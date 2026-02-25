@@ -42,7 +42,8 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
       fetchVacancies();
       fetchMyApplications();
     }
-  }, [user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const fetchVacancies = async () => {
     setLoading(true);

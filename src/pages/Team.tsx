@@ -238,7 +238,8 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
       fetchLinkedEmployees();
       fetchManualMembers();
     }
-  }, [user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const fetchLinkedEmployees = async () => {
     if (!user) return;
