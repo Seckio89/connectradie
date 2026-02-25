@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /onboarding
+Disallow: /settings
+Disallow: /my-trades
+Disallow: /jobs
+Disallow: /projects
+Disallow: /post-lead
+Disallow: /leads
+Disallow: /messages
+Disallow: /admin/
+Disallow: /my-profile
+Disallow: /schedule
+Disallow: /work
+Disallow: /performance
+Disallow: /team
+Disallow: /trade-careers
+Disallow: /site-calendar
+Disallow: /verification
+
+Sitemap: https://connectradie.com.au/sitemap.xml
