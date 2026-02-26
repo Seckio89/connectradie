@@ -40,6 +40,9 @@ const MyProfile = lazy(() => import('./pages/MyProfile'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const Contact = lazy(() => import('./pages/Contact'));
+const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
+const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 function PageSpinner() {
   return (
@@ -306,6 +309,30 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute requireTradie>
+            <AnalyticsDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/payments"
+        element={
+          <ProtectedRoute>
+            <PaymentHistory />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/verification" element={<Navigate to="/settings" replace />} />
       <Route path="*" element={<NotFound />} />
       </Routes>
@@ -316,6 +343,7 @@ function AppRoutes() {
 export default function App() {
   return (
     <Router>
+      <a href="#main-content" className="skip-to-content">Skip to content</a>
       <RouteTracker />
       <AuthProvider>
         <AppRoutes />

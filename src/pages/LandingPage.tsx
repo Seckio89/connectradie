@@ -46,7 +46,7 @@ export default function LandingPage() {
         ]}
       />
       <Navbar />
-      <main>
+      <main id="main-content">
         <HeroSection />
         <HowItWorksClientsSection />
         <CategoriesSection />

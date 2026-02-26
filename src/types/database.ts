@@ -620,6 +620,89 @@ export type SystemSettings = {
   updated_at: string;
 }
 
+export type StandardRate = {
+  id: string;
+  tradie_id: string;
+  service_name: string;
+  description: string | null;
+  price_per_hour: number | null;
+  flat_rate: number | null;
+  includes_materials: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type JobPhotoStage = 'before' | 'during' | 'after';
+
+export type JobPhoto = {
+  id: string;
+  job_id: string;
+  uploaded_by: string;
+  photo_url: string;
+  stage: JobPhotoStage;
+  caption: string | null;
+  add_to_portfolio: boolean;
+  created_at: string;
+}
+
+export type RecurringJob = {
+  id: string;
+  client_id: string;
+  tradie_id: string | null;
+  original_job_id: string | null;
+  trade_category: string;
+  description: string | null;
+  frequency_months: number;
+  auto_remind: boolean;
+  reminder_days_before: number;
+  next_due_date: string | null;
+  last_completed_at: string | null;
+  times_completed: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type SavedSearch = {
+  id: string;
+  user_id: string;
+  name: string;
+  filters: Record<string, unknown>;
+  alert_enabled: boolean;
+  last_alerted_at: string | null;
+  created_at: string;
+}
+
+export type EmailPreference = {
+  id: string;
+  user_id: string;
+  category: string;
+  email_enabled: boolean;
+  sms_enabled: boolean;
+  push_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type AbuseReportType = 'spam' | 'fake_review' | 'harassment' | 'contact_scraping' | 'other';
+export type AbuseReportSeverity = 'low' | 'medium' | 'high' | 'critical';
+export type AbuseReportStatus = 'pending' | 'investigating' | 'resolved' | 'dismissed';
+
+export type AbuseReport = {
+  id: string;
+  reporter_id: string;
+  reported_user_id: string | null;
+  report_type: AbuseReportType;
+  description: string | null;
+  evidence_urls: string[] | null;
+  severity: AbuseReportSeverity;
+  status: AbuseReportStatus;
+  resolved_at: string | null;
+  resolved_by: string | null;
+  created_at: string;
+}
+
 export type JobWithRelations = Job & {
   profiles?: {
     full_name: string;
@@ -860,6 +943,42 @@ export type Database = {
         Row: ProfileView;
         Insert: Partial<Omit<ProfileView, 'id' | 'viewed_at'>>;
         Update: Partial<Omit<ProfileView, 'id' | 'viewed_at'>>;
+        Relationships: [];
+      };
+      standard_rates: {
+        Row: StandardRate;
+        Insert: Partial<Omit<StandardRate, 'id' | 'created_at' | 'updated_at'>>;
+        Update: Partial<Omit<StandardRate, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      job_photos: {
+        Row: JobPhoto;
+        Insert: Partial<Omit<JobPhoto, 'id' | 'created_at'>>;
+        Update: Partial<Omit<JobPhoto, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      recurring_jobs: {
+        Row: RecurringJob;
+        Insert: Partial<Omit<RecurringJob, 'id' | 'created_at' | 'updated_at'>>;
+        Update: Partial<Omit<RecurringJob, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      saved_searches: {
+        Row: SavedSearch;
+        Insert: Partial<Omit<SavedSearch, 'id' | 'created_at'>>;
+        Update: Partial<Omit<SavedSearch, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      email_preferences: {
+        Row: EmailPreference;
+        Insert: Partial<Omit<EmailPreference, 'id' | 'created_at' | 'updated_at'>>;
+        Update: Partial<Omit<EmailPreference, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      abuse_reports: {
+        Row: AbuseReport;
+        Insert: Partial<Omit<AbuseReport, 'id' | 'created_at'>>;
+        Update: Partial<Omit<AbuseReport, 'id' | 'created_at'>>;
         Relationships: [];
       };
     };

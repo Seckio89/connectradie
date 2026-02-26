@@ -10,18 +10,24 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import EmptyState from '../components/EmptyState';
+import { useAuth } from '../contexts/AuthContext';
 import { getConnectAccountDetails, createConnectOnboardingSession } from '../lib/stripe';
 import type { ConnectAccountDetails } from '../lib/stripe';
 
 export default function Payouts() {
+  const { session } = useAuth();
   const [accountDetails, setAccountDetails] = useState<ConnectAccountDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [connectLoading, setConnectLoading] = useState(false);
 
   useEffect(() => {
-    fetchDetails();
-  }, []);
+    if (session) {
+      fetchDetails();
+    } else {
+      setLoading(false);
+    }
+  }, [session]);
 
   const fetchDetails = async () => {
     setLoading(true);

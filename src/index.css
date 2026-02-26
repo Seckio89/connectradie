@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import './styles/mobile-responsive.css';
+
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;
