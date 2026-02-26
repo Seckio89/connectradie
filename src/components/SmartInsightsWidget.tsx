@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Lightbulb, TrendingUp, ArrowRight, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { extractSuburb } from '../lib/contactGating';
 
 interface InsightData {
   avgResponseMinutes: number;
@@ -88,7 +89,7 @@ export default function SmartInsightsWidget() {
           .eq('tradie_id', user.id),
         supabase
           .from('jobs')
-          .select('status, suburb, created_at, tradie_id')
+          .select('status, location_address, created_at, tradie_id')
           .or(`tradie_id.eq.${user.id},tradie_id.is.null`)
           .gte('created_at', weekAgoStr),
         supabase
@@ -118,8 +119,9 @@ export default function SmartInsightsWidget() {
       );
       const suburbCounts: Record<string, number> = {};
       missedJobs.forEach((j) => {
-        if (j.suburb) {
-          suburbCounts[j.suburb] = (suburbCounts[j.suburb] || 0) + 1;
+        const suburb = extractSuburb(j.location_address);
+        if (suburb) {
+          suburbCounts[suburb] = (suburbCounts[suburb] || 0) + 1;
         }
       });
       const topSuburb = Object.entries(suburbCounts).sort(([, a], [, b]) => b - a)[0];

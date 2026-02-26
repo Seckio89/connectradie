@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { extractSuburb } from '../lib/contactGating';
 import DashboardLayout from '../components/DashboardLayout';
 
 interface HealthStats {
@@ -73,7 +74,7 @@ export default function PerformanceInsights() {
           .eq('tradie_id', user.id),
         supabase
           .from('jobs')
-          .select('status, suburb, created_at, budget')
+          .select('status, location_address, created_at, budget')
           .eq('tradie_id', user.id),
         supabase
           .from('profile_views')
@@ -124,8 +125,9 @@ export default function PerformanceInsights() {
 
       const suburbCounts: Record<string, number> = {};
       completedJobs.forEach((j) => {
-        if (j.suburb) {
-          suburbCounts[j.suburb] = (suburbCounts[j.suburb] || 0) + 1;
+        const suburb = extractSuburb(j.location_address);
+        if (suburb) {
+          suburbCounts[suburb] = (suburbCounts[suburb] || 0) + 1;
         }
       });
       const topSuburbEntry = Object.entries(suburbCounts).sort(([, a], [, b]) => b - a)[0];

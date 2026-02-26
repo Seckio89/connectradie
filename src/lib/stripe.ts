@@ -233,15 +233,20 @@ export async function getConnectAccountDetails(): Promise<ConnectAccountDetails>
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const apiUrl = `${supabaseUrl}/functions/v1/stripe-connect-account`;
 
-  const response = await fetch(apiUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${session.access_token}`,
-      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({}),
-  });
+  let response: Response;
+  try {
+    response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    });
+  } catch {
+    throw new Error('Unable to reach the payout service. The stripe-connect-account function may not be deployed. Please run: supabase functions deploy stripe-connect-account');
+  }
 
   const text = await response.text();
   let data: Record<string, unknown>;
