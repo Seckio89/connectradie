@@ -34,6 +34,7 @@ const TradeCareers = lazy(() => import('./pages/TradeCareers'));
 const Schedule = lazy(() => import('./pages/Schedule'));
 const WorkHub = lazy(() => import('./pages/WorkHub'));
 const PerformanceInsights = lazy(() => import('./pages/PerformanceInsights'));
+const Payouts = lazy(() => import('./pages/Payouts'));
 const PublicTradieProfile = lazy(() => import('./pages/PublicTradieProfile'));
 const MyProfile = lazy(() => import('./pages/MyProfile'));
 const Terms = lazy(() => import('./pages/Terms'));
@@ -270,6 +271,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute requireTradie>
             <PerformanceInsights />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/payouts"
+        element={
+          <ProtectedRoute requireTradie>
+            <Payouts />
           </ProtectedRoute>
         }
       />

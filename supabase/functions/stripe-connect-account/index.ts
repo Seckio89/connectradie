@@ -1,0 +1,141 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import Stripe from "npm:stripe@14.21.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization, X-Client-Info, Apikey",
+};
+
+function errorResponse(message: string, status: number) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 200, headers: corsHeaders });
+  }
+
+  if (req.method !== "POST") {
+    return errorResponse("Method not allowed", 405);
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return errorResponse("Server configuration error", 500);
+    }
+
+    if (!stripeSecretKey) {
+      return errorResponse("Stripe not configured", 500);
+    }
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return errorResponse("Missing Authorization header", 401);
+    }
+
+    const token = authHeader.slice(7);
+
+    const authClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    const {
+      data: { user },
+      error: authError,
+    } = await authClient.auth.getUser(token);
+    if (authError || !user) {
+      return errorResponse(authError?.message || "Unauthorized", 401);
+    }
+
+    const { data: profile } = await authClient
+      .from("profiles")
+      .select("stripe_connect_account_id, role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile || profile.role !== "tradie") {
+      return errorResponse("Only tradies can view payout details", 403);
+    }
+
+    const accountId = profile.stripe_connect_account_id;
+
+    if (!accountId) {
+      return new Response(
+        JSON.stringify({ connected: false }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
+
+    const [account, balance, payouts] = await Promise.all([
+      stripe.accounts.retrieve(accountId),
+      stripe.balance.retrieve({ stripeAccount: accountId }),
+      stripe.payouts.list({ stripeAccount: accountId, limit: 20 }),
+    ]);
+
+    let dashboardUrl: string | null = null;
+    try {
+      const loginLink = await stripe.accounts.createLoginLink(accountId);
+      dashboardUrl = loginLink.url;
+    } catch {
+      // Login link fails if account is not fully onboarded
+    }
+
+    const audAvailable = balance.available
+      .filter((b) => b.currency === "aud")
+      .reduce((sum, b) => sum + b.amount, 0);
+
+    const audPending = balance.pending
+      .filter((b) => b.currency === "aud")
+      .reduce((sum, b) => sum + b.amount, 0);
+
+    return new Response(
+      JSON.stringify({
+        connected: true,
+        account: {
+          chargesEnabled: account.charges_enabled,
+          payoutsEnabled: account.payouts_enabled,
+          detailsSubmitted: account.details_submitted,
+          requirements: {
+            currentlyDue: account.requirements?.currently_due || [],
+            pastDue: account.requirements?.past_due || [],
+          },
+        },
+        balance: {
+          available: audAvailable,
+          pending: audPending,
+        },
+        payouts: payouts.data.map((p) => ({
+          id: p.id,
+          amount: p.amount,
+          currency: p.currency,
+          status: p.status,
+          arrival_date: p.arrival_date,
+          created: p.created,
+        })),
+        dashboardUrl,
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  } catch (err) {
+    console.error("Error fetching Connect account details:", err);
+    const message =
+      err instanceof Error ? err.message : "Internal server error";
+    return errorResponse(message, 500);
+  }
+});

@@ -23,6 +23,7 @@ import {
   Users,
   DollarSign,
   Flag,
+  Wallet,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -168,6 +169,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Team Management & Scheduling', href: '/schedule', icon: CalendarDays },
     { name: 'Leads, Jobs & Recruitment', href: '/work', icon: ClipboardList },
     { name: 'Performance Insights', href: '/performance', icon: TrendingUp },
+    { name: 'Payouts', href: '/payouts', icon: Wallet },
     { name: 'Messages', href: '/messages', icon: MessageCircle },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
@@ -442,6 +444,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                           >
                             <TrendingUp className="w-4 h-4" />
                             Performance Insights
+                          </Link>
+                          <Link
+                            to="/payouts"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            <Wallet className="w-4 h-4" />
+                            Payouts
                           </Link>
                           <Link
                             to="/messages"
