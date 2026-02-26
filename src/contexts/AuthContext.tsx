@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { User, Session } from '@supabase/supabase-js';
 import * as Sentry from '@sentry/react';
 import { supabase } from '../lib/supabase';
+import { trackEvent, GA_EVENTS } from '../lib/analytics';
 import type { Profile, TradieDetails } from '../types/database';
 
 interface AuthContextType {
@@ -96,11 +97,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: { full_name: fullName }
       }
     });
+    if (!error) trackEvent(GA_EVENTS.SIGN_UP, { method: 'email' });
     return { error };
   };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (!error) trackEvent(GA_EVENTS.LOGIN, { method: 'email' });
     return { error };
   };
 

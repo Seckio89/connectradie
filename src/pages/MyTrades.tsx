@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Loader2, Filter } from 'lucide-react';
+import { Plus, Search, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { TradieWithDetails, AvailabilitySlot } from '../types/database';

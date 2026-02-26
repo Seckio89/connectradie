@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { X, Send, Paperclip, Calendar, Loader2, ChevronLeft, ChevronRight, Clock, MapPin, Image as ImageIcon, User, Phone, DollarSign, AlertTriangle, Key, FileText, ShieldAlert } from 'lucide-react';
+import { X, Send, Paperclip, Calendar, Loader2, ChevronLeft, ChevronRight, Clock, MapPin, Image as ImageIcon, User, DollarSign, AlertTriangle, Key, FileText, ShieldAlert } from 'lucide-react';
 import type { TradieWithDetails, Message, AvailabilitySlot, BudgetType, JobComplexity } from '../types/database';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';

@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Briefcase, Clock, Calendar, CheckCircle2, AlertCircle, XCircle, Loader2, User, Star, Check, X as XIcon, Play, Package, Search, ClipboardList, Crown, Zap, WifiOff, ShieldAlert, Settings, Lock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Briefcase, Clock, Calendar, CheckCircle2, AlertCircle, XCircle, Loader2, User, Star, Check, X as XIcon, Play, Package, ClipboardList, Crown, Zap, WifiOff, ShieldAlert, Settings, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { offlineAcceptJob } from '../lib/offlineSync';
 import { autoNameProject } from '../lib/projectAutoName';
 import { formatDate, checkLicenseExpired } from '../lib/utils';
 import { redactSensitiveInfo } from '../lib/redaction';
-import type { Job, JobWithRelations } from '../types/database';
+import type { JobWithRelations } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
 import JobDetailModal from '../components/JobDetailModal';
 import JobAccessModal from '../components/JobAccessModal';

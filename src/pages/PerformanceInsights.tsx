@@ -40,6 +40,22 @@ interface StrengthsData {
   reviewCount: number;
 }
 
+interface ReviewResult {
+  rating: number;
+  communication_rating: number | null;
+  punctuality_rating: number | null;
+  quality_rating: number | null;
+  value_rating: number | null;
+  created_at: string;
+}
+
+interface JobResult {
+  status: string;
+  location_address: string | null;
+  created_at: string;
+  budget: number | null;
+}
+
 interface FocusArea {
   icon: typeof Camera;
   title: string;
@@ -93,9 +109,9 @@ export default function PerformanceInsights() {
       ]);
 
       const quotes = quotesRes.data || [];
-      const jobs = jobsRes.data || [];
+      const jobs = (jobsRes.data as unknown as JobResult[]) || [];
       const views = viewsRes.data || [];
-      const reviews = reviewsRes.data || [];
+      const reviews = (reviewsRes.data as unknown as ReviewResult[]) || [];
       const portfolio = portfolioRes.data || [];
 
       const resolved = quotes.filter((q) => q.status === 'accepted' || q.status === 'declined');

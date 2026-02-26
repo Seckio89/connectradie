@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import {
-  Flag,
   Search,
   Loader2,
   Star,

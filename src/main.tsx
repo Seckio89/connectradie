@@ -6,6 +6,7 @@ import App from './App.tsx';
 import ErrorBoundary from './components/ErrorBoundary';
 import './index.css';
 import { registerServiceWorker } from './lib/serviceWorker';
+import { initAnalytics } from './lib/analytics';
 
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 if (sentryDsn) {
@@ -21,6 +22,8 @@ if (sentryDsn) {
     replaysSessionSampleRate: 0,
   });
 }
+
+initAnalytics();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

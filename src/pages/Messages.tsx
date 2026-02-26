@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, Loader2, Paperclip, Calendar, X, Lock, Image as ImageIcon, FileText, Mic, Settings, Archive, Search } from 'lucide-react';
+import { MessageSquare, Send, Loader2, Paperclip, Calendar, X, Lock, Image as ImageIcon, FileText, Mic, Settings, Archive } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useSearchParams } from 'react-router-dom';
-import type { Message, Conversation, ConversationParticipant, ConversationPermission, Profile } from '../types/database';
+import type { Message, Conversation, ConversationParticipant, Profile } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
 import UnlockLeadModal from '../components/UnlockLeadModal';
 import ConversationSettingsModal from '../components/ConversationSettingsModal';
@@ -382,7 +382,7 @@ export default function Messages() {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: { publicUrl: _publicUrl } } = supabase.storage
         .from('message-attachments')
         .getPublicUrl(fileName);
 

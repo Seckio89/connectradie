@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Search as SearchIcon, Filter, ChevronDown, Loader2, Star, X, Wrench, LogIn, Eye, Briefcase } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import type { TradieWithDetails, AvailabilitySlot } from '../types/database';
+import type { TradieWithDetails } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
 import TradieCard from '../components/TradieCard';
 import ChatDrawer from '../components/ChatDrawer';
@@ -95,7 +95,6 @@ interface TradieRatingMap {
 
 export default function Search() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [tradies, setTradies] = useState<TradieWithDetails[]>([]);
   const [filteredTradies, setFilteredTradies] = useState<TradieWithDetails[]>([]);
   const [savedTradieIds, setSavedTradieIds] = useState<string[]>([]);
@@ -110,7 +109,7 @@ export default function Search() {
   const [ratingFilter, setRatingFilter] = useState(0);
   const [contractorTypeFilter, setContractorTypeFilter] = useState<string>('');
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-  const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [tradieRatings, setTradieRatings] = useState<TradieRatingMap>({});
   const [showViewLimitModal, setShowViewLimitModal] = useState(false);
   const [dailyViewCount, setDailyViewCount] = useState(0);

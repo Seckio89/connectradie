@@ -44,7 +44,7 @@ interface PortfolioImage {
 export default function PublicTradieProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
 
   const [tradie, setTradie] = useState<TradieWithDetails | null>(null);
   const [rating, setRating] = useState<TradieRating | null>(null);

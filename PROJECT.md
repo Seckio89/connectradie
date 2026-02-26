@@ -1,209 +1,228 @@
 # ConnecTradie — Project Status & Roadmap
 
 ## Overview
-ConnecTradie is a two-sided marketplace connecting Australian homeowners with licensed tradies. Homeowners post jobs and receive quotes; tradies manage leads, availability, and client communication.
+ConnecTradie is a two-sided marketplace web app connecting Australian homeowners with licensed tradies (tradespeople). Homeowners post jobs and receive quotes; tradies manage leads, availability, and client communication.
 
 ## Tech Stack
-- **Frontend:** React 18, TypeScript, Tailwind CSS, Vite, Lucide React
+- **Frontend:** React 18, TypeScript, Tailwind CSS, Vite
 - **Backend:** Supabase (PostgreSQL, Auth, Realtime, Edge Functions, Storage)
-- **Payments:** Stripe (subscriptions, one-time payments, Connect)
-- **Integrations:** Google Calendar, Google Maps, Twilio (SMS), Resend (email)
-- **PWA:** Service worker, offline sync, push notifications
+- **Payments:** Stripe (Connect, Checkout, Escrow)
+- **Testing:** Vitest + jsdom
+- **Hosting:** Vercel (or similar)
 
 ## Project Structure
 ```
 src/
-├── components/          # 58 reusable UI components
-│   └── profile-editor/  # Profile editing modals (bio, cover, details, portfolio)
-├── contexts/            # AuthContext (Supabase auth, role detection)
-├── hooks/               # 5 custom hooks (availability, jobs, conversations, toast, categories)
-├── lib/                 # 17 utility modules (stripe, reviews, subscription, notifications, etc.)
-├── pages/               # 25 page components
-└── types/               # TypeScript types (database.ts — all DB interfaces)
-supabase/
-├── functions/           # 14 Edge Functions (Deno runtime)
-└── migrations/          # 102 SQL migrations
+├── __tests__/           # Test suite (expansion.test.ts, setup.ts)
+├── components/          # 65+ reusable UI components
+│   └── profile-editor/  # Profile editing modals
+├── contexts/            # AuthContext (Supabase auth)
+├── hooks/               # Custom hooks (geolocation, etc.)
+├── lib/                 # 20+ utility modules & services
+├── pages/               # 30+ page components
+├── sql/                 # Database migrations
+├── styles/              # CSS (mobile-responsive.css)
+└── types/               # TypeScript types (database.ts)
 ```
 
-## Completed Features
+## Feature Status — All Tiers
 
-### Authentication & Roles
-- Email/password auth via Supabase Auth
-- Three roles: client, tradie, admin
-- Role-based route protection and dashboard routing
-- Onboarding flow with employment type selection
+### ✅ TIER 1 — Revenue & Trust
+| Feature | Status | Files | Notes |
+|---------|--------|-------|-------|
+| Stripe Payments — Pro subscriptions | ✅ Done | `lib/stripe.ts`, `lib/subscription.ts` | Checkout sessions, Connect onboarding, training mode |
+| Stripe Payments — Job deposits & escrow | ✅ Done | `lib/stripePayments.ts` | Deposits, milestone payments, escrow release, refunds |
+| Stripe Payments — Fee calculator | ✅ Done | `lib/stripePayments.ts` | 10% free tier, 0% pro, Stripe fee calc, tradie payout calc |
+| Payment History page | ✅ Done | `pages/PaymentHistory.tsx` | Summary cards, filters, transaction table, tradie payout status |
+| Reviews — Full system | ✅ Done | `lib/reviewSystem.ts` | Submit, respond, stats, Top Rated badge, pending reviews, report |
+| Reviews — Verified job only | ✅ Done | `lib/reviewSystem.ts` | Only completed jobs can be reviewed, duplicate prevention |
+| Reviews — Tradie response | ✅ Done | `lib/reviewSystem.ts` | One response per review, timestamped |
+| Reviews — Top Rated badge | ✅ Done | `lib/reviewSystem.ts` | ≥5 reviews, ≥4.5 avg, ≥80% response rate |
+| Reviews — Tags & categories | ✅ Done | `lib/reviewSystem.ts` | 10 tags: punctual, quality, communication, etc. |
+| Identity verification — KYC | ✅ Done | `lib/identityVerification.ts` | Document upload, verification levels (none→premium) |
+| Identity verification — ABN | ✅ Done | `lib/identityVerification.ts` | 11-digit format + checksum validation, API integration ready |
+| Identity verification — Licenses | ✅ Done | `lib/identityVerification.ts` | State-based license verification, expiry tracking |
+| Identity verification — Badges | ✅ Done | `lib/identityVerification.ts` | Identity, Licensed, Insured, Police Check badges |
+| Identity verification — Expiry alerts | ✅ Done | `lib/identityVerification.ts` | Alerts for licenses expiring within 30 days |
 
-### Job Management
-- Job posting (urgent/scheduled, flash boost with 2hr countdown)
-- Job lifecycle: pending → accepted → in_progress → completed → cancelled/declined/funded
-- Job completion with notes and proof photos
-- Job variations table (change orders — DB ready)
+### ✅ TIER 2 — Growth & Retention
+| Feature | Status | Files | Notes |
+|---------|--------|-------|-------|
+| Email/SMS — Template system | ✅ Done | `lib/emailTemplates.ts` | 18 templates covering all user events |
+| Email/SMS — Preference management | ✅ Done | `lib/emailTemplates.ts`, `components/NotificationPreferences.tsx` | Per-category opt-in/out, toggle UI |
+| Email/SMS — Trigger helpers | ✅ Done | `lib/emailTemplates.ts` | `notifyNewLead`, `notifyQuoteReceived`, `notifyMessageReceived`, `sendReviewReminder` |
+| Email/SMS — Batch send | ✅ Done | `lib/emailTemplates.ts` | Parallel send with success/fail tracking |
+| SEO — Meta tags manager | ✅ Done | `lib/seoUtils.ts` | `setSEOMeta()` for title, description, OG, Twitter Card, robots |
+| SEO — JSON-LD structured data | ✅ Done | `lib/seoUtils.ts` | LocalBusiness, Service, JobPosting, Breadcrumb, FAQ schemas |
+| SEO — Page presets | ✅ Done | `lib/seoUtils.ts` | Pre-configured SEO for home, search, explore, register |
+| SEO — Sitemap definitions | ✅ Done | `lib/seoUtils.ts` | 8 pages with priority and change frequency |
+| Search — Geolocation | ✅ Done | `hooks/useGeolocation.ts` | GPS, reverse geocode, distance calc, session cache |
+| Search — Distance sorting | ✅ Done | `hooks/useGeolocation.ts` | Haversine formula, `sortByDistance()`, AU capital coords |
+| Search — Saved searches | ✅ Done | `lib/savedSearches.ts` | Save/load/delete, alert toggle, Supabase-backed |
+| Search — Filter builder | ✅ Done | `lib/savedSearches.ts` | Trade category, postcode, rating, verified, insured, emergency, sort |
+| Search — Recent searches | ✅ Done | `lib/savedSearches.ts` | localStorage-backed, deduplicated, max 10 |
+| Mobile responsive — CSS audit | ✅ Done | `styles/mobile-responsive.css` | Touch targets, form zoom fix, tables→cards, modals→sheets |
+| Mobile responsive — Safe areas | ✅ Done | `styles/mobile-responsive.css` | Notched phone support, print styles |
 
-### Lead System
-- Lead unlock payments ($15 for contact details, free for Pro)
-- Job access payments ($2.99, free for Pro)
-- Contact info redaction for locked leads
-- Profile view tracking and contact gating
+### ✅ TIER 3 — Competitive Advantage
+| Feature | Status | Files | Notes |
+|---------|--------|-------|-------|
+| Job tracking timeline | ✅ Done | `components/JobTimeline.tsx` | Visual progress: Posted→Quoted→Accepted→Funded→In Progress→Completed→Reviewed |
+| Job tracking — Compact mode | ✅ Done | `components/JobTimeline.tsx` | Inline dot indicator for list views |
+| Instant quoting — Standard rates | ✅ Done | `components/InstantQuoteWidget.tsx` | Tradies set rates, clients see ballpark pricing |
+| Instant quoting — Suggested services | ✅ Done | `components/InstantQuoteWidget.tsx` | Per-trade suggestions (plumber, electrician, builder, painter, landscaper) |
+| Instant quoting — Edit mode | ✅ Done | `components/InstantQuoteWidget.tsx` | Full CRUD for rates, materials toggle, hours estimate |
+| Photo documentation — Upload | ✅ Done | `components/PhotoDocumentation.tsx` | Before/during/after stages, multi-upload, compression |
+| Photo documentation — Portfolio auto-add | ✅ Done | `components/PhotoDocumentation.tsx` | 'After' photos auto-added to portfolio, toggle per photo |
+| Photo documentation — Before/after slider | ✅ Done | `components/PhotoDocumentation.tsx` | `BeforeAfterComparison` component with draggable slider |
+| Photo documentation — Viewer | ✅ Done | `components/PhotoDocumentation.tsx` | Full-screen viewer, captions, navigation |
+| Recurring jobs — Creation | ✅ Done | `lib/recurringJobs.ts` | Frequency, auto-remind, reminder days config |
+| Recurring jobs — Suggestions | ✅ Done | `lib/recurringJobs.ts` | Auto-suggest after job completion based on trade category |
+| Recurring jobs — Default frequencies | ✅ Done | `lib/recurringJobs.ts` | Plumber 12mo, lawn 1mo, painter 60mo, etc. |
+| Recurring jobs — Due reminders | ✅ Done | `lib/recurringJobs.ts` | Email + in-app notifications, configurable lead time |
+| Recurring jobs — Mark completed | ✅ Done | `lib/recurringJobs.ts` | Resets next due date, increments completion counter |
+| Analytics — Full dashboard | ✅ Done | `pages/AnalyticsDashboard.tsx` | Revenue, jobs, win rate, rating KPIs |
+| Analytics — Revenue/jobs charts | ✅ Done | `pages/AnalyticsDashboard.tsx` | Monthly bar charts with hover tooltips |
+| Analytics — Quote performance | ✅ Done | `lib/analyticsService.ts`, `pages/AnalyticsDashboard.tsx` | Win rate, price range conversion, quote counts |
+| Analytics — Response metrics | ✅ Done | `lib/analyticsService.ts`, `pages/AnalyticsDashboard.tsx` | Avg/median response time, by day of week |
+| Analytics — Client retention | ✅ Done | `lib/analyticsService.ts`, `pages/AnalyticsDashboard.tsx` | Repeat rate, top clients, avg jobs/client |
+| Analytics — Seasonal trends | ✅ Done | `lib/analyticsService.ts`, `pages/AnalyticsDashboard.tsx` | Monthly heat map, high season detection |
+| Analytics — Insights & tips | ✅ Done | `pages/AnalyticsDashboard.tsx` | Context-aware suggestions based on metrics |
 
-### Quote System
-- Blind quoting (tradies can't see competitor quotes)
-- Two-stage quotes (range estimate → firm price after site inspection)
-- Side-by-side quote comparison view
-- Quote insights widget (analytics)
-- Max 5 quotes per job (configurable)
+### ✅ TIER 4 — Scale & Operations
+| Feature | Status | Files | Notes |
+|---------|--------|-------|-------|
+| Admin panel — Overview dashboard | ✅ Done | `pages/AdminDashboard.tsx` | 8 KPI cards, quick actions |
+| Admin panel — User management | ✅ Done | `pages/AdminDashboard.tsx` | Search, filter by role, verify/reject, view details |
+| Admin panel — Verification queue | ✅ Done | `pages/AdminDashboard.tsx` | Pending count badge, approve/reject workflow |
+| Admin panel — Dispute resolution | ✅ Done | `pages/AdminDashboard.tsx` | Priority levels, resolve/dismiss actions |
+| Admin panel — Platform analytics | ✅ Done | `pages/AdminDashboard.tsx` | Conversion rate, engagement, growth, health bars |
+| Admin panel — Platform settings | ✅ Done | `pages/AdminDashboard.tsx` | Training mode, maintenance mode, registration toggle, fee config |
+| Testing — Vitest config | ✅ Done | `vitest.config.ts`, `__tests__/setup.ts` | jsdom environment, Supabase mocks, storage mocks |
+| Testing — Payment tests | ✅ Done | `__tests__/expansion.test.ts` | Fee calc, payout, constants validation |
+| Testing — Rate limiter tests | ✅ Done | `__tests__/expansion.test.ts` | Rate limiting, spam detection, fake review detection |
+| Testing — SEO tests | ✅ Done | `__tests__/expansion.test.ts` | Schema generation, presets, sitemap validation |
+| Testing — Verification tests | ✅ Done | `__tests__/expansion.test.ts` | ABN format, checksum, invalid input |
+| Testing — Accessibility tests | ✅ Done | `__tests__/expansion.test.ts` | ARIA labels, contrast ratio, price labels |
+| Testing — Geolocation tests | ✅ Done | `__tests__/expansion.test.ts` | AU coords, distance sorting, missing coords |
+| Testing — Search tests | ✅ Done | `__tests__/expansion.test.ts` | Recent searches, dedup, limits |
+| Rate limiting | ✅ Done | `lib/rateLimiter.ts` | Per-action limits (jobs, quotes, messages, login, search) |
+| Abuse detection — Spam | ✅ Done | `lib/rateLimiter.ts` | URL count, caps ratio, spam keywords, repeated chars |
+| Abuse detection — Fake reviews | ✅ Done | `lib/rateLimiter.ts` | Account age, timing, review count, short reviews |
+| Abuse detection — Contact scraping | ✅ Done | `lib/rateLimiter.ts` | View count thresholds with severity levels |
+| Abuse reporting | ✅ Done | `lib/rateLimiter.ts` | User reports, auto-escalation for critical |
+| Accessibility — Focus management | ✅ Done | `lib/accessibility.ts` | `useFocusTrap`, `useKeyboardNav`, skip to content |
+| Accessibility — Screen reader | ✅ Done | `lib/accessibility.ts` | `announce()`, `LiveRegion`, `SrOnly` components |
+| Accessibility — Motion/contrast | ✅ Done | `lib/accessibility.ts` | `useReducedMotion`, `useHighContrast`, `meetsContrastRatio` |
+| Accessibility — ARIA helpers | ✅ Done | `lib/accessibility.ts` | Rating, status, price labels, heading level manager |
+| Accessibility — CSS | ✅ Done | `styles/mobile-responsive.css` | focus-visible, reduced-motion, forced-colors, WCAG touch targets |
 
-### Real-Time Messaging
-- Conversations with real-time Supabase subscriptions
-- Booking request integration within messages
-- Conversation settings and permissions
-- File attachment support
+### Database
+| Migration | Status | File | Tables |
+|-----------|--------|------|--------|
+| Expansion migration | ✅ Done | `sql/expansion_migration.sql` | payments, standard_rates, job_photos, recurring_jobs, saved_searches, email_preferences, abuse_reports |
+| RLS policies | ✅ Done | `sql/expansion_migration.sql` | All 7 new tables have row-level security |
+| Profile extensions | ✅ Done | `sql/expansion_migration.sql` | rejection_reason, insurance_policy, abn_verified, license_verified, license_expiry, documents_url, is_emergency_available |
+| Review extensions | ✅ Done | `sql/expansion_migration.sql` | tradie_response, helpful_count, photos, tags |
+| Update triggers | ✅ Done | `sql/expansion_migration.sql` | Auto updated_at on payments, rates, recurring, email_preferences |
 
-### Tradie Profiles
-- Public-facing profile: bio, portfolio gallery, cover photo
-- Verified/licensed/insured badges, trade badges
-- Ratings and reviews display
-- Service radius, emergency availability, team size
-- Hourly rate, call-out fee, qualifications
-- Full profile editing (bio, cover, details, portfolio modals)
+### Routing
+| Route | Page | Guard | Status |
+|-------|------|-------|--------|
+| `/analytics` | AnalyticsDashboard | Tradie only | ✅ Wired |
+| `/payments` | PaymentHistory | Authenticated | ✅ Wired |
+| `/admin` | AdminDashboard | Admin only | ✅ Wired |
+| All existing routes | — | — | ✅ Preserved |
 
-### Availability & Calendar
-- Calendar-based availability scheduling (morning/midday/afternoon slots)
-- Bulk scheduling tool (Pro)
-- Google Calendar OAuth sync (Pro)
-- Site calendar with team assignments (Pro)
+## File Summary — New Files Created
 
-### Review & Rating System
-- 1–5 star rating with optional comment (ReviewModal)
-- "Leave a Review" button on completed jobs
-- Review display (ReviewsList) on public profiles
-- Rating aggregation view (RatingBreakdown — star distribution chart)
-- Rating-based filtering in search (3+, 4+, 5+)
-- Database: reviews table + tradie_ratings view + RLS policies
+### Services (src/lib/)
+| File | Lines | Purpose |
+|------|-------|---------|
+| `stripePayments.ts` | ~200 | Deposits, milestones, escrow, fees |
+| `reviewSystem.ts` | ~280 | Full review lifecycle, stats, badges |
+| `identityVerification.ts` | ~240 | KYC, ABN, licenses, badges, expiry |
+| `emailTemplates.ts` | ~260 | 18 templates, preferences, triggers |
+| `seoUtils.ts` | ~230 | Meta tags, JSON-LD, sitemap |
+| `savedSearches.ts` | ~170 | Saved searches, filters, recent |
+| `recurringJobs.ts` | ~280 | Recurring jobs, reminders, suggestions |
+| `analyticsService.ts` | ~320 | Full business analytics |
+| `rateLimiter.ts` | ~250 | Rate limits, spam/abuse detection |
+| `accessibility.ts` | ~200 | WCAG utilities, ARIA, focus |
 
-### Payments (Stripe)
-- Pro subscriptions: $45/month or $432/year (20% discount)
-- One-time payments: lead unlock ($15) + job access ($2.99) + 2% processing fee
-- Stripe Connect onboarding for tradie payouts
-- Webhook processing (subscription sync, payment completion)
-- Training mode for test payments (bypasses Stripe)
-- Payment duplicate prevention
-- Subscription cancellation flow
+### Components (src/components/)
+| File | Lines | Purpose |
+|------|-------|---------|
+| `JobTimeline.tsx` | ~200 | Visual job progress tracker |
+| `InstantQuoteWidget.tsx` | ~310 | Standard rate display + editor |
+| `PhotoDocumentation.tsx` | ~350 | Before/after photos, viewer, portfolio |
+| `NotificationPreferences.tsx` | ~150 | Email preference toggles |
 
-### Subscription System (Pro Tier)
-- Free tier: 5 job accepts/month, 3 lead unlocks/month, 1 trade category
-- Pro tier: unlimited accepts, unlimited unlocks, zero service fees
-- 14 gated features: Google Calendar, invoices, milestones, bulk availability, team management, site calendar, analytics, profile boost, etc.
-- ProFeatureGate, UpgradeBanner, ProBadgeButton components
+### Pages (src/pages/)
+| File | Lines | Purpose |
+|------|-------|---------|
+| `AnalyticsDashboard.tsx` | ~320 | Tradie business analytics |
+| `PaymentHistory.tsx` | ~200 | Payment transaction history |
+| `AdminDashboard.tsx` | ~420 | Full admin control panel |
 
-### Invoice System
-- Invoice creation modal with line items
-- GST (10%) calculation
-- Business details (ABN, address, phone, email)
-- Status tracking: draft → sent → paid
-- Linked to jobs, milestones, and subcontractors
-
-### Project Management
-- Group related jobs into projects
-- Project status: active/completed/cancelled/ongoing
-- Date change requests
-- Milestone-based staged payments (DB + partial UI)
-
-### Team Management
-- Add employees and subcontractors
-- Team member status (active/pending_approval/rejected)
-- Employer-employee relationships
-
-### Recruitment
-- Post vacancies (apprentice/qualified/senior roles)
-- Browse and apply for vacancies
-- Application tracking
-- Stats: open positions, apprenticeships, senior roles
-
-### Performance Insights
-- Quote win rate, total quotes, average job value
-- Profile views, revenue tracking, completed jobs
-- Top trades, suburbs, attributes
-- Focus areas for improvement
-
-### Verification System
-- License format validation (per Australian state: NSW, VIC, QLD, SA, WA, TAS, NT, ACT)
-- ABN checksum validation (mod 89) + ABR lookup
-- Admin verification center (approve/reject with reasons)
-- Status tracking: unverified → pending → verified/rejected/expired
-
-### Notifications
-- Push notifications (service worker + VAPID)
-- SMS (Twilio) with rate limiting (10/day per number)
-- Email (Resend) with branded HTML template
-- In-app notification routing
-- Notification type tracking and metadata
-
-### Service Reminders
-- Auto-created on job completion based on trade category intervals
-- Retention engine for recurring maintenance
-
-### Search & Discovery
-- 40+ trade categories with subcategories
-- Filters: trade type, location/postcode, rating, contractor type, availability
-- Verified/licensed/insured badges
-- Distance-based filtering (service radius)
-- Saved tradie list on client dashboard
-
-### PWA & Offline
-- Service worker with stale-while-revalidate caching
-- IndexedDB sync queue for offline actions
-- Background sync with token refresh
-- Push notification handling
-- Web manifest for home screen install
-
-### Admin
-- Verification center: review pending tradies, approve/reject
-- Search by name, email, ABN, license number
-- Training mode toggle
+### Hooks (src/hooks/)
+| File | Lines | Purpose |
+|------|-------|---------|
+| `useGeolocation.ts` | ~170 | GPS, reverse geocode, distance |
 
 ### Other
-- Landing page (hero, features, how-it-works, categories, for-tradies)
-- Static pages: Terms, Privacy, Contact
-- Settings: profile, password, notifications, verification
-- Skeleton loaders, empty states, tooltips, error boundary
-- Lazy-loaded routes with Suspense
+| File | Lines | Purpose |
+|------|-------|---------|
+| `sql/expansion_migration.sql` | ~230 | All new database tables + RLS |
+| `styles/mobile-responsive.css` | ~280 | Mobile audit fixes + accessibility |
+| `__tests__/expansion.test.ts` | ~400 | 50+ unit tests across all services |
+| `__tests__/setup.ts` | ~80 | Test mocks for Supabase, storage, fetch |
+| `vitest.config.ts` | ~25 | Test runner configuration |
 
-## Priority Roadmap (What's Next)
+**Total new code: ~5,500+ lines across 20 files**
 
-1. **Automated testing** — No tests exist. Add Vitest + React Testing Library for critical flows (auth, job posting, payments, messaging)
-2. **SEO improvements** — Add robots.txt, sitemap.xml, dynamic meta tags per page (react-helmet-async), schema.org structured data for tradie profiles
-3. **Error tracking** — Add Sentry or similar for crash reporting and error monitoring in production
-4. **Analytics integration** — Add Google Analytics or Mixpanel for user behavior tracking, funnel analysis, conversion metrics
-5. **Admin dashboard expansion** — Expand beyond verification center: platform analytics, user management, payment reporting, content moderation
-6. **Stripe Connect payout UI** — Onboarding edge function exists but no UI for viewing payout status, balance, or transfer history
-7. **Invoice PDF export** — Invoice creation modal exists but no PDF generation or download functionality
-8. **Job variations UI** — Database table exists (`job_variations`) but no visible UI for creating/managing change orders
-9. **Advanced email templates** — Send-email function has one generic template; add specific templates for leads, messages, job updates, reminders
-10. **Real-time license authority lookup** — Currently format-only validation; add live verification against state licensing databases
+## Previously Completed Features
+- Landing page with hero, features, how-it-works, categories
+- Auth: Login, Register, Onboarding (Supabase Auth)
+- Role-based dashboards (TradieDashboard 1071 lines, ClientDashboard)
+- Tradie profiles, public pages, portfolio, trade badges
+- Availability calendar with bulk scheduling
+- Job management, quote system, comparison view
+- Pro subscription with feature gating
+- Real-time messaging (ChatDrawer, Messages)
+- Push notifications, notification router
+- Contact gating and redaction for non-Pro
+- Admin verifications page
+- Site calendar, team page, trade careers
+- Performance insights, smart insights widget
 
-## Known Tech Debt
-- Some components are large and could be further decomposed
-- No CI/CD pipeline
-- Google Calendar sync is gated behind Pro but needs broader testing
-- Offline sync (`offlineSync.ts`) needs edge-case testing
-- `database.ts` types should be auto-generated from Supabase schema
-
-## Key Files
-| File | Purpose |
-|------|---------|
-| `src/App.tsx` | Router, auth guards, lazy-loaded route definitions |
-| `src/contexts/AuthContext.tsx` | Auth state, user profile, tradie details, role detection |
-| `src/pages/TradieDashboard.tsx` | Main tradie dashboard |
-| `src/pages/ClientDashboard.tsx` | Main client dashboard |
-| `src/lib/supabase.ts` | Supabase client initialization |
-| `src/lib/stripe.ts` | Stripe checkout, payments, Connect, cancellation |
-| `src/lib/subscription.ts` | Tier logic, feature gating, limits |
-| `src/lib/reviews.ts` | Review queries, rating aggregation |
-| `src/types/database.ts` | TypeScript interfaces for all DB tables |
+## Known Issues / Tech Debt
+- TradieDashboard (73K/1730 lines) is the largest file — could use further decomposition
+- `database.ts` types may need sync with new migration tables
+- Google Calendar sync is partially implemented
+- Offline sync (`offlineSync.ts`) needs testing
+- Edge Functions need deployment for: send-email, verify-abn, verify-license, create-job-deposit, pay-milestone, release-escrow, process-refund
+- Storage buckets `job-photos` and `verification-documents` need creation in Supabase dashboard
 
 ## Commands
 ```bash
-npm run dev      # Start dev server (Vite)
-npm run build    # Production build
-npm run preview  # Preview production build
+npm run dev          # Start dev server (Vite)
+npm run build        # Production build
+npm run preview      # Preview production build
+npx vitest run       # Run tests
+npx vitest           # Run tests in watch mode
+npx vitest --coverage # Run tests with coverage
 ```
+
+## Integration Checklist
+Before going live, complete these steps:
+- [ ] Run `sql/expansion_migration.sql` in Supabase SQL editor
+- [ ] Create storage buckets: `job-photos` (public), `verification-documents` (private)
+- [ ] Deploy Edge Functions for email, ABN, license verification
+- [ ] Configure Stripe webhooks for payment status updates
+- [ ] Set environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, Stripe keys
+- [ ] Import `mobile-responsive.css` in `index.css` or `App.tsx`
+- [ ] Add `<SkipToContent />` from accessibility.ts to App layout
+- [ ] Call `setSEOMeta()` on each page component mount
+- [ ] Test all payment flows in Stripe test mode
+- [ ] Run full test suite: `npx vitest run`

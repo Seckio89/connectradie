@@ -24,7 +24,7 @@ export default function BookingRequestModal({
   isOpen,
   onClose,
   messageId,
-  conversationId,
+  conversationId: _conversationId,
   onReply,
 }: BookingRequestModalProps) {
   const { user, profile } = useAuth();
@@ -142,25 +142,6 @@ export default function BookingRequestModal({
     await onReply(replyText);
     setReplyText('');
     setSending(false);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-AU', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const formatTimeSlot = (start: string, end: string) => {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    return {
-      date: startDate.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }),
-      time: `${startDate.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })} - ${endDate.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}`,
-    };
   };
 
   const { daysInMonth, startingDayOfWeek } = useMemo(() => {

@@ -28,8 +28,16 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { markNotificationRead, markAllNotificationsRead } from '../lib/notificationService';
+import type { LucideIcon } from 'lucide-react';
 import type { Notification } from '../types/database';
 import SubscriptionModal from './SubscriptionModal';
+
+interface NavItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  state?: Record<string, unknown>;
+}
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -155,7 +163,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   };
 
-  const clientNavItems = [
+  const clientNavItems: NavItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'My Jobs', href: '/leads', icon: Briefcase },
     { name: 'Projects', href: '/projects', icon: Package },
@@ -163,7 +171,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
-  const tradieNavItems = [
+  const tradieNavItems: NavItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'My Profile', href: '/my-profile', icon: UserCircle },
     { name: 'Team Management & Scheduling', href: '/schedule', icon: CalendarDays },
@@ -174,7 +182,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
-  const adminNavItems = [
+  const adminNavItems: NavItem[] = [
     { name: 'Overview', href: '/admin/overview', icon: BarChart3 },
     { name: 'User Management', href: '/admin/users', icon: Users },
     { name: 'Verifications', href: '/admin/verifications', icon: ShieldCheck },

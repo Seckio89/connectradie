@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar styles */
+.overflow-y-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overflow-y-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.overflow-y-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.overflow-y-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Always visible scrollbar for messages */
+.messages-scrollbar {
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  scrollbar-width: auto;
+  scrollbar-color: #2563eb #d1d5db;
+}
+
+.messages-scrollbar::-webkit-scrollbar {
+  width: 16px;
+  display: block !important;
+}
+
+.messages-scrollbar::-webkit-scrollbar-track {
+  background: #d1d5db;
+  border-radius: 8px;
+  margin: 8px 4px;
+}
+
+.messages-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 8px;
+  border: 3px solid #d1d5db;
+  min-height: 60px;
+  cursor: pointer;
+}
+
+.messages-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.messages-scrollbar::-webkit-scrollbar-thumb:active {
+  background: #1d4ed8;
+}
+
+.messages-scrollbar::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* Toast animation */
+@keyframes slide-in {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+/* Modal animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out;
+}
+
+/* Fade in up animation for job cards */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Button press animation */
+@keyframes button-press {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-button-press {
+  animation: button-press 0.2s ease-out;
+}
+
+/* Pulse animation for elements */
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

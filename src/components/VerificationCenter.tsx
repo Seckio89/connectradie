@@ -36,7 +36,7 @@ interface LicenseResult {
 }
 
 export default function VerificationCenter() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, tradieDetails, refreshProfile } = useAuth();
   const [selfApproving, setSelfApproving] = useState(false);
   const [showCertificate, setShowCertificate] = useState(false);
   const isAdmin = profile?.role === 'admin';
@@ -347,8 +347,8 @@ export default function VerificationCenter() {
               verified={profile.license_verified || false}
               verificationStatus={profile.verification_status}
               holderName={profile.full_name || 'License Holder'}
-              businessName={profile.abn_entity_name || profile.business_name || undefined}
-              tradeType={profile.trade_type || undefined}
+              businessName={profile.abn_entity_name || tradieDetails?.business_name || undefined}
+              tradeType={tradieDetails?.trade_type || undefined}
               apiVerified={profile.license_api_verified || false}
               licenseClass={profile.license_class || undefined}
             />
@@ -363,9 +363,9 @@ export default function VerificationCenter() {
             licenseNumber={profile.license_number}
             licenseState={profile.license_state}
             expiryDate={profile.license_expiry}
-            businessName={profile.abn_entity_name || profile.business_name || undefined}
+            businessName={profile.abn_entity_name || tradieDetails?.business_name || undefined}
             abnNumber={profile.abn_number || undefined}
-            tradeType={profile.trade_type || undefined}
+            tradeType={tradieDetails?.trade_type || undefined}
             verifiedTrades={profile.verified_trades || []}
             verifiedDate={profile.created_at}
           />

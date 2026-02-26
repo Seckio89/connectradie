@@ -89,7 +89,7 @@ export default function SmartInsightsWidget() {
           .eq('tradie_id', user.id),
         supabase
           .from('jobs')
-          .select('status, location_address, created_at, tradie_id')
+          .select('id, status, location_address, created_at, tradie_id')
           .or(`tradie_id.eq.${user.id},tradie_id.is.null`)
           .gte('created_at', weekAgoStr),
         supabase

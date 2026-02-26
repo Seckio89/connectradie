@@ -8,7 +8,7 @@ export type ProjectStatus = 'active' | 'completed' | 'cancelled' | 'ongoing' | '
 
 export type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected' | 'expired';
 
-export interface Profile {
+export type Profile = {
   id: string;
   email: string;
   full_name: string;
@@ -47,6 +47,7 @@ export interface Profile {
   cover_photo_url: string | null;
   stripe_connect_account_id: string | null;
   stripe_connect_onboarding_complete: boolean;
+  stripe_customer_id: string | null;
   employer_id: string | null;
   employment_type: 'employee' | 'subcontractor' | 'none';
   employer_status: 'active' | 'pending_approval' | 'rejected' | 'none';
@@ -56,7 +57,7 @@ export interface Profile {
   created_at: string;
 }
 
-export interface TradieDetails {
+export type TradieDetails = {
   id: string;
   profile_id: string;
   business_name: string;
@@ -83,7 +84,7 @@ export interface TradieDetails {
   created_at: string;
 }
 
-export interface Project {
+export type Project = {
   id: string;
   client_id: string;
   title: string;
@@ -102,14 +103,14 @@ export interface Project {
   updated_at: string;
 }
 
-export interface MyTrade {
+export type MyTrade = {
   id: string;
   client_id: string;
   tradie_id: string;
   created_at: string;
 }
 
-export interface AvailabilitySlot {
+export type AvailabilitySlot = {
   id: string;
   tradie_id: string;
   start_time: string;
@@ -122,7 +123,7 @@ export interface AvailabilitySlot {
 export type BudgetType = 'request_quote' | 'fixed_budget' | 'hourly_rate';
 export type JobComplexity = 'standard' | 'emergency' | 'complex';
 
-export interface OnboardingProgress {
+export type OnboardingProgress = {
   id: string;
   user_id: string;
   profile_complete: boolean;
@@ -135,7 +136,7 @@ export interface OnboardingProgress {
   updated_at: string;
 }
 
-export interface HintTracking {
+export type HintTracking = {
   id: string;
   user_id: string;
   hint_key: string;
@@ -144,7 +145,7 @@ export interface HintTracking {
   created_at: string;
 }
 
-export interface Job {
+export type Job = {
   id: string;
   client_id: string;
   tradie_id: string | null;
@@ -184,7 +185,7 @@ export interface Job {
   created_at: string;
 }
 
-export interface Quote {
+export type Quote = {
   id: string;
   job_id: string;
   tradie_id: string;
@@ -201,7 +202,7 @@ export interface Quote {
   updated_at: string;
 }
 
-export interface QuoteWithTradie extends Quote {
+export type QuoteWithTradie = Quote & {
   tradie_profile?: {
     full_name: string;
     avatar_url: string | null;
@@ -223,7 +224,7 @@ export interface QuoteWithTradie extends Quote {
   } | null;
 }
 
-export interface Conversation {
+export type Conversation = {
   id: string;
   title: string | null;
   is_group: boolean;
@@ -232,7 +233,7 @@ export interface Conversation {
   updated_at: string;
 }
 
-export interface ConversationParticipant {
+export type ConversationParticipant = {
   id: string;
   conversation_id: string;
   user_id: string;
@@ -242,7 +243,7 @@ export interface ConversationParticipant {
   archived_at: string | null;
 }
 
-export interface ConversationPermission {
+export type ConversationPermission = {
   id: string;
   conversation_id: string;
   user_id: string;
@@ -253,7 +254,7 @@ export interface ConversationPermission {
   created_at: string;
 }
 
-export interface Message {
+export type Message = {
   id: string;
   sender_id: string;
   receiver_id: string;
@@ -271,7 +272,7 @@ export interface Message {
   created_at: string;
 }
 
-export interface Notification {
+export type Notification = {
   id: string;
   user_id: string;
   title: string;
@@ -295,7 +296,7 @@ export interface Notification {
   created_at: string;
 }
 
-export interface CalendarIntegration {
+export type CalendarIntegration = {
   id: string;
   tradie_id: string;
   provider: 'google' | 'outlook' | 'apple';
@@ -311,7 +312,7 @@ export interface CalendarIntegration {
 
 export type ServiceReminderStatus = 'pending' | 'sent' | 'booked' | 'dismissed';
 
-export interface ServiceReminder {
+export type ServiceReminder = {
   id: string;
   client_id: string;
   tradie_id: string;
@@ -325,7 +326,7 @@ export interface ServiceReminder {
   tradie_business?: string;
 }
 
-export interface Review {
+export type Review = {
   id: string;
   job_id: string | null;
   tradie_id: string;
@@ -336,7 +337,7 @@ export interface Review {
   updated_at: string;
 }
 
-export interface Connection {
+export type Connection = {
   id: string;
   tradie_id: string;
   client_id: string;
@@ -345,7 +346,7 @@ export interface Connection {
   created_at: string;
 }
 
-export interface JobUnlock {
+export type JobUnlock = {
   id: string;
   tradie_id: string;
   job_id: string;
@@ -354,7 +355,7 @@ export interface JobUnlock {
   created_at: string;
 }
 
-export interface JobVariation {
+export type JobVariation = {
   id: string;
   job_id: string;
   description: string;
@@ -364,7 +365,7 @@ export interface JobVariation {
   updated_at: string;
 }
 
-export interface JobMilestone {
+export type JobMilestone = {
   id: string;
   job_id: string;
   title: string;
@@ -383,7 +384,7 @@ export interface JobMilestone {
   updated_at: string;
 }
 
-export interface MilestoneSubcontractor {
+export type MilestoneSubcontractor = {
   id: string;
   milestone_id: string;
   business_name: string;
@@ -393,7 +394,7 @@ export interface MilestoneSubcontractor {
   created_at: string;
 }
 
-export interface Invoice {
+export type Invoice = {
   id: string;
   created_by: string;
   job_id: string | null;
@@ -418,7 +419,7 @@ export interface Invoice {
   updated_at: string;
 }
 
-export interface InvoiceLineItem {
+export type InvoiceLineItem = {
   id: string;
   invoice_id: string;
   description: string;
@@ -429,7 +430,7 @@ export interface InvoiceLineItem {
   created_at: string;
 }
 
-export interface StripeSubscription {
+export type StripeSubscription = {
   id: string;
   profile_id: string;
   stripe_customer_id: string;
@@ -443,11 +444,93 @@ export interface StripeSubscription {
   updated_at: string;
 }
 
+export type AppSetting = {
+  key: string;
+  value: unknown;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export type BusinessTeamMember = {
+  id: string;
+  business_owner_id: string;
+  member_profile_id: string | null;
+  invite_email: string | null;
+  invite_name: string;
+  invite_phone: string;
+  role: 'employee' | 'subcontractor' | 'apprentice';
+  trade_specialty: string;
+  status: 'invited' | 'active' | 'inactive';
+  hourly_rate: number;
+  notes: string;
+  invited_at: string;
+  joined_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ContactMessage = {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  read: boolean;
+  created_at: string;
+}
+
+export type DateChangeFieldName = 'start_date' | 'estimated_end_date';
+export type DateChangeRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export type DateChangeRequest = {
+  id: string;
+  project_id: string;
+  requester_id: string;
+  field_name: DateChangeFieldName;
+  requested_date: string;
+  reason: string;
+  status: DateChangeRequestStatus;
+  created_at: string;
+  responded_at: string | null;
+}
+
+export type JobTeamAssignment = {
+  id: string;
+  job_id: string;
+  team_member_id: string;
+  business_owner_id: string;
+  scheduled_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  role_on_job: string;
+  notes: string;
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+}
+
+export type ProfileView = {
+  id: string;
+  viewer_id: string;
+  tradie_id: string;
+  viewed_at: string;
+}
+
+export type TradieRatingView = {
+  tradie_id: string;
+  total_reviews: number;
+  average_rating: number;
+  five_star_count: number;
+  four_star_count: number;
+  three_star_count: number;
+  two_star_count: number;
+  one_star_count: number;
+}
+
 export type VacancyRoleType = 'apprentice' | 'qualified' | 'senior_advisory';
 export type VacancyStatus = 'open' | 'closed';
 export type ApplicationStatus = 'pending' | 'reviewed' | 'shortlisted' | 'rejected';
 
-export interface TradeVacancy {
+export type TradeVacancy = {
   id: string;
   employer_id: string;
   title: string;
@@ -460,7 +543,7 @@ export interface TradeVacancy {
   updated_at: string;
 }
 
-export interface VacancyApplication {
+export type VacancyApplication = {
   id: string;
   vacancy_id: string;
   applicant_id: string;
@@ -469,7 +552,7 @@ export interface VacancyApplication {
   created_at: string;
 }
 
-export interface PortfolioImage {
+export type PortfolioImage = {
   id: string;
   tradie_id: string;
   image_url: string;
@@ -478,7 +561,7 @@ export interface PortfolioImage {
   created_at: string;
 }
 
-export interface TradeVacancyWithEmployer extends TradeVacancy {
+export type TradeVacancyWithEmployer = TradeVacancy & {
   employer?: {
     full_name: string;
     avatar_url: string | null;
@@ -492,7 +575,7 @@ export interface TradeVacancyWithEmployer extends TradeVacancy {
   application_count?: number;
 }
 
-export interface VacancyApplicationWithApplicant extends VacancyApplication {
+export type VacancyApplicationWithApplicant = VacancyApplication & {
   applicant?: {
     id: string;
     full_name: string;
@@ -509,7 +592,7 @@ export interface VacancyApplicationWithApplicant extends VacancyApplication {
 export type PaymentType = 'lead_unlock' | 'job_access' | 'job_funding';
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 
-export interface Payment {
+export type Payment = {
   id: string;
   profile_id: string;
   stripe_payment_intent_id: string | null;
@@ -524,20 +607,20 @@ export interface Payment {
   completed_at: string | null;
 }
 
-export interface TradeCategory {
+export type TradeCategory = {
   id: string;
   name: string;
   default_reminder_months: number;
   created_at: string;
 }
 
-export interface SystemSettings {
+export type SystemSettings = {
   id: number;
   is_training_mode_active: boolean;
   updated_at: string;
 }
 
-export interface JobWithRelations extends Job {
+export type JobWithRelations = Job & {
   profiles?: {
     full_name: string;
     email: string;
@@ -549,164 +632,243 @@ export interface JobWithRelations extends Job {
   } | null;
 }
 
-export interface TradieWithDetails extends Profile {
+export type TradieWithDetails = Profile & {
   tradie_details: TradieDetails | null;
   availability_hours?: number;
 }
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
+      app_settings: {
+        Row: AppSetting;
+        Insert: Partial<Omit<AppSetting, 'updated_at'>>;
+        Update: Partial<AppSetting>;
+        Relationships: [];
+      };
       profiles: {
         Row: Profile;
-        Insert: Omit<Profile, 'created_at'>;
+        Insert: Partial<Omit<Profile, 'created_at'>>;
         Update: Partial<Omit<Profile, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       tradie_details: {
         Row: TradieDetails;
-        Insert: Omit<TradieDetails, 'id' | 'created_at'>;
+        Insert: Partial<Omit<TradieDetails, 'id' | 'created_at'>>;
         Update: Partial<Omit<TradieDetails, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       projects: {
         Row: Project;
-        Insert: Omit<Project, 'id' | 'created_at' | 'updated_at'>;
+        Insert: Partial<Omit<Project, 'id' | 'created_at' | 'updated_at'>>;
         Update: Partial<Omit<Project, 'id' | 'created_at' | 'updated_at'>>;
+        Relationships: [];
       };
       my_trades: {
         Row: MyTrade;
-        Insert: Omit<MyTrade, 'id' | 'created_at'>;
+        Insert: Partial<Omit<MyTrade, 'id' | 'created_at'>>;
         Update: Partial<Omit<MyTrade, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       availability_slots: {
         Row: AvailabilitySlot;
-        Insert: Omit<AvailabilitySlot, 'id' | 'created_at'>;
+        Insert: Partial<Omit<AvailabilitySlot, 'id' | 'created_at'>>;
         Update: Partial<Omit<AvailabilitySlot, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       jobs: {
         Row: Job;
-        Insert: Omit<Job, 'id' | 'created_at' | 'updated_at'>;
+        Insert: Partial<Omit<Job, 'id' | 'created_at' | 'updated_at'>>;
         Update: Partial<Omit<Job, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       conversations: {
         Row: Conversation;
-        Insert: Omit<Conversation, 'id' | 'created_at' | 'updated_at'>;
+        Insert: Partial<Omit<Conversation, 'id' | 'created_at' | 'updated_at'>>;
         Update: Partial<Omit<Conversation, 'id' | 'created_at' | 'updated_at'>>;
+        Relationships: [];
       };
       conversation_participants: {
         Row: ConversationParticipant;
-        Insert: Omit<ConversationParticipant, 'id' | 'joined_at'>;
+        Insert: Partial<Omit<ConversationParticipant, 'id' | 'joined_at'>>;
         Update: Partial<Omit<ConversationParticipant, 'id' | 'joined_at'>>;
+        Relationships: [];
       };
       conversation_permissions: {
         Row: ConversationPermission;
-        Insert: Omit<ConversationPermission, 'id' | 'created_at'>;
+        Insert: Partial<Omit<ConversationPermission, 'id' | 'created_at'>>;
         Update: Partial<Omit<ConversationPermission, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       messages: {
         Row: Message;
-        Insert: Omit<Message, 'id' | 'created_at'>;
+        Insert: Partial<Omit<Message, 'id' | 'created_at'>>;
         Update: Partial<Omit<Message, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       notifications: {
         Row: Notification;
-        Insert: Omit<Notification, 'id' | 'created_at'>;
+        Insert: Partial<Omit<Notification, 'id' | 'created_at'>>;
         Update: Partial<Omit<Notification, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       reviews: {
         Row: Review;
-        Insert: Omit<Review, 'id' | 'created_at' | 'updated_at'>;
+        Insert: Partial<Omit<Review, 'id' | 'created_at' | 'updated_at'>>;
         Update: Partial<Omit<Review, 'id' | 'created_at' | 'updated_at'>>;
+        Relationships: [];
       };
       connections: {
         Row: Connection;
-        Insert: Omit<Connection, 'id' | 'created_at'>;
+        Insert: Partial<Omit<Connection, 'id' | 'created_at'>>;
         Update: Partial<Omit<Connection, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       job_unlocks: {
         Row: JobUnlock;
-        Insert: Omit<JobUnlock, 'id' | 'created_at'>;
+        Insert: Partial<Omit<JobUnlock, 'id' | 'created_at'>>;
         Update: Partial<Omit<JobUnlock, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       quotes: {
         Row: Quote;
-        Insert: Omit<Quote, 'id' | 'created_at' | 'updated_at'>;
+        Insert: Partial<Omit<Quote, 'id' | 'created_at' | 'updated_at'>>;
         Update: Partial<Omit<Quote, 'id' | 'created_at' | 'updated_at'>>;
+        Relationships: [];
       };
       job_variations: {
         Row: JobVariation;
-        Insert: Omit<JobVariation, 'id' | 'created_at' | 'updated_at'>;
+        Insert: Partial<Omit<JobVariation, 'id' | 'created_at' | 'updated_at'>>;
         Update: Partial<Omit<JobVariation, 'id' | 'created_at' | 'updated_at'>>;
+        Relationships: [];
       };
       job_milestones: {
         Row: JobMilestone;
-        Insert: Omit<JobMilestone, 'id' | 'created_at' | 'updated_at'>;
+        Insert: Partial<Omit<JobMilestone, 'id' | 'created_at' | 'updated_at'>>;
         Update: Partial<Omit<JobMilestone, 'id' | 'created_at' | 'updated_at'>>;
+        Relationships: [];
       };
       milestone_subcontractors: {
         Row: MilestoneSubcontractor;
-        Insert: Omit<MilestoneSubcontractor, 'id' | 'created_at'>;
+        Insert: Partial<Omit<MilestoneSubcontractor, 'id' | 'created_at'>>;
         Update: Partial<Omit<MilestoneSubcontractor, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       invoices: {
         Row: Invoice;
-        Insert: Omit<Invoice, 'id' | 'created_at' | 'updated_at'>;
+        Insert: Partial<Omit<Invoice, 'id' | 'created_at' | 'updated_at'>>;
         Update: Partial<Omit<Invoice, 'id' | 'created_at' | 'updated_at'>>;
+        Relationships: [];
       };
       invoice_line_items: {
         Row: InvoiceLineItem;
-        Insert: Omit<InvoiceLineItem, 'id' | 'created_at'>;
+        Insert: Partial<Omit<InvoiceLineItem, 'id' | 'created_at'>>;
         Update: Partial<Omit<InvoiceLineItem, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       calendar_integrations: {
         Row: CalendarIntegration;
-        Insert: Omit<CalendarIntegration, 'id' | 'created_at' | 'updated_at'>;
+        Insert: Partial<Omit<CalendarIntegration, 'id' | 'created_at' | 'updated_at'>>;
         Update: Partial<Omit<CalendarIntegration, 'id' | 'created_at' | 'updated_at'>>;
+        Relationships: [];
       };
       service_reminders: {
         Row: ServiceReminder;
-        Insert: Omit<ServiceReminder, 'id' | 'created_at'>;
+        Insert: Partial<Omit<ServiceReminder, 'id' | 'created_at'>>;
         Update: Partial<Omit<ServiceReminder, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       stripe_subscriptions: {
         Row: StripeSubscription;
-        Insert: Omit<StripeSubscription, 'id' | 'created_at' | 'updated_at'>;
+        Insert: Partial<Omit<StripeSubscription, 'id' | 'created_at' | 'updated_at'>>;
         Update: Partial<Omit<StripeSubscription, 'id' | 'created_at' | 'updated_at'>>;
+        Relationships: [];
       };
       payments: {
         Row: Payment;
-        Insert: Omit<Payment, 'id' | 'created_at'>;
+        Insert: Partial<Omit<Payment, 'id' | 'created_at'>>;
         Update: Partial<Omit<Payment, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       onboarding_progress: {
         Row: OnboardingProgress;
-        Insert: Omit<OnboardingProgress, 'id' | 'created_at' | 'updated_at'>;
+        Insert: Partial<Omit<OnboardingProgress, 'id' | 'created_at' | 'updated_at'>>;
         Update: Partial<Omit<OnboardingProgress, 'id' | 'created_at' | 'updated_at'>>;
+        Relationships: [];
       };
       hint_tracking: {
         Row: HintTracking;
-        Insert: Omit<HintTracking, 'id' | 'created_at'>;
+        Insert: Partial<Omit<HintTracking, 'id' | 'created_at'>>;
         Update: Partial<Omit<HintTracking, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       trade_categories: {
         Row: TradeCategory;
-        Insert: Omit<TradeCategory, 'id' | 'created_at'>;
+        Insert: Partial<Omit<TradeCategory, 'id' | 'created_at'>>;
         Update: Partial<Omit<TradeCategory, 'id' | 'created_at'>>;
+        Relationships: [];
       };
       system_settings: {
         Row: SystemSettings;
-        Insert: SystemSettings;
+        Insert: Partial<SystemSettings>;
         Update: Partial<Omit<SystemSettings, 'id'>>;
+        Relationships: [];
       };
       trade_vacancies: {
         Row: TradeVacancy;
-        Insert: Omit<TradeVacancy, 'id' | 'created_at' | 'updated_at'>;
+        Insert: Partial<Omit<TradeVacancy, 'id' | 'created_at' | 'updated_at'>>;
         Update: Partial<Omit<TradeVacancy, 'id' | 'created_at' | 'updated_at'>>;
+        Relationships: [];
       };
       vacancy_applications: {
         Row: VacancyApplication;
-        Insert: Omit<VacancyApplication, 'id' | 'created_at'>;
+        Insert: Partial<Omit<VacancyApplication, 'id' | 'created_at'>>;
         Update: Partial<Omit<VacancyApplication, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      business_team_members: {
+        Row: BusinessTeamMember;
+        Insert: Partial<Omit<BusinessTeamMember, 'id' | 'created_at' | 'updated_at'>>;
+        Update: Partial<Omit<BusinessTeamMember, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      contact_messages: {
+        Row: ContactMessage;
+        Insert: Partial<Omit<ContactMessage, 'id' | 'created_at'>>;
+        Update: Partial<Omit<ContactMessage, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      date_change_requests: {
+        Row: DateChangeRequest;
+        Insert: Partial<Omit<DateChangeRequest, 'id' | 'created_at'>>;
+        Update: Partial<Omit<DateChangeRequest, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      job_team_assignments: {
+        Row: JobTeamAssignment;
+        Insert: Partial<Omit<JobTeamAssignment, 'id' | 'created_at' | 'updated_at'>>;
+        Update: Partial<Omit<JobTeamAssignment, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      portfolio_images: {
+        Row: PortfolioImage;
+        Insert: Partial<Omit<PortfolioImage, 'id' | 'created_at'>>;
+        Update: Partial<Omit<PortfolioImage, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      profile_views: {
+        Row: ProfileView;
+        Insert: Partial<Omit<ProfileView, 'id' | 'viewed_at'>>;
+        Update: Partial<Omit<ProfileView, 'id' | 'viewed_at'>>;
+        Relationships: [];
       };
     };
+    Views: {
+      tradie_ratings: {
+        Row: TradieRatingView;
+        Relationships: [];
+      };
+    };
+    Functions: {};
   };
-}
+};

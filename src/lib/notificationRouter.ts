@@ -8,11 +8,6 @@ import {
   type NotificationPayload,
 } from './notificationTypes';
 
-interface RoutingRule {
-  channels: NotificationChannel[];
-  condition?: (payload: NotificationPayload) => boolean;
-}
-
 const STATIC_ROUTES: Record<string, NotificationChannel[]> = {
   [NOTIFICATION_TYPES.TRADIE_ON_THE_WAY]: [CHANNEL_SMS, CHANNEL_IN_APP],
   [NOTIFICATION_TYPES.VARIATION_REQUEST]: [CHANNEL_SMS, CHANNEL_IN_APP],
