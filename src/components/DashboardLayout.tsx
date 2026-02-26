@@ -19,6 +19,10 @@ import {
   ClipboardList,
   UserCircle,
   TrendingUp,
+  BarChart3,
+  Users,
+  DollarSign,
+  Flag,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -169,9 +173,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   ];
 
   const adminNavItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Admin Tools', href: '/settings', state: { tab: 'admin' }, icon: Crown },
+    { name: 'Overview', href: '/admin/overview', icon: BarChart3 },
+    { name: 'User Management', href: '/admin/users', icon: Users },
     { name: 'Verifications', href: '/admin/verifications', icon: ShieldCheck },
+    { name: 'Payments', href: '/admin/payments', icon: DollarSign },
+    { name: 'Moderation', href: '/admin/moderation', icon: Flag },
     { name: 'Messages', href: '/messages', icon: MessageCircle },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
