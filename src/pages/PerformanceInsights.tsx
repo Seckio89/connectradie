@@ -42,10 +42,6 @@ interface StrengthsData {
 
 interface ReviewResult {
   rating: number;
-  communication_rating: number | null;
-  punctuality_rating: number | null;
-  quality_rating: number | null;
-  value_rating: number | null;
   created_at: string;
 }
 
@@ -53,7 +49,7 @@ interface JobResult {
   status: string;
   location_address: string | null;
   created_at: string;
-  budget: number | null;
+  budget_amount: number | null;
 }
 
 interface FocusArea {
@@ -90,7 +86,7 @@ export default function PerformanceInsights() {
           .eq('tradie_id', user.id),
         supabase
           .from('jobs')
-          .select('status, location_address, created_at, budget')
+          .select('status, location_address, created_at, budget_amount')
           .eq('tradie_id', user.id),
         supabase
           .from('profile_views')
@@ -99,7 +95,7 @@ export default function PerformanceInsights() {
           .gte('viewed_at', weekAgoStr),
         supabase
           .from('reviews')
-          .select('rating, communication_rating, punctuality_rating, quality_rating, value_rating, created_at')
+          .select('rating, created_at')
           .eq('tradie_id', user.id),
         supabase
           .from('portfolio_images')
@@ -121,7 +117,7 @@ export default function PerformanceInsights() {
       const completedJobs = jobs.filter((j) => j.status === 'completed');
       const avgJobValue =
         completedJobs.length > 0
-          ? Math.round(completedJobs.reduce((sum, j) => sum + (j.budget || 0), 0) / completedJobs.length)
+          ? Math.round(completedJobs.reduce((sum, j) => sum + (j.budget_amount || 0), 0) / completedJobs.length)
           : 0;
 
       const totalRevenue = won.reduce(
@@ -153,30 +149,9 @@ export default function PerformanceInsights() {
           ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
           : 0;
 
-      const attributes: Record<string, number[]> = {
-        Communication: [],
-        Punctuality: [],
-        Quality: [],
-        Value: [],
-      };
-      reviews.forEach((r) => {
-        if (r.communication_rating) attributes['Communication'].push(r.communication_rating);
-        if (r.punctuality_rating) attributes['Punctuality'].push(r.punctuality_rating);
-        if (r.quality_rating) attributes['Quality'].push(r.quality_rating);
-        if (r.value_rating) attributes['Value'].push(r.value_rating);
-      });
-
-      let topAttr = 'Quality';
-      let topAttrScore = 0;
-      Object.entries(attributes).forEach(([name, scores]) => {
-        if (scores.length > 0) {
-          const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-          if (avg > topAttrScore) {
-            topAttr = name;
-            topAttrScore = avg;
-          }
-        }
-      });
+      // Use overall rating as the primary metric since sub-ratings aren't available
+      const topAttr = 'Overall Rating';
+      const topAttrScore = avgRating;
 
       const declaredTrades = profile?.declared_trades || [];
 

@@ -23,7 +23,7 @@ interface JobRow {
   id: string;
   client_id: string;
   status: string;
-  budget: number | null;
+  budget_amount: number | null;
   created_at: string;
 }
 
@@ -85,7 +85,7 @@ export default function AnalyticsDashboard() {
     const [jobsRes, quotesRes, reviewsRes, paymentsRes] = await Promise.all([
       supabase
         .from('jobs')
-        .select('id, client_id, status, budget, created_at')
+        .select('id, client_id, status, budget_amount, created_at')
         .eq('tradie_id', user.id)
         .gte('created_at', rangeStart),
       supabase
