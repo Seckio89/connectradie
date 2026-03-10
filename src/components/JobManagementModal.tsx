@@ -1,6 +1,55 @@
 import { useState, useEffect } from 'react';
-import { X, Loader2, AlertTriangle, Clock, FileText } from 'lucide-react';
+import {
+  X, Loader2, AlertTriangle, Clock, FileText, Archive, ArchiveRestore,
+  MapPin, User, Calendar, Phone, Mail, Play, CheckCircle2,
+  Send, ChevronDown, ChevronUp, Repeat, Image,
+  Zap, Users, Wrench, Key,
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import type { Job } from '../types/database';
+import { extractSuburb } from '../lib/contactGating';
+import SubmitQuoteModal from './SubmitQuoteModal';
+
+interface JobData {
+  id: string;
+  client_id: string;
+  tradie_id: string | null;
+  title: string | null;
+  description: string;
+  status: string;
+  priority: string;
+  is_delayed: boolean;
+  delayed_until: string | null;
+  notes: string | null;
+  scheduled_time: string | null;
+  scheduled_date: string | null;
+  location_address: string | null;
+  budget_amount: number | null;
+  budget_type: string | null;
+  archived_at: string | null;
+  created_at: string;
+  max_quotes: number | null;
+  quote_count: number | null;
+  is_emergency: boolean;
+  preferred_time_slot: string | null;
+  estimated_duration: string | null;
+  images_url: string[] | null;
+  job_complexity: string | null;
+  access_instructions: string | null;
+  allows_site_inspection: boolean;
+  profiles?: { full_name: string; email: string; phone?: string } | null;
+}
+
+interface QuoteData {
+  id: string;
+  price_min: number;
+  price_max: number;
+  firm_price: number | null;
+  status: string;
+  message: string;
+  created_at: string;
+}
 
 interface JobManagementModalProps {
   isOpen: boolean;
@@ -10,6 +59,38 @@ interface JobManagementModalProps {
   isLicenseExpired?: boolean;
 }
 
+function parseJobInfo(job: JobData) {
+  const categoryMatch = job.description.match(/^\[([^\]]+)\]/);
+  const category = categoryMatch?.[1]?.replace(/_/g, ' ') || null;
+  const cleanDescription = job.description.replace(/^\[[^\]]+\]\s*/, '');
+  const displayTitle = job.title || category || 'Untitled Job';
+  return { category, cleanDescription, displayTitle };
+}
+
+function getStatusConfig(status: string) {
+  switch (status) {
+    case 'pending': return { label: 'Pending', color: 'bg-amber-100 text-amber-800 border-amber-200', dot: 'bg-amber-500' };
+    case 'accepted': return { label: 'Accepted', color: 'bg-teal-100 text-teal-800 border-teal-200', dot: 'bg-teal-500' };
+    case 'funded': return { label: 'Funded', color: 'bg-green-100 text-green-800 border-green-200', dot: 'bg-green-500' };
+    case 'in_progress': return { label: 'In Progress', color: 'bg-blue-100 text-blue-800 border-blue-200', dot: 'bg-blue-500' };
+    case 'completed': return { label: 'Completed', color: 'bg-green-100 text-green-800 border-green-200', dot: 'bg-green-500' };
+    case 'cancelled': return { label: 'Cancelled', color: 'bg-red-100 text-red-700 border-red-200', dot: 'bg-red-500' };
+    case 'declined': return { label: 'Declined', color: 'bg-red-100 text-red-700 border-red-200', dot: 'bg-red-500' };
+    default: return { label: status, color: 'bg-gray-100 text-gray-700 border-gray-200', dot: 'bg-gray-500' };
+  }
+}
+
+function getNextStep(status: string): { action: string; hint: string; nextStatus?: string; buttonColor: string } | null {
+  switch (status) {
+    case 'pending': return { action: 'Waiting for Client', hint: 'Client is reviewing your quote', buttonColor: 'bg-gray-100 text-gray-600' };
+    case 'accepted': return { action: 'Awaiting Payment', hint: 'Client accepted — waiting for escrow payment', buttonColor: 'bg-amber-50 text-amber-700' };
+    case 'funded': return { action: 'Start Job', hint: 'Payment secured. Start working and update status.', nextStatus: 'in_progress', buttonColor: 'bg-secondary-600 text-white hover:bg-secondary-700' };
+    case 'in_progress': return { action: 'Mark Complete', hint: 'Finished? Mark complete to request payout.', nextStatus: 'completed', buttonColor: 'bg-secondary-600 text-white hover:bg-secondary-700' };
+    case 'completed': return { action: 'Job Complete', hint: 'Awaiting client approval and payout release.', buttonColor: 'bg-secondary-50 text-secondary-700' };
+    default: return null;
+  }
+}
+
 export default function JobManagementModal({
   isOpen,
   onClose,
@@ -17,14 +98,18 @@ export default function JobManagementModal({
   onJobUpdated,
   isLicenseExpired = false,
 }: JobManagementModalProps) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [job, setJob] = useState<any>(null);
+  const [job, setJob] = useState<JobData | null>(null);
+  const [quote, setQuote] = useState<QuoteData | null>(null);
+  const [notes, setNotes] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [priority, setPriority] = useState('standard');
-  const [status, setStatus] = useState('pending');
   const [isDelayed, setIsDelayed] = useState(false);
   const [delayedUntil, setDelayedUntil] = useState('');
-  const [notes, setNotes] = useState('');
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [quoteCount, setQuoteCount] = useState(0);
 
   useEffect(() => {
     if (isOpen && jobId) {
@@ -34,21 +119,53 @@ export default function JobManagementModal({
 
   const loadJob = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('jobs')
-      .select('*, profiles!jobs_client_id_fkey(full_name, email)')
-      .eq('id', jobId)
-      .maybeSingle();
+    const [jobResult, quoteResult, quoteCountResult] = await Promise.all([
+      supabase
+        .from('jobs')
+        .select('*, profiles!jobs_client_id_fkey(full_name, email, phone)')
+        .eq('id', jobId)
+        .maybeSingle(),
+      user ? supabase
+        .from('quotes')
+        .select('id, price_min, price_max, firm_price, status, message, created_at')
+        .eq('job_id', jobId)
+        .eq('tradie_id', user.id)
+        .maybeSingle() : Promise.resolve({ data: null }),
+      supabase
+        .from('quotes')
+        .select('id', { count: 'exact', head: true })
+        .eq('job_id', jobId),
+    ]);
 
-    if (data) {
-      setJob(data);
-      setPriority(data.priority || 'standard');
-      setStatus(data.status || 'pending');
-      setIsDelayed(data.is_delayed || false);
-      setDelayedUntil(data.delayed_until ? new Date(data.delayed_until).toISOString().slice(0, 16) : '');
-      setNotes(data.notes || '');
+    if (jobResult.data) {
+      const jobData = jobResult.data as unknown as JobData;
+      setJob(jobData);
+      setPriority(jobData.priority || 'standard');
+      setIsDelayed(jobData.is_delayed || false);
+      setDelayedUntil(jobData.delayed_until ? new Date(jobData.delayed_until).toISOString().slice(0, 16) : '');
+      setNotes(jobData.notes || '');
     }
+    if (quoteResult.data) {
+      setQuote(quoteResult.data as QuoteData);
+    }
+    setQuoteCount(quoteCountResult.count || 0);
     setLoading(false);
+  };
+
+  const handleStatusAdvance = async (nextStatus: string) => {
+    if (isLicenseExpired || !job) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from('jobs')
+      .update({ status: nextStatus })
+      .eq('id', jobId);
+
+    if (!error) {
+      onJobUpdated();
+      // Refresh local state
+      setJob(prev => prev ? { ...prev, status: nextStatus } : prev);
+    }
+    setSaving(false);
   };
 
   const handleSave = async () => {
@@ -58,7 +175,6 @@ export default function JobManagementModal({
       .from('jobs')
       .update({
         priority,
-        status,
         is_delayed: isDelayed,
         delayed_until: isDelayed && delayedUntil ? new Date(delayedUntil).toISOString() : null,
         notes,
@@ -72,173 +188,415 @@ export default function JobManagementModal({
     setSaving(false);
   };
 
+  const handleArchiveToggle = async () => {
+    setSaving(true);
+    const newValue = job?.archived_at ? null : new Date().toISOString();
+    const { error } = await supabase
+      .from('jobs')
+      .update({ archived_at: newValue })
+      .eq('id', jobId);
+
+    if (!error) {
+      onJobUpdated();
+      onClose();
+    }
+    setSaving(false);
+  };
+
+  const isFinished = ['completed', 'cancelled', 'declined'].includes(job?.status || '');
+  const isArchived = !!job?.archived_at;
+  const canSeeContact = ['funded', 'in_progress', 'completed'].includes(job?.status || '');
+  const isRecurring = !!(job?.title && /recurring/i.test(job.title));
+
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Manage Project</h2>
-            <button
-              onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+  const parsed = job ? parseJobInfo(job) : null;
+  const statusConfig = job ? getStatusConfig(job.status) : null;
+  const nextStep = job ? getNextStep(job.status) : null;
 
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 modal-sheet-overlay">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col modal-sheet">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-16">
             <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
           </div>
-        ) : (
+        ) : job && parsed && statusConfig ? (
           <>
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {isLicenseExpired && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-red-900">License Expired</p>
-                      <p className="text-sm text-red-700 mt-1">
-                        You cannot modify jobs while your license is expired. Please renew your license first.
-                      </p>
+            {/* ── Header ── */}
+            <div className="p-6 pb-4 border-b border-gray-100">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-5 h-5 text-secondary-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900 capitalize">{parsed.displayTitle}</h2>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusConfig.color}`}>
+                        {statusConfig.label}
+                      </span>
+                      {job.priority === 'urgent' && (
+                        <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-semibold rounded-full border border-red-200">URGENT</span>
+                      )}
                     </div>
                   </div>
                 </div>
+                <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg flex-shrink-0">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {parsed.cleanDescription && parsed.cleanDescription !== parsed.displayTitle && (
+                <div className="mt-4 bg-gray-50 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2.5 py-0.5 bg-secondary-50 text-secondary-700 rounded-full text-xs font-semibold border border-secondary-200">
+                      {parsed.category || 'Job'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700 leading-relaxed">{parsed.cleanDescription}</p>
+                </div>
               )}
-              {job && (
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">Project Details</h3>
-                  <p className="text-sm text-gray-600 mb-2">{job.description}</p>
-                  <p className="text-xs text-gray-500">
-                    Client: {job.profiles?.full_name || 'Unknown'}
-                  </p>
-                  {job.scheduled_time && (
-                    <p className="text-xs text-gray-500">
-                      Scheduled: {new Date(job.scheduled_time).toLocaleString()}
-                    </p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              {isLicenseExpired && (
+                <div className="mx-6 mt-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-700">License expired — renew to manage jobs.</p>
+                </div>
+              )}
+
+              {/* ── Quote Now Button ── */}
+              {job.status === 'pending' && !quote && !isLicenseExpired && (
+                <div className="px-6 pt-4">
+                  <button
+                    onClick={() => setShowQuoteModal(true)}
+                    className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 bg-secondary-500 text-white rounded-xl text-sm font-semibold hover:bg-secondary-600 transition-colors shadow-lg shadow-secondary-200"
+                  >
+                    <Send className="w-4 h-4" />
+                    Quote Now
+                  </button>
+                </div>
+              )}
+
+              {/* ── Next Action Banner (non-pending or already quoted) ── */}
+              {nextStep && !isLicenseExpired && !(job.status === 'pending' && !quote) && (
+                <div className="px-6 pt-4">
+                  {nextStep.nextStatus ? (
+                    <button
+                      onClick={() => handleStatusAdvance(nextStep.nextStatus!)}
+                      disabled={saving}
+                      className={`w-full flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 ${nextStep.buttonColor}`}
+                    >
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : nextStep.nextStatus === 'in_progress' ? <Play className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+                      {nextStep.action}
+                    </button>
+                  ) : (
+                    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${nextStep.buttonColor}`}>
+                      <Clock className="w-4 h-4 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold">{nextStep.action}</p>
+                        <p className="text-xs opacity-80">{nextStep.hint}</p>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <AlertTriangle className="w-4 h-4 inline mr-1" />
-                  Priority Level
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => setPriority('standard')}
-                    className={`px-4 py-3 rounded-lg font-medium transition-all ${
-                      priority === 'standard'
-                        ? 'bg-gray-600 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    Standard
-                  </button>
-                  <button
-                    onClick={() => setPriority('urgent')}
-                    className={`px-4 py-3 rounded-lg font-medium transition-all ${
-                      priority === 'urgent'
-                        ? 'bg-red-600 text-white shadow-md'
-                        : 'bg-red-100 text-red-700 hover:bg-red-200'
-                    }`}
-                  >
-                    Urgent
-                  </button>
+              {/* ── Job Details Grid ── */}
+              <div className="px-6 pt-4 space-y-3">
+                {/* Client & Contact */}
+                <div className="border border-gray-200 rounded-xl p-4">
+                  <div className="mb-2">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Client</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-secondary-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 text-secondary-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 text-sm">{job.profiles?.full_name || 'Client'}</p>
+                      {canSeeContact && (
+                        <div className="flex items-center gap-3 mt-1">
+                          {job.profiles?.phone && (
+                            <a href={`tel:${job.profiles.phone}`} className="flex items-center gap-1 text-xs text-secondary-600 hover:text-secondary-700">
+                              <Phone className="w-3 h-3" />{job.profiles.phone}
+                            </a>
+                          )}
+                          {job.profiles?.email && (
+                            <a href={`mailto:${job.profiles.email}`} className="flex items-center gap-1 text-xs text-secondary-600 hover:text-secondary-700">
+                              <Mail className="w-3 h-3" />{job.profiles.email}
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      {!canSeeContact && (
+                        <p className="text-xs text-gray-400 mt-0.5">Contact visible after payment is secured</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status
-                </label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="accepted">Accepted</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                  <option value="declined">Declined</option>
-                </select>
-              </div>
+                {/* Status Badges */}
+                {(job.is_emergency || isRecurring) && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {job.is_emergency && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-600 rounded-full text-xs font-semibold border border-red-200">
+                        <Zap className="w-3 h-3" /> Emergency
+                      </span>
+                    )}
+                    {isRecurring && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-semibold border border-secondary-200">
+                        <Repeat className="w-3 h-3" /> Recurring
+                      </span>
+                    )}
+                  </div>
+                )}
 
-              <div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isDelayed}
-                    onChange={(e) => setIsDelayed(e.target.checked)}
-                    className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                {/* Budget & How You Got This */}
+                {job.status === 'pending' && !quote && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-xl px-3 py-2.5 bg-gray-50 border border-gray-200">
+                      <p className="text-xs text-gray-500 mb-0.5">Budget</p>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {job.budget_amount ? `${job.budget_amount.toLocaleString()} AUD` : 'Awaiting quote'}
+                      </p>
+                    </div>
+                    {job.tradie_id ? (
+                      <div className="rounded-xl px-3 py-2.5 bg-secondary-50 border border-secondary-200">
+                        <p className="text-xs text-gray-500 mb-0.5">Sent To You</p>
+                        <p className="text-sm font-semibold text-secondary-700 flex items-center gap-1">
+                          <User className="w-3.5 h-3.5" />
+                          Private request
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl px-3 py-2.5 bg-gray-50 border border-gray-200">
+                        <p className="text-xs text-gray-500 mb-0.5">Quotes</p>
+                        <p className="text-sm font-semibold text-gray-700 flex items-center gap-1">
+                          <Users className="w-3.5 h-3.5" />
+                          {quoteCount} of {job.max_quotes || 5}
+                          {quoteCount >= (job.max_quotes || 5) && (
+                            <span className="ml-1 px-1.5 py-0.5 bg-red-50 text-red-600 rounded text-xs border border-red-200">Full</span>
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Your existing quote display */}
+                {quote && (
+                  <div className="bg-secondary-50 border border-secondary-200 rounded-xl px-3 py-2.5">
+                    <p className="text-xs text-gray-500 mb-0.5">Your Quote</p>
+                    <p className="text-sm font-semibold text-secondary-800">
+                      {quote.firm_price
+                        ? `$${quote.firm_price.toLocaleString()}`
+                        : `$${quote.price_min.toLocaleString()} – $${quote.price_max.toLocaleString()}`}
+                    </p>
+                  </div>
+                )}
+
+                {/* Key Info Grid */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  {job.location_address && (
+                    <div className="border border-gray-200 rounded-xl px-3 py-2.5">
+                      <p className="text-xs text-gray-400 mb-0.5">Area</p>
+                      <p className="text-sm text-gray-800 flex items-start gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-400" />
+                        <span className="line-clamp-2">
+                          {canSeeContact
+                            ? job.location_address
+                            : extractSuburb(job.location_address) || 'Suburb hidden'}
+                        </span>
+                      </p>
+                      {!canSeeContact && (
+                        <p className="text-xs text-gray-400 mt-1">Full address after payment</p>
+                      )}
+                    </div>
+                  )}
+                  {job.preferred_time_slot && (
+                    <div className="border border-gray-200 rounded-xl px-3 py-2.5">
+                      <p className="text-xs text-gray-400 mb-0.5">Preferred Time</p>
+                      <p className="text-sm text-gray-800 flex items-center gap-1.5 capitalize">
+                        <Clock className="w-3.5 h-3.5 text-gray-400" />
+                        {job.preferred_time_slot}
+                      </p>
+                    </div>
+                  )}
+                  {(job.scheduled_date || job.scheduled_time) && (
+                    <div className="border border-gray-200 rounded-xl px-3 py-2.5">
+                      <p className="text-xs text-gray-400 mb-0.5">Scheduled</p>
+                      <p className="text-sm text-gray-800 flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                        {new Date(job.scheduled_date || job.scheduled_time!).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    </div>
+                  )}
+                  {job.estimated_duration && (
+                    <div className="border border-gray-200 rounded-xl px-3 py-2.5">
+                      <p className="text-xs text-gray-400 mb-0.5">Est. Duration</p>
+                      <p className="text-sm text-gray-800 flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-gray-400" />
+                        {job.estimated_duration}
+                      </p>
+                    </div>
+                  )}
+                  <div className="border border-gray-200 rounded-xl px-3 py-2.5">
+                    <p className="text-xs text-gray-400 mb-0.5">Posted</p>
+                    <p className="text-sm text-gray-800">
+                      {new Date(job.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Access Instructions */}
+                {job.access_instructions && (
+                  <div className="border border-gray-200 rounded-xl px-3 py-2.5">
+                    <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
+                      <Key className="w-3 h-3" /> Access Instructions
+                    </p>
+                    <p className="text-sm text-gray-800">{job.access_instructions}</p>
+                  </div>
+                )}
+
+                {/* Photos */}
+                {job.images_url && job.images_url.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                      <Image className="w-3 h-3" /> Photos ({job.images_url.length})
+                    </p>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {job.images_url.slice(0, 6).map((url, i) => (
+                        <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-primary-300 transition-colors">
+                          <img src={url} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Notes */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                    Your Notes
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Add private notes about this job..."
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 resize-none"
                   />
-                  <Clock className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Mark as Delayed</span>
-                </label>
-                {isDelayed && (
-                  <div className="mt-3">
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Delayed Until
+                </div>
+
+                {/* Job Settings (collapsible) */}
+                <button
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  Job Settings
+                  {showAdvanced ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                </button>
+
+                {showAdvanced && (
+                  <div className="space-y-3 pb-1">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1.5">How urgent is this for you?</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => setPriority('standard')}
+                          className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
+                            priority === 'standard' ? 'bg-secondary-500 text-white border-secondary-500' : 'bg-white text-gray-500 border-gray-200'
+                          }`}
+                        >Normal</button>
+                        <button
+                          onClick={() => setPriority('urgent')}
+                          className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
+                            priority === 'urgent' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-500 border-gray-200'
+                          }`}
+                        >Urgent</button>
+                      </div>
+                    </div>
+
+                    <label className="flex items-center gap-2.5 cursor-pointer border border-gray-200 rounded-lg p-3">
+                      <input
+                        type="checkbox"
+                        checked={isDelayed}
+                        onChange={(e) => setIsDelayed(e.target.checked)}
+                        className="w-4 h-4 text-secondary-600 rounded focus:ring-secondary-500"
+                      />
+                      <Clock className="w-4 h-4 text-gray-400" />
+                      <div>
+                        <span className="text-sm text-gray-700">Can't start yet</span>
+                        <p className="text-xs text-gray-400">Set a date when you'll be ready to begin</p>
+                      </div>
                     </label>
-                    <input
-                      type="datetime-local"
-                      value={delayedUntil}
-                      onChange={(e) => setDelayedUntil(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    />
+                    {isDelayed && (
+                      <input
+                        type="date"
+                        value={delayedUntil ? delayedUntil.slice(0, 10) : ''}
+                        onChange={(e) => setDelayedUntil(e.target.value ? `${e.target.value}T00:00` : '')}
+                        min={new Date().toISOString().slice(0, 10)}
+                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500"
+                      />
+                    )}
                   </div>
                 )}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <FileText className="w-4 h-4 inline mr-1" />
-                  Internal Notes
-                </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Add notes about this job (visible only to you)..."
-                  rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-                />
-              </div>
             </div>
 
-            <div className="p-6 border-t border-gray-200 bg-gray-50">
+            {/* ── Footer ── */}
+            <div className="px-6 py-4 border-t border-gray-100 space-y-2">
+              {isFinished && (
+                <button
+                  onClick={handleArchiveToggle}
+                  disabled={saving}
+                  className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50 ${
+                    isArchived
+                      ? 'bg-secondary-50 text-secondary-700 border border-secondary-200 hover:bg-secondary-100'
+                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  {isArchived ? <><ArchiveRestore className="w-4 h-4" /> Unarchive</> : <><Archive className="w-4 h-4" /> Archive Job</>}
+                </button>
+              )}
               <div className="flex gap-3">
                 <button
                   onClick={onClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
                 >
-                  Cancel
+                  Close
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving || isLicenseExpired}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-secondary-600 text-white rounded-xl text-sm font-medium hover:bg-secondary-700 transition-colors disabled:opacity-50"
                 >
-                  {saving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    'Save Changes'
-                  )}
+                  {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save Notes'}
                 </button>
               </div>
             </div>
           </>
+        ) : (
+          <div className="p-6 text-center text-gray-500">Job not found</div>
         )}
       </div>
+
+      {/* SubmitQuoteModal — same full form used in Work Hub */}
+      {showQuoteModal && job && (
+        <SubmitQuoteModal
+          isOpen={showQuoteModal}
+          onClose={() => setShowQuoteModal(false)}
+          job={job as unknown as Job}
+          onQuoteSubmitted={() => {
+            setShowQuoteModal(false);
+            loadJob();
+            onJobUpdated();
+          }}
+        />
+      )}
     </div>
   );
 }

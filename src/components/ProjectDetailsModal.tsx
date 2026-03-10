@@ -9,6 +9,14 @@ import ConfirmModal from './ConfirmModal';
 import Modal from './Modal';
 import JobDetailsCard from './JobDetailsCard';
 
+interface DateChangeRequest {
+  id: string;
+  field_name: string;
+  requested_date: string;
+  reason?: string;
+  requester?: { full_name: string };
+}
+
 interface ProjectDetailsModalProps {
   project: Project & { jobs: Job[] };
   onClose: () => void;
@@ -32,14 +40,14 @@ export default function ProjectDetailsModal({
   const [projectJobs, setProjectJobs] = useState<Job[]>(project.jobs);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [jobToRemove, setJobToRemove] = useState<string | null>(null);
-  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'completed' | 'declined'>('active');
   const [showEndOngoingModal, setShowEndOngoingModal] = useState(false);
   const [endOngoingStatus, setEndOngoingStatus] = useState<'completed' | 'cancelled' | 'end_date'>('completed');
   const [endOngoingReason, setEndOngoingReason] = useState('');
   const [endOngoingDate, setEndOngoingDate] = useState('');
   const isClient = user?.id === project.client_id;
-  const [dateChangeRequests, setDateChangeRequests] = useState<any[]>([]);
+  const [dateChangeRequests, setDateChangeRequests] = useState<DateChangeRequest[]>([]);
   const [showDateRequestModal, setShowDateRequestModal] = useState(false);
   const [requestedField, setRequestedField] = useState<'start_date' | 'estimated_end_date'>('start_date');
   const [requestedDate, setRequestedDate] = useState('');
@@ -82,8 +90,9 @@ export default function ProjectDetailsModal({
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProjectJobs(data || []);
+      setProjectJobs((data || []) as unknown as Job[]);
     } catch {
+      // no-op
     }
   };
 
@@ -92,14 +101,15 @@ export default function ProjectDetailsModal({
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
-        .eq('client_id', user?.id)
+        .eq('client_id', user?.id ?? '')
         .is('project_id', null)
         .in('status', ['pending', 'accepted', 'in_progress'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAvailableJobs(data || []);
+      setAvailableJobs((data || []) as Job[]);
     } catch {
+      // no-op
     }
   };
 
@@ -217,7 +227,7 @@ export default function ProjectDetailsModal({
       loadProjectJobs();
       loadAvailableJobs();
       onUpdated();
-    } catch (error) {
+    } catch {
       setToast({
         message: 'An unexpected error occurred. Please try again.',
         type: 'error'
@@ -248,7 +258,7 @@ export default function ProjectDetailsModal({
 
       if (error) throw error;
       onUpdated();
-    } catch (error) {
+    } catch {
       setToast({ message: 'Failed to update date.', type: 'error' });
     }
   };
@@ -273,7 +283,7 @@ export default function ProjectDetailsModal({
         .eq('id', project.id);
       if (error) throw error;
       onUpdated();
-    } catch (error) {
+    } catch {
       setIsOngoing(!newValue);
       setToast({ message: 'Failed to update ongoing status.', type: 'error' });
     }
@@ -308,7 +318,7 @@ export default function ProjectDetailsModal({
       setEndOngoingReason('');
       setEndOngoingDate('');
       onUpdated();
-    } catch (error) {
+    } catch {
       setToast({ message: 'Failed to end ongoing project.', type: 'error' });
     } finally {
       setLoading(false);
@@ -322,7 +332,7 @@ export default function ProjectDetailsModal({
       .eq('project_id', project.id)
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
-    setDateChangeRequests(data || []);
+    setDateChangeRequests((data || []) as unknown as DateChangeRequest[]);
   };
 
   useEffect(() => {
@@ -348,7 +358,7 @@ export default function ProjectDetailsModal({
       setRequestReason('');
       setToast({ message: 'Date change request sent to client.', type: 'success' });
       loadDateChangeRequests();
-    } catch (error) {
+    } catch {
       setToast({ message: 'Failed to send request.', type: 'error' });
     } finally {
       setLoading(false);
@@ -370,12 +380,12 @@ export default function ProjectDetailsModal({
       if (approved) {
         const { error: projectError } = await supabase
           .from('projects')
-          .update({ [request.field_name]: request.requested_date })
+          .update({ [request.field_name as string]: request.requested_date as string })
           .eq('id', project.id);
         if (projectError) throw projectError;
 
-        if (request.field_name === 'start_date') setStartDate(request.requested_date);
-        else setEndDate(request.requested_date);
+        if (request.field_name === 'start_date') setStartDate(request.requested_date as string);
+        else setEndDate(request.requested_date as string);
       }
 
       setToast({
@@ -384,7 +394,7 @@ export default function ProjectDetailsModal({
       });
       loadDateChangeRequests();
       onUpdated();
-    } catch (error) {
+    } catch {
       setToast({ message: 'Failed to respond to request.', type: 'error' });
     } finally {
       setLoading(false);
@@ -415,7 +425,7 @@ export default function ProjectDetailsModal({
       case 'completed':
         return 'bg-green-100 text-green-700';
       case 'in_progress':
-        return 'bg-blue-100 text-blue-700';
+        return 'bg-secondary-100 text-secondary-700';
       case 'accepted':
         return 'bg-yellow-100 text-yellow-700';
       default:
@@ -447,8 +457,8 @@ export default function ProjectDetailsModal({
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Package className="w-6 h-6 text-blue-600" />
+              <div className="p-2 bg-secondary-100 rounded-lg">
+                <Package className="w-6 h-6 text-secondary-600" />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-gray-900">{project.title}</h2>
@@ -487,7 +497,7 @@ export default function ProjectDetailsModal({
                       setStartDate(e.target.value);
                       handleUpdateDate('start_date', e.target.value);
                     }}
-                    className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
               ) : (
@@ -502,7 +512,7 @@ export default function ProjectDetailsModal({
                       setRequestedDate(startDate ? startDate.split('T')[0] : '');
                       setShowDateRequestModal(true);
                     }}
-                    className="ml-auto text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                    className="ml-auto text-xs font-medium text-primary-600 hover:text-primary-800 transition-colors"
                   >
                     Request Change
                   </button>
@@ -514,15 +524,15 @@ export default function ProjectDetailsModal({
               <h3 className="text-sm font-medium text-gray-700 mb-2">Est. End Date</h3>
               {isOngoing ? (
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between px-4 py-3 bg-secondary-50 border border-secondary-200 rounded-lg">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                      <span className="text-sm font-semibold text-blue-700">Ongoing</span>
+                      <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
+                      <span className="text-sm font-semibold text-secondary-700">Ongoing</span>
                     </div>
                     {isClient && (
                       <button
                         onClick={() => setShowEndOngoingModal(true)}
-                        className="text-xs font-medium text-blue-600 hover:text-blue-800 underline underline-offset-2 transition-colors"
+                        className="text-xs font-medium text-primary-600 hover:text-primary-800 underline underline-offset-2 transition-colors"
                       >
                         End Job Group
                       </button>
@@ -540,7 +550,7 @@ export default function ProjectDetailsModal({
                         setEndDate(e.target.value);
                         handleUpdateDate('estimated_end_date', e.target.value);
                       }}
-                      className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                   <button
@@ -562,7 +572,7 @@ export default function ProjectDetailsModal({
                       setRequestedDate(endDate ? endDate.split('T')[0] : '');
                       setShowDateRequestModal(true);
                     }}
-                    className="ml-auto text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                    className="ml-auto text-xs font-medium text-primary-600 hover:text-primary-800 transition-colors"
                   >
                     Request Change
                   </button>
@@ -575,7 +585,7 @@ export default function ProjectDetailsModal({
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-gray-700">Pending Date Change Requests</h3>
               {dateChangeRequests.map((req) => (
-                <div key={req.id} className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                <div key={req.id} className="p-4 bg-warm-50 border border-warm-200 rounded-xl">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-gray-900">
@@ -602,7 +612,7 @@ export default function ProjectDetailsModal({
                       <button
                         onClick={() => handleRespondToDateRequest(req.id, true)}
                         disabled={loading}
-                        className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        className="px-3 py-1.5 text-xs font-medium text-white bg-warm-500 rounded-lg hover:bg-warm-600 transition-colors disabled:opacity-50"
                       >
                         Approve
                       </button>
@@ -619,7 +629,7 @@ export default function ProjectDetailsModal({
               {!selectedJob && (
                 <button
                   onClick={() => setShowAddJobs(!showAddJobs)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-warm-500 text-white rounded-lg hover:bg-warm-600 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   Add Jobs
@@ -640,13 +650,13 @@ export default function ProjectDetailsModal({
                       {availableJobs.map((job) => (
                         <label
                           key={job.id}
-                          className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-colors"
+                          className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-primary-300 transition-colors"
                         >
                           <input
                             type="checkbox"
                             checked={selectedJobs.has(job.id)}
                             onChange={() => toggleJobSelection(job.id)}
-                            className="w-4 h-4 text-blue-600 rounded"
+                            className="w-4 h-4 text-secondary-600 rounded"
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 truncate">
@@ -671,7 +681,7 @@ export default function ProjectDetailsModal({
                       <button
                         onClick={handleAddJobs}
                         disabled={selectedJobs.size === 0 || loading}
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 px-4 py-2 bg-warm-500 text-white rounded-lg hover:bg-warm-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Add {selectedJobs.size > 0 && `(${selectedJobs.size})`}
                       </button>
@@ -708,7 +718,7 @@ export default function ProjectDetailsModal({
                       onClick={() => setActiveTab(tab.key)}
                       className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
                         activeTab === tab.key
-                          ? 'text-blue-600'
+                          ? 'text-secondary-600'
                           : 'text-gray-500 hover:text-gray-700'
                       }`}
                     >
@@ -717,7 +727,7 @@ export default function ProjectDetailsModal({
                         {tab.count > 0 && (
                           <span className={`text-xs px-1.5 py-0.5 rounded-full ${
                             activeTab === tab.key
-                              ? 'bg-blue-100 text-blue-600'
+                              ? 'bg-primary-100 text-primary-600'
                               : 'bg-gray-100 text-gray-500'
                           }`}>
                             {tab.count}
@@ -725,7 +735,7 @@ export default function ProjectDetailsModal({
                         )}
                       </span>
                       {activeTab === tab.key && (
-                        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
+                        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-warm-500 rounded-full" />
                       )}
                     </button>
                   ))}
@@ -797,7 +807,7 @@ export default function ProjectDetailsModal({
                 <select
                   value={endOngoingStatus}
                   onChange={(e) => setEndOngoingStatus(e.target.value as 'completed' | 'cancelled' | 'end_date')}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
@@ -813,7 +823,7 @@ export default function ProjectDetailsModal({
                   type="date"
                   value={endOngoingDate}
                   onChange={(e) => setEndOngoingDate(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 {endOngoingStatus === 'end_date' && !endOngoingDate && (
                   <p className="mt-1.5 text-xs text-red-500">An end date is required for this status.</p>
@@ -829,7 +839,7 @@ export default function ProjectDetailsModal({
                     ? 'e.g. All work has been finished successfully...'
                     : 'e.g. Client no longer requires services...'}
                   rows={3}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
 
@@ -851,7 +861,7 @@ export default function ProjectDetailsModal({
                     endOngoingStatus === 'completed'
                       ? 'bg-green-600 hover:bg-green-700'
                       : endOngoingStatus === 'end_date'
-                      ? 'bg-blue-600 hover:bg-blue-700'
+                      ? 'bg-warm-500 hover:bg-warm-600'
                       : 'bg-red-600 hover:bg-red-700'
                   }`}
                 >
@@ -879,7 +889,7 @@ export default function ProjectDetailsModal({
                   type="date"
                   value={requestedDate}
                   onChange={(e) => setRequestedDate(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
 
@@ -890,7 +900,7 @@ export default function ProjectDetailsModal({
                   onChange={(e) => setRequestReason(e.target.value)}
                   placeholder="Explain why you need to change this date..."
                   rows={3}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
 
@@ -908,7 +918,7 @@ export default function ProjectDetailsModal({
                 <button
                   onClick={handleSubmitDateRequest}
                   disabled={!requestedDate || !requestReason.trim() || loading}
-                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-warm-500 rounded-lg hover:bg-warm-600 transition-colors disabled:opacity-50"
                 >
                   {loading ? 'Sending...' : 'Send Request'}
                 </button>

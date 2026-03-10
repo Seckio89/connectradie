@@ -81,7 +81,7 @@ export default function MyProfile() {
     ]);
 
     setRating(ratingResult);
-    setPortfolio(portfolioResult.data || []);
+    setPortfolio((portfolioResult.data as PortfolioImage[]) || []);
     setCompletedJobs(jobsResult.count || 0);
     setLoading(false);
   };
@@ -159,14 +159,14 @@ export default function MyProfile() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-6xl mx-auto">
+      <div className="min-h-screen bg-white">
+        <div className="max-w-[1600px] mx-auto">
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">My Public Profile</h1>
               <p className="text-sm text-gray-500 mt-0.5">
-                This is how clients see your profile. Hover over any section to edit.
+                This is how clients see your profile. <span className="hidden sm:inline">Hover over any section to edit.</span><span className="sm:hidden">Tap any section to edit.</span>
               </p>
             </div>
             <Link
@@ -182,7 +182,7 @@ export default function MyProfile() {
 
           {/* ====== HERO BANNER ====== */}
           <EditableSection label="Cover Photo" onEdit={() => setEditCoverPhoto(true)} dark>
-            <div className="rounded-2xl relative overflow-hidden">
+            <div className="rounded-2xl relative overflow-hidden dark-overlay">
               {profile?.cover_photo_url ? (
                 <img
                   src={profile.cover_photo_url}
@@ -210,7 +210,7 @@ export default function MyProfile() {
                     {profile?.avatar_url ? (
                       <img src={profile.avatar_url} alt={displayName} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full bg-primary-600 flex items-center justify-center">
+                      <div className="w-full h-full bg-warm-500 flex items-center justify-center">
                         <span className="text-4xl font-bold text-white">
                           {profile?.full_name?.charAt(0) || 'T'}
                         </span>
@@ -228,7 +228,7 @@ export default function MyProfile() {
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <h2 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">{displayName}</h2>
                       {isPro && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/20 text-amber-300 text-xs font-semibold rounded-full border border-amber-500/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-warm-500/20 text-warm-300 text-xs font-semibold rounded-full border border-warm-500/30">
                           <Crown className="w-3.5 h-3.5" />
                           PRO
                         </span>
@@ -251,13 +251,13 @@ export default function MyProfile() {
                         </span>
                       )}
                       {tradieDetails?.is_insured && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-500/20 text-blue-300 text-xs font-semibold rounded-full border border-blue-500/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary-500/20 text-secondary-300 text-xs font-semibold rounded-full border border-secondary-500/30">
                           <Shield className="w-3.5 h-3.5" />
                           Insured
                         </span>
                       )}
                       {tradieDetails?.is_licensed && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/20 text-amber-300 text-xs font-semibold rounded-full border border-amber-500/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-warm-500/20 text-warm-300 text-xs font-semibold rounded-full border border-warm-500/30">
                           <FileCheck className="w-3.5 h-3.5" />
                           Licensed
                         </span>
@@ -286,8 +286,8 @@ export default function MyProfile() {
           {/* ====== STATS BAR ====== */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
-                <Star className="w-5 h-5 text-amber-500" />
+              <div className="w-10 h-10 rounded-lg bg-warm-50 flex items-center justify-center flex-shrink-0">
+                <Star className="w-5 h-5 text-yellow-500" />
               </div>
               <div>
                 <p className="text-lg font-bold text-gray-900">
@@ -310,8 +310,8 @@ export default function MyProfile() {
               </div>
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                <Clock className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
+                <Clock className="w-5 h-5 text-secondary-600" />
               </div>
               <div>
                 <p className="text-lg font-bold text-gray-900">&lt; 1 hr</p>
@@ -319,8 +319,8 @@ export default function MyProfile() {
               </div>
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
-                <MapPin className="w-5 h-5 text-teal-600" />
+              <div className="w-10 h-10 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-5 h-5 text-secondary-600" />
               </div>
               <div>
                 <p className="text-lg font-bold text-gray-900">
@@ -332,6 +332,44 @@ export default function MyProfile() {
               </div>
             </div>
           </div>
+
+          {/* ====== PROFILE COMPLETENESS ====== */}
+          {(() => {
+            const checks = [
+              { label: 'Profile photo', done: !!profile?.avatar_url },
+              { label: 'Cover photo', done: !!profile?.cover_photo_url },
+              { label: 'Bio', done: !!(profile?.bio || tradieDetails?.bio) },
+              { label: 'Hourly rate', done: !!tradieDetails?.hourly_rate },
+              { label: 'Qualifications', done: (tradieDetails?.qualifications?.length || 0) > 0 },
+              { label: 'Portfolio photos', done: portfolio.length > 0 },
+              { label: 'Service radius', done: !!profile?.service_radius_km },
+              { label: 'Identity verified', done: isIdentityVerified },
+              { label: 'Trade category', done: !!tradeCategory },
+              { label: 'Address / suburb', done: !!suburb },
+            ];
+            const done = checks.filter(c => c.done).length;
+            const pct = Math.round((done / checks.length) * 100);
+            if (pct >= 100) return null;
+            return (
+              <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-900">Profile Completeness</h3>
+                  <span className="text-sm font-bold text-primary-600">{pct}%</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2.5 mb-4">
+                  <div className="bg-primary-600 h-2.5 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {checks.filter(c => !c.done).map(c => (
+                    <div key={c.label} className="flex items-center gap-2 text-xs text-gray-500">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0" />
+                      {c.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ====== TWO-COLUMN BODY ====== */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
@@ -451,7 +489,7 @@ export default function MyProfile() {
                   <div className="p-5">
                     <button
                       disabled
-                      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-primary-600 text-white text-sm font-semibold rounded-xl opacity-90 cursor-not-allowed"
+                      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-warm-500 text-white text-sm font-semibold rounded-xl opacity-90 cursor-not-allowed"
                     >
                       <Send className="w-4 h-4" />
                       Request a Quote
@@ -475,8 +513,8 @@ export default function MyProfile() {
                         value={tradieDetails?.hourly_rate ? `$${tradieDetails.hourly_rate}/hr` : null}
                       />
                       <div className="px-5 py-3.5 flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Truck className="w-4 h-4 text-orange-600" />
+                        <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Truck className="w-4 h-4 text-primary-600" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-gray-500">Call-out Fee</p>
@@ -495,12 +533,12 @@ export default function MyProfile() {
                         </div>
                       </div>
                       <DetailRow
-                        icon={<Briefcase className="w-4 h-4 text-blue-600" />}
+                        icon={<Briefcase className="w-4 h-4 text-secondary-600" />}
                         label="Business Type"
                         value={tradieDetails?.contractor_type || null}
                       />
                       <DetailRow
-                        icon={<Users className="w-4 h-4 text-teal-600" />}
+                        icon={<Users className="w-4 h-4 text-secondary-600" />}
                         label="Team Size"
                         value={profile?.team_size || null}
                       />

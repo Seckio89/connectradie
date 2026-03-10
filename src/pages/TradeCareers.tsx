@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, GraduationCap, Award, Briefcase, Search, Loader2, HardHat, SlidersHorizontal } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import VacancyCard from '../components/VacancyCard';
@@ -192,7 +192,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
 
   const content = (
     <>
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-[1600px] mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Recruitment</h1>
@@ -203,7 +203,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
           {isVerifiedBusiness && (
             <button
               onClick={() => { setEditVacancy(null); setShowPostModal(true); }}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all shadow-sm text-sm"
+              className="flex items-center gap-2 px-5 py-2.5 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 active:scale-[0.98] transition-all shadow-sm text-sm"
             >
               <Plus className="w-4 h-4" />
               Post a Vacancy
@@ -213,9 +213,9 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
 
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: 'Open Positions', value: vacancies.filter(v => v.status === 'open').length, color: 'bg-blue-50', iconColor: 'text-blue-600', Icon: Briefcase },
-            { label: 'Apprenticeships', value: vacancies.filter(v => v.status === 'open' && v.role_type === 'apprentice').length, color: 'bg-emerald-50', iconColor: 'text-emerald-600', Icon: GraduationCap },
-            { label: 'Senior Roles', value: vacancies.filter(v => v.status === 'open' && v.role_type === 'senior_advisory').length, color: 'bg-amber-50', iconColor: 'text-amber-600', Icon: Award },
+            { label: 'Open Positions', value: vacancies.filter(v => v.status === 'open').length, color: 'bg-secondary-50', iconColor: 'text-secondary-600', Icon: Briefcase },
+            { label: 'Apprenticeships', value: vacancies.filter(v => v.status === 'open' && v.role_type === 'apprentice').length, color: 'bg-secondary-50', iconColor: 'text-secondary-600', Icon: GraduationCap },
+            { label: 'Senior Roles', value: vacancies.filter(v => v.status === 'open' && v.role_type === 'senior_advisory').length, color: 'bg-warm-50', iconColor: 'text-warm-600', Icon: Award },
           ].map(stat => (
             <div key={stat.label} className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 shadow-sm">
               <div className="flex items-center gap-3">
@@ -242,7 +242,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
                 onClick={() => setViewTab(tab.key)}
                 className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
                   viewTab === tab.key
-                    ? 'border-blue-600 text-blue-700'
+                    ? 'border-primary-600 text-primary-700'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -261,7 +261,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search by title, trade, or location..."
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none text-sm"
               />
             </div>
             <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
@@ -274,7 +274,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
                     onClick={() => setRoleFilter(f.value)}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
                       roleFilter === f.value
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-warm-500 text-white'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >

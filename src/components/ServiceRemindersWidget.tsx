@@ -5,6 +5,13 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { ServiceReminder } from '../types/database';
 
+interface ServiceReminderRow extends ServiceReminder {
+  tradie?: {
+    full_name: string;
+    tradie_details?: { business_name: string } | null;
+  } | null;
+}
+
 function formatCategoryName(name: string): string {
   return name
     .split('_')
@@ -28,7 +35,7 @@ function getDueLabel(daysUntil: number): { text: string; color: string } {
     return { text: 'Due today', color: 'text-red-600' };
   }
   if (daysUntil <= 7) {
-    return { text: `Due in ${daysUntil}d`, color: 'text-amber-600' };
+    return { text: `Due in ${daysUntil}d`, color: 'text-warm-600' };
   }
   return { text: `Due in ${daysUntil}d`, color: 'text-gray-500' };
 }
@@ -67,12 +74,12 @@ export default function ServiceRemindersWidget() {
       .limit(5);
 
     if (data) {
-      const mapped: ServiceReminder[] = data.map((r: any) => ({
+      const mapped = (data as ServiceReminderRow[]).map((r: ServiceReminderRow) => ({
         ...r,
         tradie_name: r.tradie?.full_name || 'Unknown',
         tradie_business: r.tradie?.tradie_details?.business_name || null,
       }));
-      setReminders(mapped);
+      setReminders(mapped as ServiceReminder[]);
     }
 
     setLoading(false);
@@ -99,9 +106,9 @@ export default function ServiceRemindersWidget() {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      <div className="px-6 py-4 bg-gradient-to-r from-teal-50 to-cyan-50 border-b border-teal-100">
+      <div className="px-6 py-4 bg-gradient-to-r from-secondary-50 to-secondary-50 border-b border-secondary-100">
         <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-          <CalendarClock className="w-5 h-5 text-teal-600" />
+          <CalendarClock className="w-5 h-5 text-secondary-600" />
           Maintenance Due
         </h3>
         <p className="text-xs text-gray-500 mt-0.5">Services coming up or overdue</p>
@@ -123,13 +130,13 @@ export default function ServiceRemindersWidget() {
                   isOverdue
                     ? 'bg-red-100'
                     : daysUntil <= 7
-                      ? 'bg-amber-100'
-                      : 'bg-teal-100'
+                      ? 'bg-warm-100'
+                      : 'bg-secondary-100'
                 }`}>
                   {isOverdue ? (
                     <AlertTriangle className="w-4 h-4 text-red-600" />
                   ) : (
-                    <Wrench className={`w-4 h-4 ${daysUntil <= 7 ? 'text-amber-600' : 'text-teal-600'}`} />
+                    <Wrench className={`w-4 h-4 ${daysUntil <= 7 ? 'text-warm-600' : 'text-secondary-600'}`} />
                   )}
                 </div>
 
@@ -156,7 +163,7 @@ export default function ServiceRemindersWidget() {
                     </span>
                     <button
                       onClick={() => handleBookAgain(reminder)}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-md transition-colors"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-secondary-700 hover:text-secondary-800 bg-secondary-50 hover:bg-secondary-100 px-2.5 py-1 rounded-md transition-colors"
                     >
                       <RefreshCw className="w-3 h-3" />
                       Book Again
@@ -173,7 +180,7 @@ export default function ServiceRemindersWidget() {
         <div className="px-5 py-3 bg-gray-50 border-t border-gray-100">
           <button
             onClick={() => navigate('/search')}
-            className="flex items-center justify-center gap-1 w-full text-xs font-medium text-teal-600 hover:text-teal-700 transition-colors"
+            className="flex items-center justify-center gap-1 w-full text-xs font-medium text-secondary-600 hover:text-secondary-700 transition-colors"
           >
             View all reminders
             <ChevronRight className="w-3.5 h-3.5" />

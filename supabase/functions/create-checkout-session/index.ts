@@ -1,9 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import Stripe from "npm:stripe@14.21.0";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
@@ -35,18 +36,19 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-
-    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
-      return errorResponse("Server configuration error", 500);
+    const requiredEnvVars = ['STRIPE_SECRET_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_ANON_KEY'];
+    for (const envVar of requiredEnvVars) {
+      if (!Deno.env.get(envVar)) {
+        return new Response(JSON.stringify({ error: `Missing required configuration: ${envVar}` }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
 
-    if (!stripeSecretKey) {
-      return errorResponse("Stripe not configured", 500);
-    }
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY")!;
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -67,6 +69,18 @@ Deno.serve(async (req: Request) => {
       return errorResponse(authError?.message || "Unauthorized", 401);
     }
 
+    // Rate limit: 5 requests per minute per user
+    const { allowed } = checkRateLimit(`${user.id}-create-checkout-session`, 5, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json", "X-RateLimit-Remaining": "0" },
+        },
+      );
+    }
+
     let body: Record<string, unknown>;
     try {
       body = await req.json();
@@ -74,10 +88,11 @@ Deno.serve(async (req: Request) => {
       return errorResponse("Invalid JSON body", 400);
     }
 
-    const { priceId, successUrl, cancelUrl } = body as {
+    const { priceId, successUrl, cancelUrl, idempotencyKey } = body as {
       priceId?: string;
       successUrl?: string;
       cancelUrl?: string;
+      idempotencyKey?: string;
     };
 
     if (!priceId || !successUrl || !cancelUrl) {
@@ -109,16 +124,19 @@ Deno.serve(async (req: Request) => {
       customerId = existingSubscription.stripe_customer_id;
     }
 
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      customer_email: customerId ? undefined : profile?.email,
-      line_items: [{ price: priceId, quantity: 1 }],
-      mode: "subscription",
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      metadata: { user_id: user.id },
-      subscription_data: { metadata: { user_id: user.id } },
-    });
+    const session = await stripe.checkout.sessions.create(
+      {
+        customer: customerId,
+        customer_email: customerId ? undefined : profile?.email,
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: "subscription",
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata: { user_id: user.id },
+        subscription_data: { metadata: { user_id: user.id } },
+      },
+      idempotencyKey ? { idempotencyKey } : undefined,
+    );
 
     return new Response(JSON.stringify({ url: session.url }), {
       status: 200,

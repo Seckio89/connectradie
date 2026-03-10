@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { X, Send, Paperclip, Calendar, Loader2, ChevronLeft, ChevronRight, Clock, MapPin, Image as ImageIcon, User, DollarSign, AlertTriangle, Key, FileText, ShieldAlert } from 'lucide-react';
+import { X, Send, Paperclip, Calendar, Loader2, ChevronLeft, ChevronRight, Clock, MapPin, Image as ImageIcon, User, DollarSign, AlertTriangle, Key, FileText, ShieldAlert, Maximize2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import type { TradieWithDetails, Message, AvailabilitySlot, BudgetType, JobComplexity } from '../types/database';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import AddressAutocomplete from './AddressAutocomplete';
 import { redactContactInfo, shouldAllowContactSharing } from '../lib/redaction';
+import { redactName } from '../lib/contactGating';
 
 interface ChatDrawerProps {
   isOpen: boolean;
@@ -12,7 +14,15 @@ interface ChatDrawerProps {
   tradie: TradieWithDetails | null;
 }
 
+function getTradieDisplayName(tradie: TradieWithDetails | null): string {
+  if (!tradie) return 'Tradie';
+  const d = tradie.tradie_details;
+  const pro = d?.subscription_tier === 'pro' || d?.subscription_tier === 'business' || tradie.is_premium;
+  return pro ? (d?.business_name || redactName(tradie.full_name)) : redactName(tradie.full_name);
+}
+
 export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps) {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -76,7 +86,11 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
           }
         }
       )
-      .subscribe();
+      .subscribe((_status, err) => {
+        if (err) {
+          console.error('Chat realtime subscription error:', err);
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -118,13 +132,17 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
       .eq('user_id', user.id)
       .is('left_at', null);
 
-    type ParticipationWithConversation = {
+    interface ParticipationRow {
       conversation_id: string;
-      conversation: { id: string; is_group: boolean; [key: string]: unknown };
-    };
+      conversation: { id: string; is_group: boolean; [key: string]: unknown } | null;
+    }
 
     if (existingParticipations) {
-      for (const participation of existingParticipations as ParticipationWithConversation[]) {
+      const rows = existingParticipations as unknown as ParticipationRow[];
+      const validParticipations = rows.filter(
+        (p) => p.conversation && typeof p.conversation === 'object' && 'id' in p.conversation && !('error' in p.conversation)
+      );
+      for (const participation of validParticipations) {
         const { data: otherParticipants } = await supabase
           .from('conversation_participants')
           .select('user_id')
@@ -136,7 +154,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
           otherParticipants &&
           otherParticipants.length === 1 &&
           otherParticipants[0].user_id === tradie.id &&
-          !participation.conversation.is_group
+          !participation.conversation?.is_group
         ) {
           setConversationId(participation.conversation_id);
           await fetchMessages(participation.conversation_id);
@@ -156,22 +174,23 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
       .single();
 
     if (newConversation) {
+      const convId = (newConversation as unknown as { id: string }).id;
       await supabase
         .from('conversation_participants')
         .insert([
           {
-            conversation_id: newConversation.id,
+            conversation_id: convId,
             user_id: user.id,
             is_admin: true,
           },
           {
-            conversation_id: newConversation.id,
+            conversation_id: convId,
             user_id: tradie.id,
             is_admin: true,
           },
         ]);
 
-      setConversationId(newConversation.id);
+      setConversationId(convId);
       setMessages([]);
     }
 
@@ -186,7 +205,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
       .is('deleted_at', null)
       .order('created_at', { ascending: true });
 
-    setMessages(data || []);
+    setMessages((data || []) as Message[]);
   };
 
   const scrollToBottom = () => {
@@ -320,7 +339,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
       if (existingProject) {
         projectId = existingProject.id;
       } else {
-        const tradieLabel = tradie.tradie_details?.business_name || tradie.full_name || 'My Job';
+        const tradieLabel = getTradieDisplayName(tradie);
         const { data: newProject } = await supabase
           .from('projects')
           .insert({
@@ -361,7 +380,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
         .single();
 
       if (jobData) {
-        jobId = jobData.id;
+        jobId = (jobData as unknown as { id: string }).id;
       }
     }
 
@@ -379,7 +398,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
       .single();
 
     if (!error && data) {
-      setMessages([...messages, data]);
+      setMessages([...messages, data as Message]);
       setNewMessage('');
       setSelectedSlotId(null);
       setSelectedTime(null);
@@ -408,6 +427,10 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
 
   const contactsUnlocked = useMemo(() => {
     if (!user || !tradie) return false;
+    // Free tradies: always redact contact info to prevent bypassing the platform
+    const d = tradie.tradie_details;
+    const tradieIsPro = d?.subscription_tier === 'pro' || d?.subscription_tier === 'business' || tradie.is_premium;
+    if (!tradieIsPro) return false;
     return shouldAllowContactSharing(messages, [user.id, tradie.id]);
   }, [messages, user, tradie]);
 
@@ -416,7 +439,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/40 z-40 transition-opacity"
+        className="fixed inset-0 bg-black/40 z-50 transition-opacity"
         onClick={onClose}
       />
 
@@ -430,19 +453,28 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">
-                {tradie?.tradie_details?.business_name || tradie?.full_name}
+                {getTradieDisplayName(tradie)}
               </h3>
               <p className="text-xs text-gray-500 capitalize">
                 {tradie?.tradie_details?.trade_category}
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => { onClose(); navigate('/messages'); }}
+              className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              title="Open in full page"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -457,7 +489,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
               </div>
               <h4 className="font-medium text-gray-900 mb-1">Start a conversation</h4>
               <p className="text-sm text-gray-600">
-                Send a message to {tradie?.tradie_details?.business_name || tradie?.full_name} to discuss your job
+                Send a message to {getTradieDisplayName(tradie)} to discuss your job
               </p>
             </div>
           ) : (
@@ -471,12 +503,12 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                   <div
                     className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                       isOwn
-                        ? 'bg-primary-600 text-white rounded-br-md'
+                        ? 'bg-warm-500 text-white rounded-br-md'
                         : 'bg-gray-100 text-gray-900 rounded-bl-md'
-                    } ${message.is_booking_request ? 'border-2 border-amber-400' : ''}`}
+                    } ${message.is_booking_request ? 'border-2 border-warm-400' : ''}`}
                   >
                     {message.is_booking_request && (
-                      <div className={`flex items-center gap-1 text-xs mb-1 ${isOwn ? 'text-primary-200' : 'text-amber-600'}`}>
+                      <div className={`flex items-center gap-1 text-xs mb-1 ${isOwn ? 'text-primary-200' : 'text-warm-600'}`}>
                         <Calendar className="w-3 h-3" />
                         Booking Request
                       </div>
@@ -495,9 +527,9 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
             })
           )}
           {!contactsUnlocked && messages.length > 0 && (
-            <div className="flex items-start gap-2 px-2 py-3 bg-amber-50 border border-amber-200 rounded-xl mx-1">
-              <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700">
+            <div className="flex items-start gap-2 px-2 py-3 bg-warm-50 border border-warm-200 rounded-xl mx-1">
+              <ShieldAlert className="w-4 h-4 text-warm-600 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-warm-700">
                 Phone numbers and emails are hidden until both parties have sent a message. This keeps conversations on the platform.
               </p>
             </div>
@@ -528,7 +560,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
             <button
               onClick={() => handleSend()}
               disabled={!newMessage.trim() || sending}
-              className="p-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="p-3 bg-warm-500 text-white rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
               {sending ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -544,7 +576,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
               setShowSlotPicker(true);
             }}
             disabled={!newMessage.trim() || sending}
-            className="mt-3 w-full py-2.5 border-2 border-dashed border-amber-300 text-amber-700 font-medium rounded-xl hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 min-h-[44px]"
+            className="mt-3 w-full py-2.5 border-2 border-dashed border-warm-300 text-warm-700 font-medium rounded-xl hover:bg-warm-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 min-h-[44px]"
           >
             <Calendar className="w-4 h-4" />
             {selectedTime
@@ -617,10 +649,10 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                             className={`aspect-square rounded-lg text-sm font-medium transition-all ${
                               hasAvailability
                                 ? isSelected
-                                  ? 'bg-amber-500 text-white shadow-md'
+                                  ? 'bg-warm-500 text-white shadow-md'
                                   : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
                                 : 'text-gray-400 cursor-not-allowed'
-                            } ${isToday && !isSelected ? 'ring-2 ring-amber-300' : ''}`}
+                            } ${isToday && !isSelected ? 'ring-2 ring-warm-300' : ''}`}
                           >
                             {day}
                           </button>
@@ -631,8 +663,8 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                 </div>
 
                 {availableSlots.length === 0 ? (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                    <p className="text-sm text-amber-800">
+                  <div className="bg-warm-50 border border-warm-200 rounded-lg p-4">
+                    <p className="text-sm text-warm-800">
                       This tradie hasn't set their availability yet. Please send a regular message to discuss timing.
                     </p>
                   </div>
@@ -664,7 +696,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                                   setSelectedSlotId(slot.id);
                                   setSelectedTime(null);
                                 }}
-                                className="w-full flex items-center justify-between px-4 py-3 rounded-lg border-2 border-gray-200 bg-white hover:border-amber-300 transition-all"
+                                className="w-full flex items-center justify-between px-4 py-3 rounded-lg border-2 border-gray-200 bg-white hover:border-warm-300 transition-all"
                               >
                                 <span className="text-sm font-medium text-gray-900">{timeRange}</span>
                                 <span className="text-xs text-gray-600">Select time</span>
@@ -679,14 +711,14 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                               setSelectedSlotId(null);
                               setSelectedTime(null);
                             }}
-                            className="text-sm text-amber-600 hover:text-amber-700 font-medium flex items-center gap-1"
+                            className="text-sm text-warm-600 hover:text-warm-700 font-medium flex items-center gap-1"
                           >
                             <ChevronLeft className="w-4 h-4" />
                             Back to time windows
                           </button>
 
-                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
-                            <p className="text-sm text-amber-800">
+                          <div className="bg-warm-50 border border-warm-200 rounded-lg p-3 mb-3">
+                            <p className="text-sm text-warm-800">
                               Available window: {selectedSlot && (
                                 <>
                                   {new Date(selectedSlot.start_time).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
@@ -704,7 +736,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                                 onClick={() => setSelectedTime(option.value)}
                                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-all min-h-[44px] ${
                                   selectedTime === option.value
-                                    ? 'bg-amber-500 text-white'
+                                    ? 'bg-warm-500 text-white'
                                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                               >
@@ -724,14 +756,14 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
               </div>
 
               <div className="mt-6 space-y-6 border-t border-gray-200 pt-6">
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-                  <p className="text-sm text-amber-800 font-medium">
+                <div className="bg-warm-50 border border-warm-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-warm-800 font-medium">
                     Please provide your contact details and job location so the tradie knows where to go.
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4 space-y-4">
                   <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                    <User className="w-4 h-4 text-amber-600" />
+                    <User className="w-4 h-4 text-warm-600" />
                     Contact & Location
                   </h4>
                   <div className="grid grid-cols-2 gap-3">
@@ -746,7 +778,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                         onChange={(e) => setContactName(e.target.value)}
                         placeholder="Your name"
                         required
-                        className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent ${
+                        className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-warm-500 focus:border-transparent ${
                           !contactName.trim() && selectedTime ? 'border-red-300 bg-red-50' : 'border-gray-200'
                         }`}
                       />
@@ -762,14 +794,14 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                         onChange={(e) => setContactPhone(e.target.value)}
                         placeholder="04XX XXX XXX"
                         required
-                        className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent ${
+                        className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-warm-500 focus:border-transparent ${
                           !contactPhone.trim() && selectedTime ? 'border-red-300 bg-red-50' : 'border-gray-200'
                         }`}
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
+                    <label className="text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
                       <MapPin className="w-3 h-3" />
                       Job Location Address
                       <span className="text-red-500 ml-1">*</span>
@@ -787,7 +819,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
+                    <label className="text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
                       <Key className="w-3 h-3" />
                       Access Instructions (Optional)
                     </label>
@@ -796,14 +828,14 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                       value={accessInstructions}
                       onChange={(e) => setAccessInstructions(e.target.value)}
                       placeholder="e.g., Gate code is 1234, key under mat..."
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-warm-500 focus:border-transparent"
                     />
                   </div>
                 </div>
 
                 <div className="bg-gray-50 rounded-xl p-4 space-y-4">
                   <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-amber-600" />
+                    <FileText className="w-4 h-4 text-warm-600" />
                     Job Details
                   </h4>
                   <div>
@@ -836,7 +868,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                         onClick={() => setJobComplexity('complex')}
                         className={`px-3 py-2 rounded-lg text-sm font-medium transition-all min-h-[44px] ${
                           jobComplexity === 'complex'
-                            ? 'bg-amber-100 text-amber-700 border-2 border-amber-500'
+                            ? 'bg-warm-100 text-warm-700 border-2 border-warm-500'
                             : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'
                         }`}
                       >
@@ -851,14 +883,14 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
+                    <label className="text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       Estimated Duration
                     </label>
                     <select
                       value={estimatedDuration}
                       onChange={(e) => setEstimatedDuration(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-warm-500 focus:border-transparent"
                     >
                       <option value="">Select duration...</option>
                       <option value="1 hour">1 Hour</option>
@@ -871,7 +903,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
+                    <label className="text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
                       <ImageIcon className="w-3 h-3" />
                       Photos (Optional)
                     </label>
@@ -887,7 +919,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploadingImages}
-                      className="w-full px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-amber-400 transition-colors flex items-center justify-center gap-2 text-gray-600 hover:text-amber-600 disabled:opacity-50 text-sm"
+                      className="w-full px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-warm-400 transition-colors flex items-center justify-center gap-2 text-gray-600 hover:text-warm-600 disabled:opacity-50 text-sm"
                     >
                       {uploadingImages ? (
                         <>
@@ -921,43 +953,43 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
 
                 <div className="bg-gray-50 rounded-xl p-4 space-y-4">
                   <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-amber-600" />
+                    <DollarSign className="w-4 h-4 text-warm-600" />
                     Budget Preference
                   </h4>
                   <div className="space-y-3">
-                    <label className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-amber-300 transition-colors">
+                    <label className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-warm-300 transition-colors">
                       <input
                         type="radio"
                         name="budgetType"
                         checked={budgetType === 'request_quote'}
                         onChange={() => setBudgetType('request_quote')}
-                        className="w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500"
+                        className="w-4 h-4 text-warm-600 border-gray-300 focus:ring-warm-500"
                       />
                       <div>
                         <span className="text-sm font-medium text-gray-900">Request a Quote</span>
                         <p className="text-xs text-gray-600">Let the tradie provide pricing</p>
                       </div>
                     </label>
-                    <label className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-amber-300 transition-colors">
+                    <label className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-warm-300 transition-colors">
                       <input
                         type="radio"
                         name="budgetType"
                         checked={budgetType === 'fixed_budget'}
                         onChange={() => setBudgetType('fixed_budget')}
-                        className="w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500"
+                        className="w-4 h-4 text-warm-600 border-gray-300 focus:ring-warm-500"
                       />
                       <div className="flex-1">
                         <span className="text-sm font-medium text-gray-900">I Have a Budget</span>
                         <p className="text-xs text-gray-600">Set a fixed price for the job</p>
                       </div>
                     </label>
-                    <label className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-amber-300 transition-colors">
+                    <label className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-warm-300 transition-colors">
                       <input
                         type="radio"
                         name="budgetType"
                         checked={budgetType === 'hourly_rate'}
                         onChange={() => setBudgetType('hourly_rate')}
-                        className="w-4 h-4 text-amber-600 border-gray-300 focus:ring-amber-500"
+                        className="w-4 h-4 text-warm-600 border-gray-300 focus:ring-warm-500"
                       />
                       <div>
                         <span className="text-sm font-medium text-gray-900">Hourly Rate</span>
@@ -976,7 +1008,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                             value={budgetAmount}
                             onChange={(e) => setBudgetAmount(e.target.value)}
                             placeholder={budgetType === 'fixed_budget' ? '500' : '75'}
-                            className="w-full pl-8 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                            className="w-full pl-8 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-warm-500 focus:border-transparent"
                           />
                         </div>
                       </div>
@@ -1017,7 +1049,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                   !locationAddress.trim() ||
                   sending
                 }
-                className="px-5 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 font-medium min-h-[44px]"
+                className="px-5 py-2.5 bg-warm-500 text-white rounded-lg hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 font-medium min-h-[44px]"
               >
                 {sending ? (
                   <>

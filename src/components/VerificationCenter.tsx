@@ -10,15 +10,17 @@ import {
   AlertTriangle,
   Hash,
   Calendar,
-  User,
   ChevronRight,
   Clock,
   Award,
 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { createIdentityVerification } from '../lib/stripe';
 import LicenseCard from './LicenseCard';
 import LicenseCertificate from './LicenseCertificate';
+import { isTradeExempt, normalizeTradeName } from '../lib/licensingRequirements';
 
 type StepStatus = 'incomplete' | 'checking' | 'valid' | 'invalid';
 
@@ -40,6 +42,8 @@ export default function VerificationCenter() {
   const [selfApproving, setSelfApproving] = useState(false);
   const [showCertificate, setShowCertificate] = useState(false);
   const isAdmin = profile?.role === 'admin';
+  const primaryTrade = profile?.declared_trades?.[0] || '';
+  const tradeIsExempt = isTradeExempt(primaryTrade);
 
   const [abnInput, setAbnInput] = useState(profile?.abn_number || '');
   const [abnResult, setAbnResult] = useState<AbnResult>({ status: 'incomplete', businessName: '' });
@@ -53,8 +57,40 @@ export default function VerificationCenter() {
 
   const [licenseTrades, setLicenseTrades] = useState<string[]>(profile?.license_trades || []);
 
-  const [idFile, setIdFile] = useState<File | null>(null);
-  const idFileRef = useRef<HTMLInputElement>(null);
+  const [identityLoading, setIdentityLoading] = useState(false);
+  const [identityError, setIdentityError] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const identityStatus: 'verified' | 'processing' | 'unverified' =
+    profile?.is_identity_verified
+      ? 'verified'
+      : profile?.stripe_identity_session_id
+        ? 'processing'
+        : 'unverified';
+
+  // Handle return from Stripe Identity hosted page
+  useEffect(() => {
+    const identityParam = searchParams.get('identity');
+    if (identityParam === 'success') {
+      refreshProfile();
+      setSearchParams((prev) => {
+        prev.delete('identity');
+        return prev;
+      }, { replace: true });
+    }
+  }, [searchParams]);
+
+  const handleVerifyIdentity = async () => {
+    setIdentityLoading(true);
+    setIdentityError(null);
+    try {
+      await createIdentityVerification();
+    } catch (err: unknown) {
+      console.error('Identity verification error:', err);
+      setIdentityError(err instanceof Error ? err.message : 'Failed to start verification');
+      setIdentityLoading(false);
+    }
+  };
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -175,7 +211,7 @@ export default function VerificationCenter() {
           businessName: result.message || 'Invalid ABN',
         });
       }
-    } catch (error) {
+    } catch {
       setAbnResult({ status: 'invalid', businessName: 'Network error. Please try again.' });
     }
   };
@@ -233,7 +269,7 @@ export default function VerificationCenter() {
           licenseClass: result.licenseClass || null,
         });
       }
-    } catch (error) {
+    } catch {
       setLicenseResult({ status: 'invalid', licenseType: 'Network error. Please try again.', apiVerified: false, holderName: null, licenseClass: null });
     }
   };
@@ -247,7 +283,7 @@ export default function VerificationCenter() {
     try {
       const documentUrls: string[] = [];
 
-      if (licenseFile) {
+      if (!tradeIsExempt && licenseFile) {
         const ext = licenseFile.name.split('.').pop();
         const path = `${user.id}/license-${Date.now()}.${ext}`;
         const { error: uploadErr } = await supabase.storage
@@ -258,29 +294,28 @@ export default function VerificationCenter() {
         documentUrls.push(publicUrl);
       }
 
-      if (idFile) {
-        const ext = idFile.name.split('.').pop();
-        const path = `${user.id}/identity-${Date.now()}.${ext}`;
-        const { error: uploadErr } = await supabase.storage
-          .from('documents')
-          .upload(path, idFile, { upsert: true });
-        if (uploadErr) throw uploadErr;
-        const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path);
-        documentUrls.push(publicUrl);
+      const updatePayload: Record<string, unknown> = {
+        abn_number: abnInput.replace(/\s/g, ''),
+        verification_status: 'pending',
+        documents_url: documentUrls.length > 0 ? documentUrls : null,
+        rejection_reason: null,
+      };
+
+      if (tradeIsExempt) {
+        updatePayload.license_number = null;
+        updatePayload.license_state = null;
+        updatePayload.license_expiry = null;
+        updatePayload.license_trades = [];
+      } else {
+        updatePayload.license_number = licenseInput.trim();
+        updatePayload.license_state = licenseState.toUpperCase();
+        updatePayload.license_expiry = licenseExpiry || null;
+        updatePayload.license_trades = licenseTrades;
       }
 
       const { error: updateErr } = await supabase
         .from('profiles')
-        .update({
-          abn_number: abnInput.replace(/\s/g, ''),
-          license_number: licenseInput.trim(),
-          license_state: licenseState.toUpperCase(),
-          license_expiry: licenseExpiry || null,
-          verification_status: 'pending',
-          documents_url: documentUrls,
-          rejection_reason: null,
-          license_trades: licenseTrades,
-        })
+        .update(updatePayload)
         .eq('id', user.id);
 
       if (updateErr) throw updateErr;
@@ -294,17 +329,18 @@ export default function VerificationCenter() {
     }
   };
 
-  const allStepsComplete =
-    abnResult.status === 'valid' &&
-    licenseResult.status === 'valid' &&
-    licenseExpiry &&
-    licenseTrades.length > 0 &&
-    idFile;
+  const allStepsComplete = tradeIsExempt
+    ? abnResult.status === 'valid' && identityStatus === 'verified'
+    : abnResult.status === 'valid' &&
+      licenseResult.status === 'valid' &&
+      licenseExpiry &&
+      licenseTrades.length > 0 &&
+      identityStatus === 'verified';
 
   if (isVerified) {
     return (
       <div className="space-y-6 p-6 md:p-8">
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-8 text-center">
+        <div className="bg-gradient-to-br from-green-50 to-secondary-50 border border-green-200 rounded-2xl p-8 text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <BadgeCheck className="w-8 h-8 text-green-600" />
           </div>
@@ -331,10 +367,10 @@ export default function VerificationCenter() {
         {profile?.license_number && profile?.license_state && profile?.license_expiry && (
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-slate-900">Your License Card</h3>
+              <h3 className="text-lg font-semibold text-navy-900">Your License Card</h3>
               <button
                 onClick={() => setShowCertificate(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-900 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-navy-800 text-white text-sm font-medium rounded-lg hover:bg-navy-900 transition-colors"
               >
                 <Award className="w-4 h-4" />
                 View Certificate
@@ -377,22 +413,22 @@ export default function VerificationCenter() {
   if (isAlreadyPending) {
     return (
       <div className="space-y-6 p-6 md:p-8">
-        <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-8 text-center">
-          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <Clock className="w-8 h-8 text-amber-600" />
+        <div className="bg-gradient-to-br from-warm-50 to-warm-50 border border-warm-200 rounded-2xl p-8 text-center">
+          <div className="w-16 h-16 bg-warm-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <Clock className="w-8 h-8 text-warm-600" />
           </div>
-          <h3 className="text-xl font-bold text-amber-900 mb-2">Verification Under Review</h3>
-          <p className="text-amber-700 max-w-md mx-auto">
+          <h3 className="text-xl font-bold text-warm-900 mb-2">Verification Under Review</h3>
+          <p className="text-warm-700 max-w-md mx-auto">
             Your documents have been submitted and are being reviewed by our team. This usually takes 1-2 business days.
           </p>
-          <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-amber-100 rounded-full text-sm font-medium text-amber-800">
+          <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-warm-100 rounded-full text-sm font-medium text-warm-800">
             <Loader2 className="w-4 h-4 animate-spin" />
             Pending Review
           </div>
           {isAdmin && (
             <div className="mt-6 space-y-3">
-              <div className="border-t border-amber-200 pt-4">
-                <p className="text-sm text-amber-800 mb-3">As an admin, you can approve your own verification:</p>
+              <div className="border-t border-warm-200 pt-4">
+                <p className="text-sm text-warm-800 mb-3">As an admin, you can approve your own verification:</p>
                 <button
                   onClick={handleSelfApprove}
                   disabled={selfApproving}
@@ -415,11 +451,11 @@ export default function VerificationCenter() {
   return (
     <div className="space-y-6 p-6 md:p-8">
       {!user && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+        <div className="p-4 bg-secondary-50 border border-secondary-200 rounded-xl flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-secondary-500 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-blue-900">Login Required</p>
-            <p className="text-sm text-blue-700 mt-1">You must be logged in to verify your credentials.</p>
+            <p className="font-medium text-secondary-900">Login Required</p>
+            <p className="text-sm text-secondary-700 mt-1">You must be logged in to verify your credentials.</p>
           </div>
         </div>
       )}
@@ -469,14 +505,14 @@ export default function VerificationCenter() {
                   setAbnResult({ status: 'incomplete', businessName: '' });
                 }}
                 placeholder="e.g., 10 824 753 556"
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                 disabled={abnResult.status === 'valid'}
               />
             </div>
             <button
               onClick={handleVerifyABN}
               disabled={!user || abnInput.replace(/\s/g, '').length !== 11 || abnResult.status === 'checking' || abnResult.status === 'valid'}
-              className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="px-5 py-2.5 bg-warm-500 text-white text-sm font-medium rounded-lg hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               {abnResult.status === 'checking' ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Checking...</>
@@ -504,227 +540,299 @@ export default function VerificationCenter() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="p-5 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-              licenseResult.status === 'valid' ? 'bg-green-100' : 'bg-gray-100'
-            }`}>
-              <span className={`text-sm font-bold ${licenseResult.status === 'valid' ? 'text-green-700' : 'text-gray-500'}`}>B</span>
-            </div>
-            <div className="flex-1">
-              <h4 className="font-semibold text-gray-900">License Check</h4>
-              <p className="text-sm text-gray-500">Verify your trade license number and upload a photo</p>
-            </div>
-            {licenseResult.status === 'valid' && licenseExpiry && licenseFile && (
+      {tradeIsExempt ? (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="p-5 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-green-100">
+                <span className="text-sm font-bold text-green-700">B</span>
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900">License Check</h4>
+                <p className="text-sm text-gray-500">Not required for your trade</p>
+              </div>
               <CheckCircle2 className="w-5 h-5 text-green-500" />
-            )}
+            </div>
+          </div>
+          <div className="p-5">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-green-800">
+                  License Verification not required for {normalizeTradeName(primaryTrade)}.
+                </p>
+                <p className="text-xs text-green-700 mt-1">
+                  Your trade is exempt from licensing requirements. A verified ABN and identity are sufficient.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="p-5 space-y-4">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">License Number</label>
-              <div className="relative">
-                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={licenseInput}
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="p-5 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                licenseResult.status === 'valid' ? 'bg-green-100' : 'bg-gray-100'
+              }`}>
+                <span className={`text-sm font-bold ${licenseResult.status === 'valid' ? 'text-green-700' : 'text-gray-500'}`}>B</span>
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900">License Check</h4>
+                <p className="text-sm text-gray-500">Verify your trade license number and upload a photo</p>
+              </div>
+              {licenseResult.status === 'valid' && licenseExpiry && licenseFile && (
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              )}
+            </div>
+          </div>
+          <div className="p-5 space-y-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">License Number</label>
+                <div className="relative">
+                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={licenseInput}
+                    onChange={(e) => {
+                      setLicenseInput(e.target.value);
+                      setLicenseResult({ status: 'incomplete', licenseType: '', apiVerified: false, holderName: null, licenseClass: null });
+                    }}
+                    placeholder="e.g., ABC123456"
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">State</label>
+                <select
+                  value={licenseState}
                   onChange={(e) => {
-                    setLicenseInput(e.target.value);
+                    setLicenseState(e.target.value);
                     setLicenseResult({ status: 'incomplete', licenseType: '', apiVerified: false, holderName: null, licenseClass: null });
                   }}
-                  placeholder="e.g., ABC123456"
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                />
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                >
+                  <option value="NSW">NSW</option>
+                  <option value="VIC">VIC</option>
+                  <option value="QLD">QLD</option>
+                  <option value="SA">SA</option>
+                  <option value="WA">WA</option>
+                  <option value="TAS">TAS</option>
+                  <option value="NT">NT</option>
+                  <option value="ACT">ACT</option>
+                </select>
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">State</label>
-              <select
-                value={licenseState}
-                onChange={(e) => {
-                  setLicenseState(e.target.value);
-                  setLicenseResult({ status: 'incomplete', licenseType: '' });
-                }}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              >
-                <option value="NSW">NSW</option>
-                <option value="VIC">VIC</option>
-                <option value="QLD">QLD</option>
-                <option value="SA">SA</option>
-                <option value="WA">WA</option>
-                <option value="TAS">TAS</option>
-                <option value="NT">NT</option>
-                <option value="ACT">ACT</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Expiry Date</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="date"
-                  value={licenseExpiry}
-                  onChange={(e) => setLicenseExpiry(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                />
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={handleVerifyLicense}
-            disabled={!licenseInput.trim() || !licenseExpiry || licenseResult.status === 'checking' || licenseResult.status === 'valid'}
-            className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-          >
-            {licenseResult.status === 'checking' ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Checking...</>
-            ) : licenseResult.status === 'valid' ? (
-              <><CheckCircle2 className="w-4 h-4" /> Verified</>
-            ) : (
-              'Verify License'
-            )}
-          </button>
-
-          {licenseResult.status === 'valid' && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-green-800">{licenseResult.licenseType}</p>
-                  {licenseResult.apiVerified && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                      <BadgeCheck className="w-3 h-3" />
-                      Authority Verified
-                    </span>
-                  )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Expiry Date</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="date"
+                    value={licenseExpiry}
+                    onChange={(e) => setLicenseExpiry(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                  />
                 </div>
-                {licenseResult.holderName && (
-                  <p className="text-xs text-green-700 mt-1">Holder: {licenseResult.holderName}</p>
-                )}
-                {licenseResult.licenseClass && (
-                  <p className="text-xs text-green-700 mt-0.5">Class: {licenseResult.licenseClass}</p>
-                )}
-                {!licenseResult.apiVerified && (
-                  <p className="text-xs text-green-700 mt-1">Format validation only. Real-time verification with licensing authority not available.</p>
-                )}
               </div>
             </div>
-          )}
-          {licenseResult.status === 'invalid' && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-              <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-              <p className="text-sm text-red-700">{licenseResult.licenseType}</p>
-            </div>
-          )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Photo of License Card</label>
-            <input
-              ref={licenseFileRef}
-              type="file"
-              accept="image/*,.pdf"
-              onChange={(e) => setLicenseFile(e.target.files?.[0] || null)}
-              className="hidden"
-            />
             <button
-              onClick={() => licenseFileRef.current?.click()}
-              className="w-full border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:border-blue-300 hover:bg-blue-50/30 transition-colors"
+              onClick={handleVerifyLicense}
+              disabled={!licenseInput.trim() || !licenseExpiry || licenseResult.status === 'checking' || licenseResult.status === 'valid'}
+              className="px-5 py-2.5 bg-warm-500 text-white text-sm font-medium rounded-lg hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
-              {licenseFile ? (
-                <div className="flex items-center justify-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  <span className="text-sm font-medium text-gray-700">{licenseFile.name}</span>
-                </div>
+              {licenseResult.status === 'checking' ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Checking...</>
+              ) : licenseResult.status === 'valid' ? (
+                <><CheckCircle2 className="w-4 h-4" /> Verified</>
               ) : (
-                <div className="flex flex-col items-center">
-                  <Upload className="w-6 h-6 text-gray-400 mb-1" />
-                  <span className="text-sm text-gray-500">Click to upload license photo</span>
-                </div>
+                'Verify License'
               )}
             </button>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Which trades does this license cover? <span className="text-red-500">*</span>
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {tradeOptions.map((trade) => {
-                const selected = licenseTrades.includes(trade);
-                return (
-                  <button
-                    key={trade}
-                    type="button"
-                    onClick={() => toggleLicenseTrade(trade)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
-                      selected
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                    }`}
-                  >
-                    {selected && <CheckCircle2 className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />}
-                    {trade}
-                  </button>
-                );
-              })}
-            </div>
-            {licenseTrades.length > 0 && (
-              <p className="text-xs text-blue-600 mt-2">
-                {licenseTrades.length} trade{licenseTrades.length !== 1 ? 's' : ''} selected
-              </p>
+            {licenseResult.status === 'valid' && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-green-800">{licenseResult.licenseType}</p>
+                    {licenseResult.apiVerified && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary-100 text-secondary-700 text-xs font-medium rounded-full">
+                        <BadgeCheck className="w-3 h-3" />
+                        Authority Verified
+                      </span>
+                    )}
+                  </div>
+                  {licenseResult.holderName && (
+                    <p className="text-xs text-green-700 mt-1">Holder: {licenseResult.holderName}</p>
+                  )}
+                  {licenseResult.licenseClass && (
+                    <p className="text-xs text-green-700 mt-0.5">Class: {licenseResult.licenseClass}</p>
+                  )}
+                  {!licenseResult.apiVerified && (
+                    <p className="text-xs text-green-700 mt-1">Format validation only. Real-time verification with licensing authority not available.</p>
+                  )}
+                </div>
+              </div>
             )}
+            {licenseResult.status === 'invalid' && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                <p className="text-sm text-red-700">{licenseResult.licenseType}</p>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Photo of License Card</label>
+              <input
+                ref={licenseFileRef}
+                type="file"
+                accept="image/*,.pdf"
+                onChange={(e) => setLicenseFile(e.target.files?.[0] || null)}
+                className="hidden"
+              />
+              <button
+                onClick={() => licenseFileRef.current?.click()}
+                className="w-full border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:border-primary-300 hover:bg-primary-50/30 transition-colors"
+              >
+                {licenseFile ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    <span className="text-sm font-medium text-gray-700">{licenseFile.name}</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <Upload className="w-6 h-6 text-gray-400 mb-1" />
+                    <span className="text-sm text-gray-500">Click to upload license photo</span>
+                  </div>
+                )}
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Which trades does this license cover? <span className="text-red-500">*</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {tradeOptions.map((trade) => {
+                  const selected = licenseTrades.includes(trade);
+                  return (
+                    <button
+                      key={trade}
+                      type="button"
+                      onClick={() => toggleLicenseTrade(trade)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                        selected
+                          ? 'bg-warm-500 text-white border-primary-600 shadow-sm'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-primary-300 hover:bg-primary-50'
+                      }`}
+                    >
+                      {selected && <CheckCircle2 className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />}
+                      {trade}
+                    </button>
+                  );
+                })}
+              </div>
+              {licenseTrades.length > 0 && (
+                <p className="text-xs text-primary-600 mt-2">
+                  {licenseTrades.length} trade{licenseTrades.length !== 1 ? 's' : ''} selected
+                </p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="p-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-              idFile ? 'bg-green-100' : 'bg-gray-100'
+              identityStatus === 'verified' ? 'bg-green-100' : 'bg-gray-100'
             }`}>
-              <span className={`text-sm font-bold ${idFile ? 'text-green-700' : 'text-gray-500'}`}>C</span>
+              <span className={`text-sm font-bold ${identityStatus === 'verified' ? 'text-green-700' : 'text-gray-500'}`}>C</span>
             </div>
             <div className="flex-1">
               <h4 className="font-semibold text-gray-900">Identity Check</h4>
-              <p className="text-sm text-gray-500">Upload a photo of your Driver's License or Passport</p>
+              <p className="text-sm text-gray-500">
+                {identityStatus === 'verified'
+                  ? 'Identity verified'
+                  : identityStatus === 'processing'
+                    ? 'Verification in progress'
+                    : 'Verify your identity via our secure partner'}
+              </p>
             </div>
-            {idFile && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+            {identityStatus === 'verified' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
           </div>
         </div>
-        <div className="p-5">
-          <input
-            ref={idFileRef}
-            type="file"
-            accept="image/*,.pdf"
-            onChange={(e) => setIdFile(e.target.files?.[0] || null)}
-            className="hidden"
-          />
-          <button
-            onClick={() => idFileRef.current?.click()}
-            className="w-full border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-blue-300 hover:bg-blue-50/30 transition-colors"
-          >
-            {idFile ? (
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-green-500" />
-                <span className="text-sm font-medium text-gray-700">{idFile.name}</span>
+        <div className="p-5 space-y-4">
+          {identityStatus === 'verified' ? (
+            <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <Shield className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-green-800">Identity Verified</p>
+                <p className="text-xs text-green-700 mt-1">
+                  Your profile now features a trusted verification badge.
+                </p>
               </div>
-            ) : (
-              <div className="flex flex-col items-center">
-                <User className="w-8 h-8 text-gray-400 mb-2" />
-                <p className="text-sm font-medium text-gray-700 mb-0.5">Upload Identity Document</p>
-                <p className="text-xs text-gray-500">Driver's License or Passport (image or PDF)</p>
+            </div>
+          ) : identityStatus === 'processing' ? (
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-4 bg-warm-50 border border-warm-200 rounded-lg">
+                <Loader2 className="w-5 h-5 text-warm-600 flex-shrink-0 mt-0.5 animate-spin" />
+                <div>
+                  <p className="text-sm font-medium text-warm-800">Securely verifying your identity...</p>
+                  <p className="text-xs text-warm-700 mt-1">
+                    Check your email if the verification is still pending. This page will update automatically.
+                  </p>
+                </div>
               </div>
-            )}
-          </button>
+              <button
+                onClick={handleVerifyIdentity}
+                disabled={identityLoading}
+                className="w-full py-3 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-wait transition-colors flex items-center justify-center gap-2"
+              >
+                {identityLoading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Redirecting...</>
+                ) : (
+                  <><Shield className="w-4 h-4" /> Retry Verification</>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-blue-800">
+                  Your documents are processed securely and are <strong>never stored</strong> on ConnecTradie servers. Handled in accordance with Australian Privacy Principles.
+                </p>
+              </div>
+              {identityError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                  <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                  <p className="text-sm text-red-700">{identityError}</p>
+                </div>
+              )}
+              <button
+                onClick={handleVerifyIdentity}
+                disabled={identityLoading}
+                className="w-full py-3 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-wait transition-colors flex items-center justify-center gap-2"
+              >
+                {identityLoading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Redirecting to verification...</>
+                ) : (
+                  <><Shield className="w-4 h-4" /> Verify Identity Securely</>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
         <div className="flex items-start gap-3 mb-4">
-          <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <AlertTriangle className="w-5 h-5 text-warm-500 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-gray-900">Verification Checklist</p>
             <p className="text-sm text-gray-600 mt-1">All items must be completed before submitting.</p>
@@ -733,11 +841,15 @@ export default function VerificationCenter() {
         <div className="space-y-2">
           {[
             { done: abnResult.status === 'valid', label: 'ABN verified' },
-            { done: licenseResult.status === 'valid', label: 'License number verified' },
-            { done: !!licenseExpiry, label: 'License expiry date provided' },
-            { done: !!licenseFile, label: 'License card photo uploaded' },
-            { done: licenseTrades.length > 0, label: 'Trades covered by license selected' },
-            { done: !!idFile, label: 'Identity document uploaded' },
+            ...(tradeIsExempt
+              ? [{ done: true, label: `License not required for ${normalizeTradeName(primaryTrade)}` }]
+              : [
+                  { done: licenseResult.status === 'valid', label: 'License number verified' },
+                  { done: !!licenseExpiry, label: 'License expiry date provided' },
+                  { done: !!licenseFile, label: 'License card photo uploaded' },
+                  { done: licenseTrades.length > 0, label: 'Trades covered by license selected' },
+                ]),
+            { done: identityStatus === 'verified', label: 'Identity verified' },
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-2">
               {item.done ? (
@@ -763,7 +875,7 @@ export default function VerificationCenter() {
       <button
         onClick={handleSubmitForReview}
         disabled={!allStepsComplete || submitting}
-        className="w-full py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        className="w-full py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
       >
         {submitting ? (
           <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</>

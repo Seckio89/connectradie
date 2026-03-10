@@ -24,6 +24,7 @@ export default function BookingRequestModal({
   isOpen,
   onClose,
   messageId,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   conversationId: _conversationId,
   onReply,
 }: BookingRequestModalProps) {
@@ -75,37 +76,39 @@ export default function BookingRequestModal({
       setMessage(messageData as MessageWithProfiles);
 
       let tradieProfileId: string | null = null;
+      const msgWithProfiles = messageData as unknown as MessageWithProfiles;
 
       if (isTradie) {
-        setClient(messageData.sender_profile as Profile);
-        setTradie(messageData.receiver_profile as Profile);
+        setClient(msgWithProfiles.sender_profile);
+        setTradie(msgWithProfiles.receiver_profile);
         tradieProfileId = user.id;
 
         const { data: connectionData } = await supabase
           .from('connections')
           .select('*')
           .eq('tradie_id', user.id)
-          .eq('client_id', messageData.sender_id)
+          .eq('client_id', msgWithProfiles.sender_id)
           .maybeSingle();
 
         setIsUnlocked(!!connectionData);
       } else {
-        setClient(messageData.sender_profile as Profile);
-        setTradie(messageData.receiver_profile as Profile);
-        tradieProfileId = messageData.receiver_id;
+        setClient(msgWithProfiles.sender_profile);
+        setTradie(msgWithProfiles.receiver_profile);
+        tradieProfileId = msgWithProfiles.receiver_id;
       }
 
-      if (messageData.job_id) {
+      if (msgWithProfiles.job_id) {
         const { data: jobData } = await supabase
           .from('jobs')
           .select('*')
-          .eq('id', messageData.job_id)
+          .eq('id', msgWithProfiles.job_id)
           .single();
 
         if (jobData) {
-          setJob(jobData as Job);
-          if (jobData.tradie_id) {
-            tradieProfileId = jobData.tradie_id;
+          const typedJob = jobData as unknown as Job;
+          setJob(typedJob);
+          if (typedJob.tradie_id) {
+            tradieProfileId = typedJob.tradie_id;
           }
         }
       }
@@ -196,7 +199,7 @@ export default function BookingRequestModal({
         {/* Header - Pinned to Top */}
         <div className="flex-none p-6 border-b border-gray-100 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-warm-500 rounded-full flex items-center justify-center">
               <Calendar className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -223,7 +226,7 @@ export default function BookingRequestModal({
               onClick={() => setActiveTab('details')}
               className={`flex-1 px-4 py-3 text-sm font-medium transition-colors min-h-[44px] ${
                 activeTab === 'details'
-                  ? 'text-amber-600 border-b-2 border-amber-600 bg-white'
+                  ? 'text-warm-600 border-b-2 border-warm-600 bg-white'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -233,7 +236,7 @@ export default function BookingRequestModal({
               onClick={() => setActiveTab('availability')}
               className={`flex-1 px-4 py-3 text-sm font-medium transition-colors min-h-[44px] ${
                 activeTab === 'availability'
-                  ? 'text-amber-600 border-b-2 border-amber-600 bg-white'
+                  ? 'text-warm-600 border-b-2 border-warm-600 bg-white'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -246,7 +249,7 @@ export default function BookingRequestModal({
         <div className="flex-1 overflow-y-auto min-h-0 p-6 space-y-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
+              <Loader2 className="w-8 h-8 text-warm-600 animate-spin" />
             </div>
           ) : (
             <>
@@ -284,7 +287,7 @@ export default function BookingRequestModal({
                       }
                       disabled={(isTradie && !isUnlocked) || sending}
                       rows={4}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:cursor-not-allowed"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-warm-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:cursor-not-allowed"
                     />
                   </div>
                 </>
@@ -293,7 +296,7 @@ export default function BookingRequestModal({
               {activeTab === 'availability' && (
                 <>
                   {tradie && (
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                    <div className="p-3 bg-secondary-50 border border-secondary-200 rounded-lg text-sm text-secondary-800">
                       <strong>Viewing availability for:</strong> {tradie.full_name || 'Tradie'}
                       <br />
                       <strong>Total available slots:</strong> {availabilitySlots.length}
@@ -348,10 +351,10 @@ export default function BookingRequestModal({
                               className={`aspect-square rounded-lg text-sm font-medium transition-all ${
                                 hasAvailability
                                   ? isSelected
-                                    ? 'bg-amber-500 text-white shadow-md'
+                                    ? 'bg-warm-500 text-white shadow-md'
                                     : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
                                   : 'text-gray-400 cursor-not-allowed'
-                              } ${isToday && !isSelected ? 'ring-2 ring-amber-300' : ''}`}
+                              } ${isToday && !isSelected ? 'ring-2 ring-warm-300' : ''}`}
                             >
                               {day}
                             </button>
@@ -362,8 +365,8 @@ export default function BookingRequestModal({
                   </div>
 
                   {availabilitySlots.length === 0 ? (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                      <p className="text-sm text-amber-800 flex items-center gap-2">
+                    <div className="bg-warm-50 border border-warm-200 rounded-lg p-4">
+                      <p className="text-sm text-warm-800 flex items-center gap-2">
                         <AlertCircle className="w-4 h-4" />
                         {isTradie
                           ? 'You haven\'t set any available time slots yet. Go to your dashboard to add availability.'
@@ -394,14 +397,14 @@ export default function BookingRequestModal({
                               key={slot.id}
                               className={`flex items-center justify-between px-4 py-3 rounded-lg border-2 ${
                                 isRequestedSlot
-                                  ? 'bg-amber-50 border-amber-500'
+                                  ? 'bg-warm-50 border-warm-500'
                                   : 'bg-white border-gray-200'
                               }`}
                             >
                               <span className="text-sm font-medium text-gray-900">{timeRange}</span>
                               <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                                 isRequestedSlot
-                                  ? 'bg-amber-500 text-white'
+                                  ? 'bg-warm-500 text-white'
                                   : 'bg-green-100 text-green-700'
                               }`}>
                                 {isRequestedSlot ? 'Requested' : 'Available'}
@@ -478,7 +481,7 @@ export default function BookingRequestModal({
               <button
                 onClick={handleSendReply}
                 disabled={!replyText.trim() || sending || (isTradie && !isUnlocked)}
-                className="px-5 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 font-medium min-h-[44px]"
+                className="px-5 py-2.5 bg-warm-500 text-white rounded-lg hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 font-medium min-h-[44px]"
               >
                 {sending ? (
                   <>

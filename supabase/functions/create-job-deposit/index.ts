@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
@@ -63,11 +63,12 @@ Deno.serve(async (req: Request) => {
       return errorJson("Invalid JSON body", 400);
     }
 
-    const { jobId, amount, successUrl, cancelUrl } = body as {
+    const { jobId, amount, successUrl, cancelUrl, idempotencyKey } = body as {
       jobId?: string;
       amount?: number;
       successUrl?: string;
       cancelUrl?: string;
+      idempotencyKey?: string;
     };
 
     if (!jobId || !amount || !successUrl || !cancelUrl) {
@@ -76,6 +77,21 @@ Deno.serve(async (req: Request) => {
 
     if (typeof amount !== "number" || amount <= 0) {
       return errorJson("Amount must be a positive number", 400);
+    }
+
+    // Validate redirect URLs to prevent open redirects
+    const allowedDomain = Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com";
+    const isValidRedirectUrl = (url: string) => {
+      try {
+        const parsed = new URL(url);
+        const allowed = new URL(allowedDomain);
+        return parsed.hostname === allowed.hostname;
+      } catch {
+        return false;
+      }
+    };
+    if (!isValidRedirectUrl(successUrl as string) || !isValidRedirectUrl(cancelUrl as string)) {
+      return errorJson("Invalid redirect URL", 400);
     }
 
     // Validate job exists and user is the client
@@ -180,29 +196,32 @@ Deno.serve(async (req: Request) => {
     }
 
     // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      customer_email: customerId ? undefined : profile?.email,
-      line_items: lineItems,
-      mode: "payment",
-      payment_intent_data: {
-        capture_method: "automatic",
+    const session = await stripe.checkout.sessions.create(
+      {
+        customer: customerId,
+        customer_email: customerId ? undefined : profile?.email,
+        line_items: lineItems,
+        mode: "payment",
+        payment_intent_data: {
+          capture_method: "automatic",
+          metadata: {
+            payment_record_id: paymentRecord.id,
+            escrow: "true",
+          },
+        },
+        success_url: successUrl,
+        cancel_url: cancelUrl,
         metadata: {
+          user_id: user.id,
+          payment_type: "job_funding",
+          job_id: jobId,
           payment_record_id: paymentRecord.id,
-          escrow: "true",
+          base_amount: String(baseAmount),
+          processing_fee: String(processingFee),
         },
       },
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      metadata: {
-        user_id: user.id,
-        payment_type: "job_funding",
-        job_id: jobId,
-        payment_record_id: paymentRecord.id,
-        base_amount: String(baseAmount),
-        processing_fee: String(processingFee),
-      },
-    });
+      idempotencyKey ? { idempotencyKey } : undefined,
+    );
 
     // Update payment record with checkout session ID
     await supabase
@@ -216,8 +235,7 @@ Deno.serve(async (req: Request) => {
     });
   } catch (err) {
     console.error("Error creating job deposit session:", err);
-    const message =
-      err instanceof Error ? err.message : "Internal server error";
+    const message = "An internal error occurred";
     return errorJson(message, 500);
   }
 });

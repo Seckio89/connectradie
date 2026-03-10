@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
@@ -61,7 +61,7 @@ Deno.serve(async (req: Request) => {
       return errorJson("Invalid JSON body", 400);
     }
 
-    const { paymentId } = body as { paymentId?: string };
+    const { paymentId, idempotencyKey } = body as { paymentId?: string; idempotencyKey?: string };
 
     if (!paymentId) {
       return errorJson("Missing required parameter: paymentId", 400);
@@ -154,18 +154,21 @@ Deno.serve(async (req: Request) => {
 
     // Create a transfer to the tradie's Connect account
     // Transfer the base payment amount (excluding processing fee)
-    const transfer = await stripe.transfers.create({
-      amount: payment.amount,
-      currency: "aud",
-      destination: tradieProfile.stripe_connect_account_id,
-      transfer_group: `job_${payment.job_id}`,
-      metadata: {
-        payment_id: paymentId,
-        job_id: payment.job_id,
-        client_id: user.id,
-        tradie_id: job.tradie_id,
+    const transfer = await stripe.transfers.create(
+      {
+        amount: payment.amount,
+        currency: "aud",
+        destination: tradieProfile.stripe_connect_account_id,
+        transfer_group: `job_${payment.job_id}`,
+        metadata: {
+          payment_id: paymentId,
+          job_id: payment.job_id,
+          client_id: user.id,
+          tradie_id: job.tradie_id,
+        },
       },
-    });
+      idempotencyKey ? { idempotencyKey } : undefined,
+    );
 
     // Update payment metadata with transfer info
     await supabase

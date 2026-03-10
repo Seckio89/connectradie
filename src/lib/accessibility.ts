@@ -10,16 +10,6 @@ import { useEffect, useRef, useCallback } from 'react';
  * and add id="main-content" to your main content area.
  */
 export function SkipToContent() {
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const main = document.getElementById('main-content');
-    if (main) {
-      main.tabIndex = -1;
-      main.focus();
-      main.removeAttribute('tabindex');
-    }
-  };
-
   // Return null here - we use CSS class .skip-to-content from mobile-responsive.css
   // This is a render function that returns JSX
   return null; // Placeholder — actual JSX component is SkipToContentLink below

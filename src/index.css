@@ -1,8 +1,25 @@
+@import './styles/mobile-responsive.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import './styles/mobile-responsive.css';
+html {
+  font-size: 16px;
+}
+
+/* Scale up text on large / high-res screens for readability */
+@media (min-width: 1920px) {
+  html {
+    font-size: 16.5px;
+  }
+}
+
+@media (min-width: 2560px) {
+  html {
+    font-size: 17px;
+  }
+}
 
 @media (prefers-reduced-motion: no-preference) {
   html {
@@ -15,23 +32,896 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   Dark Mode — Comprehensive overrides
+   Base palette:
+     page bg:  #111827 (gray-900)
+     card bg:  #1f2937 (gray-800)
+     raised:   #283141
+     border:   #374151 (gray-700)
+     text:     #f9fafb / #e5e7eb / #9ca3af
+   ═══════════════════════════════════════════════════════════════ */
+
+.dark body,
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #111827;
+  color: #e5e7eb;
+}
+
+/* ── White & gray backgrounds ── */
+.dark .bg-white {
+  background-color: #1f2937 !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: #1f2937 !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: #283141 !important;
+}
+
+.dark .bg-gray-200 {
+  background-color: #374151 !important;
+}
+
+/* ── Surface backgrounds (custom palette) ── */
+.dark .bg-surface-50,
+.dark .bg-surface-100 {
+  background-color: #111827 !important;
+}
+
+.dark .bg-surface-200 {
+  background-color: #1f2937 !important;
+}
+
+/* ── Borders ── */
+.dark .border-gray-100 {
+  border-color: #283141 !important;
+}
+
+.dark .border-gray-200 {
+  border-color: #374151 !important;
+}
+
+.dark .border-gray-300 {
+  border-color: #4b5563 !important;
+}
+
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #283141 !important;
+}
+
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #374151 !important;
+}
+
+/* ── Text colors ── */
+.dark .text-gray-900 {
+  color: #f9fafb !important;
+}
+
+.dark .text-gray-800 {
+  color: #f3f4f6 !important;
+}
+
+.dark .text-gray-700 {
+  color: #e5e7eb !important;
+}
+
+.dark .text-gray-600 {
+  color: #d1d5db !important;
+}
+
+.dark .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+.dark .text-gray-400 {
+  color: #6b7280 !important;
+}
+
+/* ── Colored status backgrounds (soften for dark) ── */
+.dark .bg-green-50 {
+  background-color: rgba(6, 214, 160, 0.1) !important;
+}
+
+.dark .bg-green-100 {
+  background-color: rgba(6, 214, 160, 0.18) !important;
+}
+
+.dark .bg-green-200 {
+  background-color: rgba(6, 214, 160, 0.25) !important;
+}
+
+.dark .bg-green-500 {
+  background-color: #06D6A0 !important;
+}
+
+.dark .bg-green-600 {
+  background-color: #05AB80 !important;
+}
+
+.dark .bg-red-50,
+.dark .bg-red-100 {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+.dark .bg-blue-50,
+.dark .bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+.dark .bg-yellow-50,
+.dark .bg-yellow-100 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+}
+
+.dark .bg-purple-50,
+.dark .bg-purple-100 {
+  background-color: rgba(139, 92, 246, 0.15) !important;
+}
+
+.dark .bg-orange-50,
+.dark .bg-orange-100 {
+  background-color: rgba(249, 115, 22, 0.15) !important;
+}
+
+.dark .bg-amber-50,
+.dark .bg-amber-100 {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+}
+
+/* ── Custom palette status backgrounds ── */
+.dark .bg-primary-50,
+.dark .bg-primary-100 {
+  background-color: rgba(0, 150, 136, 0.15) !important;
+}
+
+.dark .bg-primary-200 {
+  background-color: rgba(0, 150, 136, 0.25) !important;
+}
+
+.dark .bg-secondary-50,
+.dark .bg-secondary-100 {
+  background-color: rgba(139, 184, 168, 0.12) !important;
+}
+
+.dark .bg-warm-50,
+.dark .bg-warm-100 {
+  background-color: rgba(6, 214, 160, 0.12) !important;
+}
+
+.dark .bg-accent-50,
+.dark .bg-accent-100 {
+  background-color: rgba(212, 172, 8, 0.12) !important;
+}
+
+/* ── Gradients — flatten to dark bg in dark mode ── */
+.dark .bg-gradient-to-r,
+.dark .bg-gradient-to-l,
+.dark .bg-gradient-to-b,
+.dark .bg-gradient-to-t,
+.dark .bg-gradient-to-br,
+.dark .bg-gradient-to-bl,
+.dark [class*="from-primary-50"],
+.dark [class*="from-secondary-50"],
+.dark [class*="from-green-50"],
+.dark [class*="from-warm-50"],
+.dark [class*="to-secondary-50"],
+.dark [class*="to-primary-50"] {
+  background-image: none !important;
+  background-color: #1f2937 !important;
+}
+
+/* ── Colored borders (soften for dark) ── */
+.dark .border-green-100,
+.dark .border-green-200,
+.dark .border-green-300 {
+  border-color: rgba(6, 214, 160, 0.3) !important;
+}
+
+.dark .border-red-200 {
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.dark .border-blue-200 {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.dark .border-yellow-200 {
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+.dark .border-purple-200 {
+  border-color: rgba(139, 92, 246, 0.3) !important;
+}
+
+.dark .border-orange-200 {
+  border-color: rgba(249, 115, 22, 0.3) !important;
+}
+
+.dark .border-amber-200 {
+  border-color: rgba(245, 158, 11, 0.25) !important;
+}
+
+.dark .border-primary-100,
+.dark .border-primary-200,
+.dark .border-primary-300 {
+  border-color: rgba(0, 150, 136, 0.3) !important;
+}
+
+.dark .border-secondary-200 {
+  border-color: rgba(139, 184, 168, 0.25) !important;
+}
+
+.dark .border-warm-200,
+.dark .border-warm-300 {
+  border-color: rgba(6, 214, 160, 0.25) !important;
+}
+
+/* ── Green status text — brighter for dark mode readability ── */
+.dark .text-green-500 {
+  color: #06D6A0 !important;
+}
+
+.dark .text-green-600 {
+  color: #06D6A0 !important;
+}
+
+.dark .text-green-700 {
+  color: #34D89F !important;
+}
+
+.dark .text-green-800 {
+  color: #6EE7BC !important;
+}
+
+.dark .text-green-900 {
+  color: #A7F3D5 !important;
+}
+
+/* ── Form inputs ── */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
+  color: #e5e7eb !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #6b7280 !important;
+}
+
+/* ── Hover overrides ── */
+.dark .hover\:bg-gray-50:hover {
+  background-color: #283141 !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: #374151 !important;
+}
+
+.dark .hover\:bg-gray-200:hover {
+  background-color: #4b5563 !important;
+}
+
+/* ── Shadows ── */
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dark .shadow-md,
+.dark .shadow {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6) !important;
+}
+
+.dark .shadow-xl,
+.dark .shadow-2xl {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* ── Skeleton/loading pulse ── */
+.dark .animate-pulse .bg-gray-200,
+.dark .animate-pulse .bg-gray-100 {
+  background-color: #374151 !important;
+}
+
+/* ── Scrollbar dark ── */
+.dark .overflow-y-scroll::-webkit-scrollbar-track,
+.dark .messages-scrollbar::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.dark .overflow-y-scroll::-webkit-scrollbar-thumb,
+.dark .messages-scrollbar::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-color: #1f2937;
+}
+
+.dark .overflow-y-scroll::-webkit-scrollbar-thumb:hover,
+.dark .messages-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* ── Ring / focus colors ── */
+.dark .ring-gray-200,
+.dark .focus\:ring-gray-200:focus {
+  --tw-ring-color: #374151 !important;
+}
+
+/* ── Backdrop / overlays ── */
+.dark .bg-black\/50,
+.dark .bg-black\/60 {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+}
+
+/* ── Opacity background variants ── */
+.dark .bg-white\/95 {
+  background-color: rgba(31, 41, 55, 0.95) !important;
+}
+
+.dark .bg-white\/90 {
+  background-color: rgba(31, 41, 55, 0.9) !important;
+}
+
+.dark .bg-secondary-50\/60 {
+  background-color: rgba(139, 184, 168, 0.08) !important;
+}
+
+.dark .bg-primary-50\/40 {
+  background-color: rgba(0, 150, 136, 0.08) !important;
+}
+
+/* ── Notification badge ring against dark bg ── */
+.dark .ring-white {
+  --tw-ring-color: #1f2937 !important;
+}
+
+/* ── Dropdown / popup panels ── */
+.dark [role="menu"],
+.dark [data-dropdown] {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
+}
+
+/* ── Table rows ── */
+.dark tr {
+  border-color: #374151 !important;
+}
+
+.dark thead {
+  background-color: #1f2937 !important;
+}
+
+.dark tbody tr:hover {
+  background-color: #283141 !important;
+}
+
+/* ── Tab / pill buttons in light mode colors ── */
+.dark .bg-gray-100 button,
+.dark .bg-gray-100 .text-gray-600 {
+  color: #d1d5db !important;
+}
+
+/* ── Navy palette text (custom) ── */
+.dark .text-navy-900 {
+  color: #f9fafb !important;
+}
+
+.dark .text-navy-800 {
+  color: #f3f4f6 !important;
+}
+
+.dark .text-navy-700 {
+  color: #e5e7eb !important;
+}
+
+.dark .text-navy-500,
+.dark .text-navy-600 {
+  color: #9ca3af !important;
+}
+
+.dark .text-navy-400 {
+  color: #6b7280 !important;
+}
+
+.dark .text-navy-300 {
+  color: #d1d5db !important;
+}
+
+/* ── Navy palette backgrounds ── */
+.dark .bg-navy-50 {
+  background-color: #283141 !important;
+}
+
+/* ── Colored text — keep consistent across modes ── */
+
+.dark .text-red-700 {
+  color: #fca5a5 !important;
+}
+
+.dark .text-red-600 {
+  color: #f87171 !important;
+}
+
+.dark .text-blue-700 {
+  color: #93c5fd !important;
+}
+
+.dark .text-blue-600 {
+  color: #60a5fa !important;
+}
+
+.dark .text-yellow-700,
+.dark .text-yellow-800 {
+  color: #fcd34d !important;
+}
+
+.dark .text-amber-700 {
+  color: #fbbf24 !important;
+}
+
+.dark .text-purple-700,
+.dark .text-purple-800 {
+  color: #c4b5fd !important;
+}
+
+/* warm text — no dark mode override, use Tailwind palette directly */
+
+/* secondary/primary text — no dark mode override */
+
+/* ── Calendar ring & dashed borders ── */
+.dark .ring-primary-100\/50 {
+  --tw-ring-color: rgba(0, 150, 136, 0.1) !important;
+}
+
+.dark .border-dashed {
+  border-color: #4b5563 !important;
+}
+
+/* ── Hover on colored backgrounds ── */
+.dark .hover\:bg-red-50:hover {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+.dark .hover\:bg-primary-50:hover {
+  background-color: rgba(0, 150, 136, 0.15) !important;
+}
+
+.dark .hover\:bg-warm-50:hover {
+  background-color: rgba(6, 214, 160, 0.12) !important;
+}
+
+.dark .hover\:bg-warm-100:hover {
+  background-color: rgba(6, 214, 160, 0.18) !important;
+}
+
+.dark .hover\:bg-secondary-50:hover {
+  background-color: rgba(139, 184, 168, 0.12) !important;
+}
+
+/* ── Scrollbar colors for dark mode ── */
+.dark .messages-scrollbar {
+  scrollbar-color: #4b5563 #1f2937;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Light Mode — Theme-aware area overrides
+   Converts hardcoded navy-* classes to light equivalents.
+   Scoped to .theme-aware so only marked areas get light mode.
+   Applied to: dashboard content area, landing page, navbar.
+   Sidebar stays always-dark (outside .theme-aware scope).
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Backgrounds ── */
+html:not(.dark) .theme-aware {
+  background-color: #FAFBFC !important;
+}
+
+html:not(.dark) .theme-aware .bg-navy-900 {
+  background-color: #FAFBFC !important;
+}
+
+html:not(.dark) .theme-aware .bg-navy-900\/95 {
+  background-color: rgba(255, 255, 255, 0.97) !important;
+}
+
+html:not(.dark) .theme-aware .bg-navy-800 {
+  background-color: #FFFFFF !important;
+}
+
+html:not(.dark) .theme-aware .bg-navy-700 {
+  background-color: #FAFBFC !important;
+}
+
+html:not(.dark) .theme-aware .bg-navy-600 {
+  background-color: #F5F7F8 !important;
+}
+
+/* ── Light mode: gray backgrounds → near-white ── */
+html:not(.dark) .theme-aware .bg-gray-50 {
+  background-color: #FAFBFC !important;
+}
+
+html:not(.dark) .theme-aware .bg-gray-100 {
+  background-color: #F5F7F8 !important;
+}
+
+html:not(.dark) .theme-aware .bg-gray-200 {
+  background-color: #ECEFF1 !important;
+}
+
+/* ── Light mode: borders → softer ── */
+html:not(.dark) .theme-aware .border-gray-100 {
+  border-color: #E8EBED !important;
+}
+
+html:not(.dark) .theme-aware .border-gray-200 {
+  border-color: #E0E3E6 !important;
+}
+
+/* ── Borders ── */
+html:not(.dark) .theme-aware .border-navy-800 {
+  border-color: #E8EBED !important;
+}
+
+html:not(.dark) .theme-aware .border-navy-700 {
+  border-color: #E8EBED !important;
+}
+
+html:not(.dark) .theme-aware .border-navy-600 {
+  border-color: #D5D9DC !important;
+}
+
+/* ── Dividers ── */
+html:not(.dark) .theme-aware .divide-navy-700 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #E8EBED !important;
+}
+
+html:not(.dark) .theme-aware .divide-navy-800 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #E8EBED !important;
+}
+
+/* ── Text colors ── */
+html:not(.dark) .theme-aware .text-white {
+  color: #111827 !important;
+}
+
+html:not(.dark) .theme-aware .text-gray-300 {
+  color: #374151 !important;
+}
+
+html:not(.dark) .theme-aware .text-gray-400 {
+  color: #6b7280 !important;
+}
+
+html:not(.dark) .theme-aware .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+html:not(.dark) .theme-aware .text-navy-300 {
+  color: #374151 !important;
+}
+
+html:not(.dark) .theme-aware .text-navy-400 {
+  color: #6b7280 !important;
+}
+
+html:not(.dark) .theme-aware .text-navy-600 {
+  color: #9ca3af !important;
+}
+
+/* ── Preserve white text on colored/dark backgrounds ── */
+html:not(.dark) .theme-aware .bg-warm-500 .text-white,
+html:not(.dark) .theme-aware .bg-warm-500.text-white,
+html:not(.dark) .theme-aware .bg-warm-600 .text-white,
+html:not(.dark) .theme-aware .bg-warm-600.text-white,
+html:not(.dark) .theme-aware .bg-primary-600 .text-white,
+html:not(.dark) .theme-aware .bg-primary-600.text-white,
+html:not(.dark) .theme-aware .bg-primary-700 .text-white,
+html:not(.dark) .theme-aware .bg-primary-700.text-white,
+html:not(.dark) .theme-aware .bg-red-500 .text-white,
+html:not(.dark) .theme-aware .bg-red-500.text-white,
+html:not(.dark) .theme-aware .bg-red-600 .text-white,
+html:not(.dark) .theme-aware .bg-red-600.text-white,
+html:not(.dark) .theme-aware .bg-green-500 .text-white,
+html:not(.dark) .theme-aware .bg-green-500.text-white,
+html:not(.dark) .theme-aware .bg-green-600 .text-white,
+html:not(.dark) .theme-aware .bg-green-600.text-white,
+html:not(.dark) .theme-aware .bg-blue-500 .text-white,
+html:not(.dark) .theme-aware .bg-blue-600 .text-white,
+html:not(.dark) .theme-aware .bg-gray-800 .text-white,
+html:not(.dark) .theme-aware .bg-gray-800.text-white,
+html:not(.dark) .theme-aware .bg-gray-900 .text-white,
+html:not(.dark) .theme-aware .bg-gray-900.text-white,
+html:not(.dark) .theme-aware .bg-amber-600 .text-white,
+html:not(.dark) .theme-aware .bg-amber-600.text-white,
+html:not(.dark) .theme-aware .bg-black\/90 .text-white,
+html:not(.dark) .theme-aware [class*="bg-gradient-to"] .text-white {
+  color: #FFFFFF !important;
+}
+
+/* ── Dark overlay zones (e.g. cover photo with text over dark image) ── */
+html:not(.dark) .theme-aware .dark-overlay .text-white {
+  color: #FFFFFF !important;
+}
+
+html:not(.dark) .theme-aware .dark-overlay .text-white\/60 {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+html:not(.dark) .theme-aware .dark-overlay .text-white\/70 {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+html:not(.dark) .theme-aware .dark-overlay .text-white\/80 {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+html:not(.dark) .theme-aware .dark-overlay .text-primary-300 {
+  color: #67e8f9 !important;
+}
+
+/* dark-overlay green/warm text — use Tailwind palette directly */
+
+html:not(.dark) .theme-aware .dark-overlay .text-red-300 {
+  color: #fca5a5 !important;
+}
+
+/* secondary text in dark-overlay — use Tailwind palette directly */
+
+html:not(.dark) .theme-aware .dark-overlay .text-gray-300 {
+  color: #d1d5db !important;
+}
+
+html:not(.dark) .theme-aware .dark-overlay .text-gray-400 {
+  color: #9ca3af !important;
+}
+
+html:not(.dark) .theme-aware .dark-overlay .text-gray-500 {
+  color: #6b7280 !important;
+}
+
+/* ── Hover states ── */
+html:not(.dark) .theme-aware .hover\:bg-navy-800:hover {
+  background-color: #F5F7F8 !important;
+}
+
+html:not(.dark) .theme-aware .hover\:bg-navy-700:hover {
+  background-color: #F0F2F4 !important;
+}
+
+html:not(.dark) .theme-aware .hover\:bg-navy-600:hover {
+  background-color: #E8EBED !important;
+}
+
+html:not(.dark) .theme-aware .hover\:bg-gray-50:hover {
+  background-color: #F5F7F8 !important;
+}
+
+html:not(.dark) .theme-aware .hover\:bg-gray-100:hover {
+  background-color: #F0F2F4 !important;
+}
+
+html:not(.dark) .theme-aware .hover\:text-white:hover {
+  color: #111827 !important;
+}
+
+html:not(.dark) .theme-aware .hover\:text-gray-300:hover {
+  color: #111827 !important;
+}
+
+/* ── Ring / focus ── */
+html:not(.dark) .theme-aware .ring-navy-900 {
+  --tw-ring-color: #FFFFFF !important;
+}
+
+html:not(.dark) .theme-aware .ring-navy-700 {
+  --tw-ring-color: #E8EBED !important;
+}
+
+html:not(.dark) .theme-aware .focus\:ring-warm-500:focus {
+  --tw-ring-color: #06D6A0 !important;
+}
+
+/* ── Shadows (lighter for light mode) ── */
+html:not(.dark) .theme-aware .shadow-black\/20 {
+  --tw-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05) !important;
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow) !important;
+}
+
+html:not(.dark) .theme-aware .shadow-black\/30 {
+  --tw-shadow: 0 4px 6px -1px rgba(0,0,0,0.07) !important;
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow) !important;
+}
+
+/* ── Opacity backgrounds ── */
+html:not(.dark) .theme-aware .bg-warm-500\/5 {
+  background-color: rgba(6, 214, 160, 0.05) !important;
+}
+
+html:not(.dark) .theme-aware .bg-warm-500\/10 {
+  background-color: rgba(6, 214, 160, 0.08) !important;
+}
+
+html:not(.dark) .theme-aware .bg-warm-500\/15 {
+  background-color: rgba(6, 214, 160, 0.1) !important;
+}
+
+html:not(.dark) .theme-aware .border-warm-500\/20 {
+  border-color: rgba(6, 214, 160, 0.2) !important;
+}
+
+/* ── Form inputs in dashboard (override navy bg) ── */
+html:not(.dark) .theme-aware input:not([type="checkbox"]):not([type="radio"]),
+html:not(.dark) .theme-aware textarea,
+html:not(.dark) .theme-aware select {
+  background-color: #FFFFFF !important;
+  border-color: #E0E3E6 !important;
+  color: #111827 !important;
+}
+
+html:not(.dark) .theme-aware input::placeholder,
+html:not(.dark) .theme-aware textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* ── Table overrides ── */
+html:not(.dark) .theme-aware thead {
+  background-color: #FAFBFC !important;
+}
+
+html:not(.dark) .theme-aware tbody tr:hover {
+  background-color: #FAFBFC !important;
+}
+
+html:not(.dark) .theme-aware tr {
+  border-color: #E8EBED !important;
+}
+
+/* ── Scrollbar in light mode ── */
+html:not(.dark) .theme-aware .overflow-y-auto::-webkit-scrollbar-track {
+  background: #FAFBFC;
+}
+
+html:not(.dark) .theme-aware .overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #D5D9DC;
+}
+
+/* ── Group hover states ── */
+html:not(.dark) .theme-aware .group-hover\:bg-navy-700 {
+  background-color: #F0F2F4 !important;
+}
+
+/* ── Landing page dark-tinted icon backgrounds → light ── */
+html:not(.dark) .theme-aware .bg-indigo-900\/30 {
+  background-color: #EEF2FF !important; /* indigo-50 */
+}
+
+html:not(.dark) .theme-aware .bg-orange-900\/30 {
+  background-color: #FFF7ED !important; /* orange-50 */
+}
+
+html:not(.dark) .theme-aware .bg-teal-900\/30 {
+  background-color: #F0FDFA !important; /* teal-50 */
+}
+
+html:not(.dark) .theme-aware .bg-emerald-900\/30 {
+  background-color: #ECFDF6 !important; /* emerald-50 */
+}
+
+html:not(.dark) .theme-aware .border-emerald-800 {
+  border-color: #A7F3D5 !important; /* emerald-200 */
+}
+
+/* ── Warm accent badges (e.g. "Licensed" tag) ── */
+html:not(.dark) .theme-aware .bg-warm-900\/50 {
+  background-color: rgba(6, 214, 160, 0.1) !important;
+}
+
+/* ── Warm accent text — consistent across modes ── */
+
+/* ── Placeholder text color ── */
+html:not(.dark) .theme-aware .placeholder-gray-500::placeholder {
+  color: #9ca3af !important;
+}
+
+/* ── Calendar/demo mockup — keep dark styling for visual demo ── */
+html:not(.dark) .theme-aware [class*="from-\\[#1a1a2e\\]"],
+html:not(.dark) .theme-aware [class*="to-\\[#16213e\\]"] {
+  /* Intentionally not overridden — dark demo stays dark */
+}
+
+/* ── Dark element backgrounds — keep dark in light mode ── */
+html:not(.dark) .theme-aware .bg-gray-800 {
+  background-color: #1f2937 !important;
+}
+
+html:not(.dark) .theme-aware .bg-gray-900 {
+  background-color: #111827 !important;
+}
+
+/* ── Red status text — ensure readable ── */
+html:not(.dark) .theme-aware .text-red-400 {
+  color: #ef4444 !important; /* red-500, bolder for light bg */
+}
+
+html:not(.dark) .theme-aware .text-red-700 {
+  color: #b91c1c !important;
+}
+
+/* ── Focus backgrounds ── */
+html:not(.dark) .theme-aware .focus\:bg-navy-600:focus {
+  background-color: #F0F2F4 !important;
+}
+
+/* ── Hover border colors ── */
+html:not(.dark) .theme-aware .hover\:border-warm-500:hover {
+  border-color: #06D6A0 !important;
+}
+
+html:not(.dark) .theme-aware .hover\:border-navy-700:hover {
+  border-color: #D5D9DC !important;
+}
+
+/* hover text accent — use Tailwind palette directly */
+
+/* ── Backdrop blur header ── */
+html:not(.dark) .theme-aware .backdrop-blur-sm {
+  backdrop-filter: blur(8px) !important;
+}
+
+/* ── Fill colors for star icons ── */
+html:not(.dark) .theme-aware .fill-yellow-400 {
+  fill: #facc15 !important;
+}
+
+html:not(.dark) .theme-aware .fill-yellow-400\/50 {
+  fill: rgba(250, 204, 21, 0.5) !important;
+}
+
+/* ── Transparent bg inputs (search inside hero) ── */
+html:not(.dark) .theme-aware .bg-transparent {
+  background-color: transparent !important;
+}
+
+/* ── Navy gradient (hero card avatar) — keep visible ── */
+html:not(.dark) .theme-aware .from-navy-600 {
+  --tw-gradient-from: #546E7A !important;
+}
+
+html:not(.dark) .theme-aware .to-navy-800 {
+  --tw-gradient-to: #37474F !important;
+}
+
 /* Custom scrollbar styles */
 .overflow-y-scroll::-webkit-scrollbar {
   width: 8px;
 }
 
 .overflow-y-scroll::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #F5F0EF;
   border-radius: 4px;
 }
 
 .overflow-y-scroll::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #DDD0CC;
   border-radius: 4px;
 }
 
 .overflow-y-scroll::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #A294BE;
 }
 
 /* Always visible scrollbar for messages */
@@ -39,7 +929,7 @@ body {
   overflow-y: scroll !important;
   overflow-x: hidden !important;
   scrollbar-width: auto;
-  scrollbar-color: #2563eb #d1d5db;
+  scrollbar-color: #9A7F79 #DDD0CC;
 }
 
 .messages-scrollbar::-webkit-scrollbar {
@@ -48,25 +938,25 @@ body {
 }
 
 .messages-scrollbar::-webkit-scrollbar-track {
-  background: #d1d5db;
+  background: #DDD0CC;
   border-radius: 8px;
   margin: 8px 4px;
 }
 
 .messages-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(180deg, #B49A94 0%, #9A7F79 100%);
   border-radius: 8px;
-  border: 3px solid #d1d5db;
+  border: 3px solid #DDD0CC;
   min-height: 60px;
   cursor: pointer;
 }
 
 .messages-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(180deg, #9A7F79 0%, #7A635E 100%);
 }
 
 .messages-scrollbar::-webkit-scrollbar-thumb:active {
-  background: #1d4ed8;
+  background: #7A635E;
 }
 
 .messages-scrollbar::-webkit-scrollbar-button {

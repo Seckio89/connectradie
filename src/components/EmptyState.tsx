@@ -24,12 +24,12 @@ export default function EmptyState({
       }`}
     >
       <div
-        className={`rounded-full bg-gray-100 flex items-center justify-center mb-4 ${
+        className={`rounded-full bg-primary-50 flex items-center justify-center mb-4 ${
           compact ? 'w-12 h-12' : 'w-16 h-16'
         }`}
       >
         <Icon
-          className={`text-gray-400 ${compact ? 'w-6 h-6' : 'w-8 h-8'}`}
+          className={`text-primary-400 ${compact ? 'w-6 h-6' : 'w-8 h-8'}`}
         />
       </div>
       <h3
@@ -47,7 +47,7 @@ export default function EmptyState({
       {actionLabel && onAction && (
         <button
           onClick={onAction}
-          className={`mt-5 inline-flex items-center gap-2 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 active:scale-[0.97] transition-all ${
+          className={`mt-5 inline-flex items-center gap-2 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 active:scale-[0.97] transition-all ${
             compact ? 'px-4 py-2 text-sm' : 'px-6 py-3'
           }`}
         >

@@ -36,7 +36,9 @@ export default function Modal({ isOpen, onClose, children, maxWidth = '2xl', clo
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-      onClick={closeOnBackdrop ? onClose : undefined}
+      onMouseDown={(e) => {
+        if (closeOnBackdrop && e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         className={`bg-white rounded-2xl ${maxWidthClass} w-full max-h-[90vh] overflow-y-auto shadow-xl`}
@@ -44,7 +46,6 @@ export default function Modal({ isOpen, onClose, children, maxWidth = '2xl', clo
           transform: 'translateZ(0)',
           willChange: 'transform',
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         {children}
       </div>

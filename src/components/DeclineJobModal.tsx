@@ -34,7 +34,7 @@ export default function DeclineJobModal({ isOpen, onClose, onDecline, jobDescrip
       await onDecline(reason);
       setReason('');
       onClose();
-    } catch (err) {
+    } catch {
       setError('Failed to decline job. Please try again.');
     } finally {
       setLoading(false);
@@ -46,7 +46,7 @@ export default function DeclineJobModal({ isOpen, onClose, onDecline, jobDescrip
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/50 z-40"
+        className="fixed inset-0 bg-black/50 z-50"
         onClick={onClose}
       />
       <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 p-6 w-full max-w-md">

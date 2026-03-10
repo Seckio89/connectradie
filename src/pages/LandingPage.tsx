@@ -10,7 +10,7 @@ import SEO from '../components/SEO';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white font-sans antialiased">
+    <div className="min-h-screen bg-navy-900 font-sans antialiased theme-aware flex flex-col">
       <SEO
         title="Hire Local Tradies in Australia"
         description="Find and book verified plumbers, electricians, builders and 30+ trade categories across Australia. Real-time availability, instant quotes, zero hassle."
@@ -46,7 +46,7 @@ export default function LandingPage() {
         ]}
       />
       <Navbar />
-      <main id="main-content">
+      <main id="main-content" className="flex-1">
         <HeroSection />
         <HowItWorksClientsSection />
         <CategoriesSection />

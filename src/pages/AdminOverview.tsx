@@ -15,6 +15,8 @@ import {
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import DashboardLayout from '../components/DashboardLayout';
+import SectionErrorBoundary from '../components/SectionErrorBoundary';
+import AdminRecommendations from '../components/AdminRecommendations';
 
 interface Stats {
   totalUsers: number;
@@ -137,13 +139,13 @@ export default function AdminOverview() {
 
   const getStatusBadge = (status: string) => {
     const map: Record<string, string> = {
-      pending: 'bg-amber-100 text-amber-700',
-      accepted: 'bg-blue-100 text-blue-700',
-      in_progress: 'bg-indigo-100 text-indigo-700',
+      pending: 'bg-warm-100 text-warm-700',
+      accepted: 'bg-secondary-100 text-secondary-700',
+      in_progress: 'bg-warm-100 text-warm-700',
       completed: 'bg-green-100 text-green-700',
       cancelled: 'bg-gray-100 text-gray-600',
       declined: 'bg-red-100 text-red-700',
-      funded: 'bg-purple-100 text-purple-700',
+      funded: 'bg-warm-100 text-warm-700',
       failed: 'bg-red-100 text-red-700',
     };
     return (
@@ -156,16 +158,19 @@ export default function AdminOverview() {
   if (loading) {
     return (
       <DashboardLayout>
+        <SectionErrorBoundary>
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
         </div>
+        </SectionErrorBoundary>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto">
+      <SectionErrorBoundary>
+      <div className="max-w-[1600px] mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Platform Overview</h1>
           <p className="text-gray-600 mt-1">Key metrics and recent activity across the platform</p>
@@ -175,8 +180,8 @@ export default function AdminOverview() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <div className="bg-white rounded-2xl border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-blue-50 rounded-xl">
-                <Users className="w-5 h-5 text-blue-600" />
+              <div className="p-2.5 bg-secondary-50 rounded-xl">
+                <Users className="w-5 h-5 text-secondary-600" />
               </div>
               <span className="text-sm font-medium text-gray-500">Total Users</span>
             </div>
@@ -188,8 +193,8 @@ export default function AdminOverview() {
 
           <div className="bg-white rounded-2xl border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-indigo-50 rounded-xl">
-                <Briefcase className="w-5 h-5 text-indigo-600" />
+              <div className="p-2.5 bg-primary-50 rounded-xl">
+                <Briefcase className="w-5 h-5 text-primary-600" />
               </div>
               <span className="text-sm font-medium text-gray-500">Total Jobs</span>
             </div>
@@ -212,8 +217,8 @@ export default function AdminOverview() {
 
           <div className="bg-white rounded-2xl border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-purple-50 rounded-xl">
-                <CreditCard className="w-5 h-5 text-purple-600" />
+              <div className="p-2.5 bg-warm-50 rounded-xl">
+                <CreditCard className="w-5 h-5 text-warm-600" />
               </div>
               <span className="text-sm font-medium text-gray-500">Active Subs</span>
             </div>
@@ -223,8 +228,8 @@ export default function AdminOverview() {
 
           <div className="bg-white rounded-2xl border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-amber-50 rounded-xl">
-                <ShieldCheck className="w-5 h-5 text-amber-600" />
+              <div className="p-2.5 bg-warm-50 rounded-xl">
+                <ShieldCheck className="w-5 h-5 text-warm-600" />
               </div>
               <span className="text-sm font-medium text-gray-500">Pending Verif.</span>
             </div>
@@ -233,16 +238,21 @@ export default function AdminOverview() {
           </div>
         </div>
 
+        {/* Platform Recommendations */}
+        <SectionErrorBoundary fallbackTitle="Recommendations failed to load">
+          <AdminRecommendations />
+        </SectionErrorBoundary>
+
         {/* Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Signups */}
           <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-blue-600" />
+                <UserPlus className="w-4 h-4 text-secondary-600" />
                 <h3 className="font-semibold text-gray-900">Recent Signups</h3>
               </div>
-              <Link to="/admin/users" className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
+              <Link to="/admin/users" className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
                 View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -269,10 +279,10 @@ export default function AdminOverview() {
           <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-indigo-600" />
+                <FileText className="w-4 h-4 text-primary-600" />
                 <h3 className="font-semibold text-gray-900">Recent Jobs</h3>
               </div>
-              <Link to="/admin/moderation" className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
+              <Link to="/admin/moderation" className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
                 View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -304,7 +314,7 @@ export default function AdminOverview() {
                 <Receipt className="w-4 h-4 text-green-600" />
                 <h3 className="font-semibold text-gray-900">Recent Payments</h3>
               </div>
-              <Link to="/admin/payments" className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
+              <Link to="/admin/payments" className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
                 View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -368,6 +378,7 @@ export default function AdminOverview() {
           </div>
         </div>
       </div>
+      </SectionErrorBoundary>
     </DashboardLayout>
   );
 }

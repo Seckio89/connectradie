@@ -288,60 +288,57 @@ const allCategories: Category[] = [
 ];
 
 const iconColors: Record<string, string> = {
-  sky: 'text-sky-600',
-  amber: 'text-amber-600',
-  orange: 'text-orange-600',
-  slate: 'text-slate-600',
-  rose: 'text-rose-600',
-  emerald: 'text-emerald-600',
-  teal: 'text-teal-600',
+  sky: 'text-secondary-600',
+  amber: 'text-warm-600',
+  orange: 'text-warm-600',
+  slate: 'text-navy-600',
+  rose: 'text-warm-600',
+  emerald: 'text-secondary-600',
+  teal: 'text-secondary-600',
   gray: 'text-gray-600',
   red: 'text-red-600',
-  blue: 'text-blue-600',
+  blue: 'text-secondary-600',
   stone: 'text-stone-600',
-  brick: 'text-orange-700',
-  cyan: 'text-cyan-600',
-  wood: 'text-amber-700',
+  brick: 'text-warm-700',
+  cyan: 'text-secondary-600',
+  wood: 'text-warm-700',
   cream: 'text-neutral-600',
   sand: 'text-yellow-700',
-  brown: 'text-amber-800',
-  walnut: 'text-orange-800',
+  brown: 'text-warm-800',
+  walnut: 'text-warm-800',
   steel: 'text-zinc-600',
   yellow: 'text-yellow-600',
-  aqua: 'text-cyan-500',
+  aqua: 'text-secondary-500',
   lime: 'text-lime-600',
   charcoal: 'text-gray-700',
-  earth: 'text-amber-700',
-  navy: 'text-blue-700',
-  pink: 'text-pink-600',
-  metal: 'text-slate-600',
+  earth: 'text-warm-700',
+  navy: 'text-secondary-700',
+  pink: 'text-warm-600',
+  metal: 'text-navy-600',
   dark: 'text-gray-800',
-  indigo: 'text-indigo-600',
+  indigo: 'text-primary-600',
   silver: 'text-gray-500',
   beige: 'text-stone-500',
-  gold: 'text-amber-600',
-  burgundy: 'text-rose-700',
+  gold: 'text-warm-600',
+  burgundy: 'text-warm-700',
 };
 
 export default function Explore() {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <SEO
         title="Explore All Trade Categories"
         description="Browse 35+ trade categories on ConnecTradie. From plumbers and electricians to solar installers and private chefs — find the right professional for any job in Australia."
         canonical="/explore"
       />
       <header className="sticky top-0 z-30 bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 bg-primary-600 rounded-lg flex items-center justify-center">
-                <Wrench className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">
-                Connec<span className="text-blue-600">Tradie</span>
+            <Link to="/" className="flex items-center">
+              <span className="text-2xl font-extrabold tracking-tight text-black">
+                Connec<span className="text-warm-500">Tradie</span>
               </span>
             </Link>
 
@@ -349,7 +346,7 @@ export default function Explore() {
               {user ? (
                 <Link
                   to="/dashboard"
-                  className="px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors"
+                  className="px-4 py-2 bg-warm-500 text-white font-medium rounded-lg hover:bg-warm-600 transition-colors"
                 >
                   Dashboard
                 </Link>
@@ -363,7 +360,7 @@ export default function Explore() {
                   </Link>
                   <Link
                     to="/register"
-                    className="px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors"
+                    className="px-4 py-2 bg-warm-500 text-white font-medium rounded-lg hover:bg-warm-600 transition-colors"
                   >
                     Get Started
                   </Link>
@@ -374,8 +371,8 @@ export default function Explore() {
         </div>
       </header>
 
-      <main className="py-12 sm:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main id="main-content" className="py-12 sm:py-16">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
               Explore All Trade Categories
@@ -388,7 +385,7 @@ export default function Explore() {
           <div className="space-y-5">
             {allCategories.map((category) => {
               const Icon = category.icon;
-              const iconColor = iconColors[category.color] || 'text-blue-600';
+              const iconColor = iconColors[category.color] || 'text-secondary-600';
 
               return (
                 <div
@@ -400,10 +397,10 @@ export default function Explore() {
                       <Icon className={`w-5 h-5 ${iconColor}`} />
                     </div>
                     <div>
-                      <h2 className="text-lg font-bold text-blue-900">{category.title}</h2>
+                      <h2 className="text-lg font-bold text-secondary-900">{category.title}</h2>
                       <Link
                         to={`/search?trade=${category.value}`}
-                        className="text-xs text-blue-600 font-medium hover:underline inline-flex items-center gap-1"
+                        className="text-xs text-primary-600 font-medium hover:underline inline-flex items-center gap-1"
                       >
                         View all tradies
                         <ArrowRight className="w-3 h-3" />
@@ -416,7 +413,7 @@ export default function Explore() {
                       <Link
                         key={service}
                         to={`/search?trade=${category.value}&q=${encodeURIComponent(service)}`}
-                        className="bg-white px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium transition-all hover:bg-amber-400 hover:border-amber-400 hover:text-gray-900 hover:shadow-sm"
+                        className="bg-white px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium transition-all hover:bg-warm-400 hover:border-warm-400 hover:text-gray-900 hover:shadow-sm"
                       >
                         {service}
                       </Link>
@@ -431,7 +428,7 @@ export default function Explore() {
             <p className="text-gray-600 mb-4">Can't find what you're looking for?</p>
             <Link
               to="/search"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
             >
               Browse All Tradies
               <ArrowRight className="w-5 h-5" />
@@ -441,13 +438,10 @@ export default function Explore() {
       </main>
 
       <footer className="bg-gray-900 text-gray-400 py-8 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <Wrench className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-lg font-bold text-white">
-              Connec<span className="text-blue-400">Tradie</span>
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <Link to="/" className="inline-flex items-center mb-4">
+            <span className="text-2xl font-extrabold tracking-tight text-white">
+              Connec<span className="text-warm-500">Tradie</span>
             </span>
           </Link>
           <p className="text-sm">Connecting Australians with trusted trade professionals.</p>

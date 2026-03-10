@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import Stripe from "npm:stripe@14.21.0";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
@@ -84,6 +84,16 @@ Deno.serve(async (req: Request) => {
       stripe.balance.retrieve({ stripeAccount: accountId }),
       stripe.payouts.list({ stripeAccount: accountId, limit: 20 }),
     ]);
+
+    // Sync onboarding status from Stripe → DB (covers cases where webhook is delayed/missing)
+    const onboardingComplete = !!(account.charges_enabled && account.payouts_enabled);
+    const detailsSubmitted = !!account.details_submitted;
+    if (onboardingComplete || detailsSubmitted) {
+      await authClient
+        .from("profiles")
+        .update({ stripe_connect_onboarding_complete: onboardingComplete || detailsSubmitted })
+        .eq("id", user.id);
+    }
 
     let dashboardUrl: string | null = null;
     try {

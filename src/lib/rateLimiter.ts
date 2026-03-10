@@ -316,7 +316,7 @@ export async function reportAbuse(
       reporter_id: reporterId,
       reported_user_id: reportedUserId,
       report_type: type,
-      severity,
+      severity: severity,
       description,
       status: 'pending',
     })

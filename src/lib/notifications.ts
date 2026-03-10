@@ -38,11 +38,14 @@ export async function savePushPreferences(
   pushEnabled: boolean,
   subscription: PushSubscription | null
 ) {
+
+  // Ensure push_subscription is a plain object (not a class instance)
+  const pushSubObj = subscription ? JSON.parse(JSON.stringify(subscription.toJSON())) : null;
   const { error } = await supabase
     .from('profiles')
     .update({
       push_enabled: pushEnabled,
-      push_subscription: subscription ? subscription.toJSON() : null,
+      push_subscription: pushSubObj,
     })
     .eq('id', userId);
 
@@ -122,16 +125,17 @@ export async function notifyTradiesForUrgentJob(job: Job) {
   let pushCount = 0;
   let smsCount = 0;
 
-  const pushEligible = tradies.filter((t: any) => t.push_enabled && t.push_subscription);
+  type TradieNotifRow = { id: string; full_name: string | null; push_enabled: boolean; sms_alerts_enabled: boolean; push_subscription: unknown };
+  const pushEligible = tradies.filter((t: TradieNotifRow) => t.push_enabled && t.push_subscription);
   if (pushEligible.length > 0) {
     pushCount = pushEligible.length;
   }
 
-  const smsEligible = tradies.filter((t: any) => t.sms_alerts_enabled);
+  const smsEligible = tradies.filter((t: TradieNotifRow) => t.sms_alerts_enabled);
   if (smsEligible.length > 0) {
     const smsResult = simulateSmsAlert(
       job,
-      smsEligible.map((t: any) => t.full_name || 'Unknown Tradie')
+      smsEligible.map((t: TradieNotifRow) => t.full_name || 'Unknown Tradie')
     );
     smsCount = smsResult.recipientCount;
   }

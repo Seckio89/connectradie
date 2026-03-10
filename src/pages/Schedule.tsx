@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { CalendarDays, Users } from 'lucide-react';
+import { CalendarDays, Users, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import SiteCalendar from './SiteCalendar';
 import Team from './Team';
@@ -16,7 +17,14 @@ export default function Schedule() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1600px] mx-auto">
+        <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-4">
+          <Link to="/dashboard" className="hover:text-primary-600 transition-colors">Dashboard</Link>
+          <ChevronRight className="w-3 h-3" />
+          <span className="font-medium text-gray-900">Schedule</span>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-gray-700">{tabs.find(t => t.key === activeTab)?.label}</span>
+        </nav>
         <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 mb-6 w-fit">
           {tabs.map(tab => {
             const Icon = tab.icon;

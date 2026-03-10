@@ -154,8 +154,8 @@ export default function RequestVariationModal({
       <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-5 border-b border-gray-100 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-              <FileText className="w-5 h-5 text-blue-600" />
+            <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
+              <FileText className="w-5 h-5 text-secondary-600" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-gray-900">Additional Cost</h2>
@@ -172,13 +172,13 @@ export default function RequestVariationModal({
         <form onSubmit={handleSubmit} className="p-5 overflow-y-auto flex-1 space-y-5">
           {/* Running total context banner */}
           {approvedVariationsTotal > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+            <div className="bg-secondary-50 border border-secondary-200 rounded-xl p-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-blue-700 font-medium">Approved add-ons so far</span>
-                <span className="text-blue-800 font-bold">+${approvedVariationsTotal.toLocaleString('en-AU', { minimumFractionDigits: 2 })}</span>
+                <span className="text-secondary-700 font-medium">Approved add-ons so far</span>
+                <span className="text-secondary-800 font-bold">+${approvedVariationsTotal.toLocaleString('en-AU', { minimumFractionDigits: 2 })}</span>
               </div>
               {jobBudget != null && jobBudget > 0 && (
-                <div className="flex items-center justify-between text-xs text-blue-600 mt-1 pt-1 border-t border-blue-200">
+                <div className="flex items-center justify-between text-xs text-secondary-600 mt-1 pt-1 border-t border-secondary-200">
                   <span>Current running total</span>
                   <span className="font-semibold">${currentTotal.toLocaleString('en-AU', { minimumFractionDigits: 2 })}</span>
                 </div>
@@ -203,7 +203,7 @@ export default function RequestVariationModal({
                   onClick={() => { setReasonCategory(key); setError(''); }}
                   className={`px-3 py-2 rounded-xl text-sm font-medium border transition-all ${
                     reasonCategory === key
-                      ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
+                      ? 'border-primary-500 bg-warm-50 text-warm-700 shadow-sm'
                       : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
@@ -229,7 +229,7 @@ export default function RequestVariationModal({
                   reasonCategory === 'additional_labour' ? 'e.g., Two-person job required for safe removal of old unit' :
                   'Describe what changed...'
                 }
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm resize-none"
                 rows={2}
               />
             </div>
@@ -247,7 +247,7 @@ export default function RequestVariationModal({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
-                className="w-full pl-7 pr-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="w-full pl-7 pr-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
                 required
               />
             </div>
@@ -255,7 +255,7 @@ export default function RequestVariationModal({
               <button
                 type="button"
                 onClick={useMilestoneSuggestion}
-                className="mt-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                className="mt-1.5 text-xs text-primary-600 hover:text-primary-700 font-medium"
               >
                 Use next milestone amount: ${nextMilestoneAmount.toLocaleString('en-AU', { minimumFractionDigits: 2 })}
               </button>
@@ -287,7 +287,7 @@ export default function RequestVariationModal({
               ))}
               {photoUrls.length < 4 && (
                 <label className={`w-16 h-16 rounded-lg border-2 border-dashed flex items-center justify-center cursor-pointer transition-colors ${
-                  uploading ? 'border-blue-300 bg-blue-50' : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50/50'
+                  uploading ? 'border-primary-300 bg-primary-50' : 'border-gray-300 hover:border-primary-400 hover:bg-primary-50/50'
                 }`}>
                   <input
                     type="file"
@@ -298,7 +298,7 @@ export default function RequestVariationModal({
                     disabled={uploading}
                   />
                   {uploading ? (
-                    <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                    <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
                   ) : (
                     <Camera className="w-5 h-5 text-gray-400" />
                   )}
@@ -321,7 +321,7 @@ export default function RequestVariationModal({
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-gray-400 text-sm font-medium transition-colors"
+              className="flex-1 px-4 py-2.5 bg-warm-500 text-white rounded-xl hover:bg-warm-600 disabled:bg-gray-400 text-sm font-medium transition-colors"
               disabled={loading || !reasonCategory}
             >
               {loading ? 'Sending...' : 'Send Request'}

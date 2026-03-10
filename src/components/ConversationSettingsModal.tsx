@@ -104,7 +104,7 @@ export default function ConversationSettingsModal({
 
     if (data) {
       const participantsWithPermissions = await Promise.all(
-        data.map(async (p: any) => {
+        data.map(async (p: Record<string, unknown> & { user_id: string }) => {
           const { data: perms } = await supabase
             .from('conversation_permissions')
             .select('*')
@@ -117,7 +117,7 @@ export default function ConversationSettingsModal({
           };
         })
       );
-      setParticipants(participantsWithPermissions);
+      setParticipants(participantsWithPermissions as ParticipantWithProfile[]);
     }
     setLoading(false);
   };
@@ -159,7 +159,7 @@ export default function ConversationSettingsModal({
 
     if (data) {
       const existingIds = participants.map(p => p.user_id);
-      setSearchResults(data.filter(u => !existingIds.includes(u.id)));
+      setSearchResults((data as unknown as Profile[]).filter((u: Profile) => !existingIds.includes(u.id)));
     }
     setSearching(false);
   };
@@ -253,7 +253,7 @@ export default function ConversationSettingsModal({
               onClick={() => setActiveTab('general')}
               className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
                 activeTab === 'general'
-                  ? 'bg-primary-100 text-primary-700'
+                  ? 'bg-warm-100 text-warm-700'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -264,7 +264,7 @@ export default function ConversationSettingsModal({
               onClick={() => setActiveTab('participants')}
               className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
                 activeTab === 'participants'
-                  ? 'bg-primary-100 text-primary-700'
+                  ? 'bg-warm-100 text-warm-700'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -275,7 +275,7 @@ export default function ConversationSettingsModal({
               onClick={() => setActiveTab('permissions')}
               className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
                 activeTab === 'permissions'
-                  ? 'bg-primary-100 text-primary-700'
+                  ? 'bg-warm-100 text-warm-700'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -306,7 +306,7 @@ export default function ConversationSettingsModal({
                       <button
                         onClick={handleSaveTitle}
                         disabled={savingTitle}
-                        className="p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+                        className="p-2 bg-warm-500 text-white rounded-lg hover:bg-warm-600 transition-colors disabled:opacity-50"
                       >
                         {savingTitle ? (
                           <Loader2 className="w-5 h-5 animate-spin" />
@@ -585,7 +585,7 @@ export default function ConversationSettingsModal({
             {isArchived ? (
               <button
                 onClick={handleUnarchiveConversation}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-warm-500 text-white rounded-lg hover:bg-warm-600 transition-colors"
               >
                 <Archive className="w-4 h-4" />
                 Unarchive Conversation

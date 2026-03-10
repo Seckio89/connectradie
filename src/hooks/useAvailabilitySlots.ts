@@ -35,7 +35,7 @@ export function useAvailabilitySlots({ userId, currentDate, onSuccess, onError }
         .order('start_time', { ascending: true });
 
       if (error) throw error;
-      setSlots(data || []);
+      setSlots((data || []) as AvailabilitySlot[]);
     } catch {
       onErrorRef.current?.('Failed to load availability slots. Please refresh.');
     } finally {
@@ -163,7 +163,7 @@ export function useAvailabilitySlots({ userId, currentDate, onSuccess, onError }
 
       const seen = new Map<string, string>();
       const duplicateIds: string[] = [];
-      allSlots.forEach((slot) => {
+      (allSlots as AvailabilitySlot[]).forEach((slot) => {
         const key = `${slot.start_time}-${slot.end_time}`;
         if (seen.has(key)) duplicateIds.push(slot.id);
         else seen.set(key, slot.id);

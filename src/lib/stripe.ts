@@ -4,21 +4,19 @@ import { trackEvent, GA_EVENTS } from './analytics';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
-async function isTrainingModeActive(): Promise<boolean> {
-  const { data } = await supabase
-    .from('app_settings')
-    .select('value')
-    .eq('key', 'training_mode_enabled')
-    .maybeSingle();
+function generateIdempotencyKey(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
 
-  return data?.value === true;
+const EDGE_FUNCTION_TIMEOUT = 30_000; // 30 seconds
+
+function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = EDGE_FUNCTION_TIMEOUT): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
 export async function createCheckoutSession(billingCycle: 'monthly' | 'annual' = 'monthly') {
-  if (await isTrainingModeActive()) {
-    throw new Error('Training Mode is active. Use the "Activate Pro (Test)" button instead.');
-  }
-
   const monthlyPriceId = import.meta.env.VITE_STRIPE_PRO_PRICE_ID;
   const annualPriceId = import.meta.env.VITE_STRIPE_PRO_ANNUAL_PRICE_ID;
 
@@ -37,7 +35,7 @@ export async function createCheckoutSession(billingCycle: 'monthly' | 'annual' =
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const apiUrl = `${supabaseUrl}/functions/v1/create-checkout-session`;
 
-  const response = await fetch(apiUrl, {
+  const response = await fetchWithTimeout(apiUrl, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${session.access_token}`,
@@ -46,6 +44,7 @@ export async function createCheckoutSession(billingCycle: 'monthly' | 'annual' =
     },
     body: JSON.stringify({
       priceId,
+      idempotencyKey: generateIdempotencyKey(),
       successUrl: `${window.location.origin}/dashboard?subscription=success`,
       cancelUrl: `${window.location.origin}/dashboard?subscription=cancelled`,
     }),
@@ -70,14 +69,10 @@ export async function createCheckoutSession(billingCycle: 'monthly' | 'annual' =
   }
 
   trackEvent(GA_EVENTS.BEGIN_CHECKOUT, { billing_cycle: billingCycle });
-  window.location.href = url;
+  window.location.href = url as string;
 }
 
 export async function createPaymentSession(paymentType: 'lead_unlock' | 'job_access', jobId: string) {
-  if (await isTrainingModeActive()) {
-    throw new Error('Training Mode is active. Payments are disabled in test mode.');
-  }
-
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
@@ -87,7 +82,7 @@ export async function createPaymentSession(paymentType: 'lead_unlock' | 'job_acc
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const apiUrl = `${supabaseUrl}/functions/v1/create-payment-session`;
 
-  const response = await fetch(apiUrl, {
+  const response = await fetchWithTimeout(apiUrl, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${session.access_token}`,
@@ -97,6 +92,7 @@ export async function createPaymentSession(paymentType: 'lead_unlock' | 'job_acc
     body: JSON.stringify({
       paymentType,
       jobId,
+      idempotencyKey: generateIdempotencyKey(),
       successUrl: `${window.location.origin}/jobs?payment=success&type=${paymentType}&job_id=${jobId}`,
       cancelUrl: `${window.location.origin}/jobs?payment=cancelled`,
     }),
@@ -118,10 +114,6 @@ export async function createPaymentSession(paymentType: 'lead_unlock' | 'job_acc
 }
 
 export async function createConnectOnboardingSession() {
-  if (await isTrainingModeActive()) {
-    throw new Error('Training Mode is active. Stripe Connect is disabled in test mode.');
-  }
-
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
@@ -131,7 +123,7 @@ export async function createConnectOnboardingSession() {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const apiUrl = `${supabaseUrl}/functions/v1/stripe-connect-onboarding`;
 
-  const response = await fetch(apiUrl, {
+  const response = await fetchWithTimeout(apiUrl, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${session.access_token}`,
@@ -162,14 +154,53 @@ export async function createConnectOnboardingSession() {
     throw new Error('No onboarding URL received');
   }
 
-  window.location.href = url;
+  window.location.href = url as string;
+}
+
+export async function createIdentityVerification() {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error('Not authenticated');
+  }
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const apiUrl = `${supabaseUrl}/functions/v1/stripe-identity-verification`;
+
+  const response = await fetchWithTimeout(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${session.access_token}`,
+      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      returnUrl: `${window.location.origin}/settings?identity=success`,
+    }),
+  });
+
+  const text = await response.text();
+  let data: Record<string, unknown>;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(text || `Server error (${response.status})`);
+  }
+
+  if (!response.ok) {
+    throw new Error((data.error as string) || `Identity verification failed (${response.status})`);
+  }
+
+  const { url } = data;
+
+  if (!url) {
+    throw new Error('No verification URL received');
+  }
+
+  window.location.href = url as string;
 }
 
 export async function cancelSubscription(subscriptionId: string) {
-  if (await isTrainingModeActive()) {
-    throw new Error('Training Mode is active. Use the admin panel to deactivate test subscriptions.');
-  }
-
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
@@ -179,7 +210,7 @@ export async function cancelSubscription(subscriptionId: string) {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const apiUrl = `${supabaseUrl}/functions/v1/cancel-subscription`;
 
-  const response = await fetch(apiUrl, {
+  const response = await fetchWithTimeout(apiUrl, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${session.access_token}`,
@@ -235,7 +266,7 @@ export async function getConnectAccountDetails(): Promise<ConnectAccountDetails>
 
   let response: Response;
   try {
-    response = await fetch(apiUrl, {
+    response = await fetchWithTimeout(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
@@ -244,8 +275,11 @@ export async function getConnectAccountDetails(): Promise<ConnectAccountDetails>
       },
       body: JSON.stringify({}),
     });
-  } catch {
-    throw new Error('Unable to reach the payout service. The stripe-connect-account function may not be deployed. Please run: supabase functions deploy stripe-connect-account');
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('Request timed out. Please try again.');
+    }
+    throw new Error('Unable to reach the payout service. The stripe-connect-account function may not be deployed.');
   }
 
   const text = await response.text();

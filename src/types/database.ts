@@ -17,6 +17,7 @@ export type Profile = {
   phone: string | null;
   address: string | null;
   postcode: string | null;
+  suburb: string | null;
   abn_number: string | null;
   abn_entity_name: string | null;
   abn_verified: boolean;
@@ -27,6 +28,10 @@ export type Profile = {
   license_holder_name: string | null;
   license_api_verified: boolean;
   license_class: string | null;
+  is_apprentice: boolean;
+  supervisor_license: string | null;
+  supervisor_name: string | null;
+  is_license_required: boolean;
   verification_status: VerificationStatus;
   documents_url: string[] | null;
   rejection_reason: string | null;
@@ -54,6 +59,8 @@ export type Profile = {
   declared_trades: string[];
   verified_trades: string[];
   license_trades: string[];
+  stripe_identity_session_id: string | null;
+  is_identity_verified: boolean;
   created_at: string;
 }
 
@@ -149,6 +156,7 @@ export type Job = {
   id: string;
   client_id: string;
   tradie_id: string | null;
+  title: string | null;
   description: string;
   status: JobStatus;
   scheduled_time: string | null;
@@ -181,6 +189,11 @@ export type Job = {
   quote_count: number;
   allows_site_inspection: boolean;
   quoting_status: QuotingStatus;
+  archived_at: string | null;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  contact_flagged: boolean;
+  contact_flag_reason: string | null;
   updated_at: string;
   created_at: string;
 }
@@ -264,6 +277,7 @@ export type Message = {
   is_booking_request: boolean;
   job_id: string | null;
   read_at: string | null;
+  read_by: string[] | null;
   deleted_at: string | null;
   attachment_url: string | null;
   attachment_type: string | null;
@@ -600,11 +614,106 @@ export type Payment = {
   payment_type: PaymentType;
   job_id: string | null;
   amount: number;
+  processing_fee: number | null;
   currency: string;
   status: PaymentStatus;
   metadata: Record<string, unknown> | null;
   created_at: string;
   completed_at: string | null;
+}
+
+export type DisputeStatus = 'open' | 'under_review' | 'resolved' | 'dismissed';
+
+export type Dispute = {
+  id: string;
+  job_id: string;
+  opened_by: string;
+  against_user: string;
+  reason: string;
+  description: string | null;
+  evidence_urls: string[] | null;
+  status: DisputeStatus;
+  resolution: string | null;
+  resolved_at: string | null;
+  resolved_by: string | null;
+  stripe_dispute_id: string | null;
+  stripe_charge_id: string | null;
+  amount: number | null;
+  currency: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type TypingIndicator = {
+  id: string;
+  conversation_id: string;
+  user_id: string;
+  is_typing: boolean;
+  updated_at: string;
+}
+
+export type AccountRemoval = {
+  id: string;
+  user_id: string;
+  reason: string | null;
+  requested_at: string;
+  processed_at: string | null;
+  status: 'pending' | 'processed' | 'reinstated';
+  reinstated_at: string | null;
+}
+
+export type AdminAuditLog = {
+  id: string;
+  admin_id: string;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  details: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export type StripeCustomer = {
+  id: string;
+  user_id: string;
+  customer_id: string;
+  deleted_at: string | null;
+  created_at: string;
+}
+
+export type SmsSendLog = {
+  id: string;
+  phone_number: string;
+  notification_type: string | null;
+  sent_at: string;
+}
+
+export type PaymentReconciliationLog = {
+  id: string;
+  payment_id: string | null;
+  stripe_payment_intent_id: string | null;
+  status: string;
+  details: Record<string, unknown> | null;
+  reconciled_at: string;
+}
+
+export type QuoteTemplate = {
+  id: string;
+  tradie_id: string;
+  name: string;
+  message: string;
+  includes_materials: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type TimeEntry = {
+  id: string;
+  job_id: string;
+  tradie_id: string;
+  start_time: string;
+  end_time: string | null;
+  description: string | null;
+  created_at: string;
 }
 
 export type TradeCategory = {
@@ -702,6 +811,25 @@ export type AbuseReport = {
   resolved_by: string | null;
   created_at: string;
 }
+
+export type RecommendationCategory = 'growth' | 'pricing' | 'promotions' | 'trends' | 'operations';
+export type RecommendationPriority = 'high' | 'medium' | 'low';
+export type RecommendationStatus = 'new' | 'reviewed' | 'implemented' | 'dismissed';
+
+export type PlatformRecommendation = {
+  id: string;
+  category: RecommendationCategory;
+  title: string;
+  description: string;
+  priority: RecommendationPriority;
+  status: RecommendationStatus;
+  data_snapshot: Record<string, unknown> | null;
+  action_url: string | null;
+  generated_at: string;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+};
 
 export type JobWithRelations = Job & {
   profiles?: {
@@ -981,6 +1109,60 @@ export type Database = {
         Update: Partial<Omit<AbuseReport, 'id' | 'created_at'>>;
         Relationships: [];
       };
+      disputes: {
+        Row: Dispute;
+        Insert: Partial<Omit<Dispute, 'id' | 'created_at' | 'updated_at'>>;
+        Update: Partial<Omit<Dispute, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      typing_indicators: {
+        Row: TypingIndicator;
+        Insert: Partial<Omit<TypingIndicator, 'id'>>;
+        Update: Partial<Omit<TypingIndicator, 'id'>>;
+        Relationships: [];
+      };
+      account_removals: {
+        Row: AccountRemoval;
+        Insert: Partial<Omit<AccountRemoval, 'id'>>;
+        Update: Partial<Omit<AccountRemoval, 'id'>>;
+        Relationships: [];
+      };
+      admin_audit_log: {
+        Row: AdminAuditLog;
+        Insert: Partial<Omit<AdminAuditLog, 'id' | 'created_at'>>;
+        Update: Partial<Omit<AdminAuditLog, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      stripe_customers: {
+        Row: StripeCustomer;
+        Insert: Partial<Omit<StripeCustomer, 'id' | 'created_at'>>;
+        Update: Partial<Omit<StripeCustomer, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      sms_send_log: {
+        Row: SmsSendLog;
+        Insert: Partial<Omit<SmsSendLog, 'id' | 'sent_at'>>;
+        Update: Partial<Omit<SmsSendLog, 'id' | 'sent_at'>>;
+        Relationships: [];
+      };
+      payment_reconciliation_log: {
+        Row: PaymentReconciliationLog;
+        Insert: Partial<Omit<PaymentReconciliationLog, 'id' | 'reconciled_at'>>;
+        Update: Partial<Omit<PaymentReconciliationLog, 'id' | 'reconciled_at'>>;
+        Relationships: [];
+      };
+      quote_templates: {
+        Row: QuoteTemplate;
+        Insert: Partial<Omit<QuoteTemplate, 'id' | 'created_at' | 'updated_at'>>;
+        Update: Partial<Omit<QuoteTemplate, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      time_entries: {
+        Row: TimeEntry;
+        Insert: Partial<Omit<TimeEntry, 'id' | 'created_at'>>;
+        Update: Partial<Omit<TimeEntry, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
     };
     Views: {
       tradie_ratings: {
@@ -988,6 +1170,6 @@ export type Database = {
         Relationships: [];
       };
     };
-    Functions: {};
+    Functions: Record<string, never>;
   };
 };

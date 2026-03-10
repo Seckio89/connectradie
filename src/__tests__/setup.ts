@@ -4,9 +4,7 @@ import { vi } from 'vitest';
 // Mock import.meta.env
 // ---------------------------------------------------------------------------
 
-// @ts-expect-error -- vitest allows stubbing import.meta.env
 import.meta.env.VITE_SUPABASE_URL = 'https://test-project.supabase.co';
-// @ts-expect-error
 import.meta.env.VITE_SUPABASE_ANON_KEY = 'test-anon-key-1234567890';
 
 // ---------------------------------------------------------------------------
@@ -96,7 +94,7 @@ Object.defineProperty(window, 'sessionStorage', { value: createMockStorage(), wr
 // Global fetch mock
 // ---------------------------------------------------------------------------
 
-global.fetch = vi.fn().mockResolvedValue({
+(globalThis as unknown as { fetch: typeof fetch }).fetch = vi.fn().mockResolvedValue({
   ok: true,
   status: 200,
   json: vi.fn().mockResolvedValue({}),

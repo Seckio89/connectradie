@@ -1,9 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
@@ -46,17 +47,18 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return errorJson("Server configuration error", 500);
+    const requiredEnvVars = ['STRIPE_SECRET_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
+    for (const envVar of requiredEnvVars) {
+      if (!Deno.env.get(envVar)) {
+        return new Response(JSON.stringify({ error: `Missing required configuration: ${envVar}` }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
 
-    if (!stripeSecretKey) {
-      return errorJson("Stripe not configured", 500);
-    }
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY")!;
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -71,6 +73,18 @@ Deno.serve(async (req: Request) => {
       return errorJson(authError?.message || "Unauthorized", 401);
     }
 
+    // Rate limit: 5 requests per minute per user
+    const { allowed } = checkRateLimit(`${user.id}-create-payment-session`, 5, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json", "X-RateLimit-Remaining": "0" },
+        },
+      );
+    }
+
     let body: Record<string, unknown>;
     try {
       body = await req.json();
@@ -78,11 +92,12 @@ Deno.serve(async (req: Request) => {
       return errorJson("Invalid JSON body", 400);
     }
 
-    const { paymentType, jobId, successUrl, cancelUrl } = body as {
+    const { paymentType, jobId, successUrl, cancelUrl, idempotencyKey } = body as {
       paymentType?: string;
       jobId?: string;
       successUrl?: string;
       cancelUrl?: string;
+      idempotencyKey?: string;
     };
 
     if (!paymentType || !jobId || !successUrl || !cancelUrl) {
@@ -170,21 +185,24 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      customer_email: customerId ? undefined : profile?.email,
-      line_items: lineItems,
-      mode: "payment",
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      metadata: {
-        user_id: user.id,
-        payment_type: paymentType,
-        job_id: jobId,
-        base_amount: String(baseAmount),
-        processing_fee: String(processingFee),
+    const session = await stripe.checkout.sessions.create(
+      {
+        customer: customerId,
+        customer_email: customerId ? undefined : profile?.email,
+        line_items: lineItems,
+        mode: "payment",
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata: {
+          user_id: user.id,
+          payment_type: paymentType,
+          job_id: jobId,
+          base_amount: String(baseAmount),
+          processing_fee: String(processingFee),
+        },
       },
-    });
+      idempotencyKey ? { idempotencyKey } : undefined,
+    );
 
     await supabase.from("payments")
       .update({ stripe_checkout_session_id: session.id })

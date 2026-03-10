@@ -37,7 +37,7 @@ export default function ActivityFeed() {
       const activities: Activity[] = [];
 
       if (recentJobs && recentJobs.length > 0) {
-        recentJobs.forEach((job: any) => {
+        recentJobs.forEach((job: { id: string; created_at: string; status: string; profiles: { full_name: string } | null }) => {
           const timeAgo = getTimeAgo(job.created_at);
           activities.push({
             id: `booking-${job.id}`,
@@ -51,7 +51,7 @@ export default function ActivityFeed() {
       }
 
       setActivities(activities);
-    } catch (error) {
+    } catch {
       // error handled silently
     } finally {
       setLoading(false);
@@ -76,7 +76,7 @@ export default function ActivityFeed() {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-6">
       <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <Zap className="w-5 h-5 text-amber-600" />
+        <Zap className="w-5 h-5 text-warm-600" />
         Platform Activity
       </h3>
 
@@ -93,7 +93,7 @@ export default function ActivityFeed() {
           {activities.map((activity) => (
             <div
               key={activity.id}
-              className="flex items-center gap-3 p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-100 hover:border-amber-300 transition-all duration-200 animate-in fade-in slide-in-from-top-2"
+              className="flex items-center gap-3 p-3 bg-gradient-to-r from-warm-50 to-warm-50 rounded-xl border border-warm-100 hover:border-warm-300 transition-all duration-200 animate-in fade-in slide-in-from-top-2"
             >
               {activity.icon}
               <div className="flex-1 min-w-0">

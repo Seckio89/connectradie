@@ -90,8 +90,8 @@ export default function QuoteInsightsWidget() {
     return (
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
-            <FileText className="w-5 h-5 text-teal-600" />
+          <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
+            <FileText className="w-5 h-5 text-secondary-600" />
           </div>
           <h3 className="font-semibold text-gray-900">Quote Activity</h3>
         </div>
@@ -100,7 +100,7 @@ export default function QuoteInsightsWidget() {
         </p>
         <Link
           to="/leads"
-          className="inline-flex items-center gap-2 text-sm font-medium text-teal-600 hover:text-teal-700"
+          className="inline-flex items-center gap-2 text-sm font-medium text-secondary-600 hover:text-secondary-700"
         >
           Browse Leads <ArrowRight className="w-4 h-4" />
         </Link>
@@ -112,40 +112,40 @@ export default function QuoteInsightsWidget() {
     <div className="bg-white rounded-2xl border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
-            <BarChart3 className="w-5 h-5 text-teal-600" />
+          <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
+            <BarChart3 className="w-5 h-5 text-secondary-600" />
           </div>
           <h3 className="font-semibold text-gray-900">Quote Insights</h3>
         </div>
         <Link
           to="/leads?filter=quoted"
-          className="text-sm text-teal-600 hover:text-teal-700 font-medium"
+          className="text-sm text-secondary-600 hover:text-secondary-700 font-medium"
         >
           View All
         </Link>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-5">
-        <div className="p-3 bg-teal-50 rounded-xl border border-teal-100">
+        <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
           <div className="flex items-center gap-2 mb-1">
-            <Target className="w-4 h-4 text-teal-600" />
-            <span className="text-xs text-teal-600 font-medium">Win Rate</span>
+            <Target className="w-4 h-4 text-blue-600" />
+            <span className="text-xs text-blue-600 font-medium">Win Rate</span>
           </div>
-          <p className="text-2xl font-bold text-teal-800">{stats.winRate}%</p>
+          <p className="text-2xl font-bold text-blue-800">{stats.winRate}%</p>
         </div>
-        <div className="p-3 bg-green-50 rounded-xl border border-green-100">
+        <div className="p-3 bg-white rounded-xl border border-gray-200">
           <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="w-4 h-4 text-green-600" />
-            <span className="text-xs text-green-600 font-medium">Quoted Earnings</span>
+            <DollarSign className="w-4 h-4 text-blue-600" />
+            <span className="text-xs text-gray-500 font-medium">Quoted Earnings</span>
           </div>
-          <p className="text-2xl font-bold text-green-800">${stats.totalEarned.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-gray-800">${stats.totalEarned.toLocaleString()}</p>
         </div>
       </div>
 
       <div className="space-y-3">
         <div className="flex items-center justify-between text-sm">
           <span className="flex items-center gap-2 text-gray-600">
-            <Clock className="w-4 h-4 text-amber-500" />
+            <Clock className="w-4 h-4 text-warm-500" />
             Pending
           </span>
           <span className="font-semibold text-gray-900">{stats.pendingQuotes}</span>

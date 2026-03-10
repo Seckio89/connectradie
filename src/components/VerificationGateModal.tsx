@@ -26,12 +26,12 @@ export default function VerificationGateModal({ isOpen, onClose, reason = 'unver
 
         <div className="p-6 pt-8 text-center">
           <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-            isExpired ? 'bg-red-100' : 'bg-amber-100'
+            isExpired ? 'bg-red-100' : 'bg-warm-100'
           }`}>
             {isExpired ? (
               <ShieldAlert className="w-8 h-8 text-red-600" />
             ) : (
-              <AlertTriangle className="w-8 h-8 text-amber-600" />
+              <AlertTriangle className="w-8 h-8 text-warm-600" />
             )}
           </div>
 
@@ -45,20 +45,20 @@ export default function VerificationGateModal({ isOpen, onClose, reason = 'unver
           </p>
 
           <div className={`border rounded-xl p-4 mb-6 ${
-            isExpired ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'
+            isExpired ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'
           }`}>
             <div className="flex items-start gap-3 text-left">
               <Shield className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
-                isExpired ? 'text-red-600' : 'text-amber-600'
+                isExpired ? 'text-red-600' : 'text-blue-600'
               }`} />
               <div>
-                <p className={`text-sm font-medium ${isExpired ? 'text-red-900' : 'text-amber-900'}`}>
-                  {isExpired ? 'What to do' : 'Why verification?'}
+                <p className={`text-sm font-medium ${isExpired ? 'text-red-900' : 'text-blue-900'}`}>
+                  {isExpired ? 'What to do' : 'How to get verified'}
                 </p>
-                <p className={`text-sm mt-1 ${isExpired ? 'text-red-700' : 'text-amber-700'}`}>
+                <p className={`text-sm mt-1 ${isExpired ? 'text-red-700' : 'text-blue-800'}`}>
                   {isExpired
-                    ? 'Go to Settings and upload your renewed trade license. Once verified, you can resume accepting jobs.'
-                    : 'Verified tradies earn trust badges, appear higher in search, and get access to urgent leads.'}
+                    ? 'Go to Settings \u2192 Verification tab and upload your renewed trade license. Once verified, you can resume accepting jobs.'
+                    : 'Go to Settings \u2192 Verification tab. Add your ABN and license number, then submit for review. Once approved you\'ll earn a trust badge, appear higher in search, and get access to urgent leads.'}
                 </p>
               </div>
             </div>
@@ -77,7 +77,7 @@ export default function VerificationGateModal({ isOpen, onClose, reason = 'unver
                 navigate('/settings', { state: { tab: 'verification' } });
               }}
               className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-white font-medium rounded-xl transition-colors ${
-                isExpired ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
+                isExpired ? 'bg-red-600 hover:bg-red-700' : 'bg-warm-500 hover:bg-warm-600'
               }`}
             >
               {isExpired ? 'Upload License' : 'Go to Settings'}

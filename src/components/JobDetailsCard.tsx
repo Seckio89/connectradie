@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { Calendar, MapPin, Clock, User, Mail, Phone, FileText, Image as ImageIcon, DollarSign, AlertTriangle, Key, Zap, Plus, CheckCircle, XCircle, CreditCard, Package, Info, Upload, X, Receipt, Building2, Trash2, Eye, PenLine, Crown, WifiOff, Lock, Circle } from 'lucide-react';
+import { Calendar, MapPin, Clock, User, Mail, Phone, FileText, Image as ImageIcon, DollarSign, AlertTriangle, Key, Zap, Plus, CheckCircle, XCircle, CreditCard, Package, Info, Upload, X, Receipt, Building2, Trash2, Eye, PenLine, Crown, WifiOff, Lock, Circle, Loader2 } from 'lucide-react';
 import type { Job, Profile, Project } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { getAuthHeaders } from '../lib/edgeFn';
@@ -9,10 +9,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { isPro } from '../lib/subscription';
 import { extractSuburb } from '../lib/contactGating';
 import { redactContactInfo } from '../lib/redaction';
-import RequestVariationModal from './RequestVariationModal';
-import CreateInvoiceModal from './CreateInvoiceModal';
-import InvoiceViewModal from './InvoiceViewModal';
-import SubscriptionModal from './SubscriptionModal';
+
+const RequestVariationModal = lazy(() => import('./RequestVariationModal'));
+const CreateInvoiceModal = lazy(() => import('./CreateInvoiceModal'));
+const InvoiceViewModal = lazy(() => import('./InvoiceViewModal'));
+const SubscriptionModal = lazy(() => import('./SubscriptionModal'));
 
 interface JobVariation {
   id: string;
@@ -132,7 +133,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
         .eq('id', job.project_id)
         .maybeSingle();
       if (projectError) throw projectError;
-      setProject(projectData);
+      setProject(projectData as Project | null);
 
       const { data: jobsData, error: jobsError } = await supabase
         .from('jobs')
@@ -155,7 +156,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
         .eq('job_id', job.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      setVariations(data || []);
+      setVariations((data || []) as JobVariation[]);
     } catch {
       // silent
     }
@@ -170,7 +171,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
         .order('stage_number', { ascending: true });
       if (error) throw error;
       const milestonesWithSubs = await Promise.all(
-        (data || []).map(async (milestone) => {
+        ((data || []) as JobMilestone[]).map(async (milestone: JobMilestone) => {
           if (milestone.payment_type === 'subcontractor') {
             const { data: subs } = await supabase
               .from('milestone_subcontractors')
@@ -182,7 +183,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
           return { ...milestone, subcontractors: [] };
         })
       );
-      setMilestones(milestonesWithSubs);
+      setMilestones(milestonesWithSubs as JobMilestone[]);
     } catch {
       // silent
     }
@@ -412,10 +413,10 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
 
   const getStatusBadge = () => {
     const styles: Record<string, string> = {
-      pending: 'bg-amber-100 text-amber-700',
+      pending: 'bg-warm-100 text-warm-700',
       accepted: 'bg-green-100 text-green-700',
-      in_progress: 'bg-blue-100 text-blue-700',
-      completed: 'bg-teal-100 text-teal-700',
+      in_progress: 'bg-secondary-100 text-secondary-700',
+      completed: 'bg-secondary-100 text-secondary-700',
       declined: 'bg-red-100 text-red-700',
     };
     const labels: Record<string, string> = {
@@ -462,9 +463,9 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
   return (
     <div className="bg-gray-50 rounded-2xl overflow-hidden">
       {offlineQueued && (
-        <div className="m-4 flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
-          <WifiOff className="w-5 h-5 text-amber-600 flex-shrink-0" />
-          <p className="text-sm font-medium text-amber-800">Action queued offline. It will sync when you're back online.</p>
+        <div className="m-4 flex items-center gap-3 px-4 py-3 bg-warm-50 border border-warm-200 rounded-xl">
+          <WifiOff className="w-5 h-5 text-warm-600 flex-shrink-0" />
+          <p className="text-sm font-medium text-warm-800">Action queued offline. It will sync when you're back online.</p>
         </div>
       )}
 
@@ -479,7 +480,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
               </span>
             )}
             {job.job_complexity === 'complex' && (
-              <span className="px-3 py-1 bg-amber-100 text-amber-700 text-sm font-medium rounded-full flex items-center gap-1">
+              <span className="px-3 py-1 bg-warm-100 text-warm-700 text-sm font-medium rounded-full flex items-center gap-1">
                 <Zap className="w-3 h-3" />Complex
               </span>
             )}
@@ -538,12 +539,12 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
 
           {budgetInfo && (
             <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center ${budgetInfo.type === 'quote' ? 'bg-amber-100' : 'bg-green-100'}`}>
-                <DollarSign className={`w-4 h-4 ${budgetInfo.type === 'quote' ? 'text-amber-600' : 'text-green-600'}`} />
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center ${budgetInfo.type === 'quote' ? 'bg-warm-100' : 'bg-green-100'}`}>
+                <DollarSign className={`w-4 h-4 ${budgetInfo.type === 'quote' ? 'text-warm-600' : 'text-green-600'}`} />
               </div>
               <div>
                 <p className="text-xs font-medium text-gray-500">{budgetInfo.label}</p>
-                <p className={`text-sm font-semibold ${budgetInfo.type === 'quote' ? 'text-amber-700' : 'text-green-700'}`}>
+                <p className={`text-sm font-semibold ${budgetInfo.type === 'quote' ? 'text-warm-700' : 'text-green-700'}`}>
                   {budgetInfo.value}
                 </p>
               </div>
@@ -551,11 +552,11 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
           )}
 
           {job.access_instructions && canSeeContactDetails && (
-            <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-lg p-3">
-              <Key className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+            <div className="flex items-start gap-2 bg-warm-50 border border-warm-100 rounded-lg p-3">
+              <Key className="w-4 h-4 text-warm-500 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-xs font-medium text-amber-700 mb-0.5">Access Instructions</p>
-                <p className="text-sm text-amber-900">{job.access_instructions}</p>
+                <p className="text-xs font-medium text-warm-700 mb-0.5">Access Instructions</p>
+                <p className="text-sm text-warm-900">{job.access_instructions}</p>
               </div>
             </div>
           )}
@@ -595,7 +596,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
                   {(job.contact_phone || client?.phone) && (
                     <div className="flex items-center gap-2 text-sm">
                       <Phone className="w-3.5 h-3.5 text-gray-400" />
-                      <a href={`tel:${job.contact_phone || client?.phone}`} className="text-amber-600 hover:text-amber-700">
+                      <a href={`tel:${job.contact_phone || client?.phone}`} className="text-warm-600 hover:text-warm-700">
                         {job.contact_phone || client?.phone}
                       </a>
                     </div>
@@ -603,18 +604,18 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
                   {client?.email && (
                     <div className="flex items-center gap-2 text-sm">
                       <Mail className="w-3.5 h-3.5 text-gray-400" />
-                      <a href={`mailto:${client.email}`} className="text-amber-600 hover:text-amber-700">{client.email}</a>
+                      <a href={`mailto:${client.email}`} className="text-warm-600 hover:text-warm-700">{client.email}</a>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3">
-                  <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <User className="w-4 h-4 text-amber-600" />
+                <div className="bg-warm-50 border border-warm-200 rounded-lg p-3 flex items-start gap-3">
+                  <div className="w-8 h-8 bg-warm-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-warm-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-amber-800">{job.contact_name || client?.full_name || 'Client'}</p>
-                    <p className="text-xs text-amber-700 mt-0.5">Full contact details will be revealed once you accept this job.</p>
+                    <p className="text-sm font-medium text-warm-800">{job.contact_name || client?.full_name || 'Client'}</p>
+                    <p className="text-xs text-warm-700 mt-0.5">Full contact details will be revealed once you accept this job.</p>
                   </div>
                 </div>
               )}
@@ -624,28 +625,28 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
 
         {/* Job Group Timeline */}
         {project && projectJobs.length > 0 && showClientDetails && (
-          <div className="bg-white rounded-xl border border-blue-200 p-5">
+          <div className="bg-white rounded-xl border border-secondary-200 p-5">
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Package className="w-4 h-4 text-blue-600" />
+              <div className="w-9 h-9 bg-secondary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Package className="w-4 h-4 text-secondary-600" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
-                  <h4 className="font-semibold text-blue-900 text-sm">Job Group Timeline</h4>
-                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{project.title}</span>
+                  <h4 className="font-semibold text-secondary-900 text-sm">Job Group Timeline</h4>
+                  <span className="text-xs bg-secondary-100 text-secondary-700 px-2 py-0.5 rounded-full">{project.title}</span>
                 </div>
                 <div className="space-y-1.5">
                   {projectJobs.map((pJob) => (
-                    <div key={pJob.id} className="bg-blue-50/50 rounded-lg p-2.5 border border-blue-100">
+                    <div key={pJob.id} className="bg-secondary-50/50 rounded-lg p-2.5 border border-secondary-100">
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           <span className="text-sm font-medium text-gray-900">{pJob.tradie_details?.trade_category || 'Tradie'}</span>
                           <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                             pJob.status === 'completed' ? 'bg-green-100 text-green-700' :
-                            pJob.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                            pJob.status === 'in_progress' ? 'bg-secondary-100 text-secondary-700' :
                             'bg-yellow-100 text-yellow-700'
                           }`}>{pJob.status.replace('_', ' ')}</span>
-                          {pJob.is_delayed && <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-medium">Delayed</span>}
+                          {pJob.is_delayed && <span className="px-2 py-0.5 bg-warm-100 text-warm-700 rounded text-xs font-medium">Delayed</span>}
                         </div>
                         <div className="flex items-center gap-1 text-xs text-gray-500">
                           <Calendar className="w-3 h-3" />
@@ -655,7 +656,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
                     </div>
                   ))}
                 </div>
-                <div className="mt-2 flex items-start gap-1.5 text-xs text-blue-600">
+                <div className="mt-2 flex items-start gap-1.5 text-xs text-secondary-600">
                   <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                   <p>Coordinate your work timing with other tradies in this group.</p>
                 </div>
@@ -666,23 +667,23 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
 
         {/* Pending Progress Payment Requests */}
         {variations.filter(v => v.status === 'pending').map((variation) => (
-          <div key={variation.id} className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
+          <div key={variation.id} className="bg-warm-50 border border-warm-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-700" />
-                <p className="font-semibold text-amber-900">Additional Cost Requested</p>
+                <AlertTriangle className="w-4 h-4 text-warm-700" />
+                <p className="font-semibold text-warm-900">Additional Cost Requested</p>
               </div>
               {variation.reason_category && (
-                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full capitalize">
+                <span className="px-2 py-0.5 bg-warm-100 text-warm-700 text-xs font-medium rounded-full capitalize">
                   {variation.reason_category.replace('_', ' ')}
                 </span>
               )}
             </div>
-            <p className="text-sm text-amber-800">{variation.description}</p>
+            <p className="text-sm text-warm-800">{variation.description}</p>
             {variation.photo_urls && variation.photo_urls.length > 0 && (
               <div className="flex gap-1.5 overflow-x-auto pb-1">
                 {variation.photo_urls.map((url, idx) => (
-                  <div key={idx} className="w-16 h-16 rounded-lg overflow-hidden bg-amber-100 border border-amber-200 flex-shrink-0">
+                  <div key={idx} className="w-16 h-16 rounded-lg overflow-hidden bg-warm-100 border border-warm-200 flex-shrink-0">
                     <img src={url} alt={`Evidence ${idx + 1}`} loading="lazy" decoding="async"
                       className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
                       onClick={() => window.open(url, '_blank')} />
@@ -691,9 +692,9 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
               </div>
             )}
             <div className="flex items-center justify-between">
-              <p className="text-lg font-bold text-amber-700">+${variation.additional_amount.toFixed(2)}</p>
+              <p className="text-lg font-bold text-warm-700">+${variation.additional_amount.toFixed(2)}</p>
               {job.budget_amount != null && job.budget_amount > 0 && (
-                <p className="text-xs text-amber-600">
+                <p className="text-xs text-warm-600">
                   New total: ${((job.budget_amount || 0) + approvedVariationsTotal + variation.additional_amount).toLocaleString('en-AU', { minimumFractionDigits: 2 })}
                 </p>
               )}
@@ -711,7 +712,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
               </div>
             )}
             {showClientDetails && (
-              <span className="inline-flex px-3 py-1 bg-amber-100 text-amber-700 text-sm font-medium rounded-full">Awaiting Client Approval</span>
+              <span className="inline-flex px-3 py-1 bg-warm-100 text-warm-700 text-sm font-medium rounded-full">Awaiting Client Approval</span>
             )}
           </div>
         ))}
@@ -738,9 +739,9 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
               )}
               {showClientDetails && !isProUser && (
                 <button onClick={() => setShowSubscriptionModal(true)}
-                  className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-sm rounded-lg hover:from-amber-600 hover:to-amber-700 flex items-center gap-1.5">
+                  className="px-3 py-1.5 bg-gradient-to-r from-warm-500 to-warm-600 text-white text-sm rounded-lg hover:from-warm-600 hover:to-warm-700 flex items-center gap-1.5">
                   <Crown className="w-4 h-4" />Payments
-                  <span className="text-[10px] font-bold bg-white/20 px-1.5 py-0.5 rounded">PRO</span>
+                  <span className="text-xs font-bold bg-white/20 px-1.5 py-0.5 rounded">PRO</span>
                 </button>
               )}
             </div>
@@ -824,7 +825,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <button
               onClick={() => setShowVariationModal(true)}
-              className="w-full px-4 py-3 border-2 border-dashed border-gray-300 text-gray-700 rounded-xl hover:border-blue-400 hover:bg-blue-50/50 hover:text-blue-700 flex items-center justify-center gap-2 font-medium transition-colors"
+              className="w-full px-4 py-3 border-2 border-dashed border-gray-300 text-gray-700 rounded-xl hover:border-primary-400 hover:bg-primary-50/50 hover:text-primary-700 flex items-center justify-center gap-2 font-medium transition-colors"
             >
               <Plus className="w-5 h-5" />
               Additional Cost
@@ -833,49 +834,57 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
         )}
       </div>
 
-      <RequestVariationModal
-        isOpen={showVariationModal}
-        onClose={() => setShowVariationModal(false)}
-        jobId={job.id}
-        onSuccess={fetchVariations}
-        jobBudget={job.budget_amount}
-        approvedVariationsTotal={approvedVariationsTotal}
-        nextMilestoneAmount={nextMilestoneAmount}
-      />
+      <Suspense fallback={<div className="flex items-center justify-center p-4"><Loader2 className="w-6 h-6 animate-spin" /></div>}>
+        <RequestVariationModal
+          isOpen={showVariationModal}
+          onClose={() => setShowVariationModal(false)}
+          jobId={job.id}
+          onSuccess={fetchVariations}
+          jobBudget={job.budget_amount}
+          approvedVariationsTotal={approvedVariationsTotal}
+          nextMilestoneAmount={nextMilestoneAmount}
+        />
+      </Suspense>
 
       {showCreateInvoice !== null && createPortal(
-        <CreateInvoiceModal
-          isOpen={true}
-          onClose={() => setShowCreateInvoice(null)}
-          jobId={job.id}
-          prefillBusinessName={subcontractors[showCreateInvoice]?.business_name || ''}
-          onInvoiceCreated={(invoice) => {
-            const updated = [...subcontractors];
-            updated[showCreateInvoice] = {
-              ...updated[showCreateInvoice],
-              business_name: invoice.business_name,
-              invoice_number: invoice.invoice_number,
-              amount: String(invoice.total_amount),
-              invoice_id: invoice.id,
-            };
-            setSubcontractors(updated);
-            setShowCreateInvoice(null);
-          }}
-        />,
+        <Suspense fallback={<div className="flex items-center justify-center p-4"><Loader2 className="w-6 h-6 animate-spin" /></div>}>
+          <CreateInvoiceModal
+            isOpen={true}
+            onClose={() => setShowCreateInvoice(null)}
+            jobId={job.id}
+            prefillBusinessName={subcontractors[showCreateInvoice]?.business_name || ''}
+            onInvoiceCreated={(invoice) => {
+              const updated = [...subcontractors];
+              updated[showCreateInvoice] = {
+                ...updated[showCreateInvoice],
+                business_name: invoice.business_name,
+                invoice_number: invoice.invoice_number,
+                amount: String(invoice.total_amount),
+                invoice_id: invoice.id,
+              };
+              setSubcontractors(updated);
+              setShowCreateInvoice(null);
+            }}
+          />
+        </Suspense>,
         document.body
       )}
 
-      <InvoiceViewModal
-        isOpen={viewingInvoiceId !== null}
-        onClose={() => setViewingInvoiceId(null)}
-        invoiceId={viewingInvoiceId}
-        viewerRole={showClientDetails ? 'tradie' : 'client'}
-      />
+      <Suspense fallback={<div className="flex items-center justify-center p-4"><Loader2 className="w-6 h-6 animate-spin" /></div>}>
+        <InvoiceViewModal
+          isOpen={viewingInvoiceId !== null}
+          onClose={() => setViewingInvoiceId(null)}
+          invoiceId={viewingInvoiceId}
+          viewerRole={showClientDetails ? 'tradie' : 'client'}
+        />
+      </Suspense>
 
-      <SubscriptionModal
-        isOpen={showSubscriptionModal}
-        onClose={() => setShowSubscriptionModal(false)}
-      />
+      <Suspense fallback={<div className="flex items-center justify-center p-4"><Loader2 className="w-6 h-6 animate-spin" /></div>}>
+        <SubscriptionModal
+          isOpen={showSubscriptionModal}
+          onClose={() => setShowSubscriptionModal(false)}
+        />
+      </Suspense>
 
       {viewingProof && (
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setViewingProof(null)}>
@@ -932,10 +941,10 @@ function PaymentTimelineItem({
   const isApproved = milestone.status === 'approved';
   const isSubcontractor = milestone.payment_type === 'subcontractor';
 
-  const iconColor = isPaid ? 'text-green-600' : isApproved ? 'text-blue-600' : 'text-gray-400';
+  const iconColor = isPaid ? 'text-green-600' : isApproved ? 'text-secondary-600' : 'text-gray-400';
   const lineColor = isPaid ? 'bg-green-300' : 'bg-gray-200';
   const statusLabel = isPaid ? 'Paid' : isApproved ? 'Awaiting Payment' : 'Awaiting Approval';
-  const statusStyle = isPaid ? 'text-green-700 bg-green-50' : isApproved ? 'text-blue-700 bg-blue-50' : 'text-amber-700 bg-amber-50';
+  const statusStyle = isPaid ? 'text-green-700 bg-green-50' : isApproved ? 'text-secondary-700 bg-secondary-50' : 'text-warm-700 bg-warm-50';
 
   return (
     <div className="flex gap-3">
@@ -956,7 +965,7 @@ function PaymentTimelineItem({
             <div className="flex items-center gap-2 flex-wrap mb-0.5">
               <span className="font-semibold text-gray-900 text-sm">{milestone.title}</span>
               {isSubcontractor && (
-                <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-xs font-medium rounded flex items-center gap-1">
+                <span className="px-1.5 py-0.5 bg-primary-100 text-navy-600 text-xs font-medium rounded flex items-center gap-1">
                   <Building2 className="w-3 h-3" />Sub
                 </span>
               )}
@@ -975,7 +984,7 @@ function PaymentTimelineItem({
             <div className="flex flex-col gap-1.5">
               {milestone.status === 'pending' && (
                 <button onClick={onApprove} disabled={loading}
-                  className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-1.5 font-medium whitespace-nowrap">
+                  className="px-3 py-1.5 bg-warm-500 text-white text-xs rounded-lg hover:bg-warm-600 disabled:bg-gray-400 flex items-center gap-1.5 font-medium whitespace-nowrap">
                   <CheckCircle className="w-3.5 h-3.5" />Approve
                 </button>
               )}
@@ -995,24 +1004,24 @@ function PaymentTimelineItem({
             {milestone.subcontractors!.map((sub) => (
               <div key={sub.id} className="flex items-center justify-between gap-2 bg-gray-50 rounded-lg px-3 py-1.5 text-xs">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <Building2 className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                  <span className="font-medium text-slate-700 truncate">{sub.business_name}</span>
-                  {sub.invoice_number && <span className="text-slate-400">({sub.invoice_number})</span>}
+                  <Building2 className="w-3 h-3 text-navy-400 flex-shrink-0" />
+                  <span className="font-medium text-navy-700 truncate">{sub.business_name}</span>
+                  {sub.invoice_number && <span className="text-navy-400">({sub.invoice_number})</span>}
                   {sub.invoice_id && (
                     <button onClick={() => onViewInvoice(sub.invoice_id!)}
-                      className="text-teal-600 hover:text-teal-700 font-medium flex items-center gap-0.5 flex-shrink-0">
+                      className="text-secondary-600 hover:text-secondary-700 font-medium flex items-center gap-0.5 flex-shrink-0">
                       <Eye className="w-3 h-3" />View
                     </button>
                   )}
                 </div>
-                <span className="font-semibold text-slate-700">${Number(sub.amount).toFixed(2)}</span>
+                <span className="font-semibold text-navy-700">${Number(sub.amount).toFixed(2)}</span>
               </div>
             ))}
           </div>
         )}
 
         {isSubcontractor && (milestone.subcontractors?.length ?? 0) === 0 && milestone.subcontractor_business_name && (
-          <div className="mt-2 flex items-center gap-3 text-xs text-slate-600">
+          <div className="mt-2 flex items-center gap-3 text-xs text-navy-600">
             <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{milestone.subcontractor_business_name}</span>
             {milestone.invoice_number && <span className="flex items-center gap-1"><Receipt className="w-3 h-3" />Ref: {milestone.invoice_number}</span>}
           </div>
@@ -1115,18 +1124,18 @@ function AddPaymentForm({
           <div className="flex items-center justify-between">
             <label className="block text-sm font-medium text-gray-700">Subcontractors</label>
             <button type="button" onClick={() => setSubcontractors([...subcontractors, { business_name: '', invoice_number: '', amount: '', gst: '' }])}
-              className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
+              className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
               <Plus className="w-3 h-3" />Add Another
             </button>
           </div>
           {subcontractors.map((sub, idx) => (
-            <div key={idx} className="bg-white rounded-lg border border-blue-200 p-3 space-y-2">
+            <div key={idx} className="bg-white rounded-lg border border-secondary-200 p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Subcontractor {idx + 1}</span>
+                <span className="text-xs font-semibold text-secondary-600 uppercase tracking-wide">Subcontractor {idx + 1}</span>
                 <div className="flex items-center gap-1">
                   {sub.invoice_id && (
                     <button type="button" onClick={() => setViewingInvoiceId(sub.invoice_id!)}
-                      className="p-1 text-teal-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors" title="View Invoice">
+                      className="p-1 text-secondary-500 hover:text-secondary-700 hover:bg-secondary-50 rounded transition-colors" title="View Invoice">
                       <Eye className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -1143,7 +1152,7 @@ function AddPaymentForm({
                 <div className="grid grid-cols-[1fr_auto_1fr] gap-0 items-center">
                   <div
                     className={`relative border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-colors ${
-                      dragOverIndex === idx ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-blue-300 hover:bg-gray-50'
+                      dragOverIndex === idx ? 'border-primary-400 bg-primary-50' : 'border-gray-300 hover:border-primary-300 hover:bg-gray-50'
                     }`}
                     onDragOver={(e) => { e.preventDefault(); setDragOverIndex(idx); }}
                     onDragLeave={() => setDragOverIndex(null)}
@@ -1157,47 +1166,47 @@ function AddPaymentForm({
                   >
                     {processingInvoice === idx ? (
                       <div className="flex flex-col items-center gap-1">
-                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-xs text-blue-600 font-medium">Scanning...</span>
+                        <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-xs text-secondary-600 font-medium">Scanning...</span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-1">
                         <Upload className="w-4 h-4 text-gray-400" />
-                        <span className="text-xs text-gray-500"><span className="text-blue-600 font-medium">Upload</span> existing</span>
+                        <span className="text-xs text-gray-500"><span className="text-secondary-600 font-medium">Upload</span> existing</span>
                       </div>
                     )}
                   </div>
                   <div className="flex items-center justify-center px-3">
-                    <span className="text-[10px] font-semibold text-gray-400 uppercase">or</span>
+                    <span className="text-xs font-semibold text-gray-400 uppercase">or</span>
                   </div>
                   {isProUser ? (
                     <button type="button" onClick={() => setShowCreateInvoice(idx)}
-                      className="h-full border-2 border-teal-200 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors flex flex-col items-center justify-center gap-1 p-3">
-                      <PenLine className="w-4 h-4 text-teal-600" />
-                      <span className="text-xs font-medium text-teal-700">Create new</span>
+                      className="h-full border-2 border-secondary-200 bg-secondary-50 hover:bg-secondary-100 rounded-lg transition-colors flex flex-col items-center justify-center gap-1 p-3">
+                      <PenLine className="w-4 h-4 text-secondary-600" />
+                      <span className="text-xs font-medium text-secondary-700">Create new</span>
                     </button>
                   ) : (
                     <button type="button" onClick={() => setShowSubscriptionModal(true)}
-                      className="h-full border-2 border-amber-200 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors flex flex-col items-center justify-center gap-1 p-3">
-                      <Crown className="w-4 h-4 text-amber-600" />
-                      <span className="text-xs font-medium text-amber-700">Pro only</span>
+                      className="h-full border-2 border-warm-200 bg-warm-50 hover:bg-warm-100 rounded-lg transition-colors flex flex-col items-center justify-center gap-1 p-3">
+                      <Crown className="w-4 h-4 text-warm-600" />
+                      <span className="text-xs font-medium text-warm-700">Pro only</span>
                     </button>
                   )}
                 </div>
               </div>
               {(sub.file_name || sub.file_url || sub.invoice_id) && (
-                <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-teal-50 rounded-lg border border-teal-200">
-                  <FileText className="w-4 h-4 text-teal-600 flex-shrink-0" />
-                  <span className="text-xs font-medium text-teal-800 truncate flex-1">{sub.file_name || 'Invoice attached'}</span>
+                <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-secondary-50 rounded-lg border border-secondary-200">
+                  <FileText className="w-4 h-4 text-secondary-600 flex-shrink-0" />
+                  <span className="text-xs font-medium text-secondary-800 truncate flex-1">{sub.file_name || 'Invoice attached'}</span>
                   {sub.file_url && (
                     <a href={sub.file_url} target="_blank" rel="noopener noreferrer"
-                      className="text-xs font-medium text-teal-700 hover:text-teal-900 flex items-center gap-1 flex-shrink-0">
+                      className="text-xs font-medium text-secondary-700 hover:text-secondary-900 flex items-center gap-1 flex-shrink-0">
                       <Eye className="w-3.5 h-3.5" />View
                     </a>
                   )}
                   {sub.invoice_id && (
                     <button type="button" onClick={() => setViewingInvoiceId(sub.invoice_id!)}
-                      className="text-xs font-medium text-teal-700 hover:text-teal-900 flex items-center gap-1 flex-shrink-0">
+                      className="text-xs font-medium text-secondary-700 hover:text-secondary-900 flex items-center gap-1 flex-shrink-0">
                       <Eye className="w-3.5 h-3.5" />View
                     </button>
                   )}
@@ -1217,7 +1226,7 @@ function AddPaymentForm({
                       <span className="text-gray-500">$</span>
                       <input type="number" step="0.01" min="0" value={sub.amount}
                         onChange={(e) => { const updated = [...subcontractors]; updated[idx] = { ...updated[idx], amount: e.target.value }; setSubcontractors(updated); }}
-                        className="w-24 text-right text-xs font-medium text-gray-800 bg-white border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        className="w-24 text-right text-xs font-medium text-gray-800 bg-white border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary-400"
                         placeholder="0.00" />
                     </div>
                   </div>
@@ -1227,7 +1236,7 @@ function AddPaymentForm({
                       <span className="text-gray-500">$</span>
                       <input type="number" step="0.01" min="0" value={sub.gst}
                         onChange={(e) => { const updated = [...subcontractors]; updated[idx] = { ...updated[idx], gst: e.target.value }; setSubcontractors(updated); }}
-                        className="w-24 text-right text-xs font-medium text-gray-800 bg-white border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        className="w-24 text-right text-xs font-medium text-gray-800 bg-white border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary-400"
                         placeholder="0.00" />
                     </div>
                   </div>
@@ -1236,9 +1245,9 @@ function AddPaymentForm({
             </div>
           ))}
           {subcontractors.some(s => parseFloat(s.amount) > 0 || parseFloat(s.gst) > 0) && (
-            <div className="flex justify-between items-center px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
-              <span className="text-sm font-medium text-blue-700">Total</span>
-              <span className="text-sm font-bold text-blue-800">
+            <div className="flex justify-between items-center px-3 py-2 bg-secondary-50 rounded-lg border border-secondary-200">
+              <span className="text-sm font-medium text-secondary-700">Total</span>
+              <span className="text-sm font-bold text-secondary-800">
                 ${subcontractors.reduce((sum, s) => sum + (parseFloat(s.amount) || 0) + (parseFloat(s.gst) || 0), 0).toFixed(2)}
               </span>
             </div>
@@ -1270,7 +1279,7 @@ function AddPaymentForm({
             }`}>Direct Payment</button>
           <button type="button" onClick={() => setMilestonePaymentType('subcontractor')}
             className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${
-              milestonePaymentType === 'subcontractor' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+              milestonePaymentType === 'subcontractor' ? 'border-primary-500 bg-warm-50 text-warm-700' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
             }`}>Subcontractor</button>
         </div>
       </div>
@@ -1319,7 +1328,7 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
           </div>
           <div>
             <p className="text-xs text-gray-500 mb-0.5">Pending</p>
-            <p className="text-sm font-bold text-amber-600">{pending.length}</p>
+            <p className="text-sm font-bold text-warm-600">{pending.length}</p>
             <p className="text-xs text-gray-400">awaiting review</p>
           </div>
           <div>

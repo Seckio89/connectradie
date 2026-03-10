@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, Loader2, Paperclip, Calendar, X, Lock, Image as ImageIcon, FileText, Mic, Settings, Archive } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { MessageSquare, Send, Loader2, Paperclip, Calendar, X, Lock, Image as ImageIcon, FileText, Mic, Settings, Archive, Search as SearchIcon, RotateCcw, AlertTriangle, CheckCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import type { Message, Conversation, ConversationParticipant, Profile } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
 import UnlockLeadModal from '../components/UnlockLeadModal';
@@ -12,6 +12,7 @@ import { redactContactInfo, shouldAllowContactSharing } from '../lib/redaction';
 import EmptyState from '../components/EmptyState';
 
 interface ConversationWithDetails extends Conversation {
+  job_id?: string; // Add this line to include job_id
   participants: (ConversationParticipant & { profile?: Profile })[];
   lastMessage?: Message & { sender_profile?: Profile };
   messages: (Message & { sender_profile?: Profile })[];
@@ -23,6 +24,7 @@ interface ConversationWithDetails extends Conversation {
 
 export default function Messages() {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState<ConversationWithDetails[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<ConversationWithDetails | null>(null);
@@ -38,11 +40,15 @@ export default function Messages() {
   const [selectedBookingMessageId, setSelectedBookingMessageId] = useState<string | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [toast, setToast] = useState<{ message: string; show: boolean; isError?: boolean }>({ message: '', show: false });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [failedMessages, setFailedMessages] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const attachmentMenuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prevMessageCountRef = useRef<number>(0);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
   const isTradie = profile?.role === 'tradie';
 
@@ -91,13 +97,100 @@ export default function Messages() {
           });
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (err) {
+          console.error('Messages realtime subscription error:', err);
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  // Typing indicator: subscribe to realtime changes for the selected conversation
+  useEffect(() => {
+    if (!user || !selectedConversation) {
+      setTypingUsers([]);
+      return;
+    }
+
+    const channel = supabase
+      .channel(`typing-${selectedConversation.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'typing_indicators',
+          filter: `conversation_id=eq.${selectedConversation.id}`,
+        },
+        (payload) => {
+          const record = payload.new as { user_id: string; is_typing: boolean } | undefined;
+          if (!record || record.user_id === user.id) return;
+          setTypingUsers(prev => {
+            if (record.is_typing) {
+              return prev.includes(record.user_id) ? prev : [...prev, record.user_id];
+            }
+            return prev.filter(id => id !== record.user_id);
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      setTypingUsers([]);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, selectedConversation?.id]);
+
+  // Mark messages as read when viewing a conversation (update read_at for unread messages)
+  useEffect(() => {
+    if (!selectedConversation || !user) return;
+    const unreadMessages = selectedConversation.messages.filter(
+      m => m.sender_id !== user.id && !m.read_at
+    );
+    if (unreadMessages.length > 0) {
+      supabase
+        .from('messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('conversation_id', selectedConversation.id)
+        .neq('sender_id', user.id)
+        .is('read_at', null)
+        .then();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedConversation?.id, selectedConversation?.messages?.length]);
+
+  const setTypingStatus = useCallback(async (conversationId: string, isTyping: boolean) => {
+    if (!user) return;
+    await supabase
+      .from('typing_indicators')
+      .upsert(
+        {
+          conversation_id: conversationId,
+          user_id: user.id,
+          is_typing: isTyping,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'conversation_id,user_id' }
+      );
+  }, [user]);
+
+  const handleTyping = useCallback(() => {
+    if (!selectedConversation) return;
+    setTypingStatus(selectedConversation.id, true);
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    typingTimeoutRef.current = setTimeout(() => {
+      if (selectedConversation) {
+        setTypingStatus(selectedConversation.id, false);
+      }
+    }, 3000);
+  }, [selectedConversation, setTypingStatus]);
 
   useEffect(() => {
     const conversationId = searchParams.get('conversation');
@@ -156,7 +249,7 @@ export default function Messages() {
     }
   };
 
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     if (!user) return;
     setLoading(true);
 
@@ -173,8 +266,8 @@ export default function Messages() {
     if (myParticipations) {
       const conversationsWithDetails = await Promise.all(
         myParticipations
-          .filter((mp: any) => showArchivedFilter ? mp.archived_at !== null : mp.archived_at === null)
-          .map(async (mp: any) => {
+          .filter((mp: ConversationParticipant & { conversation: Conversation; archived_at: string | null }) => showArchivedFilter ? mp.archived_at !== null : mp.archived_at === null)
+          .map(async (mp: ConversationParticipant & { conversation: Conversation; archived_at: string | null }) => {
             const conv = mp.conversation;
 
             const { data: allParticipants } = await supabase
@@ -191,11 +284,11 @@ export default function Messages() {
               .order('created_at', { ascending: true })
               .limit(50);
 
-            const otherParticipants = (allParticipants || []).filter((p: any) => p.user_id !== user.id);
-            const isUnlocked = !isTradie || otherParticipants.every((p: any) => unlockedClientIds.includes(p.user_id));
+            const otherParticipants = (allParticipants || []).filter((p: { user_id: string }) => p.user_id !== user.id);
+            const isUnlocked = !isTradie || otherParticipants.every((p: { user_id: string }) => unlockedClientIds.includes(p.user_id));
 
             const unreadCount = (messages || []).filter(
-              (m: any) => m.receiver_id === user.id && !m.read_at
+              (m: { receiver_id: string | null; read_at: string | null }) => m.receiver_id === user.id && !m.read_at
             ).length;
 
             return {
@@ -219,7 +312,7 @@ export default function Messages() {
     }
 
     setLoading(false);
-  };
+  }, [user, isTradie, unlockedClientIds, showArchivedFilter]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -251,8 +344,8 @@ export default function Messages() {
 
     if (conv.unreadCount > 0 && user) {
       const unreadIds = conv.messages
-        .filter((m: any) => m.receiver_id === user.id && !m.read_at)
-        .map((m: any) => m.id);
+        .filter((m: Message & { sender_profile?: Profile }) => m.receiver_id === user.id && !m.read_at)
+        .map((m: Message & { sender_profile?: Profile }) => m.id);
 
       if (unreadIds.length > 0) {
         await supabase
@@ -268,12 +361,13 @@ export default function Messages() {
 
   };
 
-  const handleSend = async () => {
-    if (!newMessage.trim() || !selectedConversation || !user) return;
+  const handleSend = async (messageOverride?: string) => {
+    const messageToSend = messageOverride || newMessage;
+    if (!messageToSend.trim() || !selectedConversation || !user) return;
 
     setSending(true);
 
-    const messageContent = newMessage;
+    const messageContent = messageToSend;
 
     const otherParticipants = selectedConversation.participants.filter(p => p.user_id !== user.id);
     const receiverId = otherParticipants[0]?.user_id || user.id;
@@ -301,8 +395,23 @@ export default function Messages() {
         prev.map(c => c.id === selectedConversation.id ? updatedConv : c)
       );
       setNewMessage('');
+      // Clear typing status on send
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      setTypingStatus(selectedConversation.id, false);
+    } else if (error) {
+      // Track failed message for retry
+      const failedId = `${Date.now()}`;
+      setFailedMessages(prev => new Set(prev).add(failedId));
+      setToast({ message: 'Message failed to send. Tap to retry.', show: true, isError: true });
+      setTimeout(() => setToast({ message: '', show: false }), 4000);
     }
     setSending(false);
+  };
+
+  const handleRetryMessage = async (content: string) => {
+    setFailedMessages(new Set());
+    // Pass content directly to handleSend to avoid stale state
+    await handleSend(content);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -381,10 +490,6 @@ export default function Messages() {
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
-
-      const { data: { publicUrl: _publicUrl } } = supabase.storage
-        .from('message-attachments')
-        .getPublicUrl(fileName);
 
       const attachmentType = getAttachmentType(file);
       const otherParticipants = selectedConversation.participants.filter(p => p.user_id !== user.id);
@@ -475,7 +580,7 @@ export default function Messages() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1600px] mx-auto">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
@@ -485,7 +590,7 @@ export default function Messages() {
             onClick={() => setShowArchivedFilter(!showArchivedFilter)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors min-h-[44px] ${
               showArchivedFilter
-                ? 'bg-primary-100 text-primary-700'
+                ? 'bg-warm-100 text-warm-700'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -496,9 +601,19 @@ export default function Messages() {
 
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="grid md:grid-cols-3 h-[calc(100vh-16rem)] overflow-hidden">
-            <div className="border-r border-gray-200 overflow-y-scroll" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f1f5f9' }}>
-              <div className="p-4 border-b border-gray-100">
+            <div className="border-r border-gray-200 overflow-y-scroll" style={{ scrollbarWidth: 'thin', scrollbarColor: '#DDD0CC #F5F0EF' }}>
+              <div className="p-4 border-b border-gray-100 space-y-3">
                 <h2 className="font-semibold text-gray-900">Conversations</h2>
+                <div className="relative">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search messages..."
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-gray-50"
+                  />
+                </div>
               </div>
 
               {loading ? (
@@ -513,16 +628,22 @@ export default function Messages() {
                     showArchivedFilter
                       ? 'No archived conversations to show.'
                       : isTradie
-                      ? 'When clients reach out about your services, their messages will appear here.'
-                      : 'Start a conversation by finding a tradie you\'d like to work with.'
+                      ? 'When clients enquire or you quote on a job, conversations will appear here. Browse leads to get started.'
+                      : 'Post a job or save a tradie to start a conversation. Messages with tradies will appear here.'
                   }
-                  actionLabel={!showArchivedFilter && !isTradie ? 'Find a Tradie to Chat' : undefined}
-                  onAction={!showArchivedFilter && !isTradie ? () => (window.location.href = '/search') : undefined}
+                  actionLabel={!showArchivedFilter ? (isTradie ? 'Browse Leads' : 'Post a Job') : undefined}
+                  onAction={!showArchivedFilter ? () => navigate(isTradie ? '/work' : '/post-lead') : undefined}
                   compact
                 />
               ) : (
                 <div className="divide-y divide-gray-100">
-                  {conversations.map((conv) => (
+                  {conversations.filter((conv) => {
+                    if (!searchQuery.trim()) return true;
+                    const q = searchQuery.toLowerCase();
+                    const title = getConversationTitle(conv).toLowerCase();
+                    const lastMsg = conv.lastMessage?.content?.toLowerCase() || '';
+                    return title.includes(q) || lastMsg.includes(q);
+                  }).map((conv) => (
                     <button
                       key={conv.id}
                       onClick={() => handleConversationClick(conv)}
@@ -542,7 +663,7 @@ export default function Messages() {
                               {getConversationTitle(conv)}
                             </h3>
                             {conv.unreadCount > 0 && (
-                              <span className="w-5 h-5 bg-primary-600 text-white text-xs rounded-full flex items-center justify-center">
+                              <span className="w-5 h-5 bg-warm-500 text-white text-xs rounded-full flex items-center justify-center">
                                 {conv.unreadCount}
                               </span>
                             )}
@@ -588,12 +709,14 @@ export default function Messages() {
                       <button
                         onClick={() => setShowSettingsModal(true)}
                         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        aria-label="Conversation settings"
                       >
                         <Settings className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => setSelectedConversation(null)}
                         className="md:hidden p-2 text-gray-400 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        aria-label="Close conversation"
                       >
                         <X className="w-5 h-5" />
                       </button>
@@ -619,18 +742,18 @@ export default function Messages() {
                             }
                             className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                               isOwn
-                                ? 'bg-primary-600 text-white rounded-br-md'
+                                ? 'bg-warm-500 text-white rounded-br-md'
                                 : 'bg-gray-100 text-gray-900 rounded-bl-md'
                             } ${
                               message.is_booking_request
-                                ? 'border-2 border-amber-400 cursor-pointer hover:shadow-lg transition-shadow'
+                                ? 'border-2 border-warm-400 cursor-pointer hover:shadow-lg transition-shadow'
                                 : ''
                             }`}
                           >
                             {message.is_booking_request && (
                               <div
                                 className={`flex items-center gap-1 text-xs mb-1 ${
-                                  isOwn ? 'text-primary-200' : 'text-amber-600'
+                                  isOwn ? 'text-primary-200' : 'text-warm-600'
                                 }`}
                               >
                                 <Calendar className="w-3 h-3" />
@@ -642,16 +765,16 @@ export default function Messages() {
                               <div className="space-y-2">
                                 {message.attachment_type === 'image' ? (
                                   <img
-                                    src={getAttachmentUrl(message.attachment_url)}
+                                    src={getAttachmentUrl(message.attachment_url ?? '')}
                                     alt={message.attachment_name || 'Image'}
                                     loading="lazy"
                                     decoding="async"
                                     className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                                    onClick={() => window.open(getAttachmentUrl(message.attachment_url), '_blank')}
+                                    onClick={() => window.open(getAttachmentUrl(message.attachment_url ?? ''), '_blank')}
                                   />
                                 ) : (
                                   <a
-                                    href={getAttachmentUrl(message.attachment_url)}
+                                    href={getAttachmentUrl(message.attachment_url ?? '')}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${
@@ -683,14 +806,19 @@ export default function Messages() {
                               </p>
                             )}
 
-                            <p className={`text-xs mt-1 ${isOwn ? 'text-primary-200' : 'text-gray-400'}`}>
-                              {new Date(message.created_at).toLocaleTimeString('en-AU', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </p>
+                            <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : ''}`}>
+                              <p className={`text-xs ${isOwn ? 'text-primary-200' : 'text-gray-400'}`}>
+                                {new Date(message.created_at).toLocaleTimeString('en-AU', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </p>
+                              {isOwn && message.read_at && (
+                                <CheckCheck className="w-3.5 h-3.5 text-primary-200" aria-label="Seen" />
+                              )}
+                            </div>
                             {message.is_booking_request && (
-                              <p className={`text-xs mt-1 font-medium ${isOwn ? 'text-primary-100' : 'text-amber-600'}`}>
+                              <p className={`text-xs mt-1 font-medium ${isOwn ? 'text-primary-100' : 'text-warm-600'}`}>
                                 Click to view details
                               </p>
                             )}
@@ -699,10 +827,30 @@ export default function Messages() {
                       );
                     })}
                     {selectedConversation.messages.length > 0 && !isContactSharingAllowed(selectedConversation) && (
-                      <div className="flex items-start gap-2 px-3 py-3 bg-amber-50 border border-amber-200 rounded-xl mx-1">
-                        <Lock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                        <p className="text-xs text-amber-700">
-                          Phone numbers and emails are hidden until both parties have sent a message.
+                      <div className="flex items-start gap-2 px-3 py-3 bg-warm-50 border border-warm-200 rounded-xl mx-1">
+                        <Lock className="w-4 h-4 text-warm-600 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-warm-700">
+                          For your safety, contact details are shared once both of you have sent a message.
+                        </p>
+                      </div>
+                    )}
+                    {typingUsers.length > 0 && (
+                      <div className="flex items-center gap-2 px-3 py-2">
+                        <div className="flex gap-1">
+                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          {(() => {
+                            const names = typingUsers.map(uid => {
+                              const p = selectedConversation.otherParticipants.find(op => op.user_id === uid);
+                              return p?.profile?.full_name?.split(' ')[0] || 'Someone';
+                            });
+                            return names.length === 1
+                              ? `${names[0]} is typing...`
+                              : `${names.join(', ')} are typing...`;
+                          })()}
                         </p>
                       </div>
                     )}
@@ -710,12 +858,26 @@ export default function Messages() {
                   </div>
 
                   <div className="p-4 border-t border-gray-100">
+                    {failedMessages.size > 0 && (
+                      <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+                        <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                        <p className="text-xs text-red-700 flex-1">Message failed to send.</p>
+                        <button
+                          onClick={() => handleRetryMessage(newMessage)}
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          Retry
+                        </button>
+                      </div>
+                    )}
                     <div className="flex items-end gap-2">
                       <div className="relative" ref={attachmentMenuRef}>
                         <button
                           onClick={() => setAttachmentMenuOpen(!attachmentMenuOpen)}
                           disabled={uploadingFile}
                           className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                          aria-label="Attach file"
                         >
                           {uploadingFile ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
@@ -730,7 +892,7 @@ export default function Messages() {
                               disabled={uploadingFile}
                               className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
                             >
-                              <ImageIcon className="w-4 h-4 text-blue-600" />
+                              <ImageIcon className="w-4 h-4 text-secondary-600" />
                               <span className="text-sm text-gray-700">Photo</span>
                             </button>
                             <button
@@ -769,7 +931,7 @@ export default function Messages() {
                       <div className="flex-1 relative">
                         <textarea
                           value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
+                          onChange={(e) => { setNewMessage(e.target.value); handleTyping(); }}
                           onKeyDown={handleKeyPress}
                           placeholder="Type a message..."
                           rows={1}
@@ -779,7 +941,8 @@ export default function Messages() {
                       <button
                         onClick={handleSend}
                         disabled={!newMessage.trim() || sending}
-                        className="p-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] min-w-[44px]"
+                        className="p-3 bg-warm-500 text-white rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] min-w-[44px]"
+                        aria-label="Send message"
                       >
                         {sending ? (
                           <Loader2 className="w-5 h-5 animate-spin" />
@@ -811,7 +974,8 @@ export default function Messages() {
           setSelectedConversation(null);
         }}
         onUnlock={handleUnlock}
-        clientName={selectedConversation ? getConversationTitle(selectedConversation) : 'this client'}
+        clientName={selectedConversation ? getConversationTitle(selectedConversation) ?? 'this client' : 'this client'}
+        jobId={selectedConversation?.job_id ?? ''}
       />
 
       {selectedConversation && (

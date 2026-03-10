@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, User, MapPin, Search, Camera, FileText, Calendar, CreditCard, ChevronRight, X, Loader2 } from 'lucide-react';
+import { CheckCircle2, User, MapPin, Search, Camera, FileText, Calendar, CreditCard, ChevronRight, X, Loader2, Shield, PartyPopper } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { createConnectOnboardingSession } from '../lib/stripe';
+import { createConnectOnboardingSession, getConnectAccountDetails } from '../lib/stripe';
+import { isTradeExempt } from '../lib/licensingRequirements';
 
 interface ChecklistStep {
   id: string;
@@ -17,10 +18,17 @@ interface ChecklistStep {
 export default function OnboardingChecklist() {
   const [hasJobs, setHasJobs] = useState(false);
   const [hasAvailability, setHasAvailability] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    return localStorage.getItem('onboarding_checklist_dismissed') === 'true';
+  });
+  const [allComplete] = useState(() => {
+    return localStorage.getItem('onboarding_checklist_complete') === 'true';
+  });
+  const [showDismissWarning, setShowDismissWarning] = useState(false);
   const [loading, setLoading] = useState(true);
   const [connectLoading, setConnectLoading] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
+  const [stripeConnected, setStripeConnected] = useState(false);
   const { user, profile, tradieDetails, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,7 +36,8 @@ export default function OnboardingChecklist() {
   useEffect(() => {
     const connectStatus = searchParams.get('connect');
     if (connectStatus === 'success' || connectStatus === 'refresh') {
-      refreshProfile();
+      // Sync Stripe account status to DB then refresh the local profile
+      getConnectAccountDetails().catch(() => {}).finally(() => refreshProfile());
       setSearchParams((prev) => {
         prev.delete('connect');
         return prev;
@@ -41,12 +50,32 @@ export default function OnboardingChecklist() {
     setConnectError(null);
     try {
       await createConnectOnboardingSession();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Stripe Connect error:', err);
-      setConnectError(err.message || 'Failed to connect');
+      setConnectError(err instanceof Error ? err.message : 'Failed to connect');
       setConnectLoading(false);
     }
   };
+
+  // If the user has a Stripe account but DB hasn't been synced, check Stripe directly
+  useEffect(() => {
+    if (
+      profile?.role === 'tradie' &&
+      profile.stripe_connect_account_id &&
+      !profile.stripe_connect_onboarding_complete
+    ) {
+      getConnectAccountDetails()
+        .then((details) => {
+          if (details.account?.detailsSubmitted) {
+            setStripeConnected(true);
+            refreshProfile();
+          }
+        })
+        .catch(() => {});
+    } else if (profile?.stripe_connect_onboarding_complete) {
+      setStripeConnected(true);
+    }
+  }, [profile?.stripe_connect_account_id, profile?.stripe_connect_onboarding_complete]);
 
   useEffect(() => {
     if (user) {
@@ -77,13 +106,53 @@ export default function OnboardingChecklist() {
     setLoading(false);
   };
 
+  const handleDismiss = () => {
+    setDismissed(true);
+    localStorage.setItem('onboarding_checklist_dismissed', 'true');
+  };
+
+  // If already dismissed, bail early (before loading check to avoid flicker)
+  if (dismissed) return null;
+
+  // If already completed (from localStorage), show "all set" immediately without waiting for fetch
+  if (allComplete && profile) {
+    return (
+      <div className="bg-gradient-to-br from-green-50 to-secondary-50 rounded-2xl border border-green-200 overflow-hidden p-5 text-center">
+        <div className="flex items-center justify-between mb-3">
+          <div />
+          <button
+            onClick={handleDismiss}
+            className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-white/60 transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+          <PartyPopper className="w-6 h-6 text-green-600" />
+        </div>
+        <h3 className="font-bold text-gray-900 text-sm">You&apos;re all set!</h3>
+        <p className="text-xs text-gray-600 mt-1 mb-3">
+          {profile.role === 'tradie'
+            ? 'Your profile is live and clients can find you in search.'
+            : "You're ready to find and hire great tradies."}
+        </p>
+        <button
+          onClick={() => navigate(profile.role === 'tradie' ? '/work' : '/post-lead')}
+          className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors"
+        >
+          {profile.role === 'tradie' ? 'Browse available leads \u2192' : 'Post your first job \u2192'}
+        </button>
+      </div>
+    );
+  }
+
   if (loading || !profile) return null;
 
   const clientSteps: ChecklistStep[] = [
     {
       id: 'profile',
-      label: 'Complete your profile',
-      description: 'Add your name and phone number',
+      label: 'Add your name and phone',
+      description: 'So tradies know who they\'re quoting for',
       icon: User,
       complete: !!(profile.full_name && profile.phone),
       action: () => navigate('/settings'),
@@ -91,56 +160,84 @@ export default function OnboardingChecklist() {
     {
       id: 'address',
       label: 'Add your address',
-      description: 'Set a default address for faster bookings',
+      description: 'So we show tradies who actually work in your area',
       icon: MapPin,
       complete: !!(profile.address),
       action: () => navigate('/settings'),
     },
     {
       id: 'first-action',
-      label: 'Find a tradie or post a job',
-      description: 'Search for professionals in your area',
+      label: 'Post your first job',
+      description: 'Takes 60 seconds — verified tradies will quote you directly',
       icon: Search,
       complete: hasJobs,
-      action: () => navigate('/search'),
+      action: () => navigate('/post-lead'),
     },
   ];
+
+  const primaryTrade = profile.declared_trades?.[0] || '';
+  const tradeExempt = isTradeExempt(primaryTrade);
+
+  const abnLicenseComplete = tradeExempt
+    ? !!profile.abn_number
+    : !!(profile.abn_number && profile.license_number);
+
+  const isVerifiedOrPending =
+    profile.verification_status === 'verified' || profile.verification_status === 'pending';
 
   const tradieSteps: ChecklistStep[] = [
     {
       id: 'photo',
-      label: 'Upload a profile photo',
-      description: 'Help clients recognise you',
+      label: 'Add a profile photo',
+      description: profile.avatar_url ? 'Photo uploaded' : 'Tradies with photos get 3x more enquiries',
       icon: Camera,
       complete: !!(profile.avatar_url),
       action: () => navigate('/settings'),
     },
     {
       id: 'abn-license',
-      label: 'Add ABN & License number',
-      description: 'Build trust with your credentials',
+      label: tradeExempt ? 'Add your ABN' : 'Add your ABN & license',
+      description: abnLicenseComplete ? 'Credentials added' : 'Required to appear in client search results',
       icon: FileText,
-      complete: !!(profile.abn_number && profile.license_number),
-      action: () => navigate('/settings'),
+      complete: abnLicenseComplete,
+      action: () => navigate('/settings', { state: { tab: 'verification' } }),
+    },
+    {
+      id: 'verification',
+      label: 'Get the verified badge',
+      description: profile.verification_status === 'verified'
+        ? 'Verification approved'
+        : profile.verification_status === 'pending'
+          ? 'Verification under review'
+          : 'Clients trust verified tradies — earn the badge to rank higher',
+      icon: Shield,
+      complete: isVerifiedOrPending,
+      action: () => navigate('/settings', { state: { tab: 'verification' } }),
     },
     {
       id: 'availability',
-      label: 'Set your weekly availability',
-      description: 'Let clients know when you are free',
+      label: 'Set when you\'re available',
+      description: hasAvailability ? 'Availability set' : 'Clients can only book you when they see open time slots',
       icon: Calendar,
       complete: hasAvailability,
-      action: () => navigate('/dashboard'),
+      action: () => {
+        navigate('/dashboard');
+        setTimeout(() => {
+          const calEl = document.querySelector('[data-tour="calendar"]');
+          if (calEl) calEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      },
     },
     {
       id: 'payment',
-      label: 'Connect payment method',
+      label: 'Set up payments',
       description: connectError
         ? connectError
-        : profile.stripe_connect_onboarding_complete
+        : stripeConnected
           ? 'Stripe connected'
-          : 'Get paid faster with Stripe',
+          : 'Get paid straight to your bank — set this up before accepting jobs',
       icon: CreditCard,
-      complete: !!profile.stripe_connect_onboarding_complete,
+      complete: stripeConnected,
       action: handleConnectStripe,
     },
   ];
@@ -149,7 +246,41 @@ export default function OnboardingChecklist() {
   const completedCount = steps.filter((s) => s.complete).length;
   const percentage = Math.round((completedCount / steps.length) * 100);
 
-  if (percentage === 100 || dismissed) return null;
+  // Persist completion so it survives page navigations without flicker
+  if (percentage === 100 && !allComplete) {
+    localStorage.setItem('onboarding_checklist_complete', 'true');
+  }
+
+  if (allComplete || percentage === 100) {
+    return (
+      <div className="bg-gradient-to-br from-green-50 to-secondary-50 rounded-2xl border border-green-200 overflow-hidden p-5 text-center">
+        <div className="flex items-center justify-between mb-3">
+          <div />
+          <button
+            onClick={handleDismiss}
+            className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-white/60 transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+          <PartyPopper className="w-6 h-6 text-green-600" />
+        </div>
+        <h3 className="font-bold text-gray-900 text-sm">You&apos;re all set!</h3>
+        <p className="text-xs text-gray-600 mt-1 mb-3">
+          {profile.role === 'tradie'
+            ? 'Your profile is live and clients can find you in search.'
+            : "You're ready to find and hire great tradies."}
+        </p>
+        <button
+          onClick={() => navigate(profile.role === 'tradie' ? '/work' : '/post-lead')}
+          className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors"
+        >
+          {profile.role === 'tradie' ? 'Browse available leads \u2192' : 'Post your first job \u2192'}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
@@ -159,13 +290,28 @@ export default function OnboardingChecklist() {
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold text-primary-600">{percentage}% Setup</span>
             <button
-              onClick={() => setDismissed(true)}
+              onClick={() => percentage < 100 ? setShowDismissWarning(true) : handleDismiss()}
               className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Dismiss checklist"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
+        {showDismissWarning && (
+          <div className="mx-5 mb-3 p-3 bg-warm-50 border border-warm-200 rounded-lg">
+            <p className="text-xs text-warm-800 mb-2">
+              {profile.role === 'tradie'
+                ? 'Completing setup helps clients find and trust you. Incomplete profiles rank lower in search.'
+                : 'Finishing setup helps tradies respond to you faster with accurate quotes.'}
+            </p>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setShowDismissWarning(false)} className="text-xs font-medium text-warm-700 hover:text-warm-900">Keep going</button>
+              <span className="text-gray-300">|</span>
+              <button onClick={handleDismiss} className="text-xs text-gray-500 hover:text-gray-700">Hide anyway</button>
+            </div>
+          </div>
+        )}
         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-primary-500 to-primary-600 rounded-full transition-all duration-700 ease-out"
@@ -174,6 +320,13 @@ export default function OnboardingChecklist() {
         </div>
       </div>
 
+      <div className="px-5 pb-1">
+        <p className="text-xs text-gray-500">
+          {profile.role === 'tradie'
+            ? 'Each step gets you closer to receiving leads and booking jobs'
+            : 'Quick setup so tradies can find you and send accurate quotes'}
+        </p>
+      </div>
       <div className="px-3 pb-3 space-y-1">
         {steps.map((step) => {
           const Icon = step.icon;
@@ -187,7 +340,7 @@ export default function OnboardingChecklist() {
               disabled={step.complete || isPaymentLoading}
               className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 group ${
                 step.complete
-                  ? 'bg-green-50/60 cursor-default'
+                  ? 'bg-secondary-50/60 cursor-default'
                   : isPaymentLoading
                     ? 'bg-gray-50 cursor-wait'
                     : 'hover:bg-gray-50 active:scale-[0.98] cursor-pointer'
@@ -196,12 +349,12 @@ export default function OnboardingChecklist() {
               <div
                 className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
                   step.complete
-                    ? 'bg-green-100'
+                    ? 'bg-secondary-100'
                     : 'bg-gray-100 group-hover:bg-primary-50'
                 }`}
               >
                 {step.complete ? (
-                  <CheckCircle2 className="w-4.5 h-4.5 text-green-600" />
+                  <CheckCircle2 className="w-4.5 h-4.5 text-secondary-600" />
                 ) : isPaymentLoading ? (
                   <Loader2 className="w-4 h-4 text-primary-600 animate-spin" />
                 ) : (
@@ -211,7 +364,7 @@ export default function OnboardingChecklist() {
               <div className="flex-1 min-w-0">
                 <p
                   className={`text-sm font-medium leading-tight ${
-                    step.complete ? 'text-green-700 line-through decoration-green-400' : 'text-gray-900'
+                    step.complete ? 'text-secondary-700 line-through decoration-secondary-400' : 'text-gray-900'
                   }`}
                 >
                   {step.label}

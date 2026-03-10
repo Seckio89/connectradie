@@ -12,7 +12,7 @@ export async function offlineAcceptJob(jobId: string, tradieId: string): Promise
       .eq('id', jobId)
       .eq('status', 'pending')
       .is('tradie_id', null)
-      .select('id', { count: 'exact', head: true });
+      .select('id');
 
     if (!error && count && count > 0) {
       await supabase.from('job_unlocks').insert({
@@ -73,8 +73,8 @@ export async function offlineSubmitMilestone(
 ): Promise<{ online: boolean }> {
   const updateData =
     action === 'approved'
-      ? { status: 'approved', approved_at: new Date().toISOString() }
-      : { status: 'paid', paid_at: new Date().toISOString() };
+      ? { status: 'approved' as const, approved_at: new Date().toISOString() }
+      : { status: 'paid' as const, paid_at: new Date().toISOString() };
 
   try {
     const { error } = await supabase

@@ -1,22 +1,27 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { User, Phone, Mail, Loader2, CheckCircle2, Lock, Key, Shield, Award, Briefcase, Plus, X, Zap, FileText, Hash, Camera, Crown, BadgeCheck, Wrench, Bell, BellRing, MessageSquare, Smartphone, Settings2, FlaskConical, ToggleLeft, ToggleRight, Users } from 'lucide-react';
+import { User, Loader2, CheckCircle2, Shield, X, Zap, Crown, BadgeCheck, Wrench, Bell, Settings2, Lock, Moon, Sun, Monitor } from 'lucide-react';
+import { useDarkMode } from '../hooks/useDarkMode';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import DashboardLayout from '../components/DashboardLayout';
-import AddressAutocomplete from '../components/AddressAutocomplete';
 import SubscriptionModal from '../components/SubscriptionModal';
 import VerificationCenter from '../components/VerificationCenter';
 import TradieProfessionalSettings from '../components/TradieProfessionalSettings';
 import Toast from '../components/Toast';
+import ProfileTab from '../components/settings/ProfileTab';
+import SecurityTab from '../components/settings/SecurityTab';
+import NotificationsTab from '../components/settings/NotificationsTab';
+import AdminToolsTab from '../components/settings/AdminToolsTab';
+import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import { calculateProfileCompletion, getProfileCompletionTasks } from '../lib/utils';
-import { requestPushPermission, subscribeToPush, savePushPreferences, saveSmsPreference, getPushPermissionStatus } from '../lib/notifications';
-import { isPro } from '../lib/subscription';
+import { requestPushPermission, subscribeToPush, savePushPreferences, getPushPermissionStatus } from '../lib/notifications';
 
 type TabType = 'profile' | 'professional' | 'security' | 'verification' | 'notifications' | 'admin';
 
 export default function Settings() {
-  const { user, profile, tradieDetails, refreshProfile } = useAuth();
+  const { user, profile, tradieDetails, refreshProfile, signOut } = useAuth();
+  const { isDark, toggle: toggleDarkMode } = useDarkMode();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const state = location.state as { tab?: string } | null;
@@ -32,21 +37,6 @@ export default function Settings() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
-
-  const [insuranceProvider, setInsuranceProvider] = useState('');
-  const [policyNumber, setPolicyNumber] = useState('');
-  const [qualifications, setQualifications] = useState<string[]>([]);
-  const [contractorType, setContractorType] = useState<'Solo' | 'Company' | 'Labour Hire'>('Solo');
-  const [newQualification, setNewQualification] = useState('');
-  const [verificationLoading, setVerificationLoading] = useState(false);
-  const [verificationSuccess, setVerificationSuccess] = useState(false);
-  const [verificationError, setVerificationError] = useState('');
-
   const [showCompleteBanner, setShowCompleteBanner] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -58,7 +48,7 @@ export default function Settings() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const [pushEnabled, setPushEnabled] = useState(false);
-  const [smsEnabled, setSmsEnabled] = useState(false);
+  const [, setSmsEnabled] = useState(false);
   const [pushPermission, setPushPermission] = useState<string>('default');
   const [notifSaving, setNotifSaving] = useState(false);
 
@@ -70,9 +60,16 @@ export default function Settings() {
   const isAdmin = profile?.role === 'admin';
   const showTradieFeatures = isTradie || isAdmin;
   const isSubscriptionAdmin = profile?.role === 'admin';
-  const isProUser = isPro(tradieDetails?.subscription_tier, profile?.is_premium);
-  const profileCompletion = calculateProfileCompletion(profile);
-  const incompleteTasks = getProfileCompletionTasks(profile);
+  const normalizedProfile = profile
+    ? {
+        ...profile,
+        phone: profile.phone || undefined,
+        address: profile.address ?? undefined,
+        postcode: profile.postcode ?? undefined,
+      }
+    : null;
+  const profileCompletion = calculateProfileCompletion(normalizedProfile);
+  const incompleteTasks = getProfileCompletionTasks(normalizedProfile);
 
   useEffect(() => {
     if (profile) {
@@ -154,27 +151,6 @@ export default function Settings() {
     setNotifSaving(false);
   };
 
-  const handleToggleSms = async (enabled: boolean) => {
-    if (!user) return;
-    if (enabled && !isProUser) {
-      setShowSubscriptionModal(true);
-      return;
-    }
-    setNotifSaving(true);
-
-    const saved = await saveSmsPreference(user.id, enabled);
-    if (saved) {
-      setSmsEnabled(enabled);
-      setToastMessage(enabled ? 'SMS alerts enabled.' : 'SMS alerts disabled.');
-      setToastType('success');
-    } else {
-      setToastMessage('Failed to save preference.');
-      setToastType('error');
-    }
-    setShowToast(true);
-    setNotifSaving(false);
-  };
-
   useEffect(() => {
     if (!user || profileCompletion < 100) {
       setShowCompleteBanner(false);
@@ -187,15 +163,6 @@ export default function Settings() {
       localStorage.setItem(key, 'true');
     }
   }, [user, profileCompletion]);
-
-  useEffect(() => {
-    if (tradieDetails) {
-      setInsuranceProvider(tradieDetails.insurance_provider || '');
-      setPolicyNumber(tradieDetails.policy_number || '');
-      setQualifications(tradieDetails.qualifications || []);
-      setContractorType(tradieDetails.contractor_type || 'Solo');
-    }
-  }, [tradieDetails]);
 
   useEffect(() => {
     const state = location.state as { tab?: string } | null;
@@ -323,6 +290,7 @@ export default function Settings() {
     if (updateError) {
       setError('Failed to update profile. Please try again.');
     } else {
+      await refreshProfile();
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     }
@@ -330,83 +298,49 @@ export default function Settings() {
     setLoading(false);
   };
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPasswordLoading(true);
-    setPasswordError('');
-    setPasswordSuccess(false);
-
-    if (newPassword.length < 8) {
-      setPasswordError('Password must be at least 8 characters long');
-      setPasswordLoading(false);
-      return;
-    }
-
-    if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/\d/.test(newPassword)) {
-      setPasswordError('Password must include uppercase, lowercase, and a number');
-      setPasswordLoading(false);
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setPasswordError('Passwords do not match');
-      setPasswordLoading(false);
-      return;
-    }
-
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
-
-    if (error) {
-      setPasswordError(error.message || 'Failed to update password');
-    } else {
-      setPasswordSuccess(true);
-      setNewPassword('');
-      setConfirmPassword('');
-      setTimeout(() => setPasswordSuccess(false), 3000);
-    }
-
-    setPasswordLoading(false);
-  };
-
-  const handleAddQualification = () => {
-    if (newQualification.trim() && !qualifications.includes(newQualification.trim())) {
-      setQualifications([...qualifications, newQualification.trim()]);
-      setNewQualification('');
-    }
-  };
-
-  const handleRemoveQualification = (qual: string) => {
-    setQualifications(qualifications.filter((q) => q !== qual));
-  };
-
-  const handleVerificationSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleDeleteAccount = async () => {
     if (!user) return;
 
-    setVerificationLoading(true);
-    setVerificationError('');
-    setVerificationSuccess(false);
+    // Record the self-deletion (so login check shows correct message)
+    await supabase.from('account_removals').insert({
+      user_id: user.id,
+      email: profile?.email || user.email || '',
+      full_name: profile?.full_name || '',
+      reason: 'self_deleted',
+      additional_message: 'Account deleted by user',
+      removed_at: new Date().toISOString(),
+    });
 
-    const { error: updateError } = await supabase
-      .from('tradie_details')
-      .update({
-        insurance_provider: insuranceProvider,
-        policy_number: policyNumber,
-        qualifications,
-        contractor_type: contractorType,
-      })
-      .eq('profile_id', user.id);
-
-    if (updateError) {
-      setVerificationError('Failed to update verification details. Please try again.');
-    } else {
-      setVerificationSuccess(true);
-      setTimeout(() => setVerificationSuccess(false), 3000);
+    // Delete tradie_details if applicable
+    if (isTradie) {
+      await supabase.from('tradie_details').delete().eq('profile_id', user.id);
     }
 
-    setVerificationLoading(false);
+    // Delete the profile (cascades to related data)
+    const { error } = await supabase.from('profiles').delete().eq('id', user.id);
+
+    if (error) {
+      setToastMessage('Failed to delete account: ' + error.message);
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
+    // Delete the auth user via edge function (so they can re-register with the same email)
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (currentSession?.access_token) {
+        await supabase.functions.invoke('delete-user', {
+          headers: { Authorization: `Bearer ${currentSession.access_token}` },
+        });
+      }
+    } catch {
+      // Auth user deletion failed — profile is already gone, proceed with sign out
+    }
+
+    // Sign out and redirect to home
+    await signOut();
+    window.location.href = '/';
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -494,7 +428,7 @@ export default function Settings() {
       setToastMessage(`Boosted ${staleJobs.length} stale job${staleJobs.length === 1 ? '' : 's'}!`);
       setToastType('success');
       setShowToast(true);
-    } catch (err) {
+    } catch {
       setToastMessage('Failed to run flash boost algorithm.');
       setToastType('error');
       setShowToast(true);
@@ -508,7 +442,7 @@ export default function Settings() {
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 mt-1">Manage your account settings and profile</p>
+          <p className="text-gray-500 mt-1">Manage your account settings and profile</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
@@ -518,7 +452,7 @@ export default function Settings() {
                 type="button"
                 onClick={() => profile?.avatar_url && setShowAvatarModal(true)}
                 disabled={!profile?.avatar_url}
-                className="relative w-28 h-28 rounded-xl flex-shrink-0 ring-4 ring-gray-100 hover:ring-primary-200 transition-all"
+                className="relative w-28 h-28 rounded-xl flex-shrink-0 ring-4 ring-gray-200 hover:ring-primary-200 transition-all"
               >
                 {profile?.avatar_url ? (
                   <img
@@ -559,7 +493,7 @@ export default function Settings() {
               <div className="flex items-center gap-2 justify-center sm:justify-start">
                 <h2 className="text-xl font-semibold text-gray-900">{profile?.full_name}</h2>
                 {(tradieDetails?.subscription_tier === 'pro' || profile?.is_premium) && (
-                  <BadgeCheck className="w-5 h-5 text-blue-500" />
+                  <BadgeCheck className="w-5 h-5 text-primary-500" />
                 )}
               </div>
               <p className="text-gray-500 capitalize">{profile?.role}</p>
@@ -576,7 +510,7 @@ export default function Settings() {
                   ) : (
                     <button
                       onClick={() => setShowSubscriptionModal(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 text-sm font-medium rounded-full border border-amber-200 hover:bg-amber-100 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-warm-50 text-warm-700 text-sm font-medium rounded-full border border-warm-200 hover:bg-warm-100 transition-colors"
                     >
                       <Crown className="w-3.5 h-3.5" />
                       Upgrade to Pro
@@ -588,31 +522,31 @@ export default function Settings() {
           </div>
 
           {profileCompletion < 100 && (
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 p-6 md:p-8">
+            <div className="bg-gradient-to-r from-warm-50 to-warm-50 border-b border-warm-200 p-6 md:p-8">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-amber-600" />
-                  <h3 className="font-semibold text-amber-900">Complete Your Profile</h3>
+                  <Zap className="w-5 h-5 text-warm-600" />
+                  <h3 className="font-semibold text-warm-900">Complete Your Profile</h3>
                 </div>
-                <span className="text-sm font-bold text-amber-700">{profileCompletion}%</span>
+                <span className="text-sm font-bold text-warm-700">{profileCompletion}%</span>
               </div>
-              <div className="w-full bg-amber-200 rounded-full h-2 mb-3 overflow-hidden">
+              <div className="w-full bg-warm-200 rounded-full h-2 mb-3 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-amber-500 to-orange-500 h-full transition-all duration-500"
+                  className="bg-gradient-to-r from-warm-500 to-warm-500 h-full transition-all duration-500"
                   style={{ width: `${profileCompletion}%` }}
                 />
               </div>
               {incompleteTasks.length > 0 && (
-                <div className="text-sm text-amber-800">
+                <div className="text-sm text-warm-800">
                   <p className="font-medium mb-2">Missing:</p>
                   <ul className="space-y-1">
                     {incompleteTasks.slice(0, 3).map((task, idx) => (
                       <li key={idx} className="flex items-center gap-2">
-                        <span className="text-amber-600">•</span> {task}
+                        <span className="text-warm-600">•</span> {task}
                       </li>
                     ))}
                     {incompleteTasks.length > 3 && (
-                      <li className="text-amber-700 italic">+ {incompleteTasks.length - 3} more</li>
+                      <li className="text-warm-700 italic">+ {incompleteTasks.length - 3} more</li>
                     )}
                   </ul>
                 </div>
@@ -621,7 +555,7 @@ export default function Settings() {
           )}
 
           {profileCompletion === 100 && showCompleteBanner && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200 p-6 md:p-8 flex items-center gap-3">
+            <div className="bg-gradient-to-r from-green-50 to-secondary-50 border-b border-green-200 p-6 md:p-8 flex items-center gap-3">
               <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
               <div>
                 <h3 className="font-semibold text-green-900">Profile Complete!</h3>
@@ -637,8 +571,8 @@ export default function Settings() {
                 onClick={() => setActiveTab('profile')}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors min-h-[44px] ${
                   activeTab === 'profile'
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-warm-50 text-warm-700'
+                    : 'text-gray-500 hover:bg-gray-50'
                 }`}
               >
                 <User className="w-4 h-4" />
@@ -650,8 +584,8 @@ export default function Settings() {
                   onClick={() => setActiveTab('professional')}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors min-h-[44px] ${
                     activeTab === 'professional'
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-600 hover:bg-gray-50'
+                      ? 'bg-warm-50 text-warm-700'
+                      : 'text-gray-500 hover:bg-gray-50'
                   }`}
                 >
                   <Settings2 className="w-4 h-4" />
@@ -663,8 +597,8 @@ export default function Settings() {
                 onClick={() => setActiveTab('security')}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors min-h-[44px] ${
                   activeTab === 'security'
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-warm-50 text-warm-700'
+                    : 'text-gray-500 hover:bg-gray-50'
                 }`}
               >
                 <Lock className="w-4 h-4" />
@@ -676,36 +610,34 @@ export default function Settings() {
                   onClick={() => setActiveTab('verification')}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors min-h-[44px] ${
                     activeTab === 'verification'
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-600 hover:bg-gray-50'
+                      ? 'bg-warm-50 text-warm-700'
+                      : 'text-gray-500 hover:bg-gray-50'
                   }`}
                 >
                   <Shield className="w-4 h-4" />
                   Get Verified
                 </button>
               )}
-              {showTradieFeatures && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('notifications')}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors min-h-[44px] ${
-                    activeTab === 'notifications'
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <Bell className="w-4 h-4" />
-                  Alerts
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setActiveTab('notifications')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors min-h-[44px] ${
+                  activeTab === 'notifications'
+                    ? 'bg-warm-50 text-warm-700'
+                    : 'text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                <Bell className="w-4 h-4" />
+                Notifications
+              </button>
               {isSubscriptionAdmin && (
                 <button
                   type="button"
                   onClick={() => setActiveTab('admin')}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors min-h-[44px] ${
                     activeTab === 'admin'
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-600 hover:bg-gray-50'
+                      ? 'bg-warm-50 text-warm-700'
+                      : 'text-gray-500 hover:bg-gray-50'
                   }`}
                 >
                   <Wrench className="w-4 h-4" />
@@ -716,120 +648,21 @@ export default function Settings() {
           </div>
 
           {activeTab === 'profile' && (
-            <form onSubmit={handleSubmit} className="space-y-6 p-6 md:p-8" aria-label="ConnecTradie Profile Settings">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  value={profile?.email || ''}
-                  disabled
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed"
-                />
-              </div>
-              <p className="mt-1 text-xs text-gray-500">Email cannot be changed</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
-              </label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  id="full-name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Enter your full name"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  id="phone"
-                  name="tel"
-                  type="tel"
-                  autoComplete="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Enter your phone number"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Address
-              </label>
-              <AddressAutocomplete
-                value={address}
-                onChange={(value) => setAddress(value)}
-                placeholder="Start typing your address..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Postcode
-              </label>
-              <input
-                id="postcode"
-                name="postcode"
-                type="text"
-                autoComplete="postal-code"
-                value={postcode}
-                onChange={(e) => setPostcode(e.target.value)}
-                placeholder="Enter your postcode"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-
-
-            {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            )}
-
-            {success && (
-              <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                <CheckCircle2 className="w-5 h-5 text-green-600 animate-bounce" />
-                <p className="text-sm text-green-600 font-medium">Perfect! Your profile is up to date.</p>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 min-h-[44px]"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </button>
-          </form>
+            <ProfileTab
+              email={profile?.email || ''}
+              fullName={fullName}
+              setFullName={setFullName}
+              phone={phone}
+              setPhone={setPhone}
+              address={address}
+              setAddress={setAddress}
+              postcode={postcode}
+              setPostcode={setPostcode}
+              loading={loading}
+              success={success}
+              error={error}
+              onSubmit={handleSubmit}
+            />
           )}
 
           {activeTab === 'professional' && showTradieFeatures && (
@@ -837,316 +670,63 @@ export default function Settings() {
           )}
 
           {activeTab === 'security' && (
-            <form onSubmit={handlePasswordChange} className="space-y-6 p-6 md:p-8" aria-label="Change ConnecTradie Password">
-              <input type="hidden" name="form-name" value="connectradie-change-password" />
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
-                <p className="text-sm text-gray-600 mb-6">
-                  Enter a new password for your account. Must be at least 8 characters with uppercase, lowercase, and a number.
-                </p>
-              </div>
-
-              <div>
-                <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-2">
-                  New Password
-                </label>
-                <div className="relative">
-                  <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    id="new-password"
-                    name="new-password"
-                    type="password"
-                    autoComplete="new-password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
-                    className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    aria-label="New password for ConnecTradie account"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    id="confirm-password"
-                    name="confirm-password"
-                    type="password"
-                    autoComplete="new-password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    aria-label="Confirm new password for ConnecTradie account"
-                  />
-                </div>
-              </div>
-
-              {passwordError && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-                  <p className="text-sm text-red-600">{passwordError}</p>
-                </div>
-              )}
-
-              {passwordSuccess && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <CheckCircle2 className="w-5 h-5 text-green-600 animate-bounce" />
-                  <p className="text-sm text-green-600 font-medium">Your account is now more secure!</p>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={passwordLoading || !newPassword || !confirmPassword}
-                className="w-full py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 min-h-[44px]"
-              >
-                {passwordLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Updating Password...
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-5 h-5" />
-                    Update Password
-                  </>
-                )}
-              </button>
-            </form>
+            <SecurityTab isTradie={isTradie} onDeleteAccount={handleDeleteAccount} />
           )}
 
           {activeTab === 'notifications' && (
-            <div className="space-y-6 p-6 md:p-8">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Notification Preferences</h3>
-                <p className="text-sm text-gray-600 mb-6">
-                  Control how you receive alerts about new leads and urgent jobs.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <BellRing className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">Web Push Alerts</p>
-                      <p className="text-sm text-gray-600">Receive browser notifications for urgent leads</p>
-                      <span className="inline-block mt-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">Free</span>
-                    </div>
+            <>
+              <NotificationsTab
+                pushEnabled={pushEnabled}
+                pushPermission={pushPermission}
+                notifSaving={notifSaving}
+                onTogglePush={handleTogglePush}
+              />
+              <div className="border-t border-gray-200 p-6 md:p-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-gray-100 rounded-lg">
+                    <Monitor className="w-5 h-5 text-gray-500" />
                   </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Appearance</h3>
+                    <p className="text-sm text-gray-500">Choose your preferred theme</p>
+                  </div>
+                </div>
+                <div className="flex gap-3 theme-toggle-group">
                   <button
-                    type="button"
-                    onClick={() => handleTogglePush(!pushEnabled)}
-                    disabled={notifSaving || pushPermission === 'denied' || pushPermission === 'unsupported'}
-                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                      pushEnabled ? 'bg-primary-600' : 'bg-gray-300'
-                    } ${(notifSaving || pushPermission === 'denied' || pushPermission === 'unsupported') ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    onClick={() => { if (isDark) toggleDarkMode(); }}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-colors ${!isDark ? 'border-warm-500 bg-warm-50 text-warm-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
                   >
-                    <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-                        pushEnabled ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
+                    <Sun className="w-4 h-4" />
+                    Light
+                  </button>
+                  <button
+                    onClick={() => { if (!isDark) toggleDarkMode(); }}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-colors ${isDark ? 'border-warm-500 bg-warm-50 text-warm-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                  >
+                    <Moon className="w-4 h-4" />
+                    Dark
                   </button>
                 </div>
-
-                {pushPermission === 'denied' && (
-                  <div className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-lg">
-                    <Bell className="w-4 h-4 text-red-500 flex-shrink-0" />
-                    <p className="text-sm text-red-700">
-                      Notifications are blocked. To enable them, click the lock icon in your browser's address bar and allow notifications for this site.
-                    </p>
-                  </div>
-                )}
-
-                {pushPermission === 'unsupported' && (
-                  <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-                    <Bell className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                    <p className="text-sm text-amber-700">
-                      Push notifications are not supported in your current browser. Try using Chrome, Firefox, or Safari for the best experience.
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 opacity-60">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                      <Smartphone className="w-5 h-5 text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">SMS Alerts for Urgent Jobs</p>
-                      <p className="text-sm text-gray-600">Get a text when urgent leads are posted nearby</p>
-                      <span className="inline-flex items-center gap-1 mt-1 text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-                        Coming Soon
-                      </span>
-                    </div>
-                  </div>
-                  <div className="relative inline-flex h-7 w-12 items-center rounded-full bg-gray-200 cursor-not-allowed">
-                    <span className="inline-block h-5 w-5 transform rounded-full bg-white shadow-sm translate-x-1" />
-                  </div>
-                </div>
               </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6">
-                <div className="flex items-start gap-3">
-                  <MessageSquare className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-blue-900">How it works</p>
-                    <p className="text-sm text-blue-800 mt-1">
-                      When a client posts an urgent job marked with Flash Boost, all tradies with
-                      matching notification preferences in that area are alerted instantly. Web push
-                      is free for all users. SMS alerts require a Pro subscription.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            </>
           )}
 
           {activeTab === 'admin' && isSubscriptionAdmin && (
-            <div className="space-y-6 p-6 md:p-8">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Admin Tools</h3>
-                <p className="text-sm text-gray-600 mb-6">
-                  Administrative tools for testing and managing platform features.
-                </p>
-              </div>
-
-              <div className={`rounded-xl p-6 border-2 transition-colors ${
-                trainingModeEnabled
-                  ? 'bg-gradient-to-br from-teal-50 to-emerald-50 border-teal-300'
-                  : 'bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200'
-              }`}>
-                <div className="flex items-start gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    trainingModeEnabled ? 'bg-teal-100' : 'bg-gray-200'
-                  }`}>
-                    <FlaskConical className={`w-6 h-6 ${trainingModeEnabled ? 'text-teal-600' : 'text-gray-500'}`} />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="font-semibold text-gray-900">Subscription Training Mode</h4>
-                      <button
-                        onClick={handleToggleTrainingMode}
-                        disabled={trainingModeLoading}
-                        className="flex items-center gap-2 transition-colors"
-                      >
-                        {trainingModeLoading ? (
-                          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-                        ) : trainingModeEnabled ? (
-                          <ToggleRight className="w-10 h-10 text-teal-600" />
-                        ) : (
-                          <ToggleLeft className="w-10 h-10 text-gray-400" />
-                        )}
-                      </button>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-4">
-                      When enabled, all tradies and clients will see a "Subscribe (Test Mode)" button that
-                      activates Pro features instantly without requiring Stripe payment.
-                    </p>
-
-                    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                      trainingModeEnabled
-                        ? 'bg-teal-100 text-teal-800 border border-teal-200'
-                        : 'bg-gray-100 text-gray-600 border border-gray-200'
-                    }`}>
-                      <span className={`w-2 h-2 rounded-full ${trainingModeEnabled ? 'bg-teal-500 animate-pulse' : 'bg-gray-400'}`} />
-                      {trainingModeEnabled ? 'Training Mode Active' : 'Training Mode Off'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-200 rounded-xl p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-sky-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Users className="w-6 h-6 text-sky-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 mb-1">Subscribed Users</h4>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Currently <span className="font-bold text-gray-900">{subscribedUsersCount}</span> user{subscribedUsersCount !== 1 ? 's' : ''} have
-                      an active Pro subscription (including test mode activations).
-                    </p>
-                    <button
-                      onClick={handleResetAllSubscriptions}
-                      disabled={trainingModeLoading || subscribedUsersCount === 0}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all min-h-[44px]"
-                    >
-                      {trainingModeLoading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Resetting...
-                        </>
-                      ) : (
-                        'Reset All Test Subscriptions'
-                      )}
-                    </button>
-                    <p className="text-xs text-gray-500 mt-2">
-                      This will revert all users back to the free plan. Use after training sessions.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <a
-                href="/admin/verifications"
-                className="block bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6 hover:border-blue-300 transition-colors"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Shield className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 mb-1">Verification Queue</h4>
-                    <p className="text-sm text-gray-600">
-                      Review pending tradie verifications, view uploaded documents and credentials, and approve or reject requests.
-                    </p>
-                  </div>
-                </div>
-              </a>
-
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Zap className="w-6 h-6 text-amber-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 mb-1">Flash Boost Algorithm</h4>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Finds all pending jobs created more than 2 hours ago that haven't been picked up yet, and marks them as Flash Deals with priority visibility for 1 hour to incentivize fast pickup.
-                    </p>
-                    <button
-                      onClick={handleRunFlashBoost}
-                      disabled={flashBoostLoading}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-xl hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg min-h-[44px]"
-                    >
-                      {flashBoostLoading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Running...
-                        </>
-                      ) : (
-                        <>
-                          <Zap className="w-4 h-4" />
-                          Run Flash Boost Algorithm
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <AdminToolsTab
+              trainingModeEnabled={trainingModeEnabled}
+              trainingModeLoading={trainingModeLoading}
+              subscribedUsersCount={subscribedUsersCount}
+              flashBoostLoading={flashBoostLoading}
+              onToggleTrainingMode={handleToggleTrainingMode}
+              onResetSubscriptions={handleResetAllSubscriptions}
+              onRunFlashBoost={handleRunFlashBoost}
+            />
           )}
 
           {activeTab === 'verification' && showTradieFeatures && (
-            <VerificationCenter />
+            <SectionErrorBoundary fallbackTitle="Verification center failed to load">
+              <VerificationCenter />
+            </SectionErrorBoundary>
           )}
         </div>
       </div>
@@ -1172,6 +752,7 @@ export default function Settings() {
           <button
             onClick={() => setShowAvatarModal(false)}
             className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+            aria-label="Close photo preview"
           >
             <X className="w-6 h-6" />
           </button>

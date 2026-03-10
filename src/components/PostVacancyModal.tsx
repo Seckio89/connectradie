@@ -91,7 +91,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy 
             value={form.title}
             onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
             placeholder='e.g. "1st Year Electrical Apprentice Wanted"'
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
           />
         </div>
 
@@ -105,11 +105,11 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy 
                 onClick={() => setForm(f => ({ ...f, role_type: opt.value }))}
                 className={`p-3 rounded-xl border-2 text-left transition-all ${
                   form.role_type === opt.value
-                    ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200'
+                    ? 'border-warm-500 bg-warm-50 ring-1 ring-primary-200'
                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                <p className={`text-sm font-semibold ${form.role_type === opt.value ? 'text-blue-700' : 'text-gray-800'}`}>
+                <p className={`text-sm font-semibold ${form.role_type === opt.value ? 'text-primary-700' : 'text-gray-800'}`}>
                   {opt.label}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">{opt.hint}</p>
@@ -126,7 +126,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy 
               value={form.trade_category}
               onChange={e => setForm(f => ({ ...f, trade_category: e.target.value }))}
               placeholder="e.g. Electrical, Plumbing"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
             />
           </div>
           <div>
@@ -136,7 +136,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy 
               value={form.location}
               onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
               placeholder="e.g. Sydney CBD, Melbourne"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
             />
           </div>
         </div>
@@ -148,7 +148,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy 
             onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
             rows={5}
             placeholder="Describe the role, responsibilities, requirements, and what you offer..."
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none resize-none"
           />
         </div>
 
@@ -163,7 +163,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy 
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 px-4 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-2.5 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
           >
             {saving ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

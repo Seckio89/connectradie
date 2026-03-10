@@ -29,15 +29,15 @@ export default function ConfirmModal({
         };
       case 'warning':
         return {
-          bg: 'bg-amber-50',
-          icon: 'text-amber-600',
-          button: 'bg-amber-600 hover:bg-amber-700'
+          bg: 'bg-warm-50',
+          icon: 'text-warm-600',
+          button: 'bg-warm-600 hover:bg-warm-700'
         };
       case 'info':
         return {
-          bg: 'bg-blue-50',
-          icon: 'text-blue-600',
-          button: 'bg-blue-600 hover:bg-blue-700'
+          bg: 'bg-secondary-50',
+          icon: 'text-secondary-600',
+          button: 'bg-warm-500 hover:bg-warm-600'
         };
     }
   };
@@ -45,8 +45,8 @@ export default function ConfirmModal({
   const colors = getColors();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[70] p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl animate-scale-in">
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-end sm:items-center justify-center z-[70] p-0 sm:p-4 animate-fade-in modal-sheet-overlay" onClick={onCancel}>
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-2xl animate-scale-in modal-sheet" onClick={(e) => e.stopPropagation()}>
         <div className="p-6">
           <div className="flex items-start gap-4">
             <div className={`p-3 ${colors.bg} rounded-full flex-shrink-0`}>

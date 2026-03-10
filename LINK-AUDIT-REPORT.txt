@@ -1,0 +1,129 @@
+╔══════════════════════════════════════════════════════════════════╗
+║           ConnecTradie — Link Audit Report                      ║
+║           2026-02-27T10:53:01                                ║
+╚══════════════════════════════════════════════════════════════════╝
+
+┌─ SUMMARY ──────────────────────────────────────────────────────┐
+│  🔴 Errors:     0  (broken links — will cause 404s)     │
+│  🟡 Warnings:   7  (should fix before launch)           │
+│  🔵 Info:       7  (recommendations for UX)              │
+│  ────────────────                                              │
+│  Total:        14  across 148 link references scanned   │
+└────────────────────────────────────────────────────────────────┘
+
+━━━ 🟡 WARNINGS — Fix Before Launch ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. [Orphaned Route] Route "/my-trades" has NO links pointing to it from anywhere
+     📁 App.tsx
+     💡 Add link in DashboardLayout sidebar, Navbar, or Footer
+
+  2. [Orphaned Route] Route "/projects" has NO links pointing to it from anywhere
+     📁 App.tsx
+     💡 Add link in DashboardLayout sidebar, Navbar, or Footer
+
+  3. [Orphaned Route] Route "/team" has NO links pointing to it from anywhere
+     📁 App.tsx
+     💡 Add link in DashboardLayout sidebar, Navbar, or Footer
+
+  4. [Orphaned Route] Route "/site-calendar" has NO links pointing to it from anywhere
+     📁 App.tsx
+     💡 Add link in DashboardLayout sidebar, Navbar, or Footer
+
+  5. [Orphaned Route] Route "/analytics" has NO links pointing to it from anywhere
+     📁 App.tsx
+     💡 Add link in DashboardLayout sidebar, Navbar, or Footer
+
+  6. [Orphaned Route] Route "/payments" has NO links pointing to it from anywhere
+     📁 App.tsx
+     💡 Add link in DashboardLayout sidebar, Navbar, or Footer
+
+  7. [Orphaned Route] Route "/admin" has NO links pointing to it from anywhere
+     📁 App.tsx
+     💡 Add link in DashboardLayout sidebar, Navbar, or Footer
+
+━━━ 🔵 INFO — Navigation Recommendations ━━━━━━━━━━━━━━━━━━━━━━
+
+  1. [Missing Navigation] "/analytics" is NOT accessible from any navigation menu
+     📁 components/DashboardLayout.tsx
+     💡 Add to tradieNavItems, clientNavItems, or adminNavItems array
+
+  2. [Missing Navigation] "/payments" is NOT accessible from any navigation menu
+     📁 components/DashboardLayout.tsx
+     💡 Add to tradieNavItems, clientNavItems, or adminNavItems array
+
+  3. [Missing Navigation] "/admin" is NOT accessible from any navigation menu
+     📁 components/DashboardLayout.tsx
+     💡 Add to tradieNavItems, clientNavItems, or adminNavItems array
+
+  4. [Missing Navigation] "/team" is NOT accessible from any navigation menu
+     📁 components/DashboardLayout.tsx
+     💡 Add to tradieNavItems, clientNavItems, or adminNavItems array
+
+  5. [Missing Navigation] "/site-calendar" is NOT accessible from any navigation menu
+     📁 components/DashboardLayout.tsx
+     💡 Add to tradieNavItems, clientNavItems, or adminNavItems array
+
+  6. [Missing Navigation] "/my-trades" is NOT accessible from any navigation menu
+     📁 components/DashboardLayout.tsx
+     💡 Add to tradieNavItems, clientNavItems, or adminNavItems array
+
+  7. [Missing Navigation] "/projects" is NOT accessible from any navigation menu
+     📁 components/DashboardLayout.tsx
+     💡 Add to tradieNavItems, clientNavItems, or adminNavItems array
+
+━━━ 📋 FULL ROUTE MAP ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Route                      │ In Nav │ Has Links │ Status
+  ───────────────────────────┼────────┼───────────┼──────────
+  /                           │  ✅  │    ✅   │ ✅  OK
+  /login                      │  ✅  │    ✅   │ ✅  OK
+  /register                   │  ✅  │    ✅   │ ✅  OK
+  /onboarding                 │  ❌  │    ✅   │ 🟡  Hidden
+  /dashboard                  │  ✅  │    ✅   │ ✅  OK
+  /search                     │  ❌  │    ✅   │ 🟡  Hidden
+  /tradie/:id                 │  ❌  │    ✅   │ 🟡  Hidden
+  /explore                    │  ❌  │    ✅   │ 🟡  Hidden
+  /terms                      │  ✅  │    ✅   │ ✅  OK
+  /privacy                    │  ✅  │    ✅   │ ✅  OK
+  /contact                    │  ✅  │    ✅   │ ✅  OK
+  /my-trades                  │  ❌  │    ❌   │ ⚠️  ORPHAN
+  /jobs                       │  ✅  │    ✅   │ ✅  OK
+  /projects                   │  ❌  │    ❌   │ ⚠️  ORPHAN
+  /post-lead                  │  ✅  │    ✅   │ ✅  OK
+  /leads                      │  ✅  │    ✅   │ ✅  OK
+  /messages                   │  ✅  │    ✅   │ ✅  OK
+  /settings                   │  ✅  │    ✅   │ ✅  OK
+  /admin/verifications        │  ❌  │    ✅   │ 🟡  Hidden
+  /my-profile                 │  ✅  │    ✅   │ ✅  OK
+  /schedule                   │  ✅  │    ✅   │ ✅  OK
+  /work                       │  ✅  │    ✅   │ ✅  OK
+  /performance                │  ✅  │    ✅   │ ✅  OK
+  /team                       │  ❌  │    ❌   │ ⚠️  ORPHAN
+  /trade-careers              │  ✅  │    ✅   │ ✅  OK
+  /site-calendar              │  ❌  │    ❌   │ ⚠️  ORPHAN
+  /verification               │  ❌  │    ❌   │ ⚠️  ORPHAN
+  /analytics                  │  ❌  │    ❌   │ ⚠️  ORPHAN
+  /payments                   │  ❌  │    ❌   │ ⚠️  ORPHAN
+  /admin                      │  ❌  │    ❌   │ ⚠️  ORPHAN
+
+━━━ ✅ FIX CHECKLIST ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ☐  1. Add /analytics to tradieNavItems in DashboardLayout.tsx
+  ☐  2. Add /payments to client + tradie navItems in DashboardLayout.tsx
+  ☐  3. Add /admin to adminNavItems in DashboardLayout.tsx (replace /settings admin tab)
+  ☐  4. Add /team to tradieNavItems or as sub-item under Schedule
+  ☐  5. Add /trade-careers link in tradie dashboard footer or career section
+  ☐  6. Add /site-calendar to tradieNavItems or Schedule sub-nav
+  ☐  7. Add /my-trades to clientNavItems in DashboardLayout.tsx
+  ☐  8. Add /projects to clientNavItems in DashboardLayout.tsx
+  ☐  9. Fix Footer hash links to work from non-landing pages (prefix with /)
+  ☐ 10. Verify #main-content skip link target exists in App layout
+  ☐ 11. Test all Stripe redirect URLs in test mode
+  ☐ 12. Test notification deep links render correct pages
+  ☐ 13. Test mobile hamburger menu links end-to-end
+  ☐ 14. Run audit again: npx tsx audit-links.ts
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Re-run after fixes:  npx tsx audit-links.ts
+  Add to CI pipeline:  npm run audit
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

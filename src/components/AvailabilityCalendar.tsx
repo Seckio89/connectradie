@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Clock, X, Loader2, Calendar as CalendarIcon, Upload, User, MapPin, Key } from 'lucide-react';
 import type { AvailabilitySlot, TradieWithDetails } from '../types/database';
 import { supabase } from '../lib/supabase';
@@ -6,6 +6,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { sendNotification } from '../lib/notificationService';
 import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
 import AddressAutocomplete from './AddressAutocomplete';
+import { getJobHints } from '../lib/jobDescriptionHints';
+import { redactName } from '../lib/contactGating';
 
 interface AvailabilityCalendarProps {
   isOpen: boolean;
@@ -33,6 +35,11 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
   const [accessInstructions, setAccessInstructions] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, profile } = useAuth();
+  const tradieDisplayName = (() => {
+    const d = tradie?.tradie_details;
+    const pro = d?.subscription_tier === 'pro' || d?.subscription_tier === 'business' || tradie?.is_premium;
+    return pro ? (d?.business_name || redactName(tradie?.full_name)) : redactName(tradie?.full_name);
+  })();
 
   useEffect(() => {
     if (isOpen && tradie) {
@@ -47,7 +54,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
     }
   }, [profile]);
 
-  const fetchSlots = async () => {
+  const fetchSlots = useCallback(async () => {
     if (!tradie) return;
     setLoading(true);
 
@@ -62,9 +69,9 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
       .lte('start_time', endOfMonth.toISOString())
       .order('start_time', { ascending: true });
 
-    setSlots(data || []);
+    setSlots((data || []) as AvailabilitySlot[]);
     setLoading(false);
-  };
+  }, [tradie, currentDate]);
 
   const { daysInMonth, startingDay } = useMemo(() => {
     const year = currentDate.getFullYear();
@@ -239,7 +246,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
             month: 'long',
             year: 'numeric'
           })} at ${customStartTime}`,
-          jobId: jobData.id,
+          jobId: (jobData as Record<string, string>).id,
           metadata: {
             client_id: user.id,
             scheduled_time: scheduledTime.toISOString(),
@@ -322,7 +329,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/40 z-40"
+        className="fixed inset-0 bg-black/40 z-50"
         onClick={onClose}
       />
 
@@ -330,7 +337,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
             <h3 className="font-semibold text-gray-900">
-              {tradie?.tradie_details?.business_name || tradie?.full_name}'s Calendar
+              {tradieDisplayName}'s Calendar
             </h3>
             <p className="text-sm text-gray-600">Select a date to view available time slots</p>
           </div>
@@ -398,9 +405,9 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                         disabled={isPast}
                         className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-all relative min-w-[44px] min-h-[44px] ${
                           isSelected
-                            ? 'bg-primary-600 text-white'
+                            ? 'bg-warm-500 text-white'
                             : hasSlots
-                            ? 'bg-green-100 text-green-800 hover:bg-green-200 font-semibold border border-green-300'
+                            ? 'bg-blue-50 text-blue-800 hover:bg-blue-100 font-semibold border border-blue-200'
                             : isPast
                             ? 'text-gray-300 cursor-not-allowed'
                             : 'hover:bg-gray-100 text-gray-700'
@@ -410,7 +417,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                           {day}
                         </span>
                         {hasSlots && !isSelected && (
-                          <span className="absolute bottom-0.5 w-2 h-2 bg-green-500 rounded-full" />
+                          <span className="absolute bottom-0.5 w-2 h-2 bg-blue-500 rounded-full" />
                         )}
                       </button>
                     );
@@ -419,7 +426,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
 
                 <div className="mt-4 flex items-center flex-wrap gap-5 text-sm text-gray-700">
                   <div className="flex items-center gap-2">
-                    <span className="w-4 h-4 bg-green-100 border-2 border-green-300 rounded" />
+                    <span className="w-4 h-4 bg-blue-50 border-2 border-blue-200 rounded" />
                     <span className="font-medium">Available</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -461,7 +468,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                           <span
                             className={`ml-auto text-xs px-2 py-0.5 rounded-full ${
                               slot.status === 'available'
-                                ? 'bg-green-100 text-green-700'
+                                ? 'bg-blue-100 text-blue-700'
                                 : slot.status === 'booked'
                                 ? 'bg-red-100 text-red-700'
                                 : 'bg-gray-200 text-gray-600'
@@ -477,7 +484,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                   )
                 ) : (
                   <p className="text-gray-600 text-sm">
-                    Click on a highlighted green date to see available time slots.
+                    Click on a highlighted date to see available time slots.
                   </p>
                 )}
               </div>
@@ -495,12 +502,12 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
           <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-md max-h-[90vh] flex flex-col">
             {bookingSuccess ? (
               <div className="text-center py-8 px-6">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CalendarIcon className="w-8 h-8 text-green-600" />
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CalendarIcon className="w-8 h-8 text-blue-600" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Booking Requested!</h3>
                 <p className="text-gray-600">
-                  Your booking request has been sent to {tradie?.tradie_details?.business_name || tradie?.full_name}
+                  Your booking request has been sent to {tradieDisplayName}
                 </p>
               </div>
             ) : (
@@ -576,10 +583,41 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                       rows={4}
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                     />
+                    {tradie?.tradie_details?.trade_category && (
+                      <details className="mt-2" open={bookingDescription.length < 40}>
+                        <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600 select-none">
+                          Quick-add suggestions for {tradie.tradie_details.trade_category}
+                        </summary>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {getJobHints(tradie.tradie_details.trade_category).map((hint) => {
+                            const isAdded = bookingDescription.includes(hint.replace(/:$/, ''));
+                            return (
+                              <button
+                                key={hint}
+                                type="button"
+                                onClick={() => {
+                                  if (!isAdded) {
+                                    const separator = bookingDescription.trim() ? '. ' : '';
+                                    setBookingDescription((prev) => prev.trim() + separator + hint + ' ');
+                                  }
+                                }}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                                  isAdded
+                                    ? 'bg-secondary-50 text-secondary-600 border-secondary-200 cursor-default'
+                                    : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-warm-50 hover:border-warm-300 hover:text-warm-700'
+                                }`}
+                              >
+                                {isAdded ? '✓ ' : '+ '}{hint}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </details>
+                    )}
                   </div>
 
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <p className="text-sm text-amber-800 font-medium">
+                  <div className="bg-warm-50 border border-warm-200 rounded-lg p-3">
+                    <p className="text-sm text-warm-800 font-medium">
                       Please provide your contact details and job location so the tradie knows where to go.
                     </p>
                   </div>
@@ -624,7 +662,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
+                      <label className="text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
                         Job Location Address
                         <span className="text-red-500 ml-1">*</span>
@@ -642,7 +680,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
+                      <label className="text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
                         <Key className="w-3 h-3" />
                         Access Instructions (Optional)
                       </label>
@@ -729,7 +767,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                       bookingLoading ||
                       !isValidTimeRange
                     }
-                    className="w-full py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                   >
                     {bookingLoading ? (
                       <>

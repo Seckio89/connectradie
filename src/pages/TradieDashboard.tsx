@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Calendar,
   Users,
@@ -25,6 +25,9 @@ import {
   BellOff,
   BellRing,
   ShieldAlert,
+  TrendingUp,
+  Star,
+  MapPin,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getAuthHeaders } from '../lib/edgeFn';
@@ -44,6 +47,8 @@ import SubscriptionModal from '../components/SubscriptionModal';
 import CollapsibleSection from '../components/CollapsibleSection';
 import { isPro } from '../lib/subscription';
 import UserTradeBadges from '../components/UserTradeBadges';
+import WelcomeGuide from '../components/WelcomeGuide';
+import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import {
   requestPushPermission,
   subscribeToPush,
@@ -58,7 +63,7 @@ import { useAvailabilitySlots } from '../hooks/useAvailabilitySlots';
 import { useDashboardJobs, type DashboardJob } from '../hooks/useDashboardJobs';
 import { useDashboardConversations, type DashboardConversation } from '../hooks/useDashboardConversations';
 
-type TabType = 'overview' | 'jobs' | 'messages';
+type TabType = 'jobs' | 'messages';
 
 // ─── Helpers ──────────────────────────────────────────────
 
@@ -82,11 +87,11 @@ function getStatusIcon(status: string) {
     case 'completed':
       return <CheckCircle2 className="w-5 h-5 text-green-600" />;
     case 'in_progress':
-      return <Clock className="w-5 h-5 text-blue-600" />;
+      return <Clock className="w-5 h-5 text-secondary-600" />;
     case 'cancelled':
       return <XCircle className="w-5 h-5 text-red-600" />;
     default:
-      return <AlertCircle className="w-5 h-5 text-amber-600" />;
+      return <AlertCircle className="w-5 h-5 text-warm-600" />;
   }
 }
 
@@ -95,13 +100,13 @@ function getStatusColor(status: string) {
     case 'completed':
       return 'bg-green-100 text-green-700 border-green-200';
     case 'in_progress':
-      return 'bg-blue-100 text-blue-700 border-blue-200';
+      return 'bg-secondary-100 text-secondary-700 border-secondary-200';
     case 'cancelled':
       return 'bg-red-100 text-red-700 border-red-200';
     case 'accepted':
-      return 'bg-teal-100 text-teal-700 border-teal-200';
+      return 'bg-secondary-100 text-secondary-700 border-secondary-200';
     default:
-      return 'bg-amber-100 text-amber-700 border-amber-200';
+      return 'bg-warm-100 text-warm-700 border-warm-200';
   }
 }
 
@@ -110,6 +115,7 @@ function getStatusColor(status: string) {
 export default function TradieDashboard() {
   // Auth & derived
   const { user, tradieDetails, profile } = useAuth();
+  const navigate = useNavigate();
   const isProUser = isPro(tradieDetails?.subscription_tier, profile?.is_premium);
   const isLicenseExpired = checkLicenseExpired(profile?.verification_status, profile?.license_expiry);
 
@@ -169,8 +175,9 @@ export default function TradieDashboard() {
   });
 
   // UI-only state (tabs, modals, calendar)
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [activeTab, setActiveTab] = useState<TabType>('jobs');
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [calendarView, setCalendarView] = useState<'day' | 'week' | 'month'>('month');
   const [showAddSlot, setShowAddSlot] = useState(false);
   const [showManageMenu, setShowManageMenu] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
@@ -201,9 +208,31 @@ export default function TradieDashboard() {
   const [calendarIntegration, setCalendarIntegration] = useState<CalendarIntegration | null>(null);
   const [syncLoading, setSyncLoading] = useState(false);
 
+  // Earnings
+  const [earnings, setEarnings] = useState({ total: 0, thisMonth: 0, pendingJobs: 0 });
+
+  // Recent reviews
+  const [recentReviews, setRecentReviews] = useState<{ id: string; rating: number; comment: string | null; created_at: string; client_name: string }[]>([]);
+
   // Push notifications
   const [pushStatus, setPushStatus] = useState<'loading' | 'granted' | 'denied' | 'default' | 'unsupported'>('loading');
   const [pushEnabling, setPushEnabling] = useState(false);
+
+  // Post-onboarding scroll to calendar
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showOnboardedBanner, setShowOnboardedBanner] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('onboarded') === 'tradie') {
+      setShowOnboardedBanner(true);
+      setSearchParams((prev) => { prev.delete('onboarded'); return prev; }, { replace: true });
+      setTimeout(() => {
+        const calEl = document.querySelector('[data-tour="calendar"]');
+        if (calEl) calEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 500);
+      setTimeout(() => setShowOnboardedBanner(false), 12000);
+    }
+  }, []);
 
   // Calendar computed values
   const { daysInMonth, startingDay } = getDaysInMonth(currentDate);
@@ -218,11 +247,54 @@ export default function TradieDashboard() {
       .eq('tradie_id', user.id)
       .eq('provider', 'google')
       .maybeSingle();
-    setCalendarIntegration(data);
+    setCalendarIntegration(data as CalendarIntegration | null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
+  const fetchEarnings = useCallback(async () => {
+    if (!user) return;
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const [totalResult, monthResult, pendingResult] = await Promise.all([
+      supabase.from('payments').select('amount').eq('profile_id', user.id).eq('status', 'completed'),
+      supabase.from('payments').select('amount').eq('profile_id', user.id).eq('status', 'completed').gte('created_at', monthStart),
+      supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('tradie_id', user.id).in('status', ['accepted', 'in_progress']),
+    ]);
+    setEarnings({
+      total: (totalResult.data || []).reduce((sum, p) => sum + (p.amount || 0), 0),
+      thisMonth: (monthResult.data || []).reduce((sum, p) => sum + (p.amount || 0), 0),
+      pendingJobs: pendingResult.count || 0,
+    });
+  }, [user]);
+
   // ─── Effects ──────────────────────────────────────────────
+
+  useEffect(() => {
+    fetchEarnings();
+  }, [fetchEarnings]);
+
+  // Fetch recent reviews for this tradie
+  useEffect(() => {
+    if (!user) return;
+    const fetchReviews = async () => {
+      const { data } = await supabase
+        .from('reviews')
+        .select('id, rating, comment, created_at, client:profiles!reviews_client_id_fkey(full_name)')
+        .eq('tradie_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(3);
+      if (data) {
+        setRecentReviews(data.map((r: Record<string, unknown>) => ({
+          id: r.id as string,
+          rating: r.rating as number,
+          comment: r.comment as string | null,
+          created_at: r.created_at as string,
+          client_name: (r.client as { full_name: string } | null)?.full_name || 'Client',
+        })));
+      }
+    };
+    fetchReviews();
+  }, [user]);
 
   useEffect(() => {
     setPushStatus(getPushPermissionStatus());
@@ -408,13 +480,22 @@ export default function TradieDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto">
+      <WelcomeGuide role="tradie" userName={profile?.full_name} />
+      {showOnboardedBanner && (
+        <div className="max-w-[1600px] mx-auto mb-4">
+          <div className="bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-2xl p-5">
+            <h3 className="font-bold text-primary-900 mb-1">Welcome to ConnecTradie!</h3>
+            <p className="text-sm text-primary-800">Your account is set up. Set your availability below so clients can find and book you for jobs.</p>
+          </div>
+        </div>
+      )}
+      <div className="max-w-[1600px] mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Your Business Hub</h1>
-          <p className="text-gray-700">Manage your schedule, jobs, and conversations in one place</p>
+        <div className="mb-8 bg-navy-900 rounded-lg p-6 sm:p-8 border border-navy-800">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-white mb-1">Your Business Hub</h1>
+          <p className="text-navy-300">Manage your schedule, jobs, and conversations in one place</p>
           {profile && (
-            <div className="mt-3">
+            <div className="mt-4">
               <UserTradeBadges
                 verifiedTrades={profile.verified_trades || []}
                 declaredTrades={profile.declared_trades || []}
@@ -451,129 +532,132 @@ export default function TradieDashboard() {
           </div>
         )}
 
-        {/* Quick Stats */}
-        <CollapsibleSection
-          title="Quick Stats"
-          defaultOpen={true}
-          icon={<div className="w-7 h-7 bg-primary-100 rounded-lg flex items-center justify-center"><Clock className="w-4 h-4 text-primary-600" /></div>}
-        >
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-gradient-to-br from-primary-50 to-primary-100/30 rounded-2xl border border-primary-200 p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-primary-200 rounded-xl flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-primary-700" />
-                </div>
-                <div>
-                  <p className="text-sm text-primary-700 font-medium">Available Hours</p>
-                  <p className="text-3xl font-bold text-primary-900">{totalAvailableHours.toFixed(0)}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-green-50 to-green-100/30 rounded-2xl border border-green-200 p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-200 rounded-xl flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-green-700" />
-                </div>
-                <div>
-                  <p className="text-sm text-green-700 font-medium">Booked Slots</p>
-                  <p className="text-3xl font-bold text-green-900">{bookedSlots}</p>
-                </div>
-              </div>
-            </div>
-
-            <Link to="/jobs" className="bg-gradient-to-br from-amber-50 to-amber-100/30 rounded-2xl border border-amber-200 p-6 hover:border-amber-300 hover:shadow-lg transition-all cursor-pointer">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-amber-200 rounded-xl flex items-center justify-center">
-                  <Users className="w-6 h-6 text-amber-700" />
-                </div>
-                <div>
-                  <p className="text-sm text-amber-700 font-medium">Active Jobs</p>
-                  <p className="text-3xl font-bold text-amber-900">{activeJobCount}</p>
-                </div>
-              </div>
-            </Link>
-
-            <button
-              onClick={() => setShowSubscriptionModal(true)}
-              className={`rounded-2xl border p-6 hover:shadow-lg transition-all cursor-pointer text-left ${
-                isProUser
-                  ? 'bg-gradient-to-br from-amber-50 to-yellow-100/30 border-amber-300'
-                  : 'bg-gradient-to-br from-gray-50 to-gray-100/30 border-gray-200 hover:border-amber-300'
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isProUser ? 'bg-amber-200' : 'bg-gray-200'}`}>
-                  <Crown className={`w-6 h-6 ${isProUser ? 'text-amber-700' : 'text-gray-500'}`} />
-                </div>
-                <div className="flex-1">
-                  <p className={`text-sm font-medium ${isProUser ? 'text-amber-700' : 'text-gray-600'}`}>Your Plan</p>
-                  <p className={`text-xl font-bold ${isProUser ? 'text-amber-900' : 'text-gray-900'}`}>
-                    {isProUser ? 'Pro' : 'Free'}
-                  </p>
-                  {!isProUser && <p className="text-xs text-amber-600 font-medium mt-1">Upgrade for more</p>}
-                </div>
-              </div>
-            </button>
-          </div>
-        </CollapsibleSection>
-
-        <div className="mt-6"><SmartInsightsWidget /></div>
-
-        <div className="mt-6 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
-          <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-          <span className="text-sm font-semibold text-green-800">100% Payout (Zero Platform Fees)</span>
-          <span className="text-sm text-green-600">- You keep every dollar you earn.</span>
+        {/* Onboarding Checklist */}
+        <div className="mb-6" data-tour="onboarding-checklist">
+          <SectionErrorBoundary fallbackTitle="Onboarding checklist failed to load">
+            <OnboardingChecklist />
+          </SectionErrorBoundary>
         </div>
 
-        <div className="mt-6 space-y-6">
-          <QuoteInsightsWidget />
-          <OnboardingChecklist />
-        </div>
-
-        {/* Push Notification Banner */}
-        {pushStatus !== 'granted' && pushStatus !== 'unsupported' && (
-          <div className="bg-gradient-to-r from-blue-50 to-sky-50 rounded-2xl border border-blue-200 p-5 mb-6 mt-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <BellRing className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Never Miss an Urgent Lead</h3>
-                  <p className="text-sm text-gray-600 mt-0.5">Get instant desktop alerts when high-priority jobs are posted in your area.</p>
-                </div>
-              </div>
+        {/* First-Time Guidance — shown when tradie has no jobs and no availability */}
+        {jobs.length === 0 && slots.length === 0 && !slotsLoading && (
+          <div className="mb-6 bg-gradient-to-r from-warm-50 to-secondary-50 border border-warm-200 rounded-2xl p-5">
+            <h3 className="font-bold text-gray-900 mb-1">What to do first</h3>
+            <p className="text-sm text-gray-600 mb-4">Complete these three steps to start getting work — most tradies are set up in under 5 minutes.</p>
+            <div className="grid sm:grid-cols-3 gap-3">
               <button
-                onClick={handleEnablePush}
-                disabled={pushEnabling || pushStatus === 'denied'}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex-shrink-0 ${
-                  pushStatus === 'denied'
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md active:scale-95'
-                }`}
+                onClick={() => {
+                  const calEl = document.querySelector('[data-tour="calendar"]');
+                  if (calEl) calEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}
+                className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200 hover:border-primary-300 transition-colors text-left"
               >
-                {pushEnabling ? <Loader2 className="w-4 h-4 animate-spin" /> : pushStatus === 'denied' ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-                {pushStatus === 'denied' ? 'Blocked in Browser' : 'Enable Desktop Alerts'}
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-green-700">1</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Set your availability</p>
+                  <p className="text-xs text-gray-500">Clients can only book open slots</p>
+                </div>
               </button>
+              <Link
+                to="/work"
+                className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200 hover:border-primary-300 transition-colors text-left"
+              >
+                <div className="w-8 h-8 bg-warm-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-warm-700">2</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Browse available leads</p>
+                  <p className="text-xs text-gray-500">Quote on jobs near you</p>
+                </div>
+              </Link>
+              <Link
+                to="/my-profile"
+                className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200 hover:border-primary-300 transition-colors text-left"
+              >
+                <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-primary-700">3</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Complete your profile</p>
+                  <p className="text-xs text-gray-500">Verified profiles get 3x more leads</p>
+                </div>
+              </Link>
             </div>
           </div>
         )}
 
-        {pushStatus === 'granted' && (
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200 p-4 mb-6 mt-6">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-              <p className="text-sm font-medium text-green-800">Desktop alerts are active. You'll be notified of urgent leads instantly.</p>
-            </div>
+        {/* Recruitment Banner */}
+        <Link
+          to="/work?tab=recruitment"
+          className="mb-6 flex items-center gap-4 p-4 bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-2xl hover:border-primary-300 transition-all group"
+        >
+          <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-primary-200 transition-colors">
+            <Users className="w-5 h-5 text-primary-600" />
           </div>
-        )}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-gray-900 text-sm">Looking for staff?</h3>
+            <p className="text-xs text-gray-600 mt-0.5">Post a vacancy to find apprentices, qualified tradies, and senior roles</p>
+          </div>
+          <span className="px-3 py-1.5 bg-primary-600 text-white text-xs font-semibold rounded-lg group-hover:bg-primary-700 transition-colors flex-shrink-0">
+            Post a Vacancy
+          </span>
+        </Link>
+
+        {/* Pending Actions Nudge */}
+        {(() => {
+          const pendingJobs = jobs.filter(j => j.status === 'pending');
+          const inProgressJobs = jobs.filter(j => j.status === 'in_progress');
+          const unreadConvos = conversations.filter(c => c.messages.some(m => m.receiver_id === user?.id && !m.read_at));
+          if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0) return null;
+          return (
+            <div className="bg-white rounded-xl border border-primary-200 p-4 mt-6 mb-2">
+              <p className="text-sm font-semibold text-gray-900 mb-3">Your next steps</p>
+              <div className="flex flex-wrap gap-2">
+                {pendingJobs.length > 0 && (
+                  <button onClick={() => {
+                    setActiveTab('jobs');
+                    // Open the first pending job directly
+                    const firstPending = pendingJobs[0];
+                    if (firstPending) {
+                      setSelectedJob(firstPending.id);
+                      setShowJobManagement(true);
+                    }
+                  }} className="inline-flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm font-medium text-red-800 hover:bg-red-100 transition-colors">
+                    <Briefcase className="w-4 h-4" />
+                    {pendingJobs.length} pending job{pendingJobs.length !== 1 ? 's' : ''} to review
+                  </button>
+                )}
+                {inProgressJobs.length > 0 && (
+                  <button onClick={() => {
+                    setActiveTab('jobs');
+                    const firstInProgress = inProgressJobs[0];
+                    if (firstInProgress) {
+                      setSelectedJob(firstInProgress.id);
+                      setShowJobManagement(true);
+                    }
+                  }} className="inline-flex items-center gap-2 px-3 py-2 bg-secondary-50 border border-secondary-200 rounded-lg text-sm font-medium text-secondary-800 hover:bg-secondary-100 transition-colors">
+                    <Clock className="w-4 h-4" />
+                    {inProgressJobs.length} job{inProgressJobs.length !== 1 ? 's' : ''} in progress
+                  </button>
+                )}
+                {unreadConvos.length > 0 && (
+                  <button onClick={() => setActiveTab('messages')} className="inline-flex items-center gap-2 px-3 py-2 bg-primary-50 border border-primary-200 rounded-lg text-sm font-medium text-primary-800 hover:bg-primary-100 transition-colors">
+                    <MessageSquare className="w-4 h-4" />
+                    {unreadConvos.length} unread conversation{unreadConvos.length !== 1 ? 's' : ''}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Tabbed Content */}
-        <div className="bg-white rounded-2xl border border-gray-200 mb-6 shadow-sm mt-8">
+        <div className="bg-white rounded-2xl border border-gray-200 mb-6 shadow-sm mt-6 ring-1 ring-primary-100/50" data-tour="jobs-tab">
           <div className="border-b border-gray-200">
             <div className="flex gap-2 p-4">
-              {(['overview', 'jobs', 'messages'] as TabType[]).map((tab) => {
+              {(['jobs', 'messages'] as TabType[]).map((tab) => {
                 const icons = { overview: Calendar, jobs: Briefcase, messages: MessageSquare };
                 const labels = { overview: 'Overview', jobs: 'Jobs', messages: 'Messages' };
                 const Icon = icons[tab];
@@ -583,7 +667,7 @@ export default function TradieDashboard() {
                     onClick={() => setActiveTab(tab)}
                     className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all min-h-[44px] ${
                       activeTab === tab
-                        ? 'bg-primary-600 text-white shadow-md'
+                        ? 'bg-warm-500 text-white shadow-md'
                         : 'text-gray-600 hover:bg-gray-50 active:scale-95'
                     }`}
                   >
@@ -596,276 +680,120 @@ export default function TradieDashboard() {
           </div>
 
           <div className="p-6">
-            {/* ─── OVERVIEW TAB ─── */}
-            {activeTab === 'overview' && (
-              <div className="grid lg:grid-cols-3 gap-8">
-                {/* Calendar */}
-                <div className="lg:col-span-2">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                      <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1)); setSelectedDay(null); }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                        <ChevronLeft className="w-5 h-5 text-gray-600" />
-                      </button>
-                      <h2 className="text-lg font-semibold text-gray-900">
-                        {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-                      </h2>
-                      <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1)); setSelectedDay(null); }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                        <ChevronRight className="w-5 h-5 text-gray-600" />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {isProUser ? (
-                        <button onClick={() => setShowAddSlot(true)} className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors min-h-[44px]">
-                          <Plus className="w-4 h-4" />Bulk Add Slots
-                        </button>
-                      ) : (
-                        <button onClick={() => setShowSubscriptionModal(true)} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-medium rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all min-h-[44px]">
-                          <Crown className="w-4 h-4" />Bulk Add Slots<span className="text-[10px] font-bold bg-white/20 px-1.5 py-0.5 rounded">PRO</span>
-                        </button>
-                      )}
-                      {isProUser ? (
-                        <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
-                          {syncLoading ? (
-                            <><Loader2 className="w-4 h-4 animate-spin" />{calendarIntegration ? 'Syncing...' : 'Connecting...'}</>
-                          ) : calendarIntegration ? (
-                            <><RefreshCw className="w-4 h-4" />Sync Google Calendar</>
-                          ) : (
-                            <><Calendar className="w-4 h-4" />Connect Google Calendar</>
-                          )}
-                        </button>
-                      ) : (
-                        <button onClick={() => setShowSubscriptionModal(true)} className="flex items-center gap-2 px-4 py-2 border border-amber-300 text-amber-700 font-medium rounded-xl hover:bg-amber-50 transition-colors min-h-[44px]">
-                          <Calendar className="w-4 h-4" />Google Calendar<span className="text-[10px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded">PRO</span>
-                        </button>
-                      )}
-                      <div className="relative">
-                        <button onClick={() => setShowManageMenu(!showManageMenu)} className="p-2 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors">
-                          <MoreVertical className="w-5 h-5" />
-                        </button>
-                        {showManageMenu && (
-                          <>
-                            <div className="fixed inset-0 z-10" onClick={() => setShowManageMenu(false)} />
-                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-20 py-2">
-                              <button onClick={handleRemoveDups} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3">
-                                <Copy className="w-4 h-4 text-gray-400" />Remove Duplicates
-                              </button>
-                              <button onClick={() => setConfirmClearAll(true)} className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3">
-                                <Trash2 className="w-4 h-4" />Clear All Upcoming
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {slotsLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
-                    </div>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-7 gap-1 mb-2">
-                        {dayNames.map((day) => (
-                          <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">{day}</div>
-                        ))}
-                      </div>
-
-                      <div className="grid grid-cols-7 gap-1">
-                        {[...Array(startingDay)].map((_, i) => <div key={`empty-${i}`} className="aspect-square" />)}
-                        {[...Array(daysInMonth)].map((_, i) => {
-                          const day = i + 1;
-                          const daySlots = getSlotsForDate(day);
-                          const hasAvailable = daySlots.some((s) => s.status === 'available');
-                          const hasBooked = daySlots.some((s) => s.status === 'booked');
-                          const isToday = new Date().getDate() === day && new Date().getMonth() === currentDate.getMonth() && new Date().getFullYear() === currentDate.getFullYear();
-                          const isSelected = selectedDay === day;
-
-                          return (
-                            <button
-                              key={day}
-                              onClick={() => setSelectedDay(day)}
-                              className={`aspect-square rounded-lg p-1 text-sm transition-all min-w-[40px] min-h-[40px] ${
-                                isSelected ? 'bg-primary-600 text-white ring-2 ring-primary-600 ring-offset-2'
-                                : hasAvailable && hasBooked ? 'bg-gradient-to-br from-green-50 to-blue-50 hover:from-green-100 hover:to-blue-100'
-                                : hasAvailable ? 'bg-green-50 hover:bg-green-100'
-                                : hasBooked ? 'bg-blue-50 hover:bg-blue-100'
-                                : isToday ? 'ring-2 ring-primary-500 hover:bg-gray-100'
-                                : 'hover:bg-gray-100'
-                              }`}
-                            >
-                              <div className="flex flex-col items-center">
-                                <span className={`font-medium ${isSelected ? 'text-white' : isToday ? 'text-primary-600 font-bold' : 'text-gray-700'}`}>{day}</span>
-                                <div className="flex gap-1 mt-0.5">
-                                  {hasAvailable && <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-green-300' : 'bg-green-500'}`} />}
-                                  {hasBooked && <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-blue-300' : 'bg-primary-500'}`} />}
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <div className="mt-4 flex items-center gap-5 text-sm text-gray-700">
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded" /><span className="font-medium">Available</span></div>
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-blue-100 border-2 border-primary-500 rounded" /><span className="font-medium">Booked</span></div>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Slot Sidebar */}
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <h3 className="font-semibold text-gray-900 mb-4">
-                    {selectedDay
-                      ? new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
-                      : 'Upcoming Slots'}
-                  </h3>
-
-                  {selectedDay && (
-                    <button
-                      onClick={() => !isLicenseExpired && setShowAddSlotForDay(true)}
-                      disabled={isLicenseExpired}
-                      className={`w-full mb-4 flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed rounded-xl transition-all ${
-                        isLicenseExpired ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50' : 'border-gray-300 text-gray-600 hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50'
-                      }`}
-                      title={isLicenseExpired ? 'License expired - renew to add slots' : ''}
-                    >
-                      <Plus className="w-4 h-4" />Add time slot
-                    </button>
-                  )}
-
-                  <div className="space-y-3 max-h-80 overflow-y-auto">
-                    {(selectedDay ? getSlotsForDate(selectedDay) : slots.filter((s) => new Date(s.start_time) > new Date()).slice(0, 10)).map((slot) => (
-                      <div key={slot.id} className={`p-3 rounded-xl border ${slot.status === 'available' ? 'bg-green-50 border-green-200' : slot.status === 'booked' ? 'bg-primary-50 border-primary-200' : 'bg-gray-50 border-gray-200'}`}>
-                        <div className="flex items-start justify-between">
-                          <div>
-                            {!selectedDay && (
-                              <p className="font-medium text-gray-900 text-sm">
-                                {new Date(slot.start_time).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
-                              </p>
-                            )}
-                            <p className={`text-gray-600 ${selectedDay ? 'text-sm font-medium text-gray-900' : 'text-xs mt-0.5'}`}>
-                              {new Date(slot.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(slot.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                          </div>
-                          {slot.status === 'available' && (
-                            <div className="flex items-center gap-1">
-                              <button onClick={() => startEditingSlot(slot)} className="p-2.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" title="Edit time">
-                                <Pencil className="w-4 h-4" />
-                              </button>
-                              <button onClick={() => handleDeleteSlot(slot.id)} className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" title="Delete slot">
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        <span className={`mt-2 inline-block text-xs px-2 py-0.5 rounded-full ${slot.status === 'available' ? 'bg-green-100 text-green-700' : slot.status === 'booked' ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-700'}`}>
-                          {slot.status}
-                        </span>
-                      </div>
-                    ))}
-
-                    {selectedDay && getSlotsForDate(selectedDay).length === 0 && (
-                      <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                        <p className="text-gray-600 text-sm font-medium mb-2">No slots for this day</p>
-                        <p className="text-gray-600 text-xs">Add one above to let clients know you're available</p>
-                      </div>
-                    )}
-
-                    {!selectedDay && slots.filter((s) => new Date(s.start_time) > new Date()).length === 0 && (
-                      <div className="text-center py-6 bg-amber-50 rounded-lg border border-amber-200">
-                        <p className="text-amber-900 text-sm font-medium mb-2">No upcoming availability</p>
-                        <p className="text-amber-800 text-xs">Add slots to your calendar so clients can book you</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {selectedDay && (
-                    <button onClick={() => setSelectedDay(null)} className="w-full mt-3 text-sm text-gray-500 hover:text-gray-700 py-2">
-                      Show all upcoming slots
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* ─── JOBS TAB ─── */}
             {activeTab === 'jobs' && (
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Jobs</h2>
+                <h2 className="text-lg font-bold text-gray-900 mb-4">Your Jobs</h2>
                 {jobs.length === 0 ? (
-                  <EmptyState
-                    icon={Briefcase}
-                    title="No Active Jobs"
-                    description="Set up your calendar so clients can find and book you for their next project."
-                    actionLabel="Set Your Availability"
-                    onAction={() => setActiveTab('overview')}
-                  />
+                  <div>
+                    <EmptyState
+                      icon={Briefcase}
+                      title="No Active Jobs"
+                      description="Set up your calendar so clients can find and book you for their next project."
+                      actionLabel="Set Your Availability"
+                      onAction={() => navigate('/schedule')}
+                    />
+                    <div className="text-center mt-3 pb-2">
+                      <Link to="/work?tab=recruitment" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                        Or post a vacancy to find staff &rarr;
+                      </Link>
+                    </div>
+                  </div>
                 ) : (
-                  <div className="space-y-4">
-                    {jobs.map((job: DashboardJob) => (
-                      <div
-                        key={job.id}
-                        className={`border rounded-xl p-4 transition-all ${job.priority === 'urgent' ? 'border-red-300 bg-red-50/30' : 'border-gray-200 hover:border-primary-300'}`}
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            {getStatusIcon(job.status)}
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-semibold text-gray-900">{job.profiles?.full_name || 'Client'}</h3>
-                                {job.priority === 'urgent' && (
-                                  <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full border border-red-200 flex items-center gap-1">
-                                    <AlertCircle className="w-3 h-3" />URGENT
+                  <div className="space-y-3">
+                    {jobs.map((job: DashboardJob) => {
+                      const category = job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
+                      const cleanDesc = job.description.replace(/^\[[^\]]+\]\s*/, '');
+                      const displayTitle = job.title || category || 'Job';
+                      const unlocked = isJobUnlocked(job.id);
+
+                      return (
+                        <div
+                          key={job.id}
+                          className={`border rounded-xl overflow-hidden transition-all hover:shadow-sm ${
+                            job.priority === 'urgent' ? 'border-red-200 bg-gradient-to-r from-red-50/40 to-white' : 'border-gray-200 hover:border-primary-200'
+                          }`}
+                        >
+                          {/* Card Header */}
+                          <div className="px-4 pt-4 pb-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-semibold text-gray-900 truncate capitalize">{displayTitle}</h3>
+                                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
+                                    {job.status.replace(/_/g, ' ')}
                                   </span>
-                                )}
-                                {job.is_delayed && (
-                                  <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full border border-yellow-200 flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />Delayed
-                                  </span>
-                                )}
+                                  {job.priority === 'urgent' && (
+                                    <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-semibold rounded-full border border-red-200 flex-shrink-0">
+                                      URGENT
+                                    </span>
+                                  )}
+                                  {job.is_delayed && (
+                                    <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full border border-yellow-200 flex-shrink-0">
+                                      Delayed
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-gray-600 line-clamp-2">{redactSensitiveInfo(cleanDesc, unlocked)}</p>
                               </div>
-                              <p className="text-sm text-gray-600">
-                                {redactSensitiveInfo(job.profiles?.email || '', isJobUnlocked(job.id))}
-                              </p>
+                              <button
+                                onClick={() => { if (!isLicenseExpired) { setSelectedJob(job.id); setShowJobManagement(true); } }}
+                                disabled={isLicenseExpired}
+                                className={`p-2 rounded-lg transition-colors flex-shrink-0 ${isLicenseExpired ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                                title={isLicenseExpired ? 'License expired' : 'Manage job'}
+                              >
+                                <Settings className="w-4 h-4" />
+                              </button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(job.status)}`}>
-                              {job.status.replace(/_/g, ' ')}
+
+                          {/* Card Meta */}
+                          <div className="px-4 pb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                            {category && (
+                              <span className="px-2 py-0.5 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200 capitalize">
+                                {category}
+                              </span>
+                            )}
+                            <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                              <Users className="w-3.5 h-3.5" />
+                              {job.profiles?.full_name || 'Client'}
                             </span>
-                            <button
-                              onClick={() => { if (!isLicenseExpired) { setSelectedJob(job.id); setShowJobManagement(true); } }}
-                              disabled={isLicenseExpired}
-                              className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${isLicenseExpired ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-                              title={isLicenseExpired ? 'License expired - renew to manage jobs' : 'Manage job'}
-                            >
-                              <Settings className="w-4 h-4" />
-                            </button>
+                            {job.location_address && (
+                              <span className="flex items-center gap-1.5 text-xs text-gray-500 truncate max-w-[200px]">
+                                <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                                {job.location_address}
+                              </span>
+                            )}
+                            {job.scheduled_time && (
+                              <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                                <Clock className="w-3.5 h-3.5" />
+                                {new Date(job.scheduled_time).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                              </span>
+                            )}
+                            <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(job.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                            </span>
                           </div>
+
+                          {/* Notes */}
+                          {job.notes && (
+                            <div className="mx-4 mb-3 px-3 py-2 bg-secondary-50 border border-secondary-100 rounded-lg">
+                              <p className="text-xs text-secondary-700"><span className="font-semibold">Note:</span> {job.notes}</p>
+                            </div>
+                          )}
+
+                          {/* Declined action */}
+                          {job.status === 'declined' && (
+                            <div className="px-4 pb-3 pt-1 border-t border-gray-100">
+                              <button onClick={() => { setJobToDelete(job.id); setShowDeleteConfirm(true); }} className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center gap-1.5">
+                                <Trash2 className="w-3.5 h-3.5" />Delete
+                              </button>
+                            </div>
+                          )}
                         </div>
-                        <p className="text-gray-700 mb-3">{redactSensitiveInfo(job.description, isJobUnlocked(job.id))}</p>
-                        {job.notes && (
-                          <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-                            <p className="text-xs text-blue-700"><span className="font-semibold">Note:</span> {job.notes}</p>
-                          </div>
-                        )}
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                          {job.scheduled_time && <div className="flex items-center gap-2"><Clock className="w-4 h-4" />{new Date(job.scheduled_time).toLocaleString()}</div>}
-                          {job.is_delayed && job.delayed_until && <div className="flex items-center gap-2 text-yellow-700"><Clock className="w-4 h-4" />Until {new Date(job.delayed_until).toLocaleString()}</div>}
-                          <div className="flex items-center gap-2 text-xs text-gray-400"><Calendar className="w-3 h-3" />Created {new Date(job.created_at).toLocaleDateString()}</div>
-                        </div>
-                        {job.status === 'declined' && (
-                          <div className="mt-4 pt-4 border-t border-gray-200">
-                            <button onClick={() => { setJobToDelete(job.id); setShowDeleteConfirm(true); }} className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
-                              <Trash2 className="w-4 h-4" />Delete
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -874,14 +802,14 @@ export default function TradieDashboard() {
             {/* ─── MESSAGES TAB ─── */}
             {activeTab === 'messages' && (
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Conversations</h2>
+                <h2 className="text-lg font-bold text-gray-900 mb-4">Conversations</h2>
                 {conversations.length === 0 ? (
                   <EmptyState
                     icon={MessageSquare}
                     title="No Messages Yet"
                     description="When clients message you about jobs, their conversations will appear here."
-                    actionLabel="Set Your Availability"
-                    onAction={() => setActiveTab('overview')}
+                    actionLabel="Browse Leads"
+                    onAction={() => navigate('/work')}
                   />
                 ) : (
                   <div className="space-y-3">
@@ -924,6 +852,550 @@ export default function TradieDashboard() {
             )}
           </div>
         </div>
+
+        {/* Calendar */}
+        <div className="mt-6 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 ring-1 ring-primary-100/50" data-tour="calendar">
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Calendar */}
+            <div className="lg:col-span-2">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1)); setSelectedDay(null); }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <ChevronLeft className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                  </h2>
+                  <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1)); setSelectedDay(null); }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <ChevronRight className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                    {(['day', 'week', 'month'] as const).map(v => (
+                      <button key={v} onClick={() => setCalendarView(v)}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${calendarView === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                        {v.charAt(0).toUpperCase() + v.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {isProUser ? (
+                    <button onClick={() => setShowAddSlot(true)} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition-colors min-h-[44px]">
+                      <Plus className="w-4 h-4" />Bulk Add Slots
+                    </button>
+                  ) : (
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex items-center gap-2 px-4 py-2 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 transition-all min-h-[44px]">
+                      <Crown className="w-4 h-4" />Bulk Add Slots<span className="text-xs font-bold bg-white/20 px-1.5 py-0.5 rounded">PRO</span>
+                    </button>
+                  )}
+                  {isProUser ? (
+                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
+                      {syncLoading ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" />{calendarIntegration ? 'Syncing...' : 'Connecting...'}</>
+                      ) : calendarIntegration ? (
+                        <><RefreshCw className="w-4 h-4" />Sync Google Calendar</>
+                      ) : (
+                        <><Calendar className="w-4 h-4" />Connect Google Calendar</>
+                      )}
+                    </button>
+                  ) : (
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex items-center gap-2 px-4 py-2 border border-warm-300 text-warm-700 font-medium rounded-xl hover:bg-warm-50 transition-colors min-h-[44px]">
+                      <Calendar className="w-4 h-4" />Google Calendar<span className="text-xs font-bold bg-warm-100 text-warm-600 px-1.5 py-0.5 rounded">PRO</span>
+                    </button>
+                  )}
+                  <div className="relative">
+                    <button onClick={() => setShowManageMenu(!showManageMenu)} className="p-2 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors">
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+                    {showManageMenu && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setShowManageMenu(false)} />
+                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-20 py-2">
+                          <button onClick={handleRemoveDups} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3">
+                            <Copy className="w-4 h-4 text-gray-400" />Remove Duplicates
+                          </button>
+                          <button onClick={() => setConfirmClearAll(true)} className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3">
+                            <Trash2 className="w-4 h-4" />Clear All Upcoming
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {slotsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+                </div>
+              ) : calendarView === 'day' ? (
+                /* Day View */
+                (() => {
+                  const viewDate = selectedDay
+                    ? new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay)
+                    : new Date();
+                  const viewDay = viewDate.getDate();
+                  const daySlots = getSlotsForDate(viewDay);
+                  const hours = Array.from({ length: 15 }, (_, i) => i + 6); // 6am-8pm
+                  return (
+                    <div>
+                      <div className="text-center mb-4">
+                        <p className="text-sm font-medium text-gray-700">
+                          {viewDate.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        </p>
+                      </div>
+                      <div className="border border-gray-200 rounded-xl overflow-hidden">
+                        {hours.map(hour => {
+                          const hourStr = `${hour.toString().padStart(2, '0')}:00`;
+                          const label = hour < 12 ? `${hour}:00 AM` : hour === 12 ? '12:00 PM' : `${hour - 12}:00 PM`;
+                          const slotsInHour = daySlots.filter(s => {
+                            const startH = new Date(s.start_time).getHours();
+                            const endH = new Date(s.end_time).getHours();
+                            return hour >= startH && hour < endH;
+                          });
+                          return (
+                            <div key={hourStr} className={`flex border-b border-gray-100 last:border-b-0 min-h-[44px] ${slotsInHour.length > 0 ? '' : 'bg-white'}`}>
+                              <div className="w-20 flex-shrink-0 px-3 py-2 text-xs text-gray-400 font-medium border-r border-gray-100">
+                                {label}
+                              </div>
+                              <div className="flex-1 flex gap-1 p-1">
+                                {slotsInHour.map(s => (
+                                  <div key={s.id} className={`flex-1 rounded-md px-2 py-1 text-xs font-medium ${s.status === 'available' ? 'bg-green-100 text-green-700 border border-green-200' : s.status === 'booked' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
+                                    {s.status === 'available' ? 'Available' : s.status === 'booked' ? 'Booked' : s.status}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="mt-4 flex items-center gap-5 text-sm text-gray-700">
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded" /><span className="font-medium">Available</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-red-100 border-2 border-red-500 rounded" /><span className="font-medium">Booked</span></div>
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : calendarView === 'week' ? (
+                /* Week View */
+                (() => {
+                  const today = selectedDay
+                    ? new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay)
+                    : new Date();
+                  const startOfWeek = new Date(today);
+                  startOfWeek.setDate(today.getDate() - today.getDay());
+                  const weekDays = Array.from({ length: 7 }, (_, i) => {
+                    const d = new Date(startOfWeek);
+                    d.setDate(startOfWeek.getDate() + i);
+                    return d;
+                  });
+                  const hours = Array.from({ length: 15 }, (_, i) => i + 6);
+                  return (
+                    <div>
+                      <div className="overflow-x-auto">
+                        <div className="min-w-[700px]">
+                          <div className="grid grid-cols-[80px_repeat(7,1fr)] border border-gray-200 rounded-t-xl overflow-hidden">
+                            <div className="bg-gray-50 border-r border-b border-gray-200 p-2" />
+                            {weekDays.map(d => {
+                              const isToday = d.toDateString() === new Date().toDateString();
+                              return (
+                                <div key={d.toISOString()} className={`text-center py-2 border-r border-b border-gray-200 last:border-r-0 text-xs font-medium ${isToday ? 'bg-primary-50 text-primary-700' : 'bg-gray-50 text-gray-600'}`}>
+                                  <div>{dayNames[d.getDay()]}</div>
+                                  <div className={`text-base font-semibold ${isToday ? 'text-primary-700' : 'text-gray-900'}`}>{d.getDate()}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="border-x border-b border-gray-200 rounded-b-xl overflow-hidden">
+                            {hours.map(hour => {
+                              const label = hour < 12 ? `${hour}:00 AM` : hour === 12 ? '12:00 PM' : `${hour - 12}:00 PM`;
+                              return (
+                                <div key={hour} className="grid grid-cols-[80px_repeat(7,1fr)] border-b border-gray-100 last:border-b-0">
+                                  <div className="px-3 py-1.5 text-xs text-gray-400 font-medium border-r border-gray-100">{label}</div>
+                                  {weekDays.map(d => {
+                                    const isSameMonth = d.getMonth() === currentDate.getMonth() && d.getFullYear() === currentDate.getFullYear();
+                                    const daySlotsW = isSameMonth ? getSlotsForDate(d.getDate()) : [];
+                                    const slotsInHour = daySlotsW.filter(s => {
+                                      const startH = new Date(s.start_time).getHours();
+                                      const endH = new Date(s.end_time).getHours();
+                                      return hour >= startH && hour < endH;
+                                    });
+                                    return (
+                                      <div key={d.toISOString()} className="border-r border-gray-100 last:border-r-0 p-0.5 min-h-[32px]">
+                                        {slotsInHour.map(s => (
+                                          <div key={s.id} className={`rounded px-1 py-0.5 text-xs font-medium truncate ${s.status === 'available' ? 'bg-green-100 text-green-700' : s.status === 'booked' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
+                                            {s.status === 'available' ? 'Avail' : 'Bkd'}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex items-center gap-5 text-sm text-gray-700">
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded" /><span className="font-medium">Available</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-red-100 border-2 border-red-500 rounded" /><span className="font-medium">Booked</span></div>
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : (
+                /* Month View (existing) */
+                <>
+                  <div className="grid grid-cols-7 gap-1 mb-2" role="row">
+                    {dayNames.map((day) => (
+                      <div key={day} className="text-center text-xs font-medium text-gray-500 py-2" role="columnheader">{day}</div>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1" role="grid" aria-label="Availability calendar">
+                    {[...Array(startingDay)].map((_, i) => <div key={`empty-${i}`} className="aspect-square" />)}
+                    {[...Array(daysInMonth)].map((_, i) => {
+                      const day = i + 1;
+                      const daySlots = getSlotsForDate(day);
+                      const hasAvailable = daySlots.some((s) => s.status === 'available');
+                      const hasBooked = daySlots.some((s) => s.status === 'booked');
+                      const isToday = new Date().getDate() === day && new Date().getMonth() === currentDate.getMonth() && new Date().getFullYear() === currentDate.getFullYear();
+                      const isSelected = selectedDay === day;
+                      const availableCount = daySlots.filter((s) => s.status === 'available').length;
+                      const bookedCount = daySlots.filter((s) => s.status === 'booked').length;
+                      const dateLabel = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
+                      const slotSummary = availableCount > 0 || bookedCount > 0
+                        ? `, ${availableCount} available slot${availableCount !== 1 ? 's' : ''}${bookedCount > 0 ? `, ${bookedCount} booked` : ''}`
+                        : ', no slots';
+
+                      return (
+                        <button
+                          key={day}
+                          onClick={() => setSelectedDay(day)}
+                          aria-label={`${dateLabel}${slotSummary}`}
+                          aria-pressed={isSelected}
+                          className={`aspect-square rounded-lg p-1 text-sm transition-all min-w-[40px] min-h-[40px] ${
+                            isSelected ? 'bg-warm-500 text-white ring-2 ring-primary-600 ring-offset-2'
+                            : hasAvailable && hasBooked ? 'bg-gradient-to-br from-green-50 to-red-50 hover:from-green-100 hover:to-red-100'
+                            : hasAvailable ? 'bg-green-50 hover:bg-green-100'
+                            : hasBooked ? 'bg-red-50 hover:bg-red-100'
+                            : isToday ? 'ring-2 ring-primary-500 hover:bg-gray-100'
+                            : 'hover:bg-gray-100'
+                          }`}
+                        >
+                          <div className="flex flex-col items-center">
+                            <span className={`font-medium ${isSelected ? 'text-white' : isToday ? 'text-primary-600 font-bold' : 'text-gray-700'}`}>{day}</span>
+                            <div className="flex gap-1 mt-0.5">
+                              {hasAvailable && <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-green-300' : 'bg-green-500'}`} />}
+                              {hasBooked && <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-red-300' : 'bg-red-500'}`} />}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-4 flex items-center gap-5 text-sm text-gray-700">
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded" /><span className="font-medium">Available</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-red-100 border-2 border-red-500 rounded" /><span className="font-medium">Booked</span></div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Slot Sidebar */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <h3 className="font-semibold text-gray-900 mb-4">
+                {selectedDay
+                  ? new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+                  : 'Upcoming Slots'}
+              </h3>
+
+              {selectedDay && (
+                <button
+                  onClick={() => !isLicenseExpired && setShowAddSlotForDay(true)}
+                  disabled={isLicenseExpired}
+                  className={`w-full mb-4 flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed rounded-xl transition-all ${
+                    isLicenseExpired ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50' : 'border-gray-300 text-gray-600 hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50'
+                  }`}
+                  title={isLicenseExpired ? 'License expired - renew to add slots' : ''}
+                >
+                  <Plus className="w-4 h-4" />Add time slot
+                </button>
+              )}
+
+              <div className="space-y-3 max-h-80 overflow-y-auto">
+                {(selectedDay ? getSlotsForDate(selectedDay) : slots.filter((s) => new Date(s.start_time) > new Date()).slice(0, 10)).map((slot) => (
+                  <div key={slot.id} className={`p-3 rounded-xl border ${slot.status === 'available' ? 'bg-green-50 border-green-200' : slot.status === 'booked' ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        {!selectedDay && (
+                          <p className="font-medium text-gray-900 text-sm">
+                            {new Date(slot.start_time).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
+                          </p>
+                        )}
+                        <p className={`text-gray-600 ${selectedDay ? 'text-sm font-medium text-gray-900' : 'text-xs mt-0.5'}`}>
+                          {new Date(slot.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(slot.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      {slot.status === 'available' && (
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => startEditingSlot(slot)} className="p-2.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" title="Edit time" aria-label="Edit time slot">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDeleteSlot(slot.id)} className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" title="Delete slot" aria-label="Delete time slot">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <span className={`mt-2 inline-block text-xs px-2 py-0.5 rounded-full ${slot.status === 'available' ? 'bg-green-100 text-green-700' : slot.status === 'booked' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
+                      {slot.status}
+                    </span>
+                  </div>
+                ))}
+
+                {selectedDay && getSlotsForDate(selectedDay).length === 0 && (
+                  <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                    <p className="text-gray-600 text-sm font-medium mb-2">No slots for this day</p>
+                    <p className="text-gray-600 text-xs">Add one above to let clients know you're available</p>
+                  </div>
+                )}
+
+                {!selectedDay && slots.filter((s) => new Date(s.start_time) > new Date()).length === 0 && (
+                  <div className="text-center py-6 bg-warm-50 rounded-lg border border-warm-200">
+                    <p className="text-warm-900 text-sm font-medium mb-2">No upcoming availability</p>
+                    <p className="text-warm-800 text-xs">Add slots to your calendar so clients can book you</p>
+                  </div>
+                )}
+              </div>
+
+              {selectedDay && (
+                <button onClick={() => setSelectedDay(null)} className="w-full mt-3 text-sm text-gray-500 hover:text-gray-700 py-2">
+                  Show all upcoming slots
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div data-tour="quick-stats">
+        <CollapsibleSection
+          title="Quick Stats"
+          defaultOpen={true}
+          icon={<div className="w-7 h-7 bg-primary-100 rounded-lg flex items-center justify-center"><Clock className="w-4 h-4 text-primary-600" /></div>}
+        >
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-primary-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-navy-500 font-medium">Available Hours</p>
+                  <p className="text-3xl font-bold text-navy-900">{totalAvailableHours.toFixed(0)}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-navy-500 font-medium">Booked Slots</p>
+                  <p className="text-3xl font-bold text-navy-900">{bookedSlots}</p>
+                </div>
+              </div>
+            </div>
+
+            <Link to="/jobs" className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md hover:border-primary-300 transition-all cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                  <Users className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-navy-500 font-medium">Active Jobs</p>
+                  <p className="text-3xl font-bold text-navy-900">{activeJobCount}</p>
+                </div>
+              </div>
+            </Link>
+
+            <button
+              onClick={() => setShowSubscriptionModal(true)}
+              className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md transition-all cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isProUser ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                  <Crown className={`w-6 h-6 ${isProUser ? 'text-blue-600' : 'text-gray-500'}`} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-navy-500 font-medium">Your Plan</p>
+                  <p className="text-xl font-bold text-navy-900">
+                    {isProUser ? 'Pro' : 'Free'}
+                  </p>
+                  {!isProUser && <p className="text-xs text-primary-600 font-medium mt-1">Upgrade for more</p>}
+                </div>
+              </div>
+            </button>
+          </div>
+        </CollapsibleSection>
+        </div>
+
+        {/* Earnings Summary */}
+        <div className="mt-6 bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">Earnings Summary</h3>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-blue-50 rounded-xl p-4 text-center">
+              <Calendar className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+              <p className="text-xl font-bold text-blue-700">${earnings.thisMonth.toLocaleString()}</p>
+              <p className="text-xs text-blue-600 mt-1">This Month</p>
+            </div>
+            <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
+              <TrendingUp className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+              <p className="text-xl font-bold text-gray-800">${earnings.total.toLocaleString()}</p>
+              <p className="text-xs text-gray-500 mt-1">All Time</p>
+            </div>
+            <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
+              <Briefcase className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+              <p className="text-xl font-bold text-gray-800">{earnings.pendingJobs}</p>
+              <p className="text-xs text-gray-500 mt-1">Active Jobs</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Reviews */}
+        {recentReviews.length > 0 && (
+          <div className="mt-6 bg-white rounded-2xl border border-gray-200 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-50 rounded-lg">
+                  <Star className="w-5 h-5 text-yellow-500 fill-yellow-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Recent Reviews</h3>
+              </div>
+              <Link to="/my-profile" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                View All
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {recentReviews.map((review) => (
+                <div key={review.id} className="flex items-start gap-3 p-3 bg-surface-50 border border-surface-200 rounded-lg">
+                  <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                    <Users className="w-4 h-4 text-primary-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-sm font-semibold text-gray-900">{review.client_name || 'Client'}</span>
+                      <div className="flex items-center gap-0.5">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-3 h-3 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    {review.comment && (
+                      <p className="text-xs text-gray-600 line-clamp-2">{review.comment.replace(/\[Tags:.*?\]/, '').trim()}</p>
+                    )}
+                    <p className="text-xs text-gray-400 mt-1">
+                      {new Date(review.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <SectionErrorBoundary fallbackTitle="Quote insights failed to load">
+          <div className="mt-6" data-tour="quote-insights"><QuoteInsightsWidget /></div>
+        </SectionErrorBoundary>
+
+        <SectionErrorBoundary fallbackTitle="Smart insights failed to load">
+          <div className="mt-6"><SmartInsightsWidget /></div>
+        </SectionErrorBoundary>
+
+        {/* Push Notification Banner */}
+        {pushStatus !== 'granted' && pushStatus !== 'unsupported' && (
+          <div className="bg-gradient-to-r from-primary-50 to-warm-50 rounded-2xl border border-primary-200 p-5 mb-6 mt-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <BellRing className="w-6 h-6 text-primary-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Never Miss an Urgent Lead</h3>
+                  <p className="text-sm text-gray-600 mt-0.5">Get instant desktop alerts when high-priority jobs are posted in your area.</p>
+                </div>
+              </div>
+              <button
+                onClick={handleEnablePush}
+                disabled={pushEnabling || pushStatus === 'denied'}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex-shrink-0 ${
+                  pushStatus === 'denied'
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-warm-500 text-white hover:bg-warm-600 shadow-sm hover:shadow-md active:scale-95'
+                }`}
+              >
+                {pushEnabling ? <Loader2 className="w-4 h-4 animate-spin" /> : pushStatus === 'denied' ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                {pushStatus === 'denied' ? 'Blocked in Browser' : 'Enable Desktop Alerts'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {pushStatus === 'granted' && (
+          <div className="bg-gradient-to-r from-green-50 to-secondary-50 rounded-2xl border border-green-200 p-4 mb-6 mt-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                <p className="text-sm font-medium text-green-800">Desktop alerts are active. You'll be notified of urgent leads instantly.</p>
+              </div>
+              <button
+                onClick={async () => {
+                  if (!user) return;
+                  setPushEnabling(true);
+                  try {
+                    if ('serviceWorker' in navigator) {
+                      const registration = await navigator.serviceWorker.getRegistration();
+                      if (registration) {
+                        const subscription = await registration.pushManager.getSubscription();
+                        if (subscription) await subscription.unsubscribe();
+                      }
+                    }
+                    await savePushPreferences(user.id, false, null);
+                    setPushStatus('default');
+                    showToast('Desktop alerts disabled.');
+                  } catch {
+                    showToast('Failed to disable alerts.', true);
+                  }
+                  setPushEnabling(false);
+                }}
+                disabled={pushEnabling}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 hover:text-red-700 bg-white border border-green-200 hover:border-red-200 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+              >
+                {pushEnabling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BellOff className="w-3.5 h-3.5" />}
+                Disable
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-6 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
+          <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+          <span className="text-sm font-semibold text-green-800">95% Payout (5% Platform Fee)</span>
+          <span className="text-sm text-green-600">- Half the fee of free users. You keep more of every job.</span>
+        </div>
       </div>
 
       {/* ─── MODALS ─── */}
@@ -933,7 +1405,7 @@ export default function TradieDashboard() {
       {/* Edit Slot Modal */}
       {editingSlot && (
         <>
-          <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setEditingSlot(null)} />
+          <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setEditingSlot(null)} />
           <div role="dialog" aria-modal="true" onKeyDown={(e) => { if (e.key === 'Escape') setEditingSlot(null); }} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900">Edit Time Slot</h3>
@@ -959,7 +1431,7 @@ export default function TradieDashboard() {
             </div>
             <div className="flex gap-3">
               <button onClick={() => setEditingSlot(null)} className="flex-1 px-4 py-3 text-gray-700 font-medium border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
-              <button onClick={handleUpdateSlot} className="flex-1 px-4 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors">Save Changes</button>
+              <button onClick={handleUpdateSlot} className="flex-1 px-4 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors">Save Changes</button>
             </div>
           </div>
         </>
@@ -968,7 +1440,7 @@ export default function TradieDashboard() {
       {/* Clear All Confirm Modal */}
       {confirmClearAll && (
         <>
-          <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setConfirmClearAll(false)} />
+          <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setConfirmClearAll(false)} />
           <div role="dialog" aria-modal="true" onKeyDown={(e) => { if (e.key === 'Escape') setConfirmClearAll(false); }} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-md p-6">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center"><Trash2 className="w-6 h-6 text-red-600" /></div>
@@ -989,7 +1461,7 @@ export default function TradieDashboard() {
       {/* Add Slot For Day Modal */}
       {showAddSlotForDay && selectedDay !== null && (
         <>
-          <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setShowAddSlotForDay(false)} />
+          <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowAddSlotForDay(false)} />
           <div role="dialog" aria-modal="true" onKeyDown={(e) => { if (e.key === 'Escape') setShowAddSlotForDay(false); }} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900">Add Time Slot</h3>
@@ -1015,7 +1487,7 @@ export default function TradieDashboard() {
             </div>
             <div className="flex gap-3">
               <button onClick={() => setShowAddSlotForDay(false)} className="flex-1 px-4 py-3 text-gray-700 font-medium border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
-              <button onClick={handleAddSlotForDay} disabled={newSlotStartTime >= newSlotEndTime || addingSlot} className="flex-1 px-4 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              <button onClick={handleAddSlotForDay} disabled={newSlotStartTime >= newSlotEndTime || addingSlot} className="flex-1 px-4 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 {addingSlot ? <><Loader2 className="w-4 h-4 animate-spin" />Adding...</> : 'Add Slot'}
               </button>
             </div>

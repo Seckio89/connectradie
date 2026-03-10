@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { FREE_LIMITS, TIER_PRICING, getCurrentTier, type SubscriptionTier } from '../lib/subscription';
+import { TIER_PRICING, getCurrentTier, type SubscriptionTier } from '../lib/subscription';
 import { createCheckoutSession, cancelSubscription } from '../lib/stripe';
 
 interface SubscriptionModalProps {
@@ -34,34 +34,35 @@ type ModalState = 'pricing' | 'processing' | 'success' | 'cancelling' | 'cancell
 type BillingCycle = 'monthly' | 'annual';
 
 const FREE_FEATURES = [
+  { text: 'Unlimited job accepts', icon: Briefcase },
+  { text: 'Unlimited lead unlocks', icon: Unlock },
+  { text: 'Messaging with clients', icon: MessageSquare },
   { text: 'Basic profile listing', icon: Users },
-  { text: 'Receive direct booking requests', icon: Briefcase },
-  { text: `Up to ${FREE_LIMITS.JOB_ACCEPTS_PER_MONTH} active jobs at a time`, icon: Briefcase },
-  { text: `${FREE_LIMITS.LEAD_UNLOCKS_PER_MONTH} lead unlocks/month`, icon: Unlock },
-  { text: 'Unlimited messaging', icon: MessageSquare },
-  { text: 'Verification & credentials', icon: Shield },
+  { text: '10% platform fee on payments', icon: Percent },
   { text: 'Reviews & ratings', icon: Star },
+  { text: 'Verification badges', icon: Shield },
+  { text: 'No per-lead fees or lock-in contracts', icon: Check },
 ];
 
 const PRO_FEATURES = [
-  { text: 'Everything in Free', icon: Check, highlight: false },
-  { text: 'Appear in search results', icon: TrendingUp, highlight: true },
-  { text: 'Up to 15 lead notifications/month', icon: Unlock, highlight: false },
-  { text: 'Full job management tools', icon: Briefcase, highlight: false },
-  { text: 'Invoicing & milestone tracking', icon: FileText, highlight: false },
+  { text: 'Everything in Free, plus:', icon: Check, highlight: false },
+  { text: '5% platform fee — save 50%', icon: Percent, highlight: true },
+  { text: 'Business name shown to clients', icon: BadgeCheck, highlight: true },
+  { text: 'Priority in search results', icon: TrendingUp, highlight: true },
+  { text: 'Verified Pro badge', icon: BadgeCheck, highlight: true },
+  { text: 'Invoicing tools', icon: FileText, highlight: false },
+  { text: 'Project & milestone tracking', icon: Layers, highlight: false },
   { text: 'Google Calendar sync', icon: Calendar, highlight: false },
   { text: 'Bulk availability management', icon: CalendarRange, highlight: false },
-  { text: 'Project & milestone tracking', icon: Layers, highlight: false },
-  { text: 'Verified Pro badge', icon: BadgeCheck, highlight: true },
-  { text: '100% payout - zero platform fees', icon: Percent, highlight: true },
-  { text: 'Priority over free users', icon: Star, highlight: true },
+  { text: 'Team management', icon: Users, highlight: false },
+  { text: 'Advanced analytics', icon: TrendingUp, highlight: false },
 ];
 
 export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModalProps) {
   const { user, profile, tradieDetails, refreshProfile } = useAuth();
   const [modalState, setModalState] = useState<ModalState>('pricing');
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [stripeSubscription, setStripeSubscription] = useState<any>(null);
+  const [stripeSubscription, setStripeSubscription] = useState<Record<string, unknown> | null>(null);
   const [trainingModeEnabled, setTrainingModeEnabled] = useState(false);
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
 
@@ -78,11 +79,41 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
     const params = new URLSearchParams(window.location.search);
     const subscriptionStatus = params.get('subscription');
 
-    if (subscriptionStatus === 'success') {
-      setModalState('success');
-      window.history.replaceState({}, '', window.location.pathname);
-      refreshProfile();
-    }
+    if (subscriptionStatus !== 'success') return;
+
+    setModalState('success');
+    window.history.replaceState({}, '', window.location.pathname);
+
+    // Webhook delivery is async — poll until is_premium flips true (up to 20s)
+    let attempts = 0;
+    let timerId: ReturnType<typeof setTimeout>;
+
+    const poll = async () => {
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData.user) return;
+
+      const { data: profileRow } = await supabase
+        .from('profiles')
+        .select('is_premium')
+        .eq('id', authData.user.id)
+        .maybeSingle();
+
+      if (profileRow?.is_premium) {
+        await refreshProfile();
+        return;
+      }
+
+      attempts++;
+      if (attempts < 10) {
+        timerId = setTimeout(poll, 2000);
+      } else {
+        await refreshProfile();
+      }
+    };
+
+    poll();
+
+    return () => clearTimeout(timerId);
   }, []);
 
   const loadSubscriptionData = async () => {
@@ -160,7 +191,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
       setErrorMessage('');
 
       if (stripeSubscription) {
-        await cancelSubscription(stripeSubscription.stripe_subscription_id);
+        await cancelSubscription(stripeSubscription.stripe_subscription_id as string);
       } else {
         const { error: tradieError } = await supabase
           .from('tradie_details')
@@ -204,7 +235,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
+      <div className="fixed inset-0 bg-black/60 " onClick={handleClose} />
 
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[92vh] overflow-y-auto">
         <button
@@ -233,15 +264,13 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
             <p className="text-gray-600 mb-4 max-w-sm">
               Your membership has been cancelled. You'll revert to the free plan at the end of your billing period.
             </p>
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8 max-w-sm">
-              <p className="text-sm text-amber-800">
-                Free plan: {FREE_LIMITS.JOB_ACCEPTS_PER_MONTH} job accepts and {FREE_LIMITS.LEAD_UNLOCKS_PER_MONTH} lead unlocks per month.
-                Upgrade again anytime.
-              </p>
-            </div>
+            <p className="text-sm text-gray-500 mb-8 max-w-sm">
+              Free plan: unlimited job accepts with 10% platform fee.
+              Upgrade again anytime.
+            </p>
             <button
               onClick={handleClose}
-              className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+              className="px-8 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
             >
               Done
             </button>
@@ -259,7 +288,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
             </p>
             <button
               onClick={() => setModalState('pricing')}
-              className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+              className="px-8 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
             >
               Try Again
             </button>
@@ -268,8 +297,8 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
 
         {modalState === 'processing' && (
           <div className="p-16 flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-6 animate-pulse">
-              <Loader2 className="w-10 h-10 text-amber-600 animate-spin" />
+            <div className="w-20 h-20 bg-warm-100 rounded-full flex items-center justify-center mb-6 animate-pulse">
+              <Loader2 className="w-10 h-10 text-warm-600 animate-spin" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Activating Pro...</h2>
             <p className="text-gray-600">Please wait while we activate your membership.</p>
@@ -282,7 +311,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
                 <Check className="w-10 h-10 text-green-600" />
               </div>
-              <div className="absolute -top-2 -right-2 w-10 h-10 bg-amber-400 rounded-full flex items-center justify-center shadow-lg">
+              <div className="absolute -top-2 -right-2 w-10 h-10 bg-warm-400 rounded-full flex items-center justify-center shadow-lg">
                 <Crown className="w-5 h-5 text-white" />
               </div>
             </div>
@@ -292,7 +321,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
             </p>
             <button
               onClick={handleClose}
-              className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+              className="px-8 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
             >
               Get Started
             </button>
@@ -302,21 +331,25 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
         {modalState === 'pricing' && (
           <>
             {trainingModeEnabled && (
-              <div className="mx-8 mt-8 mb-0 flex items-center gap-3 px-4 py-3 bg-teal-50 border border-teal-200 rounded-xl">
-                <FlaskConical className="w-5 h-5 text-teal-600 flex-shrink-0" />
-                <p className="text-sm text-teal-800 font-medium">
+              <div className="mx-8 mt-8 mb-0 flex items-center gap-3 px-4 py-3 bg-secondary-50 border border-secondary-200 rounded-xl">
+                <FlaskConical className="w-5 h-5 text-secondary-600 flex-shrink-0" />
+                <p className="text-sm text-secondary-800 font-medium">
                   Test Mode is active — subscriptions can be activated without payment.
                 </p>
               </div>
             )}
 
             <div className="px-8 pt-8 pb-4 text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-50 text-amber-700 rounded-full text-sm font-medium mb-4">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-warm-50 text-warm-700 rounded-full text-sm font-medium mb-4">
                 <Crown className="w-4 h-4" />
-                {currentTier !== 'free' ? `Your ${tierLabel(currentTier)} Plan` : 'Choose Your Plan'}
+                {currentTier !== 'free'
+                  ? `Your ${tierLabel(currentTier)} Plan`
+                  : 'Choose Your Plan'}
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {currentTier !== 'free' ? `You're on the ${tierLabel(currentTier)} Plan` : 'Grow Your Business'}
+                {currentTier !== 'free'
+                  ? `You're on the ${tierLabel(currentTier)} Plan`
+                  : 'Grow Your Business'}
               </h2>
               <p className="text-gray-500 max-w-lg mx-auto text-sm">
                 {currentTier !== 'free'
@@ -345,7 +378,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                 >
                   Annual
                   <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-md">
-                    Save 20%
+                    Save 28%
                   </span>
                 </button>
               </div>
@@ -354,10 +387,10 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
             <div className="p-8 pt-4 grid md:grid-cols-2 gap-6 max-w-2xl mx-auto w-full">
               {/* Free */}
               <div className={`border-2 rounded-2xl p-6 relative flex flex-col ${
-                currentTier === 'free' ? 'border-blue-200 bg-blue-50/30' : 'border-gray-200'
+                currentTier === 'free' ? 'border-primary-200 bg-primary-50/30' : 'border-gray-200'
               }`}>
                 {currentTier === 'free' && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-warm-500 text-white text-xs font-bold rounded-full">
                     Current Plan
                   </div>
                 )}
@@ -372,7 +405,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     <span className="text-3xl font-bold text-gray-900">$0</span>
                     <span className="text-gray-500 text-sm">/mo</span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1.5">Get started on the platform</p>
+                  <p className="text-xs text-gray-500 mt-1.5">Get listed — no per-lead fees</p>
                 </div>
 
                 <div className="space-y-2.5 flex-1">
@@ -403,17 +436,17 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
               {/* Pro */}
               <div className={`border-2 rounded-2xl p-6 relative flex flex-col ${
                 currentTier === 'pro'
-                  ? 'border-amber-400 bg-amber-50/30'
-                  : 'border-amber-300 bg-gradient-to-b from-amber-50/40 to-white shadow-lg shadow-amber-100/60'
+                  ? 'border-warm-400 bg-warm-50/30'
+                  : 'border-warm-300 bg-gradient-to-b from-warm-50/40 to-white shadow-lg shadow-warm-100/60'
               }`}>
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-bold rounded-full uppercase tracking-wide">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-warm-500 to-warm-600 text-white text-xs font-bold rounded-full uppercase tracking-wide">
                   {currentTier === 'pro' ? 'Current Plan' : 'Most Popular'}
                 </div>
 
                 <div className="mb-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                      <Crown className="w-4 h-4 text-amber-600" />
+                    <div className="w-8 h-8 bg-warm-100 rounded-lg flex items-center justify-center">
+                      <Crown className="w-4 h-4 text-warm-600" />
                     </div>
                     <h3 className="text-base font-semibold text-gray-900">Pro</h3>
                   </div>
@@ -440,9 +473,9 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     return (
                       <div key={feature.text} className="flex items-center gap-2.5">
                         <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          feature.highlight ? 'bg-amber-100' : 'bg-green-100'
+                          feature.highlight ? 'bg-warm-100' : 'bg-green-100'
                         }`}>
-                          <Icon className={`w-2.5 h-2.5 ${feature.highlight ? 'text-amber-600' : 'text-green-600'}`} />
+                          <Icon className={`w-2.5 h-2.5 ${feature.highlight ? 'text-warm-600' : 'text-green-600'}`} />
                         </div>
                         <span className={`text-xs ${feature.highlight ? 'text-gray-900 font-medium' : 'text-gray-700'}`}>
                           {feature.text}
@@ -470,7 +503,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     {showTestModeButton ? (
                       <button
                         onClick={handleTestModeSubscribe}
-                        className="w-full py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 text-white text-sm font-semibold rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                        className="w-full py-2.5 bg-gradient-to-r from-secondary-500 to-secondary-600 text-white text-sm font-semibold rounded-xl hover:from-secondary-600 hover:to-secondary-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                       >
                         <FlaskConical className="w-4 h-4" />
                         Activate Pro (Test)
@@ -478,7 +511,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     ) : (
                       <button
                         onClick={handleUpgrade}
-                        className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-sm font-semibold rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all shadow-md hover:shadow-lg"
+                        className="w-full py-2.5 bg-gradient-to-r from-warm-500 to-warm-600 text-white text-sm font-semibold rounded-xl hover:from-warm-600 hover:to-warm-700 transition-all shadow-md hover:shadow-lg"
                       >
                         Get Pro
                         {billingCycle === 'annual' && <span className="ml-1 text-xs opacity-80">— billed ${TIER_PRICING.pro.annual}/yr</span>}
@@ -489,9 +522,30 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
               </div>
             </div>
 
+            {currentTier === 'free' && (
+              <div className="mx-8 mb-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                <p className="text-xs font-semibold text-gray-700 mb-2 text-center">How we compare</p>
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="bg-white rounded-lg p-2 border border-gray-100">
+                    <p className="text-gray-400 mb-0.5">hipages</p>
+                    <p className="font-bold text-gray-600 line-through">$200-500/mo</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-2 border border-gray-100">
+                    <p className="text-gray-400 mb-0.5">ServiceSeeking</p>
+                    <p className="font-bold text-gray-600 line-through">$83-250/qtr</p>
+                  </div>
+                  <div className="bg-warm-50 rounded-lg p-2 border border-warm-200">
+                    <p className="text-warm-600 mb-0.5 font-medium">ConnecTradie</p>
+                    <p className="font-bold text-warm-700">${TIER_PRICING.pro.monthly}/mo</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400 text-center mt-2">No per-lead fees. No lock-in contracts. Cancel anytime.</p>
+              </div>
+            )}
+
             <div className="px-8 pb-6 text-center">
               <p className="text-xs text-gray-400">
-                Prices in AUD. Cancel anytime. Annual billing saves you 20%.
+                Prices in AUD. Cancel anytime. Annual billing saves you 28%.
               </p>
             </div>
           </>

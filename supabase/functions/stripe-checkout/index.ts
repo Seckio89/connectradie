@@ -9,7 +9,7 @@ const stripe = new Stripe(stripeSecret, { apiVersion: '2023-10-16' });
 // Helper function to create responses with CORS headers
 function corsResponse(body: string | object | null, status = 200) {
   const headers = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') || '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': '*',
   };
@@ -54,7 +54,25 @@ Deno.serve(async (req) => {
       return corsResponse({ error }, 400);
     }
 
-    const authHeader = req.headers.get('Authorization')!;
+    // Validate redirect URLs to prevent open redirects
+    const allowedDomain = Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com";
+    const isValidRedirectUrl = (url: string) => {
+      try {
+        const parsed = new URL(url);
+        const allowed = new URL(allowedDomain);
+        return parsed.hostname === allowed.hostname;
+      } catch {
+        return false;
+      }
+    };
+    if (!isValidRedirectUrl(success_url) || !isValidRedirectUrl(cancel_url)) {
+      return corsResponse({ error: 'Invalid redirect URL' }, 400);
+    }
+
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return corsResponse({ error: 'Missing Authorization header' }, 401);
+    }
     const token = authHeader.replace('Bearer ', '');
     const {
       data: { user },
@@ -108,7 +126,7 @@ Deno.serve(async (req) => {
         // Try to clean up both the Stripe customer and subscription record
         try {
           await stripe.customers.del(newCustomer.id);
-          await supabase.from('stripe_subscriptions').delete().eq('customer_id', newCustomer.id);
+          await supabase.from('stripe_subscriptions').delete().eq('stripe_customer_id', newCustomer.id);
         } catch (deleteError) {
           console.error('Failed to clean up after customer mapping error:', deleteError);
         }
@@ -118,7 +136,10 @@ Deno.serve(async (req) => {
 
       if (mode === 'subscription') {
         const { error: createSubscriptionError } = await supabase.from('stripe_subscriptions').insert({
-          customer_id: newCustomer.id,
+          stripe_customer_id: newCustomer.id,
+          profile_id: user.id,
+          stripe_subscription_id: `pending_${newCustomer.id}`,
+          stripe_price_id: '',
           status: 'not_started',
         });
 
@@ -147,7 +168,7 @@ Deno.serve(async (req) => {
         const { data: subscription, error: getSubscriptionError } = await supabase
           .from('stripe_subscriptions')
           .select('status')
-          .eq('customer_id', customerId)
+          .eq('stripe_customer_id', customerId)
           .maybeSingle();
 
         if (getSubscriptionError) {
@@ -159,7 +180,10 @@ Deno.serve(async (req) => {
         if (!subscription) {
           // Create subscription record for existing customer if missing
           const { error: createSubscriptionError } = await supabase.from('stripe_subscriptions').insert({
-            customer_id: customerId,
+            stripe_customer_id: customerId,
+            profile_id: user.id,
+            stripe_subscription_id: `pending_${customerId}`,
+            stripe_price_id: '',
             status: 'not_started',
           });
 
@@ -192,7 +216,7 @@ Deno.serve(async (req) => {
     return corsResponse({ sessionId: session.id, url: session.url });
   } catch (error: any) {
     console.error(`Checkout error: ${error.message}`);
-    return corsResponse({ error: error.message }, 500);
+    return corsResponse({ error: 'An internal error occurred' }, 500);
   }
 });
 

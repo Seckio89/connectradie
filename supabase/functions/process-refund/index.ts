@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
@@ -61,9 +61,10 @@ Deno.serve(async (req: Request) => {
       return errorJson("Invalid JSON body", 400);
     }
 
-    const { paymentId, reason } = body as {
+    const { paymentId, reason, idempotencyKey } = body as {
       paymentId?: string;
       reason?: string;
+      idempotencyKey?: string;
     };
 
     if (!paymentId) {
@@ -135,17 +136,20 @@ Deno.serve(async (req: Request) => {
     // Create refund for the full amount (base + processing fee)
     const refundAmount = payment.amount + (payment.processing_fee || 0);
 
-    const refund = await stripe.refunds.create({
-      payment_intent: payment.stripe_payment_intent_id,
-      amount: refundAmount,
-      reason: "requested_by_customer",
-      metadata: {
-        payment_id: paymentId,
-        job_id: payment.job_id,
-        refunded_by: user.id,
-        custom_reason: reason || "No reason provided",
+    const refund = await stripe.refunds.create(
+      {
+        payment_intent: payment.stripe_payment_intent_id,
+        amount: refundAmount,
+        reason: "requested_by_customer",
+        metadata: {
+          payment_id: paymentId,
+          job_id: payment.job_id,
+          refunded_by: user.id,
+          custom_reason: reason || "No reason provided",
+        },
       },
-    });
+      idempotencyKey ? { idempotencyKey } : undefined,
+    );
 
     // Update payment status to refunded
     const existingMetadata = payment.metadata || {};

@@ -1,9 +1,21 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import * as Sentry from '@sentry/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { replayOnReconnect } from './lib/serviceWorker';
 import { trackPageView } from './lib/analytics';
 import { Loader2 } from 'lucide-react';
+import OfflineBanner from './components/OfflineBanner';
+
+if (import.meta.env.VITE_SENTRY_DSN) {
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN,
+    environment: import.meta.env.MODE,
+    tracesSampleRate: 0.1,
+    replaysSessionSampleRate: 0,
+    replaysOnErrorSampleRate: 1.0,
+  });
+}
 
 // Eagerly loaded — these are entry points visitors hit first
 import LandingPage from './pages/LandingPage';
@@ -28,9 +40,7 @@ const AdminOverview = lazy(() => import('./pages/AdminOverview'));
 const AdminUsers = lazy(() => import('./pages/AdminUsers'));
 const AdminPayments = lazy(() => import('./pages/AdminPayments'));
 const AdminModeration = lazy(() => import('./pages/AdminModeration'));
-const Team = lazy(() => import('./pages/Team'));
-const SiteCalendar = lazy(() => import('./pages/SiteCalendar'));
-const TradeCareers = lazy(() => import('./pages/TradeCareers'));
+const AdminDisputes = lazy(() => import('./pages/AdminDisputes'));
 const Schedule = lazy(() => import('./pages/Schedule'));
 const WorkHub = lazy(() => import('./pages/WorkHub'));
 const PerformanceInsights = lazy(() => import('./pages/PerformanceInsights'));
@@ -40,9 +50,12 @@ const MyProfile = lazy(() => import('./pages/MyProfile'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const Contact = lazy(() => import('./pages/Contact'));
+const HelpFAQ = lazy(() => import('./pages/HelpFAQ'));
+const Pricing = lazy(() => import('./pages/Pricing'));
 const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
 const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const LeaveReview = lazy(() => import('./pages/LeaveReview'));
 
 function PageSpinner() {
   return (
@@ -52,7 +65,7 @@ function PageSpinner() {
   );
 }
 
-function ProtectedRoute({ children, requireAdmin, requireTradie, requireOnboarding = true }: { children: React.ReactNode; requireAdmin?: boolean; requireTradie?: boolean; requireOnboarding?: boolean }) {
+function ProtectedRoute({ children, requireAdmin, requireTradie, requireClient, requireOnboarding = true }: { children: React.ReactNode; requireAdmin?: boolean; requireTradie?: boolean; requireClient?: boolean; requireOnboarding?: boolean }) {
   const { user, profile, loading } = useAuth();
 
   if (loading) {
@@ -60,6 +73,11 @@ function ProtectedRoute({ children, requireAdmin, requireTradie, requireOnboardi
   }
 
   if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  // User is authenticated but has no profile — account was removed by admin
+  if (!profile && !loading) {
     return <Navigate to="/login" />;
   }
 
@@ -72,6 +90,10 @@ function ProtectedRoute({ children, requireAdmin, requireTradie, requireOnboardi
   }
 
   if (requireTradie && profile?.role !== 'tradie') {
+    return <Navigate to="/dashboard" />;
+  }
+
+  if (requireClient && profile?.role !== 'client') {
     return <Navigate to="/dashboard" />;
   }
 
@@ -92,10 +114,48 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+const PAGE_TITLES: Record<string, string> = {
+  '/': 'ConnecTradie — Find Trusted Local Tradies',
+  '/login': 'Sign In | ConnecTradie',
+  '/register': 'Register | ConnecTradie',
+  '/onboarding': 'Get Started | ConnecTradie',
+  '/dashboard': 'Dashboard | ConnecTradie',
+  '/leads': 'My Jobs | ConnecTradie',
+  '/post-lead': 'Post a Job | ConnecTradie',
+  '/search': 'Search Tradies | ConnecTradie',
+  '/my-trades': 'Saved Tradies | ConnecTradie',
+  '/projects': 'Projects | ConnecTradie',
+  '/jobs': 'Active Jobs | ConnecTradie',
+  '/messages': 'Messages | ConnecTradie',
+  '/notifications': 'Notifications | ConnecTradie',
+  '/settings': 'Settings | ConnecTradie',
+  '/payments': 'Payments | ConnecTradie',
+  '/review': 'Leave a Review | ConnecTradie',
+  '/payouts': 'Payouts | ConnecTradie',
+  '/schedule': 'Schedule | ConnecTradie',
+  '/work': 'Work Hub | ConnecTradie',
+  '/my-profile': 'My Profile | ConnecTradie',
+  '/explore': 'Explore | ConnecTradie',
+  '/contact': 'Contact | ConnecTradie',
+  '/help': 'Help & FAQ | ConnecTradie',
+  '/pricing': 'Pricing | ConnecTradie',
+  '/terms': 'Terms of Service | ConnecTradie',
+  '/privacy': 'Privacy Policy | ConnecTradie',
+  '/analytics': 'Analytics | ConnecTradie',
+  '/performance': 'Performance Insights | ConnecTradie',
+  '/admin': 'Admin | ConnecTradie',
+  '/admin/verifications': 'Verifications | ConnecTradie Admin',
+  '/admin/users': 'Users | ConnecTradie Admin',
+  '/admin/payments': 'Payments | ConnecTradie Admin',
+  '/admin/moderation': 'Moderation | ConnecTradie Admin',
+  '/admin/disputes': 'Disputes | ConnecTradie Admin',
+};
+
 function RouteTracker() {
   const location = useLocation();
   useEffect(() => {
     trackPageView(location.pathname + location.search);
+    document.title = PAGE_TITLES[location.pathname] || 'ConnecTradie';
   }, [location]);
   return null;
 }
@@ -149,10 +209,12 @@ function AppRoutes() {
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/help" element={<HelpFAQ />} />
+      <Route path="/pricing" element={<Pricing />} />
       <Route
         path="/my-trades"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireClient>
             <MyTrades />
           </ProtectedRoute>
         }
@@ -160,7 +222,7 @@ function AppRoutes() {
       <Route
         path="/jobs"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireTradie>
             <Jobs />
           </ProtectedRoute>
         }
@@ -168,7 +230,7 @@ function AppRoutes() {
       <Route
         path="/projects"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireClient>
             <Projects />
           </ProtectedRoute>
         }
@@ -176,7 +238,7 @@ function AppRoutes() {
       <Route
         path="/post-lead"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireClient>
             <PostLead />
           </ProtectedRoute>
         }
@@ -246,6 +308,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/admin/disputes"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminDisputes />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/my-profile"
         element={
           <ProtectedRoute requireTradie>
@@ -286,34 +356,18 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/team"
-        element={
-          <ProtectedRoute requireTradie>
-            <Team />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/trade-careers"
-        element={
-          <ProtectedRoute requireTradie>
-            <TradeCareers />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/site-calendar"
-        element={
-          <ProtectedRoute requireTradie>
-            <SiteCalendar />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/analytics"
         element={
           <ProtectedRoute requireTradie>
             <AnalyticsDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <Notifications />
           </ProtectedRoute>
         }
       />
@@ -326,13 +380,14 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/admin"
+        path="/review/:jobId"
         element={
-          <ProtectedRoute requireAdmin>
-            <AdminDashboard />
+          <ProtectedRoute>
+            <LeaveReview />
           </ProtectedRoute>
         }
       />
+      <Route path="/admin" element={<Navigate to="/admin/overview" replace />} />
       <Route path="/verification" element={<Navigate to="/settings" replace />} />
       <Route path="*" element={<NotFound />} />
       </Routes>
@@ -342,12 +397,15 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <Router>
-      <a href="#main-content" className="skip-to-content">Skip to content</a>
-      <RouteTracker />
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </Router>
+    <Sentry.ErrorBoundary fallback={<p className="p-8 text-center text-red-600">Something went wrong. Please refresh the page.</p>}>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <OfflineBanner />
+        <a href="#main-content" className="skip-to-content">Skip to content</a>
+        <RouteTracker />
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </Router>
+    </Sentry.ErrorBoundary>
   );
 }

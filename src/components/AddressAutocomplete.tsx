@@ -3,10 +3,19 @@ import { MapPin, X, AlertCircle } from 'lucide-react';
 import { useLoadScript } from '@react-google-maps/api';
 
 const libraries: ('places')[] = ['places'];
+const DEFAULT_SEARCH_TYPES = ['address'];
+
+export interface AddressDetails {
+  suburb?: string;
+  postcode?: string;
+  state?: string;
+  lat?: number;
+  lng?: number;
+}
 
 interface AddressAutocompleteProps {
   value: string;
-  onChange: (value: string, coordinates?: { lat: number; lng: number }) => void;
+  onChange: (value: string, coordinates?: { lat: number; lng: number }, details?: AddressDetails) => void;
   placeholder?: string;
   className?: string;
   searchTypes?: string[];
@@ -17,14 +26,14 @@ export default function AddressAutocomplete({
   onChange,
   placeholder = 'Start typing an address...',
   className = '',
-  searchTypes = ['address'],
+  searchTypes = DEFAULT_SEARCH_TYPES,
 }: AddressAutocompleteProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
   const placesService = useRef<google.maps.places.PlacesService | null>(null);
-  const mapDiv = useRef<HTMLDivElement>(null);
+  const mapDiv = useRef<HTMLDivElement | null>(null);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -50,7 +59,9 @@ export default function AddressAutocomplete({
       return;
     }
 
-    const fetchPredictions = async () => {
+    let cancelled = false;
+
+    const fetchPredictions = () => {
       try {
         autocompleteService.current?.getPlacePredictions(
           {
@@ -59,6 +70,7 @@ export default function AddressAutocomplete({
             types: searchTypes,
           },
           (results, status) => {
+            if (cancelled) return;
             if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
               setPredictions(results);
             } else {
@@ -66,14 +78,17 @@ export default function AddressAutocomplete({
             }
           }
         );
-      } catch (error) {
-        setPredictions([]);
+      } catch {
+        if (!cancelled) setPredictions([]);
       }
     };
 
     const timeoutId = setTimeout(fetchPredictions, 300);
-    return () => clearTimeout(timeoutId);
-  }, [value]);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [value, searchTypes]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -96,7 +111,7 @@ export default function AddressAutocomplete({
     placesService.current.getDetails(
       {
         placeId: prediction.place_id,
-        fields: ['geometry', 'formatted_address'],
+        fields: ['geometry', 'formatted_address', 'address_components'],
       },
       (place, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
@@ -107,7 +122,20 @@ export default function AddressAutocomplete({
               }
             : undefined;
 
-          onChange(place.formatted_address || prediction.description, coordinates);
+          const components = place.address_components || [];
+          const getComponent = (type: string) =>
+            components.find(c => c.types.includes(type))?.long_name;
+          const getShortComponent = (type: string) =>
+            components.find(c => c.types.includes(type))?.short_name;
+
+          const details: AddressDetails = {
+            suburb: getComponent('locality') || getComponent('sublocality_level_1') || getComponent('neighborhood'),
+            postcode: getComponent('postal_code'),
+            state: getShortComponent('administrative_area_level_1'),
+            ...coordinates,
+          };
+
+          onChange(place.formatted_address || prediction.description, coordinates, details);
         } else {
           onChange(prediction.description);
         }
@@ -132,7 +160,7 @@ export default function AddressAutocomplete({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
-            className={`w-full pl-12 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+            className={`w-full pl-12 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 ${className}`}
           />
           {value && (
             <button
@@ -144,7 +172,7 @@ export default function AddressAutocomplete({
             </button>
           )}
         </div>
-        <div className="mt-2 flex items-start gap-2 text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+        <div className="mt-2 flex items-start gap-2 text-sm text-warm-600 bg-warm-50 p-3 rounded-lg">
           <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
           <p>Address autocomplete unavailable. Add VITE_GOOGLE_MAPS_API_KEY to enable suggestions.</p>
         </div>
@@ -162,7 +190,7 @@ export default function AddressAutocomplete({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
-            className={`w-full pl-12 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+            className={`w-full pl-12 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 ${className}`}
           />
           {value && (
             <button
@@ -206,7 +234,7 @@ export default function AddressAutocomplete({
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => setIsFocused(true)}
           placeholder={placeholder}
-          className={`w-full pl-12 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+          className={`w-full pl-12 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 ${className}`}
         />
         {value && (
           <button

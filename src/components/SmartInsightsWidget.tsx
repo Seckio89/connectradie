@@ -180,18 +180,18 @@ export default function SmartInsightsWidget() {
     <div
       className={`rounded-2xl border p-5 transition-all hover:shadow-md ${
         isPositive
-          ? 'bg-gradient-to-r from-sky-50 via-blue-50 to-cyan-50 border-sky-200'
-          : 'bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 border-amber-200'
+          ? 'bg-gradient-to-r from-secondary-50 via-secondary-50 to-secondary-50 border-secondary-200'
+          : 'bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-amber-200'
       }`}
     >
       <div className="flex items-start gap-4">
         <div
           className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
-            isPositive ? 'bg-sky-100' : 'bg-amber-100'
+            isPositive ? 'bg-secondary-100' : 'bg-amber-100'
           }`}
         >
           {isPositive ? (
-            <TrendingUp className="w-5 h-5 text-sky-600" />
+            <TrendingUp className="w-5 h-5 text-secondary-600" />
           ) : (
             <Lightbulb className="w-5 h-5 text-amber-600" />
           )}
@@ -200,7 +200,7 @@ export default function SmartInsightsWidget() {
           <div className="flex items-center gap-2 mb-1.5">
             <h3
               className={`text-sm font-bold uppercase tracking-wide ${
-                isPositive ? 'text-sky-700' : 'text-amber-700'
+                isPositive ? 'text-secondary-700' : 'text-amber-700'
               }`}
             >
               Smart Insight
@@ -211,7 +211,7 @@ export default function SmartInsightsWidget() {
             to="/performance"
             className={`inline-flex items-center gap-1.5 mt-3 text-sm font-semibold transition-colors ${
               isPositive
-                ? 'text-sky-600 hover:text-sky-700'
+                ? 'text-secondary-600 hover:text-secondary-700'
                 : 'text-amber-600 hover:text-amber-700'
             }`}
           >

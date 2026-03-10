@@ -1,6 +1,17 @@
 export async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return null;
 
+  // Don't register service workers in development — they intercept Vite's
+  // module requests and break hot-module reloading.
+  if (import.meta.env.DEV) {
+    // Unregister any previously-registered SW so it stops intercepting requests
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    for (const r of registrations) {
+      await r.unregister();
+    }
+    return null;
+  }
+
   try {
     const registration = await navigator.serviceWorker.register('/service-worker.js', {
       scope: '/',
@@ -16,7 +27,7 @@ export async function registerServiceWorker() {
     });
 
     return registration;
-  } catch (err) {
+  } catch {
     // Service workers not supported in this environment (e.g., StackBlitz)
     // This is expected and not a critical error
     // Service worker registration failed or not supported - this is expected in some environments
@@ -51,7 +62,7 @@ export async function requestBackgroundSync(tag = 'sync-job-actions'): Promise<b
   try {
     const registration = await navigator.serviceWorker.ready;
     if ('sync' in registration) {
-      await (registration as any).sync.register(tag);
+      await (registration as unknown as { sync: { register: (tag: string) => Promise<void> } }).sync.register(tag);
       return true;
     }
   } catch {

@@ -11,12 +11,11 @@ import {
   Truck,
   Users,
   Zap,
-  Wrench,
   Clock,
-  Loader2,
   Send,
   Image as ImageIcon,
   LogIn,
+  Lock,
   CircleDollarSign,
   Briefcase,
   GraduationCap,
@@ -29,6 +28,7 @@ import type { TradieWithDetails } from '../types/database';
 import { getTradieRating, type TradieRating } from '../lib/reviews';
 import { redactName, extractSuburb } from '../lib/contactGating';
 import UserTradeBadges from '../components/UserTradeBadges';
+import { CardSkeleton, ListSkeleton } from '../components/SkeletonLoader';
 import ReviewsList from '../components/ReviewsList';
 import RatingBreakdown from '../components/RatingBreakdown';
 import DashboardLayout from '../components/DashboardLayout';
@@ -108,10 +108,10 @@ export default function PublicTradieProfile() {
   const isLoggedIn = !!user;
 
   const details = tradie?.tradie_details;
-  const displayName = details?.business_name || redactName(tradie?.full_name);
+  const isPro = details?.subscription_tier === 'pro' || details?.subscription_tier === 'business' || tradie?.is_premium;
+  const displayName = isPro ? (details?.business_name || redactName(tradie?.full_name)) : redactName(tradie?.full_name);
   const personalName = tradie?.full_name ? redactName(tradie.full_name) : null;
   const suburb = tradie ? extractSuburb(tradie.address) : '';
-  const isPro = details?.subscription_tier === 'pro';
   const isIdentityVerified = details?.is_verified || tradie?.verification_status === 'verified';
   const tradeCategory = details?.trade_category;
   const avgRating = rating?.average_rating ?? 0;
@@ -159,7 +159,7 @@ export default function PublicTradieProfile() {
   };
 
   const content = (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <SEO
         title={seoTitle}
         description={seoDescription}
@@ -169,13 +169,10 @@ export default function PublicTradieProfile() {
       />
       {!isLoggedIn && (
         <header className="sticky top-0 z-30 bg-white border-b border-gray-100">
-          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <Wrench className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-lg font-bold text-gray-900">
-                Connec<span className="text-blue-600">Tradie</span>
+          <div className="max-w-[1600px] mx-auto px-4 py-3 flex items-center justify-between">
+            <Link to="/" className="flex items-center">
+              <span className="text-2xl font-extrabold tracking-tight text-black">
+                Connec<span className="text-warm-500">Tradie</span>
               </span>
             </Link>
             <div className="flex items-center gap-3">
@@ -187,7 +184,7 @@ export default function PublicTradieProfile() {
               </Link>
               <Link
                 to="/login"
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-warm-500 text-white text-sm font-medium rounded-lg hover:bg-warm-600 transition-colors"
               >
                 <LogIn className="w-4 h-4" />
                 Sign In
@@ -198,8 +195,9 @@ export default function PublicTradieProfile() {
       )}
 
       {loading && (
-        <div className="flex items-center justify-center py-32">
-          <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <CardSkeleton />
+          <div className="mt-4"><ListSkeleton rows={3} /></div>
         </div>
       )}
 
@@ -212,7 +210,7 @@ export default function PublicTradieProfile() {
           <p className="text-gray-500 mb-6">This tradie profile doesn't exist or is no longer available.</p>
           <button
             onClick={() => navigate('/search')}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-warm-500 text-white font-medium rounded-lg hover:bg-warm-600 transition-colors"
           >
             Browse Tradies
           </button>
@@ -220,30 +218,35 @@ export default function PublicTradieProfile() {
       )}
 
       {tradie && !loading && (
-        <div className="max-w-6xl mx-auto">
-          <div className="rounded-2xl relative overflow-hidden">
+        <div className="max-w-[1600px] mx-auto">
+          {/* Cover photo */}
+          <div className="relative overflow-hidden" style={{ height: 200 }}>
             {tradie.cover_photo_url ? (
               <img
                 src={tradie.cover_photo_url}
                 alt="Cover"
-                className="w-full h-56 sm:h-72 object-cover"
+                className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-56 sm:h-72 bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900" />
+              <div className="w-full h-full bg-gradient-to-br from-primary-800 via-primary-900 to-navy-900" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
 
             <button
               onClick={() => navigate(-1)}
-              className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white/80 text-sm font-medium rounded-lg hover:bg-white/25 hover:text-white transition-colors"
+              className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white/90 text-sm font-medium rounded-lg hover:bg-white/25 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Back
             </button>
+          </div>
 
-            <div className="absolute inset-x-0 bottom-0 px-6 pb-6 pt-16">
+          {/* Profile header card - overlaps cover */}
+          <div className="relative px-4 sm:px-6 -mt-16">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
               <div className="flex flex-col sm:flex-row items-start gap-5">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gray-700 overflow-hidden ring-4 ring-white/20 flex-shrink-0 shadow-xl">
+                {/* Avatar */}
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gray-100 overflow-hidden ring-4 ring-white shadow-lg flex-shrink-0 -mt-16 sm:-mt-20">
                   {tradie.avatar_url ? (
                     <img
                       src={tradie.avatar_url}
@@ -251,7 +254,7 @@ export default function PublicTradieProfile() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-primary-600 flex items-center justify-center">
+                    <div className="w-full h-full bg-warm-500 flex items-center justify-center">
                       <span className="text-4xl font-bold text-white">
                         {tradie.full_name?.charAt(0) || 'T'}
                       </span>
@@ -259,48 +262,56 @@ export default function PublicTradieProfile() {
                   )}
                 </div>
 
-                <div className="flex-1 min-w-0">
+                {/* Name & info */}
+                <div className="flex-1 min-w-0 sm:-mt-2">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
                       {displayName}
                     </h1>
                     {isPro && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/20 text-amber-300 text-xs font-semibold rounded-full border border-amber-500/30">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-warm-50 text-warm-700 text-xs font-semibold rounded-full border border-warm-200">
                         <Crown className="w-3.5 h-3.5" />
                         PRO
                       </span>
                     )}
+                    {!isPro && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">
+                        <Lock className="w-3 h-3" />
+                        Free listing
+                      </span>
+                    )}
                   </div>
 
-                  {details?.business_name && personalName && (
-                    <p className="text-white/60 mt-0.5">{personalName}</p>
+                  {isPro && details?.business_name && personalName && (
+                    <p className="text-gray-500 mt-0.5 text-sm">{personalName}</p>
                   )}
 
-                  <p className="text-primary-300 font-medium capitalize mt-1 drop-shadow-sm">
+                  <p className="text-primary-600 font-semibold capitalize mt-1 text-sm">
                     {tradeCategory || 'Trade Professional'}
+                    {suburb && <span className="text-gray-400 font-normal"> · {suburb}</span>}
                   </p>
 
                   <div className="flex flex-wrap items-center gap-2 mt-3">
                     {isIdentityVerified && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-500/20 text-green-300 text-xs font-semibold rounded-full border border-green-500/30">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">
                         <ShieldCheck className="w-3.5 h-3.5" />
                         ID Verified
                       </span>
                     )}
                     {details?.is_insured && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-500/20 text-blue-300 text-xs font-semibold rounded-full border border-blue-500/30">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-secondary-50 text-secondary-700 text-xs font-semibold rounded-full border border-secondary-200">
                         <Shield className="w-3.5 h-3.5" />
                         Insured
                       </span>
                     )}
                     {details?.is_licensed && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/20 text-amber-300 text-xs font-semibold rounded-full border border-amber-500/30">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-warm-50 text-warm-700 text-xs font-semibold rounded-full border border-warm-200">
                         <FileCheck className="w-3.5 h-3.5" />
                         Licensed
                       </span>
                     )}
                     {tradie.is_emergency_available && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-500/20 text-red-300 text-xs font-semibold rounded-full border border-red-500/30">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-700 text-xs font-semibold rounded-full border border-red-200">
                         <Zap className="w-3.5 h-3.5" />
                         Emergency
                       </span>
@@ -319,10 +330,10 @@ export default function PublicTradieProfile() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6 px-4 sm:px-0">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4 px-4 sm:px-6">
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
-                <Star className="w-5 h-5 text-amber-500" />
+              <div className="w-10 h-10 rounded-lg bg-warm-50 flex items-center justify-center flex-shrink-0">
+                <Star className="w-5 h-5 text-yellow-500" />
               </div>
               <div>
                 <p className="text-lg font-bold text-gray-900">
@@ -345,8 +356,8 @@ export default function PublicTradieProfile() {
               </div>
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                <Clock className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
+                <Clock className="w-5 h-5 text-secondary-600" />
               </div>
               <div>
                 <p className="text-lg font-bold text-gray-900">&lt; 1 hr</p>
@@ -354,8 +365,8 @@ export default function PublicTradieProfile() {
               </div>
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
-                <MapPin className="w-5 h-5 text-teal-600" />
+              <div className="w-10 h-10 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-5 h-5 text-secondary-600" />
               </div>
               <div>
                 <p className="text-lg font-bold text-gray-900">
@@ -368,7 +379,7 @@ export default function PublicTradieProfile() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8 px-4 sm:px-0 pb-32 lg:pb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 px-4 sm:px-6 pb-32 lg:pb-8">
             <div className="lg:col-span-2 space-y-8">
 
               {(tradie.bio || details?.bio) && (
@@ -465,7 +476,7 @@ export default function PublicTradieProfile() {
                     </p>
                     <button
                       onClick={handleRequestQuote}
-                      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors min-h-[48px] shadow-sm"
+                      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors min-h-[48px] shadow-sm"
                     >
                       <Send className="w-4 h-4" />
                       Request a Quote
@@ -490,7 +501,7 @@ export default function PublicTradieProfile() {
                     {rating && rating.total_reviews > 0 && (
                       <div className="mt-3 pt-3 border-t border-gray-100">
                         <div className="flex items-center gap-1.5">
-                          <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                           <span className="font-semibold text-gray-900 text-sm">
                             {rating.average_rating.toFixed(1)}
                           </span>
@@ -516,8 +527,8 @@ export default function PublicTradieProfile() {
                     />
 
                     <div className="px-5 py-3.5 flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Truck className="w-4 h-4 text-orange-600" />
+                      <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Truck className="w-4 h-4 text-primary-600" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-gray-500">Call-out Fee</p>
@@ -535,14 +546,14 @@ export default function PublicTradieProfile() {
                     </div>
 
                     <DetailRow
-                      icon={<Briefcase className="w-4 h-4 text-blue-600" />}
-                      iconBg="bg-blue-50"
+                      icon={<Briefcase className="w-4 h-4 text-secondary-600" />}
+                      iconBg="bg-secondary-50"
                       label="Business Type"
                       value={details?.contractor_type || null}
                     />
                     <DetailRow
-                      icon={<Users className="w-4 h-4 text-teal-600" />}
-                      iconBg="bg-teal-50"
+                      icon={<Users className="w-4 h-4 text-secondary-600" />}
+                      iconBg="bg-secondary-50"
                       label="Team Size"
                       value={tradie.team_size || null}
                     />
@@ -625,7 +636,7 @@ export default function PublicTradieProfile() {
                 <p className="font-semibold text-gray-900 text-sm truncate">{displayName}</p>
                 {rating && rating.total_reviews > 0 && (
                   <div className="flex items-center gap-1">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
                     <span className="text-xs text-gray-600">
                       {rating.average_rating.toFixed(1)} ({rating.total_reviews})
                     </span>
@@ -634,7 +645,7 @@ export default function PublicTradieProfile() {
               </div>
               <button
                 onClick={handleRequestQuote}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors min-h-[48px] shadow-sm"
+                className="inline-flex items-center gap-2 px-5 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors min-h-[48px] shadow-sm"
               >
                 <Send className="w-4 h-4" />
                 Request a Quote

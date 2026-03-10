@@ -64,8 +64,8 @@ export default function ApplicationModal({ isOpen, onClose, vacancy, onSubmit }:
       <div className="px-6 pt-5 pb-3">
         <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-              <RoleIcon className="w-5 h-5 text-blue-600" />
+            <div className="w-10 h-10 rounded-xl bg-secondary-50 flex items-center justify-center flex-shrink-0">
+              <RoleIcon className="w-5 h-5 text-secondary-600" />
             </div>
             <div className="min-w-0">
               <h3 className="font-semibold text-gray-900 leading-snug">{vacancy.title}</h3>
@@ -102,7 +102,7 @@ export default function ApplicationModal({ isOpen, onClose, vacancy, onSubmit }:
             onChange={e => setCoverLetter(e.target.value)}
             rows={6}
             placeholder="Introduce yourself briefly. Mention your experience, qualifications, and why you're interested in this role..."
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm leading-relaxed"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none resize-none text-sm leading-relaxed"
           />
           <p className="text-xs text-gray-400 mt-1.5">
             Your profile details (trade, verification status) will be visible to the employer.
@@ -120,7 +120,7 @@ export default function ApplicationModal({ isOpen, onClose, vacancy, onSubmit }:
           <button
             type="submit"
             disabled={submitting}
-            className="flex-1 px-4 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-2.5 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
           >
             {submitting ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

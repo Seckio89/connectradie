@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wrench, Home, HardHat, ArrowRight, Loader2, MapPin, Users, Building2, Search, Check, X, ChevronRight, UserCheck } from 'lucide-react';
+import { Wrench, Home, HardHat, ArrowRight, Loader2, Users, Building2, Search, Check, X, ChevronRight, UserCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SearchableSelect from '../components/SearchableSelect';
+import AddressAutocomplete, { type AddressDetails } from '../components/AddressAutocomplete';
 import { supabase } from '../lib/supabase';
 
 type Step = 'role' | 'trade-type' | 'employment' | 'business-search' | 'employment-role' | 'details';
@@ -19,8 +20,9 @@ interface BusinessResult {
 export default function Onboarding() {
   const [step, setStep] = useState<Step>('role');
   const [selectedRole, setSelectedRole] = useState<'client' | 'tradie' | null>(null);
-  const [tradeType, setTradeType] = useState<'construction' | 'hospitality' | ''>('');
-  const [postcode, setPostcode] = useState('');
+  const [tradeType, setTradeType] = useState<'construction' | 'hospitality' | undefined>(undefined);
+  const [address, setAddress] = useState('');
+  const [addressDetails, setAddressDetails] = useState<AddressDetails | null>(null);
   const [businessName, setBusinessName] = useState('');
   const [tradeCategory, setTradeCategory] = useState('');
   const [employmentType, setEmploymentType] = useState<'own' | 'employed' | null>(null);
@@ -59,10 +61,15 @@ export default function Onboarding() {
     searchTimeout.current = setTimeout(async () => {
       setSearchLoading(true);
       const { data } = await supabase.rpc('search_businesses_by_name', { search_term: businessSearch });
-      setBusinessResults(data || []);
+      setBusinessResults(Array.isArray(data) ? data : []);
       setSearchLoading(false);
     }, 300);
   }, [businessSearch]);
+
+  const handleAddressChange = (value: string, _coords?: { lat: number; lng: number }, details?: AddressDetails) => {
+    setAddress(value);
+    setAddressDetails(details || null);
+  };
 
   const handleRoleSelect = (role: 'client' | 'tradie') => {
     setSelectedRole(role);
@@ -104,7 +111,8 @@ export default function Onboarding() {
     try {
       const profileUpdates: Record<string, unknown> = {
         role: 'tradie' as const,
-        postcode,
+        postcode: addressDetails?.postcode || undefined,
+        suburb: addressDetails?.suburb || undefined,
         onboarding_completed: true,
         employer_id: selectedBusiness.profile_id,
         employment_type: employmentRole,
@@ -134,21 +142,22 @@ export default function Onboarding() {
         joined_at: null,
       }, { onConflict: 'business_owner_id,member_profile_id' }).throwOnError();
 
-      await supabase.from('notifications').insert({
-        user_id: selectedBusiness.profile_id,
-        title: 'New Team Member Request',
-        message: `${profile.full_name} has requested to join your team as ${roleLabel}.`,
-        type: 'team',
-        channel: 'in_app',
-        read: false,
-        link: '/team',
-        metadata: {
+      await supabase.rpc('create_notification', {
+        p_user_id: selectedBusiness.profile_id,
+        p_title: 'New Team Member Request',
+        p_message: `${profile.full_name} has requested to join your team as ${roleLabel}.`,
+        p_type: 'team',
+        p_channel: 'in_app',
+        p_read: false,
+        p_link: '/team',
+        p_metadata: {
           requester_id: user.id,
           requester_name: profile.full_name,
           employment_type: employmentRole,
         },
-      });
+      }).select().throwOnError();
 
+      resetWelcomeFlags();
       navigate('/dashboard?joined=requested');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -157,13 +166,21 @@ export default function Onboarding() {
     }
   };
 
+  // Clear localStorage flags so WelcomeGuide and OnboardingChecklist show fresh
+  const resetWelcomeFlags = () => {
+    localStorage.removeItem('connectradie_welcome_client');
+    localStorage.removeItem('connectradie_welcome_tradie');
+    localStorage.removeItem('onboarding_checklist_dismissed');
+    localStorage.removeItem('onboarding_checklist_complete');
+  };
+
   const handleComplete = async () => {
     if (!selectedRole) return;
     setLoading(true);
     setError('');
 
     try {
-      const profileUpdates: Record<string, unknown> = { role: selectedRole, postcode, onboarding_completed: true };
+      const profileUpdates: Record<string, unknown> = { role: selectedRole, postcode: addressDetails?.postcode || undefined, suburb: addressDetails?.suburb || undefined, onboarding_completed: true };
       if (selectedRole === 'tradie' && tradeCategory) {
         profileUpdates.declared_trades = [tradeCategory];
       }
@@ -179,7 +196,8 @@ export default function Onboarding() {
         if (tradieError) throw new Error('Failed to save business details. Please try again.');
       }
 
-      navigate('/dashboard');
+      resetWelcomeFlags();
+      navigate(selectedRole === 'tradie' ? '/dashboard?onboarded=tradie' : '/dashboard?onboarded=client');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
@@ -197,14 +215,11 @@ export default function Onboarding() {
   const progressPct = steps.length > 1 ? Math.round((currentStepIndex / (steps.length - 1)) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-lg">
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-            <Wrench className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-2xl font-bold text-gray-900">
-            Connec<span className="text-blue-600">Tradie</span>
+        <div className="flex items-center justify-center mb-8">
+          <span className="text-2xl font-extrabold tracking-tight text-black">
+            Connec<span className="text-warm-500">Tradie</span>
           </span>
         </div>
 
@@ -216,7 +231,7 @@ export default function Onboarding() {
             </div>
             <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary-600 rounded-full transition-all duration-500"
+                className="h-full bg-warm-500 rounded-full transition-all duration-500"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
@@ -234,10 +249,10 @@ export default function Onboarding() {
           {step === 'role' && (
             <>
               <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">
-                Welcome to Connec<span className="text-blue-600">Tradie</span>!
+                Welcome to Connec<span className="text-warm-500">Tradie</span>!
               </h2>
               <p className="text-gray-600 text-center mb-8">
-                How will you be using Connec<span className="text-blue-600">Tradie</span>?
+                How will you be using Connec<span className="text-warm-500">Tradie</span>?
               </p>
 
               <div className="grid gap-4">
@@ -262,8 +277,8 @@ export default function Onboarding() {
                   className="group relative p-6 border-2 border-gray-200 rounded-2xl hover:border-primary-500 transition-all text-left"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-amber-100 rounded-xl flex items-center justify-center group-hover:bg-amber-200 transition-colors">
-                      <HardHat className="w-7 h-7 text-amber-600" />
+                    <div className="w-14 h-14 bg-warm-100 rounded-xl flex items-center justify-center group-hover:bg-warm-200 transition-colors">
+                      <HardHat className="w-7 h-7 text-warm-600" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900">I'm in the trades</h3>
@@ -287,8 +302,8 @@ export default function Onboarding() {
                   className="group relative p-6 border-2 border-gray-200 rounded-2xl hover:border-primary-500 transition-all text-left"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center group-hover:bg-orange-200 transition-colors">
-                      <HardHat className="w-7 h-7 text-orange-600" />
+                    <div className="w-14 h-14 bg-primary-100 rounded-xl flex items-center justify-center group-hover:bg-primary-200 transition-colors">
+                      <HardHat className="w-7 h-7 text-primary-600" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900">Construction & Trades</h3>
@@ -303,8 +318,8 @@ export default function Onboarding() {
                   className="group relative p-6 border-2 border-gray-200 rounded-2xl hover:border-primary-500 transition-all text-left"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-emerald-100 rounded-xl flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
-                      <Wrench className="w-7 h-7 text-emerald-600" />
+                    <div className="w-14 h-14 bg-secondary-100 rounded-xl flex items-center justify-center group-hover:bg-secondary-200 transition-colors">
+                      <Wrench className="w-7 h-7 text-secondary-600" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900">Hospitality & Events</h3>
@@ -348,8 +363,8 @@ export default function Onboarding() {
                   className="group p-6 border-2 border-gray-200 rounded-2xl hover:border-primary-500 transition-all text-left"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center group-hover:bg-blue-200 transition-colors flex-shrink-0">
-                      <Users className="w-7 h-7 text-blue-600" />
+                    <div className="w-14 h-14 bg-secondary-100 rounded-xl flex items-center justify-center group-hover:bg-secondary-200 transition-colors flex-shrink-0">
+                      <Users className="w-7 h-7 text-secondary-600" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900">I work for a business</h3>
@@ -445,17 +460,12 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Your postcode</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      value={postcode}
-                      onChange={e => setPostcode(e.target.value)}
-                      placeholder="e.g., 2000"
-                      className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Your location</label>
+                  <AddressAutocomplete
+                    value={address}
+                    onChange={handleAddressChange}
+                    placeholder="Start typing your address..."
+                  />
                 </div>
 
                 <button
@@ -466,8 +476,8 @@ export default function Onboarding() {
                       handleComplete();
                     }
                   }}
-                  disabled={loading || !tradeCategory || !postcode || (!!businessSearch && !selectedBusiness)}
-                  className="w-full py-3 px-4 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
+                  disabled={loading || !tradeCategory || !addressDetails?.suburb || (!!businessSearch && !selectedBusiness)}
+                  className="w-full py-3 px-4 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
                 >
                   {loading ? (
                     <><Loader2 className="w-5 h-5 animate-spin" />Setting up...</>
@@ -496,7 +506,7 @@ export default function Onboarding() {
                   onClick={() => { setEmploymentRole('employee'); }}
                   className={`group p-6 border-2 rounded-2xl transition-all text-left ${
                     employmentRole === 'employee'
-                      ? 'border-primary-500 bg-primary-50'
+                      ? 'border-warm-500 bg-warm-50'
                       : 'border-gray-200 hover:border-primary-500'
                   }`}
                 >
@@ -504,21 +514,21 @@ export default function Onboarding() {
                     <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
                       employmentRole === 'employee'
                         ? 'bg-primary-200'
-                        : 'bg-blue-100 group-hover:bg-blue-200'
+                        : 'bg-secondary-100 group-hover:bg-secondary-200'
                     }`}>
-                      <UserCheck className="w-7 h-7 text-blue-600" />
+                      <UserCheck className="w-7 h-7 text-secondary-600" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900">Employee</h3>
                       <p className="text-gray-600 text-sm mt-1">
                         I'm a direct employee or apprentice of this business
                       </p>
-                      <p className="text-xs text-blue-600 mt-2 font-medium">
+                      <p className="text-xs text-secondary-600 mt-2 font-medium">
                         Your employer will approve your request
                       </p>
                     </div>
                     {employmentRole === 'employee' && (
-                      <div className="w-6 h-6 rounded-full bg-primary-600 flex items-center justify-center flex-shrink-0">
+                      <div className="w-6 h-6 rounded-full bg-warm-500 flex items-center justify-center flex-shrink-0">
                         <Check className="w-4 h-4 text-white" />
                       </div>
                     )}
@@ -529,7 +539,7 @@ export default function Onboarding() {
                   onClick={() => { setEmploymentRole('subcontractor'); }}
                   className={`group p-6 border-2 rounded-2xl transition-all text-left ${
                     employmentRole === 'subcontractor'
-                      ? 'border-primary-500 bg-primary-50'
+                      ? 'border-warm-500 bg-warm-50'
                       : 'border-gray-200 hover:border-primary-500'
                   }`}
                 >
@@ -537,21 +547,21 @@ export default function Onboarding() {
                     <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
                       employmentRole === 'subcontractor'
                         ? 'bg-primary-200'
-                        : 'bg-amber-100 group-hover:bg-amber-200'
+                        : 'bg-warm-100 group-hover:bg-warm-200'
                     }`}>
-                      <Wrench className="w-7 h-7 text-amber-600" />
+                      <Wrench className="w-7 h-7 text-warm-600" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900">Subcontractor</h3>
                       <p className="text-gray-600 text-sm mt-1">
                         I do contract work for this business on a project basis
                       </p>
-                      <p className="text-xs text-amber-600 mt-2 font-medium">
+                      <p className="text-xs text-warm-600 mt-2 font-medium">
                         Your employer will approve your request
                       </p>
                     </div>
                     {employmentRole === 'subcontractor' && (
-                      <div className="w-6 h-6 rounded-full bg-primary-600 flex items-center justify-center flex-shrink-0">
+                      <div className="w-6 h-6 rounded-full bg-warm-500 flex items-center justify-center flex-shrink-0">
                         <Check className="w-4 h-4 text-white" />
                       </div>
                     )}
@@ -562,7 +572,7 @@ export default function Onboarding() {
               <button
                 onClick={handleJoinRequest}
                 disabled={loading || !employmentRole}
-                className="w-full mt-6 py-3 px-4 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
+                className="w-full mt-6 py-3 px-4 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
               >
                 {loading ? (
                   <><Loader2 className="w-5 h-5 animate-spin" />Setting up...</>
@@ -580,23 +590,18 @@ export default function Onboarding() {
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Your postcode</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      value={postcode}
-                      onChange={e => setPostcode(e.target.value)}
-                      placeholder="e.g., 2000"
-                      className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Your location</label>
+                  <AddressAutocomplete
+                    value={address}
+                    onChange={handleAddressChange}
+                    placeholder="Start typing your address..."
+                  />
                 </div>
 
                 <button
                   onClick={handleComplete}
-                  disabled={loading || !postcode}
-                  className="w-full py-3 px-4 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
+                  disabled={loading || !addressDetails?.suburb}
+                  className="w-full py-3 px-4 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
                 >
                   {loading ? (
                     <><Loader2 className="w-5 h-5 animate-spin" />Setting up...</>
@@ -636,23 +641,18 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Service area postcode</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      value={postcode}
-                      onChange={e => setPostcode(e.target.value)}
-                      placeholder="e.g., 2000"
-                      className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Service area</label>
+                  <AddressAutocomplete
+                    value={address}
+                    onChange={handleAddressChange}
+                    placeholder="Start typing your address..."
+                  />
                 </div>
 
                 <button
                   onClick={handleComplete}
-                  disabled={loading || !businessName || !tradeCategory || !postcode}
-                  className="w-full py-3 px-4 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
+                  disabled={loading || !businessName || !tradeCategory || !addressDetails?.suburb}
+                  className="w-full py-3 px-4 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
                 >
                   {loading ? (
                     <><Loader2 className="w-5 h-5 animate-spin" />Setting up...</>

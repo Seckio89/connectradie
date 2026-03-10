@@ -1,9 +1,17 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import * as Sentry from '@sentry/react';
 import { supabase } from '../lib/supabase';
 import { trackEvent, GA_EVENTS } from '../lib/analytics';
 import type { Profile, TradieDetails } from '../types/database';
+
+interface SignInResult {
+  error: Error | null;
+  removed?: boolean;
+  selfDeleted?: boolean;
+  removalReason?: string;
+  removalMessage?: string;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -11,8 +19,8 @@ interface AuthContextType {
   profile: Profile | null;
   tradieDetails: TradieDetails | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<SignInResult>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>;
   updateTradieDetails: (updates: Partial<TradieDetails>) => Promise<{ error: Error | null }>;
@@ -27,6 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [tradieDetails, setTradieDetails] = useState<TradieDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  // Prevent onAuthStateChange from setting user while signIn is handling the flow
+  const signingInRef = useRef(false);
 
   const fetchProfile = async (userId: string, retries = 3) => {
     const { data: profileData } = await supabase
@@ -36,15 +46,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .maybeSingle();
 
     if (profileData) {
-      setProfile(profileData);
+      setProfile(profileData as Profile);
 
-      if (profileData.role === 'tradie') {
+      if ((profileData as Profile).role === 'tradie') {
         const { data: tradieData } = await supabase
           .from('tradie_details')
           .select('*')
           .eq('profile_id', userId)
           .maybeSingle();
-        setTradieDetails(tradieData);
+        setTradieDetails(tradieData as TradieDetails | null);
       }
     } else if (retries > 0) {
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -52,23 +62,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Check if a user's profile exists; if not, they were removed
+  const checkProfileExists = async (userId: string): Promise<boolean> => {
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
+    return !!profileData;
+  };
+
   useEffect(() => {
     let mounted = true;
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
-      setSession(session);
-      setUser(session?.user ?? null);
+
       if (session?.user) {
+        // Before setting user state, verify the profile still exists
+        const profileExists = await checkProfileExists(session.user.id);
+        if (!mounted) return;
+
+        if (!profileExists) {
+          // Removed user — clear session, don't set user
+          await supabase.auth.signOut();
+          if (mounted) setLoading(false);
+          return;
+        }
+
+        setSession(session);
+        setUser(session.user);
         Sentry.setUser({ id: session.user.id, email: session.user.email });
         await fetchProfile(session.user.id);
       }
+
       if (mounted) setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       if (event === 'INITIAL_SESSION') return;
+
+      // When signIn function is handling the flow, skip state updates here
+      if (signingInRef.current && event === 'SIGNED_IN') return;
+
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+        setUser(null);
+        Sentry.setUser(null);
+        setProfile(null);
+        setTradieDetails(null);
+        return;
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -76,10 +122,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         (async () => {
           if (mounted) await fetchProfile(session.user.id);
         })();
-      } else if (event === 'SIGNED_OUT') {
-        Sentry.setUser(null);
-        setProfile(null);
-        setTradieDetails(null);
       }
     });
 
@@ -89,22 +131,95 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
+  const signUp = async (email: string, password: string, fullName: string, phone?: string) => {
+    const { error, data } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName }
+        data: { full_name: fullName, phone },
+        emailRedirectTo: `${window.location.origin}/dashboard`,
       }
     });
+
+    // Store phone on the profile if signup succeeded and phone was provided
+    if (!error && data.user && phone) {
+      await supabase
+        .from('profiles')
+        .update({ phone })
+        .eq('id', data.user.id);
+    }
+
     if (!error) trackEvent(GA_EVENTS.SIGN_UP, { method: 'email' });
     return { error };
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (!error) trackEvent(GA_EVENTS.LOGIN, { method: 'email' });
-    return { error };
+  const signIn = async (email: string, password: string): Promise<SignInResult> => {
+    // Prevent onAuthStateChange from setting user during our check
+    signingInRef.current = true;
+
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      signingInRef.current = false;
+      return { error };
+    }
+
+    // Check if user's profile still exists (removed users have profile deleted)
+    const userId = data.user?.id;
+    if (userId) {
+      const profileExists = await checkProfileExists(userId);
+
+      if (!profileExists) {
+        // Profile was deleted — check if self-deleted or admin-removed
+        const { data: removal } = await supabase
+          .from('account_removals')
+          .select('reason, additional_message')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const isSelfDeleted = removal?.reason === 'self_deleted';
+
+        // If self-deleted, clean up the orphaned auth user so they can re-register
+        if (isSelfDeleted && data.session?.access_token) {
+          try {
+            await supabase.functions.invoke('delete-user', {
+              headers: { Authorization: `Bearer ${data.session.access_token}` },
+            });
+          } catch {
+            // Best-effort cleanup
+          }
+        }
+
+        // Sign them out immediately
+        await supabase.auth.signOut();
+        setUser(null);
+        setSession(null);
+        setProfile(null);
+        setTradieDetails(null);
+        signingInRef.current = false;
+
+        return {
+          error: null,
+          removed: !isSelfDeleted,
+          selfDeleted: isSelfDeleted,
+          removalReason: removal?.reason || 'Your account has been removed by an administrator.',
+          removalMessage: removal?.additional_message || '',
+        };
+      }
+    }
+
+    // Profile exists — allow login, update state
+    setUser(data.user);
+    setSession(data.session);
+    Sentry.setUser({ id: data.user.id, email: data.user.email });
+    signingInRef.current = false;
+
+    // Fetch full profile data
+    if (userId) await fetchProfile(userId);
+
+    trackEvent(GA_EVENTS.LOGIN, { method: 'email' });
+    return { error: null };
   };
 
   const signOut = async () => {

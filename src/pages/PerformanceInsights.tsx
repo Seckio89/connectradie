@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   TrendingUp,
   Target,
@@ -57,6 +58,8 @@ interface FocusArea {
   title: string;
   description: string;
   severity: 'high' | 'medium' | 'low';
+  link?: string;
+  linkLabel?: string;
 }
 
 export default function PerformanceInsights() {
@@ -172,8 +175,10 @@ export default function PerformanceInsights() {
           icon: Target,
           title: 'Low Quote Win Rate',
           description:
-            'You are winning fewer than 1 in 3 quotes. Consider adjusting your pricing or adding more detail to your quotes to stand out.',
+            'You are winning fewer than 1 in 3 quotes. Try adjusting your pricing or adding more detail to stand out. Check your recent quotes in the Work Hub.',
           severity: 'high',
+          link: '/work?tab=active',
+          linkLabel: 'Review My Quotes',
         });
       }
 
@@ -184,6 +189,8 @@ export default function PerformanceInsights() {
           description:
             'Profiles with recent project photos get 2x more leads. Upload some of your best work to your portfolio.',
           severity: 'high',
+          link: '/my-profile',
+          linkLabel: 'Upload Photos',
         });
       }
 
@@ -194,6 +201,8 @@ export default function PerformanceInsights() {
           description:
             'Your profile had fewer than 5 views this week. Make sure your availability calendar is up to date and your services are listed correctly.',
           severity: 'medium',
+          link: '/schedule',
+          linkLabel: 'Update Availability',
         });
       }
 
@@ -202,8 +211,10 @@ export default function PerformanceInsights() {
           icon: Star,
           title: 'No Reviews Yet',
           description:
-            'You have completed jobs but no reviews. Ask your clients to leave a review -- tradies with reviews rank higher in search.',
+            'You have completed jobs but no reviews. Ask your clients to leave a review — tradies with reviews rank higher in search.',
           severity: 'medium',
+          link: '/work?tab=active',
+          linkLabel: 'View Completed Jobs',
         });
       }
 
@@ -247,11 +258,11 @@ export default function PerformanceInsights() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[1600px] mx-auto">
           <div className="flex items-center justify-center py-24">
             <div className="text-center">
-              <Loader2 className="w-10 h-10 text-sky-600 animate-spin mx-auto mb-4" />
-              <p className="text-gray-600 font-medium">Crunching your numbers...</p>
+              <Loader2 className="w-10 h-10 text-primary-600 animate-spin mx-auto mb-4" />
+              <p className="text-gray-400 font-medium">Crunching your numbers...</p>
             </div>
           </div>
         </div>
@@ -261,15 +272,15 @@ export default function PerformanceInsights() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1600px] mx-auto">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-sky-600" />
+            <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-secondary-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Performance Insights</h1>
-              <p className="text-gray-600 text-sm">
+              <h1 className="text-2xl font-bold text-white">Performance Insights</h1>
+              <p className="text-gray-400 text-sm">
                 Understand how your business is performing and where to improve
               </p>
             </div>
@@ -279,7 +290,7 @@ export default function PerformanceInsights() {
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-4">
             <BarChart3 className="w-5 h-5 text-gray-500" />
-            <h2 className="text-lg font-bold text-gray-900">Health Check</h2>
+            <h2 className="text-lg font-bold text-white">Health Check</h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <HealthCard
@@ -316,7 +327,7 @@ export default function PerformanceInsights() {
           </div>
 
           {health && health.totalRevenue > 0 && (
-            <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200 p-5">
+            <div className="mt-4 bg-gradient-to-r from-green-50 to-secondary-50 rounded-2xl border border-green-200 p-5">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                   <DollarSign className="w-6 h-6 text-green-600" />
@@ -335,16 +346,16 @@ export default function PerformanceInsights() {
         <section>
           <div className="flex items-center gap-2 mb-4">
             <Lightbulb className="w-5 h-5 text-gray-500" />
-            <h2 className="text-lg font-bold text-gray-900">Strengths & Focus Areas</h2>
+            <h2 className="text-lg font-bold text-white">Strengths & Focus Areas</h2>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="bg-navy-800 rounded-2xl border border-navy-700 p-6">
               <div className="flex items-center gap-2 mb-5">
                 <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                   <Award className="w-4 h-4 text-green-600" />
                 </div>
-                <h3 className="font-bold text-gray-900">What's Working</h3>
+                <h3 className="font-bold text-white">What's Working</h3>
               </div>
 
               {strengths ? (
@@ -372,7 +383,7 @@ export default function PerformanceInsights() {
                     />
                   )}
                   {strengths.avgRating > 0 && (
-                    <div className="pt-3 border-t border-gray-100">
+                    <div className="pt-3 border-t border-navy-700">
                       <div className="flex items-center gap-2">
                         <div className="flex">
                           {[1, 2, 3, 4, 5].map((s) => (
@@ -380,13 +391,13 @@ export default function PerformanceInsights() {
                               key={s}
                               className={`w-4 h-4 ${
                                 s <= Math.round(strengths.avgRating)
-                                  ? 'text-amber-400 fill-amber-400'
+                                  ? 'text-yellow-400 fill-yellow-400'
                                   : 'text-gray-200'
                               }`}
                             />
                           ))}
                         </div>
-                        <span className="text-sm font-semibold text-gray-700">
+                        <span className="text-sm font-semibold text-gray-300">
                           {strengths.avgRating} avg rating
                         </span>
                       </div>
@@ -405,12 +416,12 @@ export default function PerformanceInsights() {
               )}
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="bg-navy-800 rounded-2xl border border-navy-700 p-6">
               <div className="flex items-center gap-2 mb-5">
-                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                  <Lightbulb className="w-4 h-4 text-amber-600" />
+                <div className="w-8 h-8 bg-warm-100 rounded-lg flex items-center justify-center">
+                  <Lightbulb className="w-4 h-4 text-warm-600" />
                 </div>
-                <h3 className="font-bold text-gray-900">Where to Improve</h3>
+                <h3 className="font-bold text-white">Where to Improve</h3>
               </div>
 
               {focusAreas.length > 0 ? (
@@ -449,28 +460,16 @@ function HealthCard({
 }) {
   const colorMap = {
     sky: {
-      bg: 'bg-gradient-to-br from-sky-50 to-cyan-50',
-      border: 'border-sky-200',
-      iconBg: 'bg-sky-100',
-      iconText: 'text-sky-600',
-      label: 'text-sky-700',
-      value: 'text-sky-900',
+      iconBg: 'bg-secondary-100',
+      iconText: 'text-secondary-600',
     },
     green: {
-      bg: 'bg-gradient-to-br from-green-50 to-emerald-50',
-      border: 'border-green-200',
       iconBg: 'bg-green-100',
       iconText: 'text-green-600',
-      label: 'text-green-700',
-      value: 'text-green-900',
     },
     amber: {
-      bg: 'bg-gradient-to-br from-amber-50 to-yellow-50',
-      border: 'border-amber-200',
-      iconBg: 'bg-amber-100',
-      iconText: 'text-amber-600',
-      label: 'text-amber-700',
-      value: 'text-amber-900',
+      iconBg: 'bg-warm-100',
+      iconText: 'text-warm-600',
     },
   };
 
@@ -478,7 +477,7 @@ function HealthCard({
 
   return (
     <div
-      className={`${c.bg} rounded-2xl border ${c.border} p-5 hover:shadow-lg transition-all duration-200`}
+      className="bg-navy-800 rounded-2xl border border-primary-800 shadow-sm p-5 hover:shadow-md transition-all duration-200"
     >
       <div className="flex items-start justify-between mb-3">
         <div className={`w-10 h-10 ${c.iconBg} rounded-xl flex items-center justify-center`}>
@@ -501,8 +500,8 @@ function HealthCard({
           </div>
         )}
       </div>
-      <p className={`text-sm font-medium ${c.label} mb-1`}>{label}</p>
-      <p className={`text-3xl font-bold ${c.value} mb-1`}>{value}</p>
+      <p className="text-sm font-medium text-navy-500 mb-1">{label}</p>
+      <p className="text-3xl font-bold text-navy-900 mb-1">{value}</p>
       {detail && <p className="text-xs text-gray-500 leading-relaxed">{detail}</p>}
     </div>
   );
@@ -521,12 +520,12 @@ function StrengthRow({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+      <div className="w-8 h-8 bg-navy-700 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
         <Icon className="w-4 h-4 text-gray-500" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{label}</p>
-        <p className="font-semibold text-gray-900">{value}</p>
+        <p className="font-semibold text-white">{value}</p>
         <p className="text-xs text-gray-500 mt-0.5">{detail}</p>
       </div>
     </div>
@@ -537,17 +536,17 @@ function FocusAreaRow({ area }: { area: FocusArea }) {
   const Icon = area.icon;
   const severityStyles = {
     high: 'bg-red-50 border-red-200',
-    medium: 'bg-amber-50 border-amber-200',
+    medium: 'bg-warm-50 border-warm-200',
     low: 'bg-green-50 border-green-200',
   };
   const iconStyles = {
     high: 'bg-red-100 text-red-600',
-    medium: 'bg-amber-100 text-amber-600',
+    medium: 'bg-warm-100 text-warm-600',
     low: 'bg-green-100 text-green-600',
   };
   const badgeStyles = {
     high: 'bg-red-100 text-red-700',
-    medium: 'bg-amber-100 text-amber-700',
+    medium: 'bg-warm-100 text-warm-700',
     low: 'bg-green-100 text-green-700',
   };
   const badgeLabels = {
@@ -566,14 +565,22 @@ function FocusAreaRow({ area }: { area: FocusArea }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <p className="font-semibold text-gray-900 text-sm">{area.title}</p>
+            <p className="font-semibold text-white text-sm">{area.title}</p>
             <span
-              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${badgeStyles[area.severity]}`}
+              className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${badgeStyles[area.severity]}`}
             >
               {badgeLabels[area.severity]}
             </span>
           </div>
-          <p className="text-sm text-gray-600 leading-relaxed">{area.description}</p>
+          <p className="text-sm text-gray-400 leading-relaxed">{area.description}</p>
+          {area.link && area.linkLabel && (
+            <Link
+              to={area.link}
+              className="inline-block mt-2 text-xs font-semibold text-warm-600 hover:text-warm-700 transition-colors"
+            >
+              {area.linkLabel} →
+            </Link>
+          )}
         </div>
       </div>
     </div>

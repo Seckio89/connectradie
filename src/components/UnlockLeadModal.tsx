@@ -52,8 +52,8 @@ export default function UnlockLeadModal({ isOpen, onClose, onUnlock, clientName,
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl transform transition-all">
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 modal-sheet-overlay">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-2xl transform transition-all modal-sheet">
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <h3 className="text-xl font-bold text-gray-900">Unlock Lead Details</h3>
           <button
@@ -65,8 +65,8 @@ export default function UnlockLeadModal({ isOpen, onClose, onUnlock, clientName,
         </div>
 
         <div className="p-6">
-          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-amber-600" />
+          <div className="w-16 h-16 bg-warm-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-8 h-8 text-warm-600" />
           </div>
 
           <h4 className="text-center text-lg font-semibold text-gray-900 mb-2">
@@ -88,24 +88,24 @@ export default function UnlockLeadModal({ isOpen, onClose, onUnlock, clientName,
           )}
 
           {!isProUser && remainingUnlocks !== null && remainingUnlocks !== undefined && totalUnlocks && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex items-center justify-between">
+            <div className="bg-warm-50 border border-warm-200 rounded-xl p-3 mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Crown className="w-4 h-4 text-amber-600" />
-                <span className="text-sm text-amber-800 font-medium">Free unlocks remaining</span>
+                <Crown className="w-4 h-4 text-warm-600" />
+                <span className="text-sm text-warm-800 font-medium">Free unlocks remaining</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-16 h-1.5 bg-amber-200 rounded-full overflow-hidden">
+                <div className="w-16 h-1.5 bg-warm-200 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-amber-500 rounded-full transition-all"
+                    className="h-full bg-warm-500 rounded-full transition-all"
                     style={{ width: `${((totalUnlocks - remainingUnlocks) / totalUnlocks) * 100}%` }}
                   />
                 </div>
-                <span className="text-sm font-bold text-amber-700">{remainingUnlocks}/{totalUnlocks}</span>
+                <span className="text-sm font-bold text-warm-700">{remainingUnlocks}/{totalUnlocks}</span>
               </div>
             </div>
           )}
 
-          <div className={`rounded-xl p-6 mb-6 border-2 ${isProUser ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200' : 'bg-gradient-to-br from-primary-50 to-amber-50 border-primary-200'}`}>
+          <div className={`rounded-xl p-6 mb-6 border-2 ${isProUser ? 'bg-gradient-to-br from-green-50 to-secondary-50 border-green-200' : 'bg-gradient-to-br from-primary-50 to-warm-50 border-primary-200'}`}>
             {isProUser ? (
               <>
                 <div className="flex items-center justify-center gap-2 mb-4">
@@ -173,7 +173,7 @@ export default function UnlockLeadModal({ isOpen, onClose, onUnlock, clientName,
             <button
               onClick={handleUnlock}
               disabled={loading || success}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-primary-600 to-amber-600 text-white font-semibold rounded-xl hover:from-primary-700 hover:to-amber-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-90 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-primary-600 to-warm-600 text-white font-semibold rounded-xl hover:from-primary-700 hover:to-warm-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-90 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>

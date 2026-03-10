@@ -2,9 +2,9 @@ import { MapPin, Clock, BadgeCheck, GraduationCap, Award, Briefcase, Users, Buil
 import type { TradeVacancyWithEmployer } from '../types/database';
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: typeof GraduationCap }> = {
-  apprentice: { label: 'Apprenticeship', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: GraduationCap },
-  qualified: { label: 'Qualified Trade', color: 'bg-blue-50 text-blue-700 border-blue-200', icon: Briefcase },
-  senior_advisory: { label: 'Senior / Advisory', color: 'bg-amber-50 text-amber-700 border-amber-200', icon: Award },
+  apprentice: { label: 'Apprenticeship', color: 'bg-secondary-50 text-secondary-700 border-secondary-200', icon: GraduationCap },
+  qualified: { label: 'Qualified Trade', color: 'bg-secondary-50 text-secondary-700 border-secondary-200', icon: Briefcase },
+  senior_advisory: { label: 'Senior / Advisory', color: 'bg-warm-50 text-warm-700 border-warm-200', icon: Award },
 };
 
 interface VacancyCardProps {
@@ -38,7 +38,7 @@ export default function VacancyCard({ vacancy, onApply, hasApplied, isOwner, onM
           )}
         </div>
 
-        <h3 className="text-lg font-bold text-gray-900 mb-2 leading-snug group-hover:text-blue-700 transition-colors">
+        <h3 className="text-lg font-bold text-gray-900 mb-2 leading-snug group-hover:text-primary-700 transition-colors">
           {vacancy.title}
         </h3>
 
@@ -49,7 +49,7 @@ export default function VacancyCard({ vacancy, onApply, hasApplied, isOwner, onM
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="text-sm font-medium text-gray-700 truncate">{businessName}</span>
             {isVerified && (
-              <BadgeCheck className="w-4 h-4 text-blue-500 flex-shrink-0" />
+              <BadgeCheck className="w-4 h-4 text-primary-500 flex-shrink-0" />
             )}
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function VacancyCard({ vacancy, onApply, hasApplied, isOwner, onM
         ) : vacancy.status === 'open' ? (
           <button
             onClick={() => onApply(vacancy)}
-            className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all"
+            className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold text-white bg-warm-500 rounded-xl hover:bg-warm-600 active:scale-[0.98] transition-all"
           >
             Apply Now
           </button>

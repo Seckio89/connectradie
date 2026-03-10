@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Calendar, Package, Clock, CheckCircle2, XCircle, FolderOpen, Trash2, PenLine, MapPin, Briefcase, X } from 'lucide-react';
+import { Plus, Calendar, Package, Clock, CheckCircle2, XCircle, FolderOpen, Trash2, PenLine, MapPin, Briefcase, X, LayoutList, BarChart3 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Project, Job } from '../types/database';
@@ -39,8 +39,8 @@ function extractSuburbFromAddress(address: string | null): string | null {
 function getStatusDot(status: string) {
   switch (status) {
     case 'completed': return 'bg-green-500';
-    case 'in_progress': return 'bg-blue-500';
-    case 'accepted': return 'bg-amber-500';
+    case 'in_progress': return 'bg-primary-500';
+    case 'accepted': return 'bg-warm-500';
     case 'pending': return 'bg-gray-400';
     case 'declined': return 'bg-red-400';
     default: return 'bg-gray-400';
@@ -58,6 +58,7 @@ export default function Projects() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [savingTitle, setSavingTitle] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'timeline'>('grid');
 
   useEffect(() => {
     if (user) {
@@ -72,11 +73,17 @@ export default function Projects() {
 
       await supabase.rpc('auto_complete_ended_projects');
 
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
-        .eq('client_id', user?.id)
-        .order('created_at', { ascending: false });
+        .eq('client_id', user.id)
+        .order('created_at', { ascending: false })
+        .returns<Project[]>();
 
       if (projectsError) throw projectsError;
 
@@ -86,7 +93,8 @@ export default function Projects() {
             .from('jobs')
             .select('*')
             .eq('project_id', project.id)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .returns<Job[]>();
 
           return {
             ...project,
@@ -104,6 +112,7 @@ export default function Projects() {
         }
       }
     } catch {
+      // no-op
     } finally {
       setLoading(false);
     }
@@ -123,6 +132,7 @@ export default function Projects() {
         ));
       }
     } catch {
+      // no-op
     } finally {
       setSavingTitle(false);
       setEditingId(null);
@@ -131,9 +141,9 @@ export default function Projects() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-blue-100 text-blue-700';
-      case 'ongoing': return 'bg-amber-100 text-amber-700';
-      case 'end_date': return 'bg-orange-100 text-orange-700';
+      case 'active': return 'bg-secondary-100 text-secondary-700';
+      case 'ongoing': return 'bg-warm-100 text-warm-700';
+      case 'end_date': return 'bg-warm-100 text-warm-700';
       case 'completed': return 'bg-green-100 text-green-700';
       case 'cancelled': return 'bg-gray-100 text-gray-700';
       default: return 'bg-gray-100 text-gray-700';
@@ -165,6 +175,13 @@ export default function Projects() {
     if (!projectToDelete) return;
     try {
       setDeleting(true);
+
+      // Unlink any jobs from this project first
+      await supabase
+        .from('jobs')
+        .update({ project_id: null })
+        .eq('project_id', projectToDelete.id);
+
       const { error } = await supabase
         .from('projects')
         .delete()
@@ -172,7 +189,9 @@ export default function Projects() {
       if (error) throw error;
       setProjectToDelete(null);
       await loadProjects();
-    } catch {
+    } catch (err) {
+      console.error('Failed to delete project:', err);
+      alert('Failed to delete this project. Please try again.');
     } finally {
       setDeleting(false);
     }
@@ -191,7 +210,7 @@ export default function Projects() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -205,13 +224,33 @@ export default function Projects() {
             <h1 className="text-3xl font-bold text-gray-900">Jobs</h1>
             <p className="text-gray-600 mt-1">Group related jobs to keep everything organised and on track</p>
           </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors min-h-[44px]"
-          >
-            <Plus className="w-5 h-5" />
-            Add Job Group
-          </button>
+          <div className="flex items-center gap-3">
+            {projects.length > 0 && (
+              <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                  title="Grid view"
+                >
+                  <LayoutList className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('timeline')}
+                  className={`p-2 rounded-md transition-colors ${viewMode === 'timeline' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                  title="Timeline view"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-warm-500 text-white rounded-xl hover:bg-warm-600 transition-colors min-h-[44px]"
+            >
+              <Plus className="w-5 h-5" />
+              Add Job Group
+            </button>
+          </div>
         </div>
 
         {projects.length === 0 ? (
@@ -225,6 +264,18 @@ export default function Projects() {
             />
           </div>
         ) : (
+          viewMode === 'timeline' ? (
+            <ProjectTimeline
+              projects={projects}
+              onSelect={(p) => setSelectedProject(p)}
+              formatDate={formatDate}
+              getStatusColor={getStatusColor}
+              getStatusLabel={getStatusLabel}
+              getStatusDot={getStatusDot}
+              extractCategory={extractCategory}
+              cleanDescription={cleanDescription}
+            />
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => {
               const firstJob = project.jobs[0] || null;
@@ -245,8 +296,8 @@ export default function Projects() {
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
-                          <Package className="w-5 h-5 text-blue-600" />
+                        <div className="p-2 bg-secondary-100 rounded-lg flex-shrink-0">
+                          <Package className="w-5 h-5 text-secondary-600" />
                         </div>
                         <div className="flex-1 min-w-0">
                           {isEditing ? (
@@ -260,12 +311,12 @@ export default function Projects() {
                                   if (e.key === 'Escape') setEditingId(null);
                                 }}
                                 autoFocus
-                                className="flex-1 px-2 py-1 text-sm font-semibold text-gray-900 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="flex-1 px-2 py-1 text-sm font-semibold text-gray-900 border border-primary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                               />
                               <button
                                 onClick={() => handleSaveTitle(project.id)}
                                 disabled={savingTitle}
-                                className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                className="p-1 text-primary-600 hover:bg-primary-50 rounded transition-colors"
                               >
                                 <CheckCircle2 className="w-4 h-4" />
                               </button>
@@ -278,7 +329,7 @@ export default function Projects() {
                             </div>
                           ) : (
                             <div className="flex items-center gap-1.5">
-                              <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                              <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors truncate">
                                 {project.title}
                               </h3>
                               <button
@@ -287,7 +338,7 @@ export default function Projects() {
                                   setEditingId(project.id);
                                   setEditTitle(project.title);
                                 }}
-                                className="p-1 rounded text-gray-300 hover:text-blue-600 hover:bg-blue-50 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
+                                className="p-1 rounded text-gray-300 hover:text-primary-600 hover:bg-primary-50 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
                                 title="Rename project"
                               >
                                 <PenLine className="w-3.5 h-3.5" />
@@ -307,7 +358,7 @@ export default function Projects() {
                           e.stopPropagation();
                           setProjectToDelete(project);
                         }}
-                        className="p-1.5 rounded-lg text-gray-300 hover:text-red-600 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0"
                         title="Delete project"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -373,7 +424,7 @@ export default function Projects() {
                           </div>
                         ))}
                         {additionalCount > 0 && (
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full whitespace-nowrap">
+                          <span className="px-2 py-0.5 bg-secondary-100 text-secondary-700 text-xs font-medium rounded-full whitespace-nowrap">
                             +{additionalCount} other {additionalCount === 1 ? 'job' : 'jobs'}
                           </span>
                         )}
@@ -384,6 +435,7 @@ export default function Projects() {
               );
             })}
           </div>
+          )
         )}
 
         {showCreateModal && (
@@ -413,5 +465,95 @@ export default function Projects() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+function ProjectTimeline({ projects, onSelect, formatDate, getStatusColor, getStatusLabel, getStatusDot, extractCategory, cleanDescription }: {
+  projects: ProjectWithJobs[];
+  onSelect: (p: ProjectWithJobs) => void;
+  formatDate: (d: string | null) => string;
+  getStatusColor: (s: string) => string;
+  getStatusLabel: (s: string) => string;
+  getStatusDot: (s: string) => string;
+  extractCategory: (d: string) => string | null;
+  cleanDescription: (d: string) => string;
+}) {
+  return (
+    <div className="space-y-6">
+      {projects.map((project) => (
+        <div
+          key={project.id}
+          className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-all cursor-pointer"
+          onClick={() => onSelect(project)}
+        >
+          <div className="p-5 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-secondary-100 rounded-lg">
+                  <Package className="w-5 h-5 text-secondary-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">{project.title}</h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+                      {getStatusLabel(project.status)}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {formatDate(project.start_date)} - {formatDate(project.estimated_end_date)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <span className="text-sm text-gray-500">{project.jobs.length} {project.jobs.length === 1 ? 'job' : 'jobs'}</span>
+            </div>
+          </div>
+
+          {project.jobs.length > 0 && (
+            <div className="px-5 py-4">
+              <div className="relative">
+                {/* Timeline line */}
+                <div className="absolute left-3 top-3 bottom-3 w-0.5 bg-gray-200" />
+
+                <div className="space-y-4">
+                  {project.jobs.map((job, index) => {
+                    const category = extractCategory(job.description);
+                    const desc = cleanDescription(job.description);
+                    return (
+                      <div key={job.id} className="relative flex items-start gap-4 pl-1">
+                        <div className={`relative z-10 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center flex-shrink-0 ${getStatusDot(job.status)}`}>
+                          <span className="text-white text-xs font-bold">{index + 1}</span>
+                        </div>
+                        <div className="flex-1 min-w-0 pb-1">
+                          <div className="flex items-center gap-2">
+                            {category && (
+                              <span className="text-xs font-medium text-primary-700 bg-primary-50 px-2 py-0.5 rounded-full">{category}</span>
+                            )}
+                            <span className={`text-xs font-medium capitalize px-2 py-0.5 rounded-full ${
+                              job.status === 'completed' ? 'bg-green-50 text-green-700' :
+                              job.status === 'in_progress' ? 'bg-secondary-50 text-secondary-700' :
+                              job.status === 'accepted' ? 'bg-warm-50 text-warm-700' :
+                              'bg-gray-50 text-gray-600'
+                            }`}>
+                              {job.status.replace('_', ' ')}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700 mt-1 truncate">{desc}</p>
+                          {job.scheduled_date && (
+                            <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {formatDate(job.scheduled_date)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }

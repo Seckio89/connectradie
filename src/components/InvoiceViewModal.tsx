@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Printer, FileText, Download, Loader2 } from 'lucide-react';
-import html2pdf from 'html2pdf.js';
 import Modal from './Modal';
 import { supabase } from '../lib/supabase';
 
@@ -63,7 +62,7 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
         .maybeSingle();
 
       if (invError) throw invError;
-      setInvoice(inv);
+      setInvoice(inv as InvoiceData | null);
 
       const { data: items, error: itemsError } = await supabase
         .from('invoice_line_items')
@@ -72,8 +71,8 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
         .order('sort_order', { ascending: true });
 
       if (itemsError) throw itemsError;
-      setLineItems(items || []);
-    } catch (err) {
+      setLineItems((items || []) as InvoiceLineItem[]);
+    } catch {
       // error handled silently
     } finally {
       setLoading(false);
@@ -95,21 +94,21 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-              color: #1a1a1a;
+              color: #26201E;
               padding: 40px;
               background: white;
             }
             .invoice-header { display: flex; justify-content: space-between; margin-bottom: 40px; }
-            .invoice-header h1 { font-size: 32px; color: #0d9488; font-weight: 800; letter-spacing: -0.5px; }
-            .company-name { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
-            .company-details { font-size: 12px; color: #6b7280; line-height: 1.6; }
+            .invoice-header h1 { font-size: 32px; color: #6D9B8B; font-weight: 800; letter-spacing: -0.5px; }
+            .company-name { font-size: 20px; font-weight: 700; color: #26201E; margin-bottom: 4px; }
+            .company-details { font-size: 12px; color: #A08B86; line-height: 1.6; }
             .invoice-meta { text-align: right; }
-            .invoice-meta .label { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
-            .invoice-meta .value { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
-            .bill-to { margin-bottom: 32px; padding: 20px; background: #f9fafb; border-radius: 8px; }
-            .bill-to .label { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-            .bill-to .name { font-size: 16px; font-weight: 600; color: #1a1a1a; }
-            .bill-to .address { font-size: 13px; color: #6b7280; }
+            .invoice-meta .label { font-size: 11px; color: #8C7CA7; text-transform: uppercase; letter-spacing: 0.5px; }
+            .invoice-meta .value { font-size: 14px; font-weight: 600; color: #26201E; margin-bottom: 8px; }
+            .bill-to { margin-bottom: 32px; padding: 20px; background: #F5F0EF; border-radius: 8px; }
+            .bill-to .label { font-size: 11px; color: #8C7CA7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+            .bill-to .name { font-size: 16px; font-weight: 600; color: #26201E; }
+            .bill-to .address { font-size: 13px; color: #A08B86; }
             table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
             thead th {
               padding: 12px 16px;
@@ -117,29 +116,29 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
               font-size: 11px;
               text-transform: uppercase;
               letter-spacing: 0.5px;
-              color: #6b7280;
-              border-bottom: 2px solid #e5e7eb;
-              background: #f9fafb;
+              color: #A08B86;
+              border-bottom: 2px solid #EBE1DF;
+              background: #F5F0EF;
             }
             thead th:nth-child(2), thead th:nth-child(3), thead th:nth-child(4) { text-align: right; }
             tbody td {
               padding: 12px 16px;
               font-size: 14px;
-              color: #374151;
-              border-bottom: 1px solid #f3f4f6;
+              color: #5C4F4B;
+              border-bottom: 1px solid #EBE1DF;
             }
             tbody td:nth-child(2), tbody td:nth-child(3), tbody td:nth-child(4) { text-align: right; }
             .totals { display: flex; justify-content: flex-end; }
             .totals-table { width: 280px; }
             .totals-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; }
-            .totals-row .label { color: #6b7280; }
-            .totals-row .value { font-weight: 600; color: #1a1a1a; }
-            .totals-row.total { border-top: 2px solid #0d9488; padding-top: 12px; margin-top: 4px; }
-            .totals-row.total .label { font-size: 16px; font-weight: 700; color: #1a1a1a; }
-            .totals-row.total .value { font-size: 20px; font-weight: 800; color: #0d9488; }
-            .notes { margin-top: 32px; padding: 16px; background: #f9fafb; border-radius: 8px; border-left: 3px solid #0d9488; }
-            .notes .label { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-            .notes p { font-size: 13px; color: #6b7280; line-height: 1.6; white-space: pre-wrap; }
+            .totals-row .label { color: #A08B86; }
+            .totals-row .value { font-weight: 600; color: #26201E; }
+            .totals-row.total { border-top: 2px solid #6D9B8B; padding-top: 12px; margin-top: 4px; }
+            .totals-row.total .label { font-size: 16px; font-weight: 700; color: #26201E; }
+            .totals-row.total .value { font-size: 20px; font-weight: 800; color: #6D9B8B; }
+            .notes { margin-top: 32px; padding: 16px; background: #F5F0EF; border-radius: 8px; border-left: 3px solid #6D9B8B; }
+            .notes .label { font-size: 11px; color: #8C7CA7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+            .notes p { font-size: 13px; color: #A08B86; line-height: 1.6; white-space: pre-wrap; }
             @media print { body { padding: 20px; } }
           </style>
         </head>
@@ -166,19 +165,19 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
 
     const printContents = printRef.current.innerHTML;
     container.innerHTML = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a1a; padding: 40px; background: white;">
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #26201E; padding: 40px; background: white;">
         <style>
           .invoice-header { display: flex; justify-content: space-between; margin-bottom: 40px; }
-          .invoice-header h1 { font-size: 32px; color: #0d9488; font-weight: 800; letter-spacing: -0.5px; }
-          .company-name { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
-          .company-details { font-size: 12px; color: #6b7280; line-height: 1.6; }
+          .invoice-header h1 { font-size: 32px; color: #6D9B8B; font-weight: 800; letter-spacing: -0.5px; }
+          .company-name { font-size: 20px; font-weight: 700; color: #26201E; margin-bottom: 4px; }
+          .company-details { font-size: 12px; color: #A08B86; line-height: 1.6; }
           .invoice-meta { text-align: right; }
-          .invoice-meta .label { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
-          .invoice-meta .value { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
-          .bill-to { margin-bottom: 32px; padding: 20px; background: #f9fafb; border-radius: 8px; }
-          .bill-to .label { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-          .bill-to .name { font-size: 16px; font-weight: 600; color: #1a1a1a; }
-          .bill-to .address { font-size: 13px; color: #6b7280; }
+          .invoice-meta .label { font-size: 11px; color: #8C7CA7; text-transform: uppercase; letter-spacing: 0.5px; }
+          .invoice-meta .value { font-size: 14px; font-weight: 600; color: #26201E; margin-bottom: 8px; }
+          .bill-to { margin-bottom: 32px; padding: 20px; background: #F5F0EF; border-radius: 8px; }
+          .bill-to .label { font-size: 11px; color: #8C7CA7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+          .bill-to .name { font-size: 16px; font-weight: 600; color: #26201E; }
+          .bill-to .address { font-size: 13px; color: #A08B86; }
           table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
           thead th {
             padding: 12px 16px;
@@ -186,29 +185,29 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: #6b7280;
-            border-bottom: 2px solid #e5e7eb;
-            background: #f9fafb;
+            color: #A08B86;
+            border-bottom: 2px solid #EBE1DF;
+            background: #F5F0EF;
           }
           thead th:nth-child(2), thead th:nth-child(3), thead th:nth-child(4) { text-align: right; }
           tbody td {
             padding: 12px 16px;
             font-size: 14px;
-            color: #374151;
-            border-bottom: 1px solid #f3f4f6;
+            color: #5C4F4B;
+            border-bottom: 1px solid #EBE1DF;
           }
           tbody td:nth-child(2), tbody td:nth-child(3), tbody td:nth-child(4) { text-align: right; }
           .totals { display: flex; justify-content: flex-end; }
           .totals-table { width: 280px; }
           .totals-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; }
-          .totals-row .label { color: #6b7280; }
-          .totals-row .value { font-weight: 600; color: #1a1a1a; }
-          .totals-row.total { border-top: 2px solid #0d9488; padding-top: 12px; margin-top: 4px; }
-          .totals-row.total .label { font-size: 16px; font-weight: 700; color: #1a1a1a; }
-          .totals-row.total .value { font-size: 20px; font-weight: 800; color: #0d9488; }
-          .notes { margin-top: 32px; padding: 16px; background: #f9fafb; border-radius: 8px; border-left: 3px solid #0d9488; }
-          .notes .label { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-          .notes p { font-size: 13px; color: #6b7280; line-height: 1.6; white-space: pre-wrap; }
+          .totals-row .label { color: #A08B86; }
+          .totals-row .value { font-weight: 600; color: #26201E; }
+          .totals-row.total { border-top: 2px solid #6D9B8B; padding-top: 12px; margin-top: 4px; }
+          .totals-row.total .label { font-size: 16px; font-weight: 700; color: #26201E; }
+          .totals-row.total .value { font-size: 20px; font-weight: 800; color: #6D9B8B; }
+          .notes { margin-top: 32px; padding: 16px; background: #F5F0EF; border-radius: 8px; border-left: 3px solid #6D9B8B; }
+          .notes .label { font-size: 11px; color: #8C7CA7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+          .notes p { font-size: 13px; color: #A08B86; line-height: 1.6; white-space: pre-wrap; }
         </style>
         ${printContents}
       </div>
@@ -217,6 +216,7 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
     document.body.appendChild(container);
 
     try {
+      const html2pdf = (await import('html2pdf.js')).default;
       await html2pdf()
         .set({
           margin: 10,
@@ -248,8 +248,8 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
-              <FileText className="w-5 h-5 text-teal-600" />
+            <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
+              <FileText className="w-5 h-5 text-secondary-600" />
             </div>
             <h2 className="text-xl font-bold text-gray-900">Invoice</h2>
           </div>
@@ -257,7 +257,7 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
             <button
               onClick={handleDownloadPdf}
               disabled={pdfLoading}
-              className="flex items-center gap-2 px-4 py-2 border border-teal-600 text-teal-600 rounded-lg hover:bg-teal-50 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-2 border border-secondary-600 text-secondary-600 rounded-lg hover:bg-secondary-50 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {pdfLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -268,7 +268,7 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
             </button>
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 text-sm font-medium transition-colors"
             >
               <Printer className="w-4 h-4" />
               Print / Save PDF
@@ -284,13 +284,13 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 border-3 border-teal-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-3 border-primary-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : invoice ? (
           <div ref={printRef} className="bg-white">
             <div className="invoice-header flex justify-between items-start mb-8">
               <div>
-                <h1 className="text-3xl font-extrabold text-teal-600 tracking-tight mb-6">
+                <h1 className="text-3xl font-extrabold text-secondary-600 tracking-tight mb-6">
                   INVOICE
                 </h1>
                 <div className="company-name text-lg font-bold text-gray-900">
@@ -305,7 +305,7 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
               </div>
               <div className="invoice-meta text-right space-y-2">
                 <div>
-                  <div className="label text-[10px] text-gray-400 uppercase tracking-wider">
+                  <div className="label text-xs text-gray-400 uppercase tracking-wider">
                     Invoice No.
                   </div>
                   <div className="value text-sm font-semibold text-gray-900">
@@ -313,7 +313,7 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
                   </div>
                 </div>
                 <div>
-                  <div className="label text-[10px] text-gray-400 uppercase tracking-wider">
+                  <div className="label text-xs text-gray-400 uppercase tracking-wider">
                     Date
                   </div>
                   <div className="value text-sm font-semibold text-gray-900">
@@ -322,7 +322,7 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
                 </div>
                 {invoice.due_date && (
                   <div>
-                    <div className="label text-[10px] text-gray-400 uppercase tracking-wider">
+                    <div className="label text-xs text-gray-400 uppercase tracking-wider">
                       Due Date
                     </div>
                     <div className="value text-sm font-semibold text-gray-900">
@@ -335,7 +335,7 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
 
             {(invoice.bill_to_name || invoice.bill_to_address) && (
               <div className="bill-to mb-8 p-4 bg-gray-50 rounded-xl">
-                <div className="label text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                <div className="label text-xs text-gray-400 uppercase tracking-wider mb-1">
                   Bill To
                 </div>
                 {invoice.bill_to_name && (
@@ -352,16 +352,16 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
             <table className="w-full mb-6">
               <thead>
                 <tr className="border-b-2 border-gray-200 bg-gray-50">
-                  <th className="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Description
                   </th>
-                  <th className="px-4 py-3 text-right text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Qty
                   </th>
-                  <th className="px-4 py-3 text-right text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Unit Price
                   </th>
-                  <th className="px-4 py-3 text-right text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Amount
                   </th>
                 </tr>
@@ -400,9 +400,9 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
                     </span>
                   </div>
                 )}
-                <div className="totals-row total flex justify-between pt-3 mt-1 border-t-2 border-teal-500">
+                <div className="totals-row total flex justify-between pt-3 mt-1 border-t-2 border-secondary-500">
                   <span className="label text-lg font-bold text-gray-900">Total</span>
-                  <span className="value text-xl font-extrabold text-teal-600">
+                  <span className="value text-xl font-extrabold text-secondary-600">
                     ${Number(invoice.total_amount).toFixed(2)}
                   </span>
                 </div>
@@ -425,8 +425,8 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
             </div>
 
             {invoice.notes && (
-              <div className="notes p-4 bg-gray-50 rounded-xl border-l-3 border-teal-500">
-                <div className="label text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+              <div className="notes p-4 bg-gray-50 rounded-xl border-l-3 border-secondary-500">
+                <div className="label text-xs text-gray-400 uppercase tracking-wider mb-1">
                   Notes
                 </div>
                 <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">

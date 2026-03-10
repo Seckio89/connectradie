@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Wrench, ArrowLeft, Mail, MapPin, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Mail, MapPin, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import SEO from '../components/SEO';
 
@@ -28,15 +28,20 @@ export default function Contact() {
       setName('');
       setEmail('');
       setMessage('');
-    } catch {
-      setError('Failed to send message. Please try again or email us directly.');
+    } catch (err: unknown) {
+      const msg = err instanceof Object && 'code' in err ? (err as { code: string }).code : '';
+      if (msg === '42501' || msg === 'PGRST301') {
+        setError('Too many messages sent. Please wait a while before trying again, or email us directly at admin@connectradie.com.');
+      } else {
+        setError('Failed to send message. Please try again or email us directly at admin@connectradie.com.');
+      }
     } finally {
       setSending(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <SEO
         title="Contact Us"
         description="Get in touch with ConnecTradie. Have a question about hiring a tradie or listing your trade business? We respond within 1-2 business days."
@@ -45,12 +50,9 @@ export default function Contact() {
       <header className="sticky top-0 z-30 bg-white border-b border-gray-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 bg-primary-600 rounded-lg flex items-center justify-center">
-                <Wrench className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">
-                Connec<span className="text-blue-600">Tradie</span>
+            <Link to="/" className="flex items-center">
+              <span className="text-2xl font-extrabold tracking-tight text-black">
+                Connec<span className="text-warm-500">Tradie</span>
               </span>
             </Link>
             <Link
@@ -64,7 +66,7 @@ export default function Contact() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+      <main id="main-content" className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Contact Us</h1>
         <p className="text-gray-600 mb-10">
           Have a question or need help? We'd love to hear from you.
@@ -135,7 +137,7 @@ export default function Contact() {
                 <button
                   type="submit"
                   disabled={sending}
-                  className="w-full py-3 px-4 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 px-4 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                 >
                   {sending ? (
                     <>
@@ -157,9 +159,9 @@ export default function Contact() {
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Get in Touch</h3>
               <div className="space-y-4">
-                <a href="mailto:support@connecttradie.com.au" className="flex items-center gap-3 text-gray-600 hover:text-primary-600 transition-colors">
+                <a href="mailto:admin@connectradie.com" className="flex items-center gap-3 text-gray-600 hover:text-primary-600 transition-colors">
                   <Mail className="w-5 h-5 text-gray-400" />
-                  <span className="text-sm">support@connecttradie.com.au</span>
+                  <span className="text-sm">admin@connectradie.com</span>
                 </a>
                 <div className="flex items-center gap-3 text-gray-600">
                   <MapPin className="w-5 h-5 text-gray-400" />

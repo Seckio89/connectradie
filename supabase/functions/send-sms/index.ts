@@ -1,8 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
@@ -29,19 +30,38 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const twilioSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const twilioAuth = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const twilioFrom = Deno.env.get("TWILIO_PHONE_NUMBER");
-
-    if (!twilioSid || !twilioAuth || !twilioFrom) {
+    // Authenticate the caller
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
-        JSON.stringify({
-          error: "SMS provider not configured",
-          details: "Twilio credentials are not set. SMS delivery is unavailable.",
-        }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Missing Authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(authHeader.slice(7));
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const requiredEnvVars = ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
+    for (const envVar of requiredEnvVars) {
+      if (!Deno.env.get(envVar)) {
+        return new Response(JSON.stringify({ error: `Missing required configuration: ${envVar}` }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    const twilioSid = Deno.env.get("TWILIO_ACCOUNT_SID")!;
+    const twilioAuth = Deno.env.get("TWILIO_AUTH_TOKEN")!;
+    const twilioFrom = Deno.env.get("TWILIO_PHONE_NUMBER")!;
 
     const { to, body, notificationType }: SmsRequest = await req.json();
 
@@ -53,6 +73,19 @@ Deno.serve(async (req: Request) => {
     }
 
     const normalised = to.startsWith("+") ? to : `+61${to.replace(/^0/, "")}`;
+
+    // Rate limit: 10 requests per minute per phone number
+    const rateLimitKey = `${normalised}-send-sms`;
+    const { allowed, remaining } = checkRateLimit(rateLimitKey, 10, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json", "X-RateLimit-Remaining": "0" },
+        },
+      );
+    }
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -100,8 +133,7 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({
           error: "SMS delivery failed",
-          details: twilioData.message || "Unknown Twilio error",
-          code: twilioData.code,
+          details: "SMS could not be delivered. Please try again later.",
         }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

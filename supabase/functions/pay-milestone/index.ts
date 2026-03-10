@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
@@ -63,10 +63,11 @@ Deno.serve(async (req: Request) => {
       return errorJson("Invalid JSON body", 400);
     }
 
-    const { milestoneId, successUrl, cancelUrl } = body as {
+    const { milestoneId, successUrl, cancelUrl, idempotencyKey } = body as {
       milestoneId?: string;
       successUrl?: string;
       cancelUrl?: string;
+      idempotencyKey?: string;
     };
 
     if (!milestoneId || !successUrl || !cancelUrl) {
@@ -191,23 +192,26 @@ Deno.serve(async (req: Request) => {
     }
 
     // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      customer_email: customerId ? undefined : profile?.email,
-      line_items: lineItems,
-      mode: "payment",
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      metadata: {
-        user_id: user.id,
-        payment_type: "job_funding",
-        job_id: milestone.job_id,
-        milestone_id: milestoneId,
-        payment_record_id: paymentRecord.id,
-        base_amount: String(baseAmount),
-        processing_fee: String(processingFee),
+    const session = await stripe.checkout.sessions.create(
+      {
+        customer: customerId,
+        customer_email: customerId ? undefined : profile?.email,
+        line_items: lineItems,
+        mode: "payment",
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata: {
+          user_id: user.id,
+          payment_type: "job_funding",
+          job_id: milestone.job_id,
+          milestone_id: milestoneId,
+          payment_record_id: paymentRecord.id,
+          base_amount: String(baseAmount),
+          processing_fee: String(processingFee),
+        },
       },
-    });
+      idempotencyKey ? { idempotencyKey } : undefined,
+    );
 
     // Update payment record with checkout session ID
     await supabase

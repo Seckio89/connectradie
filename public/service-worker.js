@@ -1,4 +1,6 @@
 const CACHE_NAME = 'connecttradie-v1';
+const API_CACHE_NAME = 'connecttradie-api-v1';
+const API_CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 const APP_SHELL = [
   '/',
   '/dashboard',
@@ -61,10 +63,11 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
+  const keepCaches = [CACHE_NAME, API_CACHE_NAME];
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys.filter((key) => !keepCaches.includes(key)).map((key) => caches.delete(key))
       )
     ).then(() => self.clients.claim())
   );
@@ -79,7 +82,18 @@ self.addEventListener('fetch', (event) => {
 
   if (url.origin !== location.origin) return;
 
+  // Cache Supabase REST GET requests with network-first strategy
+  if (url.pathname.startsWith('/rest/') && request.method === 'GET') {
+    event.respondWith(networkFirstWithCache(request));
+    return;
+  }
+
   if (url.pathname.startsWith('/rest/') || url.pathname.startsWith('/auth/') || url.pathname.startsWith('/functions/')) {
+    return;
+  }
+
+  // Don't cache Vite dev server resources
+  if (url.pathname.startsWith('/node_modules/') || url.pathname.startsWith('/@') || url.pathname.startsWith('/src/')) {
     return;
   }
 
@@ -97,9 +111,40 @@ async function staleWhileRevalidate(request) {
       }
       return networkResponse;
     })
-    .catch(() => cachedResponse);
+    .catch(() => cachedResponse || null);
 
-  return cachedResponse || fetchPromise;
+  const response = cachedResponse || (await fetchPromise);
+  // Must always return a valid Response — never undefined/null
+  return response || new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+}
+
+async function networkFirstWithCache(request) {
+  const cache = await caches.open(API_CACHE_NAME);
+
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const responseWithTimestamp = networkResponse.clone();
+      const headers = new Headers(responseWithTimestamp.headers);
+      headers.set('sw-cached-at', Date.now().toString());
+      const body = await responseWithTimestamp.blob();
+      const cachedResp = new Response(body, { status: networkResponse.status, statusText: networkResponse.statusText, headers });
+      cache.put(request, cachedResp);
+    }
+    return networkResponse;
+  } catch {
+    const cachedResponse = await cache.match(request);
+    if (cachedResponse) {
+      const cachedAt = parseInt(cachedResponse.headers.get('sw-cached-at') || '0', 10);
+      if (Date.now() - cachedAt < API_CACHE_MAX_AGE) {
+        return cachedResponse;
+      }
+    }
+    return new Response(JSON.stringify({ error: 'Offline', message: 'No cached data available' }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }
 
 self.addEventListener('sync', (event) => {

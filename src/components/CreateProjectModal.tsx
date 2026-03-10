@@ -42,7 +42,7 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
 
       onCreated();
       onClose();
-    } catch (err) {
+    } catch {
       setError('Failed to create job group. Please try again.');
     } finally {
       setLoading(false);
@@ -80,7 +80,7 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g., Kitchen Renovation"
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
                 required
               />
             </div>
@@ -95,7 +95,7 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of this job group..."
               rows={3}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
             />
           </div>
 
@@ -110,7 +110,7 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
@@ -126,14 +126,14 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
                   value={estimatedEndDate}
                   onChange={(e) => setEstimatedEndDate(e.target.value)}
                   min={startDate}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800">
+          <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+            <p className="text-sm text-secondary-800">
               After creating the job group, you can add existing jobs or create new ones within it.
             </p>
           </div>
@@ -149,7 +149,7 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-3 bg-warm-500 text-white rounded-xl hover:bg-warm-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating...' : 'Create Job Group'}
             </button>

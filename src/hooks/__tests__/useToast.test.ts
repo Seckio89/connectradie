@@ -120,7 +120,7 @@ describe('useToast', () => {
   });
 
   it('cleans up timer on unmount', () => {
-    const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
     const { result, unmount } = renderHook(() => useToast());
 
     act(() => {

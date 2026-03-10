@@ -3,6 +3,13 @@ import { X, Lightbulb } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
+interface HintRecord {
+  user_id: string;
+  hint_key: string;
+  dismissed_at: string | null;
+  view_count: number;
+}
+
 interface TooltipHintProps {
   hintKey: string;
   title: string;
@@ -31,17 +38,17 @@ export default function TooltipHint({
   const { user } = useAuth();
 
   const themeClasses = {
-    blue: 'from-blue-50 to-cyan-50 border-blue-200 text-blue-900',
-    green: 'from-green-50 to-emerald-50 border-green-200 text-green-900',
-    amber: 'from-amber-50 to-orange-50 border-amber-200 text-amber-900',
-    purple: 'from-purple-50 to-pink-50 border-purple-200 text-purple-900',
+    blue: 'from-secondary-50 to-secondary-50 border-secondary-200 text-secondary-900',
+    green: 'from-green-50 to-secondary-50 border-green-200 text-green-900',
+    amber: 'from-warm-50 to-warm-50 border-warm-200 text-warm-900',
+    purple: 'from-warm-50 to-warm-50 border-warm-200 text-warm-900',
   };
 
   const iconColors = {
-    blue: 'bg-blue-100 text-blue-600',
+    blue: 'bg-secondary-100 text-secondary-600',
     green: 'bg-green-100 text-green-600',
-    amber: 'bg-amber-100 text-amber-600',
-    purple: 'bg-purple-100 text-purple-600',
+    amber: 'bg-warm-100 text-warm-600',
+    purple: 'bg-warm-100 text-warm-600',
   };
 
   useEffect(() => {
@@ -55,7 +62,7 @@ export default function TooltipHint({
         .eq('hint_key', hintKey)
         .maybeSingle();
 
-      if (!data || !data.dismissed_at) {
+      if (!data || !(data as HintRecord).dismissed_at) {
         setIsVisible(true);
       } else {
         setIsDismissed(true);
@@ -81,7 +88,7 @@ export default function TooltipHint({
         .from('hint_tracking')
         .update({
           dismissed_at: new Date().toISOString(),
-          view_count: (existing.view_count || 0) + 1,
+          view_count: ((existing as HintRecord).view_count || 0) + 1,
         })
         .eq('user_id', user.id)
         .eq('hint_key', hintKey);

@@ -14,15 +14,16 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import type { Job, QuoteWithTradie } from '../types/database';
+import type { Job, Quote, QuoteWithTradie } from '../types/database';
 
 type SortMode = 'recommended' | 'price_low' | 'price_high' | 'rating';
 
 interface QuoteComparisonViewProps {
   job: Job;
-  onAcceptQuote: (quoteId: string) => Promise<void>;
+  onAcceptQuote: (quoteId: string, jobId: string, agreedPrice?: number) => Promise<void>;
   onDeclineQuote: (quoteId: string) => Promise<void>;
   onMessageTradie: (tradieId: string) => void;
+  onConfirmPrice?: (quoteId: string, jobId: string, min: number, max: number) => void;
 }
 
 function RatingStars({ rating }: { rating: number }) {
@@ -33,7 +34,7 @@ function RatingStars({ rating }: { rating: number }) {
           key={i}
           className={`w-3.5 h-3.5 ${
             i <= Math.round(rating)
-              ? 'text-amber-400 fill-amber-400'
+              ? 'text-yellow-400 fill-yellow-400'
               : 'text-gray-200'
           }`}
         />
@@ -44,14 +45,14 @@ function RatingStars({ rating }: { rating: number }) {
 
 function QuoteTag({ label, color }: { label: string; color: 'teal' | 'amber' | 'blue' | 'green' }) {
   const colorClasses = {
-    teal: 'bg-teal-50 text-teal-700 border-teal-200',
-    amber: 'bg-amber-50 text-amber-700 border-amber-200',
-    blue: 'bg-blue-50 text-blue-700 border-blue-200',
+    teal: 'bg-secondary-50 text-secondary-700 border-secondary-200',
+    amber: 'bg-warm-50 text-warm-700 border-warm-200',
+    blue: 'bg-secondary-50 text-secondary-700 border-secondary-200',
     green: 'bg-green-50 text-green-700 border-green-200',
   };
 
   return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${colorClasses[color]}`}>
+    <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${colorClasses[color]}`}>
       {label}
     </span>
   );
@@ -62,6 +63,7 @@ export default function QuoteComparisonView({
   onAcceptQuote,
   onDeclineQuote,
   onMessageTradie,
+  onConfirmPrice,
 }: QuoteComparisonViewProps) {
   const [quotes, setQuotes] = useState<QuoteWithTradie[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,7 +92,7 @@ export default function QuoteComparisonView({
     }
 
     const enriched: QuoteWithTradie[] = await Promise.all(
-      quotesData.map(async (q) => {
+      (quotesData as unknown as Quote[]).map(async (q) => {
         const { data: profileData } = await supabase
           .from('profiles')
           .select('full_name, avatar_url, verification_status, verified_trades, declared_trades')
@@ -164,8 +166,14 @@ export default function QuoteComparisonView({
   }, [quotes, sortMode]);
 
   const handleAccept = async (quoteId: string) => {
+    const quote = quotes.find((q) => q.id === quoteId);
+    // Range quote → open price confirmation modal instead of paying immediately
+    if (quote && !quote.firm_price && quote.price_min && quote.price_max && onConfirmPrice) {
+      onConfirmPrice(quoteId, job.id, quote.price_min, quote.price_max);
+      return;
+    }
     setAcceptingId(quoteId);
-    await onAcceptQuote(quoteId);
+    await onAcceptQuote(quoteId, job.id);
     await fetchQuotes();
     setAcceptingId(null);
   };
@@ -180,7 +188,7 @@ export default function QuoteComparisonView({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
       </div>
     );
   }
@@ -223,7 +231,7 @@ export default function QuoteComparisonView({
           <select
             value={sortMode}
             onChange={(e) => setSortMode(e.target.value as SortMode)}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-secondary-500"
           >
             <option value="recommended">Recommended</option>
             <option value="price_low">Price: Low to High</option>
@@ -254,14 +262,14 @@ export default function QuoteComparisonView({
               className={`rounded-xl border-2 transition-all ${
                 isAccepted
                   ? 'border-green-300 bg-green-50/30 shadow-md'
-                  : 'border-gray-200 hover:border-teal-200 hover:shadow-md'
+                  : 'border-gray-200 hover:border-secondary-200 hover:shadow-md'
               }`}
             >
               <div className="p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-lg font-bold text-teal-600">
+                    <div className="w-12 h-12 bg-secondary-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-lg font-bold text-secondary-600">
                         {quote.tradie_profile?.full_name?.charAt(0) || 'T'}
                       </span>
                     </div>
@@ -271,7 +279,7 @@ export default function QuoteComparisonView({
                           {quote.tradie_details?.business_name || quote.tradie_profile?.full_name || 'Tradie'}
                         </h3>
                         {quote.tradie_profile?.verification_status === 'verified' && (
-                          <Shield className="w-4 h-4 text-teal-500" />
+                          <Shield className="w-4 h-4 text-secondary-500" />
                         )}
                         {isAccepted && (
                           <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-bold">
@@ -308,7 +316,7 @@ export default function QuoteComparisonView({
                         <p className="text-lg font-bold text-gray-900">
                           ${quote.price_min.toLocaleString()} - ${quote.price_max.toLocaleString()}
                         </p>
-                        <p className="text-[10px] text-gray-500 uppercase font-medium">Range</p>
+                        <p className="text-xs text-gray-500 uppercase font-medium">Range</p>
                       </div>
                     )}
                   </div>
@@ -336,7 +344,7 @@ export default function QuoteComparisonView({
                     </span>
                   )}
                   {quote.requires_site_inspection && (
-                    <span className="flex items-center gap-1 text-amber-600">
+                    <span className="flex items-center gap-1 text-warm-600">
                       <Eye className="w-3 h-3" />
                       Needs site visit
                     </span>
@@ -345,7 +353,7 @@ export default function QuoteComparisonView({
 
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : quote.id)}
-                  className="mt-3 flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700 font-medium"
+                  className="mt-3 flex items-center gap-1 text-xs text-secondary-600 hover:text-secondary-700 font-medium"
                 >
                   {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                   {isExpanded ? 'Less detail' : 'View approach'}
@@ -362,14 +370,14 @@ export default function QuoteComparisonView({
                     <button
                       onClick={() => handleAccept(quote.id)}
                       disabled={!!acceptingId || !!decliningId}
-                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-50 text-sm"
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors disabled:opacity-50 text-sm"
                     >
                       {acceptingId === quote.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <CheckCircle2 className="w-4 h-4" />
                       )}
-                      Accept Quote
+                      Hire & Pay
                     </button>
                     <button
                       onClick={() => onMessageTradie(quote.tradie_id)}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   FileText,
   Hash,
@@ -12,9 +12,14 @@ import {
   CheckCircle2,
   Info,
   MapPin,
+  GraduationCap,
+  Calendar,
+  Wrench,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { ALL_TRADES, TOP_10_TRADES, normalizeTradeName, AUSTRALIAN_STATES, getLicensingRequirements, isLicenseRequiredForTrade, type AustralianState } from '../lib/licensingRequirements';
+import SearchableSelect from './SearchableSelect';
 
 type TeamSize = 'Solo' | 'Small Team (2-5)' | 'Large Team (6+)';
 
@@ -55,6 +60,11 @@ export default function TradieProfessionalSettings() {
 
   const [abnNumber, setAbnNumber] = useState('');
   const [licenseNumber, setLicenseNumber] = useState('');
+  const [licenseState, setLicenseState] = useState<AustralianState | ''>('');
+  const [licenseExpiry, setLicenseExpiry] = useState('');
+  const [isApprentice, setIsApprentice] = useState(false);
+  const [supervisorLicense, setSupervisorLicense] = useState('');
+  const [supervisorName, setSupervisorName] = useState('');
   const [insurancePolicy, setInsurancePolicy] = useState(false);
   const [serviceRadius, setServiceRadius] = useState(20);
   const [isEmergencyAvailable, setIsEmergencyAvailable] = useState(false);
@@ -63,6 +73,9 @@ export default function TradieProfessionalSettings() {
   const [showCalloutFee, setShowCalloutFee] = useState(true);
   const [calloutFeeWaived, setCalloutFeeWaived] = useState(false);
   const [bio, setBio] = useState('');
+
+  const [selectedTrade, setSelectedTrade] = useState(profile?.declared_trades?.[0] || '');
+  const [tradeSaving, setTradeSaving] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -73,10 +86,28 @@ export default function TradieProfessionalSettings() {
     ? profile.address.split(',')[0]?.trim() || 'your location'
     : 'your location';
 
+  const primaryTrade = selectedTrade;
+
+  const licensingHint = useMemo(() => {
+    if (!licenseState) return null;
+    return getLicensingRequirements(licenseState as AustralianState, primaryTrade);
+  }, [licenseState, primaryTrade]);
+
+  const licenseRequired = useMemo(() => {
+    if (!licenseState || !primaryTrade) return true;
+    return isLicenseRequiredForTrade(licenseState as AustralianState, primaryTrade);
+  }, [licenseState, primaryTrade]);
+
   useEffect(() => {
     if (profile) {
+      setSelectedTrade(profile.declared_trades?.[0] || '');
       setAbnNumber(profile.abn_number || '');
       setLicenseNumber(profile.license_number || '');
+      setLicenseState((profile.license_state as AustralianState) || '');
+      setLicenseExpiry(profile.license_expiry || '');
+      setIsApprentice(profile.is_apprentice || false);
+      setSupervisorLicense(profile.supervisor_license || '');
+      setSupervisorName(profile.supervisor_name || '');
       setInsurancePolicy(profile.insurance_policy || false);
       setServiceRadius(profile.service_radius_km || 20);
       setIsEmergencyAvailable(profile.is_emergency_available || false);
@@ -107,6 +138,25 @@ export default function TradieProfessionalSettings() {
     return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5, 8)} ${digits.slice(8)}`;
   };
 
+  const handleTradeChange = async (tradeValue: string) => {
+    const prev = selectedTrade;
+    setSelectedTrade(tradeValue);
+    if (!user) return;
+
+    setTradeSaving(true);
+    const { error: tradeError } = await supabase
+      .from('profiles')
+      .update({ declared_trades: tradeValue ? [tradeValue] : [] })
+      .eq('id', user.id);
+
+    if (tradeError) {
+      setSelectedTrade(prev); // revert on failure
+    } else {
+      await refreshProfile();
+    }
+    setTradeSaving(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -117,7 +167,9 @@ export default function TradieProfessionalSettings() {
 
     const updates: Record<string, unknown> = {
       abn_number: abnNumber || null,
-      license_number: licenseNumber || null,
+      license_number: !licenseRequired || isApprentice ? null : licenseNumber || null,
+      license_state: licenseState || null,
+      license_expiry: !licenseRequired ? null : licenseExpiry || null,
       insurance_policy: insurancePolicy,
       service_radius_km: serviceRadius,
       is_emergency_available: isEmergencyAvailable,
@@ -127,6 +179,15 @@ export default function TradieProfessionalSettings() {
       callout_fee_waived_on_proceed: calloutFeeWaived,
       bio: bio || null,
     };
+
+    // Only include licensing columns if the migration has been applied
+    // (profile will have the field as a boolean rather than undefined)
+    if (typeof profile?.is_apprentice !== 'undefined') {
+      updates.is_apprentice = licenseRequired ? isApprentice : false;
+      updates.supervisor_license = licenseRequired && isApprentice ? supervisorLicense || null : null;
+      updates.supervisor_name = licenseRequired && isApprentice ? supervisorName || null : null;
+      updates.is_license_required = licenseRequired;
+    }
 
     const { error: updateError } = await supabase
       .from('profiles')
@@ -146,11 +207,74 @@ export default function TradieProfessionalSettings() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 p-6 md:p-8">
+      {/* ── Trade Service Selector ─────────────────────────────── */}
+      <div className="bg-white border border-gray-200 rounded-xl">
+        <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 rounded-t-xl">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-primary-100 rounded-lg flex items-center justify-center">
+              <Wrench className="w-5 h-5 text-primary-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">What trade service are you providing?</h3>
+              <p className="text-xs text-gray-500">This determines your licensing requirements</p>
+            </div>
+            {tradeSaving && <Loader2 className="w-4 h-4 text-primary-500 animate-spin ml-auto" />}
+          </div>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Popular trades</label>
+            <div className="flex flex-wrap gap-2">
+              {TOP_10_TRADES.map((trade) => {
+                const isSelected = selectedTrade === trade.value;
+                return (
+                  <button
+                    key={trade.value}
+                    type="button"
+                    onClick={() => handleTradeChange(isSelected ? '' : trade.value)}
+                    disabled={tradeSaving}
+                    className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+                      isSelected
+                        ? 'bg-warm-500 text-white border-primary-600 shadow-sm'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-primary-300 hover:bg-primary-50'
+                    }`}
+                  >
+                    {isSelected && <CheckCircle2 className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />}
+                    {trade.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Or search all trades</label>
+            <SearchableSelect
+              options={ALL_TRADES}
+              value={selectedTrade}
+              onChange={handleTradeChange}
+              placeholder="Search for your trade..."
+              icon={<Wrench className="w-5 h-5" />}
+            />
+          </div>
+
+          {selectedTrade && (
+            <div className="flex items-center gap-2 p-3 bg-primary-50 border border-primary-200 rounded-lg">
+              <CheckCircle2 className="w-4 h-4 text-primary-600 flex-shrink-0" />
+              <p className="text-sm text-primary-800">
+                Selected: <strong>{normalizeTradeName(selectedTrade)}</strong>
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Business Details ───────────────────────────────────── */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-blue-600" />
+            <div className="w-9 h-9 bg-secondary-100 rounded-lg flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5 text-secondary-600" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">Business Details</h3>
@@ -172,12 +296,12 @@ export default function TradieProfessionalSettings() {
                 onChange={(e) => handleAbnChange(e.target.value.replace(/\s/g, ''))}
                 placeholder="51 824 753 556"
                 maxLength={14}
-                className="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                className="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
               />
               {abnValidating && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                  <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
-                  <span className="text-xs text-blue-600 font-medium">Validating...</span>
+                  <Loader2 className="w-4 h-4 text-primary-500 animate-spin" />
+                  <span className="text-xs text-secondary-600 font-medium">Validating...</span>
                 </div>
               )}
               {!abnValidating && abnNumber.length === 11 && (
@@ -188,22 +312,169 @@ export default function TradieProfessionalSettings() {
             </div>
           </div>
 
+          {/* Issuing State */}
           <div>
             <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-              License Number
-              <InfoTooltip text="Your trade license number for verification" />
+              Issuing State / Territory
+              <InfoTooltip text="The state that issued your trade license" />
             </label>
             <div className="relative">
-              <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                value={licenseNumber}
-                onChange={(e) => setLicenseNumber(e.target.value)}
-                placeholder="e.g., 123456C"
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
-              />
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <select
+                value={licenseState}
+                onChange={(e) => setLicenseState(e.target.value as AustralianState)}
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white transition-shadow"
+              >
+                <option value="">Select state...</option>
+                {AUSTRALIAN_STATES.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
+
+          {/* Licensing hint — specialist / threshold / exempt */}
+          {licensingHint && (
+            <div className={`flex items-start gap-2.5 p-3 rounded-lg border ${
+              licensingHint.exempt
+                ? 'bg-green-50 border-green-200'
+                : 'bg-secondary-50 border-secondary-200'
+            }`}>
+              <Info className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                licensingHint.exempt
+                  ? 'text-green-500'
+                  : 'text-secondary-500'
+              }`} />
+              <div>
+                <p className={`text-sm ${
+                  licensingHint.exempt
+                    ? 'text-green-700'
+                    : 'text-secondary-700'
+                }`}>
+                  {licensingHint.hint}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Managed by {licensingHint.authority}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Exempt trade — show trust reminder instead of license fields */}
+          {licensingHint?.exempt && (
+            <div className="flex items-start gap-2.5 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <CheckCircle2 className="w-4 h-4 mt-0.5 text-green-500 flex-shrink-0" />
+              <p className="text-sm text-green-700">
+                Your verified <strong>ABN</strong> is sufficient for {normalizeTradeName(primaryTrade) || 'your trade'} in {licenseState}. We recommend also adding <strong>Public Liability Insurance</strong> to boost your trust score.
+              </p>
+            </div>
+          )}
+
+          {/* Only show license / apprentice fields when the trade requires licensing */}
+          {licenseRequired && (
+            <>
+              {/* Apprentice toggle */}
+              <div className="flex items-center justify-between p-4 bg-warm-50 rounded-xl border border-warm-200">
+                <div className="flex items-center gap-3">
+                  <GraduationCap className="w-5 h-5 text-warm-600" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">I am an Apprentice</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Apprentices must be linked to a qualified supervisor</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsApprentice(!isApprentice)}
+                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-warm-500 focus:ring-offset-2 ${
+                    isApprentice ? 'bg-warm-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                      isApprentice ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Conditional license fields */}
+              {isApprentice ? (
+                <div className="space-y-4 pl-1 border-l-2 border-warm-200 ml-2">
+                  <div className="pl-4">
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                      Supervisor&apos;s License Number
+                      <InfoTooltip text="The license number of your supervising contractor" />
+                    </label>
+                    <div className="relative">
+                      <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        value={supervisorLicense}
+                        onChange={(e) => setSupervisorLicense(e.target.value)}
+                        placeholder="e.g., 123456C"
+                        className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                      />
+                    </div>
+                  </div>
+                  <div className="pl-4">
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                      Supervisor&apos;s Name
+                      <InfoTooltip text="Full name of the license holder supervising your work" />
+                    </label>
+                    <div className="relative">
+                      <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        value={supervisorName}
+                        onChange={(e) => setSupervisorName(e.target.value)}
+                        placeholder="e.g., John Smith"
+                        className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                    Contractor License Number
+                    <InfoTooltip text="Your trade license number for verification" />
+                  </label>
+                  <div className="relative">
+                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={licenseNumber}
+                      onChange={(e) => setLicenseNumber(e.target.value)}
+                      placeholder="e.g., 123456C"
+                      className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* License expiry */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  License Expiry Date
+                  <InfoTooltip text="We'll remind you before your license expires" />
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="date"
+                    value={licenseExpiry}
+                    onChange={(e) => setLicenseExpiry(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
             <div className="flex items-center gap-3">
@@ -216,7 +487,7 @@ export default function TradieProfessionalSettings() {
             <button
               type="button"
               onClick={() => setInsurancePolicy(!insurancePolicy)}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
                 insurancePolicy ? 'bg-green-500' : 'bg-gray-300'
               }`}
             >
@@ -233,8 +504,8 @@ export default function TradieProfessionalSettings() {
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-teal-100 rounded-lg flex items-center justify-center">
-              <Radar className="w-5 h-5 text-teal-600" />
+            <div className="w-9 h-9 bg-secondary-100 rounded-lg flex items-center justify-center">
+              <Radar className="w-5 h-5 text-secondary-600" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">Operational Settings</h3>
@@ -256,25 +527,22 @@ export default function TradieProfessionalSettings() {
                 step={1}
                 value={serviceRadius}
                 onChange={(e) => setServiceRadius(parseInt(e.target.value, 10))}
-                className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-teal-600 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white"
+                className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer warm-secondary-600 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-secondary-600 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white"
               />
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400">5km</span>
                 <span className="text-xs text-gray-400">50km</span>
               </div>
-              <div className="flex items-center gap-2 p-3 bg-teal-50 border border-teal-200 rounded-lg">
-                <MapPin className="w-4 h-4 text-teal-600 flex-shrink-0" />
-                <p className="text-sm text-teal-800">
-                  You will receive leads within <span className="font-bold">{serviceRadius}km</span> of <span className="font-bold">{suburb}</span>.
-                </p>
-              </div>
+              <p className="text-xs text-gray-500">
+                You will receive leads within <span className="font-semibold">{serviceRadius}km</span> of <span className="font-semibold">{suburb}</span>.
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
+          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-warm-50 to-warm-50 rounded-xl border border-warm-200">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                <Zap className="w-5 h-5 text-amber-600" />
+              <div className="w-10 h-10 bg-warm-100 rounded-lg flex items-center justify-center">
+                <Zap className="w-5 h-5 text-warm-600" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-900">Available for 24/7 Emergency Jobs</p>
@@ -284,8 +552,8 @@ export default function TradieProfessionalSettings() {
             <button
               type="button"
               onClick={() => setIsEmergencyAvailable(!isEmergencyAvailable)}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
-                isEmergencyAvailable ? 'bg-amber-500' : 'bg-gray-300'
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-warm-500 focus:ring-offset-2 ${
+                isEmergencyAvailable ? 'bg-warm-500' : 'bg-gray-300'
               }`}
             >
               <span
@@ -301,8 +569,8 @@ export default function TradieProfessionalSettings() {
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-sky-100 rounded-lg flex items-center justify-center">
-              <PenLine className="w-5 h-5 text-sky-600" />
+            <div className="w-9 h-9 bg-secondary-100 rounded-lg flex items-center justify-center">
+              <PenLine className="w-5 h-5 text-secondary-600" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">About the Business</h3>
@@ -321,7 +589,7 @@ export default function TradieProfessionalSettings() {
               <select
                 value={teamSize}
                 onChange={(e) => setTeamSize(e.target.value as TeamSize)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white transition-shadow"
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white transition-shadow"
               >
                 <option value="">Select team size...</option>
                 {TEAM_SIZE_OPTIONS.map((opt) => (
@@ -342,14 +610,14 @@ export default function TradieProfessionalSettings() {
               <InfoTooltip text="Shown to clients before they book" />
             </label>
             <div className="relative">
-              <Truck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500" />
+              <Truck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-500" />
               <input
                 type="number"
                 min={0}
                 value={callOutFee}
                 onChange={(e) => setCallOutFee(e.target.value)}
                 placeholder="e.g., 80"
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
           </div>
@@ -366,8 +634,8 @@ export default function TradieProfessionalSettings() {
                 <button
                   type="button"
                   onClick={() => setShowCalloutFee(!showCalloutFee)}
-                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                    showCalloutFee ? 'bg-blue-500' : 'bg-gray-300'
+                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                    showCalloutFee ? 'bg-primary-500' : 'bg-gray-300'
                   }`}
                 >
                   <span
@@ -410,7 +678,7 @@ export default function TradieProfessionalSettings() {
                 Short Bio
                 <InfoTooltip text="A brief pitch shown on your public profile" />
               </label>
-              <span className={`text-xs font-medium ${bio.length > 140 ? 'text-red-500' : bio.length > 120 ? 'text-amber-500' : 'text-gray-400'}`}>
+              <span className={`text-xs font-medium ${bio.length > 140 ? 'text-red-500' : bio.length > 120 ? 'text-warm-500' : 'text-gray-400'}`}>
                 {bio.length}/140
               </span>
             </div>
@@ -421,7 +689,7 @@ export default function TradieProfessionalSettings() {
               }}
               placeholder="e.g., Specializing in heritage renovations with 15+ years experience..."
               rows={3}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-shadow"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-shadow"
             />
           </div>
         </div>
@@ -443,7 +711,7 @@ export default function TradieProfessionalSettings() {
       <button
         type="submit"
         disabled={saving || bio.length > 140}
-        className="w-full py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        className="w-full py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
       >
         {saving ? (
           <>

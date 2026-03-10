@@ -11,13 +11,14 @@ import {
   Users,
   Calendar,
   Lightbulb,
-  Loader2,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
+import { DashboardStatsSkeleton, GridSkeleton } from '../components/SkeletonLoader';
+import { BarChart as SimpleBarChart, LineChart, DonutChart } from '../components/SimpleCharts';
 
-type DateRange = '7d' | '30d' | '90d' | '12m';
+type DateRange = '7d' | '30d' | '90d' | '12m' | 'all';
 
 interface JobRow {
   id: string;
@@ -25,14 +26,22 @@ interface JobRow {
   status: string;
   budget_amount: number | null;
   created_at: string;
+  profiles: { full_name: string | null } | null;
 }
 
 interface QuoteRow {
   id: string;
   job_id: string;
-  amount: number;
+  price_min: number;
+  price_max: number;
+  firm_price: number | null;
   status: string;
   created_at: string;
+}
+
+/** Use firm_price if set, otherwise midpoint of price range. */
+function quoteAmount(q: QuoteRow): number {
+  return q.firm_price ?? (q.price_min + q.price_max) / 2;
 }
 
 interface ReviewRow {
@@ -69,7 +78,8 @@ export default function AnalyticsDashboard() {
     if (dateRange === '7d') now.setDate(now.getDate() - 7);
     else if (dateRange === '30d') now.setDate(now.getDate() - 30);
     else if (dateRange === '90d') now.setDate(now.getDate() - 90);
-    else now.setFullYear(now.getFullYear() - 1);
+    else if (dateRange === '12m') now.setFullYear(now.getFullYear() - 1);
+    else now.setFullYear(now.getFullYear() - 10); // 'all' — go back far enough
     return now.toISOString();
   }, [dateRange]);
 
@@ -85,12 +95,12 @@ export default function AnalyticsDashboard() {
     const [jobsRes, quotesRes, reviewsRes, paymentsRes] = await Promise.all([
       supabase
         .from('jobs')
-        .select('id, client_id, status, budget_amount, created_at')
+        .select('id, client_id, status, budget_amount, created_at, profiles!jobs_client_id_fkey(full_name)')
         .eq('tradie_id', user.id)
         .gte('created_at', rangeStart),
       supabase
         .from('quotes')
-        .select('id, job_id, amount, status, created_at')
+        .select('id, job_id, price_min, price_max, firm_price, status, created_at')
         .eq('tradie_id', user.id)
         .gte('created_at', rangeStart),
       supabase
@@ -105,10 +115,32 @@ export default function AnalyticsDashboard() {
         .gte('created_at', rangeStart),
     ]);
 
-    setJobs((jobsRes.data as JobRow[]) || []);
-    setQuotes((quotesRes.data as QuoteRow[]) || []);
-    setReviews((reviewsRes.data as ReviewRow[]) || []);
-    setPayments((paymentsRes.data as PaymentRow[]) || []);
+    // Only set state if no error is present and data is an array
+    setJobs(Array.isArray(jobsRes.data) && !jobsRes.error ? (jobsRes.data as JobRow[]) : []);
+    // Only cast to QuoteRow[] if there is no error and data is an array
+    if (quotesRes.error || !Array.isArray(quotesRes.data)) {
+      // This can happen if the query requests a column that doesn't exist (e.g., 'amount')
+      // or if there is another query error. Log for debugging.
+      console.error('Error fetching quotes:', quotesRes.error);
+      setQuotes([]);
+    } else {
+      // Defensive: filter out any non-object or incomplete entries for type safety
+      const validQuotes = (quotesRes.data as unknown[])
+        .filter(
+          (q): q is QuoteRow =>
+            typeof q === 'object' &&
+            q !== null &&
+            'id' in q &&
+            'job_id' in q &&
+            'price_min' in q &&
+            'price_max' in q &&
+            'status' in q &&
+            'created_at' in q
+        );
+      setQuotes(validQuotes);
+    }
+    setReviews(Array.isArray(reviewsRes.data) && !reviewsRes.error ? (reviewsRes.data as ReviewRow[]) : []);
+    setPayments(Array.isArray(paymentsRes.data) && !paymentsRes.error ? (paymentsRes.data as PaymentRow[]) : []);
     setLoading(false);
   };
 
@@ -140,8 +172,6 @@ export default function AnalyticsDashboard() {
     }));
   }, [payments]);
 
-  const maxMonthlyRevenue = Math.max(...monthlyRevenue.map(m => m.amount), 1);
-
   // Conversion by price range
   const conversionByRange = useMemo(() => {
     const ranges = [
@@ -151,7 +181,7 @@ export default function AnalyticsDashboard() {
       { label: '$5k+', min: 500000, max: Infinity },
     ];
     return ranges.map(r => {
-      const inRange = quotes.filter(q => q.amount >= r.min && q.amount < r.max);
+      const inRange = quotes.filter(q => { const a = quoteAmount(q); return a >= r.min && a < r.max; });
       const won = inRange.filter(q => q.status === 'accepted').length;
       return { label: r.label, total: inRange.length, won, rate: inRange.length > 0 ? Math.round((won / inRange.length) * 100) : 0 };
     });
@@ -178,15 +208,23 @@ export default function AnalyticsDashboard() {
 
   // Client retention
   const clientStats = useMemo(() => {
-    const clientJobMap = new Map<string, number>();
-    jobs.forEach(j => clientJobMap.set(j.client_id, (clientJobMap.get(j.client_id) || 0) + 1));
-    const repeatClients = Array.from(clientJobMap.values()).filter(c => c > 1).length;
+    const clientJobMap = new Map<string, { name: string; count: number }>();
+    jobs.forEach(j => {
+      const existing = clientJobMap.get(j.client_id);
+      const name = j.profiles?.full_name || 'Unknown Client';
+      if (existing) {
+        existing.count += 1;
+      } else {
+        clientJobMap.set(j.client_id, { name, count: 1 });
+      }
+    });
+    const repeatClients = Array.from(clientJobMap.values()).filter(c => c.count > 1).length;
     const totalClients = clientJobMap.size;
     const repeatPct = totalClients > 0 ? Math.round((repeatClients / totalClients) * 100) : 0;
     const topClients: ClientEntry[] = Array.from(clientJobMap.entries())
-      .sort((a, b) => b[1] - a[1])
+      .sort((a, b) => b[1].count - a[1].count)
       .slice(0, 5)
-      .map(([client_id, count]) => ({ client_id, full_name: `Client ${client_id.slice(0, 6)}`, count }));
+      .map(([client_id, { name, count }]) => ({ client_id, full_name: name, count }));
     return { repeatPct, totalClients, repeatClients, topClients };
   }, [jobs]);
 
@@ -222,8 +260,9 @@ export default function AnalyticsDashboard() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <DashboardStatsSkeleton />
+        <div className="mt-6">
+          <GridSkeleton count={4} />
         </div>
       </DashboardLayout>
     );
@@ -231,34 +270,42 @@ export default function AnalyticsDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1600px] mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Business Analytics</h1>
-            <p className="text-gray-600 mt-1">Track your performance and grow your business</p>
+            <h1 className="text-2xl font-bold text-gray-900">My Stats</h1>
+            <p className="text-gray-500 mt-1">See how your business is tracking and where to improve</p>
           </div>
-          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1">
-            {(['7d', '30d', '90d', '12m'] as DateRange[]).map(range => (
+          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
+            {([
+              { key: '7d' as DateRange, label: '7 Days' },
+              { key: '30d' as DateRange, label: '30 Days' },
+              { key: '90d' as DateRange, label: '3 Months' },
+              { key: '12m' as DateRange, label: '12 Months' },
+              { key: 'all' as DateRange, label: 'All Time' },
+            ]).map(({ key, label }) => (
               <button
-                key={range}
-                onClick={() => setDateRange(range)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                  dateRange === range ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'
+                key={key}
+                onClick={() => setDateRange(key)}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  dateRange === key
+                    ? 'bg-warm-500 text-white shadow-sm'
+                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
-                {range}
+                {label}
               </button>
             ))}
           </div>
         </div>
 
         {!hasData ? (
-          <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+          <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center shadow-sm">
             <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No analytics data yet</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No stats yet</h3>
             <p className="text-gray-500 max-w-md mx-auto">
-              Start quoting on jobs and completing work to see your business analytics here.
+              Once you submit your first quote and complete a job, your stats will appear here. Browse available leads to get started.
             </p>
           </div>
         ) : (
@@ -271,38 +318,79 @@ export default function AnalyticsDashboard() {
               <KPICard icon={Star} label="Avg Rating" value={avgRating > 0 ? avgRating.toFixed(1) : '--'} trend={avgRating >= 4.0 ? 'up' : avgRating > 0 ? 'down' : 'neutral'} color="amber" />
             </div>
 
-            {/* Revenue Bar Chart */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Revenue</h2>
-              <div className="flex items-end gap-2 h-48">
-                {monthlyRevenue.map((m, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center group">
-                    <div className="relative w-full flex justify-center">
-                      <div className="absolute -top-8 hidden group-hover:block bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-                        {formatCurrency(m.amount)}
-                      </div>
-                      <div
-                        className="w-full max-w-[40px] bg-blue-500 rounded-t-md transition-all hover:bg-blue-600"
-                        style={{ height: `${Math.max((m.amount / maxMonthlyRevenue) * 160, 4)}px` }}
-                      />
-                    </div>
-                    <span className="text-xs text-gray-500 mt-2">{m.label}</span>
+            {/* Interactive Revenue Trend (Line Chart) */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Revenue Trend</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">Monthly revenue over the selected period</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalRevenue)}</p>
+                  <p className="text-xs text-gray-500">Total in period</p>
+                </div>
+              </div>
+              <LineChart
+                data={monthlyRevenue.map(m => ({ label: m.label, value: m.amount }))}
+                height={220}
+                color="#06D6A0"
+                formatValue={(v) => formatCurrency(v)}
+              />
+            </div>
+
+            {/* Quotes Sent vs Won (Bar Chart) + Job Status (Donut) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                <h2 className="text-lg font-semibold text-gray-900 mb-1">Quotes: Sent vs Won</h2>
+                <p className="text-sm text-gray-500 mb-4">Comparison across price ranges</p>
+                <SimpleBarChart
+                  data={conversionByRange.flatMap(r => [
+                    { label: `${r.label} Sent`, value: r.total, color: '#93c5fd' },
+                    { label: `${r.label} Won`, value: r.won, color: '#3b82f6' },
+                  ])}
+                  height={200}
+                  showValues={true}
+                />
+                <div className="flex items-center justify-center gap-4 mt-3 text-xs text-gray-500">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded" style={{ backgroundColor: '#93c5fd' }} />
+                    <span>Sent</span>
                   </div>
-                ))}
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded" style={{ backgroundColor: '#3b82f6' }} />
+                    <span>Won</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                <h2 className="text-lg font-semibold text-gray-900 mb-1">Job Status Breakdown</h2>
+                <p className="text-sm text-gray-500 mb-4">Distribution of jobs by current status</p>
+                <DonutChart
+                  data={[
+                    { label: 'Completed', value: jobs.filter(j => j.status === 'completed').length, color: '#06D6A0' },
+                    { label: 'In Progress', value: jobs.filter(j => j.status === 'in_progress').length, color: '#3b82f6' },
+                    { label: 'Pending', value: jobs.filter(j => j.status === 'pending' || j.status === 'open').length, color: '#f59e0b' },
+                    { label: 'Declined', value: jobs.filter(j => j.status === 'declined').length, color: '#f97316' },
+                    { label: 'Cancelled', value: jobs.filter(j => j.status === 'cancelled').length, color: '#ef4444' },
+                  ].filter(d => d.value > 0)}
+                  size={160}
+                  centerLabel="Jobs"
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               {/* Quote Performance */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Quote Performance</h2>
                 <div className="flex items-center gap-6 mb-6">
                   {/* CSS Donut */}
                   <div className="relative w-24 h-24 flex-shrink-0">
                     <svg className="w-24 h-24 -rotate-90" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="3" />
+                      <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#E5E7EB" strokeWidth="3" />
                       <circle
-                        cx="18" cy="18" r="15.9155" fill="none" stroke="#4f46e5"
+                        cx="18" cy="18" r="15.9155" fill="none" stroke="#06D6A0"
                         strokeWidth="3" strokeDasharray={`${winRate} ${100 - winRate}`} strokeLinecap="round"
                       />
                     </svg>
@@ -310,31 +398,31 @@ export default function AnalyticsDashboard() {
                       <span className="text-lg font-bold text-gray-900">{winRate}%</span>
                     </div>
                   </div>
-                  <div className="text-sm text-gray-600 space-y-1">
+                  <div className="text-sm text-gray-500 space-y-1">
                     <p>Quotes Sent: <span className="font-semibold text-gray-900">{totalQuotes}</span></p>
                     <p>Accepted: <span className="font-semibold text-green-600">{wonQuotes}</span></p>
                     <p>Declined: <span className="font-semibold text-red-600">{quotes.filter(q => q.status === 'declined').length}</span></p>
-                    <p>Pending: <span className="font-semibold text-amber-600">{quotes.filter(q => q.status === 'pending').length}</span></p>
+                    <p>Pending: <span className="font-semibold text-warm-600">{quotes.filter(q => q.status === 'pending').length}</span></p>
                   </div>
                 </div>
 
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Conversion by Price Range</h3>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Win Rate by Quote Price</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-left text-gray-500 border-b border-gray-100">
+                      <tr className="text-left text-gray-500 border-b border-gray-200">
                         <th className="pb-2 font-medium">Range</th>
                         <th className="pb-2 font-medium text-center">Sent</th>
                         <th className="pb-2 font-medium text-center">Won</th>
                         <th className="pb-2 font-medium text-right">Rate</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-gray-100">
                       {conversionByRange.map(r => (
                         <tr key={r.label}>
-                          <td className="py-2 text-gray-900">{r.label}</td>
-                          <td className="py-2 text-center text-gray-600">{r.total}</td>
-                          <td className="py-2 text-center text-gray-600">{r.won}</td>
+                          <td className="py-2 text-gray-700">{r.label}</td>
+                          <td className="py-2 text-center text-gray-500">{r.total}</td>
+                          <td className="py-2 text-center text-gray-500">{r.won}</td>
                           <td className="py-2 text-right font-medium text-gray-900">{r.rate}%</td>
                         </tr>
                       ))}
@@ -344,16 +432,16 @@ export default function AnalyticsDashboard() {
               </div>
 
               {/* Response Time */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Response Time</h2>
                 <div className="flex gap-6 mb-6">
-                  <div className="bg-blue-50 rounded-xl p-4 flex-1 text-center">
-                    <Clock className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+                  <div className="bg-secondary-50 rounded-xl p-4 flex-1 text-center">
+                    <Clock className="w-5 h-5 text-secondary-600 mx-auto mb-1" />
                     <p className="text-2xl font-bold text-gray-900">{Math.round(avgResponseTime)}h</p>
                     <p className="text-xs text-gray-500">Average</p>
                   </div>
-                  <div className="bg-indigo-50 rounded-xl p-4 flex-1 text-center">
-                    <Clock className="w-5 h-5 text-indigo-600 mx-auto mb-1" />
+                  <div className="bg-primary-50 rounded-xl p-4 flex-1 text-center">
+                    <Clock className="w-5 h-5 text-primary-600 mx-auto mb-1" />
                     <p className="text-2xl font-bold text-gray-900">{Math.round(avgResponseTime * 0.8)}h</p>
                     <p className="text-xs text-gray-500">Median</p>
                   </div>
@@ -364,7 +452,7 @@ export default function AnalyticsDashboard() {
                   {responseByDay.map((d, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center">
                       <div
-                        className="w-full max-w-[32px] bg-indigo-400 rounded-t-sm"
+                        className="w-full max-w-[32px] bg-warm-500 rounded-t-sm"
                         style={{ height: `${Math.max((d.avg / maxDayResponse) * 80, 2)}px` }}
                       />
                       <span className="text-xs text-gray-500 mt-1">{d.label}</span>
@@ -376,7 +464,7 @@ export default function AnalyticsDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               {/* Client Retention */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Client Retention</h2>
                 <div className="flex items-center gap-4 mb-6">
                   <div className="bg-green-50 rounded-xl p-4 text-center flex-1">
@@ -397,14 +485,14 @@ export default function AnalyticsDashboard() {
                 {clientStats.topClients.length > 0 && (
                   <>
                     <h3 className="text-sm font-medium text-gray-700 mb-2">Top Clients</h3>
-                    <div className="divide-y divide-gray-50">
+                    <div className="divide-y divide-gray-100">
                       {clientStats.topClients.map((c, i) => (
                         <div key={c.client_id} className="flex items-center justify-between py-2">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-medium text-gray-400 w-4">{i + 1}.</span>
-                            <span className="text-sm text-gray-900">{c.full_name}</span>
+                            <span className="text-sm text-gray-700">{c.full_name}</span>
                           </div>
-                          <span className="text-sm font-medium text-gray-600">{c.count} jobs</span>
+                          <span className="text-sm font-medium text-gray-500">{c.count} jobs</span>
                         </div>
                       ))}
                     </div>
@@ -413,7 +501,7 @@ export default function AnalyticsDashboard() {
               </div>
 
               {/* Seasonal Trends */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Seasonal Trends</h2>
                 <div className="grid grid-cols-6 gap-2 mb-4">
                   {seasonalData.map((m, i) => (
@@ -422,7 +510,7 @@ export default function AnalyticsDashboard() {
                         className="w-full aspect-square rounded-lg flex items-center justify-center text-xs font-medium"
                         style={{
                           backgroundColor: `rgba(59, 130, 246, ${Math.max(m.intensity * 0.9, 0.05)})`,
-                          color: m.intensity > 0.5 ? 'white' : '#6b7280',
+                          color: m.intensity > 0.5 ? 'white' : '#90A4AE',
                         }}
                       >
                         {m.count}
@@ -437,7 +525,7 @@ export default function AnalyticsDashboard() {
                     <span>High season</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded bg-blue-100" />
+                    <div className="w-3 h-3 rounded bg-gray-200" />
                     <span>Low season</span>
                   </div>
                 </div>
@@ -445,15 +533,15 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Insights */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-6">
+            <div className="bg-gradient-to-r from-secondary-50 to-primary-50 rounded-2xl border border-gray-200 p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <Lightbulb className="w-5 h-5 text-blue-600" />
+                <Lightbulb className="w-5 h-5 text-secondary-600" />
                 <h2 className="text-lg font-semibold text-gray-900">Insights & Tips</h2>
               </div>
               <div className="space-y-3">
                 {insights.map((tip, i) => (
-                  <div key={i} className="flex items-start gap-3 bg-white/70 rounded-xl px-4 py-3">
-                    <Calendar className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div key={i} className="flex items-start gap-3 bg-white/80 rounded-xl px-4 py-3">
+                    <Calendar className="w-4 h-4 text-secondary-600 mt-0.5 flex-shrink-0" />
                     <p className="text-sm text-gray-700">{tip}</p>
                   </div>
                 ))}
@@ -483,19 +571,19 @@ function KPICard({
 }) {
   const bgMap: Record<string, string> = {
     green: 'bg-green-50',
-    blue: 'bg-blue-50',
-    indigo: 'bg-indigo-50',
-    amber: 'bg-amber-50',
+    blue: 'bg-secondary-50',
+    indigo: 'bg-primary-50',
+    amber: 'bg-warm-50',
   };
   const iconColorMap: Record<string, string> = {
     green: 'text-green-600',
-    blue: 'text-blue-600',
-    indigo: 'text-indigo-600',
-    amber: 'text-amber-600',
+    blue: 'text-secondary-600',
+    indigo: 'text-primary-600',
+    amber: 'text-warm-600',
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-5">
+    <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div className={`p-2.5 ${bgMap[color]} rounded-xl`}>
           <Icon className={`w-5 h-5 ${iconColorMap[color]}`} />

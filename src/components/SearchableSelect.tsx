@@ -98,7 +98,7 @@ export default function SearchableSelect({
       </div>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-200 z-20 max-h-64 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-200 z-50 max-h-80 overflow-y-auto">
           {filtered.length === 0 ? (
             <div className="px-4 py-3 text-sm text-gray-500">No results found</div>
           ) : (
@@ -109,7 +109,7 @@ export default function SearchableSelect({
                 onClick={() => handleSelect(option.value)}
                 className={`w-full px-4 py-3 text-left text-sm transition-colors min-h-[44px] flex items-center ${
                   option.value === value
-                    ? 'bg-primary-50 text-primary-700 font-medium'
+                    ? 'bg-warm-50 text-warm-700 font-medium'
                     : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >

@@ -20,7 +20,7 @@ export interface SavedSearch {
   user_id: string;
   name: string;
   filters: SearchFilters;
-  alerts_enabled: boolean;
+  alert_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -52,7 +52,7 @@ export async function saveSearch(
       user_id: user.id,
       name,
       filters: filters as unknown as Record<string, unknown>,
-      alerts_enabled: false,
+      alert_enabled: false,
     })
     .select()
     .single();
@@ -106,7 +106,7 @@ export async function toggleSearchAlerts(
 ): Promise<void> {
   const { error } = await supabase
     .from('saved_searches')
-    .update({ alerts_enabled: enabled })
+    .update({ alert_enabled: enabled })
     .eq('id', searchId);
 
   if (error) throw new Error(error.message);

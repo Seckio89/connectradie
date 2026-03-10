@@ -2,6 +2,14 @@ import { supabase } from './supabase';
 import { callEdgeFunction } from './edgeFn';
 
 // ---------------------------------------------------------------------------
+// Idempotency key helper – prevents duplicate payment submissions
+// ---------------------------------------------------------------------------
+
+function generateIdempotencyKey(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -46,8 +54,8 @@ export interface PaymentHistoryItem extends PaymentRecord {
 /** Platform fee rate for free-tier tradies (10%). */
 export const PLATFORM_FEE_RATE_FREE = 0.10;
 
-/** Platform fee rate for pro-tier tradies (0%). */
-export const PLATFORM_FEE_RATE_PRO = 0;
+/** Platform fee rate for pro-tier tradies (5%). */
+export const PLATFORM_FEE_RATE_PRO = 0.05;
 
 /** ConnecTradie processing fee (2%). */
 export const PROCESSING_FEE_RATE = 0.02;
@@ -91,6 +99,32 @@ export function calculateFees(amountCents: number, isPro: boolean): FeeBreakdown
 // ---------------------------------------------------------------------------
 
 /**
+ * Accept a quote and create a Stripe Checkout session in one step.
+ * The edge function accepts the quote, assigns the tradie, and creates the payment.
+ * Redirects the browser to the Stripe-hosted payment page on success.
+ */
+export async function acceptAndPay(
+  quoteId: string,
+  jobId: string,
+  agreedPrice?: number,
+): Promise<{ url: string; paymentId: string }> {
+  const idempotencyKey = generateIdempotencyKey();
+  const result = await callEdgeFunction<{ url: string; paymentId: string }>('accept-and-pay', {
+    quoteId,
+    idempotencyKey,
+    agreedPrice,
+    successUrl: `${window.location.origin}/leads?payment=success&job_id=${jobId}`,
+    cancelUrl: `${window.location.origin}/leads?payment=cancelled&job_id=${jobId}`,
+  });
+
+  if (!result.url) {
+    throw new Error('No checkout URL received from accept-and-pay');
+  }
+
+  return result;
+}
+
+/**
  * Create a Stripe Checkout session for a job deposit.
  * Redirects the browser to the Stripe-hosted payment page on success.
  */
@@ -98,11 +132,13 @@ export async function createJobDeposit(
   jobId: string,
   amountCents: number,
 ): Promise<{ url: string }> {
+  const idempotencyKey = generateIdempotencyKey();
   const result = await callEdgeFunction<{ url: string }>('create-job-deposit', {
     jobId,
     amountCents,
-    successUrl: `${window.location.origin}/jobs/${jobId}?payment=success`,
-    cancelUrl: `${window.location.origin}/jobs/${jobId}?payment=cancelled`,
+    idempotencyKey,
+    successUrl: `${window.location.origin}/jobs?payment=success&job_id=${jobId}`,
+    cancelUrl: `${window.location.origin}/jobs?payment=cancelled&job_id=${jobId}`,
   });
 
   if (!result.url) {
@@ -118,10 +154,12 @@ export async function createJobDeposit(
 export async function payMilestone(
   milestoneId: string,
 ): Promise<{ url: string }> {
+  const idempotencyKey = generateIdempotencyKey();
   const result = await callEdgeFunction<{ url: string }>('pay-milestone', {
     milestoneId,
-    successUrl: `${window.location.origin}/milestones/${milestoneId}?payment=success`,
-    cancelUrl: `${window.location.origin}/milestones/${milestoneId}?payment=cancelled`,
+    idempotencyKey,
+    successUrl: `${window.location.origin}/jobs?payment=success&milestone_id=${milestoneId}`,
+    cancelUrl: `${window.location.origin}/jobs?payment=cancelled&milestone_id=${milestoneId}`,
   });
 
   if (!result.url) {
@@ -132,12 +170,45 @@ export async function payMilestone(
 }
 
 /**
+ * Create a Stripe Checkout session for an existing pending payment record.
+ * Redirects the browser to the Stripe-hosted payment page on success.
+ */
+export async function createJobPaymentCheckout(
+  paymentId: string,
+): Promise<{ url: string }> {
+  const idempotencyKey = generateIdempotencyKey();
+  const result = await callEdgeFunction<{ url: string }>('create-job-payment-checkout', {
+    paymentId,
+    idempotencyKey,
+    successUrl: `${window.location.origin}/payments?payment=success&payment_id=${paymentId}`,
+    cancelUrl: `${window.location.origin}/payments?payment=cancelled&payment_id=${paymentId}`,
+  });
+
+  if (!result.url) {
+    throw new Error('No checkout URL received');
+  }
+
+  return result;
+}
+
+/**
+ * Verify a payment's status by checking the Stripe session directly.
+ * This is a fallback for when the Stripe webhook fails to update the payment record.
+ */
+export async function verifyPayment(
+  paymentId: string,
+): Promise<{ status: string; message: string; verified_via?: string }> {
+  return callEdgeFunction<{ status: string; message: string; verified_via?: string }>('verify-payment', { paymentId });
+}
+
+/**
  * Release escrowed funds for a completed payment.
  */
 export async function releaseEscrow(
   paymentId: string,
 ): Promise<{ success: boolean }> {
-  return callEdgeFunction<{ success: boolean }>('release-escrow', { paymentId });
+  const idempotencyKey = generateIdempotencyKey();
+  return callEdgeFunction<{ success: boolean }>('release-escrow', { paymentId, idempotencyKey });
 }
 
 /**
@@ -147,9 +218,11 @@ export async function processRefund(
   paymentId: string,
   reason?: string,
 ): Promise<{ success: boolean; refundId?: string }> {
+  const idempotencyKey = generateIdempotencyKey();
   return callEdgeFunction<{ success: boolean; refundId?: string }>('process-refund', {
     paymentId,
     reason: reason ?? null,
+    idempotencyKey,
   });
 }
 

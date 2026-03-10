@@ -115,7 +115,7 @@ export async function submitDocumentsForVerification(files: File[]): Promise<str
   const { error: updateError } = await supabase
     .from('profiles')
     .update({
-      documents_url: uploadedPaths.join(','),
+      documents_url: uploadedPaths,
       verification_status: 'pending',
     })
     .eq('id', user.id);

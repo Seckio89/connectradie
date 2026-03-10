@@ -38,11 +38,11 @@ export async function getTradieRating(tradieId: string): Promise<TradieRating | 
     .eq('tradie_id', tradieId)
     .maybeSingle();
 
-  if (error) {
+  if (error || !data) {
     return null;
   }
 
-  return data;
+  return data as TradieRating;
 }
 
 export async function getTradieReviews(tradieId: string): Promise<Review[]> {
@@ -76,7 +76,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
   //     FROM reviews;
   //   $$ LANGUAGE SQL STABLE;
   //
-  const { data, error } = await supabase.rpc('get_platform_stats');
+  const { data, error } = await supabase.rpc('get_platform_stats') as { data: PlatformStats | null, error: { message: string } | null };
 
   if (error || !data) {
     return {

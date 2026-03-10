@@ -129,7 +129,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
     const startDate = new Date(year, month, 1);
     const endDate = new Date(recurringPattern.endDate);
 
-    let currentDate = new Date(startDate);
+    const currentDate = new Date(startDate);
     while (currentDate <= endDate) {
       const dayOfWeek = currentDate.getDay();
       if (recurringPattern.weekdays.includes(dayOfWeek)) {
@@ -158,7 +158,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
     try {
       await onSave(slots);
       onClose();
-    } catch (error) {
+    } catch {
       // error handled silently
     } finally {
       setIsSaving(false);
@@ -190,7 +190,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/30 z-40"
+        className="fixed inset-0 bg-black/30 z-50"
         onClick={onClose}
       />
       <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -257,7 +257,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                         disabled={isPast}
                         className={`aspect-square rounded-lg text-sm font-medium transition-all ${
                           selected
-                            ? 'bg-primary-600 text-white shadow-sm'
+                            ? 'bg-warm-500 text-white shadow-sm'
                             : isPast
                             ? 'text-gray-300 cursor-not-allowed'
                             : 'text-gray-700 hover:bg-gray-200'
@@ -297,18 +297,18 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                 </button>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <div className="bg-secondary-50 border border-secondary-200 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Repeat className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-semibold text-blue-900">Recurring Pattern</span>
+                    <Repeat className="w-4 h-4 text-secondary-600" />
+                    <span className="text-sm font-semibold text-secondary-900">Recurring Pattern</span>
                   </div>
                   <button
                     onClick={() => setRecurringPattern({ ...recurringPattern, enabled: !recurringPattern.enabled })}
                     className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
                       recurringPattern.enabled
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-blue-600 border border-blue-300'
+                        ? 'bg-warm-500 text-white'
+                        : 'bg-white text-primary-600 border border-primary-300'
                     }`}
                   >
                     {recurringPattern.enabled ? 'Enabled' : 'Disabled'}
@@ -318,7 +318,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                 {recurringPattern.enabled && (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-medium text-blue-900 mb-2">Repeat on:</label>
+                      <label className="block text-xs font-medium text-secondary-900 mb-2">Repeat on:</label>
                       <div className="flex gap-1">
                         {WEEKDAY_NAMES.map((day, index) => (
                           <button
@@ -326,7 +326,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                             onClick={() => toggleWeekday(index)}
                             className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors ${
                               recurringPattern.weekdays.includes(index)
-                                ? 'bg-blue-600 text-white'
+                                ? 'bg-warm-500 text-white'
                                 : 'bg-white text-gray-600 border border-gray-200'
                             }`}
                           >
@@ -337,16 +337,16 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-blue-900 mb-2">Repeat until:</label>
+                      <label className="block text-xs font-medium text-secondary-900 mb-2">Repeat until:</label>
                       <input
                         type="date"
                         value={recurringPattern.endDate}
                         onChange={(e) => setRecurringPattern({ ...recurringPattern, endDate: e.target.value })}
-                        className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
                     </div>
 
-                    <p className="text-xs text-blue-700">
+                    <p className="text-xs text-secondary-700">
                       This will create slots for selected weekdays until the end date.
                     </p>
                   </div>
@@ -364,7 +364,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                     onClick={() => setSelectedPreset(preset.id)}
                     className={`p-4 rounded-xl border-2 transition-all text-left ${
                       selectedPreset === preset.id
-                        ? 'border-primary-500 bg-primary-50'
+                        ? 'border-warm-500 bg-warm-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -406,9 +406,9 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                 </div>
               )}
 
-              <div className="bg-gradient-to-br from-primary-50 to-blue-50 rounded-xl p-6 border border-primary-100">
+              <div className="bg-gradient-to-br from-primary-50 to-secondary-50 rounded-xl p-6 border border-primary-100">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-warm-500 rounded-xl flex items-center justify-center">
                     <CalendarIcon className="w-5 h-5 text-white" />
                   </div>
                   <div>
@@ -454,7 +454,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
           <button
             onClick={handleSave}
             disabled={totalSlots === 0 || isSaving}
-            className="px-6 py-2.5 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            className="px-6 py-2.5 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
             {isSaving ? (
               <>

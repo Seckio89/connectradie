@@ -15,7 +15,7 @@ export default function UserTradeBadges({ verifiedTrades, declaredTrades, size =
   if (verified.length === 0 && pendingTrades.length === 0) return null;
 
   const paddingClass = size === 'sm' ? 'px-2 py-0.5' : 'px-2.5 py-1';
-  const textClass = size === 'sm' ? 'text-[10px]' : 'text-xs';
+  const textClass = size === 'sm' ? 'text-xs' : 'text-xs';
   const iconClass = size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5';
 
   return (
@@ -23,7 +23,7 @@ export default function UserTradeBadges({ verifiedTrades, declaredTrades, size =
       {verified.map((trade) => (
         <span
           key={`v-${trade}`}
-          className={`inline-flex items-center gap-1 ${paddingClass} bg-blue-600 text-white ${textClass} font-semibold rounded-full shadow-sm`}
+          className={`inline-flex items-center gap-1 ${paddingClass} bg-secondary-600 text-white ${textClass} font-semibold rounded-full shadow-sm`}
         >
           <CheckCircle2 className={iconClass} />
           {trade}

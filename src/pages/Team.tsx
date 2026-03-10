@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Mail, Phone, Briefcase, MoreVertical, Pencil, Trash2, UserCheck, Star, HardHat, Wrench, X, Check, AlertCircle, Clock, Shield } from 'lucide-react';
+import { Users, Plus, Mail, Phone, Briefcase, MoreVertical, Pencil, Trash2, UserCheck, Star, HardHat, Wrench, X, Check, AlertCircle, Clock, Shield, Calendar, ChevronLeft, ChevronRight, Lock, Timer, CheckCircle2, XCircle } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import SectionErrorBoundary from '../components/SectionErrorBoundary';
+import ConfirmModal from '../components/ConfirmModal';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -34,7 +36,22 @@ interface TeamMember {
   joined_at: string | null;
 }
 
-type ActiveTab = 'active' | 'manual';
+type ActiveTab = 'active' | 'manual' | 'permissions' | 'calendar' | 'timesheets';
+
+interface TimeEntry {
+  id: string;
+  team_member_id: string;
+  member_name: string;
+  business_owner_id: string;
+  job_id: string | null;
+  date: string;
+  hours: number;
+  description: string;
+  status: 'pending' | 'approved' | 'rejected';
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+}
 
 const ROLE_LABELS: Record<string, string> = {
   employee: 'Employee',
@@ -43,8 +60,8 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  employee: 'bg-blue-100 text-blue-700',
-  subcontractor: 'bg-amber-100 text-amber-700',
+  employee: 'bg-secondary-100 text-secondary-700',
+  subcontractor: 'bg-warm-100 text-warm-700',
   apprentice: 'bg-green-100 text-green-700',
 };
 
@@ -52,6 +69,21 @@ const STATUS_COLORS: Record<string, string> = {
   invited: 'bg-yellow-100 text-yellow-700',
   active: 'bg-green-100 text-green-700',
   inactive: 'bg-gray-100 text-gray-600',
+};
+
+const ROLE_PERMISSIONS: Record<string, { label: string; permissions: string[] }> = {
+  employee: {
+    label: 'Employee',
+    permissions: ['View assigned jobs', 'Update job status', 'Log hours', 'View team calendar', 'Send messages'],
+  },
+  subcontractor: {
+    label: 'Subcontractor',
+    permissions: ['View assigned jobs', 'Submit quotes', 'Update job status', 'View own calendar'],
+  },
+  apprentice: {
+    label: 'Apprentice',
+    permissions: ['View assigned jobs', 'Log hours', 'View team calendar'],
+  },
 };
 
 interface AddMemberModalProps {
@@ -92,7 +124,7 @@ function AddMemberModal({ onClose, onSave, editMember }: AddMemberModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 ">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <div>
@@ -206,7 +238,7 @@ function AddMemberModal({ onClose, onSave, editMember }: AddMemberModalProps) {
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 px-4 py-2.5 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2.5 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
               {saving ? (
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -232,6 +264,70 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>('active');
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string; type: 'linked' | 'manual' } | null>(null);
+
+  // Timesheets state
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [timesheetWeekStart, setTimesheetWeekStart] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - d.getDay());
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+  const [showAddEntry, setShowAddEntry] = useState(false);
+  const [entryForm, setEntryForm] = useState({ member_id: '', date: new Date().toISOString().slice(0, 10), hours: '', description: '', job_id: '' });
+  const [savingEntry, setSavingEntry] = useState(false);
+  const [calMonth, setCalMonth] = useState(new Date());
+
+  const fetchTimeEntries = async () => {
+    if (!user) return;
+    const weekEnd = new Date(timesheetWeekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    const { data } = await supabase
+      .from('time_entries')
+      .select('*')
+      .eq('business_owner_id', user.id)
+      .gte('date', timesheetWeekStart.toISOString().slice(0, 10))
+      .lte('date', weekEnd.toISOString().slice(0, 10))
+      .order('date', { ascending: true });
+    if (data) {
+      const entries = (data as unknown as TimeEntry[]).map(entry => {
+        const member = [...activeTeam.map(e => ({ id: e.id, name: e.full_name })), ...manualMembers.map(m => ({ id: m.id, name: m.invite_name }))];
+        const found = member.find(m => m.id === entry.team_member_id);
+        return { ...entry, member_name: found?.name || 'Unknown' };
+      });
+      setTimeEntries(entries);
+    }
+  };
+
+  const handleAddTimeEntry = async () => {
+    if (!user || !entryForm.member_id || !entryForm.hours) return;
+    setSavingEntry(true);
+    const { error } = await supabase.from('time_entries').insert({
+      team_member_id: entryForm.member_id,
+      business_owner_id: user.id,
+      job_id: entryForm.job_id || null,
+      date: entryForm.date,
+      hours: parseFloat(entryForm.hours),
+      description: entryForm.description,
+    });
+    setSavingEntry(false);
+    if (!error) {
+      setShowAddEntry(false);
+      setEntryForm({ member_id: '', date: new Date().toISOString().slice(0, 10), hours: '', description: '', job_id: '' });
+      fetchTimeEntries();
+    }
+  };
+
+  const handleUpdateEntryStatus = async (entryId: string, status: 'approved' | 'rejected') => {
+    if (!user) return;
+    await supabase.from('time_entries').update({
+      status,
+      approved_by: user.id,
+      approved_at: new Date().toISOString(),
+    }).eq('id', entryId);
+    fetchTimeEntries();
+  };
 
   useEffect(() => {
     if (user) {
@@ -240,6 +336,13 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  useEffect(() => {
+    if (user && activeTab === 'timesheets') {
+      fetchTimeEntries();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, activeTab, timesheetWeekStart]);
 
   const fetchLinkedEmployees = async () => {
     if (!user) return;
@@ -263,7 +366,8 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
       .eq('business_owner_id', user.id)
       .is('member_profile_id', null)
       .order('created_at', { ascending: false });
-    setManualMembers(data || []);
+    
+    setManualMembers((data as unknown as TeamMember[]) || []);
   };
 
   const handleApproveRequest = async (employeeId: string) => {
@@ -280,18 +384,19 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
 
       const emp = linkedEmployees.find(e => e.id === employeeId);
       const roleLabel = emp?.employment_type === 'employee' ? 'employee' : 'subcontractor';
-      await supabase.from('notifications').insert({
-        user_id: employeeId,
-        title: 'Request approved',
-        message: `Your request to join as ${roleLabel} has been approved. You are now part of the team.`,
-        type: 'team',
-        channel: 'in_app',
-        read: false,
-        link: '/dashboard',
+      await supabase.rpc('create_notification', {
+        p_user_id: employeeId,
+        p_title: 'Request approved',
+        p_message: `Your request to join as ${roleLabel} has been approved. You are now part of the team.`,
+        p_type: 'team',
+        p_channel: 'in_app',
+        p_read: false,
+        p_link: '/dashboard',
       });
 
       await fetchLinkedEmployees();
     } catch {
+      // no-op
     } finally {
       setProcessingId(null);
     }
@@ -309,25 +414,25 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
         .eq('member_profile_id', employeeId)
         .eq('business_owner_id', user!.id);
 
-      await supabase.from('notifications').insert({
-        user_id: employeeId,
-        title: 'Request declined',
-        message: `Your team request has been declined.`,
-        type: 'team',
-        channel: 'in_app',
-        read: false,
-        link: '/dashboard',
+      await supabase.rpc('create_notification', {
+        p_user_id: employeeId,
+        p_title: 'Request declined',
+        p_message: `Your team request has been declined.`,
+        p_type: 'team',
+        p_channel: 'in_app',
+        p_read: false,
+        p_link: '/dashboard',
       });
 
       setLinkedEmployees(prev => prev.filter(e => e.id !== employeeId));
     } catch {
+      // no-op
     } finally {
       setProcessingId(null);
     }
   };
 
   const handleRemoveEmployee = async (employeeId: string) => {
-    if (!confirm('Remove this person from your team? They will no longer be linked to your business.')) return;
     setProcessingId(employeeId);
     try {
       const { error: rpcError } = await supabase.rpc('employer_remove_member', { member_id: employeeId });
@@ -339,18 +444,19 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
         .eq('member_profile_id', employeeId)
         .eq('business_owner_id', user!.id);
 
-      await supabase.from('notifications').insert({
-        user_id: employeeId,
-        title: 'Removed from team',
-        message: `You have been removed from the team.`,
-        type: 'team',
-        channel: 'in_app',
-        read: false,
-        link: '/dashboard',
+      await supabase.rpc('create_notification', {
+        p_user_id: employeeId,
+        p_title: 'Removed from team',
+        p_message: `You have been removed from the team.`,
+        p_type: 'team',
+        p_channel: 'in_app',
+        p_read: false,
+        p_link: '/dashboard',
       });
 
       setLinkedEmployees(prev => prev.filter(e => e.id !== employeeId));
     } catch {
+      // no-op
     } finally {
       setProcessingId(null);
     }
@@ -375,7 +481,6 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
   };
 
   const handleDeleteManual = async (id: string) => {
-    if (!confirm('Remove this team member?')) return;
     await supabase.from('business_team_members').delete().eq('id', id);
     setManualMembers(prev => prev.filter(m => m.id !== id));
   };
@@ -399,17 +504,28 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
       </div>
     );
     if (embedded) return notAvailable;
-    return <DashboardLayout>{notAvailable}</DashboardLayout>;
+    return <DashboardLayout><SectionErrorBoundary>{notAvailable}</SectionErrorBoundary></DashboardLayout>;
   }
 
-  const teamTabs: { key: 'active' | 'manual'; label: string; count: number; icon: typeof Users }[] = [
+  const calDaysInMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 0).getDate();
+  const calStartDay = new Date(calMonth.getFullYear(), calMonth.getMonth(), 1).getDay();
+  const calMonthLabel = calMonth.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+  const allMembers = [
+    ...activeTeam.map(e => ({ name: e.full_name, role: e.employment_type })),
+    ...manualMembers.filter(m => m.status === 'active').map(m => ({ name: m.invite_name, role: m.role })),
+  ];
+
+  const teamTabs: { key: ActiveTab; label: string; count: number; icon: typeof Users }[] = [
     { key: 'active', label: 'Active Team', count: activeTeam.length, icon: UserCheck },
     { key: 'manual', label: 'Manually Added', count: manualMembers.length, icon: Users },
+    { key: 'permissions', label: 'Role Permissions', count: 0, icon: Lock },
+    { key: 'calendar', label: 'Team Calendar', count: 0, icon: Calendar },
+    { key: 'timesheets', label: 'Timesheets', count: 0, icon: Timer },
   ];
 
   const content = (
     <>
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-[1600px] mx-auto space-y-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">My Team</h1>
@@ -417,7 +533,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
           </div>
           <button
             onClick={() => { setEditMember(null); setShowAddModal(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors text-sm"
+            className="flex items-center gap-2 px-4 py-2.5 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 transition-colors text-sm"
           >
             <Plus className="w-4 h-4" />
             Add Member
@@ -427,8 +543,8 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                <Users className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 bg-secondary-50 rounded-xl flex items-center justify-center">
+                <Users className="w-5 h-5 text-secondary-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
@@ -449,8 +565,8 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
           </div>
           <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
-                <Clock className="w-5 h-5 text-amber-600" />
+              <div className="w-10 h-10 bg-warm-50 rounded-xl flex items-center justify-center">
+                <Clock className="w-5 h-5 text-warm-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
@@ -472,24 +588,24 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
         </div>
 
         {pendingRequests.length > 0 && (
-          <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl overflow-hidden shadow-sm">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-amber-200 bg-amber-100/60">
-              <div className="w-8 h-8 bg-amber-200 rounded-lg flex items-center justify-center">
-                <AlertCircle className="w-5 h-5 text-amber-700" />
+          <div className="bg-warm-50 border-2 border-warm-300 rounded-2xl overflow-hidden shadow-sm">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-warm-200 bg-warm-100/60">
+              <div className="w-8 h-8 bg-warm-200 rounded-lg flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-warm-700" />
               </div>
               <div className="flex-1">
-                <h2 className="font-bold text-amber-900">Pending Requests</h2>
-                <p className="text-xs text-amber-700 mt-0.5">These users want to join your team. Review and approve or decline.</p>
+                <h2 className="font-bold text-warm-900">Pending Requests</h2>
+                <p className="text-xs text-warm-700 mt-0.5">These users want to join your team. Review and approve or decline.</p>
               </div>
-              <span className="px-2.5 py-1 bg-amber-200 text-amber-800 rounded-full text-xs font-bold">
+              <span className="px-2.5 py-1 bg-warm-200 text-warm-800 rounded-full text-xs font-bold">
                 {pendingRequests.length} pending
               </span>
             </div>
-            <div className="divide-y divide-amber-200">
+            <div className="divide-y divide-warm-200">
               {pendingRequests.map(emp => (
                 <div key={emp.id} className="flex items-center gap-4 p-5 bg-white/40">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-200 to-amber-300 flex items-center justify-center flex-shrink-0">
-                    <span className="text-lg font-bold text-amber-800">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-warm-200 to-warm-300 flex items-center justify-center flex-shrink-0">
+                    <span className="text-lg font-bold text-warm-800">
                       {emp.full_name.charAt(0).toUpperCase()}
                     </span>
                   </div>
@@ -568,13 +684,13 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                 {tab.label}
                 {tab.count > 0 && (
                   <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
-                    activeTab === tab.key ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600'
+                    activeTab === tab.key ? 'bg-warm-100 text-warm-700' : 'bg-gray-100 text-gray-600'
                   }`}>
                     {tab.count}
                   </span>
                 )}
                 {activeTab === tab.key && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-warm-500" />
                 )}
               </button>
             ))}
@@ -644,7 +760,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                     </div>
 
                     <button
-                      onClick={() => handleRemoveEmployee(emp.id)}
+                      onClick={() => setMemberToRemove({ id: emp.id, name: emp.full_name, type: 'linked' })}
                       disabled={processingId === emp.id}
                       className="flex items-center gap-1.5 px-3 py-2 border border-red-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors opacity-0 group-hover:opacity-100"
                     >
@@ -659,6 +775,269 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                 ))}
               </div>
             )
+          ) : activeTab === 'permissions' ? (
+            <div className="p-5 space-y-4">
+              {Object.entries(ROLE_PERMISSIONS).map(([key, { label, permissions }]) => (
+                <div key={key} className="border border-gray-100 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[key]}`}>{label}</span>
+                    <span className="text-xs text-gray-400">
+                      {allMembers.filter(m => m.role === key).length} member{allMembers.filter(m => m.role === key).length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {permissions.map(p => (
+                      <div key={p} className="flex items-center gap-2 text-sm text-gray-600">
+                        <Check className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                        {p}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : activeTab === 'calendar' ? (
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <button onClick={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() - 1))} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <h3 className="text-sm font-semibold text-gray-900">{calMonthLabel}</h3>
+                <button onClick={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1))} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="grid grid-cols-7 gap-1 mb-1">
+                {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
+                  <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: calStartDay }).map((_, i) => <div key={`e-${i}`} />)}
+                {Array.from({ length: calDaysInMonth }).map((_, i) => {
+                  const day = i + 1;
+                  const isToday = day === new Date().getDate() && calMonth.getMonth() === new Date().getMonth() && calMonth.getFullYear() === new Date().getFullYear();
+                  const isWeekend = new Date(calMonth.getFullYear(), calMonth.getMonth(), day).getDay() % 6 === 0;
+                  return (
+                    <div key={day} className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs ${isToday ? 'bg-primary-100 border border-primary-300 font-bold text-primary-700' : isWeekend ? 'bg-gray-50 text-gray-400' : 'text-gray-700'}`}>
+                      <span>{day}</span>
+                      {allMembers.length > 0 && !isWeekend && (
+                        <div className="flex gap-0.5 mt-0.5">
+                          {allMembers.slice(0, 3).map((m, idx) => (
+                            <div key={idx} className={`w-1.5 h-1.5 rounded-full ${idx === 0 ? 'bg-green-400' : idx === 1 ? 'bg-secondary-400' : 'bg-warm-400'}`} title={m.name} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {allMembers.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {allMembers.slice(0, 5).map((m, idx) => (
+                    <div key={idx} className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <div className={`w-2 h-2 rounded-full ${idx === 0 ? 'bg-green-400' : idx === 1 ? 'bg-secondary-400' : idx === 2 ? 'bg-warm-400' : 'bg-primary-400'}`} />
+                      {m.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {allMembers.length === 0 && (
+                <div className="text-center py-8 text-gray-400 text-sm">No active team members to show on the calendar</div>
+              )}
+            </div>
+          ) : activeTab === 'timesheets' ? (
+            <div className="p-5 space-y-4">
+              {/* Week Navigation */}
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => { const d = new Date(timesheetWeekStart); d.setDate(d.getDate() - 7); setTimesheetWeekStart(d); }}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <h3 className="text-sm font-semibold text-gray-900">
+                  Week of {timesheetWeekStart.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </h3>
+                <button
+                  onClick={() => { const d = new Date(timesheetWeekStart); d.setDate(d.getDate() + 7); setTimesheetWeekStart(d); }}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Add Entry Button */}
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowAddEntry(!showAddEntry)}
+                  className="flex items-center gap-2 px-4 py-2 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 transition-colors text-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Entry
+                </button>
+              </div>
+
+              {/* Inline Add Entry Form */}
+              {showAddEntry && (
+                <div className="border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Team Member *</label>
+                      <select
+                        value={entryForm.member_id}
+                        onChange={e => setEntryForm(f => ({ ...f, member_id: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                      >
+                        <option value="">Select member...</option>
+                        {activeTeam.map(e => (
+                          <option key={e.id} value={e.id}>{e.full_name}</option>
+                        ))}
+                        {manualMembers.filter(m => m.status === 'active').map(m => (
+                          <option key={m.id} value={m.id}>{m.invite_name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Date *</label>
+                      <input
+                        type="date"
+                        value={entryForm.date}
+                        onChange={e => setEntryForm(f => ({ ...f, date: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Hours *</label>
+                      <input
+                        type="number"
+                        min="0.25"
+                        max="24"
+                        step="0.25"
+                        value={entryForm.hours}
+                        onChange={e => setEntryForm(f => ({ ...f, hours: e.target.value }))}
+                        placeholder="8"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Job (optional)</label>
+                      <input
+                        type="text"
+                        value={entryForm.job_id}
+                        onChange={e => setEntryForm(f => ({ ...f, job_id: e.target.value }))}
+                        placeholder="Job ID"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                    <input
+                      type="text"
+                      value={entryForm.description}
+                      onChange={e => setEntryForm(f => ({ ...f, description: e.target.value }))}
+                      placeholder="What was worked on..."
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => setShowAddEntry(false)}
+                      className="px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleAddTimeEntry}
+                      disabled={savingEntry || !entryForm.member_id || !entryForm.hours}
+                      className="px-4 py-2 bg-warm-500 text-white text-sm font-medium rounded-lg hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center gap-2"
+                    >
+                      {savingEntry && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                      Save Entry
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Weekly Totals per Member */}
+              {(() => {
+                const memberTotals: Record<string, { name: string; hours: number }> = {};
+                timeEntries.forEach(e => {
+                  if (!memberTotals[e.team_member_id]) memberTotals[e.team_member_id] = { name: e.member_name, hours: 0 };
+                  memberTotals[e.team_member_id].hours += Number(e.hours);
+                });
+                const totals = Object.values(memberTotals);
+                if (totals.length === 0) return null;
+                return (
+                  <div className="flex flex-wrap gap-3">
+                    {totals.map((t, i) => (
+                      <div key={i} className="flex items-center gap-2 px-3 py-2 bg-primary-50 rounded-lg border border-primary-100">
+                        <Timer className="w-4 h-4 text-primary-600" />
+                        <span className="text-sm font-medium text-gray-900">{t.name}</span>
+                        <span className="text-sm font-bold text-primary-700">{t.hours}h</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Time Entries List */}
+              {timeEntries.length === 0 ? (
+                <div className="text-center py-12 text-gray-400 text-sm">
+                  <Timer className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                  <p className="font-medium text-gray-600">No time entries this week</p>
+                  <p className="text-xs mt-1">Add entries to start tracking your team's hours</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden">
+                  {timeEntries.map(entry => (
+                    <div key={entry.id} className="flex items-center gap-4 p-4 bg-white hover:bg-gray-50/50 transition-colors">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-bold text-primary-700">
+                          {entry.member_name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-gray-900 text-sm">{entry.member_name}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            entry.status === 'approved' ? 'bg-green-100 text-green-700'
+                            : entry.status === 'rejected' ? 'bg-red-100 text-red-700'
+                            : 'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
+                          <span>{new Date(entry.date).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                          <span className="font-semibold text-gray-700">{entry.hours}h</span>
+                          {entry.description && <span className="truncate">{entry.description}</span>}
+                        </div>
+                      </div>
+                      {entry.status === 'pending' && (
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <button
+                            onClick={() => handleUpdateEntryStatus(entry.id, 'approved')}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            title="Approve"
+                          >
+                            <CheckCircle2 className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleUpdateEntryStatus(entry.id, 'rejected')}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Reject"
+                          >
+                            <XCircle className="w-5 h-5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : (
             manualMembers.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center px-4">
@@ -671,7 +1050,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                 </p>
                 <button
                   onClick={() => { setEditMember(null); setShowAddModal(true); }}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors text-sm"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 transition-colors text-sm"
                 >
                   <Plus className="w-4 h-4" />
                   Add First Member
@@ -745,7 +1124,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                             Edit Details
                           </button>
                           <button
-                            onClick={() => { handleDeleteManual(member.id); setOpenMenuId(null); }}
+                            onClick={() => { setMemberToRemove({ id: member.id, name: member.invite_name, type: 'manual' }); setOpenMenuId(null); }}
                             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -769,9 +1148,28 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
           editMember={editMember}
         />
       )}
+
+      {memberToRemove && (
+        <ConfirmModal
+          title="Remove Team Member"
+          message={`Are you sure you want to remove ${memberToRemove.name} from your team? This action cannot be undone.`}
+          confirmText="Remove"
+          type="danger"
+          onConfirm={async () => {
+            const { id, type } = memberToRemove;
+            setMemberToRemove(null);
+            if (type === 'linked') {
+              await handleRemoveEmployee(id);
+            } else {
+              await handleDeleteManual(id);
+            }
+          }}
+          onCancel={() => setMemberToRemove(null)}
+        />
+      )}
     </>
   );
 
   if (embedded) return content;
-  return <DashboardLayout>{content}</DashboardLayout>;
+  return <DashboardLayout><SectionErrorBoundary>{content}</SectionErrorBoundary></DashboardLayout>;
 }

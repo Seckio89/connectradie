@@ -14,9 +14,12 @@ import {
   ChevronDown,
   ChevronUp,
   Search,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import DashboardLayout from '../components/DashboardLayout';
+import Breadcrumbs from '../components/Breadcrumbs';
 import type { Profile } from '../types/database';
 
 interface PendingUser extends Profile {
@@ -24,7 +27,6 @@ interface PendingUser extends Profile {
 }
 
 export default function AdminVerifications() {
-  const [, /* pendingUsers */ setPendingUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState<Record<string, string>>({});
@@ -33,25 +35,34 @@ export default function AdminVerifications() {
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'declined'>('pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [allUsers, setAllUsers] = useState<PendingUser[]>([]);
+  const [fetchError, setFetchError] = useState('');
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
   const fetchUsers = async () => {
-    setLoading(true);
+    try {
+      setFetchError('');
+      setLoading(true);
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .in('role', ['tradie', 'admin'])
-      .neq('verification_status', 'unverified')
-      .order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('role', ['tradie', 'admin'])
+        .neq('verification_status', 'unverified')
+        .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      setAllUsers(data);
+      if (error) throw error;
+
+      if (data) {
+        setAllUsers(data as PendingUser[]);
+      }
+      setLoading(false);
+    } catch {
+      setFetchError('Failed to load data. Please try again.');
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const getFilteredUsersByTab = () => {
@@ -92,9 +103,9 @@ export default function AdminVerifications() {
     setActionLoading(userId);
 
     const user = allUsers.find(u => u.id === userId);
-    const licenseTrades = (user as any)?.license_trades || [];
-    const declaredTrades = (user as any)?.declared_trades || [];
-    const existingVerified = (user as any)?.verified_trades || [];
+    const licenseTrades = user?.license_trades || [];
+    const declaredTrades = user?.declared_trades || [];
+    const existingVerified = user?.verified_trades || [];
     const merged = Array.from(new Set([...existingVerified, ...licenseTrades, ...declaredTrades]));
 
     const { error } = await supabase
@@ -120,7 +131,7 @@ export default function AdminVerifications() {
       setAllUsers((prev) =>
         prev.map((u) =>
           u.id === userId
-            ? { ...u, verification_status: 'verified', rejection_reason: null, verified_trades: merged, license_verified: true } as any
+            ? { ...u, verification_status: 'verified' as const, rejection_reason: null, verified_trades: merged, license_verified: true }
             : u
         )
       );
@@ -172,7 +183,7 @@ export default function AdminVerifications() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <span className="px-2.5 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">Pending</span>;
+        return <span className="px-2.5 py-0.5 bg-warm-100 text-warm-700 rounded-full text-xs font-medium">Pending</span>;
       case 'verified':
         return <span className="px-2.5 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">Verified</span>;
       case 'rejected':
@@ -184,16 +195,17 @@ export default function AdminVerifications() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto">
+      <Breadcrumbs />
+      <div className="max-w-[1600px] mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Verification Center</h1>
             <p className="text-gray-600 mt-1">Review and manage tradie verification requests</p>
           </div>
           {pendingCount > 0 && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl">
-              <Clock className="w-4 h-4 text-amber-600" />
-              <span className="text-sm font-semibold text-amber-800">{pendingCount} pending</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-warm-50 border border-warm-200 rounded-xl">
+              <Clock className="w-4 h-4 text-warm-600" />
+              <span className="text-sm font-semibold text-warm-800">{pendingCount} pending</span>
             </div>
           )}
         </div>
@@ -206,7 +218,7 @@ export default function AdminVerifications() {
                 onClick={() => setActiveTab('pending')}
                 className={`flex-1 px-6 py-4 text-sm font-semibold transition-all relative ${
                   activeTab === 'pending'
-                    ? 'text-amber-700 bg-amber-50/50'
+                    ? 'text-warm-700 bg-warm-50/50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
@@ -216,7 +228,7 @@ export default function AdminVerifications() {
                   {pendingCount > 0 && (
                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                       activeTab === 'pending'
-                        ? 'bg-amber-200 text-amber-800'
+                        ? 'bg-warm-200 text-warm-800'
                         : 'bg-gray-200 text-gray-700'
                     }`}>
                       {pendingCount}
@@ -224,7 +236,7 @@ export default function AdminVerifications() {
                   )}
                 </div>
                 {activeTab === 'pending' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-600"></div>
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-warm-600"></div>
                 )}
               </button>
 
@@ -291,18 +303,27 @@ export default function AdminVerifications() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by name, email, ABN, or license..."
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
               />
             </div>
           </div>
 
-          {loading ? (
+          {fetchError ? (
+            <div className="bg-white rounded-2xl border border-red-200 p-12 text-center">
+              <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load</h3>
+              <p className="text-gray-600 mb-4">{fetchError}</p>
+              <button onClick={fetchUsers} className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                <RefreshCw className="w-4 h-4" /> Try Again
+              </button>
+            </div>
+          ) : loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="py-16 text-center">
-              {activeTab === 'pending' && <Clock className="w-12 h-12 text-amber-300 mx-auto mb-3" />}
+              {activeTab === 'pending' && <Clock className="w-12 h-12 text-warm-300 mx-auto mb-3" />}
               {activeTab === 'approved' && <CheckCircle2 className="w-12 h-12 text-green-300 mx-auto mb-3" />}
               {activeTab === 'declined' && <XCircle className="w-12 h-12 text-red-300 mx-auto mb-3" />}
               <p className="text-gray-500 font-medium">
@@ -326,11 +347,11 @@ export default function AdminVerifications() {
                       onClick={() => setExpandedId(isExpanded ? null : user.id)}
                       className="w-full text-left p-5 flex items-center gap-4"
                     >
-                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <div className="w-12 h-12 bg-secondary-100 rounded-xl flex items-center justify-center flex-shrink-0">
                         {user.avatar_url ? (
                           <img src={user.avatar_url} alt="" className="w-12 h-12 rounded-xl object-cover" />
                         ) : (
-                          <User className="w-6 h-6 text-blue-600" />
+                          <User className="w-6 h-6 text-secondary-600" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -392,17 +413,17 @@ export default function AdminVerifications() {
                             </div>
                           </div>
 
-                          {(user as any).license_trades && (user as any).license_trades.length > 0 && (
+                          {user.license_trades && user.license_trades.length > 0 && (
                             <div className="bg-white rounded-lg p-3 border border-gray-200 sm:col-span-2 lg:col-span-3">
                               <div className="flex items-center gap-2 mb-2">
                                 <Shield className="w-4 h-4 text-gray-400" />
                                 <span className="text-xs font-medium text-gray-500 uppercase">Trades Covered by License</span>
                               </div>
                               <div className="flex flex-wrap gap-1.5">
-                                {(user as any).license_trades.map((trade: string) => (
+                                {user.license_trades.map((trade: string) => (
                                   <span
                                     key={trade}
-                                    className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-200"
+                                    className="px-2.5 py-1 bg-secondary-50 text-secondary-700 text-xs font-medium rounded-full border border-secondary-200"
                                   >
                                     {trade}
                                   </span>
@@ -421,7 +442,7 @@ export default function AdminVerifications() {
                                     href={url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-primary-600 hover:bg-primary-50 hover:border-primary-200 transition-colors"
                                   >
                                     <ExternalLink className="w-3.5 h-3.5" />
                                     Document {idx + 1}

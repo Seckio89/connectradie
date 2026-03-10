@@ -105,6 +105,7 @@ export default function CreateInvoiceModal({
         }
       }
     } catch {
+      // no-op
     }
   };
 
@@ -210,7 +211,7 @@ export default function CreateInvoiceModal({
 
       resetForm();
       onClose();
-    } catch (err) {
+    } catch {
       alert('Failed to create invoice. Please try again.');
     } finally {
       setSaving(false);
@@ -238,8 +239,8 @@ export default function CreateInvoiceModal({
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
-              <FileText className="w-5 h-5 text-teal-600" />
+            <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
+              <FileText className="w-5 h-5 text-secondary-600" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">Create Invoice</h2>
@@ -269,7 +270,7 @@ export default function CreateInvoiceModal({
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
                   placeholder="e.g., Smith Electrical Pty Ltd"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
                 />
               </div>
               <div>
@@ -279,7 +280,7 @@ export default function CreateInvoiceModal({
                   value={businessAbn}
                   onChange={(e) => setBusinessAbn(e.target.value)}
                   placeholder="e.g., 12 345 678 901"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
                 />
               </div>
               <div>
@@ -298,7 +299,7 @@ export default function CreateInvoiceModal({
                   value={businessPhone}
                   onChange={(e) => setBusinessPhone(e.target.value)}
                   placeholder="Phone"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
                 />
               </div>
               <div>
@@ -308,7 +309,7 @@ export default function CreateInvoiceModal({
                   value={businessEmail}
                   onChange={(e) => setBusinessEmail(e.target.value)}
                   placeholder="Email"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
                 />
               </div>
             </div>
@@ -324,7 +325,7 @@ export default function CreateInvoiceModal({
                   value={billToName}
                   onChange={(e) => setBillToName(e.target.value)}
                   placeholder="Client name"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
                 />
               </div>
               <div>
@@ -353,7 +354,7 @@ export default function CreateInvoiceModal({
                   value={invoiceNumber}
                   onChange={(e) => setInvoiceNumber(e.target.value)}
                   placeholder="e.g., INV-001"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
                 />
               </div>
               <div>
@@ -364,7 +365,7 @@ export default function CreateInvoiceModal({
                   type="date"
                   value={invoiceDate}
                   onChange={(e) => setInvoiceDate(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
                 />
               </div>
               <div>
@@ -375,7 +376,7 @@ export default function CreateInvoiceModal({
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
                 />
               </div>
             </div>
@@ -389,7 +390,7 @@ export default function CreateInvoiceModal({
               <button
                 type="button"
                 onClick={addLineItem}
-                className="text-xs font-medium text-teal-600 hover:text-teal-700 flex items-center gap-1"
+                className="text-xs font-medium text-secondary-600 hover:text-secondary-700 flex items-center gap-1"
               >
                 <Plus className="w-3 h-3" />
                 Add Item
@@ -484,7 +485,7 @@ export default function CreateInvoiceModal({
                       type="checkbox"
                       checked={includeGst}
                       onChange={(e) => setIncludeGst(e.target.checked)}
-                      className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                      className="rounded border-gray-300 text-secondary-600 focus:ring-secondary-500"
                     />
                     GST (10%)
                   </label>
@@ -505,7 +506,7 @@ export default function CreateInvoiceModal({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Additional notes, payment terms, bank details..."
               rows={3}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm resize-none"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm resize-none"
             />
           </div>
 
@@ -513,7 +514,7 @@ export default function CreateInvoiceModal({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 px-4 py-3 bg-teal-600 text-white rounded-xl hover:bg-teal-700 disabled:bg-gray-400 font-semibold flex items-center justify-center gap-2 transition-colors"
+              className="flex-1 px-4 py-3 bg-secondary-600 text-white rounded-xl hover:bg-secondary-700 disabled:bg-gray-400 font-semibold flex items-center justify-center gap-2 transition-colors"
             >
               <Calculator className="w-4 h-4" />
               {saving ? 'Creating...' : 'Create Invoice'}

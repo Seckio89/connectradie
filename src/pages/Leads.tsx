@@ -1,15 +1,16 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Zap,
   MapPin,
   Clock,
-  DollarSign,
   Loader2,
   Briefcase,
   Plus,
   Calendar,
   AlertTriangle,
+  AlertCircle,
+  RefreshCw,
   WifiOff,
   CalendarDays,
   Sun,
@@ -19,8 +20,17 @@ import {
   Settings,
   FileText,
   Users,
+  User,
   CheckCircle2,
   Eye,
+  XCircle,
+  Trash2,
+  Camera,
+  X,
+  Archive,
+  CreditCard,
+  Shield,
+  DollarSign,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -30,8 +40,13 @@ import EmptyState from '../components/EmptyState';
 import VerificationGateModal from '../components/VerificationGateModal';
 import SubmitQuoteModal from '../components/SubmitQuoteModal';
 import QuoteComparisonView from '../components/QuoteComparisonView';
+import SectionErrorBoundary from '../components/SectionErrorBoundary';
+import ConfirmModal from '../components/ConfirmModal';
+import Modal from '../components/Modal';
 import { formatDate, checkLicenseExpired } from '../lib/utils';
 import { extractSuburb } from '../lib/contactGating';
+import { acceptAndPay } from '../lib/stripePayments';
+import { getJobHints } from '../lib/jobDescriptionHints';
 
 function FlashCountdown({ expiry, onExpired }: { expiry: string; onExpired?: () => void }) {
   const [timeLeft, setTimeLeft] = useState('');
@@ -89,42 +104,122 @@ function getDateGroupLabel(dateStr: string): string {
   return date.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-type LeadFilter = 'all' | 'pending' | 'accepted' | 'boosted' | 'urgent' | 'scheduled' | 'quoted';
+type LeadFilter = 'all' | 'pending' | 'accepted' | 'boosted' | 'urgent' | 'scheduled' | 'quoted' | 'history' | 'archived' | 'deleted' | 'open' | 'quoting' | 'in_progress' | 'completed';
 
 type LeadWithClient = Job & { client_name?: string; my_quote?: Quote | null };
 
 export default function Leads({ embedded = false }: { embedded?: boolean }) {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [leads, setLeads] = useState<LeadWithClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<LeadFilter>('all');
   const [showVerificationGate, setShowVerificationGate] = useState(false);
   const [gateReason, setGateReason] = useState<'unverified' | 'expired'>('unverified');
   const [quoteModalJob, setQuoteModalJob] = useState<Job | null>(null);
-  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(searchParams.get('job'));
+  const [quoteAcceptedBanner, setQuoteAcceptedBanner] = useState<false | 'success' | 'cancelled' | 'error'>(false);
+  const [fetchError, setFetchError] = useState('');
+  const [dismissedJobIds, setDismissedJobIds] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('dismissed_leads');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch { return new Set(); }
+  });
+
+  const [deleteJobTarget, setDeleteJobTarget] = useState<LeadWithClient | null>(null);
+  const [editJob, setEditJob] = useState<LeadWithClient | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [editLocation, setEditLocation] = useState('');
+  const [editBudget, setEditBudget] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editPhotos, setEditPhotos] = useState<{ url: string; isExisting: boolean; file?: File }[]>([]);
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
+  const editFileRef = useRef<HTMLInputElement>(null);
+  const [acceptedQuotes, setAcceptedQuotes] = useState<Record<string, Quote>>({});
+  const [payingJobId, setPayingJobId] = useState<string | null>(null);
+  const [priceConfirm, setPriceConfirm] = useState<{
+    quoteId: string;
+    jobId: string;
+    min: number;
+    max: number;
+    agreedPrice: string;
+  } | null>(null);
 
   const isTradie = profile?.role === 'tradie';
   const isVerified = profile?.verification_status === 'verified';
   const isLicenseExpired = checkLicenseExpired(profile?.verification_status, profile?.license_expiry);
 
+  const fetchLeads = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    setFetchError('');
+
+    try {
+      if (isTradie) {
+        await fetchTradieLeads();
+      } else {
+        await fetchClientLeads();
+      }
+    } catch (err) {
+      console.error('Failed to fetch leads:', err);
+      setFetchError('Failed to load leads. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isTradie, filter, dismissedJobIds]);
+
   useEffect(() => {
     if (user && profile) {
       fetchLeads();
     }
-  }, [user, profile, filter]);
+  }, [user, profile, fetchLeads]);
 
-  const fetchLeads = async () => {
-    if (!user) return;
-    setLoading(true);
+  // Handle payment callbacks and auto-expand job from ?job= query param
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    const jobParam = searchParams.get('job') || searchParams.get('job_id');
 
-    if (isTradie) {
-      await fetchTradieLeads();
-    } else {
-      await fetchClientLeads();
+    if (paymentStatus === 'success' && jobParam) {
+      setQuoteAcceptedBanner('success');
+      setTimeout(() => setQuoteAcceptedBanner(false), 10000);
+      searchParams.delete('payment');
+      searchParams.delete('job_id');
+      setSearchParams(searchParams, { replace: true });
+      // Refresh leads to get updated status
+      fetchLeads();
+    } else if (paymentStatus === 'cancelled' && jobParam) {
+      setQuoteAcceptedBanner('cancelled');
+      setTimeout(() => setQuoteAcceptedBanner(false), 8000);
+      searchParams.delete('payment');
+      searchParams.delete('job_id');
+      setSearchParams(searchParams, { replace: true });
     }
-    setLoading(false);
-  };
+
+    if (jobParam && !loading && leads.length > 0) {
+      const targetJob = leads.find((l) => l.id === jobParam);
+      searchParams.delete('job');
+      searchParams.delete('job_id');
+      setSearchParams(searchParams, { replace: true });
+
+      if (targetJob && !isTradie && targetJob.status === 'pending' && !targetJob.tradie_id) {
+        // Open edit modal directly for pending client jobs
+        if (targetJob.quote_count > 0) {
+          setExpandedJobId(jobParam);
+        }
+        openEditJob(targetJob);
+      } else {
+        setExpandedJobId(jobParam);
+      }
+
+      setTimeout(() => {
+        document.getElementById(`job-${jobParam}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [loading, leads, searchParams, setSearchParams]);
 
   const fetchTradieLeads = async () => {
     if (!user) return;
@@ -152,16 +247,18 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         .from('quotes')
         .select('*')
         .eq('tradie_id', user.id)
-        .in('job_id', data.map((d: any) => d.id));
+        .in('job_id', data.map((d: { id: string }) => d.id));
 
       const quoteMap = new Map<string, Quote>();
-      (myQuotes || []).forEach((q: Quote) => quoteMap.set(q.job_id, q));
+      ((myQuotes || []) as Quote[]).forEach((q) => quoteMap.set(q.job_id, q));
 
-      let mapped = data.map((lead: any) => ({
-        ...lead,
-        client_name: lead.profiles?.full_name || 'Client',
-        my_quote: quoteMap.get(lead.id) || null,
-      }));
+      let mapped = data
+        .filter((lead: { id: string }) => !dismissedJobIds.has(lead.id))
+        .map((lead: Job & { profiles: { full_name: string } | null }) => ({
+          ...lead,
+          client_name: lead.profiles?.full_name || 'Client',
+          my_quote: quoteMap.get(lead.id) || null,
+        }));
 
       if (filter === 'quoted') {
         mapped = mapped.filter((l: LeadWithClient) => l.my_quote);
@@ -169,6 +266,16 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
 
       setLeads(mapped);
     }
+  };
+
+  const ARCHIVE_AFTER_DAYS = 7;
+
+  const isAutoArchivable = (job: Job) => {
+    if (job.archived_at) return true;
+    const finishedStatuses = ['completed', 'cancelled', 'declined'];
+    if (!finishedStatuses.includes(job.status)) return false;
+    const age = (Date.now() - new Date(job.updated_at).getTime()) / 86400000;
+    return age >= ARCHIVE_AFTER_DAYS;
   };
 
   const fetchClientLeads = async () => {
@@ -180,10 +287,9 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       .eq('client_id', user.id)
       .order('created_at', { ascending: false });
 
+    // Tradie-only server-side filters
     if (filter === 'pending') {
       query = query.eq('status', 'pending').is('tradie_id', null);
-    } else if (filter === 'accepted') {
-      query = query.not('tradie_id', 'is', null);
     } else if (filter === 'boosted') {
       query = query.eq('is_flash_boost', true);
     } else if (filter === 'quoted') {
@@ -192,7 +298,256 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
 
     const { data, error } = await query;
     if (!error && data) {
-      setLeads(data);
+      const jobs = data as LeadWithClient[];
+
+      // Fetch accepted quotes for awarded jobs (tradie assigned but not yet funded)
+      const awardedJobIds = jobs
+        .filter(j => j.tradie_id && ['pending', 'accepted'].includes(j.status))
+        .map(j => j.id);
+
+      if (awardedJobIds.length > 0) {
+        const { data: quotes } = await supabase
+          .from('quotes')
+          .select('*')
+          .in('job_id', awardedJobIds)
+          .eq('status', 'accepted');
+
+        if (quotes && quotes.length > 0) {
+          const quoteMap: Record<string, Quote> = {};
+          for (const q of quotes) {
+            quoteMap[q.job_id] = q as Quote;
+          }
+          setAcceptedQuotes(quoteMap);
+        }
+      }
+
+      // Client-side filtering for progression tabs
+      const isActive = (j: LeadWithClient) =>
+        !j.archived_at && !j.deleted_at && j.status !== 'cancelled' && j.status !== 'declined';
+
+      if (filter === 'open') {
+        // Posted, no quotes yet, no tradie assigned
+        setLeads(jobs.filter(j =>
+          j.status === 'pending' && !j.tradie_id && j.quote_count === 0
+          && isActive(j)
+        ));
+      } else if (filter === 'quoting') {
+        // Has quotes but no tradie assigned yet
+        setLeads(jobs.filter(j =>
+          j.status === 'pending' && !j.tradie_id && j.quote_count > 0
+          && isActive(j)
+        ));
+      } else if (filter === 'accepted') {
+        // Tradie assigned, awaiting payment (not yet funded/in_progress/completed)
+        setLeads(jobs.filter(j =>
+          j.tradie_id && ['pending', 'accepted'].includes(j.status)
+          && isActive(j)
+        ));
+      } else if (filter === 'in_progress') {
+        // Funded or actively being worked on
+        setLeads(jobs.filter(j =>
+          ['funded', 'in_progress'].includes(j.status)
+          && isActive(j)
+        ));
+      } else if (filter === 'completed') {
+        // Finished successfully
+        setLeads(jobs.filter(j =>
+          j.status === 'completed'
+          && !j.archived_at && !j.deleted_at
+        ));
+      } else if (filter === 'archived') {
+        // Explicitly archived, cancelled, declined, or auto-archivable
+        setLeads(jobs.filter(j =>
+          !j.deleted_at && (j.archived_at || j.status === 'cancelled' || j.status === 'declined' || isAutoArchivable(j))
+        ));
+      } else if (filter === 'all') {
+        // All active jobs (not archived, deleted, cancelled, declined, or auto-archivable)
+        setLeads(jobs.filter(j =>
+          isActive(j) && !isAutoArchivable(j)
+        ));
+      } else if (filter === 'history') {
+        setLeads(jobs.filter(j => isAutoArchivable(j)));
+      } else {
+        setLeads(jobs);
+      }
+    }
+  };
+
+  const handleRestoreJob = async (jobId: string) => {
+    const { error } = await supabase
+      .from('jobs')
+      .update({ deleted_at: null, deleted_by: null })
+      .eq('id', jobId);
+    if (!error) {
+      setLeads(prev => prev.filter(j => j.id !== jobId));
+    }
+  };
+
+  const handleArchiveJob = async (jobId: string) => {
+    const { error } = await supabase
+      .from('jobs')
+      .update({ archived_at: new Date().toISOString() })
+      .eq('id', jobId);
+    if (!error) {
+      setLeads(prev => prev.filter(j => j.id !== jobId));
+    }
+  };
+
+  const handleUnarchiveJob = async (jobId: string) => {
+    const { error } = await supabase
+      .from('jobs')
+      .update({ archived_at: null })
+      .eq('id', jobId);
+    if (!error) {
+      setLeads(prev => prev.filter(j => j.id !== jobId));
+    }
+  };
+
+  const handleExportInvoice = async () => {
+    const html2pdfModule = await import('html2pdf.js');
+    const html2pdf = html2pdfModule.default;
+    const now = new Date();
+    const invoiceNumber = `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    const invoiceJobs = leads.filter(l => l.budget_amount && l.budget_amount > 0);
+    const userName = profile?.full_name || 'Client';
+    const userEmail = profile?.email || '';
+    const isClientView = !isTradie;
+
+    const subtotal = invoiceJobs.reduce((sum, j) => sum + (j.budget_amount || 0), 0);
+    const gst = Math.round(subtotal / 11 * 100) / 100;
+    const exGst = Math.round((subtotal - gst) * 100) / 100;
+
+    let jobRows = '';
+    invoiceJobs.forEach((lead, idx) => {
+      const category = lead.description.match(/^\[([^\]]+)\]/)?.[1] || 'Service';
+      const desc = lead.description.replace(/^\[[^\]]+\]\s*/, '');
+      const completedDate = lead.updated_at
+        ? new Date(lead.updated_at).toLocaleDateString('en-AU')
+        : new Date(lead.created_at).toLocaleDateString('en-AU');
+      const amount = lead.budget_amount || 0;
+      const bg = idx % 2 === 0 ? '#FFFFFF' : '#F9FAFB';
+      jobRows += '<tr style="background-color:' + bg + ';">' +
+        '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#374151;font-weight:500;">' + category + '</td>' +
+        '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#374151;">' + (desc.length > 70 ? desc.slice(0, 70) + '...' : desc) + '</td>' +
+        '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#374151;text-align:center;">' + lead.status.replace('_', ' ') + '</td>' +
+        '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#6B7280;text-align:center;">' + completedDate + '</td>' +
+        '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#111827;text-align:right;font-weight:600;">$' + amount.toFixed(2) + '</td>' +
+        '</tr>';
+    });
+
+    if (!jobRows) {
+      jobRows = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#9CA3AF;font-size:13px;background:#F9FAFB;">No jobs with amounts in this period</td></tr>';
+    }
+
+    const invoiceDate = now.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.width = '794px';
+    container.style.background = '#FFFFFF';
+    container.innerHTML = '<div style="font-family:Arial,Helvetica,sans-serif;width:794px;padding:40px 48px;color:#1F2937;background:#FFFFFF;">' +
+
+      // Header
+      '<table style="width:100%;border-collapse:collapse;margin-bottom:0;">' +
+        '<tr><td colspan="2" style="padding-bottom:20px;border-bottom:3px solid #004d40;">' +
+          '<table style="width:100%;border-collapse:collapse;">' +
+            '<tr>' +
+              '<td style="vertical-align:top;width:50%;">' +
+                '<div style="font-size:28px;font-weight:800;color:#004d40;margin:0;">ConnecTradie</div>' +
+                '<div style="font-size:11px;color:#6B7280;margin-top:4px;">ABN: 00 000 000 000</div>' +
+              '</td>' +
+              '<td style="vertical-align:top;text-align:right;width:50%;">' +
+                '<div style="font-size:22px;font-weight:700;color:#1F2937;">TAX INVOICE</div>' +
+                '<div style="font-size:12px;color:#6B7280;margin-top:8px;">Invoice #: <strong style="color:#1F2937;">' + invoiceNumber + '</strong></div>' +
+                '<div style="font-size:12px;color:#6B7280;margin-top:2px;">Date: ' + invoiceDate + '</div>' +
+              '</td>' +
+            '</tr>' +
+          '</table>' +
+        '</td></tr>' +
+      '</table>' +
+
+      // Bill To / Platform
+      '<table style="width:100%;border-collapse:collapse;margin:28px 0;">' +
+        '<tr>' +
+          '<td style="vertical-align:top;width:50%;">' +
+            '<div style="font-size:10px;font-weight:700;color:#004d40;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;">' + (isClientView ? 'Bill To' : 'From') + '</div>' +
+            '<div style="font-size:14px;font-weight:600;color:#1F2937;">' + userName + '</div>' +
+            (userEmail ? '<div style="font-size:12px;color:#6B7280;margin-top:3px;">' + userEmail + '</div>' : '') +
+          '</td>' +
+          '<td style="vertical-align:top;text-align:right;width:50%;">' +
+            '<div style="font-size:10px;font-weight:700;color:#004d40;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;">Platform</div>' +
+            '<div style="font-size:14px;font-weight:600;color:#1F2937;">ConnecTradie Pty Ltd</div>' +
+            '<div style="font-size:12px;color:#6B7280;margin-top:3px;">support@connectradie.com</div>' +
+          '</td>' +
+        '</tr>' +
+      '</table>' +
+
+      // Items Table
+      '<table style="width:100%;border-collapse:collapse;">' +
+        '<thead>' +
+          '<tr style="background-color:#004d40;">' +
+            '<th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Service</th>' +
+            '<th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Description</th>' +
+            '<th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Status</th>' +
+            '<th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Date</th>' +
+            '<th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Amount (AUD)</th>' +
+          '</tr>' +
+        '</thead>' +
+        '<tbody>' + jobRows + '</tbody>' +
+      '</table>' +
+
+      // Totals
+      '<table style="width:100%;border-collapse:collapse;margin-top:16px;">' +
+        '<tr>' +
+          '<td style="width:55%;"></td>' +
+          '<td style="width:45%;">' +
+            '<table style="width:100%;border-collapse:collapse;background:#F9FAFB;border:1px solid #E5E7EB;">' +
+              '<tr><td style="padding:8px 16px;font-size:12px;color:#6B7280;">Subtotal (ex. GST)</td>' +
+                  '<td style="padding:8px 16px;font-size:12px;color:#374151;text-align:right;font-weight:500;">$' + exGst.toFixed(2) + '</td></tr>' +
+              '<tr><td style="padding:8px 16px;font-size:12px;color:#6B7280;border-bottom:2px solid #004d40;">GST (10%)</td>' +
+                  '<td style="padding:8px 16px;font-size:12px;color:#374151;text-align:right;font-weight:500;border-bottom:2px solid #004d40;">$' + gst.toFixed(2) + '</td></tr>' +
+              '<tr><td style="padding:12px 16px;font-size:15px;font-weight:700;color:#004d40;">Total (inc. GST)</td>' +
+                  '<td style="padding:12px 16px;font-size:15px;font-weight:700;color:#004d40;text-align:right;">$' + subtotal.toFixed(2) + '</td></tr>' +
+            '</table>' +
+          '</td>' +
+        '</tr>' +
+      '</table>' +
+
+      // Payment Info
+      '<table style="width:100%;border-collapse:collapse;margin-top:28px;">' +
+        '<tr><td style="padding:16px 20px;background-color:#ECFDF6;border:1px solid #A7F3D5;">' +
+          '<div style="font-size:10px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">Payment Information</div>' +
+          '<div style="font-size:12px;color:#374151;line-height:1.6;">All payments processed securely via Stripe through the ConnecTradie platform. Funds held in escrow until job completion and client approval.</div>' +
+        '</td></tr>' +
+      '</table>' +
+
+      // Footer
+      '<table style="width:100%;border-collapse:collapse;margin-top:28px;">' +
+        '<tr><td style="padding:16px 0 0;border-top:1px solid #E5E7EB;text-align:center;">' +
+          '<div style="font-size:10px;color:#9CA3AF;line-height:1.6;">This is a computer-generated tax invoice. All amounts are in Australian Dollars (AUD) and include GST where applicable.</div>' +
+          '<div style="font-size:10px;color:#9CA3AF;margin-top:4px;">Generated via ConnecTradie — ' + invoiceDate + '</div>' +
+        '</td></tr>' +
+      '</table>' +
+
+    '</div>';
+
+    document.body.appendChild(container);
+
+    try {
+      await html2pdf()
+        .set({
+          margin: [8, 0, 8, 0],
+          filename: 'ConnecTradie-Invoice-' + invoiceNumber + '.pdf',
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        })
+        .from(container.firstElementChild)
+        .save();
+    } finally {
+      document.body.removeChild(container);
     }
   };
 
@@ -257,6 +612,16 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     setQuoteModalJob(lead);
   };
 
+  const handleDismissLead = (leadId: string) => {
+    setDismissedJobIds(prev => {
+      const next = new Set(prev);
+      next.add(leadId);
+      localStorage.setItem('dismissed_leads', JSON.stringify([...next]));
+      return next;
+    });
+    setLeads(prev => prev.filter(l => l.id !== leadId));
+  };
+
   const handleFlashExpired = async (leadId: string) => {
     await supabase
       .from('jobs')
@@ -270,11 +635,15 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     );
   };
 
-  const handleAcceptQuote = async (quoteId: string) => {
-    await supabase
-      .from('quotes')
-      .update({ status: 'accepted' })
-      .eq('id', quoteId);
+  const handleAcceptQuote = async (quoteId: string, jobId: string, agreedPrice?: number) => {
+    try {
+      const { url } = await acceptAndPay(quoteId, jobId, agreedPrice);
+      window.location.href = url;
+    } catch (err) {
+      console.error('Accept & Pay failed:', err);
+      setQuoteAcceptedBanner('error');
+      setTimeout(() => setQuoteAcceptedBanner(false), 8000);
+    }
   };
 
   const handleDeclineQuote = async (quoteId: string) => {
@@ -284,13 +653,161 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       .eq('id', quoteId);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleMessageTradie = (_tradieId: string) => {
     navigate('/messages');
   };
 
+  const BOOST_PRICE = 4.99;
+  const BOOST_DURATION_HOURS = 24;
+
+  const handleBoostJob = async (jobId: string) => {
+    const expiry = new Date(Date.now() + BOOST_DURATION_HOURS * 60 * 60 * 1000).toISOString();
+    const { error } = await supabase
+      .from('jobs')
+      .update({ is_flash_boost: true, flash_expiry: expiry, priority: 'urgent' })
+      .eq('id', jobId);
+
+    if (!error) {
+      setLeads((prev) =>
+        prev.map((l) =>
+          l.id === jobId ? { ...l, is_flash_boost: true, flash_expiry: expiry, priority: 'urgent' as const } : l
+        )
+      );
+    }
+  };
+
+  const handleDeleteJob = async () => {
+    if (!deleteJobTarget || !user) return;
+    const jobId = deleteJobTarget.id;
+    const role = isTradie ? 'tradie' : 'client';
+
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .update({ deleted_at: new Date().toISOString(), deleted_by: role })
+        .eq('id', jobId);
+
+      if (error) {
+        console.error('Failed to delete job:', error);
+        return;
+      }
+
+      setLeads((prev) => prev.filter((l) => l.id !== jobId));
+
+      // Create a notification for the job deletion
+      try {
+        await supabase.from('notifications').insert({
+          user_id: user.id,
+          type: 'job_deleted',
+          title: 'Job removed',
+          message: `Your job "${deleteJobTarget.title || cleanDescription(deleteJobTarget.description).slice(0, 40)}" has been removed. You can view it in the Deleted tab.`,
+          read: false,
+        });
+      } catch {
+        // Notification is non-critical — don't block the delete
+      }
+    } catch (err) {
+      console.error('Failed to delete job:', err);
+    } finally {
+      setDeleteJobTarget(null);
+    }
+  };
+
+  const openEditJob = (lead: LeadWithClient) => {
+    const desc = lead.description.replace(/^\[[^\]]+\]\s*/, '');
+    setEditTitle(lead.title || '');
+    setEditDesc(desc);
+    setEditLocation(lead.location_address || '');
+    setEditBudget(lead.budget_amount ? String(lead.budget_amount) : '');
+    setEditPhotos(
+      (lead.images_url || []).map((url) => ({ url, isExisting: true }))
+    );
+    setEditJob(lead);
+  };
+
+  const handleEditPhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) continue;
+      if (file.size > 10 * 1024 * 1024) continue;
+      if (editPhotos.length >= 5) break;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setEditPhotos((prev) => {
+          if (prev.length >= 5) return prev;
+          return [...prev, { url: ev.target?.result as string, isExisting: false, file }];
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+    if (editFileRef.current) editFileRef.current.value = '';
+  };
+
+  const removeEditPhoto = (index: number) => {
+    setEditPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editJob || !user) return;
+    setEditSaving(true);
+    try {
+      // Upload new photos
+      const imageUrls: string[] = [];
+      for (const photo of editPhotos) {
+        if (photo.isExisting) {
+          imageUrls.push(photo.url);
+        } else if (photo.file) {
+          const ext = photo.file.name.split('.').pop() || 'jpg';
+          const filePath = `${user.id}/${editJob.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
+          const { error: uploadErr } = await supabase.storage
+            .from('job-attachments')
+            .upload(filePath, photo.file, { cacheControl: '3600', upsert: false });
+          if (!uploadErr) {
+            const { data: urlData } = supabase.storage
+              .from('job-attachments')
+              .getPublicUrl(filePath);
+            if (urlData?.publicUrl) imageUrls.push(urlData.publicUrl);
+          }
+        }
+      }
+
+      const category = editJob.description.match(/^\[([^\]]+)\]/)?.[1] || '';
+      const newDescription = category ? `[${category}] ${editDesc.trim()}` : editDesc.trim();
+      const updateData: Record<string, unknown> = {
+        title: editTitle.trim() || null,
+        description: newDescription,
+        location_address: editLocation.trim(),
+        images_url: imageUrls.length > 0 ? imageUrls : null,
+      };
+      if (editBudget) {
+        updateData.budget_amount = parseFloat(editBudget);
+        updateData.budget_type = 'fixed_budget';
+      } else {
+        updateData.budget_amount = null;
+        updateData.budget_type = 'request_quote';
+      }
+      const { error } = await supabase
+        .from('jobs')
+        .update(updateData)
+        .eq('id', editJob.id)
+        .eq('client_id', user.id);
+      if (!error) {
+        setEditJob(null);
+        fetchLeads();
+      }
+    } catch (err) {
+      console.error('Failed to save job edit:', err);
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   const extractCategory = (description: string) => {
     const match = description.match(/^\[([^\]]+)\]/);
-    return match ? match[1] : null;
+    if (!match) return null;
+    // Format raw category: cleaning_weekly → Cleaning Weekly, plumber → Plumber
+    return match[1].replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
 
   const cleanDescription = (description: string) => {
@@ -298,6 +815,10 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
   };
 
   const getClientStatusLabel = (lead: Job) => {
+    if (lead.status === 'completed') return 'Completed';
+    if (lead.status === 'in_progress') return 'In Progress';
+    if (lead.status === 'funded') return 'Paid — Tradie Assigned';
+    if (lead.status === 'accepted') return 'Accepted — Awaiting Payment';
     if (lead.quoting_status === 'awarded') return 'Awarded';
     if (lead.quote_count > 0) return `${lead.quote_count} Quote${lead.quote_count !== 1 ? 's' : ''}`;
     if (lead.tradie_id && lead.status !== 'pending') return 'Picked Up';
@@ -308,12 +829,16 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
   };
 
   const getClientStatusColor = (lead: Job) => {
+    if (lead.status === 'completed') return 'bg-green-100 text-green-800 border-green-300';
+    if (lead.status === 'in_progress') return 'bg-blue-100 text-blue-700 border-blue-200';
+    if (lead.status === 'funded') return 'bg-green-100 text-green-700 border-green-200';
+    if (lead.status === 'accepted') return 'bg-secondary-100 text-secondary-700 border-secondary-200';
     if (lead.quoting_status === 'awarded') return 'bg-green-100 text-green-700 border-green-200';
-    if (lead.quote_count > 0) return 'bg-teal-100 text-teal-700 border-teal-200';
+    if (lead.quote_count > 0) return 'bg-secondary-100 text-secondary-700 border-secondary-200';
     if (lead.tradie_id && lead.status !== 'pending') return 'bg-green-100 text-green-700 border-green-200';
-    if (lead.is_flash_boost) return 'bg-amber-100 text-amber-700 border-amber-200';
+    if (lead.is_flash_boost) return 'bg-warm-100 text-warm-700 border-warm-200';
     if (lead.priority === 'urgent') return 'bg-red-100 text-red-700 border-red-200';
-    if (lead.scheduled_date) return 'bg-teal-100 text-teal-700 border-teal-200';
+    if (lead.scheduled_date) return 'bg-secondary-100 text-secondary-700 border-secondary-200';
     return 'bg-gray-100 text-gray-600 border-gray-200';
   };
 
@@ -326,10 +851,13 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
   ];
 
   const clientFilters: { key: LeadFilter; label: string }[] = [
-    { key: 'all', label: 'All Leads' },
-    { key: 'pending', label: 'Waiting' },
+    { key: 'all', label: 'All Jobs' },
+    { key: 'open', label: 'Open' },
+    { key: 'quoting', label: 'Quoting' },
     { key: 'accepted', label: 'Awarded' },
-    { key: 'boosted', label: 'Boosted' },
+    { key: 'in_progress', label: 'In Progress' },
+    { key: 'completed', label: 'Completed' },
+    { key: 'archived', label: 'Archived' },
   ];
 
   const filters = isTradie ? tradieFilters : clientFilters;
@@ -348,151 +876,198 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     const slotsRemaining = lead.max_quotes - lead.quote_count;
     const isClientViewing = !isTradie;
     const showQuoteComparison = isClientViewing && expandedJobId === lead.id && lead.quote_count > 0;
+    const isClientEditable = isClientViewing && lead.status === 'pending' && !lead.tradie_id && !lead.deleted_at;
 
     return (
-      <div key={lead.id}>
+      <div key={lead.id} id={`job-${lead.id}`}>
         <div
+          role={isClientEditable ? 'button' : undefined}
+          tabIndex={isClientEditable ? 0 : undefined}
+          onClick={isClientEditable ? () => openEditJob(lead) : undefined}
+          onKeyDown={isClientEditable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditJob(lead); } } : undefined}
           className={`rounded-xl p-5 transition-all ${
+            isClientEditable ? 'cursor-pointer hover:shadow-md ' : ''
+          }${
             isFlashActive && isTradie
-              ? 'border-2 border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.3)] bg-gradient-to-r from-amber-50/50 to-white'
+              ? 'border border-warm-300 bg-white shadow-sm'
               : isUrgent && isTradie
-              ? 'border-2 border-red-300 bg-gradient-to-r from-red-50/30 to-white'
+              ? 'border border-red-200 bg-white shadow-sm'
               : hasQuoted
-              ? 'border-2 border-teal-200 bg-teal-50/20'
-              : 'border border-gray-200 hover:border-gray-300'
+              ? 'border border-secondary-200 bg-white shadow-sm'
+              : 'border border-gray-200 bg-white hover:border-gray-300'
           }`}
         >
-          <div className="flex items-start justify-between gap-4 mb-3">
+          {/* Top row: title + actions */}
+          <div className="flex items-start justify-between gap-3 mb-1.5">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                {category && (
-                  <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200">
-                    {category}
-                  </span>
-                )}
-                {isFlashActive && isTradie && (
-                  <>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-gradient-to-r from-amber-400 to-orange-400 text-white rounded-full text-xs font-bold shadow-sm animate-pulse">
-                      <Zap className="w-3 h-3" />
-                      Flash Deal
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-50 text-red-700 rounded-full text-xs font-semibold border border-red-200">
-                      <AlertTriangle className="w-3 h-3" />
-                      Urgent
-                    </span>
-                  </>
-                )}
-                {!isFlashActive && isUrgent && isTradie && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-50 text-red-700 rounded-full text-xs font-semibold border border-red-200">
-                    <Zap className="w-3 h-3" />
-                    Urgent
-                  </span>
-                )}
-                {lead.scheduled_date && isTradie && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-teal-50 text-teal-700 rounded-full text-xs font-semibold border border-teal-200">
-                    <CalendarDays className="w-3 h-3" />
-                    {new Date(lead.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
-                  </span>
-                )}
-                {lead.preferred_time_slot && isTradie && SlotIcon && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
-                    <SlotIcon className="w-3 h-3" />
-                    {SLOT_LABELS[lead.preferred_time_slot]}
-                  </span>
-                )}
-                {isTradie && slotsRemaining <= 2 && slotsRemaining > 0 && !hasQuoted && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold border border-amber-200">
-                    <Users className="w-3 h-3" />
-                    {slotsRemaining} spot{slotsRemaining !== 1 ? 's' : ''} left
-                  </span>
-                )}
-                {hasQuoted && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-teal-100 text-teal-700 rounded-full text-xs font-bold border border-teal-200">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Quoted
-                  </span>
-                )}
-                {!isTradie && (
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getClientStatusColor(lead)}`}
-                  >
-                    {getClientStatusLabel(lead)}
-                  </span>
-                )}
-              </div>
-              {isTradie && (lead as LeadWithClient).client_name && (
-                <p className="text-sm text-gray-600">
-                  Posted by {((lead as LeadWithClient).client_name || '').split(' ')[0] || 'Client'}
-                </p>
-              )}
+              <h3 className="text-base font-semibold text-gray-900 leading-tight capitalize">
+                {(() => {
+                  const raw = lead.title || category || 'Untitled Job';
+                  // Clean up raw titles: "cleaning weekly — Recurring Service" → "Cleaning Weekly — Recurring Service"
+                  return raw.replace(/_/g, ' ');
+                })()}
+              </h3>
             </div>
-
             {isFlashActive && isTradie && (
               <div className="text-right flex-shrink-0">
-                <div className="text-xs text-amber-600 font-medium">Ends in</div>
+                <div className="text-xs text-warm-600 font-medium">Ends in</div>
                 <FlashCountdown
                   expiry={lead.flash_expiry!}
                   onExpired={() => handleFlashExpired(lead.id)}
                 />
               </div>
             )}
+            {isClientEditable && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setDeleteJobTarget(lead); }}
+                className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                title="Remove job"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
-          <p className="text-gray-800 mb-3 line-clamp-3">{desc}</p>
+          {/* Description */}
+          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{desc}</p>
 
-          {isFlashActive && isTradie && (
-            <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
-              <Zap className="w-4 h-4 text-amber-600 flex-shrink-0" />
-              <span className="text-sm font-medium text-amber-800">
-                Flash Deal -- Quick Quote Priority
+          {/* Badges row */}
+          <div className="flex items-center gap-2 flex-wrap mb-3">
+            {category && (
+              <span className="px-2.5 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                {category}
               </span>
-            </div>
-          )}
-
-          {!isTradie && isFlashActive && (
-            <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg">
-              <Zap className="w-4 h-4 text-orange-500 flex-shrink-0" />
-              <span className="text-sm text-orange-700">
-                We are boosting your lead to find a Tradie faster.
+            )}
+            {!isTradie && (
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getClientStatusColor(lead)}`}>
+                {getClientStatusLabel(lead)}
               </span>
-            </div>
-          )}
+            )}
+            {isFlashActive && isTradie && (
+              <>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-warm-500 text-white rounded-full text-xs font-bold shadow-sm animate-pulse">
+                  <Zap className="w-3 h-3" />
+                  Flash Deal
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-50 text-red-700 rounded-full text-xs font-semibold border border-red-200">
+                  <AlertTriangle className="w-3 h-3" />
+                  Urgent
+                </span>
+              </>
+            )}
+            {!isFlashActive && isUrgent && isTradie && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-50 text-red-700 rounded-full text-xs font-semibold border border-red-200">
+                <Zap className="w-3 h-3" />
+                Urgent
+              </span>
+            )}
+            {lead.scheduled_date && isTradie && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200">
+                <CalendarDays className="w-3 h-3" />
+                {new Date(lead.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+              </span>
+            )}
+            {lead.preferred_time_slot && isTradie && SlotIcon && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                <SlotIcon className="w-3 h-3" />
+                {SLOT_LABELS[lead.preferred_time_slot]}
+              </span>
+            )}
+            {isTradie && slotsRemaining <= 2 && slotsRemaining > 0 && !hasQuoted && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-warm-50 text-warm-700 rounded-full text-xs font-semibold border border-warm-200">
+                <Users className="w-3 h-3" />
+                {slotsRemaining} spot{slotsRemaining !== 1 ? 's' : ''} left
+              </span>
+            )}
+            {isTradie && slotsRemaining > 2 && lead.quote_count > 0 && !hasQuoted && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                <Users className="w-3 h-3" />
+                {lead.quote_count}/{lead.max_quotes} quotes
+              </span>
+            )}
+            {hasQuoted && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-secondary-100 text-secondary-700 rounded-full text-xs font-bold border border-secondary-200">
+                <CheckCircle2 className="w-3 h-3" />
+                Quoted
+              </span>
+            )}
+            {isTradie && (
+              <span className="text-xs text-gray-400 ml-auto">
+                Posted by {((lead as LeadWithClient).client_name || 'Client').split(' ')[0]}
+              </span>
+            )}
+          </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
+          {/* Metadata row */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-500">
             {lead.location_address && (
               <div className="flex items-center gap-1.5">
-                <MapPin className="w-4 h-4" />
+                <MapPin className="w-3.5 h-3.5" />
                 <span className="truncate max-w-[200px]">
                   {isTradie ? extractSuburb(lead.location_address) || 'Nearby' : lead.location_address}
                 </span>
               </div>
             )}
             <div className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-3.5 h-3.5" />
               {formatDate(lead.created_at)}
             </div>
             {lead.budget_amount && (
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="w-4 h-4" />
+              <div className="flex items-center gap-1 font-semibold text-gray-700">
                 ${lead.budget_amount.toLocaleString()}
               </div>
             )}
             {!lead.budget_amount && lead.budget_type === 'request_quote' && (
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="w-4 h-4" />
+              <div className="flex items-center gap-1.5 text-secondary-600 font-medium">
+                <FileText className="w-3.5 h-3.5" />
                 Requesting Quote
               </div>
             )}
           </div>
 
+          {/* Flash/Boost banners */}
+          {isFlashActive && isTradie && (
+            <div className="mt-3 flex items-center gap-2 px-2.5 py-1.5 bg-warm-50 border border-warm-200 rounded-lg">
+              <Zap className="w-3.5 h-3.5 text-warm-600 flex-shrink-0" />
+              <span className="text-xs font-medium text-warm-700">
+                Flash Deal — Quick Quote Priority
+              </span>
+            </div>
+          )}
+
+          {!isTradie && isFlashActive && (
+            <div className="mt-3 flex items-center justify-between px-3 py-2 bg-gradient-to-r from-warm-50 to-orange-50 border border-warm-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-warm-500 flex-shrink-0" />
+                <span className="text-sm font-medium text-warm-700">
+                  Boosted — finding tradies faster
+                </span>
+              </div>
+              <div className="text-xs text-warm-600">
+                <FlashCountdown
+                  expiry={lead.flash_expiry!}
+                  onExpired={() => handleFlashExpired(lead.id)}
+                />
+                {' '}remaining
+              </div>
+            </div>
+          )}
+
           {isTradie && !hasQuoted && (
-            <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+            <div className="flex items-center gap-3 pt-4 mt-4 border-t border-gray-100">
+              <button
+                onClick={() => handleDismissLead(lead.id)}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-all"
+              >
+                <XCircle className="w-4 h-4" />
+                Not Interested
+              </button>
               <button
                 onClick={() => handleQuoteClick(lead)}
-                className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all min-h-[44px] ${
+                className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                   isFlashActive
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-md'
-                    : 'bg-teal-600 text-white hover:bg-teal-700'
+                    ? 'bg-warm-500 text-white hover:bg-warm-600 shadow-sm'
+                    : 'bg-warm-500 text-white hover:bg-warm-600'
                 }`}
               >
                 <FileText className="w-4 h-4" />
@@ -501,37 +1076,49 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
             </div>
           )}
 
-          {isTradie && hasQuoted && (
-            <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-              <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-teal-50 border border-teal-200 rounded-xl">
-                <CheckCircle2 className="w-5 h-5 text-teal-600 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-teal-800">
-                    You quoted {lead.my_quote!.firm_price
-                      ? `$${lead.my_quote!.firm_price.toLocaleString()}`
-                      : `$${lead.my_quote!.price_min.toLocaleString()} - $${lead.my_quote!.price_max.toLocaleString()}`
-                    }
-                  </p>
-                  <p className="text-xs text-teal-600">
-                    {lead.my_quote!.status === 'pending' ? 'Awaiting client decision' : lead.my_quote!.status}
-                  </p>
+          {isTradie && hasQuoted && (() => {
+            const qs = lead.my_quote!.status;
+            const statusConfig = qs === 'accepted'
+              ? { bg: 'bg-green-50 border-green-200', icon: <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />, label: 'Quote accepted — the client chose you!', textColor: 'text-green-800' }
+              : qs === 'declined'
+              ? { bg: 'bg-red-50 border-red-200', icon: <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />, label: 'Quote declined by client', textColor: 'text-red-700' }
+              : qs === 'expired'
+              ? { bg: 'bg-gray-50 border-gray-200', icon: <Clock className="w-5 h-5 text-gray-400 flex-shrink-0" />, label: 'Quote expired', textColor: 'text-gray-600' }
+              : qs === 'withdrawn'
+              ? { bg: 'bg-gray-50 border-gray-200', icon: <XCircle className="w-5 h-5 text-gray-400 flex-shrink-0" />, label: 'Quote withdrawn', textColor: 'text-gray-600' }
+              : { bg: 'bg-secondary-50 border-secondary-200', icon: <Clock className="w-5 h-5 text-secondary-600 flex-shrink-0" />, label: 'Awaiting client decision', textColor: 'text-secondary-600' };
+            return (
+              <div className="flex items-center gap-3 pt-4 mt-4 border-t border-gray-100">
+                <div className={`flex-1 flex items-center gap-3 px-4 py-3 ${statusConfig.bg} border rounded-xl`}>
+                  {statusConfig.icon}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-secondary-800">
+                      You quoted {lead.my_quote!.firm_price
+                        ? `$${lead.my_quote!.firm_price.toLocaleString()}`
+                        : `$${lead.my_quote!.price_min.toLocaleString()} - $${lead.my_quote!.price_max.toLocaleString()}`
+                      }
+                    </p>
+                    <p className={`text-xs ${statusConfig.textColor}`}>
+                      {statusConfig.label}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {!isTradie && !lead.tradie_id && lead.status === 'pending' && lead.quote_count === 0 && (
-            <div className="flex items-center gap-2 pt-3 border-t border-gray-100 text-sm text-gray-500">
-              <Clock className="w-4 h-4" />
+            <div className="flex items-center gap-2 pt-4 mt-4 border-t border-gray-100 text-xs text-gray-400">
+              <Clock className="w-3.5 h-3.5" />
               Waiting for tradies to submit quotes...
             </div>
           )}
 
           {!isTradie && lead.status === 'pending' && lead.quote_count > 0 && (
-            <div className="pt-3 border-t border-gray-100">
+            <div className="pt-4 mt-4 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={() => setExpandedJobId(expandedJobId === lead.id ? null : lead.id)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-colors text-sm"
+                className="inline-flex items-center gap-2 px-5 py-2 bg-secondary-600 text-white font-semibold rounded-lg hover:bg-secondary-700 transition-colors text-sm"
               >
                 <Eye className="w-4 h-4" />
                 {expandedJobId === lead.id ? 'Hide Quotes' : `Review ${lead.quote_count} Quote${lead.quote_count !== 1 ? 's' : ''}`}
@@ -539,10 +1126,113 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
             </div>
           )}
 
-          {!isTradie && lead.tradie_id && lead.quoting_status === 'awarded' && (
-            <div className="flex items-center gap-2 pt-3 border-t border-gray-100 text-sm text-green-600">
+          {!isTradie && lead.status === 'completed' && (
+            <div className="pt-4 mt-4 border-t border-gray-100">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  {lead.completion_notes && (
+                    <div className="flex items-start gap-2.5">
+                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-xs font-semibold text-green-700">Completed</span>
+                        <p className="text-sm text-gray-600 mt-0.5 whitespace-pre-line">{lead.completion_notes}</p>
+                      </div>
+                    </div>
+                  )}
+                  {!lead.completion_notes && (
+                    <div className="flex items-center gap-2 text-sm text-green-600">
+                      <CheckCircle2 className="w-4 h-4" />
+                      Job marked as complete
+                    </div>
+                  )}
+                </div>
+                {!lead.archived_at && filter !== 'history' && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleArchiveJob(lead.id); }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                  >
+                    <Archive className="w-3.5 h-3.5" />
+                    Archive
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!isTradie && lead.status === 'funded' && lead.tradie_id && (
+            <div className="flex items-center gap-2 pt-4 mt-4 border-t border-gray-100 text-sm text-green-600">
               <CheckCircle2 className="w-4 h-4" />
-              Quote accepted -- tradie assigned
+              Payment received — waiting for tradie to start
+            </div>
+          )}
+
+          {!isTradie && lead.status === 'in_progress' && lead.tradie_id && (
+            <div className="flex items-center gap-2 pt-4 mt-4 border-t border-gray-100 text-sm text-blue-600">
+              <Loader2 className="w-4 h-4" />
+              Work in progress
+            </div>
+          )}
+
+          {!isTradie && lead.tradie_id && lead.quoting_status === 'awarded' && lead.status !== 'completed' && lead.status !== 'in_progress' && lead.status !== 'funded' && (
+            <div className="pt-4 mt-4 border-t border-gray-100">
+              {acceptedQuotes[lead.id] ? (
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-sm text-green-700">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Quoted <span className="font-semibold">{(() => {
+                      const q = acceptedQuotes[lead.id];
+                      if (q.firm_price) return `$${q.firm_price.toLocaleString()}`;
+                      return `$${q.price_min.toLocaleString()} – $${q.price_max.toLocaleString()}`;
+                    })()}</span></span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const q = acceptedQuotes[lead.id];
+                      // Range quote → ask client to confirm agreed price first
+                      if (!q.firm_price && q.price_min && q.price_max) {
+                        setPriceConfirm({
+                          quoteId: q.id,
+                          jobId: lead.id,
+                          min: q.price_min,
+                          max: q.price_max,
+                          agreedPrice: '',
+                        });
+                      } else {
+                        setPayingJobId(lead.id);
+                        handleAcceptQuote(q.id, lead.id);
+                      }
+                    }}
+                    disabled={payingJobId === lead.id}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-60"
+                  >
+                    {payingJobId === lead.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Shield className="w-4 h-4" />
+                    )}
+                    Pay & Secure
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Quote accepted — tradie assigned
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Archive button for cancelled/declined jobs */}
+          {!isTradie && !lead.archived_at && filter !== 'history' && (lead.status === 'cancelled' || lead.status === 'declined') && (
+            <div className="flex justify-end pt-4 mt-4 border-t border-gray-100">
+              <button
+                onClick={(e) => { e.stopPropagation(); handleArchiveJob(lead.id); }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Archive className="w-3.5 h-3.5" />
+                Archive
+              </button>
             </div>
           )}
         </div>
@@ -554,6 +1244,9 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
               onAcceptQuote={handleAcceptQuote}
               onDeclineQuote={handleDeclineQuote}
               onMessageTradie={handleMessageTradie}
+              onConfirmPrice={(quoteId, jobId, min, max) =>
+                setPriceConfirm({ quoteId, jobId, min, max, agreedPrice: '' })
+              }
             />
           </div>
         )}
@@ -589,7 +1282,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         {showUrgent && urgentLeads.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-red-400 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-warm-400 to-red-400 flex items-center justify-center">
                 <Zap className="w-4 h-4 text-white" />
               </div>
               <h3 className="font-bold text-gray-900">Urgent / Now</h3>
@@ -606,11 +1299,11 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         {showGrouped && scheduledGroups.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-400 to-emerald-400 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-secondary-400 to-secondary-400 flex items-center justify-center">
                 <CalendarDays className="w-4 h-4 text-white" />
               </div>
               <h3 className="font-bold text-gray-900">Scheduled Jobs</h3>
-              <span className="ml-auto px-2 py-0.5 bg-teal-100 text-teal-700 rounded-full text-xs font-semibold">
+              <span className="ml-auto px-2 py-0.5 bg-secondary-100 text-secondary-700 rounded-full text-xs font-semibold">
                 {scheduledGroups.reduce((acc, g) => acc + g.leads.length, 0)}
               </span>
             </div>
@@ -618,9 +1311,9 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
               {scheduledGroups.map((group) => (
                 <div key={group.date}>
                   <div className="flex items-center gap-2 mb-2">
-                    <CalendarDays className="w-4 h-4 text-teal-600" />
-                    <span className="text-sm font-semibold text-teal-700">{group.label}</span>
-                    <div className="flex-1 h-px bg-teal-100" />
+                    <CalendarDays className="w-4 h-4 text-secondary-600" />
+                    <span className="text-sm font-semibold text-secondary-700">{group.label}</span>
+                    <div className="flex-1 h-px bg-secondary-100" />
                   </div>
                   <div className="space-y-3 ml-6">
                     {group.leads.map(renderLeadCard)}
@@ -649,11 +1342,30 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         )}
 
         {urgentLeads.length === 0 && scheduledGroups.length === 0 && otherLeads.length === 0 && (
-          <EmptyState
-            icon={Briefcase}
-            title="No Available Leads"
-            description="There are no open leads right now. Check back soon -- new jobs are posted regularly."
-          />
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center">
+            <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Briefcase className="w-7 h-7 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">No leads right now</h3>
+            <p className="text-gray-600 text-sm mb-5 max-w-sm mx-auto">
+              New jobs are posted every day. While you wait, here are some things you can do to get more leads:
+            </p>
+            <div className="grid sm:grid-cols-3 gap-3 max-w-lg mx-auto mb-6">
+              <Link to="/settings" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gray-50 hover:bg-primary-50 border border-gray-200 hover:border-primary-200 transition-all text-center">
+                <User className="w-5 h-5 text-primary-600" />
+                <span className="text-xs font-medium text-gray-700">Complete profile</span>
+              </Link>
+              <Link to="/dashboard" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gray-50 hover:bg-primary-50 border border-gray-200 hover:border-primary-200 transition-all text-center">
+                <Calendar className="w-5 h-5 text-primary-600" />
+                <span className="text-xs font-medium text-gray-700">Update availability</span>
+              </Link>
+              <Link to="/settings" state={{ tab: 'verification' }} className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gray-50 hover:bg-primary-50 border border-gray-200 hover:border-primary-200 transition-all text-center">
+                <ShieldAlert className="w-5 h-5 text-primary-600" />
+                <span className="text-xs font-medium text-gray-700">Get verified</span>
+              </Link>
+            </div>
+            <p className="text-xs text-gray-400">Verified tradies with complete profiles appear higher in search results. New leads typically arrive daily.</p>
+          </div>
         )}
       </div>
     );
@@ -661,36 +1373,79 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
 
   const content = (
     <>
-      <div className="max-w-7xl mx-auto">
+      <div className={`${embedded ? '' : 'max-w-5xl'} mx-auto`}>
+        {quoteAcceptedBanner === 'success' && (
+          <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4">
+            <div className="flex items-center gap-3 mb-1">
+              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+              <p className="text-sm font-bold text-green-800">Payment successful!</p>
+            </div>
+            <p className="text-xs text-green-700 ml-8">Your tradie has been hired and payment is held securely in escrow. The tradie will be notified and can start work.</p>
+          </div>
+        )}
+        {quoteAcceptedBanner === 'cancelled' && (
+          <div className="mb-4 bg-accent-50 border border-accent-200 rounded-xl p-4">
+            <div className="flex items-center gap-3 mb-1">
+              <AlertCircle className="w-5 h-5 text-accent-600 flex-shrink-0" />
+              <p className="text-sm font-bold text-accent-800">Payment not completed</p>
+            </div>
+            <p className="text-xs text-accent-700 ml-8">The quote has been accepted but payment was not completed. You can complete payment from the Payments page.</p>
+          </div>
+        )}
+        {quoteAcceptedBanner === 'error' && (
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-4">
+            <div className="flex items-center gap-3 mb-1">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+              <p className="text-sm font-bold text-red-800">Something went wrong</p>
+            </div>
+            <p className="text-xs text-red-700 ml-8">Failed to process the quote acceptance. Please try again.</p>
+          </div>
+        )}
         {offlineQueued && (
-          <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl animate-pulse">
-            <WifiOff className="w-5 h-5 text-amber-600 flex-shrink-0" />
-            <p className="text-sm font-medium text-amber-800">
+          <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-warm-50 border border-warm-200 rounded-xl animate-pulse">
+            <WifiOff className="w-5 h-5 text-warm-600 flex-shrink-0" />
+            <p className="text-sm font-medium text-warm-800">
               You're offline. Your action has been queued and will sync automatically when you're back online.
             </p>
           </div>
         )}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {isTradie ? 'Available Leads' : 'My Requests'}
-            </h1>
-            <p className="text-gray-700 mt-1">
-              {isTradie
-                ? 'Browse open jobs and submit competitive quotes'
-                : 'Track your quote requests and compare incoming quotes'}
-            </p>
+        {!embedded && (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {isTradie ? 'Available Work' : 'My Jobs'}
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                {isTradie
+                  ? 'These are jobs posted by clients near you. Quote on the ones you want.'
+                  : 'Track your quote requests and compare incoming quotes'}
+              </p>
+            </div>
+            {!isTradie && (
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const unboosted = leads.filter(l => l.status === 'pending' && !l.is_flash_boost && !l.tradie_id);
+                  if (unboosted.length === 0) return null;
+                  return (
+                    <button
+                      onClick={() => {
+                        if (unboosted.length === 1) {
+                          handleBoostJob(unboosted[0].id);
+                        } else {
+                          setFilter('pending');
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 border border-warm-300 text-warm-700 text-sm font-semibold rounded-lg hover:bg-warm-50 transition-colors"
+                    >
+                      <Zap className="w-4 h-4" />
+                      Boost ${BOOST_PRICE.toFixed(2)}
+                    </button>
+                  );
+                })()}
+              </div>
+            )}
           </div>
-          {!isTradie && (
-            <Link
-              to="/post-lead"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              Request a Quote
-            </Link>
-          )}
-        </div>
+        )}
 
         {isTradie && isLicenseExpired && (
           <div className="mb-6 bg-red-50 border-2 border-red-300 rounded-2xl p-5">
@@ -716,47 +1471,170 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         )}
 
         {isTradie && (
-          <div className="mb-6 flex items-center gap-2 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl">
-            <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
-            <p className="text-sm text-blue-800">
+          <div className="mb-4 inline-flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+            <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <p className="text-xs text-gray-500">
               <span className="font-semibold">Blind quoting:</span> Other tradies cannot see your price. Compete on quality, not just cost.
             </p>
           </div>
         )}
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-center gap-2 mb-6 overflow-x-auto">
-            {filters.map((f) => (
-              <button
-                key={f.key}
-                onClick={() => setFilter(f.key)}
-                className={`px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-colors min-h-[44px] ${
-                  filter === f.key
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+        {/* Tabs */}
+        <div className="flex items-center gap-6 border-b border-gray-200 mb-6 overflow-x-auto">
+          {filters.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                filter === f.key
+                  ? 'border-warm-500 text-warm-600'
+                  : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
 
-          {loading ? (
+        <div>
+
+          {fetchError ? (
+            <div className="bg-white rounded-2xl border border-red-200 p-12 text-center">
+              <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Something went wrong</h3>
+              <p className="text-gray-600 mb-4">{fetchError}</p>
+              <button onClick={fetchLeads} className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                <RefreshCw className="w-4 h-4" />Try Again
+              </button>
+            </div>
+          ) : loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
             </div>
           ) : isTradie ? (
             renderTradieGroupedView()
           ) : leads.length === 0 ? (
-            <EmptyState
-              icon={Briefcase}
-              title="No Requests Yet"
-              description="You haven't submitted any quote requests yet. Submit one now and tradies in your area will see it."
-              actionLabel="Request a Quote"
-              onAction={() => (window.location.href = '/post-lead')}
-            />
+            filter === 'all' ? (
+              <EmptyState
+                icon={Briefcase}
+                title="No Jobs Yet"
+                description="You haven't posted any jobs yet. Post one now and tradies in your area will see it."
+                actionLabel="Post a Job"
+                onAction={() => navigate('/post-lead')}
+              />
+            ) : filter === 'open' ? (
+              <EmptyState
+                icon={Clock}
+                title="No Open Jobs"
+                description="Jobs waiting for tradies to submit quotes will appear here. Post a job to get started."
+                actionLabel="Post a Job"
+                onAction={() => navigate('/post-lead')}
+              />
+            ) : filter === 'quoting' ? (
+              <EmptyState
+                icon={FileText}
+                title="No Jobs Being Quoted"
+                description="When tradies submit quotes on your jobs, they'll move here so you can compare and choose."
+              />
+            ) : filter === 'accepted' ? (
+              <EmptyState
+                icon={CheckCircle2}
+                title="No Awarded Jobs"
+                description="Jobs where you've accepted a quote will appear here, ready for payment."
+              />
+            ) : filter === 'in_progress' ? (
+              <EmptyState
+                icon={Loader2}
+                title="No Jobs In Progress"
+                description="Once you pay and the tradie starts work, active jobs will appear here."
+              />
+            ) : filter === 'completed' ? (
+              <EmptyState
+                icon={CheckCircle2}
+                title="No Completed Jobs"
+                description="Finished jobs will appear here. You can leave reviews and export invoices."
+              />
+            ) : filter === 'archived' ? (
+              <EmptyState
+                icon={Archive}
+                title="No Archived Jobs"
+                description="Archived, cancelled, and declined jobs will appear here. You can unarchive them anytime."
+              />
+            ) : (
+              <EmptyState
+                icon={Briefcase}
+                title="No Jobs Found"
+                description="No jobs match this filter."
+              />
+            )
+          ) : filter === 'completed' ? (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-gray-500">
+                  {leads.length} completed job{leads.length !== 1 ? 's' : ''}
+                </p>
+                <button
+                  onClick={handleExportInvoice}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-lg transition-colors"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  Export Invoice
+                </button>
+              </div>
+              <div className="space-y-3">
+                {leads.map(renderLeadCard)}
+              </div>
+            </div>
+          ) : filter === 'archived' ? (
+            <div>
+              <div className="flex items-center gap-2 mb-4 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg">
+                <Archive className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <p className="text-xs text-gray-500">
+                  Archived jobs are hidden from your main list. You can unarchive them anytime to bring them back.
+                </p>
+              </div>
+              <div className="space-y-3">
+                {leads.map(lead => {
+                  const category = lead.description.match(/^\[([^\]]+)\]/)?.[1] || '';
+                  const desc = lead.description.replace(/^\[[^\]]+\]\s*/, '');
+                  return (
+                    <div key={lead.id} className="rounded-xl p-5 border border-gray-200 bg-white">
+                      <div className="flex items-start justify-between gap-3 mb-1.5">
+                        <h3 className="text-base font-semibold text-gray-900">{lead.title || category || 'Untitled Job'}</h3>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button
+                            onClick={() => handleUnarchiveJob(lead.id)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-lg transition-colors"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            Unarchive
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-500 mb-3 line-clamp-2">{desc}</p>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
+                        {category && <span className="px-2 py-0.5 bg-gray-100 rounded-full">{category}</span>}
+                        <span className={`px-2 py-0.5 rounded-full ${
+                          lead.status === 'completed' ? 'bg-green-100 text-green-700' :
+                          lead.status === 'cancelled' ? 'bg-gray-100 text-gray-600' :
+                          lead.status === 'declined' ? 'bg-red-100 text-red-600' :
+                          'bg-yellow-100 text-yellow-700'
+                        }`}>{lead.status.replace('_', ' ')}</span>
+                        {lead.location_address && (
+                          <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{lead.location_address}</span>
+                        )}
+                        <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{formatDate(lead.created_at)}</span>
+                        {lead.archived_at && (
+                          <span className="text-gray-400">Archived {new Date(lead.archived_at).toLocaleDateString('en-AU')}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {leads.map(renderLeadCard)}
             </div>
           )}
@@ -780,9 +1658,336 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           }}
         />
       )}
+
+      {editJob && (() => {
+        const ej = editJob;
+        const ejCategory = extractCategory(ej.description);
+        const ejIsFlash = ej.is_flash_boost && ej.flash_expiry && new Date(ej.flash_expiry) > new Date();
+        return (
+          <Modal isOpen={!!editJob} onClose={() => setEditJob(null)} maxWidth="lg">
+            <div className="p-6">
+              {/* Header — category as title */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-secondary-100 flex items-center justify-center">
+                    <Briefcase className="w-5 h-5 text-secondary-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900">{ejCategory || 'Job Details'}</h2>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getClientStatusColor(ej)}`}>
+                        {getClientStatusLabel(ej)}
+                      </span>
+                      {ejIsFlash && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-warm-100 text-warm-700 rounded-full text-xs font-semibold border border-warm-200">
+                          <Zap className="w-3 h-3" />
+                          Boosted
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <button onClick={() => setEditJob(null)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Info pills */}
+              <div className="flex flex-wrap gap-2 mb-5">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-xs text-gray-600">
+                  <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                  Posted {formatDate(ej.created_at)}
+                </div>
+                {ej.quote_count > 0 && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-50 rounded-lg text-xs text-secondary-700 font-medium">
+                    <Users className="w-3.5 h-3.5" />
+                    {ej.quote_count} quote{ej.quote_count !== 1 ? 's' : ''}
+                  </div>
+                )}
+                {ej.scheduled_date && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-lg text-xs text-blue-700">
+                    <Clock className="w-3.5 h-3.5" />
+                    {new Date(ej.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </div>
+                )}
+                {ej.budget_amount && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 rounded-lg text-xs text-green-700 font-medium">
+                    ${ej.budget_amount.toLocaleString()} budget
+                  </div>
+                )}
+              </div>
+
+              {/* Title */}
+              <div className="mb-4">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mb-1.5">
+                  Job Title
+                </label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  placeholder="Give your job a short title"
+                  maxLength={80}
+                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-warm-500 focus:border-warm-500 transition-colors"
+                />
+              </div>
+
+              {/* Description section */}
+              <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mb-2">
+                  <FileText className="w-3.5 h-3.5" />
+                  Description
+                </label>
+                <textarea
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  rows={3}
+                  placeholder="Describe what you need done — the more detail, the better the quotes."
+                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-warm-500 focus:border-warm-500 transition-colors resize-none"
+                />
+                {/* Quick-add hints — compact, below description */}
+                {ejCategory && (
+                  <details className="mt-2" open={editDesc.length < 40}>
+                    <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600 select-none">
+                      Quick-add suggestions for {ejCategory}
+                    </summary>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {getJobHints(ejCategory).map((hint) => {
+                        const isAdded = editDesc.includes(hint.replace(/:$/, ''));
+                        return (
+                          <button
+                            key={hint}
+                            type="button"
+                            onClick={() => {
+                              if (!isAdded) {
+                                const separator = editDesc.trim() ? '. ' : '';
+                                setEditDesc((prev) => prev.trim() + separator + hint + ' ');
+                              }
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                              isAdded
+                                ? 'bg-secondary-50 text-secondary-600 border-secondary-200 cursor-default'
+                                : 'bg-white text-gray-600 border-gray-200 hover:bg-warm-50 hover:border-warm-300 hover:text-warm-700'
+                            }`}
+                          >
+                            {isAdded ? '✓ ' : '+ '}{hint}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </details>
+                )}
+              </div>
+
+              {/* Location & Budget — side by side */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                <div className="sm:col-span-2">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mb-1.5">
+                    <MapPin className="w-3.5 h-3.5" />
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={editLocation}
+                    onChange={(e) => setEditLocation(e.target.value)}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-warm-500 focus:border-warm-500 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mb-1.5">
+                    Budget
+                    <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                    <input
+                      type="number"
+                      value={editBudget}
+                      onChange={(e) => setEditBudget(e.target.value)}
+                      placeholder="—"
+                      className="w-full pl-8 pr-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-warm-500 focus:border-warm-500 transition-colors"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Photos — compact row */}
+              <div className="mb-2">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mb-2">
+                  <Camera className="w-3.5 h-3.5" />
+                  Photos
+                  <span className="text-gray-400 font-normal">({editPhotos.length}/5)</span>
+                </label>
+                <div className="flex gap-2 items-center flex-wrap">
+                  {editPhotos.map((p, i) => (
+                    <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex-shrink-0 group">
+                      <img
+                        src={p.url}
+                        alt={`Photo ${i + 1}`}
+                        className="w-full h-full object-cover cursor-pointer"
+                        onClick={() => setPreviewPhoto(p.url)}
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); removeEditPhoto(i); }}
+                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {editPhotos.length < 5 && (
+                    <button
+                      type="button"
+                      onClick={() => editFileRef.current?.click()}
+                      className="w-16 h-16 flex-shrink-0 flex flex-col items-center justify-center gap-0.5 border border-dashed border-gray-300 rounded-lg hover:border-warm-400 hover:bg-warm-50/30 transition-colors group"
+                    >
+                      <Plus className="w-4 h-4 text-gray-400 group-hover:text-warm-600 transition-colors" />
+                      <span className="text-[10px] text-gray-400 group-hover:text-warm-600">Add</span>
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={editFileRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg"
+                  multiple
+                  onChange={handleEditPhotoSelect}
+                  className="hidden"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-3 mt-5 pt-4 border-t border-gray-100">
+                <button
+                  onClick={() => { setEditJob(null); setDeleteJobTarget(ej); }}
+                  className="inline-flex items-center gap-1.5 text-red-500 hover:text-red-700 transition-colors text-sm font-medium"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Remove
+                </button>
+                <div className="flex-1" />
+                <button
+                  onClick={() => setEditJob(null)}
+                  className="px-5 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={editSaving || !editDesc.trim() || !editLocation.trim()}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-warm-500 text-white rounded-lg hover:bg-warm-600 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {editSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </button>
+              </div>
+            </div>
+          </Modal>
+        );
+      })()}
+
+      {/* Photo lightbox */}
+      {previewPhoto && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4"
+          onMouseDown={() => setPreviewPhoto(null)}
+        >
+          <img
+            src={previewPhoto}
+            alt="Photo preview"
+            className="max-w-full max-h-[85vh] rounded-lg object-contain"
+            onMouseDown={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setPreviewPhoto(null)}
+            className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
+      {priceConfirm && (
+        <Modal open onClose={() => setPriceConfirm(null)} title="Confirm Agreed Price">
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              The tradie quoted a range of <span className="font-semibold">${priceConfirm.min.toLocaleString()}</span> – <span className="font-semibold">${priceConfirm.max.toLocaleString()}</span>.
+            </p>
+            <p className="text-sm text-gray-600">
+              Please enter the price you and the tradie have agreed on:
+            </p>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+              <input
+                type="number"
+                min={priceConfirm.min}
+                max={priceConfirm.max}
+                step="0.01"
+                value={priceConfirm.agreedPrice}
+                onChange={(e) => setPriceConfirm({ ...priceConfirm, agreedPrice: e.target.value })}
+                placeholder={`${priceConfirm.min} – ${priceConfirm.max}`}
+                className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              />
+            </div>
+            {priceConfirm.agreedPrice && (
+              Number(priceConfirm.agreedPrice) < priceConfirm.min || Number(priceConfirm.agreedPrice) > priceConfirm.max
+            ) && (
+              <p className="text-xs text-red-500">
+                Price must be between ${priceConfirm.min.toLocaleString()} and ${priceConfirm.max.toLocaleString()}
+              </p>
+            )}
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => setPriceConfirm(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const price = Number(priceConfirm.agreedPrice);
+                  if (price >= priceConfirm.min && price <= priceConfirm.max) {
+                    setPayingJobId(priceConfirm.jobId);
+                    handleAcceptQuote(priceConfirm.quoteId, priceConfirm.jobId, price);
+                    setPriceConfirm(null);
+                  }
+                }}
+                disabled={
+                  !priceConfirm.agreedPrice ||
+                  Number(priceConfirm.agreedPrice) < priceConfirm.min ||
+                  Number(priceConfirm.agreedPrice) > priceConfirm.max
+                }
+                className="inline-flex items-center gap-2 px-5 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Shield className="w-4 h-4" />
+                Confirm & Pay
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {deleteJobTarget && (
+        <ConfirmModal
+          title="Remove Job"
+          message={`Are you sure you want to remove "${deleteJobTarget.title || cleanDescription(deleteJobTarget.description).slice(0, 60)}"? ${deleteJobTarget.quote_count > 0 ? `This job has ${deleteJobTarget.quote_count} quote${deleteJobTarget.quote_count !== 1 ? 's' : ''}.` : ''} The job will be hidden from tradies and moved to your Deleted tab. You can restore it anytime.`}
+          confirmText="Remove"
+          cancelText="Keep"
+          onConfirm={handleDeleteJob}
+          onCancel={() => setDeleteJobTarget(null)}
+          type="danger"
+        />
+      )}
     </>
   );
 
   if (embedded) return content;
-  return <DashboardLayout>{content}</DashboardLayout>;
+  return <DashboardLayout><SectionErrorBoundary>{content}</SectionErrorBoundary></DashboardLayout>;
 }

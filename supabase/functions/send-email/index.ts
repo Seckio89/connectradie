@@ -1,7 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
@@ -29,7 +31,7 @@ function buildHtmlEmail(subject: string, body: string, notificationType?: string
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subject}</title>
+  <title>${escapeHtml(subject)}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:32px 16px;">
@@ -43,8 +45,8 @@ function buildHtmlEmail(subject: string, body: string, notificationType?: string
           </tr>
           <tr>
             <td style="padding:32px;">
-              <h2 style="margin:0 0 16px;color:#111827;font-size:18px;font-weight:600;">${subject}</h2>
-              <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.6;">${body}</p>
+              <h2 style="margin:0 0 16px;color:#111827;font-size:18px;font-weight:600;">${escapeHtml(subject)}</h2>
+              <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.6;">${escapeHtml(body)}</p>
               <a href="https://connectradie.com/dashboard" style="display:inline-block;background-color:#1e40af;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;">View in App</a>
             </td>
           </tr>
@@ -344,18 +346,41 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const resendKey = Deno.env.get("RESEND_API_KEY");
-    const fromEmail = Deno.env.get("EMAIL_FROM_ADDRESS") || "notifications@connectradie.com";
-
-    if (!resendKey) {
+    // Authenticate the caller
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
-        JSON.stringify({
-          error: "Email provider not configured",
-          details: "Resend API key is not set. Email delivery is unavailable.",
-        }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Missing Authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(JSON.stringify({ error: "Server configuration error" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(authHeader.slice(7));
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const requiredEnvVars = ['RESEND_API_KEY'];
+    for (const envVar of requiredEnvVars) {
+      if (!Deno.env.get(envVar)) {
+        return new Response(JSON.stringify({ error: `Missing required configuration: ${envVar}` }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    const resendKey = Deno.env.get("RESEND_API_KEY")!;
+    const fromEmail = Deno.env.get("EMAIL_FROM_ADDRESS") || "notifications@connectradie.com";
 
     const { to, subject, body, notificationType, metadata }: EmailRequest = await req.json();
 
@@ -363,6 +388,19 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({ error: "Missing required fields: to, subject, body" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Rate limit: 20 requests per minute per recipient
+    const rateLimitKey = `${to}-send-email`;
+    const { allowed } = checkRateLimit(rateLimitKey, 20, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json", "X-RateLimit-Remaining": "0" },
+        },
       );
     }
 

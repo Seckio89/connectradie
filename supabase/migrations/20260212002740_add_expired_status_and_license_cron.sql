@@ -42,8 +42,8 @@ SELECT cron.schedule(
   $$
   SELECT
     net.http_post(
-      url := 'https://ymxbyxhvhcelwqufhyob.supabase.co/functions/v1/check-license-expiry',
-      headers := '{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlteGJ5eGh2aGNlbHdxdWZoeW9iIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODAyMTYzMSwiZXhwIjoyMDgzNTk3NjMxfQ.gBKT4QNJOFh7u0M6J7mJP7aYJa-kMZcROtXEKS-rU2s"}'::jsonb,
+      url := current_setting('app.settings.supabase_url', true) || '/functions/v1/check-license-expiry',
+      headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true)),
       body := '{}'::jsonb
     ) AS request_id;
   $$

@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { X, Mail, Phone, Briefcase, Clock, UserCheck, UserX, Eye, Loader2 } from 'lucide-react';
 import Modal from './Modal';
 import { supabase } from '../lib/supabase';
-import type { TradeVacancyWithEmployer, VacancyApplicationWithApplicant } from '../types/database';
+import type { TradeVacancyWithEmployer, VacancyApplicationWithApplicant, ApplicationStatus } from '../types/database';
 
 const APP_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
-  reviewed: { label: 'Reviewed', color: 'bg-blue-100 text-blue-700' },
+  reviewed: { label: 'Reviewed', color: 'bg-secondary-100 text-secondary-700' },
   shortlisted: { label: 'Shortlisted', color: 'bg-green-100 text-green-700' },
   rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700' },
 };
@@ -57,11 +57,11 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
   const handleUpdateStatus = async (applicationId: string, newStatus: string) => {
     await supabase
       .from('vacancy_applications')
-      .update({ status: newStatus })
+      .update({ status: newStatus as ApplicationStatus })
       .eq('id', applicationId);
 
     setApplications(prev =>
-      prev.map(a => a.id === applicationId ? { ...a, status: newStatus } : a)
+      prev.map(a => a.id === applicationId ? { ...a, status: newStatus as ApplicationStatus } : a)
     );
   };
 
@@ -129,8 +129,8 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
                     className="flex items-center gap-3 p-4 cursor-pointer"
                     onClick={() => setExpandedId(isExpanded ? null : app.id)}
                   >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-bold text-blue-700">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-bold text-secondary-700">
                         {applicant?.full_name?.charAt(0)?.toUpperCase() || '?'}
                       </span>
                     </div>
@@ -196,7 +196,7 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
                         {app.status !== 'reviewed' && app.status !== 'shortlisted' && (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleUpdateStatus(app.id, 'reviewed'); }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-700 border border-primary-200 rounded-lg hover:bg-primary-50 transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             Mark Reviewed

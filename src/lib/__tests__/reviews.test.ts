@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getTradieRating, getTradieReviews, canUserReviewJob } from '../reviews';
 
 // Mock the supabase module
@@ -65,7 +66,7 @@ describe('reviews', () => {
           resolve({ data: mockRating, error: null });
           return Promise.resolve({ data: mockRating, error: null });
         };
-        return chain as ReturnType<typeof supabase.from>;
+        return chain as unknown as ReturnType<typeof supabase.from>;
       });
 
       const result = await getTradieRating('tradie-123');
@@ -84,7 +85,7 @@ describe('reviews', () => {
           resolve({ data: null, error: { message: 'DB error' } });
           return Promise.resolve({ data: null, error: { message: 'DB error' } });
         };
-        return chain as ReturnType<typeof supabase.from>;
+        return chain as unknown as ReturnType<typeof supabase.from>;
       });
 
       const result = await getTradieRating('bad-id');
@@ -109,7 +110,7 @@ describe('reviews', () => {
           resolve({ data: mockReviews, error: null });
           return Promise.resolve({ data: mockReviews, error: null });
         };
-        return chain as ReturnType<typeof supabase.from>;
+        return chain as unknown as ReturnType<typeof supabase.from>;
       });
 
       const result = await getTradieReviews('tradie-123');
@@ -128,7 +129,7 @@ describe('reviews', () => {
           resolve({ data: null, error: { message: 'Error' } });
           return Promise.resolve({ data: null, error: { message: 'Error' } });
         };
-        return chain as ReturnType<typeof supabase.from>;
+        return chain as unknown as ReturnType<typeof supabase.from>;
       });
 
       const result = await getTradieReviews('bad-id');

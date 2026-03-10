@@ -28,7 +28,7 @@ export default function RatingBreakdown({ rating }: RatingBreakdownProps) {
               key={i}
               className={`w-4 h-4 ${
                 i < Math.round(rating.average_rating)
-                  ? 'fill-amber-400 text-amber-400'
+                  ? 'fill-yellow-400 text-yellow-400'
                   : 'text-gray-300'
               }`}
             />
@@ -43,10 +43,10 @@ export default function RatingBreakdown({ rating }: RatingBreakdownProps) {
         {bars.map((bar) => (
           <div key={bar.label} className="flex items-center gap-2">
             <span className="text-sm text-gray-600 w-3 text-right flex-shrink-0">{bar.label}</span>
-            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 flex-shrink-0" />
+            <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400 flex-shrink-0" />
             <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
               <div
-                className="bg-amber-400 h-full rounded-full transition-all duration-500"
+                className="bg-warm-400 h-full rounded-full transition-all duration-500"
                 style={{ width: `${(bar.count / maxCount) * 100}%` }}
               />
             </div>

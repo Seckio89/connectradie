@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Loader2 } from 'lucide-react';
+import { Plus, Search, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { TradieWithDetails, AvailabilitySlot } from '../types/database';
@@ -12,6 +12,7 @@ import AvailabilityCalendar from '../components/AvailabilityCalendar';
 export default function MyTrades() {
   const [savedTradies, setSavedTradies] = useState<TradieWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [filter, setFilter] = useState('all');
   const [chatTradie, setChatTradie] = useState<TradieWithDetails | null>(null);
   const [calendarTradie, setCalendarTradie] = useState<TradieWithDetails | null>(null);
@@ -27,53 +28,66 @@ export default function MyTrades() {
   const fetchSavedTradies = async () => {
     if (!user) return;
     setLoading(true);
+    setError('');
 
-    const { data: savedIds } = await supabase
-      .from('my_trades')
-      .select('tradie_id')
-      .eq('client_id', user.id);
+    try {
+      const { data: savedIds, error: savedErr } = await supabase
+        .from('my_trades')
+        .select('tradie_id')
+        .eq('client_id', user.id);
 
-    if (savedIds && savedIds.length > 0) {
-      const tradieIds = savedIds.map((s) => s.tradie_id);
+      if (savedErr) throw savedErr;
 
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select(`*, tradie_details (*)`)
-        .in('id', tradieIds);
+      if (savedIds && savedIds.length > 0) {
+        const tradieIds = savedIds.map((s) => s.tradie_id);
 
-      if (profiles) {
-        const tradiesWithAvailability = await Promise.all(
-          profiles.map(async (tradie) => {
-            const now = new Date();
-            const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const { data: profiles, error: profileErr } = await supabase
+          .from('profiles')
+          .select(`*, tradie_details (*)`)
+          .in('id', tradieIds)
+          .returns<TradieWithDetails[]>();
 
-            const { data: slots } = await supabase
-              .from('availability_slots')
-              .select('*')
-              .eq('tradie_id', tradie.id)
-              .eq('status', 'available')
-              .gte('start_time', now.toISOString())
-              .lte('start_time', weekFromNow.toISOString());
+        if (profileErr) throw profileErr;
 
-            const availabilityHours = (slots || []).reduce((acc: number, slot: AvailabilitySlot) => {
-              const start = new Date(slot.start_time);
-              const end = new Date(slot.end_time);
-              return acc + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-            }, 0);
+        if (profiles) {
+          const tradiesWithAvailability = await Promise.all(
+            profiles.map(async (tradie: TradieWithDetails) => {
+              const now = new Date();
+              const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-            return {
-              ...tradie,
-              tradie_details: tradie.tradie_details,
-              availability_hours: availabilityHours,
-            } as TradieWithDetails;
-          })
-        );
+              const { data: slots } = await supabase
+                .from('availability_slots')
+                .select('*')
+                .eq('tradie_id', tradie.id)
+                .eq('status', 'available')
+                .gte('start_time', now.toISOString())
+                .lte('start_time', weekFromNow.toISOString());
 
-        setSavedTradies(tradiesWithAvailability);
+              const availabilityHours = ((slots as AvailabilitySlot[]) || []).reduce((acc: number, slot: AvailabilitySlot) => {
+                const start = new Date(slot.start_time);
+                const end = new Date(slot.end_time);
+                return acc + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+              }, 0);
+
+              return {
+                ...tradie,
+                tradie_details: tradie.tradie_details,
+                availability_hours: availabilityHours,
+              } as TradieWithDetails;
+            })
+          );
+
+          setSavedTradies(tradiesWithAvailability);
+        }
+      } else {
+        setSavedTradies([]);
       }
+    } catch (err: unknown) {
+      console.error('Failed to fetch saved tradies:', err);
+      setError('Failed to load your saved tradies. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleRemoveTradie = async (tradie: TradieWithDetails) => {
@@ -99,7 +113,7 @@ export default function MyTrades() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1600px] mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">My Trades</h1>
@@ -107,7 +121,7 @@ export default function MyTrades() {
           </div>
           <Link
             to="/search"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
           >
             <Plus className="w-5 h-5" />
             Add Tradie
@@ -120,7 +134,7 @@ export default function MyTrades() {
               onClick={() => setFilter('all')}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
                 filter === 'all'
-                  ? 'bg-primary-100 text-primary-700'
+                  ? 'bg-warm-100 text-warm-700'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -152,7 +166,7 @@ export default function MyTrades() {
                 onClick={() => setFilter(cat!)}
                 className={`px-4 py-2 rounded-lg font-medium text-sm capitalize transition-colors ${
                   filter === cat
-                    ? 'bg-primary-100 text-primary-700'
+                    ? 'bg-warm-100 text-warm-700'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
@@ -162,7 +176,17 @@ export default function MyTrades() {
           </div>
         </div>
 
-        {loading ? (
+        {error ? (
+          <div className="bg-white rounded-2xl border border-red-200 p-12 text-center">
+            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Something went wrong</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button onClick={fetchSavedTradies} className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+              <RefreshCw className="w-4 h-4" />
+              Try Again
+            </button>
+          </div>
+        ) : loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
           </div>
@@ -181,7 +205,7 @@ export default function MyTrades() {
             </p>
             <Link
               to="/search"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
             >
               <Search className="w-5 h-5" />
               Find Tradies

@@ -39,7 +39,7 @@ async function loadCategories(): Promise<TradeCategoryOption[]> {
 
   const options: TradeCategoryOption[] = [
     { value: '', label: 'All Trades' },
-    ...data.map((cat: TradeCategory) => ({
+    ...data.map((cat: Pick<TradeCategory, 'id' | 'name'>) => ({
       value: cat.name.toLowerCase().replace(/\s+/g, '-'),
       label: cat.name,
     })),
