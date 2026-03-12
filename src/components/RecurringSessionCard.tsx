@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Calendar, CheckCircle2, SkipForward, Clock, Plus, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, CheckCircle2, SkipForward, Clock, Plus, X, AlertTriangle } from 'lucide-react';
 import type { RecurringSession, RecurringSessionStatus } from '../lib/recurringJobs';
 import {
   rescheduleSession,
@@ -7,6 +7,7 @@ import {
   completeSession,
   addExtraSession,
 } from '../lib/recurringJobs';
+import { getBlockedDates, checkClash } from '../lib/availability';
 
 const STATUS_STYLES: Record<RecurringSessionStatus, { bg: string; text: string; label: string }> = {
   scheduled: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700', label: 'Scheduled' },
@@ -16,10 +17,22 @@ const STATUS_STYLES: Record<RecurringSessionStatus, { bg: string; text: string; 
   extra: { bg: 'bg-purple-50 border-purple-200', text: 'text-purple-700', label: 'Extra' },
 };
 
+const DEFAULT_SESSION_DURATION_HOURS = 2;
+
+function addHoursToTime(time: string, hours: number): string {
+  const [h, m] = time.split(':').map(Number);
+  const totalMinutes = (h + hours) * 60 + m;
+  const newH = Math.min(Math.floor(totalMinutes / 60), 23);
+  const newM = totalMinutes % 60;
+  return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}:00`;
+}
+
 interface RecurringSessionCardProps {
   session: RecurringSession;
   recurringJobId: string;
   userRole: 'client' | 'tradie';
+  tradieId?: string;
+  preferredTime?: string;
   onUpdate: () => void;
 }
 
@@ -27,6 +40,8 @@ export default function RecurringSessionCard({
   session,
   recurringJobId,
   userRole,
+  tradieId,
+  preferredTime,
   onUpdate,
 }: RecurringSessionCardProps) {
   const [showReschedule, setShowReschedule] = useState(false);
@@ -39,6 +54,9 @@ export default function RecurringSessionCard({
   const [extraCost, setExtraCost] = useState('');
   const [extraNotes, setExtraNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [blockedDates, setBlockedDates] = useState<Set<string>>(new Set());
+  const [clashWarning, setClashWarning] = useState('');
+  const [checkingClash, setCheckingClash] = useState(false);
 
   const style = STATUS_STYLES[session.status];
   const displayDate = session.actual_date || session.scheduled_date;
@@ -50,14 +68,73 @@ export default function RecurringSessionCard({
 
   const isActionable = session.status === 'scheduled' || session.status === 'rescheduled';
 
+  // Fetch blocked dates when reschedule form opens
+  useEffect(() => {
+    if (!showReschedule || !tradieId) return;
+    let cancelled = false;
+
+    const fetchBlocked = async () => {
+      try {
+        const now = new Date();
+        const threeMonths = new Date(now);
+        threeMonths.setMonth(threeMonths.getMonth() + 3);
+        const dates = await getBlockedDates(
+          tradieId,
+          now.toISOString().split('T')[0],
+          threeMonths.toISOString().split('T')[0],
+        );
+        if (!cancelled) setBlockedDates(new Set(dates));
+      } catch {
+        // non-critical — just won't show blocked dates
+      }
+    };
+
+    fetchBlocked();
+    return () => { cancelled = true; };
+  }, [showReschedule, tradieId]);
+
+  // Check clash when reschedule date changes
+  useEffect(() => {
+    if (!rescheduleDate || !tradieId) {
+      setClashWarning('');
+      return;
+    }
+
+    let cancelled = false;
+    const startTime = preferredTime || '09:00:00';
+    const endTime = addHoursToTime(startTime, DEFAULT_SESSION_DURATION_HOURS);
+
+    const check = async () => {
+      setCheckingClash(true);
+      try {
+        const hasClash = await checkClash(tradieId, rescheduleDate, startTime, endTime);
+        if (!cancelled) {
+          setClashWarning(
+            hasClash
+              ? 'Tradie is unavailable at that time — please choose another date'
+              : '',
+          );
+        }
+      } catch {
+        // non-critical
+      } finally {
+        if (!cancelled) setCheckingClash(false);
+      }
+    };
+
+    check();
+    return () => { cancelled = true; };
+  }, [rescheduleDate, tradieId, preferredTime]);
+
   const handleReschedule = async () => {
-    if (!rescheduleDate || !reason.trim()) return;
+    if (!rescheduleDate || !reason.trim() || clashWarning) return;
     setLoading(true);
     try {
       await rescheduleSession(session.id, rescheduleDate, reason.trim(), userRole);
       setShowReschedule(false);
       setRescheduleDate('');
       setReason('');
+      setClashWarning('');
       onUpdate();
     } catch {
       // handled by parent
@@ -122,7 +199,12 @@ export default function RecurringSessionCard({
     setShowSkip(false);
     setShowExtra(false);
     setReason('');
+    setClashWarning('');
+    setRescheduleDate('');
   };
+
+  // Build min attribute for date picker (today)
+  const minDate = new Date().toISOString().split('T')[0];
 
   return (
     <div className={`rounded-xl border p-4 ${style.bg} transition-all`}>
@@ -204,9 +286,26 @@ export default function RecurringSessionCard({
           <input
             type="date"
             value={rescheduleDate}
+            min={minDate}
             onChange={(e) => setRescheduleDate(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+              clashWarning ? 'border-red-300 bg-red-50' : 'border-gray-200'
+            }`}
           />
+          {blockedDates.size > 0 && (
+            <p className="text-xs text-gray-400">
+              {blockedDates.size} date{blockedDates.size !== 1 ? 's' : ''} fully booked in the next 3 months
+            </p>
+          )}
+          {checkingClash && (
+            <p className="text-xs text-gray-400 animate-pulse">Checking availability...</p>
+          )}
+          {clashWarning && (
+            <div className="flex items-start gap-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-red-600 font-medium">{clashWarning}</p>
+            </div>
+          )}
           <label className="block text-xs font-medium text-gray-600">Reason</label>
           <input
             type="text"
@@ -218,13 +317,13 @@ export default function RecurringSessionCard({
           <div className="flex gap-2">
             <button
               onClick={handleReschedule}
-              disabled={loading || !rescheduleDate || !reason.trim()}
+              disabled={loading || !rescheduleDate || !reason.trim() || !!clashWarning || checkingClash}
               className="px-4 py-2 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
             >
               {loading ? 'Saving...' : 'Confirm'}
             </button>
             <button
-              onClick={() => { setShowReschedule(false); setReason(''); }}
+              onClick={() => { setShowReschedule(false); setReason(''); setClashWarning(''); }}
               className="px-4 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <X className="w-3 h-3" />

@@ -28,6 +28,17 @@ function jsonResponse(data: unknown, status = 200) {
   });
 }
 
+const DEFAULT_SESSION_DURATION_HOURS = 2;
+const DEFAULT_PREFERRED_TIME = "09:00:00";
+
+function addHoursToTime(time: string, hours: number): string {
+  const [h, m] = time.split(":").map(Number);
+  const totalMinutes = (h + hours) * 60 + m;
+  const newH = Math.min(Math.floor(totalMinutes / 60), 23);
+  const newM = totalMinutes % 60;
+  return `${String(newH).padStart(2, "0")}:${String(newM).padStart(2, "0")}:00`;
+}
+
 // Frequency conventions: -1 = weekly, -2 = fortnightly, positive = months
 function calculateNextDueDate(current: string, frequencyMonths: number): string {
   const base = new Date(current);
@@ -78,7 +89,7 @@ Deno.serve(async (req: Request) => {
     // Fetch all active recurring jobs where next_due_date <= today
     const { data: dueJobs, error: fetchError } = await supabase
       .from("recurring_jobs")
-      .select("id, frequency_months, next_due_date, times_completed")
+      .select("id, frequency_months, next_due_date, times_completed, tradie_id, preferred_time")
       .eq("is_active", true)
       .lte("next_due_date", today);
 
@@ -121,13 +132,15 @@ Deno.serve(async (req: Request) => {
           skippedDuplicates++;
         } else {
           // Insert the session
-          const { error: insertError } = await supabase
+          const { data: newSession, error: insertError } = await supabase
             .from("recurring_sessions")
             .insert({
               recurring_job_id: job.id,
               scheduled_date: scheduledDate,
               status: "scheduled",
-            });
+            })
+            .select("id")
+            .single();
 
           if (insertError) {
             errors.push(`Job ${job.id}: failed to create session — ${insertError.message}`);
@@ -135,6 +148,29 @@ Deno.serve(async (req: Request) => {
           }
 
           sessionsCreated++;
+
+          // Block the tradie's availability for this session
+          if (job.tradie_id && newSession) {
+            const startTime = job.preferred_time || DEFAULT_PREFERRED_TIME;
+            const endTime = addHoursToTime(startTime, DEFAULT_SESSION_DURATION_HOURS);
+            const { error: availError } = await supabase
+              .from("tradie_availability")
+              .upsert(
+                {
+                  tradie_id: job.tradie_id,
+                  date: scheduledDate,
+                  start_time: startTime,
+                  end_time: endTime,
+                  is_blocked: true,
+                  reason: "recurring_job",
+                  source_job_id: newSession.id,
+                },
+                { onConflict: "tradie_id,date,start_time" },
+              );
+            if (availError) {
+              errors.push(`Job ${job.id}: session created but failed to block availability — ${availError.message}`);
+            }
+          }
         }
 
         // Advance next_due_date and increment times_completed
