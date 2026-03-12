@@ -1,6 +1,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+function requireEnv(key: string): string {
+  const val = Deno.env.get(key);
+  if (!val) throw new Error(`Missing required env var: ${key}`);
+  return val;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -260,9 +266,22 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    let supabaseUrl: string, supabaseAnonKey: string, supabaseServiceRoleKey: string;
+    try {
+      supabaseUrl = requireEnv("SUPABASE_URL");
+      supabaseAnonKey = requireEnv("SUPABASE_ANON_KEY");
+      supabaseServiceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+    } catch (e) {
+      console.error(e);
+      return new Response(
+        JSON.stringify({ error: "Server configuration error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
+      supabaseUrl,
+      supabaseAnonKey,
       { global: { headers: { Authorization: authHeader } } }
     );
 
@@ -371,8 +390,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const serviceRoleClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      supabaseUrl,
+      supabaseServiceRoleKey
     );
 
     await serviceRoleClient

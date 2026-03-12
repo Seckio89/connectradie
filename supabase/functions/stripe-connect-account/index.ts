@@ -2,6 +2,12 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import Stripe from "npm:stripe@14.21.0";
 
+function requireEnv(key: string): string {
+  const val = Deno.env.get(key);
+  if (!val) throw new Error(`Missing required env var: ${key}`);
+  return val;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -26,16 +32,14 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-
-    if (!supabaseUrl || !supabaseServiceKey) {
+    let supabaseUrl: string, supabaseServiceKey: string, stripeSecretKey: string;
+    try {
+      supabaseUrl = requireEnv("SUPABASE_URL");
+      supabaseServiceKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+      stripeSecretKey = requireEnv("STRIPE_SECRET_KEY");
+    } catch (e) {
+      console.error(e);
       return errorResponse("Server configuration error", 500);
-    }
-
-    if (!stripeSecretKey) {
-      return errorResponse("Stripe not configured", 500);
     }
 
     const authHeader = req.headers.get("Authorization");
