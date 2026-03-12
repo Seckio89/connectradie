@@ -7,7 +7,25 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+// --- Named constants ---
 const MAX_BASE64_SIZE = 10 * 1024 * 1024;
+const BASIC_EXTRACT_MAX_BYTES = 2 * 1024 * 1024;
+const MAX_BT_ET_BLOCK_SIZE = 10240;
+const MIN_EXTRACTED_TEXT_LENGTH = 10;
+const MAX_NAME_LENGTH = 80;
+const MAX_INVOICE_NUMBER_LENGTH = 30;
+const MAX_AMOUNT_VALUE = 1000000;
+const PDF_PARSE_TIMEOUT_MS = 10000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`Timed out after ${ms}ms`)), ms);
+    promise.then(
+      (val) => { clearTimeout(timer); resolve(val); },
+      (err) => { clearTimeout(timer); reject(err); },
+    );
+  });
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -51,7 +69,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // P0 Fix 1: Role check — only tradies and admins can parse invoices
+    // Role check — only tradies and admins can parse invoices
     const { data: callerProfile } = await supabase
       .from("profiles")
       .select("role")
@@ -98,14 +116,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // P0 Fix 2: Decode base64 once to avoid triple memory allocation
+    // Decode base64 once — all extraction methods share this buffer
     const binary = atob(file_base64);
     const pdfBytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
       pdfBytes[i] = binary.charCodeAt(i);
     }
 
-    const extractedText = await extractPdfText(pdfBytes, file_base64);
+    const extractedText = await extractPdfText(pdfBytes);
 
     if (!extractedText || !extractedText.trim()) {
       return new Response(
@@ -129,17 +147,19 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-async function extractPdfText(pdfBytes: Uint8Array, base64: string): Promise<string> {
+// --- PDF text extraction (3-method fallback chain) ---
+
+async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
   const methods = [
     () => extractWithUnpdf(pdfBytes),
-    () => extractWithPdfParse(base64),
+    () => extractWithPdfParse(pdfBytes),
     () => Promise.resolve(basicPdfExtract(pdfBytes)),
   ];
 
   for (const method of methods) {
     try {
       const text = await method();
-      if (text && text.trim().length > 10) return text;
+      if (text && text.trim().length > MIN_EXTRACTED_TEXT_LENGTH) return text;
     } catch {
       continue;
     }
@@ -154,16 +174,13 @@ async function extractWithUnpdf(pdfBytes: Uint8Array): Promise<string> {
   return text || "";
 }
 
-async function extractWithPdfParse(base64: string): Promise<string> {
+async function extractWithPdfParse(pdfBytes: Uint8Array): Promise<string> {
   const pdfParse = (await import("npm:pdf-parse@1.1.1")).default;
   const { Buffer } = await import("node:buffer");
-  const buffer = Buffer.from(base64, "base64");
-  const data = await pdfParse(buffer);
+  const buffer = Buffer.from(pdfBytes);
+  const data = await withTimeout(pdfParse(buffer), PDF_PARSE_TIMEOUT_MS);
   return data.text || "";
 }
-
-// P0 Fix 3: Cap input size for regex safety + replace ReDoS-prone BT/ET pattern
-const BASIC_EXTRACT_MAX_BYTES = 2 * 1024 * 1024;
 
 function basicPdfExtract(pdfBytes: Uint8Array): string {
   try {
@@ -193,15 +210,14 @@ function basicPdfExtract(pdfBytes: Uint8Array): string {
       }
     }
 
-    // Use indexOf-based scan instead of ReDoS-prone /BT\s*([\s\S]*?)\s*ET/g
+    // indexOf-based BT/ET scan (avoids ReDoS-prone regex on raw binary)
     let searchFrom = 0;
     while (searchFrom < content.length) {
       const btIdx = content.indexOf("BT", searchFrom);
       if (btIdx === -1) break;
       const etIdx = content.indexOf("ET", btIdx + 2);
       if (etIdx === -1) break;
-      // Cap block size to 10KB to avoid huge regex scans
-      if (etIdx - btIdx <= 10240) {
+      if (etIdx - btIdx <= MAX_BT_ET_BLOCK_SIZE) {
         const block = content.substring(btIdx + 2, etIdx);
         const textOps = block.match(/\(([^)]{1,200})\)\s*Tj/g);
         if (textOps) {
@@ -222,8 +238,14 @@ function basicPdfExtract(pdfBytes: Uint8Array): string {
   }
 }
 
+// --- Invoice field extraction ---
+
+function splitLines(text: string): string[] {
+  return text.split(/\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+}
+
 function findTotalAmount(text: string): string {
-  const lines = text.split(/\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+  const lines = splitLines(text);
 
   interface AmountCandidate {
     value: number;
@@ -261,7 +283,7 @@ function findTotalAmount(text: string): string {
       const valStr = m[1].replace(/,/g, "");
       const val = parseFloat(valStr);
       const key = `${i}-${val}`;
-      if (val > 0 && val < 1000000 && !seen.has(key)) {
+      if (val > 0 && val < MAX_AMOUNT_VALUE && !seen.has(key)) {
         seen.add(key);
         candidates.push({ value: val, valueStr: valStr, lineIndex: i, score: -5 });
       }
@@ -328,7 +350,9 @@ function findTotalAmount(text: string): string {
   return "";
 }
 
-function findBusinessName(lines: string[], fullText: string): string {
+function findBusinessName(text: string): string {
+  const lines = splitLines(text);
+
   const entitySuffixes =
     /(?:Pty\.?\s*Ltd\.?|P\/L|LLC|Inc\.?|Ltd\.?|Co\.\s|Corporation|Corp\.?|Group|Holdings|Enterprises|Trading|Industries|International)/i;
 
@@ -361,12 +385,16 @@ function findBusinessName(lines: string[], fullText: string): string {
     return words.filter((w) => lower.includes(w)).length >= 2;
   }
 
+  function isValidName(name: string): boolean {
+    return name.length >= 3 && name.length < MAX_NAME_LENGTH;
+  }
+
   for (const line of lines) {
     const trimmed = line.trim();
     if (entitySuffixes.test(trimmed) && !isTableHeader(trimmed) && !isSkip(trimmed)) {
       let name = trimmed.replace(/\s*[-|:]\s*(?:tax\s+)?invoice.*$/i, "").trim();
       name = name.replace(/^(from|by|billed?\s*by|company)[\s:]+/i, "").trim();
-      if (name.length >= 3 && name.length < 80) return name;
+      if (isValidName(name)) return name;
     }
   }
 
@@ -375,7 +403,7 @@ function findBusinessName(lines: string[], fullText: string): string {
     for (let i = abnIndex - 1; i >= Math.max(0, abnIndex - 3); i--) {
       const candidate = lines[i].trim();
       if (
-        candidate.length >= 3 && candidate.length < 80 &&
+        isValidName(candidate) &&
         !isSkip(candidate) && !isTableHeader(candidate) &&
         !/^\d/.test(candidate) && !/^\$/.test(candidate)
       ) {
@@ -389,7 +417,7 @@ function findBusinessName(lines: string[], fullText: string): string {
     if (tradeSuffixes.test(trimmed) && !isTableHeader(trimmed) && !isSkip(trimmed)) {
       let name = trimmed.replace(/\s*[-|:]\s*(?:tax\s+)?invoice.*$/i, "").trim();
       name = name.replace(/^(from|by|billed?\s*by|company)[\s:]+/i, "").trim();
-      if (name.length >= 3 && name.length < 80) return name;
+      if (isValidName(name)) return name;
     }
   }
 
@@ -397,10 +425,10 @@ function findBusinessName(lines: string[], fullText: string): string {
     /(?:from|billed?\s*by|issued\s*by|supplier|vendor|contractor|company)[\s:]+(.+)/i,
   ];
   for (const pattern of fromPatterns) {
-    const match = fullText.match(pattern);
+    const match = text.match(pattern);
     if (match) {
       const candidate = match[1].trim().split(/\n/)[0].trim();
-      if (candidate.length >= 3 && candidate.length < 80 && !isSkip(candidate) && !isTableHeader(candidate)) {
+      if (isValidName(candidate) && !isSkip(candidate) && !isTableHeader(candidate)) {
         return candidate;
       }
     }
@@ -412,7 +440,7 @@ function findBusinessName(lines: string[], fullText: string): string {
   for (const line of searchLines) {
     const trimmed = line.trim();
     if (
-      trimmed.length >= 3 && trimmed.length < 80 &&
+      isValidName(trimmed) &&
       !isSkip(trimmed) && !isTableHeader(trimmed) &&
       !/^\d/.test(trimmed) && !/^\$/.test(trimmed)
     ) {
@@ -423,7 +451,9 @@ function findBusinessName(lines: string[], fullText: string): string {
   return "";
 }
 
-function findInvoiceNumber(lines: string[], fullText: string): string {
+function findInvoiceNumber(text: string): string {
+  const lines = splitLines(text);
+
   const invPatterns = [
     /(?:invoice|inv)\s*(?:#|no\.?|number|num)?[\s:.-]*([A-Z0-9][\w/-]*\d[\w/-]*)/i,
     /(?:invoice|inv)\s*(?:#|no\.?|number|num)?[\s:.-]*(\d+)/i,
@@ -438,15 +468,15 @@ function findInvoiceNumber(lines: string[], fullText: string): string {
   for (const line of lines) {
     for (const pattern of invPatterns) {
       const match = line.match(pattern);
-      if (match && match[1].trim().length <= 30) {
+      if (match && match[1].trim().length <= MAX_INVOICE_NUMBER_LENGTH) {
         return match[1].trim();
       }
     }
   }
 
   for (const pattern of invPatterns) {
-    const match = fullText.match(pattern);
-    if (match && match[1].trim().length <= 30) {
+    const match = text.match(pattern);
+    if (match && match[1].trim().length <= MAX_INVOICE_NUMBER_LENGTH) {
       return match[1].trim();
     }
   }
@@ -455,7 +485,7 @@ function findInvoiceNumber(lines: string[], fullText: string): string {
 }
 
 function findGstAmount(text: string): string {
-  const lines = text.split(/\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+  const lines = splitLines(text);
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].toLowerCase();
@@ -496,7 +526,7 @@ function findGstAmount(text: string): string {
 }
 
 function findDueDate(text: string): string {
-  const lines = text.split(/\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+  const lines = splitLines(text);
 
   const monthMap: Record<string, string> = {
     jan: "01", january: "01", feb: "02", february: "02", mar: "03", march: "03",
@@ -583,14 +613,9 @@ function parseInvoiceDetails(text: string): {
     return { business_name: "", invoice_number: "", amount: "", gst: "", due_date: "" };
   }
 
-  const lines = text
-    .split(/\n/)
-    .map((l: string) => l.trim())
-    .filter((l: string) => l.length > 0);
-
   return {
-    business_name: findBusinessName(lines, text),
-    invoice_number: findInvoiceNumber(lines, text),
+    business_name: findBusinessName(text),
+    invoice_number: findInvoiceNumber(text),
     amount: findTotalAmount(text),
     gst: findGstAmount(text),
     due_date: findDueDate(text),
