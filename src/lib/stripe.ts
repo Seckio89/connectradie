@@ -255,9 +255,7 @@ export interface ConnectAccountDetails {
 }
 
 export async function getConnectAccountDetails(): Promise<ConnectAccountDetails> {
-  // Force a session refresh to avoid stale/expired tokens causing 401
-  const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
-  const session = refreshedSession ?? (await supabase.auth.getSession()).data.session;
+  const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
     throw new Error('Not authenticated');

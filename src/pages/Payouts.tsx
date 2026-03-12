@@ -82,15 +82,17 @@ export default function Payouts() {
     setOnboardingComplete(data?.stripe_connect_onboarding_complete ?? false);
   }, [user]);
 
+  const isAuthenticated = !!session;
   useEffect(() => {
-    if (session) {
+    if (isAuthenticated) {
       fetchDetails();
       fetchEarnings();
       fetchOnboardingStatus();
     } else {
       setLoading(false);
     }
-  }, [session, fetchEarnings, fetchOnboardingStatus]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   const fetchDetails = async () => {
     setLoading(true);
