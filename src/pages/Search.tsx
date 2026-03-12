@@ -111,7 +111,7 @@ export default function Search() {
       checkViewLimits();
       fetchSavedSearchesList();
     }
-  }, [tradeFilter, user]);
+  }, [tradeFilter, postcodeFilter, user]);
 
   const checkViewLimits = async () => {
     if (!user || !isClient) return;
@@ -125,7 +125,7 @@ export default function Search() {
 
   useEffect(() => {
     applyFilters();
-  }, [tradies, ratingFilter, contractorTypeFilter, searchQuery, tradieRatings, postcodeFilter, emergencyFilter]);
+  }, [tradies, ratingFilter, contractorTypeFilter, searchQuery, tradieRatings, emergencyFilter]);
 
   const fetchRatings = async () => {
     const { data } = await supabase
@@ -164,6 +164,10 @@ export default function Search() {
 
     if (tradeFilter) {
       query.eq('tradie_details.trade_category', tradeFilter);
+    }
+
+    if (postcodeFilter.trim()) {
+      query.ilike('postcode', `${postcodeFilter.trim()}%`);
     }
 
     const { data: profiles } = await query;
@@ -244,15 +248,6 @@ export default function Search() {
         const trade = t.tradie_details?.trade_category?.toLowerCase() || '';
         const bio = t.tradie_details?.bio?.toLowerCase() || '';
         return name.includes(query) || business.includes(query) || trade.includes(query) || bio.includes(query);
-      });
-    }
-
-    if (postcodeFilter.trim()) {
-      const pc = postcodeFilter.toLowerCase();
-      result = result.filter((t) => {
-        const postcode = t.postcode?.toLowerCase() || '';
-        const address = t.address?.toLowerCase() || '';
-        return postcode.includes(pc) || address.includes(pc);
       });
     }
 
@@ -703,7 +698,14 @@ export default function Search() {
               <SearchIcon className="w-6 h-6 text-gray-400" />
             </div>
             <h3 className="text-base font-semibold text-gray-900 mb-1">No tradies found</h3>
-            <p className="text-sm text-gray-500">Try adjusting your search or filters</p>
+            <p className="text-sm text-gray-500 mb-6">Try adjusting your search or filters</p>
+            <Link
+              to="/post-lead"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors shadow-sm shadow-warm-500/20"
+            >
+              <Briefcase className="w-5 h-5" />
+              Post a Job Instead
+            </Link>
           </div>
         ) : (
           <>
@@ -741,7 +743,7 @@ export default function Search() {
                     />
                   ))}
                 </div>
-                {hasMore && !searchQuery.trim() && !postcodeFilter.trim() && !ratingFilter && !contractorTypeFilter && (
+                {hasMore && (
                   <div className="flex justify-center mt-8">
                     <button
                       onClick={loadMore}

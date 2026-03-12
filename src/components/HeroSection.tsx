@@ -159,7 +159,12 @@ export default function HeroSection() {
 
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 transition-all shadow-md shadow-warm-500/20 hover:shadow-lg hover:shadow-warm-500/25 active:scale-95"
+                  disabled={!tradeType}
+                  className={`px-6 py-3 font-medium rounded-xl transition-all shadow-md active:scale-95 ${
+                    tradeType
+                      ? 'bg-warm-500 text-white hover:bg-warm-600 shadow-warm-500/20 hover:shadow-lg hover:shadow-warm-500/25'
+                      : 'bg-warm-500/50 text-white/70 cursor-not-allowed shadow-none'
+                  }`}
                 >
                   Find Tradies
                 </button>
