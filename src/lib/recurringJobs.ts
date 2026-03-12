@@ -15,6 +15,10 @@ export interface RecurringJobData {
   is_active?: boolean;
   original_job_id?: string;
   location?: string;
+  agreed_price?: number;
+  day_of_week?: number;
+  preferred_time?: string;
+  billing_cycle?: 'fortnightly' | 'monthly';
 }
 
 export interface RecurringJob {
@@ -32,11 +36,33 @@ export interface RecurringJob {
   created_at: string;
   updated_at: string;
   location?: string;
+  agreed_price?: number;
+  day_of_week?: number;
+  preferred_time?: string;
+  billing_cycle?: 'fortnightly' | 'monthly';
+  last_invoiced_at?: string;
   tradie?: {
     id: string;
     full_name: string;
     email: string;
   } | null;
+}
+
+export type RecurringSessionStatus = 'scheduled' | 'completed' | 'rescheduled' | 'skipped' | 'extra';
+
+export interface RecurringSession {
+  id: string;
+  recurring_job_id: string;
+  scheduled_date: string;
+  actual_date: string | null;
+  status: RecurringSessionStatus;
+  extra_hours: number | null;
+  extra_cost: number | null;
+  reschedule_reason: string | null;
+  reschedule_by: 'client' | 'tradie' | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface RecurringJobSuggestion {
@@ -471,4 +497,111 @@ export function suggestRecurringJob(tradeCategory: string): RecurringJobSuggesti
     description: descriptions[key] ?? `Recurring ${tradeCategory} maintenance service.`,
     priceRange: pricing[key],
   };
+}
+
+// ---------------------------------------------------------------------------
+// Session operations
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch upcoming sessions for a recurring job (next 3 months).
+ */
+export async function getUpcomingSessions(
+  recurringJobId: string,
+): Promise<RecurringSession[]> {
+  const now = new Date();
+  const threeMonthsLater = new Date(now);
+  threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
+
+  const { data, error } = await supabase
+    .from('recurring_sessions')
+    .select('*')
+    .eq('recurring_job_id', recurringJobId)
+    .gte('scheduled_date', now.toISOString().split('T')[0])
+    .lte('scheduled_date', threeMonthsLater.toISOString().split('T')[0])
+    .order('scheduled_date', { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as RecurringSession[];
+}
+
+/**
+ * Reschedule a session to a new date.
+ */
+export async function rescheduleSession(
+  sessionId: string,
+  newDate: string,
+  reason: string,
+  by: 'client' | 'tradie',
+): Promise<void> {
+  const { error } = await supabase
+    .from('recurring_sessions')
+    .update({
+      actual_date: newDate,
+      status: 'rescheduled',
+      reschedule_reason: reason,
+      reschedule_by: by,
+    })
+    .eq('id', sessionId);
+
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Skip a session with a reason.
+ */
+export async function skipSession(
+  sessionId: string,
+  reason: string,
+  by: 'client' | 'tradie',
+): Promise<void> {
+  const { error } = await supabase
+    .from('recurring_sessions')
+    .update({
+      status: 'skipped',
+      reschedule_reason: reason,
+      reschedule_by: by,
+    })
+    .eq('id', sessionId);
+
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Add an extra session (outside normal schedule).
+ */
+export async function addExtraSession(
+  recurringJobId: string,
+  date: string,
+  extraHours: number,
+  extraCost: number,
+  notes: string,
+): Promise<RecurringSession> {
+  const { data, error } = await supabase
+    .from('recurring_sessions')
+    .insert({
+      recurring_job_id: recurringJobId,
+      scheduled_date: date,
+      status: 'extra',
+      extra_hours: extraHours,
+      extra_cost: extraCost,
+      notes,
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as RecurringSession;
+}
+
+/**
+ * Mark a session as completed.
+ */
+export async function completeSession(sessionId: string): Promise<void> {
+  const { error } = await supabase
+    .from('recurring_sessions')
+    .update({ status: 'completed' })
+    .eq('id', sessionId);
+
+  if (error) throw new Error(error.message);
 }
