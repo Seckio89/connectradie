@@ -149,6 +149,38 @@ Deno.serve(async (req: Request) => {
       return errorJson("Only the client on this job can accept a quote", 403);
     }
 
+    // --- Free tier limit: MAX_JOBS_PER_MONTH (5) for the tradie ---
+    if (!alreadyAccepted) {
+      const { data: tradieSub } = await supabase
+        .from("stripe_subscriptions")
+        .select("subscription_tier")
+        .eq("profile_id", quote.tradie_id)
+        .maybeSingle();
+
+      const isTradieProUser =
+        tradieSub?.subscription_tier === "pro" ||
+        tradieSub?.subscription_tier === "business";
+
+      if (!isTradieProUser) {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+        const { count: monthlyJobCount } = await supabase
+          .from("jobs")
+          .select("*", { count: "exact", head: true })
+          .eq("tradie_id", quote.tradie_id)
+          .in("status", ["accepted", "in_progress", "completed"])
+          .gte("created_at", startOfMonth);
+
+        if ((monthlyJobCount ?? 0) >= 5) {
+          return errorJson(
+            "This tradie has reached their free tier limit of 5 jobs per month. They need to upgrade to Pro to accept more jobs.",
+            403,
+          );
+        }
+      }
+    }
+
     // Check for existing payment on this job
     const { data: existingPayment } = await supabase
       .from("payments")

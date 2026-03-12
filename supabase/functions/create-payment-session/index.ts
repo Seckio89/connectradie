@@ -126,6 +126,37 @@ Deno.serve(async (req: Request) => {
       return errorJson("Invalid payment type", 400);
     }
 
+    // --- Free tier limit: MAX_LEAD_UNLOCKS_PER_MONTH (3) ---
+    if (paymentType === "lead_unlock") {
+      const { data: userSub } = await supabase
+        .from("stripe_subscriptions")
+        .select("subscription_tier")
+        .eq("profile_id", user.id)
+        .maybeSingle();
+
+      const isProUser =
+        userSub?.subscription_tier === "pro" ||
+        userSub?.subscription_tier === "business";
+
+      if (!isProUser) {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+        const { count: monthlyUnlocks } = await supabase
+          .from("job_unlocks")
+          .select("*", { count: "exact", head: true })
+          .eq("tradie_id", user.id)
+          .gte("created_at", startOfMonth);
+
+        if ((monthlyUnlocks ?? 0) >= 3) {
+          return errorJson(
+            "You've reached your free tier limit of 3 lead unlocks per month. Upgrade to Pro for unlimited unlocks.",
+            403,
+          );
+        }
+      }
+    }
+
     const { data: existingPayment } = await supabase
       .from("payments")
       .select("id")
