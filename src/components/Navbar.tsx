@@ -5,15 +5,21 @@ import { Link, useNavigate } from 'react-router-dom';
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
 
+  const isTradie = profile?.role === 'tradie';
+  const postJobHref = user ? '/dashboard' : '/register?type=client';
+
   const navLinks = [
-    { name: 'Post a Job', href: '/register?type=client', isRoute: true },
+    // Hide "Post a Job" entirely for tradies; route to dashboard for logged-in clients
+    ...(!isTradie ? [{ name: 'Post a Job', href: postJobHref, isRoute: true }] : []),
     { name: 'Find a Trade', href: '/search', isRoute: true },
     { name: 'Explore', href: '/explore', isRoute: true },
-    { name: 'For Tradies', href: '/#for-tradies', isRoute: false },
-    { name: 'How it Works', href: '/#how-it-works-clients', isRoute: false },
+    ...(!user ? [
+      { name: 'For Tradies', href: '/#for-tradies', isRoute: false },
+      { name: 'How it Works', href: '/#how-it-works-clients', isRoute: false },
+    ] : []),
   ];
 
   const handleSignOut = async () => {

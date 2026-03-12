@@ -1,93 +1,75 @@
-# ConnecTradie Project Context
+# ConnecTradie
+
+Australian two-sided marketplace — homeowners post jobs, licensed tradies bid.
+Escrow via Stripe Connect (Stripe holds funds, NOT us — AFSL compliance critical).
 
 ## Stack
-- **Frontend:** React 18, TypeScript, Tailwind CSS
-- **Backend:** Supabase (PostgreSQL, 19 Edge Functions)
-- **Payments:** Stripe Connect (escrow model)
-- **Dev Environment:** VS Code + Claude Code extension, local git repo
+- React 18 · TypeScript strict · Tailwind CSS · Vite
+- Supabase: PostgreSQL + 20 Edge Functions (Deno) + RLS
+- Stripe Connect escrow · Google Maps API · Sentry
 
-## Project Structure
+## Key Directories
 ```
-/src
-  /components    # React components
-  /pages         # Route pages
-  /hooks         # Custom React hooks
-  /lib           # Utilities, Supabase client
-  /types         # TypeScript interfaces
-/supabase
-  /functions     # Edge Functions (19 total)
-  /migrations    # Database migrations
+src/pages/          # 38 route pages
+src/components/     # 90+ components
+src/hooks/          # useAvailabilitySlots, useDashboardJobs, useToast, etc.
+src/lib/            # Supabase client, notifications, analytics, email templates
+src/contexts/       # AuthContext.tsx
+supabase/functions/ # 20 Edge Functions
+supabase/migrations/# 70+ migrations — never edit existing, always add new
 ```
+
+## Edge Functions (20)
+cancel-subscription · check-license-expiry · create-checkout-session
+create-job-deposit · create-payment-session · google-calendar-oauth
+parse-invoice · pay-milestone · process-refund · release-escrow
+send-email · send-sms · stripe-checkout · stripe-connect-account
+stripe-connect-onboarding · stripe-webhook · sync-google-calendar
+verify-abn · verify-license
 
 ## Commands
-- `npm run dev` — Start dev server
-- `npm run build` — Production build
-- `npm run lint` — ESLint check
-- `supabase functions serve` — Local Edge Function testing
-- `supabase functions deploy <name>` — Deploy single function
-- `supabase db push` — Apply migrations
+```bash
+npm run dev                        # dev server
+npm run build                      # production build
+npx tsc --noEmit --skipLibCheck    # type check — run after every change
+supabase functions serve           # local edge function test
+supabase functions deploy <name>   # deploy single function
+supabase gen types typescript      # regenerate DB types
+supabase db push                   # apply migrations
+```
 
-## Code Conventions
-- TypeScript strict mode, avoid `any`
-- Named exports preferred
-- Use Supabase types from `/src/types/supabase.ts`
-- Tailwind for all styling, no custom CSS files
-- Error handling: always wrap Supabase calls in try/catch
-- For type mismatches on Supabase inserts, prefer safe destructuring over `as` casts
+## Hard Rules
+- Never commit .env or expose API keys
+- Stripe webhooks MUST validate signatures
+- Never edit existing migrations — create new ones only
+- No `any` — use types from src/types/supabase.ts
+- All Supabase calls in try/catch with structured errors
+- Supabase inserts: safe destructuring over `as` casts
+- Tailwind only — no custom CSS
 
-## Edge Functions
-- Located in `/supabase/functions/`
-- Use Deno runtime
-- Environment variables via `Deno.env.get()`
-- Stripe webhooks require signature validation
+## UI Patterns
+- Max-width: `max-w-5xl` (ultrawide 3440×1440)
+- Tabs: `border-b-2 border-warm-500 text-warm-600` active / `border-transparent text-gray-400` inactive
+- Buttons: `inline-flex px-5 py-2` — never `w-full` unless explicit
+- Modals: use src/components/Modal.tsx
+- Status badges: `px-3 py-1 rounded-full text-xs font-medium border`
+- Job lifecycle: `pending → accepted → funded → in_progress → completed`
 
-## Testing Approach
-- Test critical paths: auth, payments, job lifecycle
-- Run `npm test` before committing
+## Large Files — Read Fully Before Editing
+- src/components/JobDetailsCard.tsx — 1413 lines
+- src/components/ChatDrawer.tsx — 1054 lines
+- src/pages/Settings.tsx — 1190 lines
+- src/pages/TradieDashboard.tsx — 1088 lines
+- src/pages/Jobs.tsx — 988 lines
 
-## Important Notes
-- NEVER commit `.env` or expose API keys
-- Stripe webhook handlers MUST validate signatures
-- Database types regenerate via `supabase gen types typescript`
-- For production deploys, verify all 19 Edge Functions are deployed with correct env vars
+## Workflow: Plan → Execute → Verify → Iterate
+1. Plan — read relevant files, trace full path (UI → edge fn → DB), state plan before coding
+2. Execute — types first → backend → frontend, minimal changes, follow existing patterns
+3. Verify — run `npx tsc --noEmit --skipLibCheck`, fix all errors before moving on
+4. Iterate — if screenshot provided, compare and fix immediately
 
-## Workflow Loop (Plan → Execute → Verify → Iterate)
-
-Every task MUST follow this loop:
-
-### 1. Plan
-- Read all relevant files before making changes
-- Identify every file that will be affected
-- For UI changes: understand the component tree and data flow
-- For backend changes: trace the full request path (frontend → edge function → database)
-- State your plan before writing code
-
-### 2. Execute
-- Make changes in logical order (types → backend → frontend)
-- Keep changes minimal — only touch what's needed
-- Follow existing patterns in the codebase (check nearby code first)
-- Use trade-specific Australian context where relevant (AUD, AU standards, state licensing)
-
-### 3. Verify
-- Run `npx tsc --noEmit --skipLibCheck` after every set of changes
-- Fix all TypeScript errors before moving on
-- For UI: consider how it looks on ultrawide (3440x1440) — use max-w-5xl for content areas
-- For data: verify Supabase column names match the actual schema
-
-### 4. Iterate
-- If the user provides a screenshot, compare against what was implemented
-- Address feedback immediately — don't defer
-- If something doesn't work, investigate the root cause rather than guessing
-
-## Key Patterns
-- **Tabs:** Underline style — `border-b-2 border-warm-500 text-warm-600` active, `border-transparent text-gray-400` inactive
-- **Buttons:** `inline-flex` with `px-5 py-2`, never `w-full` unless explicitly needed
-- **Modals:** Use `Modal` component from `src/components/Modal.tsx`
-- **Status badges:** `px-3 py-1 rounded-full text-xs font-medium border` + status color
-- **Job lifecycle:** `pending → accepted → funded → in_progress → completed`
-- **Card max-width:** `max-w-5xl` for single-column layouts on ultrawide monitors
-
-## Workflow Preferences
-- Verify TypeScript compilation before committing
-- Prefer small, focused commits with conventional commit messages
-- When editing a page, always check if the same pattern exists elsewhere that needs updating
+## Business Context
+- HIA-aligned milestone payment templates
+- Client-side escrow release (homeowner triggers, not platform)
+- AUD, Australian state licensing, ABN verification
+- Competitors: hipages, Airtasker, Oneflare, ServiceSeeking

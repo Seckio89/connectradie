@@ -57,8 +57,14 @@ body {
   background-color: #1f2937 !important;
 }
 
-.dark .bg-gray-50 {
+.dark .bg-gray-50,
+.dark .bg-gray-50\/80,
+.dark .bg-gray-50\/70,
+.dark .bg-gray-50\/50 {
   background-color: #1f2937 !important;
+}
+.dark .hover\:bg-gray-50\/50:hover {
+  background-color: #283141 !important;
 }
 
 .dark .bg-gray-100 {
@@ -122,12 +128,205 @@ body {
 }
 
 .dark .text-gray-400 {
-  color: #6b7280 !important;
+  color: #9ca3af !important;
+}
+
+/* ── Additional text overrides for dark readability ── */
+.dark .text-gray-300 {
+  color: #d1d5db !important;
+}
+
+.dark .text-gray-200 {
+  color: #e5e7eb !important;
+}
+
+.dark .text-gray-100 {
+  color: #f3f4f6 !important;
+}
+
+.dark .text-black {
+  color: #f9fafb !important;
+}
+
+/* ── Colored text — brighter for dark readability ── */
+.dark .text-red-500 {
+  color: #f87171 !important;
+}
+
+.dark .text-red-400 {
+  color: #fca5a5 !important;
+}
+
+.dark .text-blue-500 {
+  color: #60a5fa !important;
+}
+
+.dark .text-blue-400 {
+  color: #93c5fd !important;
+}
+
+.dark .text-yellow-500 {
+  color: #fbbf24 !important;
+}
+
+.dark .text-yellow-600 {
+  color: #fcd34d !important;
+}
+
+.dark .text-amber-500 {
+  color: #fbbf24 !important;
+}
+
+.dark .text-amber-600 {
+  color: #fcd34d !important;
+}
+
+.dark .text-orange-500 {
+  color: #fb923c !important;
+}
+
+.dark .text-orange-600,
+.dark .text-orange-700 {
+  color: #fdba74 !important;
+}
+
+.dark .text-purple-500 {
+  color: #a78bfa !important;
+}
+
+.dark .text-purple-600 {
+  color: #c4b5fd !important;
+}
+
+.dark .text-indigo-600,
+.dark .text-indigo-700 {
+  color: #a5b4fc !important;
+}
+
+/* ── Custom palette text — brighter for dark ── */
+.dark .text-primary-600 {
+  color: #2dd4bf !important;
+}
+
+.dark .text-primary-700 {
+  color: #5eead4 !important;
+}
+
+.dark .text-primary-800,
+.dark .text-primary-900 {
+  color: #99f6e4 !important;
+}
+
+.dark .text-warm-600 {
+  color: #06D6A0 !important;
+}
+
+.dark .text-warm-700 {
+  color: #34d89f !important;
+}
+
+.dark .text-warm-800 {
+  color: #6ee7bc !important;
+}
+
+.dark .text-secondary-600 {
+  color: #8bb8a8 !important;
+}
+
+.dark .text-secondary-700 {
+  color: #a8d0c0 !important;
+}
+
+.dark .text-accent-600 {
+  color: #fbbf24 !important;
+}
+
+.dark .text-accent-700 {
+  color: #fcd34d !important;
+}
+
+/* ── Dark shades of colored text — must be bright in dark mode ── */
+.dark .text-amber-800,
+.dark .text-amber-900 {
+  color: #fcd34d !important;
+}
+
+.dark .text-yellow-900 {
+  color: #fef08a !important;
+}
+
+.dark .text-red-800,
+.dark .text-red-900 {
+  color: #fca5a5 !important;
+}
+
+.dark .text-blue-800,
+.dark .text-blue-900 {
+  color: #93c5fd !important;
+}
+
+.dark .text-green-900 {
+  color: #a7f3d5 !important;
+}
+
+.dark .text-primary-500 {
+  color: #14b8a6 !important;
+}
+
+.dark .text-primary-400 {
+  color: #2dd4bf !important;
+}
+
+.dark .text-warm-500 {
+  color: #06D6A0 !important;
+}
+
+.dark .text-warm-400 {
+  color: #34d89f !important;
+}
+
+.dark .text-warm-900 {
+  color: #6ee7bc !important;
+}
+
+.dark .text-secondary-500 {
+  color: #8bb8a8 !important;
+}
+
+.dark .text-secondary-800,
+.dark .text-secondary-900 {
+  color: #c8e0d6 !important;
+}
+
+.dark .text-accent-800,
+.dark .text-accent-900 {
+  color: #fef08a !important;
+}
+
+.dark .text-orange-800,
+.dark .text-orange-900 {
+  color: #fed7aa !important;
+}
+
+.dark .text-purple-900 {
+  color: #ddd6fe !important;
+}
+
+.dark .text-indigo-800,
+.dark .text-indigo-900 {
+  color: #c7d2fe !important;
 }
 
 /* ── Colored status backgrounds (soften for dark) ── */
-.dark .bg-green-50 {
+.dark .bg-green-50,
+.dark .bg-green-50\/30,
+.dark .bg-green-50\/40,
+.dark .bg-green-50\/50,
+.dark .bg-green-50\/60 {
   background-color: rgba(6, 214, 160, 0.1) !important;
+}
+.dark .hover\:bg-green-50\/60:hover {
+  background-color: rgba(6, 214, 160, 0.15) !important;
 }
 
 .dark .bg-green-100 {
@@ -146,9 +345,30 @@ body {
   background-color: #05AB80 !important;
 }
 
+/* ── Emerald (calendar available dates) ── */
+.dark .bg-emerald-50,
+.dark .bg-emerald-50\/60 {
+  background-color: rgba(6, 214, 160, 0.12) !important;
+}
+.dark .bg-emerald-100,
+.dark .hover\:bg-emerald-100:hover {
+  background-color: rgba(6, 214, 160, 0.22) !important;
+}
+.dark .border-emerald-200 {
+  border-color: rgba(6, 214, 160, 0.3) !important;
+}
+.dark .text-emerald-700,
+.dark .hover\:text-emerald-700:hover {
+  color: #06D6A0 !important;
+}
+
 .dark .bg-red-50,
 .dark .bg-red-100 {
   background-color: rgba(239, 68, 68, 0.15) !important;
+}
+.dark .bg-red-200,
+.dark .hover\:bg-red-200:hover {
+  background-color: rgba(239, 68, 68, 0.25) !important;
 }
 
 .dark .bg-blue-50,
@@ -195,6 +415,10 @@ body {
 .dark .bg-warm-100 {
   background-color: rgba(6, 214, 160, 0.12) !important;
 }
+.dark .bg-warm-200,
+.dark .hover\:bg-warm-200:hover {
+  background-color: rgba(6, 214, 160, 0.2) !important;
+}
 
 .dark .bg-accent-50,
 .dark .bg-accent-100 {
@@ -212,8 +436,11 @@ body {
 .dark [class*="from-secondary-50"],
 .dark [class*="from-green-50"],
 .dark [class*="from-warm-50"],
+.dark [class*="from-gray-50"],
+.dark [class*="from-amber-50"],
 .dark [class*="to-secondary-50"],
-.dark [class*="to-primary-50"] {
+.dark [class*="to-primary-50"],
+.dark [class*="to-yellow-50"] {
   background-image: none !important;
   background-color: #1f2937 !important;
 }
@@ -247,6 +474,29 @@ body {
 
 .dark .border-amber-200 {
   border-color: rgba(245, 158, 11, 0.25) !important;
+}
+
+.dark .border-amber-300 {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+.dark .border-red-100,
+.dark .border-red-300 {
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.dark .border-blue-100,
+.dark .border-blue-300 {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.dark .border-warm-100 {
+  border-color: rgba(6, 214, 160, 0.2) !important;
+}
+
+.dark .border-secondary-100,
+.dark .border-secondary-300 {
+  border-color: rgba(139, 184, 168, 0.25) !important;
 }
 
 .dark .border-primary-100,
@@ -312,8 +562,77 @@ body {
   background-color: #4b5563 !important;
 }
 
+/* ── Additional dark backgrounds ── */
+.dark .bg-gray-300 {
+  background-color: #4b5563 !important;
+}
+
+.dark .bg-gray-400 {
+  background-color: #6b7280 !important;
+}
+
+/* ── Colored button backgrounds — keep vibrant but slightly muted ── */
+.dark .bg-red-500 {
+  background-color: #ef4444 !important;
+}
+
+.dark .bg-red-600 {
+  background-color: #dc2626 !important;
+}
+
+.dark .bg-blue-500 {
+  background-color: #3b82f6 !important;
+}
+
+.dark .bg-blue-600 {
+  background-color: #2563eb !important;
+}
+
+.dark .bg-yellow-500 {
+  background-color: #eab308 !important;
+}
+
+.dark .bg-purple-500 {
+  background-color: #8b5cf6 !important;
+}
+
+/* ── Missing border colors ── */
+.dark .border-gray-400 {
+  border-color: #6b7280 !important;
+}
+
+.dark .border-gray-500 {
+  border-color: #6b7280 !important;
+}
+
+.dark .border-white {
+  border-color: #374151 !important;
+}
+
+/* ── Additional hover states ── */
+.dark .hover\:bg-gray-300:hover {
+  background-color: #4b5563 !important;
+}
+
+.dark .hover\:bg-white:hover {
+  background-color: #283141 !important;
+}
+
+.dark .hover\:text-gray-900:hover {
+  color: #f9fafb !important;
+}
+
+.dark .hover\:text-gray-800:hover {
+  color: #f3f4f6 !important;
+}
+
+.dark .hover\:text-gray-700:hover {
+  color: #e5e7eb !important;
+}
+
 /* ── Shadows ── */
-.dark .shadow-sm {
+.dark .shadow-sm,
+.dark [class*="shadow-gray-200"] {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
 }
 
@@ -355,6 +674,9 @@ body {
 }
 
 /* ── Ring / focus colors ── */
+.dark .ring-gray-100 {
+  --tw-ring-color: #283141 !important;
+}
 .dark .ring-gray-200,
 .dark .focus\:ring-gray-200:focus {
   --tw-ring-color: #374151 !important;
@@ -375,12 +697,51 @@ body {
   background-color: rgba(31, 41, 55, 0.9) !important;
 }
 
-.dark .bg-secondary-50\/60 {
+.dark .bg-white\/80 {
+  background-color: rgba(31, 41, 55, 0.8) !important;
+}
+
+.dark .bg-white\/60,
+.dark .hover\:bg-white\/60:hover {
+  background-color: rgba(31, 41, 55, 0.6) !important;
+}
+
+.dark .bg-white\/50,
+.dark .hover\:bg-white\/50:hover {
+  background-color: rgba(31, 41, 55, 0.5) !important;
+}
+
+.dark .bg-white\/40,
+.dark .hover\:bg-white\/40:hover {
+  background-color: rgba(31, 41, 55, 0.4) !important;
+}
+
+.dark .bg-secondary-50\/60,
+.dark .bg-secondary-50\/30,
+.dark .bg-secondary-50\/50 {
   background-color: rgba(139, 184, 168, 0.08) !important;
 }
 
-.dark .bg-primary-50\/40 {
+.dark .bg-primary-50\/40,
+.dark .bg-primary-50\/30,
+.dark .bg-primary-50\/50 {
   background-color: rgba(0, 150, 136, 0.08) !important;
+}
+.dark .hover\:bg-primary-50\/30:hover,
+.dark .hover\:bg-primary-50\/50:hover {
+  background-color: rgba(0, 150, 136, 0.12) !important;
+}
+
+.dark .bg-warm-50\/30,
+.dark .bg-warm-50\/50 {
+  background-color: rgba(6, 214, 160, 0.08) !important;
+}
+.dark .hover\:bg-warm-50\/30:hover {
+  background-color: rgba(6, 214, 160, 0.12) !important;
+}
+
+.dark .bg-warm-100\/60 {
+  background-color: rgba(6, 214, 160, 0.12) !important;
 }
 
 /* ── Notification badge ring against dark bg ── */
@@ -507,8 +868,83 @@ body {
   background-color: rgba(6, 214, 160, 0.18) !important;
 }
 
-.dark .hover\:bg-secondary-50:hover {
+.dark .hover\:bg-secondary-50:hover,
+.dark .hover\:bg-secondary-50\/30:hover {
   background-color: rgba(139, 184, 168, 0.12) !important;
+}
+
+.dark .hover\:bg-green-50:hover,
+.dark .hover\:bg-green-50\/30:hover {
+  background-color: rgba(6, 214, 160, 0.1) !important;
+}
+
+.dark .hover\:bg-blue-50:hover {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+.dark .hover\:bg-amber-50:hover {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+}
+
+/* ── White text in dark mode — keep white ── */
+.dark .text-white {
+  color: #ffffff !important;
+}
+
+/* ── Disabled states ── */
+.dark .disabled\:opacity-60:disabled,
+.dark .disabled\:opacity-50:disabled,
+.dark .disabled\:opacity-40:disabled {
+  opacity: 0.4 !important;
+}
+
+/* ── Placeholder text (additional selectors) ── */
+.dark .placeholder-gray-400::placeholder,
+.dark .placeholder-gray-500::placeholder {
+  color: #6b7280 !important;
+}
+
+/* ── Badge / chip backgrounds ── */
+.dark .bg-gray-800 {
+  background-color: #374151 !important;
+}
+
+.dark .bg-gray-900 {
+  background-color: #283141 !important;
+}
+
+/* ── Focus ring colors ── */
+.dark .focus\:ring-primary-500:focus {
+  --tw-ring-color: rgba(0, 150, 136, 0.5) !important;
+}
+
+.dark .focus\:ring-warm-500:focus {
+  --tw-ring-color: rgba(6, 214, 160, 0.5) !important;
+}
+
+.dark .focus\:ring-green-500:focus {
+  --tw-ring-color: rgba(6, 214, 160, 0.5) !important;
+}
+
+.dark .focus\:ring-blue-500:focus {
+  --tw-ring-color: rgba(59, 130, 246, 0.5) !important;
+}
+
+.dark .focus\:ring-red-500:focus {
+  --tw-ring-color: rgba(239, 68, 68, 0.5) !important;
+}
+
+/* ── Focus border colors ── */
+.dark .focus\:border-primary-500:focus {
+  border-color: #14b8a6 !important;
+}
+
+.dark .focus\:border-warm-500:focus {
+  border-color: #06D6A0 !important;
+}
+
+.dark .focus\:border-green-500:focus {
+  border-color: #06D6A0 !important;
 }
 
 /* ── Scrollbar colors for dark mode ── */
@@ -1053,4 +1489,15 @@ html:not(.dark) .theme-aware .to-navy-800 {
 
 .animate-pulse-soft {
   animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

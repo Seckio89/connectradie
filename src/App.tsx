@@ -41,6 +41,7 @@ const AdminUsers = lazy(() => import('./pages/AdminUsers'));
 const AdminPayments = lazy(() => import('./pages/AdminPayments'));
 const AdminModeration = lazy(() => import('./pages/AdminModeration'));
 const AdminDisputes = lazy(() => import('./pages/AdminDisputes'));
+const AdminUpdates = lazy(() => import('./pages/AdminUpdates'));
 const Schedule = lazy(() => import('./pages/Schedule'));
 const WorkHub = lazy(() => import('./pages/WorkHub'));
 const PerformanceInsights = lazy(() => import('./pages/PerformanceInsights'));
@@ -312,6 +313,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute requireAdmin>
             <AdminDisputes />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/updates"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminUpdates />
           </ProtectedRoute>
         }
       />

@@ -36,6 +36,7 @@ function getNotificationIcon(type: string) {
     case 'job_update':
     case 'booking_request':
     case 'job':
+    case 'new_lead':
       return Briefcase;
     case 'message':
     case 'new_message':
@@ -56,6 +57,7 @@ function getFilterCategory(type: string): FilterTab {
     case 'job_update':
     case 'booking_request':
     case 'job':
+    case 'new_lead':
     case 'project_update':
       return 'job';
     case 'message':

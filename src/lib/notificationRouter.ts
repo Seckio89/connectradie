@@ -26,6 +26,7 @@ const STATIC_ROUTES: Record<string, NotificationChannel[]> = {
   [NOTIFICATION_TYPES.PAYMENT_RECEIVED]: [CHANNEL_EMAIL, CHANNEL_IN_APP],
 
   [NOTIFICATION_TYPES.BOOKING_REMINDER]: [CHANNEL_EMAIL, CHANNEL_IN_APP],
+  [NOTIFICATION_TYPES.NEW_LEAD]: [CHANNEL_IN_APP],
 };
 
 function resolveConditionalRoutes(payload: NotificationPayload): NotificationChannel[] | null {

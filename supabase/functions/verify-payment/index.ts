@@ -65,7 +65,7 @@ Deno.serve(async (req: Request) => {
     // Look up the payment
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
-      .select("id, profile_id, status, stripe_checkout_session_id, stripe_payment_intent_id")
+      .select("id, profile_id, job_id, status, stripe_checkout_session_id, stripe_payment_intent_id")
       .eq("id", paymentId)
       .maybeSingle();
 
@@ -78,8 +78,20 @@ Deno.serve(async (req: Request) => {
       return errorJson("Not authorized", 403);
     }
 
-    // Already completed — nothing to do
+    // Already completed — ensure job is also funded (catches cases where
+    // a previous verify-payment completed the payment but didn't update the job)
     if (payment.status === "completed") {
+      if (payment.job_id) {
+        const { error: jobFixError } = await supabase
+          .from("jobs")
+          .update({ status: "funded" })
+          .eq("id", payment.job_id)
+          .in("status", ["pending", "accepted"]);
+
+        if (!jobFixError) {
+          console.info(`Job ${payment.job_id} status fixed to funded (payment already completed)`);
+        }
+      }
       return new Response(
         JSON.stringify({ status: "completed", message: "Payment already confirmed" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -127,6 +139,21 @@ Deno.serve(async (req: Request) => {
       if (updateError) {
         console.error("Failed to update payment:", updateError);
         return errorJson("Failed to update payment record", 500);
+      }
+
+      // Also update the job status to 'funded' (mirrors stripe-webhook behavior)
+      if (session.metadata?.job_id) {
+        const { error: jobUpdateError } = await supabase
+          .from("jobs")
+          .update({ status: "funded" })
+          .eq("id", session.metadata.job_id)
+          .in("status", ["pending", "accepted"]);
+
+        if (jobUpdateError) {
+          console.error("Failed to update job status to funded:", jobUpdateError);
+        } else {
+          console.info(`Job ${session.metadata.job_id} status updated to funded (webhook fallback)`);
+        }
       }
 
       console.info(`Payment ${paymentId} verified and marked as completed (webhook fallback)`);

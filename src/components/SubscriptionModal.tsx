@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { friendlyError } from '../lib/utils';
 import {
   X,
   Check,
@@ -147,7 +148,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
       setErrorMessage('');
       await createCheckoutSession(billingCycle);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to start checkout');
+      setErrorMessage(friendlyError(error, 'Unable to start checkout. Please try again.'));
       setModalState('error');
     }
   };
@@ -178,7 +179,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
       await refreshProfile();
       setModalState('success');
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to activate plan');
+      setErrorMessage(friendlyError(error, 'Unable to activate your plan. Please try again.'));
       setModalState('error');
     }
   };
@@ -212,7 +213,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
       await loadSubscriptionData();
       setModalState('cancelled');
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to cancel subscription');
+      setErrorMessage(friendlyError(error, 'Unable to cancel your subscription. Please try again or contact support.'));
       setModalState('error');
     }
   };

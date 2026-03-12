@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, Calendar, Plus, Trash2, Clock, Package, ChevronRight, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { friendlyError } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { Project, Job } from '../types/database';
 import { autoNameProject } from '../lib/projectAutoName';
@@ -141,7 +142,7 @@ export default function ProjectDetailsModal({
 
         if (error) {
           setToast({
-            message: `Failed to add job: ${error.message}`,
+            message: friendlyError(error, 'Unable to add job to project. Please try again.'),
             type: 'error'
           });
           // Revert optimistic update on error
@@ -209,7 +210,7 @@ export default function ProjectDetailsModal({
 
       if (error) {
         setToast({
-          message: `Failed to remove job: ${error.message}`,
+          message: friendlyError(error, 'Unable to remove job from project. Please try again.'),
           type: 'error'
         });
         // Revert optimistic update on error

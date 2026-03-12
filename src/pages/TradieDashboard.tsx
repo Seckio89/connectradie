@@ -45,7 +45,7 @@ import SmartInsightsWidget from '../components/SmartInsightsWidget';
 import EmptyState from '../components/EmptyState';
 import SubscriptionModal from '../components/SubscriptionModal';
 import CollapsibleSection from '../components/CollapsibleSection';
-import { isPro } from '../lib/subscription';
+import { isPro, FREE_LIMITS, getMonthlyJobAccepts, getMonthlyLeadUnlocks } from '../lib/subscription';
 import UserTradeBadges from '../components/UserTradeBadges';
 import WelcomeGuide from '../components/WelcomeGuide';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
@@ -218,6 +218,10 @@ export default function TradieDashboard() {
   const [pushStatus, setPushStatus] = useState<'loading' | 'granted' | 'denied' | 'default' | 'unsupported'>('loading');
   const [pushEnabling, setPushEnabling] = useState(false);
 
+  // Free tier usage
+  const [monthlyJobs, setMonthlyJobs] = useState(0);
+  const [monthlyUnlocks, setMonthlyUnlocks] = useState(0);
+
   // Post-onboarding scroll to calendar
   const [searchParams, setSearchParams] = useSearchParams();
   const [showOnboardedBanner, setShowOnboardedBanner] = useState(false);
@@ -268,6 +272,14 @@ export default function TradieDashboard() {
   }, [user]);
 
   // ─── Effects ──────────────────────────────────────────────
+
+  // Fetch free tier usage counts
+  useEffect(() => {
+    if (!user || isProUser) return;
+    Promise.all([getMonthlyJobAccepts(user.id), getMonthlyLeadUnlocks(user.id)]).then(
+      ([jobs, unlocks]) => { setMonthlyJobs(jobs); setMonthlyUnlocks(unlocks); }
+    );
+  }, [user, isProUser]);
 
   useEffect(() => {
     fetchEarnings();
@@ -532,6 +544,44 @@ export default function TradieDashboard() {
           </div>
         )}
 
+        {/* Free Tier Usage */}
+        {!isProUser && (
+          <div className="mb-6 bg-white border border-gray-200 rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-900">Free Plan Usage</h3>
+              <button onClick={() => setShowSubscriptionModal(true)} className="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors">
+                Upgrade to Pro
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-gray-600">Jobs accepted this month</span>
+                  <span className="text-xs font-medium text-gray-900">{monthlyJobs} of {FREE_LIMITS.MAX_JOBS_PER_MONTH}</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${monthlyJobs >= FREE_LIMITS.MAX_JOBS_PER_MONTH ? 'bg-red-500' : monthlyJobs >= FREE_LIMITS.MAX_JOBS_PER_MONTH - 1 ? 'bg-amber-500' : 'bg-warm-500'}`}
+                    style={{ width: `${Math.min(100, (monthlyJobs / FREE_LIMITS.MAX_JOBS_PER_MONTH) * 100)}%` }}
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-gray-600">Lead unlocks this month</span>
+                  <span className="text-xs font-medium text-gray-900">{monthlyUnlocks} of {FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH}</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${monthlyUnlocks >= FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH ? 'bg-red-500' : monthlyUnlocks >= FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH - 1 ? 'bg-amber-500' : 'bg-warm-500'}`}
+                    style={{ width: `${Math.min(100, (monthlyUnlocks / FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Onboarding Checklist */}
         <div className="mb-6" data-tour="onboarding-checklist">
           <SectionErrorBoundary fallbackTitle="Onboarding checklist failed to load">
@@ -681,10 +731,21 @@ export default function TradieDashboard() {
 
           <div className="p-6">
             {/* ─── JOBS TAB ─── */}
-            {activeTab === 'jobs' && (
+            {activeTab === 'jobs' && (() => {
+              const activeJobs = jobs.filter((j: DashboardJob) => !['completed', 'cancelled', 'declined'].includes(j.status));
+              const completedJobs = jobs.filter((j: DashboardJob) => j.status === 'completed');
+              const otherJobs = jobs.filter((j: DashboardJob) => ['cancelled', 'declined'].includes(j.status));
+
+              return (
               <div>
-                <h2 className="text-lg font-bold text-gray-900 mb-4">Your Jobs</h2>
-                {jobs.length === 0 ? (
+                {/* ─── Active Jobs ─── */}
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-gray-900">Active Jobs</h2>
+                  <Link to="/work?tab=active" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                    View all in Work Hub &rarr;
+                  </Link>
+                </div>
+                {activeJobs.length === 0 ? (
                   <div>
                     <EmptyState
                       icon={Briefcase}
@@ -701,7 +762,7 @@ export default function TradieDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {jobs.map((job: DashboardJob) => {
+                    {activeJobs.map((job: DashboardJob) => {
                       const category = job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
                       const cleanDesc = job.description.replace(/^\[[^\]]+\]\s*/, '');
                       const displayTitle = job.title || category || 'Job';
@@ -714,7 +775,6 @@ export default function TradieDashboard() {
                             job.priority === 'urgent' ? 'border-red-200 bg-gradient-to-r from-red-50/40 to-white' : 'border-gray-200 hover:border-primary-200'
                           }`}
                         >
-                          {/* Card Header */}
                           <div className="px-4 pt-4 pb-3">
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex-1 min-w-0">
@@ -747,7 +807,6 @@ export default function TradieDashboard() {
                             </div>
                           </div>
 
-                          {/* Card Meta */}
                           <div className="px-4 pb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
                             {category && (
                               <span className="px-2 py-0.5 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200 capitalize">
@@ -776,19 +835,9 @@ export default function TradieDashboard() {
                             </span>
                           </div>
 
-                          {/* Notes */}
                           {job.notes && (
                             <div className="mx-4 mb-3 px-3 py-2 bg-secondary-50 border border-secondary-100 rounded-lg">
                               <p className="text-xs text-secondary-700"><span className="font-semibold">Note:</span> {job.notes}</p>
-                            </div>
-                          )}
-
-                          {/* Declined action */}
-                          {job.status === 'declined' && (
-                            <div className="px-4 pb-3 pt-1 border-t border-gray-100">
-                              <button onClick={() => { setJobToDelete(job.id); setShowDeleteConfirm(true); }} className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center gap-1.5">
-                                <Trash2 className="w-3.5 h-3.5" />Delete
-                              </button>
                             </div>
                           )}
                         </div>
@@ -796,8 +845,102 @@ export default function TradieDashboard() {
                     })}
                   </div>
                 )}
+
+                {/* ─── Completed Jobs ─── */}
+                {completedJobs.length > 0 && (
+                  <div className="mt-8">
+                    <CollapsibleSection
+                      title={`Completed Jobs (${completedJobs.length})`}
+                      defaultOpen={activeJobs.length === 0}
+                    >
+                      <div className="space-y-2 mt-3">
+                        {completedJobs.map((job: DashboardJob) => {
+                          const category = job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
+                          const displayTitle = job.title || category || 'Job';
+                          const completedDate = job.updated_at
+                            ? new Date(job.updated_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+                            : null;
+
+                          return (
+                            <div
+                              key={job.id}
+                              onClick={() => navigate(`/work?job=${job.id}`)}
+                              className="flex items-center gap-3 px-4 py-3 border border-gray-100 rounded-lg bg-gray-50/50 hover:bg-white hover:border-primary-200 cursor-pointer transition-all group"
+                            >
+                              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-medium text-gray-900 truncate capitalize group-hover:text-primary-700 transition-colors">{displayTitle}</h4>
+                                <div className="flex items-center gap-3 mt-0.5">
+                                  <span className="text-xs text-gray-500">{job.profiles?.full_name || 'Client'}</span>
+                                  {completedDate && (
+                                    <span className="text-xs text-gray-400">{completedDate}</span>
+                                  )}
+                                  {job.location_address && (
+                                    <span className="text-xs text-gray-400 truncate max-w-[150px]">
+                                      {job.location_address.split(',')[0]}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="text-xs text-gray-400 group-hover:text-primary-500 transition-colors flex-shrink-0">
+                                View &rarr;
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CollapsibleSection>
+                  </div>
+                )}
+
+                {/* ─── Cancelled / Declined Jobs ─── */}
+                {otherJobs.length > 0 && (
+                  <div className="mt-6">
+                    <CollapsibleSection
+                      title={`Cancelled / Declined (${otherJobs.length})`}
+                      defaultOpen={false}
+                    >
+                      <div className="space-y-2 mt-3">
+                        {otherJobs.map((job: DashboardJob) => {
+                          const category = job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
+                          const displayTitle = job.title || category || 'Job';
+
+                          return (
+                            <div
+                              key={job.id}
+                              className="flex items-center justify-between gap-3 px-4 py-3 border border-gray-100 rounded-lg bg-gray-50/50"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                  job.status === 'cancelled' ? 'bg-red-50' : 'bg-orange-50'
+                                }`}>
+                                  <XCircle className={`w-4 h-4 ${job.status === 'cancelled' ? 'text-red-400' : 'text-orange-400'}`} />
+                                </div>
+                                <div className="min-w-0">
+                                  <h4 className="text-sm font-medium text-gray-500 truncate capitalize">{displayTitle}</h4>
+                                  <span className="text-xs text-gray-400 capitalize">{job.status} &middot; {job.profiles?.full_name || 'Client'}</span>
+                                </div>
+                              </div>
+                              {job.status === 'declined' && (
+                                <button
+                                  onClick={() => { setJobToDelete(job.id); setShowDeleteConfirm(true); }}
+                                  className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CollapsibleSection>
+                  </div>
+                )}
               </div>
-            )}
+              );
+            })()}
 
             {/* ─── MESSAGES TAB ─── */}
             {activeTab === 'messages' && (

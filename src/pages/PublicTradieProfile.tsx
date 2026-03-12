@@ -246,7 +246,7 @@ export default function PublicTradieProfile() {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
               <div className="flex flex-col sm:flex-row items-start gap-5">
                 {/* Avatar */}
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gray-100 overflow-hidden ring-4 ring-white shadow-lg flex-shrink-0 -mt-16 sm:-mt-20">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden ring-4 ring-white shadow-lg flex-shrink-0 -mt-16 sm:-mt-20">
                   {tradie.avatar_url ? (
                     <img
                       src={tradie.avatar_url}
@@ -254,7 +254,7 @@ export default function PublicTradieProfile() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-warm-500 flex items-center justify-center">
+                    <div className="w-full h-full bg-primary-700 flex items-center justify-center">
                       <span className="text-4xl font-bold text-white">
                         {tradie.full_name?.charAt(0) || 'T'}
                       </span>

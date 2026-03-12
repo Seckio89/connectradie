@@ -46,8 +46,10 @@ Deno.serve(async (req) => {
       event = await stripe.webhooks.constructEventAsync(body, signature, stripeWebhookSecret);
     } catch (error: any) {
       console.error(`Webhook signature verification failed: ${error.message}`);
-      console.error('Webhook secret is configured but signature verification failed');
+      console.error(`Webhook secret starts with: ${stripeWebhookSecret?.slice(0, 10)}...`);
+      console.error(`Webhook secret length: ${stripeWebhookSecret?.length}`);
       console.error(`Signature starts with: ${signature?.slice(0, 20)}...`);
+      console.error(`Body length: ${body?.length}`);
       return new Response(JSON.stringify({ error: `Signature verification failed: ${error.message}` }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -273,13 +275,14 @@ async function handleEvent(event: Stripe.Event) {
         } else {
           console.info(`Payment record updated for session ${session.id}: ${JSON.stringify(updated)}`);
 
-          // If this is a job_funding payment, update the job status to 'funded'
+          // If this is a job_funding payment, update the job status directly to in_progress
+          // (skipping funded intermediate step to reduce manual tradie clicks)
           if (session.metadata?.payment_type === 'job_funding' && session.metadata?.job_id) {
             const { error: jobUpdateError } = await supabase
               .from('jobs')
-              .update({ status: 'funded' })
+              .update({ status: 'in_progress' })
               .eq('id', session.metadata.job_id)
-              .in('status', ['pending', 'accepted']);
+              .in('status', ['pending', 'accepted', 'funded']);
 
             if (jobUpdateError) {
               console.error('Error updating job status to funded:', jobUpdateError);

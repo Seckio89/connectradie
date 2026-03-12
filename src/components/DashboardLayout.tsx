@@ -33,6 +33,7 @@ import { markNotificationRead, markAllNotificationsRead } from '../lib/notificat
 import type { LucideIcon } from 'lucide-react';
 import type { Notification } from '../types/database';
 import SubscriptionModal from './SubscriptionModal';
+import PlatformUpdateBanner from './PlatformUpdateBanner';
 
 interface NavSubItem {
   name: string;
@@ -59,6 +60,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [expandedNav, setExpandedNav] = useState<string | null>(null);
+  const [toastNotification, setToastNotification] = useState<Notification | null>(null);
+  const lastNotificationIdRef = useRef<string | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
@@ -77,32 +81,82 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (user) {
-      fetchNotifications();
+    if (!user) return;
 
-      // Subscribe to new notifications in real-time
-      const channel = supabase
-        .channel('notifications')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${user.id}`,
-          },
-          (payload) => {
-            setNotifications(prev => [payload.new as Notification, ...prev]);
-          }
-        )
-        .subscribe();
+    // Fetch initial notifications and set the latest ID ref
+    const initNotifications = async () => {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
+      if (!error && data) {
+        setNotifications(data as Notification[]);
+        if (data.length > 0) {
+          lastNotificationIdRef.current = data[0].id;
+        }
+      }
+    };
+    initNotifications();
+
+    // Subscribe to new notifications in real-time
+    const channel = supabase
+      .channel(`notifications-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const newNotif = payload.new as Notification;
+          if (newNotif.id === lastNotificationIdRef.current) return;
+          lastNotificationIdRef.current = newNotif.id;
+          setNotifications(prev => {
+            if (prev.some(n => n.id === newNotif.id)) return prev;
+            return [newNotif, ...prev];
+          });
+          showToast(newNotif);
+        }
+      )
+      .subscribe();
+
+    // Poll every 5s as fallback — catches cases where realtime misses
+    const interval = setInterval(async () => {
+      const { data } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data && data.id !== lastNotificationIdRef.current) {
+        lastNotificationIdRef.current = data.id;
+        setNotifications(prev => {
+          if (prev.some(n => n.id === data.id)) return prev;
+          return [data as Notification, ...prev];
+        });
+        showToast(data as Notification);
+      }
+    }, 5000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  function showToast(notif: Notification) {
+    setToastNotification(notif);
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = setTimeout(() => setToastNotification(null), 10000);
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -117,21 +171,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const fetchNotifications = async () => {
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(10);
-
-    if (error) return;
-
-    setNotifications((data || []) as Notification[]);
-  };
 
   const markAsRead = async (notificationId: string) => {
     const success = await markNotificationRead(notificationId);
@@ -181,6 +220,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     } else if (notification.type === 'vacancy_application') {
       navigate('/work');
       setNotificationsOpen(false);
+    } else if (notification.type === 'new_lead') {
+      navigate(jobId ? `/work?job=${jobId}` : '/work');
+      setNotificationsOpen(false);
     } else {
       // Fallback: if there's a job_id, navigate to the relevant page
       if (jobId) {
@@ -227,6 +269,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Payments', href: '/admin/payments', icon: DollarSign },
     { name: 'Moderation', href: '/admin/moderation', icon: Flag },
     { name: 'Disputes', href: '/admin/disputes', icon: AlertTriangle },
+    { name: 'Updates', href: '/admin/updates', icon: Zap },
     { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Messages', href: '/messages', icon: MessageCircle },
     { name: 'Settings', href: '/settings', icon: Settings },
@@ -622,9 +665,45 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         <main id="main-content" className="p-4 sm:p-6 lg:p-8 flex-1">
+          <PlatformUpdateBanner />
           {children}
         </main>
       </div>
+
+      {/* Toast notification banner — positioned below header, right side */}
+      {toastNotification && (
+        <div className="fixed top-16 right-4 z-[60] w-80 max-w-[calc(100vw-2rem)]"
+          style={{ animation: 'slideDown 0.3s ease-out' }}
+        >
+          <div
+            className="flex items-start gap-3 px-4 py-3.5 bg-navy-800 border border-navy-600 rounded-lg shadow-lg cursor-pointer hover:bg-navy-750 transition-colors"
+            onClick={() => {
+              const jobId = toastNotification.job_id || toastNotification.metadata?.job_id;
+              if (toastNotification.type === 'new_lead') {
+                navigate(jobId ? `/work?job=${jobId}` : '/work');
+              } else if (toastNotification.link) {
+                navigate(toastNotification.link);
+              }
+              setToastNotification(null);
+            }}
+          >
+            <div className="w-8 h-8 bg-warm-500/15 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Briefcase className="w-4 h-4 text-warm-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white leading-tight">{toastNotification.title}</p>
+              <p className="text-xs text-gray-400 truncate mt-0.5">{toastNotification.message}</p>
+              <p className="text-[10px] text-warm-400 font-medium mt-1">Click to view</p>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); setToastNotification(null); }}
+              className="p-0.5 text-gray-500 hover:text-gray-300 flex-shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <SubscriptionModal
         isOpen={showSubscriptionModal}

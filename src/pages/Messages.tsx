@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageSquare, Send, Loader2, Paperclip, Calendar, X, Lock, Image as ImageIcon, FileText, Mic, Settings, Archive, Search as SearchIcon, RotateCcw, AlertTriangle, CheckCheck } from 'lucide-react';
+import { MessageSquare, Send, Loader2, Paperclip, Calendar, X, Lock, Image as ImageIcon, FileText, Mic, Settings, Archive, Search as SearchIcon, RotateCcw, AlertTriangle, CheckCheck, ArrowLeft, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -8,7 +8,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import UnlockLeadModal from '../components/UnlockLeadModal';
 import ConversationSettingsModal from '../components/ConversationSettingsModal';
 import BookingRequestModal from '../components/BookingRequestModal';
-import { redactContactInfo, shouldAllowContactSharing } from '../lib/redaction';
+import { redactContactInfo, shouldAllowContactSharing, detectCrossMessageDigitBypass } from '../lib/redaction';
 import EmptyState from '../components/EmptyState';
 
 interface ConversationWithDetails extends Conversation {
@@ -20,6 +20,7 @@ interface ConversationWithDetails extends Conversation {
   isUnlocked?: boolean;
   myParticipation?: ConversationParticipant;
   otherParticipants: (ConversationParticipant & { profile?: Profile })[];
+  otherParticipantTier?: string | null;
 }
 
 export default function Messages() {
@@ -49,6 +50,7 @@ export default function Messages() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const pendingSelectTradieRef = useRef<string | null>(null);
 
   const isTradie = profile?.role === 'tradie';
 
@@ -204,6 +206,96 @@ export default function Messages() {
     }
   }, [conversations, searchParams]);
 
+  // Auto-create or open conversation when navigating from "Ask a Question"
+  const creatingConvRef = useRef(false);
+  useEffect(() => {
+    const tradieId = searchParams.get('tradie');
+    if (!tradieId || !user || loading || creatingConvRef.current) return;
+
+    // Check if conversation with this tradie already exists
+    const existing = conversations.find(c =>
+      c.otherParticipants.some(p => p.user_id === tradieId)
+    );
+
+    if (existing) {
+      handleConversationClick(existing);
+      searchParams.delete('tradie');
+      searchParams.delete('job');
+      setSearchParams(searchParams);
+      return;
+    }
+
+    // Create new conversation
+    creatingConvRef.current = true;
+
+    const createConversation = async () => {
+      try {
+        // Get tradie's name for conversation title
+        const { data: tradieProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', tradieId)
+          .maybeSingle();
+
+        const title = tradieProfile?.full_name
+          ? `Chat with ${tradieProfile.full_name}`
+          : null;
+
+        const { data: conv, error: convError } = await supabase
+          .from('conversations')
+          .insert({ created_by: user.id, title })
+          .select()
+          .single();
+
+        if (convError || !conv) throw convError;
+
+        // Add both participants
+        const { error: partError } = await supabase
+          .from('conversation_participants')
+          .insert([
+            { conversation_id: conv.id, user_id: user.id },
+            { conversation_id: conv.id, user_id: tradieId },
+          ]);
+
+        if (partError) throw partError;
+
+        // Clear params and mark for auto-select after reload
+        pendingSelectTradieRef.current = tradieId;
+        searchParams.delete('tradie');
+        searchParams.delete('job');
+        setSearchParams(searchParams);
+
+        // Reload conversations — the pending ref will trigger auto-select
+        await fetchConversations();
+      } catch (err) {
+        console.error('Failed to create conversation:', err);
+        setToast({ message: 'Failed to start conversation. Please try again.', show: true, isError: true });
+        searchParams.delete('tradie');
+        searchParams.delete('job');
+        setSearchParams(searchParams);
+      } finally {
+        creatingConvRef.current = false;
+      }
+    };
+
+    createConversation();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversations, searchParams, user?.id, loading]);
+
+  // Auto-select newly created conversation
+  useEffect(() => {
+    if (!pendingSelectTradieRef.current || conversations.length === 0) return;
+    const tradieId = pendingSelectTradieRef.current;
+    const newConv = conversations.find(c =>
+      c.otherParticipants.some(p => p.user_id === tradieId)
+    );
+    if (newConv) {
+      handleConversationClick(newConv);
+      pendingSelectTradieRef.current = null;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversations]);
+
   useEffect(() => {
     if (selectedConversation) {
       const currentMessageCount = selectedConversation.messages.length;
@@ -287,6 +379,18 @@ export default function Messages() {
             const otherParticipants = (allParticipants || []).filter((p: { user_id: string }) => p.user_id !== user.id);
             const isUnlocked = !isTradie || otherParticipants.every((p: { user_id: string }) => unlockedClientIds.includes(p.user_id));
 
+            // Fetch subscription tier for the other participant (to determine redaction rules)
+            let otherParticipantTier: string | null = null;
+            const otherUserId = otherParticipants[0]?.user_id;
+            if (otherUserId) {
+              const { data: td } = await supabase
+                .from('tradie_details')
+                .select('subscription_tier')
+                .eq('profile_id', otherUserId)
+                .maybeSingle();
+              otherParticipantTier = td?.subscription_tier || null;
+            }
+
             const unreadCount = (messages || []).filter(
               (m: { receiver_id: string | null; read_at: string | null }) => m.receiver_id === user.id && !m.read_at
             ).length;
@@ -300,6 +404,7 @@ export default function Messages() {
               isUnlocked,
               myParticipation: mp,
               otherParticipants,
+              otherParticipantTier,
             };
           })
       );
@@ -553,6 +658,44 @@ export default function Messages() {
     return date.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
+  const formatRelativeTime = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Now';
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays < 7) return `${diffDays}d`;
+    return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+  };
+
+  const getOtherParticipantName = (conv: ConversationWithDetails) => {
+    const other = conv.otherParticipants[0]?.profile;
+    return other?.full_name || 'Unknown User';
+  };
+
+  const formatMessageDateSeparator = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return 'Today';
+    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return date.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
+  };
+
+  const shouldShowDateSeparator = (messages: (Message & { sender_profile?: Profile })[], index: number) => {
+    if (index === 0) return true;
+    const current = new Date(messages[index].created_at).toDateString();
+    const previous = new Date(messages[index - 1].created_at).toDateString();
+    return current !== previous;
+  };
+
   const getConversationTitle = (conv: ConversationWithDetails) => {
     if (conv.title) return conv.title;
     if (conv.is_group) {
@@ -566,7 +709,14 @@ export default function Messages() {
     return conv.otherParticipants[0]?.profile?.full_name?.charAt(0) || '?';
   };
 
+  const isProTradie = (conv: ConversationWithDetails) => {
+    // If the other participant is a pro/business tradie, skip all redaction
+    const tier = conv.otherParticipantTier;
+    return tier === 'pro' || tier === 'business';
+  };
+
   const isContactSharingAllowed = (conv: ConversationWithDetails) => {
+    if (isProTradie(conv)) return true;
     if (!user) return false;
     const otherUser = conv.otherParticipants[0]?.user_id;
     if (!otherUser) return false;
@@ -581,37 +731,33 @@ export default function Messages() {
   return (
     <DashboardLayout>
       <div className="max-w-[1600px] mx-auto">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-            <p className="text-gray-600 mt-1">Chat with your clients and tradies</p>
-          </div>
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
           <button
             onClick={() => setShowArchivedFilter(!showArchivedFilter)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors min-h-[44px] ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] ${
               showArchivedFilter
                 ? 'bg-warm-100 text-warm-700'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
             }`}
           >
             <Archive className="w-4 h-4" />
-            {showArchivedFilter ? 'Show Active' : 'Show Archived'}
+            {showArchivedFilter ? 'Show Active' : 'Archived'}
           </button>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="grid md:grid-cols-3 h-[calc(100vh-16rem)] overflow-hidden">
-            <div className="border-r border-gray-200 overflow-y-scroll" style={{ scrollbarWidth: 'thin', scrollbarColor: '#DDD0CC #F5F0EF' }}>
-              <div className="p-4 border-b border-gray-100 space-y-3">
-                <h2 className="font-semibold text-gray-900">Conversations</h2>
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="grid md:grid-cols-[340px_1fr] h-[calc(100vh-14rem)] overflow-hidden">
+            <div className="border-r border-gray-200 overflow-y-auto flex flex-col" style={{ scrollbarWidth: 'thin', scrollbarColor: '#DDD0CC #F5F0EF' }}>
+              <div className="px-4 pt-4 pb-3">
                 <div className="relative">
                   <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search messages..."
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-gray-50"
+                    placeholder="Search conversations..."
+                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-gray-50 placeholder:text-gray-400"
                   />
                 </div>
               </div>
@@ -636,114 +782,144 @@ export default function Messages() {
                   compact
                 />
               ) : (
-                <div className="divide-y divide-gray-100">
+                <div>
                   {conversations.filter((conv) => {
                     if (!searchQuery.trim()) return true;
                     const q = searchQuery.toLowerCase();
                     const title = getConversationTitle(conv).toLowerCase();
                     const lastMsg = conv.lastMessage?.content?.toLowerCase() || '';
                     return title.includes(q) || lastMsg.includes(q);
-                  }).map((conv) => (
-                    <button
-                      key={conv.id}
-                      onClick={() => handleConversationClick(conv)}
-                      className={`w-full p-4 text-left hover:bg-gray-50 transition-colors relative ${
-                        selectedConversation?.id === conv.id ? 'bg-primary-50' : ''
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0 relative">
-                          <span className="text-sm font-bold text-primary-600">
-                            {getConversationInitial(conv)}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <h3 className="font-semibold text-gray-900 truncate flex items-center gap-2">
-                              {getConversationTitle(conv)}
-                            </h3>
-                            {conv.unreadCount > 0 && (
-                              <span className="w-5 h-5 bg-warm-500 text-white text-xs rounded-full flex items-center justify-center">
-                                {conv.unreadCount}
-                              </span>
-                            )}
+                  }).map((conv) => {
+                    const isSelected = selectedConversation?.id === conv.id;
+                    const hasUnread = conv.unreadCount > 0;
+                    return (
+                      <button
+                        key={conv.id}
+                        onClick={() => handleConversationClick(conv)}
+                        className={`w-full px-4 py-3.5 text-left transition-colors relative ${
+                          isSelected
+                            ? 'bg-primary-50 border-l-[3px] border-l-primary-600'
+                            : 'border-l-[3px] border-l-transparent hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            isSelected ? 'bg-primary-600 text-white' : 'bg-primary-100 text-primary-600'
+                          }`}>
+                            <span className="text-sm font-bold">
+                              {getConversationInitial(conv)}
+                            </span>
                           </div>
-                          {conv.lastMessage && (
-                            <>
-                              <p className="text-sm text-gray-600 truncate">
-                                {maybeRedact(conv.lastMessage.content, conv)}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <h3 className={`text-sm truncate ${hasUnread ? 'font-bold text-gray-900' : 'font-medium text-gray-900'}`}>
+                                {getOtherParticipantName(conv)}
+                              </h3>
+                              <span className={`text-xs flex-shrink-0 ml-2 ${hasUnread ? 'text-warm-600 font-semibold' : 'text-gray-400'}`}>
+                                {conv.lastMessage ? formatRelativeTime(conv.lastMessage.created_at) : ''}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between mt-0.5">
+                              <p className={`text-xs truncate pr-2 ${hasUnread ? 'text-gray-700 font-medium' : 'text-gray-500'}`}>
+                                {conv.lastMessage
+                                  ? (conv.lastMessage.sender_id === user?.id ? 'You: ' : '') + maybeRedact(conv.lastMessage.content, conv)
+                                  : 'No messages yet'}
                               </p>
-                              <p className="text-xs text-gray-400 mt-1">
-                                {formatDate(conv.lastMessage.created_at)}
-                              </p>
-                            </>
-                          )}
+                              {hasUnread && (
+                                <span className="w-5 h-5 bg-warm-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0">
+                                  {conv.unreadCount}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
 
-            <div className="md:col-span-2 flex flex-col h-full overflow-hidden">
+            <div className="flex flex-col h-full overflow-hidden">
               {selectedConversation ? (
                 <>
-                  <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                  <div className="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between bg-white">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-bold text-primary-600">
+                      <button
+                        onClick={() => setSelectedConversation(null)}
+                        className="md:hidden p-1.5 text-gray-400 hover:text-gray-600 rounded-lg"
+                        aria-label="Back to conversations"
+                      >
+                        <ArrowLeft className="w-5 h-5" />
+                      </button>
+                      <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-bold text-white">
                           {getConversationInitial(selectedConversation)}
                         </span>
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900">
-                          {getConversationTitle(selectedConversation)}
+                        <h3 className="font-semibold text-gray-900 text-sm">
+                          {getOtherParticipantName(selectedConversation)}
                         </h3>
                         <p className="text-xs text-gray-500">
-                          {selectedConversation.participants.length} participant{selectedConversation.participants.length !== 1 ? 's' : ''}
+                          {selectedConversation.is_group
+                            ? `${selectedConversation.participants.length} members`
+                            : isTradie ? 'Client' : 'Tradie'}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setShowSettingsModal(true)}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
-                        aria-label="Conversation settings"
-                      >
-                        <Settings className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => setSelectedConversation(null)}
-                        className="md:hidden p-2 text-gray-400 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                        aria-label="Close conversation"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => setShowSettingsModal(true)}
+                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
+                      aria-label="Conversation settings"
+                    >
+                      <Settings className="w-4.5 h-4.5" />
+                    </button>
                   </div>
 
                   <div
                     ref={messagesContainerRef}
-                    className="flex-1 min-h-0 messages-scrollbar p-4 space-y-4"
+                    className="flex-1 min-h-0 messages-scrollbar px-5 py-4 space-y-3 bg-gray-50/50"
                   >
-                    {selectedConversation.messages.map((message) => {
+                    {selectedConversation.messages.length === 0 && (
+                      <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                        <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4">
+                          <MessageSquare className="w-7 h-7 text-primary-600" />
+                        </div>
+                        <h3 className="text-base font-semibold text-gray-900 mb-1">Start the conversation</h3>
+                        <p className="text-sm text-gray-500 max-w-xs">
+                          Send a message to {getOtherParticipantName(selectedConversation).split(' ')[0]} about your job. Ask questions, discuss details, or request a quote.
+                        </p>
+                      </div>
+                    )}
+                    {(() => {
+                      const crossMessageRedactedIds = !isContactSharingAllowed(selectedConversation)
+                        ? detectCrossMessageDigitBypass(selectedConversation.messages)
+                        : new Set<string>();
+                      return selectedConversation.messages.map((message, index) => {
                       const isOwn = message.sender_id === user?.id;
+                      const isCrossMessageRedacted = crossMessageRedactedIds.has(message.id);
+                      const showDate = shouldShowDateSeparator(selectedConversation.messages, index);
                       return (
-                        <div
-                          key={message.id}
-                          className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
-                        >
+                        <div key={message.id}>
+                          {showDate && (
+                            <div className="flex items-center justify-center my-3">
+                              <span className="px-3 py-1 bg-white border border-gray-200 rounded-full text-[11px] font-medium text-gray-500 shadow-sm">
+                                {formatMessageDateSeparator(message.created_at)}
+                              </span>
+                            </div>
+                          )}
+                          <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                           <div
                             onClick={
                               message.is_booking_request
                                 ? () => handleBookingRequestClick(message.id)
                                 : undefined
                             }
-                            className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                            className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${
                               isOwn
-                                ? 'bg-warm-500 text-white rounded-br-md'
-                                : 'bg-gray-100 text-gray-900 rounded-bl-md'
+                                ? 'bg-primary-700 text-white rounded-br-md'
+                                : 'bg-white text-gray-900 rounded-bl-md border border-gray-200 shadow-sm'
                             } ${
                               message.is_booking_request
                                 ? 'border-2 border-warm-400 cursor-pointer hover:shadow-lg transition-shadow'
@@ -753,7 +929,7 @@ export default function Messages() {
                             {message.is_booking_request && (
                               <div
                                 className={`flex items-center gap-1 text-xs mb-1 ${
-                                  isOwn ? 'text-primary-200' : 'text-warm-600'
+                                  isOwn ? 'text-primary-300' : 'text-warm-600'
                                 }`}
                               >
                                 <Calendar className="w-3 h-3" />
@@ -778,7 +954,7 @@ export default function Messages() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${
-                                      isOwn ? 'bg-primary-700 hover:bg-primary-800' : 'bg-gray-200 hover:bg-gray-300'
+                                      isOwn ? 'bg-primary-800 hover:bg-primary-900' : 'bg-gray-100 hover:bg-gray-200'
                                     }`}
                                   >
                                     {message.attachment_type === 'pdf' && <FileText className="w-4 h-4" />}
@@ -787,7 +963,7 @@ export default function Messages() {
                                     <div className="flex-1 min-w-0">
                                       <p className="text-xs font-medium truncate">{message.attachment_name}</p>
                                       {message.attachment_size && (
-                                        <p className={`text-xs ${isOwn ? 'text-primary-200' : 'text-gray-500'}`}>
+                                        <p className={`text-xs ${isOwn ? 'text-primary-300' : 'text-gray-500'}`}>
                                           {(message.attachment_size / 1024 / 1024).toFixed(2)} MB
                                         </p>
                                       )}
@@ -796,25 +972,27 @@ export default function Messages() {
                                 )}
                                 {message.content && !message.content.startsWith('Sent a ') && (
                                   <p className="text-sm whitespace-pre-wrap">
-                                    {maybeRedact(message.content, selectedConversation)}
+                                    {isCrossMessageRedacted ? '[hidden]' : maybeRedact(message.content, selectedConversation)}
                                   </p>
                                 )}
                               </div>
                             ) : (
                               <p className="text-sm whitespace-pre-wrap">
-                                {maybeRedact(message.content.replace('[Booking Request] ', ''), selectedConversation)}
+                                {isCrossMessageRedacted
+                                  ? '[hidden]'
+                                  : maybeRedact(message.content.replace('[Booking Request] ', ''), selectedConversation)}
                               </p>
                             )}
 
-                            <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : ''}`}>
-                              <p className={`text-xs ${isOwn ? 'text-primary-200' : 'text-gray-400'}`}>
+                            <div className={`flex items-center gap-1 mt-1.5 ${isOwn ? 'justify-end' : ''}`}>
+                              <p className={`text-[11px] ${isOwn ? 'text-primary-300' : 'text-gray-400'}`}>
                                 {new Date(message.created_at).toLocaleTimeString('en-AU', {
                                   hour: '2-digit',
                                   minute: '2-digit',
                                 })}
                               </p>
                               {isOwn && message.read_at && (
-                                <CheckCheck className="w-3.5 h-3.5 text-primary-200" aria-label="Seen" />
+                                <CheckCheck className="w-3 h-3 text-primary-300" aria-label="Seen" />
                               )}
                             </div>
                             {message.is_booking_request && (
@@ -824,13 +1002,15 @@ export default function Messages() {
                             )}
                           </div>
                         </div>
+                        </div>
                       );
-                    })}
+                    });
+                    })()}
                     {selectedConversation.messages.length > 0 && !isContactSharingAllowed(selectedConversation) && (
                       <div className="flex items-start gap-2 px-3 py-3 bg-warm-50 border border-warm-200 rounded-xl mx-1">
                         <Lock className="w-4 h-4 text-warm-600 flex-shrink-0 mt-0.5" />
                         <p className="text-xs text-warm-700">
-                          For your safety, contact details are shared once both of you have sent a message.
+                          For your safety, contact details such as phone numbers and emails are hidden to keep communication on the platform.
                         </p>
                       </div>
                     )}
@@ -857,7 +1037,7 @@ export default function Messages() {
                     <div ref={messagesEndRef} />
                   </div>
 
-                  <div className="p-4 border-t border-gray-100">
+                  <div className="px-5 py-3 border-t border-gray-200 bg-white">
                     {failedMessages.size > 0 && (
                       <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
                         <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
@@ -876,7 +1056,7 @@ export default function Messages() {
                         <button
                           onClick={() => setAttachmentMenuOpen(!attachmentMenuOpen)}
                           disabled={uploadingFile}
-                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                          className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50"
                           aria-label="Attach file"
                         >
                           {uploadingFile ? (
@@ -935,31 +1115,33 @@ export default function Messages() {
                           onKeyDown={handleKeyPress}
                           placeholder="Type a message..."
                           rows={1}
-                          className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-gray-50 text-sm placeholder:text-gray-400 transition-all"
                         />
                       </div>
                       <button
-                        onClick={handleSend}
+                        onClick={() => handleSend()}
                         disabled={!newMessage.trim() || sending}
-                        className="p-3 bg-warm-500 text-white rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px] min-w-[44px]"
+                        className="p-2.5 bg-primary-700 text-white rounded-xl hover:bg-primary-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors min-h-[42px] min-w-[42px] flex items-center justify-center"
                         aria-label="Send message"
                       >
                         {sending ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <Loader2 className="w-4.5 h-4.5 animate-spin" />
                         ) : (
-                          <Send className="w-5 h-5" />
+                          <Send className="w-4.5 h-4.5" />
                         )}
                       </button>
                     </div>
                   </div>
                 </>
               ) : (
-                <div className="flex items-center justify-center h-full">
-                  <EmptyState
-                    icon={MessageSquare}
-                    title="Select a conversation"
-                    description="Choose a conversation from the list to start messaging"
-                  />
+                <div className="flex items-center justify-center h-full bg-gray-50/50">
+                  <div className="text-center px-6">
+                    <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <MessageSquare className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-1">Select a conversation</h3>
+                    <p className="text-xs text-gray-500">Choose a conversation from the list to view messages</p>
+                  </div>
                 </div>
               )}
             </div>

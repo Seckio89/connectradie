@@ -25,6 +25,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/useToast';
+import { friendlyError } from '../lib/utils';
 import { ListSkeleton } from '../components/SkeletonLoader';
 import { releaseEscrow, processRefund, createJobPaymentCheckout, verifyPayment } from '../lib/stripePayments';
 import DashboardLayout from '../components/DashboardLayout';
@@ -40,6 +41,7 @@ interface PaymentRow {
   currency: string;
   status: string;
   stripe_payment_intent_id: string | null;
+  stripe_checkout_session_id: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
   completed_at: string | null;
@@ -94,6 +96,43 @@ export default function PaymentHistory() {
       showToast('Payment was cancelled.', true);
     }
   }, []);
+
+  // Auto-verify any pending payments that have a Stripe checkout session
+  // This catches cases where the webhook failed and the user navigated away before verification
+  useEffect(() => {
+    if (!user || isTradie) return;
+    (async () => {
+      try {
+        const { data: pendingPayments } = await supabase
+          .from('payments')
+          .select('id, status, stripe_checkout_session_id')
+          .eq('profile_id', user.id)
+          .eq('status', 'pending')
+          .not('stripe_checkout_session_id', 'is', null);
+
+        if (pendingPayments && pendingPayments.length > 0) {
+          let anyUpdated = false;
+          for (const p of pendingPayments) {
+            try {
+              const result = await verifyPayment(p.id);
+              if (result.status === 'completed') {
+                anyUpdated = true;
+              }
+            } catch {
+              // Verification failed for this payment — continue with others
+            }
+          }
+          if (anyUpdated) {
+            fetchPayments();
+            fetchSummary();
+          }
+        }
+      } catch {
+        // Non-critical — don't block page load
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isTradie]);
 
   const fetchPayments = useCallback(async () => {
     if (!user) return;
@@ -634,8 +673,24 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
   onPaymentUpdate: () => void;
   showToast: (msg: string, isError?: boolean) => void;
 }) {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [actionLoading, setActionLoading] = useState(false);
+  const [hasReview, setHasReview] = useState(false);
+
+  useEffect(() => {
+    if (payment.job_id && user) {
+      supabase
+        .from('reviews')
+        .select('id')
+        .eq('job_id', payment.job_id)
+        .eq('client_id', user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) setHasReview(true);
+        });
+    }
+  }, [payment.job_id, user]);
 
   const subtotal = payment.amount;
   const gstAmount = Math.round(subtotal / 11);
@@ -647,13 +702,30 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
   const tradieName = (payment.metadata as Record<string, unknown>)?.tradie_name as string || null;
   const tradieAbn = (payment.metadata as Record<string, unknown>)?.tradie_abn as string || null;
 
+  const handleVerifyPayment = async () => {
+    setActionLoading(true);
+    try {
+      const result = await verifyPayment(payment.id);
+      if (result.status === 'completed') {
+        showToast('Payment verified and confirmed!');
+        onPaymentUpdate();
+      } else {
+        showToast(result.message || 'Payment has not been completed yet. Please try paying again.', true);
+      }
+    } catch (err) {
+      showToast(friendlyError(err, 'Unable to verify payment. Please try again.'), true);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handlePayNow = async () => {
     setActionLoading(true);
     try {
       const { url } = await createJobPaymentCheckout(payment.id);
       window.location.href = url;
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to start checkout', true);
+      showToast(friendlyError(err, 'Unable to start checkout. Please try again.'), true);
       setActionLoading(false);
     }
   };
@@ -669,7 +741,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
         navigate(`/review/${payment.job_id}`);
       }
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to release payment. Please try again.', true);
+      showToast(friendlyError(err, 'Unable to release payment. Please try again.'), true);
       setActionLoading(false);
     }
   };
@@ -718,7 +790,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
             </div>
             <p className="text-sm font-medium text-navy-900">{jobDesc}</p>
             {payment.job_id && (
-              <Link to={profile?.role === 'tradie' ? '/jobs' : '/leads'} className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 mt-2 font-medium transition-colors">
+              <Link to={isTradie ? '/jobs' : '/leads'} className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 mt-2 font-medium transition-colors">
                 View job <ExternalLink className="w-3 h-3" />
               </Link>
             )}
@@ -792,17 +864,36 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
               <div className="flex items-start gap-3 mb-3">
                 <CreditCard className="w-5 h-5 text-accent-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-accent-800">Payment Required</p>
+                  <p className="text-sm font-semibold text-accent-800">
+                    {payment.stripe_checkout_session_id ? 'Payment Processing' : 'Payment Required'}
+                  </p>
                   <p className="text-xs text-accent-700 mt-0.5">
-                    Your tradie has completed the work and requested payment. Review the invoice above, then pay securely via Stripe.
+                    {payment.stripe_checkout_session_id
+                      ? 'You may have already completed this payment. Click "Verify Payment" to check, or pay again if needed.'
+                      : 'Your tradie has completed the work and requested payment. Review the invoice above, then pay securely via Stripe.'}
                   </p>
                 </div>
               </div>
-              <button onClick={handlePayNow} disabled={actionLoading}
-                className="w-full px-4 py-2.5 bg-primary-600 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
-                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-                Pay Now — {formatCurrency(subtotal)}
-              </button>
+              {payment.stripe_checkout_session_id ? (
+                <div className="flex gap-2">
+                  <button onClick={handleVerifyPayment} disabled={actionLoading}
+                    className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+                    {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                    Verify Payment
+                  </button>
+                  <button onClick={handlePayNow} disabled={actionLoading}
+                    className="flex-1 px-4 py-2.5 bg-white border border-surface-300 text-navy-700 rounded-lg text-sm font-semibold hover:bg-surface-50 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+                    <CreditCard className="w-4 h-4" />
+                    Pay Again
+                  </button>
+                </div>
+              ) : (
+                <button onClick={handlePayNow} disabled={actionLoading}
+                  className="w-full px-4 py-2.5 bg-primary-600 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+                  {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                  Pay Now — {formatCurrency(subtotal)}
+                </button>
+              )}
             </div>
           )}
 
@@ -828,12 +919,14 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
 
           {/* Transfer completed */}
           {!isTradie && isCompletedWithStripe && transferDone && (
-            <div className="bg-warm-50 border border-warm-200 rounded-lg p-3 space-y-2">
+            <div className={`${hasReview ? 'bg-green-50 border-green-200' : 'bg-warm-50 border-warm-200'} border rounded-lg p-3 space-y-2`}>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-warm-600 flex-shrink-0" />
-                <p className="text-sm text-warm-700 font-medium">Payment released to tradie</p>
+                <CheckCircle2 className={`w-4 h-4 ${hasReview ? 'text-green-600' : 'text-warm-600'} flex-shrink-0`} />
+                <p className={`text-sm ${hasReview ? 'text-green-700' : 'text-warm-700'} font-medium`}>
+                  {hasReview ? 'Completed — Payment released & reviewed' : 'Payment released to tradie'}
+                </p>
               </div>
-              {payment.job_id && (
+              {payment.job_id && !hasReview && (
                 <Link
                   to={`/review/${payment.job_id}`}
                   className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-warm-500 text-white rounded-lg text-sm font-semibold hover:bg-warm-600 transition-colors"
@@ -906,7 +999,7 @@ function RefundSection({ paymentId, onSuccess, onError }: { paymentId: string; o
       await processRefund(paymentId, reason.trim());
       onSuccess();
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'Failed to process refund. Please try again.');
+      onError(friendlyError(err, 'Unable to process refund. Please try again or contact support.'));
     } finally {
       setProcessing(false);
     }

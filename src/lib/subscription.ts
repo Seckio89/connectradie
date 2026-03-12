@@ -2,6 +2,8 @@ import { supabase } from './supabase';
 
 export const FREE_LIMITS = {
   MAX_TRADE_CATEGORIES: 1,
+  MAX_JOBS_PER_MONTH: 5,
+  MAX_LEAD_UNLOCKS_PER_MONTH: 3,
 } as const;
 
 export const PRO_LIMITS = {

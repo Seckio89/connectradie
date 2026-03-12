@@ -14,7 +14,7 @@ import SecurityTab from '../components/settings/SecurityTab';
 import NotificationsTab from '../components/settings/NotificationsTab';
 import AdminToolsTab from '../components/settings/AdminToolsTab';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
-import { calculateProfileCompletion, getProfileCompletionTasks } from '../lib/utils';
+import { calculateProfileCompletion, getProfileCompletionTasks, friendlyError } from '../lib/utils';
 import { requestPushPermission, subscribeToPush, savePushPreferences, getPushPermissionStatus } from '../lib/notifications';
 
 type TabType = 'profile' | 'professional' | 'security' | 'verification' | 'notifications' | 'admin';
@@ -311,16 +311,11 @@ export default function Settings() {
       removed_at: new Date().toISOString(),
     });
 
-    // Delete tradie_details if applicable
-    if (isTradie) {
-      await supabase.from('tradie_details').delete().eq('profile_id', user.id);
-    }
-
-    // Delete the profile (cascades to related data)
-    const { error } = await supabase.from('profiles').delete().eq('id', user.id);
+    // Use server-side function to delete all linked data + profile in one transaction
+    const { error } = await supabase.rpc('delete_user_account');
 
     if (error) {
-      setToastMessage('Failed to delete account: ' + error.message);
+      setToastMessage(friendlyError(error, 'Unable to delete your account right now. Please contact support for assistance.'));
       setToastType('error');
       setShowToast(true);
       return;

@@ -53,6 +53,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
       initializeConversation();
       fetchAvailableSlots();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, tradie, user]);
 
   useEffect(() => {

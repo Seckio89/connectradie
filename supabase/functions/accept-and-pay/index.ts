@@ -79,11 +79,14 @@ Deno.serve(async (req: Request) => {
     }
 
     // Validate redirect URLs to prevent open redirects
-    const allowedDomain = Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com";
+    // Default to "*" to match CORS header default when ALLOWED_ORIGIN is unset
+    const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") || "*";
     const isValidRedirectUrl = (url: string) => {
       try {
-        const parsed = new URL(url as string);
-        const allowed = new URL(allowedDomain);
+        const parsed = new URL(url);
+        // Allow wildcard origin (dev mode) or exact hostname match
+        if (allowedOrigin === "*") return true;
+        const allowed = new URL(allowedOrigin);
         return parsed.hostname === allowed.hostname;
       } catch {
         return false;
@@ -104,9 +107,11 @@ Deno.serve(async (req: Request) => {
       return errorJson("Quote not found", 404);
     }
 
-    if (quote.status !== "pending") {
+    if (quote.status !== "pending" && quote.status !== "accepted") {
       return errorJson("Quote has already been processed", 409);
     }
+
+    const alreadyAccepted = quote.status === "accepted";
 
     // Determine the payment amount in dollars.
     // For range quotes, the client must confirm an agreed price within the range.
@@ -144,21 +149,25 @@ Deno.serve(async (req: Request) => {
       return errorJson("Only the client on this job can accept a quote", 403);
     }
 
-    // Check for existing completed payment on this job
+    // Check for existing payment on this job
     const { data: existingPayment } = await supabase
       .from("payments")
-      .select("id")
+      .select("id, status")
       .eq("profile_id", user.id)
       .eq("job_id", quote.job_id)
       .eq("payment_type", "job_funding")
-      .in("status", ["completed", "pending"])
       .maybeSingle();
 
-    if (existingPayment) {
-      return errorJson(
-        "A payment already exists for this job",
-        409,
-      );
+    if (existingPayment?.status === "completed") {
+      return errorJson("Payment has already been completed for this job", 409);
+    }
+
+    // Delete stale pending payment so we can create a fresh checkout session
+    if (existingPayment?.status === "pending") {
+      await supabase
+        .from("payments")
+        .delete()
+        .eq("id", existingPayment.id);
     }
 
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
@@ -193,47 +202,48 @@ Deno.serve(async (req: Request) => {
       .eq("id", quote.tradie_id)
       .maybeSingle();
 
-    // Accept the quote and assign the tradie to the job
-    const { error: quoteUpdateError } = await supabase
-      .from("quotes")
-      .update({ status: "accepted" })
-      .eq("id", quoteId);
+    // Only accept the quote and assign the tradie if not already done
+    if (!alreadyAccepted) {
+      const { error: quoteUpdateError } = await supabase
+        .from("quotes")
+        .update({ status: "accepted" })
+        .eq("id", quoteId);
 
-    if (quoteUpdateError) {
-      return errorJson("Failed to accept quote", 500);
-    }
+      if (quoteUpdateError) {
+        return errorJson("Failed to accept quote", 500);
+      }
 
-    // Update job: assign tradie and set status to accepted
-    await supabase
-      .from("jobs")
-      .update({
-        tradie_id: quote.tradie_id,
-        status: "accepted",
-        budget_amount: quotePriceDollars,
-      })
-      .eq("id", quote.job_id);
+      // Update job: assign tradie and set status to accepted
+      await supabase
+        .from("jobs")
+        .update({
+          tradie_id: quote.tradie_id,
+          status: "accepted",
+          budget_amount: quotePriceDollars,
+        })
+        .eq("id", quote.job_id);
 
-    // Auto-rename the project so the client can identify it
-    if (job.project_id) {
-      try {
-        const category = job.description.match(/^\[([^\]]+)\]/)?.[1] || "";
-        const tradieName = tradieProfile?.full_name || "Tradie";
-        // Extract suburb from address (take second-to-last comma-separated part, or first part)
-        const addressParts = (job.location_address || "").split(",").map((s: string) => s.trim());
-        const suburb = addressParts.length >= 2
-          ? addressParts[addressParts.length - 2]
-          : addressParts[0] || "";
-        const parts = [category, tradieName, suburb].filter(Boolean);
-        const newTitle = parts.join(" — ");
+      // Auto-rename the project so the client can identify it
+      if (job.project_id) {
+        try {
+          const category = job.description.match(/^\[([^\]]+)\]/)?.[1] || "";
+          const tradieName = tradieProfile?.full_name || "Tradie";
+          const addressParts = (job.location_address || "").split(",").map((s: string) => s.trim());
+          const suburb = addressParts.length >= 2
+            ? addressParts[addressParts.length - 2]
+            : addressParts[0] || "";
+          const parts = [category, tradieName, suburb].filter(Boolean);
+          const newTitle = parts.join(" — ");
 
-        if (newTitle) {
-          await supabase
-            .from("projects")
-            .update({ title: newTitle })
-            .eq("id", job.project_id);
+          if (newTitle) {
+            await supabase
+              .from("projects")
+              .update({ title: newTitle })
+              .eq("id", job.project_id);
+          }
+        } catch {
+          // Non-critical — don't fail the payment flow
         }
-      } catch {
-        // Non-critical — don't fail the payment flow
       }
     }
 
@@ -261,15 +271,17 @@ Deno.serve(async (req: Request) => {
 
     if (insertError) {
       console.error("Failed to insert payment record:", insertError);
-      // Revert quote acceptance
-      await supabase
-        .from("quotes")
-        .update({ status: "pending" })
-        .eq("id", quoteId);
-      await supabase
-        .from("jobs")
-        .update({ tradie_id: null, status: "pending", budget_amount: null })
-        .eq("id", quote.job_id);
+      // Only revert if we accepted the quote in this call
+      if (!alreadyAccepted) {
+        await supabase
+          .from("quotes")
+          .update({ status: "pending" })
+          .eq("id", quoteId);
+        await supabase
+          .from("jobs")
+          .update({ tradie_id: null, status: "pending", budget_amount: null })
+          .eq("id", quote.job_id);
+      }
       return errorJson("Failed to create payment record", 500);
     }
 
@@ -279,7 +291,8 @@ Deno.serve(async (req: Request) => {
         price_data: {
           currency: "aud",
           product_data: {
-            name: `Job Payment — ${(job.description || "").slice(0, 60)}`,
+            name: `Job Deposit — ${(job.description || "").slice(0, 60)}`,
+            description: "Held in escrow. Released to tradie on job completion.",
           },
           unit_amount: baseAmountCents,
         },

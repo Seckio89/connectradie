@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, User, Phone, Loader2, AlertCircle, CheckCircle2, Eye, EyeOff, Shield, Star, Zap, Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { friendlyError } from '../lib/utils';
 import SEO from '../components/SEO';
 
 const GoogleIcon = () => (
@@ -52,7 +53,7 @@ export default function Register() {
       options: { redirectTo: `${window.location.origin}/onboarding` },
     });
     if (error) {
-      setError(error.message);
+      setError(friendlyError(error, 'Unable to sign up with Google. Please try again.'));
       setGoogleLoading(false);
     }
   };
@@ -87,7 +88,7 @@ export default function Register() {
     const { error } = await signUp(email, password, fullName, trimmedPhone);
 
     if (error) {
-      setError(error.message);
+      setError(friendlyError(error, 'Unable to create your account. Please try again.'));
       setLoading(false);
     } else {
       setSuccess(true);

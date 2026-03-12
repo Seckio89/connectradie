@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Zap,
@@ -23,8 +23,9 @@ import { supabase } from '../lib/supabase';
 import DashboardLayout from '../components/DashboardLayout';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import SearchableSelect from '../components/SearchableSelect';
-import { notifyTradiesForUrgentJob } from '../lib/notifications';
+import { notifyTradiesForUrgentJob, notifyTradiesForNewLead } from '../lib/notifications';
 import { redactContactInfo, detectContactInfo, getContactWarningMessage } from '../lib/redaction';
+import { getJobHints } from '../lib/jobDescriptionHints';
 import type { Job } from '../types/database';
 
 const TRADE_CATEGORIES = [
@@ -61,6 +62,54 @@ const TRADE_CATEGORIES = [
   'Private Chef',
   'Event Catering',
 ];
+
+// Trades where site inspections are unnecessary — tradies can quote from photos/description
+const SIMPLE_TRADES = [
+  'Cleaner',
+  'Handyman',
+  'Pest Control',
+  'Locksmith',
+  'Appliance Repair',
+  'Private Chef',
+  'Event Catering',
+  'Security Systems',
+  'Garage Doors',
+];
+
+const JOB_TITLE_SUGGESTIONS: Record<string, string[]> = {
+  Cleaner: ['Office clean', 'End of lease clean', 'Deep house clean', 'Window cleaning', 'Carpet steam clean', 'Regular weekly clean'],
+  Plumber: ['Fix leaking tap', 'Blocked drain', 'Hot water system install', 'Toilet repair', 'Burst pipe — urgent', 'Gas fitting'],
+  Electrician: ['Install downlights', 'Switchboard upgrade', 'Power point install', 'Ceiling fan install', 'Smoke alarm check', 'EV charger install'],
+  Carpenter: ['Build timber deck', 'Custom shelving', 'Built-in wardrobe', 'Door replacement', 'Pergola build', 'Skirting boards'],
+  Builder: ['Garage extension', 'Granny flat build', 'Deck and pergola', 'Wall removal', 'Bathroom renovation', 'Kitchen renovation'],
+  Painter: ['Interior repaint', 'Exterior repaint', 'Feature wall', 'Doors and trim', 'Ceiling repaint', 'Spray paint fence'],
+  Landscaper: ['New turf and garden beds', 'Paving job', 'Retaining wall', 'Tree removal', 'Irrigation install', 'Garden makeover'],
+  Roofer: ['Fix roof leak', 'Gutter replacement', 'Full roof replacement', 'Ridge capping repair', 'Skylight install', 'Roof inspection'],
+  Tiler: ['Retile bathroom', 'Kitchen splashback', 'Floor tiling', 'Outdoor patio tiles', 'Grout replacement', 'Waterproofing and tiling'],
+  Concreter: ['New driveway slab', 'Concrete path', 'Shed slab', 'Exposed aggregate', 'Pool surround', 'Steps and stairs'],
+  'Air Conditioning': ['Split system install', 'AC not cooling', 'Ducted system service', 'New AC unit', 'AC repair', 'Evaporative cooler service'],
+  Locksmith: ['Rekey all locks', 'Smart lock install', 'Locked out — emergency', 'Deadbolt install', 'Window locks', 'Master key system'],
+  'Pest Control': ['Termite inspection', 'Cockroach treatment', 'Rodent control', 'Spider spray', 'Pre-purchase pest report', 'Ant treatment'],
+  Fencer: ['Colorbond fence install', 'Pool fence install', 'Timber paling fence', 'Gate install', 'Old fence removal', 'Slat screen fence'],
+  Bricklayer: ['Retaining wall build', 'Brick repair', 'Letterbox build', 'Garden wall', 'Repointing', 'Feature brick wall'],
+  Pool: ['Green pool cleanup', 'Pump replacement', 'Pool resurface', 'Pool fencing', 'Salt chlorinator install', 'Pool heating install'],
+  Handyman: ['Hang TV on wall', 'Furniture assembly', 'Shelving install', 'Door repair', 'Blind install', 'General odd jobs'],
+  Glazier: ['Replace cracked window', 'Shower screen install', 'Mirror install', 'Glass splashback', 'Double glazing upgrade', 'Sliding door repair'],
+  Plasterer: ['Patch ceiling holes', 'Cornice install', 'Full room re-plaster', 'Water damage repair', 'Skim coat walls', 'Crack repair'],
+  Renderer: ['Render front facade', 'Crack repair', 'Acrylic render', 'Texture coat finish', 'Cement render', 'Block wall render'],
+  Demolition: ['Remove old shed', 'Bathroom strip-out', 'Kitchen strip-out', 'Concrete removal', 'Full house demo', 'Asbestos removal'],
+  'Flooring Specialist': ['Sand and polish floors', 'Vinyl plank install', 'Timber floor install', 'Carpet replacement', 'Laminate flooring', 'Floor levelling'],
+  'Cabinet Maker': ['Custom wardrobe', 'Kitchen cabinetry', 'Bathroom vanity', 'Entertainment unit', 'Laundry cabinets', 'Walk-in robe'],
+  Solar: ['Solar panel install', 'Battery storage', 'Inverter replacement', 'Solar hot water', 'System upgrade', 'Panel cleaning'],
+  Waterproofing: ['Bathroom waterproofing', 'Shower leak fix', 'Balcony membrane', 'Basement waterproofing', 'Deck membrane', 'Roof coating'],
+  Insulation: ['Ceiling batts install', 'Wall insulation', 'Underfloor insulation', 'Soundproofing a room', 'Roof sarking', 'Remove and replace batts'],
+  'Garage Doors': ['New roller door', 'Motor replacement', 'Panel lift door', 'Door off track', 'Remote programming', 'Spring replacement'],
+  'Security Systems': ['CCTV camera install', 'Alarm system install', 'Video doorbell', 'Intercom install', 'Access control setup', 'Smart home security'],
+  'Appliance Repair': ['Washing machine repair', 'Fridge not cooling', 'Dishwasher repair', 'Oven repair', 'Dryer not heating', 'Rangehood fix'],
+  Excavation: ['Site cut for build', 'Trenching for pipes', 'Pool excavation', 'Driveway dig', 'Stump removal', 'Bobcat work'],
+  'Private Chef': ['Dinner party for 8', 'Weekly meal prep', 'Special occasion dinner', 'Brunch for 12', 'Kids party catering', 'Date night at home'],
+  'Event Catering': ['Wedding for 100 guests', 'Corporate lunch', 'Birthday party', 'Grazing table setup', 'Buffet for 50', 'Cocktail event'],
+};
 
 type ScheduleMode = null | 'urgent' | 'scheduled';
 type TimeSlot = 'morning' | 'midday' | 'afternoon';
@@ -195,12 +244,12 @@ function SmartCalendar({
               onClick={() => onSelectDate(day)}
               className={`relative py-2 rounded-lg text-sm font-medium transition-all ${
                 disabled
-                  ? 'text-gray-300 cursor-not-allowed line-through'
+                  ? 'bg-red-50 text-red-300 cursor-not-allowed'
                   : isSelected
                   ? 'bg-secondary-600 text-white shadow-md'
                   : isWeekend
-                  ? 'text-gray-400 hover:bg-gray-100'
-                  : 'text-gray-700 hover:bg-secondary-50 hover:text-secondary-700'
+                  ? 'bg-emerald-50/60 text-gray-400 hover:bg-emerald-100 hover:text-gray-600'
+                  : 'bg-emerald-50/60 text-gray-700 hover:bg-emerald-100 hover:text-emerald-700'
               }`}
             >
               {day.getDate()}
@@ -209,11 +258,15 @@ function SmartCalendar({
         })}
       </div>
 
-      <div className="mt-3 flex items-center gap-2 text-xs text-gray-400">
-        <div className="w-3 h-3 rounded bg-gray-100 border border-gray-200 line-through flex items-center justify-center text-[8px]">
-
+      <div className="mt-3 flex items-center gap-4 text-xs text-gray-400">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded bg-emerald-50 border border-emerald-200"></div>
+          <span>Available</span>
         </div>
-        <span>Today & tomorrow blocked -- use Urgent for same-day needs</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded bg-red-50 border border-red-200"></div>
+          <span>Unavailable</span>
+        </div>
       </div>
     </div>
   );
@@ -245,7 +298,26 @@ export default function PostLead() {
   const [smsResult, setSmsResult] = useState<{ push: number; sms: number } | null>(null);
   const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([]);
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
+  const [titleDropdownOpen, setTitleDropdownOpen] = useState(false);
+  const titleRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  // Close title dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (titleRef.current && !titleRef.current.contains(e.target as Node)) {
+        setTitleDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const titleSuggestions = useMemo(() => {
+    const suggestions = category ? (JOB_TITLE_SUGGESTIONS[category] || []) : [];
+    if (!title.trim()) return suggestions;
+    return suggestions.filter(s => s.toLowerCase().includes(title.toLowerCase()));
+  }, [category, title]);
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -336,7 +408,7 @@ export default function PostLead() {
       flash_expiry: flashExpiry,
       emergency_fee_applied: isUrgent,
       max_quotes: maxQuotes,
-      allows_site_inspection: allowsSiteInspection,
+      allows_site_inspection: SIMPLE_TRADES.includes(category) ? false : allowsSiteInspection,
       scheduled_date: scheduleMode === 'scheduled' && scheduledDate
         ? scheduledDate.toISOString().split('T')[0]
         : null,
@@ -391,6 +463,8 @@ export default function PostLead() {
     // Show success immediately, notify tradies in background
     setSubmitted(true);
     setSubmitting(false);
+
+    // New lead notifications are handled by database trigger (notify_tradies_on_new_job)
 
     if (isUrgent) {
       notifyTradiesForUrgentJob(insertedJob as Job).then((result) => {
@@ -524,41 +598,36 @@ export default function PostLead() {
                     icon={<FileText className="w-5 h-5" />}
                   />
                 </div>
-                <div>
+                <div ref={titleRef} className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Job Title</label>
                   <input
                     type="text"
                     value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder={(() => {
-                      if (!category) return 'Short title for your job';
-                      const examples: Record<string, string> = {
-                        Cleaner: 'e.g. End of lease clean',
-                        Plumber: 'e.g. Fix leaking kitchen tap',
-                        Electrician: 'e.g. Install downlights in living room',
-                        Carpenter: 'e.g. Build a timber deck',
-                        Builder: 'e.g. Garage extension',
-                        Painter: 'e.g. Repaint 3-bedroom house interior',
-                        Landscaper: 'e.g. New garden bed and turf',
-                        Roofer: 'e.g. Fix roof leak above bathroom',
-                        Tiler: 'e.g. Retile bathroom floor',
-                        'Air Conditioning': 'e.g. Install split system in bedroom',
-                        Locksmith: 'e.g. Rekey all locks after moving in',
-                        'Pest Control': 'e.g. Annual termite inspection',
-                        Fencer: 'e.g. Replace side fence panels',
-                        Concreter: 'e.g. New driveway slab',
-                        Bricklayer: 'e.g. Repair retaining wall',
-                        'Pool Maintenance': 'e.g. Green pool recovery',
-                        Handyman: 'e.g. Assemble flat-pack furniture',
-                        Glazier: 'e.g. Replace cracked window pane',
-                        Renderer: 'e.g. Render front facade',
-                        Demolition: 'e.g. Remove old garden shed',
-                      };
-                      return examples[category] || `e.g. Describe your ${category.toLowerCase()} job`;
-                    })()}
+                    onChange={(e) => {
+                      setTitle(e.target.value);
+                      setTitleDropdownOpen(true);
+                    }}
+                    onFocus={() => setTitleDropdownOpen(true)}
+                    placeholder={category ? `Select or type your ${category.toLowerCase()} job title` : 'Select a trade first'}
                     maxLength={80}
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
+                  {titleDropdownOpen && titleSuggestions.length > 0 && (
+                    <ul className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                      {titleSuggestions.map((suggestion) => (
+                        <li
+                          key={suggestion}
+                          onClick={() => {
+                            setTitle(suggestion);
+                            setTitleDropdownOpen(false);
+                          }}
+                          className="px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 cursor-pointer first:rounded-t-xl last:rounded-b-xl"
+                        >
+                          {suggestion}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
 
@@ -582,6 +651,31 @@ export default function PostLead() {
                     </div>
                   );
                 })()}
+                {category && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {getJobHints(category).map((hint) => {
+                      const alreadyUsed = description.toLowerCase().includes(hint.toLowerCase());
+                      return (
+                        <button
+                          key={hint}
+                          type="button"
+                          disabled={alreadyUsed}
+                          onClick={() => {
+                            const separator = description.trim() ? (description.trim().endsWith('.') || description.trim().endsWith(',') ? ' ' : '. ') : '';
+                            setDescription((prev) => prev.trim() + separator + hint);
+                          }}
+                          className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
+                            alreadyUsed
+                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-default'
+                              : 'bg-white text-gray-600 border-gray-200 hover:bg-primary-50 hover:text-primary-700 hover:border-primary-300'
+                          }`}
+                        >
+                          {hint}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -728,12 +822,15 @@ export default function PostLead() {
               <div className="mt-5 space-y-4 animate-in fade-in duration-300">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    When should the tradie visit?
+                    {SIMPLE_TRADES.includes(category) ? 'When do you need this done?' : 'When should the tradie visit?'}
                   </label>
                   <div className="flex items-start gap-2.5 px-3.5 py-2.5 bg-blue-50 border border-blue-200 rounded-xl mb-3">
                     <CalendarDays className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-blue-800 leading-relaxed">
-                      The tradie will come to your property to <strong>inspect the job and give you a firm quote</strong>. You'll need to be home.
+                      {SIMPLE_TRADES.includes(category)
+                        ? <>Pick a date that works for the <strong>tradie to complete the job</strong>. You'll need to provide access.</>
+                        : <>The tradie will come to your property to <strong>inspect the job and give you a firm quote</strong>. You'll need to be home.</>
+                      }
                     </p>
                   </div>
                   <SmartCalendar
@@ -749,12 +846,15 @@ export default function PostLead() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    What time works best for the visit?
+                    {SIMPLE_TRADES.includes(category) ? 'What time works best?' : 'What time works best for the visit?'}
                   </label>
                   <div className="flex items-start gap-2.5 px-3.5 py-2.5 bg-blue-50 border border-blue-200 rounded-xl mb-3">
                     <Clock className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-blue-800 leading-relaxed">
-                      Pick when you're available to <strong>let the tradie in</strong> and walk them through the job.
+                      {SIMPLE_TRADES.includes(category)
+                        ? <>Pick a time that suits you — the tradie will <strong>confirm availability</strong>.</>
+                        : <>Pick when you're available to <strong>let the tradie in</strong> and walk them through the job.</>
+                      }
                     </p>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
@@ -883,24 +983,26 @@ export default function PostLead() {
                 </p>
               </div>
 
-              <label
-                className="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 hover:border-secondary-300 cursor-pointer transition-colors"
-                htmlFor="allows-site-inspection"
-              >
-                <input
-                  id="allows-site-inspection"
-                  type="checkbox"
-                  checked={allowsSiteInspection}
-                  onChange={(e) => setAllowsSiteInspection(e.target.checked)}
-                  className="w-4 h-4 text-secondary-600 rounded border-gray-300 focus:ring-secondary-500 mt-0.5"
-                />
-                <div>
-                  <span className="text-sm font-medium text-gray-700">Allow site inspections</span>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Let tradies visit before giving a firm price. Recommended for complex jobs.
-                  </p>
-                </div>
-              </label>
+              {!SIMPLE_TRADES.includes(category) && (
+                <label
+                  className="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 hover:border-secondary-300 cursor-pointer transition-colors"
+                  htmlFor="allows-site-inspection"
+                >
+                  <input
+                    id="allows-site-inspection"
+                    type="checkbox"
+                    checked={allowsSiteInspection}
+                    onChange={(e) => setAllowsSiteInspection(e.target.checked)}
+                    className="w-4 h-4 text-secondary-600 rounded border-gray-300 focus:ring-secondary-500 mt-0.5"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Allow site inspections</span>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Let tradies visit before giving a firm price. Recommended for complex jobs.
+                    </p>
+                  </div>
+                </label>
+              )}
             </div>
           </div>
 

@@ -21,6 +21,7 @@ export const NOTIFICATION_TYPES = {
   PAYMENT_RECEIVED: 'PAYMENT_RECEIVED',
   LICENSE_EXPIRING: 'LICENSE_EXPIRING',
   BOOKING_REMINDER: 'BOOKING_REMINDER',
+  NEW_LEAD: 'NEW_LEAD',
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];
@@ -118,5 +119,8 @@ export const NOTIFICATION_TEMPLATES: Record<
   [NOTIFICATION_TYPES.BOOKING_REMINDER]: {
     defaultTitle: 'Booking Reminder',
     emailSubject: 'Reminder: Upcoming Booking on {scheduledDate}',
+  },
+  [NOTIFICATION_TYPES.NEW_LEAD]: {
+    defaultTitle: 'New Lead Available',
   },
 };

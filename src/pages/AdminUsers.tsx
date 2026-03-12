@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { friendlyError } from '../lib/utils';
 import {
   Users,
   Search,
@@ -313,7 +314,7 @@ export default function AdminUsers() {
     const { error } = await supabase.from('profiles').delete().eq('id', userId);
 
     if (error) {
-      showToast('Failed to remove user: ' + error.message, true);
+      showToast(friendlyError(error, 'Unable to remove this user. They may have linked data that needs to be handled first.'), true);
     } else {
       setUsers(prev => prev.filter(u => u.id !== userId));
       await logAdminAction('delete_user', 'user', userId, { reason, email: user?.email });

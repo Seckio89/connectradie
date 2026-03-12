@@ -11,6 +11,7 @@ import AvailabilityCalendar from '../components/AvailabilityCalendar';
 import ActivityFeed from '../components/ActivityFeed';
 import OnboardingChecklist from '../components/OnboardingChecklist';
 import ServiceRemindersWidget from '../components/ServiceRemindersWidget';
+import { redactName } from '../lib/contactGating';
 import SubscriptionModal from '../components/SubscriptionModal';
 // TooltipHint available for future use
 import UserTradeBadges from '../components/UserTradeBadges';
@@ -375,7 +376,8 @@ export default function ClientDashboard() {
       if (error) throw error;
 
       setSavedTradies(savedTradies.filter((t) => t.id !== tradie.id));
-      showToast(`${tradie.tradie_details?.business_name || tradie.full_name} removed`);
+      const isPro = tradie.tradie_details?.subscription_tier === 'pro' || tradie.tradie_details?.subscription_tier === 'business';
+      showToast(`${isPro ? (tradie.tradie_details?.business_name || tradie.full_name) : redactName(tradie.full_name)} removed`);
     } catch {
       showToast('Failed to remove tradie. Please try again.', true);
     }
@@ -522,7 +524,7 @@ export default function ClientDashboard() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {recentJobs
                     .filter(j => showArchived ? j.archived_at : (!j.archived_at && j.status !== 'completed'))
                     .slice(0, showArchived ? 20 : 5)
@@ -530,131 +532,133 @@ export default function ClientDashboard() {
                     const categoryMatch = job.description.match(/^\[([^\]]+)\]/);
                     const categoryRaw = categoryMatch ? categoryMatch[1] : null;
                     const category = categoryRaw ? categoryRaw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : null;
-                    const desc = job.description.replace(/^\[[^\]]+\]\s*/, '');
                     const isFlashActive = job.is_flash_boost && job.flash_expiry && new Date(job.flash_expiry) > new Date();
                     const isArchived = !!job.archived_at;
 
                     const statusConfig = isArchived
-                      ? { bg: 'bg-gray-50 border-gray-200 opacity-75', dot: 'bg-gray-300', label: 'Archived', icon: <Archive className="w-3.5 h-3.5 text-gray-400" /> }
-                      : job.status === 'completed'
-                      ? { bg: 'bg-white border-gray-200', dot: 'bg-green-500', label: 'Completed', icon: <CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> }
+                      ? { bg: 'bg-gray-50 border-gray-200 opacity-75', label: 'Archived', icon: <Archive className="w-3 h-3 text-gray-400" /> }
                       : job.status === 'in_progress'
-                      ? { bg: 'bg-blue-50 border-blue-200', dot: 'bg-blue-500', label: 'In Progress', icon: <Play className="w-3.5 h-3.5 text-blue-600" /> }
+                      ? { bg: 'bg-blue-50 border-blue-200', label: 'In Progress', icon: <Play className="w-3 h-3 text-blue-600" /> }
                       : job.status === 'funded'
-                      ? { bg: 'bg-white border-green-200', dot: 'bg-green-500', label: 'Paid — Tradie Assigned', icon: <DollarSign className="w-3.5 h-3.5 text-green-600" /> }
+                      ? { bg: 'bg-white border-green-200', label: 'Paid', icon: <DollarSign className="w-3 h-3 text-green-600" /> }
                       : job.quoting_status === 'awarded'
-                      ? { bg: 'bg-white border-secondary-200', dot: 'bg-secondary-500', label: 'Awarded', icon: <CheckCircle2 className="w-3.5 h-3.5 text-secondary-600" /> }
+                      ? { bg: 'bg-white border-secondary-200', label: 'Awarded', icon: <CheckCircle2 className="w-3 h-3 text-secondary-600" /> }
                       : job.quote_count > 0
-                      ? { bg: 'bg-secondary-50 border-secondary-200', dot: 'bg-secondary-500', label: `${job.quote_count} Quote${job.quote_count !== 1 ? 's' : ''}`, icon: <Eye className="w-3.5 h-3.5 text-secondary-600" /> }
+                      ? { bg: 'bg-secondary-50 border-secondary-200', label: `${job.quote_count} Quote${job.quote_count !== 1 ? 's' : ''}`, icon: <Eye className="w-3 h-3 text-secondary-600" /> }
                       : isFlashActive
-                      ? { bg: 'bg-warm-50 border-warm-200', dot: 'bg-warm-500', label: 'Boosted', icon: <Zap className="w-3.5 h-3.5 text-warm-600" /> }
-                      : { bg: 'bg-gray-50 border-gray-200', dot: 'bg-gray-400', label: 'Waiting for quotes', icon: <Clock className="w-3.5 h-3.5 text-gray-500" /> };
+                      ? { bg: 'bg-warm-50 border-warm-200', label: 'Boosted', icon: <Zap className="w-3 h-3 text-warm-600" /> }
+                      : { bg: 'bg-gray-50 border-gray-200', label: 'Waiting for quotes', icon: <Clock className="w-3 h-3 text-gray-500" /> };
 
                     return (
-                      <div key={job.id} className={`relative group p-4 rounded-xl border ${statusConfig.bg} hover:shadow-sm transition-all`}>
-                        <Link
-                          to={`/leads?job=${job.id}`}
-                          className="block"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-semibold text-gray-900 leading-tight mb-1 capitalize">
-                                {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
-                              </h4>
-                              <p className="text-xs text-gray-500 line-clamp-1 mb-2">{desc}</p>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${
-                                  statusConfig.label === 'Archived' ? 'bg-gray-100 text-gray-500 border-gray-200' :
-                                  statusConfig.label === 'Awarded' ? 'bg-green-100 text-green-700 border-green-200' :
-                                  statusConfig.label === 'Boosted' ? 'bg-warm-100 text-warm-700 border-warm-200' :
-                                  statusConfig.label.includes('Quote') ? 'bg-secondary-100 text-secondary-700 border-secondary-200' :
-                                  'bg-gray-100 text-gray-600 border-gray-200'
-                                }`}>
-                                  {statusConfig.icon}
-                                  {statusConfig.label}
-                                </span>
-                                {category && (
-                                  <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded-full text-xs font-medium">
-                                    {category}
-                                  </span>
-                                )}
-                                {job.location_address && (
-                                  <span className="text-xs text-gray-400 flex items-center gap-1">
-                                    <MapPin className="w-3 h-3" />
-                                    {job.location_address}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0 mt-1" />
+                      <Link key={job.id} to={`/leads?job=${job.id}`} className={`group relative flex items-center gap-3 px-4 py-3 rounded-xl border ${statusConfig.bg} hover:shadow-sm transition-all`}>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-semibold text-gray-900 truncate capitalize">
+                              {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
+                            </h4>
+                            {category && (
+                              <span className="hidden sm:inline px-1.5 py-0.5 bg-primary-50 text-primary-700 rounded text-[10px] font-medium flex-shrink-0">
+                                {category}
+                              </span>
+                            )}
                           </div>
-                        </Link>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            isArchived ? unarchiveJob(job.id) : archiveJob(job.id);
-                          }}
-                          className="absolute top-3 right-10 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white border border-gray-200 text-gray-400 hover:text-gray-600"
-                          title={isArchived ? 'Restore job' : 'Archive job'}
-                        >
-                          {isArchived ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
-                        </button>
-                      </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${
+                              statusConfig.label === 'Archived' ? 'text-gray-400' :
+                              statusConfig.label === 'Awarded' ? 'text-green-600' :
+                              statusConfig.label === 'Boosted' ? 'text-warm-600' :
+                              statusConfig.label.includes('Quote') ? 'text-secondary-600' :
+                              statusConfig.label === 'In Progress' ? 'text-blue-600' :
+                              statusConfig.label === 'Paid' ? 'text-green-600' :
+                              'text-gray-500'
+                            }`}>
+                              {statusConfig.icon}
+                              {statusConfig.label}
+                            </span>
+                            {job.location_address && (
+                              <span className="hidden sm:flex text-[11px] text-gray-400 items-center gap-0.5 truncate max-w-[200px]">
+                                <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
+                                {job.location_address.split(',')[0]}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {!isArchived && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                archiveJob(job.id);
+                              }}
+                              className="p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-gray-500"
+                              title="Archive job"
+                            >
+                              <Archive className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {isArchived && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                unarchiveJob(job.id);
+                              }}
+                              className="p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-gray-500"
+                              title="Restore job"
+                            >
+                              <ArchiveRestore className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <ArrowRight className="w-3.5 h-3.5 text-gray-300" />
+                        </div>
+                      </Link>
                     );
                   })}
 
                   <Link
                     to="/post-lead"
-                    className="flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-gray-200 text-sm font-medium text-gray-500 hover:border-warm-300 hover:text-warm-600 transition-colors"
+                    className="flex items-center justify-center gap-2 p-2.5 rounded-xl border-2 border-dashed border-gray-200 text-sm font-medium text-gray-500 hover:border-warm-300 hover:text-warm-600 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     Post Another Job
                   </Link>
 
-                  {/* Completed Jobs Section */}
+                  {/* Completed Jobs — compact summary */}
                   {showCompleted && recentJobs.filter(j => j.status === 'completed' && !j.archived_at).length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <h3 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                        Completed Jobs
-                      </h3>
-                      <div className="space-y-2">
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-xs font-semibold text-gray-500 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                          Completed
+                        </h3>
+                        <Link to="/leads?filter=completed" className="text-[11px] text-primary-600 hover:text-primary-700 font-medium">
+                          View all
+                        </Link>
+                      </div>
+                      <div className="space-y-1">
                         {recentJobs
                           .filter(j => j.status === 'completed' && !j.archived_at)
+                          .slice(0, 3)
                           .map((job) => {
                             const categoryRaw = job.description.match(/^\[([^\]]+)\]/)?.[1];
                             const category = categoryRaw ? categoryRaw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : null;
-                            const desc = job.description.replace(/^\[[^\]]+\]\s*/, '');
                             return (
-                              <div key={job.id} className="group relative p-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-white transition-all">
-                                <Link to={`/leads?job=${job.id}`} className="block">
-                                  <div className="flex items-center justify-between gap-3">
-                                    <div className="flex-1 min-w-0">
-                                      <h4 className="text-sm font-medium text-gray-700 capitalize truncate">
-                                        {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
-                                      </h4>
-                                      <p className="text-xs text-gray-400 line-clamp-1">{desc}</p>
-                                      <div className="flex items-center gap-2 mt-1">
-                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 border border-green-200 rounded-full text-xs font-medium">
-                                          <CheckCircle2 className="w-3 h-3" /> Completed
-                                        </span>
-                                        {category && (
-                                          <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded-full text-xs font-medium">{category}</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                  </div>
-                                </Link>
+                              <Link key={job.id} to={`/leads?job=${job.id}`}
+                                className="group flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
+                                <span className="text-sm text-gray-600 truncate flex-1 capitalize">
+                                  {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
+                                </span>
+                                {category && <span className="text-[10px] text-gray-400 flex-shrink-0">{category}</span>}
                                 <button
                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); archiveJob(job.id); }}
-                                  className="absolute top-2 right-10 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white border border-gray-200 text-gray-400 hover:text-gray-600"
-                                  title="Archive job"
+                                  className="p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-gray-500"
+                                  title="Archive"
                                 >
-                                  <Archive className="w-3.5 h-3.5" />
+                                  <Archive className="w-3 h-3" />
                                 </button>
-                              </div>
+                              </Link>
                             );
                           })}
                       </div>
@@ -971,7 +975,9 @@ export default function ClientDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 text-sm truncate">
-                        {tradie.tradie_details?.business_name || tradie.full_name}
+                        {(tradie.tradie_details?.subscription_tier === 'pro' || tradie.tradie_details?.subscription_tier === 'business')
+                          ? (tradie.tradie_details?.business_name || tradie.full_name)
+                          : redactName(tradie.full_name)}
                       </p>
                       <p className="text-xs text-gray-600 capitalize">
                         {tradie.tradie_details?.trade_category}

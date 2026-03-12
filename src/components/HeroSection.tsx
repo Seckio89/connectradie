@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ChevronDown, Shield, Star, Clock, ArrowRight } from 'lucide-react';
 import { getPlatformStats, type PlatformStats } from '../lib/reviews';
+import { TRADE_OPTIONS } from '../lib/tradeCategories';
 
 export default function HeroSection() {
   const [tradeType, setTradeType] = useState('');
@@ -41,41 +42,7 @@ export default function HeroSection() {
     setPlatformStats(stats);
   };
 
-  const tradeOptions = [
-    { value: 'plumber', label: 'Plumber' },
-    { value: 'electrician', label: 'Electrician' },
-    { value: 'carpenter', label: 'Carpenter' },
-    { value: 'painter', label: 'Painter' },
-    { value: 'handyman', label: 'Handyman' },
-    { value: 'builder', label: 'Builder' },
-    { value: 'roofer', label: 'Roofer' },
-    { value: 'tiler', label: 'Tiler' },
-    { value: 'bricklayer', label: 'Bricklayer' },
-    { value: 'plasterer', label: 'Plasterer' },
-    { value: 'landscaper', label: 'Landscaper' },
-    { value: 'air-conditioning', label: 'Air Conditioning' },
-    { value: 'locksmith', label: 'Locksmith' },
-    { value: 'glazier', label: 'Glazier' },
-    { value: 'concreter', label: 'Concreter' },
-    { value: 'fencer', label: 'Fencer' },
-    { value: 'pest-control', label: 'Pest Control' },
-    { value: 'solar', label: 'Solar Installer' },
-    { value: 'pool', label: 'Pool Builder/Technician' },
-    { value: 'demolition', label: 'Demolition' },
-    { value: 'excavation', label: 'Excavation' },
-    { value: 'waterproofing', label: 'Waterproofing' },
-    { value: 'flooring', label: 'Flooring Specialist' },
-    { value: 'cabinet-maker', label: 'Cabinet Maker' },
-    { value: 'renderer', label: 'Rendering Specialist' },
-    { value: 'garage-doors', label: 'Garage Doors' },
-    { value: 'security', label: 'Security Systems' },
-    { value: 'antenna', label: 'Antenna & TV' },
-    { value: 'appliance-repair', label: 'Appliance Repair' },
-    { value: 'curtains-blinds', label: 'Curtains & Blinds' },
-    { value: 'cleaner', label: 'Cleaner' },
-    { value: 'private-chef', label: 'Private Chef' },
-    { value: 'catering', label: 'Event Catering' },
-  ];
+  const tradeOptions = TRADE_OPTIONS;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,7 +195,7 @@ export default function HeroSection() {
               {/* Main Tradie Profile Card */}
               <div className="bg-navy-800 rounded-2xl shadow-xl shadow-black/30 border border-navy-700 p-6 max-w-sm mx-auto">
                 <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-navy-600 to-navy-800 flex items-center justify-center text-white font-bold text-lg shrink-0 border border-navy-600">
+                  <div className="w-14 h-14 rounded-xl bg-white flex items-center justify-center text-gray-900 font-bold text-lg shrink-0 border-2 border-warm-500">
                     ME
                   </div>
                   <div className="flex-1 min-w-0">

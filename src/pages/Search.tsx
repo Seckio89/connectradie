@@ -14,45 +14,9 @@ import SEO from '../components/SEO';
 import { recordProfileView, getDailyViewCount, hasEngagement, getRemainingViews, DAILY_VIEW_LIMIT_VALUE, redactName } from '../lib/contactGating';
 import { useToast } from '../hooks/useToast';
 import { saveSearch, getSavedSearches, deleteSavedSearch, toggleSearchAlerts, type SavedSearch, type SearchFilters } from '../lib/savedSearches';
+import { TRADE_OPTIONS } from '../lib/tradeCategories';
 
-const tradeCategories = [
-  { value: '', label: 'All Trades' },
-  { value: 'plumber', label: 'Plumber' },
-  { value: 'electrician', label: 'Electrician' },
-  { value: 'carpenter', label: 'Carpenter' },
-  { value: 'builder', label: 'Builder' },
-  { value: 'painter', label: 'Painter' },
-  { value: 'landscaper', label: 'Landscaper' },
-  { value: 'handyman', label: 'Handyman' },
-  { value: 'cleaner', label: 'Cleaner' },
-  { value: 'roofer', label: 'Roofer' },
-  { value: 'tiler', label: 'Tiler' },
-  { value: 'concreter', label: 'Concreter' },
-  { value: 'bricklayer', label: 'Bricklayer' },
-  { value: 'glazier', label: 'Glazier' },
-  { value: 'fencer', label: 'Fencer' },
-  { value: 'plasterer', label: 'Plasterer' },
-  { value: 'renderer', label: 'Renderer' },
-  { value: 'flooring', label: 'Flooring Specialist' },
-  { value: 'cabinet-maker', label: 'Cabinet Maker' },
-  { value: 'locksmith', label: 'Locksmith' },
-  { value: 'air-conditioning', label: 'Air Conditioning' },
-  { value: 'solar', label: 'Solar Installer' },
-  { value: 'pool', label: 'Pool Builder/Technician' },
-  { value: 'pest-control', label: 'Pest Control' },
-  { value: 'demolition', label: 'Demolition' },
-  { value: 'excavation', label: 'Excavation' },
-  { value: 'scaffolding', label: 'Scaffolding' },
-  { value: 'waterproofing', label: 'Waterproofing' },
-  { value: 'insulation', label: 'Insulation' },
-  { value: 'garage-doors', label: 'Garage Doors' },
-  { value: 'security', label: 'Security Systems' },
-  { value: 'antenna', label: 'Antenna & TV' },
-  { value: 'appliance-repair', label: 'Appliance Repair' },
-  { value: 'curtains-blinds', label: 'Curtains & Blinds' },
-  { value: 'private-chef', label: 'Private Chef' },
-  { value: 'catering', label: 'Event Catering' },
-];
+const tradeCategories = [{ value: '', label: 'All Trades' }, ...TRADE_OPTIONS];
 
 const advancedCategories: Record<string, string[]> = {
   plumber: ['Blocked Drains', 'Gas Fitting', 'Hot Water Systems', 'Leak Detection & Repairs', 'Pipe Installation', 'Bathroom Plumbing', 'Kitchen Plumbing', 'Toilet Repairs', 'Tap Repairs', 'Burst Pipes', 'Sewer & Stormwater', 'Backflow Prevention', 'Water Filtration'],
@@ -349,14 +313,15 @@ export default function Search() {
         .eq('tradie_id', tradie.id);
 
       setSavedTradieIds(savedTradieIds.filter((id) => id !== tradie.id));
-      showToast(`${tradie.tradie_details?.business_name || tradie.full_name} removed from saved`);
+      const isPro = tradie.tradie_details?.subscription_tier === 'pro' || tradie.tradie_details?.subscription_tier === 'business';
+      showToast(`${isPro ? (tradie.tradie_details?.business_name || tradie.full_name) : redactName(tradie.full_name)} removed from saved`);
     } else {
       await supabase
         .from('my_trades')
         .insert({ client_id: user.id, tradie_id: tradie.id });
 
       setSavedTradieIds([...savedTradieIds, tradie.id]);
-      showToast(`${tradie.tradie_details?.business_name || tradie.full_name} saved!`);
+      showToast(`${isPro ? (tradie.tradie_details?.business_name || tradie.full_name) : redactName(tradie.full_name)} saved!`);
     }
   };
 
@@ -880,20 +845,20 @@ export default function Search() {
         <SEO title={seoTitle} description={seoDescription} canonical="/search" />
         {isClient && !isEngaged && (
           <div className="max-w-[1600px] mx-auto mb-4">
-            {remainingViews > 0 && remainingViews <= Math.ceil(DAILY_VIEW_LIMIT_VALUE / 2) ? (
+            {remainingViews === DAILY_VIEW_LIMIT_VALUE ? (
+              <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl">
+                <Eye className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                <p className="text-sm text-blue-800">
+                  Free accounts can view <span className="font-semibold">{DAILY_VIEW_LIMIT_VALUE}</span> tradie profiles per day.{' '}
+                  <Link to="/post-lead" className="font-semibold underline hover:text-blue-900">Post a job</Link> to unlock unlimited access.
+                </p>
+              </div>
+            ) : remainingViews > 0 && remainingViews <= 3 ? (
               <div className="flex items-center gap-3 px-4 py-3 bg-warm-50 border border-warm-200 rounded-xl">
                 <Eye className="w-5 h-5 text-warm-600 flex-shrink-0" />
                 <p className="text-sm text-warm-800">
                   <span className="font-semibold">{remainingViews}</span> free profile view{remainingViews !== 1 ? 's' : ''} left today.{' '}
                   <Link to="/post-lead" className="font-semibold underline hover:text-warm-900">Post your job</Link> and let tradies come to you — free and unlimited.
-                </p>
-              </div>
-            ) : remainingViews > Math.ceil(DAILY_VIEW_LIMIT_VALUE / 2) ? (
-              <div className="flex items-center gap-3 px-4 py-3 bg-secondary-50 border border-secondary-200 rounded-xl">
-                <Eye className="w-5 h-5 text-secondary-600 flex-shrink-0" />
-                <p className="text-sm text-secondary-800">
-                  You can view <span className="font-semibold">{DAILY_VIEW_LIMIT_VALUE}</span> profiles per day for free.{' '}
-                  Or <Link to="/post-lead" className="font-semibold underline hover:text-primary-900">post what you need</Link> and let tradies quote you directly — no limits.
                 </p>
               </div>
             ) : remainingViews <= 0 ? (
@@ -1027,7 +992,9 @@ function MapView({
             <MarkerF
               key={tradie.id}
               position={{ lat, lng }}
-              title={tradie.tradie_details?.business_name || tradie.full_name || ''}
+              title={(tradie.tradie_details?.subscription_tier === 'pro' || tradie.tradie_details?.subscription_tier === 'business')
+                ? (tradie.tradie_details?.business_name || tradie.full_name || '')
+                : (redactName(tradie.full_name) || '')}
             />
           ) : null;
         })}

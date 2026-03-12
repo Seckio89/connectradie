@@ -31,6 +31,8 @@ import {
   CreditCard,
   Shield,
   DollarSign,
+  Star,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -45,7 +47,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import Modal from '../components/Modal';
 import { formatDate, checkLicenseExpired } from '../lib/utils';
 import { extractSuburb } from '../lib/contactGating';
-import { acceptAndPay } from '../lib/stripePayments';
+import { acceptAndPay, verifyPayment, releaseEscrow } from '../lib/stripePayments';
 import { getJobHints } from '../lib/jobDescriptionHints';
 
 function FlashCountdown({ expiry, onExpired }: { expiry: string; onExpired?: () => void }) {
@@ -114,7 +116,11 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [leads, setLeads] = useState<LeadWithClient[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<LeadFilter>('all');
+  const [filter, setFilter] = useState<LeadFilter>(() => {
+    const urlFilter = new URLSearchParams(window.location.search).get('filter');
+    const validFilters: LeadFilter[] = ['all', 'open', 'quoting', 'accepted', 'in_progress', 'completed', 'archived', 'pending', 'boosted', 'urgent', 'scheduled', 'quoted', 'history', 'deleted'];
+    return urlFilter && validFilters.includes(urlFilter as LeadFilter) ? urlFilter as LeadFilter : 'all';
+  });
   const [showVerificationGate, setShowVerificationGate] = useState(false);
   const [gateReason, setGateReason] = useState<'unverified' | 'expired'>('unverified');
   const [quoteModalJob, setQuoteModalJob] = useState<Job | null>(null);
@@ -138,6 +144,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
   const [editPhotos, setEditPhotos] = useState<{ url: string; isExisting: boolean; file?: File }[]>([]);
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
   const editFileRef = useRef<HTMLInputElement>(null);
+  const [viewLeadDetail, setViewLeadDetail] = useState<LeadWithClient | null>(null);
   const [acceptedQuotes, setAcceptedQuotes] = useState<Record<string, Quote>>({});
   const [payingJobId, setPayingJobId] = useState<string | null>(null);
   const [priceConfirm, setPriceConfirm] = useState<{
@@ -147,6 +154,11 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     max: number;
     agreedPrice: string;
   } | null>(null);
+
+  const [releasingJobId, setReleasingJobId] = useState<string | null>(null);
+  const [releasedJobIds, setReleasedJobIds] = useState<Set<string>>(new Set());
+  const [reviewedJobIds, setReviewedJobIds] = useState<Set<string>>(new Set());
+  const [viewCompletedJob, setViewCompletedJob] = useState<LeadWithClient | null>(null);
 
   const isTradie = profile?.role === 'tradie';
   const isVerified = profile?.verification_status === 'verified';
@@ -184,13 +196,35 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     const jobParam = searchParams.get('job') || searchParams.get('job_id');
 
     if (paymentStatus === 'success' && jobParam) {
-      setQuoteAcceptedBanner('success');
-      setTimeout(() => setQuoteAcceptedBanner(false), 10000);
       searchParams.delete('payment');
       searchParams.delete('job_id');
       setSearchParams(searchParams, { replace: true });
-      // Refresh leads to get updated status
-      fetchLeads();
+
+      // Verify payment via Stripe (webhook fallback) then refresh
+      (async () => {
+        try {
+          // Find the pending payment for this job
+          const { data: pendingPayment } = await supabase
+            .from('payments')
+            .select('id, status')
+            .eq('job_id', jobParam)
+            .eq('payment_type', 'job_funding')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (pendingPayment && pendingPayment.status === 'pending') {
+            await verifyPayment(pendingPayment.id);
+          }
+        } catch (err) {
+          console.error('Payment verification fallback failed:', err);
+        }
+        // Switch to in_progress tab — funded jobs appear there.
+        // The filter change triggers useEffect → fetchLeads() automatically.
+        setFilter('in_progress');
+        setQuoteAcceptedBanner('success');
+        setTimeout(() => setQuoteAcceptedBanner(false), 10000);
+      })();
     } else if (paymentStatus === 'cancelled' && jobParam) {
       setQuoteAcceptedBanner('cancelled');
       setTimeout(() => setQuoteAcceptedBanner(false), 8000);
@@ -228,6 +262,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       .from('jobs')
       .select('*, profiles!jobs_client_id_fkey(full_name)')
       .is('tradie_id', null)
+      .is('deleted_at', null)
       .eq('status', 'pending')
       .eq('quoting_status', 'open')
       .order('created_at', { ascending: false });
@@ -321,6 +356,47 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         }
       }
 
+      // Pre-check which completed jobs already had payment released and reviews left
+      const completedJobIds = jobs
+        .filter(j => j.status === 'completed')
+        .map(j => j.id);
+
+      if (completedJobIds.length > 0) {
+        const [paymentsResult, reviewsResult] = await Promise.all([
+          supabase
+            .from('payments')
+            .select('job_id, metadata')
+            .in('job_id', completedJobIds)
+            .eq('payment_type', 'job_funding'),
+          supabase
+            .from('reviews')
+            .select('job_id')
+            .in('job_id', completedJobIds)
+            .eq('client_id', user!.id),
+        ]);
+
+        if (paymentsResult.data && paymentsResult.data.length > 0) {
+          const alreadyReleased = new Set<string>();
+          for (const p of paymentsResult.data) {
+            const meta = p.metadata as Record<string, unknown> | null;
+            if (meta?.transfer_id) {
+              alreadyReleased.add(p.job_id);
+            }
+          }
+          if (alreadyReleased.size > 0) {
+            setReleasedJobIds(prev => {
+              const next = new Set(prev);
+              alreadyReleased.forEach(id => next.add(id));
+              return next;
+            });
+          }
+        }
+
+        if (reviewsResult.data && reviewsResult.data.length > 0) {
+          setReviewedJobIds(new Set(reviewsResult.data.map(r => r.job_id)));
+        }
+      }
+
       // Client-side filtering for progression tabs
       const isActive = (j: LeadWithClient) =>
         !j.archived_at && !j.deleted_at && j.status !== 'cancelled' && j.status !== 'declined';
@@ -350,18 +426,17 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           && isActive(j)
         ));
       } else if (filter === 'completed') {
-        // Finished successfully
+        // All completed jobs (including previously archived ones) — this is the completion history
         setLeads(jobs.filter(j =>
-          j.status === 'completed'
-          && !j.archived_at && !j.deleted_at
+          j.status === 'completed' && !j.deleted_at
         ));
       } else if (filter === 'archived') {
-        // Explicitly archived, cancelled, declined, or auto-archivable
+        // Explicitly archived (non-completed), cancelled, declined, or auto-archivable
         setLeads(jobs.filter(j =>
-          !j.deleted_at && (j.archived_at || j.status === 'cancelled' || j.status === 'declined' || isAutoArchivable(j))
+          !j.deleted_at && j.status !== 'completed' && (j.archived_at || j.status === 'cancelled' || j.status === 'declined' || isAutoArchivable(j))
         ));
       } else if (filter === 'all') {
-        // All active jobs (not archived, deleted, cancelled, declined, or auto-archivable)
+        // All active jobs — hide completed jobs that are fully done (released + reviewed)
         setLeads(jobs.filter(j =>
           isActive(j) && !isAutoArchivable(j)
         ));
@@ -635,12 +710,42 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     );
   };
 
+  const handleReleasePayment = async (jobId: string) => {
+    setReleasingJobId(jobId);
+    try {
+      // Find the payment for this job
+      const { data: payment } = await supabase
+        .from('payments')
+        .select('id')
+        .eq('job_id', jobId)
+        .eq('status', 'completed')
+        .maybeSingle();
+
+      if (!payment) {
+        // No completed payment found — may already be released
+        setReleasedJobIds(prev => new Set(prev).add(jobId));
+      } else {
+        await releaseEscrow(payment.id);
+        setReleasedJobIds(prev => new Set(prev).add(jobId));
+      }
+
+      navigate(`/review/${jobId}`);
+    } catch (err) {
+      console.error('Failed to release payment:', err);
+      // Still navigate to review if release fails (payment might already be released)
+      navigate(`/review/${jobId}`);
+    } finally {
+      setReleasingJobId(null);
+    }
+  };
+
   const handleAcceptQuote = async (quoteId: string, jobId: string, agreedPrice?: number) => {
     try {
       const { url } = await acceptAndPay(quoteId, jobId, agreedPrice);
       window.location.href = url;
     } catch (err) {
       console.error('Accept & Pay failed:', err);
+      setPayingJobId(null);
       setQuoteAcceptedBanner('error');
       setTimeout(() => setQuoteAcceptedBanner(false), 8000);
     }
@@ -653,9 +758,8 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       .eq('id', quoteId);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleMessageTradie = (_tradieId: string) => {
-    navigate('/messages');
+  const handleMessageTradie = (tradieId: string, jobId: string) => {
+    navigate(`/messages?tradie=${tradieId}&job=${jobId}`);
   };
 
   const BOOST_PRICE = 4.99;
@@ -815,7 +919,13 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
   };
 
   const getClientStatusLabel = (lead: Job) => {
-    if (lead.status === 'completed') return 'Completed';
+    if (lead.status === 'completed') {
+      const isReleased = releasedJobIds.has(lead.id);
+      const isReviewed = reviewedJobIds.has(lead.id);
+      if (isReleased && isReviewed) return 'Completed';
+      if (isReleased) return 'Awaiting Review';
+      return 'Awaiting Release';
+    }
     if (lead.status === 'in_progress') return 'In Progress';
     if (lead.status === 'funded') return 'Paid — Tradie Assigned';
     if (lead.status === 'accepted') return 'Accepted — Awaiting Payment';
@@ -829,7 +939,12 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
   };
 
   const getClientStatusColor = (lead: Job) => {
-    if (lead.status === 'completed') return 'bg-green-100 text-green-800 border-green-300';
+    if (lead.status === 'completed') {
+      const isReleased = releasedJobIds.has(lead.id);
+      const isReviewed = reviewedJobIds.has(lead.id);
+      if (isReleased && isReviewed) return 'bg-green-100 text-green-800 border-green-300';
+      return 'bg-amber-100 text-amber-700 border-amber-200';
+    }
     if (lead.status === 'in_progress') return 'bg-blue-100 text-blue-700 border-blue-200';
     if (lead.status === 'funded') return 'bg-green-100 text-green-700 border-green-200';
     if (lead.status === 'accepted') return 'bg-secondary-100 text-secondary-700 border-secondary-200';
@@ -881,200 +996,199 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     return (
       <div key={lead.id} id={`job-${lead.id}`}>
         <div
-          role={isClientEditable ? 'button' : undefined}
-          tabIndex={isClientEditable ? 0 : undefined}
-          onClick={isClientEditable ? () => openEditJob(lead) : undefined}
-          onKeyDown={isClientEditable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditJob(lead); } } : undefined}
-          className={`rounded-xl p-5 transition-all ${
-            isClientEditable ? 'cursor-pointer hover:shadow-md ' : ''
+          role="button"
+          tabIndex={0}
+          onClick={isClientEditable ? () => openEditJob(lead) : isTradie ? () => setViewLeadDetail(lead) : undefined}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isClientEditable) openEditJob(lead); else if (isTradie) setViewLeadDetail(lead); } }}
+          className={`rounded-2xl overflow-hidden transition-all ${
+            isClientEditable || isTradie ? 'cursor-pointer ' : ''
           }${
             isFlashActive && isTradie
-              ? 'border border-warm-300 bg-white shadow-sm'
+              ? 'border border-warm-200 bg-white shadow-md hover:shadow-xl ring-1 ring-warm-100'
               : isUrgent && isTradie
-              ? 'border border-red-200 bg-white shadow-sm'
+              ? 'border border-red-200 bg-white shadow-md hover:shadow-xl'
               : hasQuoted
-              ? 'border border-secondary-200 bg-white shadow-sm'
-              : 'border border-gray-200 bg-white hover:border-gray-300'
+              ? 'border border-secondary-200 bg-white shadow-sm hover:shadow-md'
+              : 'border border-gray-200 bg-white shadow-sm hover:shadow-lg hover:border-gray-300'
           }`}
         >
-          {/* Top row: title + actions */}
-          <div className="flex items-start justify-between gap-3 mb-1.5">
+          {/* Left accent bar + card content */}
+          <div className="flex">
+            {/* Accent bar */}
+            <div className={`w-1.5 flex-shrink-0 ${
+              isFlashActive && isTradie ? 'bg-warm-500'
+              : isUrgent && isTradie ? 'bg-red-400'
+              : hasQuoted ? 'bg-secondary-400'
+              : 'bg-primary-400'
+            }`} />
+
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold text-gray-900 leading-tight capitalize">
-                {(() => {
-                  const raw = lead.title || category || 'Untitled Job';
-                  // Clean up raw titles: "cleaning weekly — Recurring Service" → "Cleaning Weekly — Recurring Service"
-                  return raw.replace(/_/g, ' ');
-                })()}
-              </h3>
-            </div>
-            {isFlashActive && isTradie && (
-              <div className="text-right flex-shrink-0">
-                <div className="text-xs text-warm-600 font-medium">Ends in</div>
-                <FlashCountdown
-                  expiry={lead.flash_expiry!}
-                  onExpired={() => handleFlashExpired(lead.id)}
-                />
-              </div>
-            )}
-            {isClientEditable && (
-              <button
-                onClick={(e) => { e.stopPropagation(); setDeleteJobTarget(lead); }}
-                className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
-                title="Remove job"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
-          </div>
+              {/* Card body */}
+              <div className="px-5 py-4">
+                {/* Header row: title + status + delete */}
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-gray-900 leading-snug capitalize">
+                      {(() => {
+                        const raw = lead.title || category || 'Untitled Job';
+                        return raw.replace(/_/g, ' ');
+                      })()}
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {!isTradie && (
+                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${getClientStatusColor(lead)}`}>
+                        {getClientStatusLabel(lead)}
+                      </span>
+                    )}
+                    {isFlashActive && isTradie && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-warm-500 text-white rounded-full text-[11px] font-bold shadow-sm animate-pulse">
+                        <Zap className="w-3 h-3" />
+                        Flash
+                      </span>
+                    )}
+                    {!isFlashActive && isUrgent && isTradie && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-50 text-red-700 rounded-full text-[11px] font-semibold border border-red-200">
+                        <Zap className="w-3 h-3" />
+                        Urgent
+                      </span>
+                    )}
+                    {isClientEditable && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteJobTarget(lead); }}
+                        className="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Remove job"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-          {/* Description */}
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{desc}</p>
+                {/* Description */}
+                <p className="text-sm text-gray-500 mb-3 line-clamp-2 leading-relaxed">{desc}</p>
 
-          {/* Badges row */}
-          <div className="flex items-center gap-2 flex-wrap mb-3">
-            {category && (
-              <span className="px-2.5 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
-                {category}
-              </span>
-            )}
-            {!isTradie && (
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getClientStatusColor(lead)}`}>
-                {getClientStatusLabel(lead)}
-              </span>
-            )}
-            {isFlashActive && isTradie && (
-              <>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-warm-500 text-white rounded-full text-xs font-bold shadow-sm animate-pulse">
-                  <Zap className="w-3 h-3" />
-                  Flash Deal
-                </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-50 text-red-700 rounded-full text-xs font-semibold border border-red-200">
-                  <AlertTriangle className="w-3 h-3" />
-                  Urgent
-                </span>
-              </>
-            )}
-            {!isFlashActive && isUrgent && isTradie && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-50 text-red-700 rounded-full text-xs font-semibold border border-red-200">
-                <Zap className="w-3 h-3" />
-                Urgent
-              </span>
-            )}
-            {lead.scheduled_date && isTradie && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200">
-                <CalendarDays className="w-3 h-3" />
-                {new Date(lead.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
-              </span>
-            )}
-            {lead.preferred_time_slot && isTradie && SlotIcon && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
-                <SlotIcon className="w-3 h-3" />
-                {SLOT_LABELS[lead.preferred_time_slot]}
-              </span>
-            )}
-            {isTradie && slotsRemaining <= 2 && slotsRemaining > 0 && !hasQuoted && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-warm-50 text-warm-700 rounded-full text-xs font-semibold border border-warm-200">
-                <Users className="w-3 h-3" />
-                {slotsRemaining} spot{slotsRemaining !== 1 ? 's' : ''} left
-              </span>
-            )}
-            {isTradie && slotsRemaining > 2 && lead.quote_count > 0 && !hasQuoted && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
-                <Users className="w-3 h-3" />
-                {lead.quote_count}/{lead.max_quotes} quotes
-              </span>
-            )}
-            {hasQuoted && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-secondary-100 text-secondary-700 rounded-full text-xs font-bold border border-secondary-200">
-                <CheckCircle2 className="w-3 h-3" />
-                Quoted
-              </span>
-            )}
-            {isTradie && (
-              <span className="text-xs text-gray-400 ml-auto">
-                Posted by {((lead as LeadWithClient).client_name || 'Client').split(' ')[0]}
-              </span>
-            )}
-          </div>
+                {/* Details row */}
+                <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap text-xs text-gray-500">
+                  {category && (
+                    <span className="inline-flex items-center gap-1 text-gray-600 font-medium">
+                      <Briefcase className="w-3 h-3 text-gray-400" />
+                      {category}
+                    </span>
+                  )}
+                  {lead.location_address && (
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-gray-400" />
+                      {isTradie ? extractSuburb(lead.location_address) || 'Nearby' : (() => {
+                        const parts = lead.location_address!.split(',').map(s => s.trim());
+                        return parts.length >= 2 ? `${parts[0]}, ${parts[1]}` : parts[0];
+                      })()}
+                    </span>
+                  )}
+                  {lead.scheduled_date && (
+                    <span className="inline-flex items-center gap-1">
+                      <CalendarDays className="w-3 h-3 text-secondary-500" />
+                      <span className="text-secondary-700 font-medium">
+                        {new Date(lead.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                      </span>
+                    </span>
+                  )}
+                  {lead.preferred_time_slot && SlotIcon && (
+                    <span className="inline-flex items-center gap-1">
+                      <SlotIcon className="w-3 h-3 text-gray-400" />
+                      {SLOT_LABELS[lead.preferred_time_slot]}
+                    </span>
+                  )}
+                  {lead.budget_amount ? (
+                    <span className="inline-flex items-center font-bold text-emerald-700">
+                      ${lead.budget_amount.toLocaleString()}
+                    </span>
+                  ) : lead.budget_type === 'request_quote' ? (
+                    <span className="inline-flex items-center gap-1 text-blue-600 font-medium">
+                      <FileText className="w-3 h-3" />
+                      Quote Requested
+                    </span>
+                  ) : null}
+                  {isTradie && slotsRemaining <= 2 && slotsRemaining > 0 && !hasQuoted && (
+                    <span className="inline-flex items-center gap-1 text-warm-700 font-semibold">
+                      <Users className="w-3 h-3" />
+                      {slotsRemaining} spot{slotsRemaining !== 1 ? 's' : ''} left
+                    </span>
+                  )}
+                  {isTradie && slotsRemaining > 2 && lead.quote_count > 0 && !hasQuoted && (
+                    <span className="inline-flex items-center gap-1">
+                      <Users className="w-3 h-3 text-gray-400" />
+                      {lead.quote_count}/{lead.max_quotes} quotes
+                    </span>
+                  )}
+                  {hasQuoted && (
+                    <span className="inline-flex items-center gap-1 text-secondary-700 font-bold">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Quoted
+                    </span>
+                  )}
+                </div>
+              </div>
 
-          {/* Metadata row */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-500">
-            {lead.location_address && (
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5" />
-                <span className="truncate max-w-[200px]">
-                  {isTradie ? extractSuburb(lead.location_address) || 'Nearby' : lead.location_address}
-                </span>
-              </div>
-            )}
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5" />
-              {formatDate(lead.created_at)}
-            </div>
-            {lead.budget_amount && (
-              <div className="flex items-center gap-1 font-semibold text-gray-700">
-                ${lead.budget_amount.toLocaleString()}
-              </div>
-            )}
-            {!lead.budget_amount && lead.budget_type === 'request_quote' && (
-              <div className="flex items-center gap-1.5 text-secondary-600 font-medium">
-                <FileText className="w-3.5 h-3.5" />
-                Requesting Quote
-              </div>
-            )}
-          </div>
+              {/* Footer: actions + meta */}
+              {isTradie && !hasQuoted && (
+                <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                  <span className="text-xs text-gray-400">
+                    Posted by {((lead as LeadWithClient).client_name || 'Client').split(' ')[0]} · {formatDate(lead.created_at)}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleDismissLead(lead.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+                    >
+                      <XCircle className="w-3.5 h-3.5" />
+                      Pass
+                    </button>
+                    <button
+                      onClick={() => handleQuoteClick(lead)}
+                      className="inline-flex items-center gap-1.5 px-5 py-1.5 rounded-lg text-xs font-semibold bg-warm-500 text-white hover:bg-warm-600 shadow-sm transition-all"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      Submit Quote
+                    </button>
+                  </div>
+                </div>
+              )}
+              {isTradie && hasQuoted && (
+                <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
+                  <span className="text-xs text-gray-400">
+                    Posted by {((lead as LeadWithClient).client_name || 'Client').split(' ')[0]} · {formatDate(lead.created_at)}
+                  </span>
+                </div>
+              )}
 
-          {/* Flash/Boost banners */}
-          {isFlashActive && isTradie && (
-            <div className="mt-3 flex items-center gap-2 px-2.5 py-1.5 bg-warm-50 border border-warm-200 rounded-lg">
-              <Zap className="w-3.5 h-3.5 text-warm-600 flex-shrink-0" />
-              <span className="text-xs font-medium text-warm-700">
-                Flash Deal — Quick Quote Priority
-              </span>
-            </div>
-          )}
+              {/* Flash/Boost banners */}
+              {isFlashActive && isTradie && (
+                <div className="mx-5 mb-3 flex items-center gap-2 px-3 py-2 bg-warm-50 border border-warm-200 rounded-lg">
+                  <Zap className="w-3.5 h-3.5 text-warm-600 flex-shrink-0" />
+                  <span className="text-xs font-medium text-warm-700">
+                    Flash Deal — Quick Quote Priority
+                  </span>
+                </div>
+              )}
 
-          {!isTradie && isFlashActive && (
-            <div className="mt-3 flex items-center justify-between px-3 py-2 bg-gradient-to-r from-warm-50 to-orange-50 border border-warm-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-warm-500 flex-shrink-0" />
-                <span className="text-sm font-medium text-warm-700">
-                  Boosted — finding tradies faster
-                </span>
-              </div>
-              <div className="text-xs text-warm-600">
-                <FlashCountdown
-                  expiry={lead.flash_expiry!}
-                  onExpired={() => handleFlashExpired(lead.id)}
-                />
-                {' '}remaining
-              </div>
-            </div>
-          )}
-
-          {isTradie && !hasQuoted && (
-            <div className="flex items-center gap-3 pt-4 mt-4 border-t border-gray-100">
-              <button
-                onClick={() => handleDismissLead(lead.id)}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-all"
-              >
-                <XCircle className="w-4 h-4" />
-                Not Interested
-              </button>
-              <button
-                onClick={() => handleQuoteClick(lead)}
-                className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                  isFlashActive
-                    ? 'bg-warm-500 text-white hover:bg-warm-600 shadow-sm'
-                    : 'bg-warm-500 text-white hover:bg-warm-600'
-                }`}
-              >
-                <FileText className="w-4 h-4" />
-                Submit Quote
-              </button>
-            </div>
-          )}
+              {!isTradie && isFlashActive && (
+                <div className="mx-5 mb-3 flex items-center justify-between px-3 py-2 bg-gradient-to-r from-warm-50 to-orange-50 border border-warm-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-warm-500 flex-shrink-0" />
+                    <span className="text-sm font-medium text-warm-700">
+                      Boosted — finding tradies faster
+                    </span>
+                  </div>
+                  <div className="text-xs text-warm-600">
+                    <FlashCountdown
+                      expiry={lead.flash_expiry!}
+                      onExpired={() => handleFlashExpired(lead.id)}
+                    />
+                    {' '}remaining
+                  </div>
+                </div>
+              )}
 
           {isTradie && hasQuoted && (() => {
             const qs = lead.my_quote!.status;
@@ -1088,8 +1202,8 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
               ? { bg: 'bg-gray-50 border-gray-200', icon: <XCircle className="w-5 h-5 text-gray-400 flex-shrink-0" />, label: 'Quote withdrawn', textColor: 'text-gray-600' }
               : { bg: 'bg-secondary-50 border-secondary-200', icon: <Clock className="w-5 h-5 text-secondary-600 flex-shrink-0" />, label: 'Awaiting client decision', textColor: 'text-secondary-600' };
             return (
-              <div className="flex items-center gap-3 pt-4 mt-4 border-t border-gray-100">
-                <div className={`flex-1 flex items-center gap-3 px-4 py-3 ${statusConfig.bg} border rounded-xl`}>
+              <div className="px-5 py-3 bg-gray-50 border-t border-gray-100">
+                <div className={`flex items-center gap-3 px-4 py-3 ${statusConfig.bg} border rounded-xl`}>
                   {statusConfig.icon}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-secondary-800">
@@ -1108,73 +1222,98 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           })()}
 
           {!isTradie && !lead.tradie_id && lead.status === 'pending' && lead.quote_count === 0 && (
-            <div className="flex items-center gap-2 pt-4 mt-4 border-t border-gray-100 text-xs text-gray-400">
-              <Clock className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-2 px-5 py-2.5 border-t border-gray-100 text-xs text-gray-400">
+              <Loader2 className="w-3 h-3 animate-spin" />
               Waiting for tradies to submit quotes...
             </div>
           )}
 
           {!isTradie && lead.status === 'pending' && lead.quote_count > 0 && (
-            <div className="pt-4 mt-4 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+              <span className="text-xs text-gray-400">{formatDate(lead.created_at)}</span>
               <button
                 onClick={() => setExpandedJobId(expandedJobId === lead.id ? null : lead.id)}
-                className="inline-flex items-center gap-2 px-5 py-2 bg-secondary-600 text-white font-semibold rounded-lg hover:bg-secondary-700 transition-colors text-sm"
+                className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  expandedJobId === lead.id
+                    ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    : 'bg-secondary-600 text-white hover:bg-secondary-700 shadow-sm'
+                }`}
               >
-                <Eye className="w-4 h-4" />
-                {expandedJobId === lead.id ? 'Hide Quotes' : `Review ${lead.quote_count} Quote${lead.quote_count !== 1 ? 's' : ''}`}
+                <Eye className="w-3.5 h-3.5" />
+                {expandedJobId === lead.id ? 'Hide Quotes' : `View ${lead.quote_count} Quote${lead.quote_count !== 1 ? 's' : ''}`}
               </button>
             </div>
           )}
 
-          {!isTradie && lead.status === 'completed' && (
-            <div className="pt-4 mt-4 border-t border-gray-100">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  {lead.completion_notes && (
-                    <div className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="text-xs font-semibold text-green-700">Completed</span>
-                        <p className="text-sm text-gray-600 mt-0.5 whitespace-pre-line">{lead.completion_notes}</p>
-                      </div>
-                    </div>
-                  )}
-                  {!lead.completion_notes && (
-                    <div className="flex items-center gap-2 text-sm text-green-600">
-                      <CheckCircle2 className="w-4 h-4" />
-                      Job marked as complete
-                    </div>
+          {!isTradie && lead.status === 'completed' && (() => {
+            const isReleased = releasedJobIds.has(lead.id);
+            const isReviewed = reviewedJobIds.has(lead.id);
+            const isFullyDone = isReleased && isReviewed;
+            return (
+              <div className="flex items-center justify-between px-5 py-2.5 bg-gray-50 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-2">
+                  {isFullyDone ? (
+                    <button
+                      onClick={() => setViewCompletedJob(lead)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded-lg hover:bg-primary-100 border border-primary-200 transition-colors"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      View
+                    </button>
+                  ) : !isReleased ? (
+                    <button
+                      onClick={() => handleReleasePayment(lead.id)}
+                      disabled={releasingJobId === lead.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-600 text-white text-xs font-semibold rounded-lg hover:bg-warm-700 transition-colors disabled:opacity-60"
+                    >
+                      {releasingJobId === lead.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                      )}
+                      Release & Review
+                    </button>
+                  ) : (
+                    <Link
+                      to={`/review/${lead.id}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-500 text-white text-xs font-semibold rounded-lg hover:bg-warm-600 transition-colors"
+                    >
+                      <Star className="w-3.5 h-3.5" />
+                      Leave a Review
+                    </Link>
                   )}
                 </div>
-                {!lead.archived_at && filter !== 'history' && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleArchiveJob(lead.id); }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-                  >
-                    <Archive className="w-3.5 h-3.5" />
-                    Archive
-                  </button>
-                )}
+                <div className="flex items-center gap-2">
+                  {!lead.archived_at && filter !== 'history' && (
+                    <button
+                      onClick={() => handleArchiveJob(lead.id)}
+                      className="p-1.5 text-gray-300 hover:text-gray-500 rounded-lg transition-colors"
+                      title="Archive"
+                    >
+                      <Archive className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {!isTradie && lead.status === 'funded' && lead.tradie_id && (
-            <div className="flex items-center gap-2 pt-4 mt-4 border-t border-gray-100 text-sm text-green-600">
+            <div className="flex items-center gap-2 px-5 py-3 border-t border-gray-100 text-sm text-green-600">
               <CheckCircle2 className="w-4 h-4" />
               Payment received — waiting for tradie to start
             </div>
           )}
 
           {!isTradie && lead.status === 'in_progress' && lead.tradie_id && (
-            <div className="flex items-center gap-2 pt-4 mt-4 border-t border-gray-100 text-sm text-blue-600">
+            <div className="flex items-center gap-2 px-5 py-3 border-t border-gray-100 text-sm text-blue-600">
               <Loader2 className="w-4 h-4" />
               Work in progress
             </div>
           )}
 
           {!isTradie && lead.tradie_id && lead.quoting_status === 'awarded' && lead.status !== 'completed' && lead.status !== 'in_progress' && lead.status !== 'funded' && (
-            <div className="pt-4 mt-4 border-t border-gray-100">
+            <div className="px-5 py-3 border-t border-gray-100">
               {acceptedQuotes[lead.id] ? (
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 text-sm text-green-700">
@@ -1225,7 +1364,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
 
           {/* Archive button for cancelled/declined jobs */}
           {!isTradie && !lead.archived_at && filter !== 'history' && (lead.status === 'cancelled' || lead.status === 'declined') && (
-            <div className="flex justify-end pt-4 mt-4 border-t border-gray-100">
+            <div className="flex justify-end px-5 py-3 border-t border-gray-100">
               <button
                 onClick={(e) => { e.stopPropagation(); handleArchiveJob(lead.id); }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -1235,19 +1374,25 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
               </button>
             </div>
           )}
+            </div>{/* close flex-1 */}
+          </div>{/* close flex */}
         </div>
 
         {showQuoteComparison && (
-          <div className="mt-2 p-5 bg-gray-50 rounded-xl border border-gray-200">
-            <QuoteComparisonView
-              job={lead}
-              onAcceptQuote={handleAcceptQuote}
-              onDeclineQuote={handleDeclineQuote}
-              onMessageTradie={handleMessageTradie}
-              onConfirmPrice={(quoteId, jobId, min, max) =>
-                setPriceConfirm({ quoteId, jobId, min, max, agreedPrice: '' })
-              }
-            />
+          <div className="relative mt-0 ml-6 pl-6 border-l-2 border-gray-200">
+            {/* Connector from job card to quotes */}
+            <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-gray-300" />
+            <div className="pt-2">
+              <QuoteComparisonView
+                job={lead}
+                onAcceptQuote={handleAcceptQuote}
+                onDeclineQuote={handleDeclineQuote}
+                onMessageTradie={handleMessageTradie}
+                onConfirmPrice={(quoteId, jobId, min, max) =>
+                  setPriceConfirm({ quoteId, jobId, min, max, agreedPrice: '' })
+                }
+              />
+            </div>
           </div>
         )}
       </div>
@@ -1581,8 +1726,71 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                   Export Invoice
                 </button>
               </div>
-              <div className="space-y-3">
-                {leads.map(renderLeadCard)}
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden divide-y divide-gray-100">
+                {leads.map((lead) => {
+                  const category = extractCategory(lead.description);
+                  const desc = cleanDescription(lead.description);
+                  const isReleased = releasedJobIds.has(lead.id);
+                  const isReviewed = reviewedJobIds.has(lead.id);
+                  const isFullyDone = isReleased && isReviewed;
+                  return (
+                    <div key={lead.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors group">
+                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-semibold text-gray-900 truncate capitalize">
+                            {(lead.title || category || 'Untitled Job').replace(/_/g, ' ')}
+                          </h4>
+                          {category && (
+                            <span className="hidden sm:inline px-1.5 py-0.5 bg-primary-50 text-primary-700 rounded text-[10px] font-medium flex-shrink-0">
+                              {category}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-400 truncate mt-0.5">{desc}</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                        {isFullyDone ? (
+                          <button
+                            onClick={() => setViewCompletedJob(lead)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded-lg hover:bg-primary-100 border border-primary-200 transition-colors"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            View
+                          </button>
+                        ) : !isReleased ? (
+                          <button
+                            onClick={() => handleReleasePayment(lead.id)}
+                            disabled={releasingJobId === lead.id}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-600 text-white text-xs font-semibold rounded-lg hover:bg-warm-700 transition-colors disabled:opacity-60"
+                          >
+                            {releasingJobId === lead.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                            )}
+                            Release & Review
+                          </button>
+                        ) : (
+                          <Link
+                            to={`/review/${lead.id}`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-500 text-white text-xs font-semibold rounded-lg hover:bg-warm-600 transition-colors"
+                          >
+                            <Star className="w-3.5 h-3.5" />
+                            Leave a Review
+                          </Link>
+                        )}
+                        <button
+                          onClick={() => handleArchiveJob(lead.id)}
+                          className="p-1.5 rounded-lg text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-all"
+                          title="Archive"
+                        >
+                          <Archive className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : filter === 'archived' ? (
@@ -1640,6 +1848,222 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           )}
         </div>
       </div>
+
+      {/* Job Detail Modal for Tradies */}
+      {viewLeadDetail && (() => {
+        const vl = viewLeadDetail;
+        const vlCategory = extractCategory(vl.description);
+        const vlDesc = cleanDescription(vl.description);
+        const vlIsUrgent = vl.priority === 'urgent';
+        const vlIsFlash = vl.is_flash_boost && vl.flash_expiry && new Date(vl.flash_expiry) > new Date();
+        const vlSlotIcon = vl.preferred_time_slot ? SLOT_ICONS[vl.preferred_time_slot] : null;
+        const vlHasQuoted = isTradie && vl.my_quote;
+        const vlPhotos = vl.images_url || [];
+
+        return (
+          <Modal isOpen={!!viewLeadDetail} onClose={() => setViewLeadDetail(null)} maxWidth="2xl">
+            <div className="overflow-hidden">
+              {/* Header */}
+              <div className={`px-6 py-4 border-b ${
+                vlIsFlash ? 'bg-gradient-to-r from-warm-50 to-orange-50 border-warm-200'
+                : vlIsUrgent ? 'bg-red-50 border-red-100'
+                : 'bg-gray-50 border-gray-100'
+              }`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${
+                      vlIsFlash ? 'bg-warm-100' : vlIsUrgent ? 'bg-red-100' : 'bg-white border border-gray-200'
+                    }`}>
+                      <Briefcase className={`w-5 h-5 ${
+                        vlIsFlash ? 'text-warm-600' : vlIsUrgent ? 'text-red-600' : 'text-gray-600'
+                      }`} />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900 capitalize">
+                        {(vl.title || vlCategory || 'Untitled Job').replace(/_/g, ' ')}
+                      </h2>
+                      <div className="flex items-center gap-2 mt-1">
+                        {vlCategory && (
+                          <span className="px-2.5 py-0.5 bg-white text-gray-600 rounded-full text-xs font-medium border border-gray-200">
+                            {vlCategory}
+                          </span>
+                        )}
+                        {vlIsFlash && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-warm-500 text-white rounded-full text-xs font-bold animate-pulse">
+                            <Zap className="w-3 h-3" />
+                            Flash Deal
+                          </span>
+                        )}
+                        {vlIsUrgent && !vlIsFlash && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold border border-red-200">
+                            <Zap className="w-3 h-3" />
+                            Urgent
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={() => setViewLeadDetail(null)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-colors">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="px-6 py-5 space-y-5">
+                {/* Description section */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Job Description</h4>
+                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{vlDesc}</p>
+                </div>
+
+                {/* Photos */}
+                {vlPhotos.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Photos</h4>
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {vlPhotos.map((url, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setPreviewPhoto(url)}
+                          className="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden border border-gray-200 hover:border-primary-300 transition-colors"
+                        >
+                          <img src={url} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Details grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {vl.location_address && (
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
+                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Location</p>
+                        <p className="text-sm text-gray-700 mt-0.5">{extractSuburb(vl.location_address) || 'Nearby'}</p>
+                      </div>
+                    </div>
+                  )}
+                  {vl.scheduled_date && (
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
+                      <CalendarDays className="w-4 h-4 text-secondary-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Scheduled Date</p>
+                        <p className="text-sm text-gray-700 mt-0.5">
+                          {new Date(vl.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {vl.preferred_time_slot && vlSlotIcon && (
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
+                      {(() => { const Icon = vlSlotIcon; return <Icon className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />; })()}
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Preferred Time</p>
+                        <p className="text-sm text-gray-700 mt-0.5">{SLOT_LABELS[vl.preferred_time_slot]}</p>
+                      </div>
+                    </div>
+                  )}
+                  {vl.budget_amount ? (
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-emerald-50 rounded-xl">
+                      <DollarSign className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Budget</p>
+                        <p className="text-sm font-semibold text-emerald-700 mt-0.5">${vl.budget_amount.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  ) : vl.budget_type === 'request_quote' ? (
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-secondary-50 rounded-xl">
+                      <FileText className="w-4 h-4 text-secondary-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Budget</p>
+                        <p className="text-sm font-medium text-secondary-700 mt-0.5">Requesting Quote</p>
+                      </div>
+                    </div>
+                  ) : null}
+                  <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
+                    <Clock className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Posted</p>
+                      <p className="text-sm text-gray-700 mt-0.5">{formatDate(vl.created_at)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
+                    <Users className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Quote Slots</p>
+                      <p className="text-sm text-gray-700 mt-0.5">{vl.quote_count}/{vl.max_quotes} filled</p>
+                    </div>
+                  </div>
+                  {vl.allows_site_inspection && !['Cleaner', 'Handyman', 'Pest Control', 'Locksmith', 'Appliance Repair', 'Private Chef', 'Event Catering', 'Security Systems', 'Garage Doors'].includes(vlCategory) && (
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-blue-50 rounded-xl">
+                      <Eye className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Site Inspection</p>
+                        <p className="text-sm text-blue-700 mt-0.5">Client allows inspections</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Posted by */}
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <User className="w-3.5 h-3.5" />
+                  Posted by {((vl as LeadWithClient).client_name || 'Client').split(' ')[0]}
+                </div>
+              </div>
+
+              {/* Footer actions */}
+              {isTradie && !vlHasQuoted && (
+                <div className="flex items-center gap-3 px-6 py-4 bg-gray-50 border-t border-gray-100">
+                  <button
+                    onClick={() => { handleDismissLead(vl.id); setViewLeadDetail(null); }}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-white hover:text-gray-700 border border-gray-200 transition-all"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    Not Interested
+                  </button>
+                  <button
+                    onClick={() => { setViewLeadDetail(null); handleQuoteClick(vl); }}
+                    className="inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-lg text-sm font-semibold bg-warm-500 text-white hover:bg-warm-600 shadow-sm transition-all"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Submit Quote
+                  </button>
+                </div>
+              )}
+
+              {isTradie && vlHasQuoted && (() => {
+                const qs = vl.my_quote!.status;
+                const statusConfig = qs === 'accepted'
+                  ? { bg: 'bg-green-50 border-green-200', icon: <CheckCircle2 className="w-5 h-5 text-green-600" />, label: 'Quote accepted — the client chose you!', textColor: 'text-green-800' }
+                  : qs === 'declined'
+                  ? { bg: 'bg-red-50 border-red-200', icon: <XCircle className="w-5 h-5 text-red-500" />, label: 'Quote declined by client', textColor: 'text-red-700' }
+                  : { bg: 'bg-secondary-50 border-secondary-200', icon: <Clock className="w-5 h-5 text-secondary-600" />, label: 'Awaiting client decision', textColor: 'text-secondary-600' };
+                return (
+                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                    <div className={`flex items-center gap-3 px-4 py-3 ${statusConfig.bg} border rounded-xl`}>
+                      {statusConfig.icon}
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">
+                          You quoted {vl.my_quote!.firm_price
+                            ? `$${vl.my_quote!.firm_price.toLocaleString()}`
+                            : `$${vl.my_quote!.price_min.toLocaleString()} – $${vl.my_quote!.price_max.toLocaleString()}`
+                          }
+                        </p>
+                        <p className={`text-xs ${statusConfig.textColor}`}>{statusConfig.label}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </Modal>
+        );
+      })()}
 
       <VerificationGateModal
         isOpen={showVerificationGate}
@@ -1915,8 +2339,11 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       )}
 
       {priceConfirm && (
-        <Modal open onClose={() => setPriceConfirm(null)} title="Confirm Agreed Price">
-          <div className="space-y-4">
+        <Modal isOpen={true} onClose={() => setPriceConfirm(null)}>
+          <div className="px-6 pt-5 pb-1">
+            <h2 className="text-lg font-semibold text-gray-900">Confirm Agreed Price</h2>
+          </div>
+          <div className="px-6 pb-6 space-y-4">
             <p className="text-sm text-gray-600">
               The tradie quoted a range of <span className="font-semibold">${priceConfirm.min.toLocaleString()}</span> – <span className="font-semibold">${priceConfirm.max.toLocaleString()}</span>.
             </p>
@@ -1973,6 +2400,205 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           </div>
         </Modal>
       )}
+
+      {viewCompletedJob && (() => {
+        const cj = viewCompletedJob;
+        const cjCategory = extractCategory(cj.description);
+        const cjDesc = cleanDescription(cj.description);
+        const cjPhotos = cj.images_url || [];
+        const completedDate = cj.updated_at
+          ? new Date(cj.updated_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+          : new Date(cj.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        const handleExportSingleInvoice = async () => {
+          const html2pdfModule = await import('html2pdf.js');
+          const html2pdf = html2pdfModule.default;
+          const now = new Date();
+          const invoiceNumber = `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+          const userName = profile?.full_name || 'Client';
+          const userEmail = profile?.email || '';
+          const amount = cj.budget_amount || 0;
+          const gst = Math.round(amount / 11 * 100) / 100;
+          const exGst = Math.round((amount - gst) * 100) / 100;
+          const invoiceDate = now.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+          const category = cjCategory || 'Service';
+          const desc = cjDesc.length > 70 ? cjDesc.slice(0, 70) + '...' : cjDesc;
+
+          const container = document.createElement('div');
+          container.style.position = 'fixed';
+          container.style.left = '-9999px';
+          container.style.top = '0';
+          container.style.width = '794px';
+          container.style.background = '#FFFFFF';
+          container.innerHTML = '<div style="font-family:Arial,Helvetica,sans-serif;width:794px;padding:40px 48px;color:#1F2937;background:#FFFFFF;">' +
+            '<table style="width:100%;border-collapse:collapse;margin-bottom:0;"><tr><td colspan="2" style="padding-bottom:20px;border-bottom:3px solid #004d40;"><table style="width:100%;border-collapse:collapse;"><tr>' +
+            '<td style="vertical-align:top;width:50%;"><div style="font-size:28px;font-weight:800;color:#004d40;margin:0;">ConnecTradie</div><div style="font-size:11px;color:#6B7280;margin-top:4px;">ABN: 00 000 000 000</div></td>' +
+            '<td style="vertical-align:top;text-align:right;width:50%;"><div style="font-size:22px;font-weight:700;color:#1F2937;">TAX INVOICE</div><div style="font-size:12px;color:#6B7280;margin-top:8px;">Invoice #: <strong style="color:#1F2937;">' + invoiceNumber + '</strong></div><div style="font-size:12px;color:#6B7280;margin-top:2px;">Date: ' + invoiceDate + '</div></td>' +
+            '</tr></table></td></tr></table>' +
+            '<table style="width:100%;border-collapse:collapse;margin:28px 0;"><tr><td style="vertical-align:top;width:50%;"><div style="font-size:10px;font-weight:700;color:#004d40;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;">Bill To</div><div style="font-size:14px;font-weight:600;color:#1F2937;">' + userName + '</div>' + (userEmail ? '<div style="font-size:12px;color:#6B7280;margin-top:3px;">' + userEmail + '</div>' : '') + '</td>' +
+            '<td style="vertical-align:top;text-align:right;width:50%;"><div style="font-size:10px;font-weight:700;color:#004d40;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;">Platform</div><div style="font-size:14px;font-weight:600;color:#1F2937;">ConnecTradie Pty Ltd</div><div style="font-size:12px;color:#6B7280;margin-top:3px;">support@connectradie.com</div></td></tr></table>' +
+            '<table style="width:100%;border-collapse:collapse;"><thead><tr style="background-color:#004d40;">' +
+            '<th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Service</th>' +
+            '<th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Description</th>' +
+            '<th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Date</th>' +
+            '<th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Amount (AUD)</th>' +
+            '</tr></thead><tbody>' +
+            '<tr style="background-color:#FFFFFF;"><td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#374151;font-weight:500;">' + category + '</td>' +
+            '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#374151;">' + desc + '</td>' +
+            '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#6B7280;text-align:center;">' + completedDate + '</td>' +
+            '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#111827;text-align:right;font-weight:600;">$' + amount.toFixed(2) + '</td></tr>' +
+            '</tbody></table>' +
+            '<table style="width:100%;border-collapse:collapse;margin-top:16px;"><tr><td style="width:55%;"></td><td style="width:45%;"><table style="width:100%;border-collapse:collapse;background:#F9FAFB;border:1px solid #E5E7EB;">' +
+            '<tr><td style="padding:8px 16px;font-size:12px;color:#6B7280;">Subtotal (ex. GST)</td><td style="padding:8px 16px;font-size:12px;color:#374151;text-align:right;font-weight:500;">$' + exGst.toFixed(2) + '</td></tr>' +
+            '<tr><td style="padding:8px 16px;font-size:12px;color:#6B7280;border-bottom:2px solid #004d40;">GST (10%)</td><td style="padding:8px 16px;font-size:12px;color:#374151;text-align:right;font-weight:500;border-bottom:2px solid #004d40;">$' + gst.toFixed(2) + '</td></tr>' +
+            '<tr><td style="padding:12px 16px;font-size:15px;font-weight:700;color:#004d40;">Total (inc. GST)</td><td style="padding:12px 16px;font-size:15px;font-weight:700;color:#004d40;text-align:right;">$' + amount.toFixed(2) + '</td></tr>' +
+            '</table></td></tr></table>' +
+            '<table style="width:100%;border-collapse:collapse;margin-top:28px;"><tr><td style="padding:16px 0 0;border-top:1px solid #E5E7EB;text-align:center;"><div style="font-size:10px;color:#9CA3AF;line-height:1.6;">This is a computer-generated tax invoice. All amounts are in Australian Dollars (AUD) and include GST where applicable.</div><div style="font-size:10px;color:#9CA3AF;margin-top:4px;">Generated via ConnecTradie — ' + invoiceDate + '</div></td></tr></table>' +
+            '</div>';
+
+          document.body.appendChild(container);
+          try {
+            await html2pdf().set({
+              margin: 0,
+              filename: `ConnecTradie-Invoice-${invoiceNumber}.pdf`,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            }).from(container).save();
+          } finally {
+            document.body.removeChild(container);
+          }
+        };
+
+        return (
+          <Modal isOpen={!!viewCompletedJob} onClose={() => setViewCompletedJob(null)} maxWidth="lg">
+            <div className="overflow-hidden">
+              {/* Header */}
+              <div className="px-6 py-4 border-b bg-green-50 border-green-100">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-green-100 flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900 capitalize">
+                        {(cj.title || cjCategory || 'Untitled Job').replace(/_/g, ' ')}
+                      </h2>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="px-2.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-semibold border border-green-300">
+                          Completed
+                        </span>
+                        {cjCategory && (
+                          <span className="px-2.5 py-0.5 bg-white text-gray-600 rounded-full text-xs font-medium border border-gray-200">
+                            {cjCategory}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={() => setViewCompletedJob(null)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-colors">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="px-6 py-5 space-y-5">
+                {/* Description */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Job Description</h4>
+                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{cjDesc}</p>
+                </div>
+
+                {/* Photos */}
+                {cjPhotos.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Photos</h4>
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {cjPhotos.map((url, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setPreviewPhoto(url)}
+                          className="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border border-gray-200 hover:border-primary-300 transition-colors"
+                        >
+                          <img src={url} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Details grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {cj.location_address && (
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
+                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Location</p>
+                        <p className="text-sm text-gray-700 mt-0.5">{cj.location_address}</p>
+                      </div>
+                    </div>
+                  )}
+                  {cj.scheduled_date && (
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
+                      <CalendarDays className="w-4 h-4 text-secondary-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Scheduled Date</p>
+                        <p className="text-sm text-gray-700 mt-0.5">
+                          {new Date(cj.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
+                    <Calendar className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Completed</p>
+                      <p className="text-sm text-gray-700 mt-0.5">{completedDate}</p>
+                    </div>
+                  </div>
+                  {cj.budget_amount ? (
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-emerald-50 rounded-xl">
+                      <DollarSign className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Amount Paid</p>
+                        <p className="text-sm font-semibold text-emerald-700 mt-0.5">${cj.budget_amount.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* Payment & Review status */}
+                <div className="flex items-center gap-3 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
+                  <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-green-800">Payment Released & Reviewed</p>
+                    <p className="text-xs text-green-600 mt-0.5">This job has been fully completed. Payment has been released to the tradie and a review has been left.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-100">
+                <button
+                  onClick={() => setViewCompletedJob(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={handleExportSingleInvoice}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  Export Invoice
+                </button>
+              </div>
+            </div>
+          </Modal>
+        );
+      })()}
 
       {deleteJobTarget && (
         <ConfirmModal

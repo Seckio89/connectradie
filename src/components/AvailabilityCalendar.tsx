@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { friendlyError } from '../lib/utils';
 import { ChevronLeft, ChevronRight, Clock, X, Loader2, Calendar as CalendarIcon, Upload, User, MapPin, Key } from 'lucide-react';
 import type { AvailabilitySlot, TradieWithDetails } from '../types/database';
 import { supabase } from '../lib/supabase';
@@ -272,7 +273,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
         onClose();
       }, 2000);
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : 'Failed to create booking');
+      setUploadError(friendlyError(error, 'Unable to create booking. Please try again.'));
       setBookingLoading(false);
       return;
     }

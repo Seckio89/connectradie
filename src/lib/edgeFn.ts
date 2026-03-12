@@ -5,12 +5,25 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /**
  * Returns auth headers using the current user's session token.
- * Falls back to anon key only if no session exists.
+ * Forces a token refresh to ensure the token is not expired.
  */
 export async function getAuthHeaders(): Promise<Record<string, string>> {
-  const { data: { session } } = await supabase.auth.getSession();
+  // Always refresh to get a valid, non-expired token
+  const { data: { session }, error } = await supabase.auth.refreshSession();
+  if (error || !session?.access_token) {
+    // Fallback: try cached session (may still be valid)
+    const { data: { session: cached } } = await supabase.auth.getSession();
+    if (!cached?.access_token) {
+      throw new Error('Your session has expired. Please sign in again.');
+    }
+    return {
+      'Authorization': `Bearer ${cached.access_token}`,
+      'apikey': SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+    };
+  }
   return {
-    'Authorization': `Bearer ${session?.access_token ?? SUPABASE_ANON_KEY}`,
+    'Authorization': `Bearer ${session.access_token}`,
     'apikey': SUPABASE_ANON_KEY,
     'Content-Type': 'application/json',
   };
@@ -18,17 +31,36 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
 
 /**
  * Call a Supabase Edge Function with proper auth.
- * Handles response parsing and error formatting consistently.
+ * Uses raw fetch with a freshly-refreshed token to guarantee the gateway accepts it.
  */
 export async function callEdgeFunction<T = Record<string, unknown>>(
   functionName: string,
   body: Record<string, unknown>
 ): Promise<T> {
-  const headers = await getAuthHeaders();
+  // Get current session — the Supabase client auto-refreshes tokens for queries,
+  // so getSession() should return the latest valid token.
+  let token: string | undefined;
+
+  const { data: { session } } = await supabase.auth.getSession();
+  token = session?.access_token;
+
+  // If no cached session or it expires soon, force a refresh
+  if (!token || (session?.expires_at && session.expires_at - Math.floor(Date.now() / 1000) < 30)) {
+    const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+    token = refreshed?.access_token;
+  }
+
+  if (!token) {
+    throw new Error('Your session has expired. Please sign in again.');
+  }
 
   const response = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
     method: 'POST',
-    headers,
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'apikey': SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(body),
   });
 

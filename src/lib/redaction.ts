@@ -309,3 +309,219 @@ export function shouldAllowContactSharing(
   const bSent = messages.some((m) => m.sender_id === idB);
   return aSent && bSent;
 }
+
+/**
+ * Checks if a short message is a strong email-signal fragment.
+ * Only matches things that are clearly email-related, NOT normal conversation words.
+ */
+function isEmailSignal(text: string): boolean {
+  const lower = text.toLowerCase().trim();
+  // @ symbol (alone or with surrounding text like "@gmail")
+  if (lower.includes('@')) return true;
+  // Known email domains exactly ("gmail", "hotmail", etc.)
+  if (EMAIL_DOMAINS.some(d => lower === d)) return true;
+  // Common TLDs with or without leading dot (".com", "com", ".au", ".co.uk")
+  if (/^\.?(com|net|org|io|au|co|edu|gov|info|biz|com\.au|co\.uk)$/i.test(lower)) return true;
+  // A dot by itself
+  if (lower === '.') return true;
+  // "at" used as @ substitute — only exact match
+  if (lower === 'at') return true;
+  // "dot" used as . substitute — only exact match
+  if (lower === 'dot') return true;
+  return false;
+}
+
+/**
+ * Checks if a message could be part of a contact info sequence.
+ * Used only in Pass 3 to collect runs of fragments from the same sender.
+ * A fragment is either a strong email signal OR a short token (no spaces, <= 20 chars)
+ * that appears AFTER at least one strong signal in the run.
+ */
+function isEmailFragment(text: string, hasSeenSignal: boolean): boolean {
+  if (isEmailSignal(text)) return true;
+  // Only allow generic short tokens if we already have a strong signal in the run
+  // (prevents "hi", "thanks", "ok" from starting a fragment run)
+  if (hasSeenSignal && /^[\w.-]{1,20}$/.test(text.trim()) && !text.trim().includes(' ')) return true;
+  return false;
+}
+
+/**
+ * Detects cross-message contact info bypass where a user sends individual
+ * digits, number words, or email fragments as separate messages.
+ * Returns a Set of message IDs that should be redacted.
+ */
+export function detectCrossMessageDigitBypass(
+  messages: { id: string; sender_id: string; content: string }[]
+): Set<string> {
+  const redactedIds = new Set<string>();
+
+  // ── Pass 1: Consecutive digit messages (phone numbers) ──
+  let i = 0;
+  while (i < messages.length) {
+    const sender = messages[i].sender_id;
+    const content = messages[i].content.trim();
+
+    if (/^\d{1,2}$/.test(content)) {
+      const digitRun: number[] = [i];
+      let j = i + 1;
+      while (j < messages.length) {
+        const nextContent = messages[j].content.trim();
+        if (messages[j].sender_id === sender && /^\d{1,2}$/.test(nextContent)) {
+          digitRun.push(j);
+          j++;
+        } else {
+          break;
+        }
+      }
+
+      if (digitRun.length >= 4) {
+        for (const idx of digitRun) {
+          redactedIds.add(messages[idx].id);
+        }
+      }
+
+      i = j;
+    } else {
+      i++;
+    }
+  }
+
+  // ── Pass 2: Number-word messages ("zero", "four", mixed with digits) ──
+  i = 0;
+  while (i < messages.length) {
+    const sender = messages[i].sender_id;
+    const content = messages[i].content.trim().toLowerCase();
+
+    if (/^\d{1,2}$/.test(content) || NUMBER_WORDS.has(content.replace(/[^a-z]/g, ''))) {
+      const wordRun: number[] = [i];
+      let j = i + 1;
+      while (j < messages.length) {
+        const nextContent = messages[j].content.trim().toLowerCase();
+        if (
+          messages[j].sender_id === sender &&
+          (/^\d{1,2}$/.test(nextContent) || NUMBER_WORDS.has(nextContent.replace(/[^a-z]/g, '')))
+        ) {
+          wordRun.push(j);
+          j++;
+        } else {
+          break;
+        }
+      }
+
+      if (wordRun.length >= 4) {
+        for (const idx of wordRun) {
+          redactedIds.add(messages[idx].id);
+        }
+      }
+
+      i = j;
+    } else {
+      i++;
+    }
+  }
+
+  // ── Pass 3: Cross-message email detection ──
+  // Only starts collecting when a STRONG email signal is seen (@ , domain, TLD, "at", "dot").
+  // Generic short words ("hi", "ok", "thanks") can NOT start a fragment run.
+  i = 0;
+  while (i < messages.length) {
+    const sender = messages[i].sender_id;
+    const content = messages[i].content.trim();
+
+    // A run must START with a strong email signal
+    if (content.length <= 30 && isEmailSignal(content)) {
+      let hasSeenSignal = true;
+      const fragmentRun: number[] = [i];
+      let j = i + 1;
+      while (j < messages.length) {
+        const nextContent = messages[j].content.trim();
+        if (
+          messages[j].sender_id === sender &&
+          nextContent.length <= 30 &&
+          isEmailFragment(nextContent, hasSeenSignal)
+        ) {
+          if (isEmailSignal(nextContent)) hasSeenSignal = true;
+          fragmentRun.push(j);
+          j++;
+        } else {
+          break;
+        }
+      }
+
+      // Also look backwards — the signal might be in the middle (e.g., "john", "@", "gmail")
+      // Expand backwards to include short tokens from the same sender before the signal
+      let k = i - 1;
+      while (k >= 0 && !redactedIds.has(messages[k].id)) {
+        const prevContent = messages[k].content.trim();
+        if (
+          messages[k].sender_id === sender &&
+          prevContent.length <= 20 &&
+          /^[\w.-]{1,20}$/.test(prevContent)
+        ) {
+          fragmentRun.unshift(k);
+          k--;
+        } else {
+          break;
+        }
+      }
+
+      // Check if the combined fragments form an email-like pattern
+      if (fragmentRun.length >= 2) {
+        const combined = fragmentRun.map(idx => messages[idx].content.trim()).join('');
+        const combinedSpaced = fragmentRun.map(idx => messages[idx].content.trim()).join(' ');
+
+        const looksLikeEmail =
+          // Contains @ and a dot after it (standard email shape)
+          /[\w.-]+@[\w.-]+\.\w{2,}/i.test(combined) ||
+          /[\w.-]+\s*@\s*[\w.-]+\s*\.\s*\w{2,}/i.test(combinedSpaced) ||
+          // Contains @ and a known domain
+          (combined.includes('@') && EMAIL_DOMAINS.some(d => combined.toLowerCase().includes(d))) ||
+          // Contains "at" word + known domain (e.g., "john", "at", "gmail", "dot", "com")
+          (/\bat\b/i.test(combinedSpaced) && EMAIL_DOMAINS.some(d => combinedSpaced.toLowerCase().includes(d))) ||
+          // Contains "at" + "dot" pattern (spoken email)
+          (/\bat\b/i.test(combinedSpaced) && /\bdot\b/i.test(combinedSpaced));
+
+        if (looksLikeEmail) {
+          for (const idx of fragmentRun) {
+            redactedIds.add(messages[idx].id);
+          }
+        }
+      }
+
+      i = j;
+    } else {
+      i++;
+    }
+  }
+
+  // ── Pass 4: Sliding window — concatenate recent short messages and detect ──
+  // Catches cases where email parts are mixed with normal-length fragments
+  for (i = 0; i < messages.length; i++) {
+    const sender = messages[i].sender_id;
+    // Build a window of up to 8 consecutive messages from the same sender
+    const window: number[] = [];
+    for (let k = i; k < messages.length && k < i + 8; k++) {
+      if (messages[k].sender_id !== sender) break;
+      if (messages[k].content.trim().length > 50) break; // skip long messages
+      window.push(k);
+    }
+
+    if (window.length >= 2) {
+      const combined = window.map(idx => messages[idx].content.trim()).join('');
+      // Check if combined text contains a phone number or email
+      const hasPhone =
+        /04\d{8}/i.test(combined) ||
+        /0[2-8]\d{8}/i.test(combined) ||
+        /\+614\d{8}/i.test(combined);
+      const hasEmail = /[\w.-]+@[\w.-]+\.\w{2,}/i.test(combined);
+
+      if (hasPhone || hasEmail) {
+        for (const idx of window) {
+          redactedIds.add(messages[idx].id);
+        }
+      }
+    }
+  }
+
+  return redactedIds;
+}

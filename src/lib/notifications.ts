@@ -1,5 +1,7 @@
 import { supabase } from './supabase';
 import type { Job } from '../types/database';
+import { sendNotification } from './notificationService';
+import { NOTIFICATION_TYPES } from './notificationTypes';
 
 export async function requestPushPermission(): Promise<'granted' | 'denied' | 'default'> {
   if (!('Notification' in window)) return 'denied';
@@ -112,6 +114,71 @@ export function simulateSmsAlert(job: Job, tradieNames: string[]) {
     recipientCount: tradieNames.length,
     timestamp: new Date().toISOString(),
   };
+}
+
+/**
+ * Notify all tradies matching the job's trade category that a new lead is available.
+ * Sends in-app bell notifications so tradies see it in real-time.
+ */
+export async function notifyTradiesForNewLead(job: Job) {
+  try {
+    const category = extractCategory(job.description);
+    const suburb = extractSuburb(job.location_address);
+
+    // Find tradies whose trade_category matches this job
+    const { data: tradies, error } = await supabase
+      .from('tradie_details')
+      .select('profile_id, trade_category')
+      .ilike('trade_category', category);
+
+    if (error || !tradies || tradies.length === 0) {
+      // Fallback: notify all tradies if no category match or query fails
+      const { data: allTradies } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('role', 'tradie');
+
+      if (!allTradies || allTradies.length === 0) return { notified: 0 };
+
+      const promises = allTradies.map((t) =>
+        sendNotification({
+          type: NOTIFICATION_TYPES.NEW_LEAD,
+          userId: t.id,
+          title: `New ${category} Lead`,
+          message: `A new ${category} job has been posted in ${suburb}. Submit your quote now!`,
+          link: '/work',
+          jobId: job.id,
+          metadata: { category, suburb, job_id: job.id },
+        }).catch(() => null)
+      );
+      await Promise.allSettled(promises);
+      return { notified: allTradies.length };
+    }
+
+    // Filter out the client who posted the job
+    const tradieIds = tradies
+      .map((t) => t.profile_id)
+      .filter((id) => id !== job.client_id);
+
+    if (tradieIds.length === 0) return { notified: 0 };
+
+    const promises = tradieIds.map((tradieId) =>
+      sendNotification({
+        type: NOTIFICATION_TYPES.NEW_LEAD,
+        userId: tradieId,
+        title: `New ${category} Lead`,
+        message: `A new ${category} job has been posted in ${suburb}. Submit your quote now!`,
+        link: '/work',
+        jobId: job.id,
+        metadata: { category, suburb, job_id: job.id },
+      }).catch(() => null)
+    );
+    await Promise.allSettled(promises);
+    return { notified: tradieIds.length };
+  } catch (err) {
+    console.error('Failed to notify tradies for new lead:', err);
+    return { notified: 0 };
+  }
 }
 
 export async function notifyTradiesForUrgentJob(job: Job) {

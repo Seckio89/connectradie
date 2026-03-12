@@ -69,3 +69,23 @@ export const TRADE_CATEGORY_MAP = Object.fromEntries(
 export function getTradeCategoryLabel(value: string): string {
   return TRADE_CATEGORY_MAP[value] || value.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
+
+/** Simplified trade options for search/hero dropdowns (value + label only) */
+export const TRADE_OPTIONS: { value: string; label: string }[] = TRADE_CATEGORIES.map(({ value, label }) => ({ value, label }));
+
+/** Construction trades for onboarding */
+export const CONSTRUCTION_CATEGORIES = [
+  'Plumber', 'Electrician', 'Carpenter', 'Builder', 'Painter',
+  'Landscaper', 'Handyman', 'Cleaner', 'Roofer', 'Tiler',
+  'Concreter', 'Fencer', 'Glazier', 'Locksmith', 'Pest Control',
+  'Air Conditioning', 'Garage Doors', 'Demolition', 'Bricklayer', 'Plasterer',
+  'Flooring', 'Cabinet Maker', 'Welder', 'Insulation', 'Arborist',
+  'Pool Builder', 'Antenna Technician', 'Waterproofing', 'Scaffolder', 'Earthmoving',
+  'Stonemasonry', 'Solar', 'Security Systems', 'Curtains & Blinds', 'Lawn Mowing',
+  'Removalist', 'Bathroom Renovator', 'Kitchen Renovator', 'HVAC',
+];
+
+/** Hospitality trades for onboarding */
+export const HOSPITALITY_CATEGORIES = [
+  'Private Chef', 'Event Catering', 'Mobile Bar/Bartender',
+];

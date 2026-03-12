@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wrench, Home, HardHat, ArrowRight, Loader2, Users, Building2, Search, Check, X, ChevronRight, UserCheck } from 'lucide-react';
+import { Wrench, Home, HardHat, ArrowRight, Loader2, Users, Building2, Search, Check, X, ChevronRight, UserCheck, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SearchableSelect from '../components/SearchableSelect';
 import AddressAutocomplete, { type AddressDetails } from '../components/AddressAutocomplete';
 import { supabase } from '../lib/supabase';
+import { CONSTRUCTION_CATEGORIES, HOSPITALITY_CATEGORIES } from '../lib/tradeCategories';
 
 type Step = 'role' | 'trade-type' | 'employment' | 'business-search' | 'employment-role' | 'details';
 
@@ -37,19 +38,10 @@ export default function Onboarding() {
   const { user, profile, updateProfile, updateTradieDetails } = useAuth();
   const navigate = useNavigate();
 
-  const constructionCategories = [
-    'Plumber', 'Electrician', 'Carpenter', 'Handyman', 'Cleaner',
-    'Painter', 'Landscaper', 'Builder', 'HVAC Technician', 'Locksmith',
-  ];
-
-  const hospitalityCategories = [
-    'Private Chef', 'Event Catering', 'Mobile Bar/Bartender',
-  ];
-
   const tradeCategories = tradeType === 'construction'
-    ? constructionCategories
+    ? CONSTRUCTION_CATEGORIES
     : tradeType === 'hospitality'
-    ? hospitalityCategories
+    ? HOSPITALITY_CATEGORIES
     : [];
 
   useEffect(() => {
@@ -226,7 +218,7 @@ export default function Onboarding() {
         {step !== 'role' && (
           <div className="mb-6">
             <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
-              <span>Setting up your account</span>
+              <span>Step {currentStepIndex + 1} of {steps.length}</span>
               <span>{progressPct}% complete</span>
             </div>
             <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -328,6 +320,13 @@ export default function Onboarding() {
                     <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all" />
                   </div>
                 </button>
+              </div>
+
+              <div className="mt-6 flex items-start gap-2.5 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+                <Shield className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700 leading-relaxed">
+                  You'll need your trade licence or certificate ready to complete verification after signup. This unlocks full platform access.
+                </p>
               </div>
             </>
           )}

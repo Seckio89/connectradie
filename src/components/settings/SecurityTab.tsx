@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Loader2, CheckCircle2, Lock, Key, Trash2, AlertTriangle, Shield, Smartphone, Download } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { friendlyError } from '../../lib/utils';
 
 interface SecurityTabProps {
   isTradie: boolean;
@@ -125,7 +126,7 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
     const { error } = await supabase.auth.updateUser({ password: newPassword });
 
     if (error) {
-      setPasswordError(error.message || 'Failed to update password');
+      setPasswordError(friendlyError(error, 'Unable to update your password. Please try again.'));
     } else {
       setPasswordSuccess(true);
       setNewPassword('');
@@ -144,7 +145,7 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
         supabase.from('jobs').select('*').eq('client_id', user.id),
         supabase.from('jobs').select('*').eq('tradie_id', user.id),
         supabase.from('messages').select('*').eq('sender_id', user.id),
-        supabase.from('reviews').select('*').eq('reviewer_id', user.id),
+        supabase.from('reviews').select('*').eq('client_id', user.id),
         supabase.from('reviews').select('*').eq('tradie_id', user.id),
         supabase.from('payments').select('*').eq('profile_id', user.id),
       ]);

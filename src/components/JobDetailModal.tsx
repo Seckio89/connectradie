@@ -18,7 +18,7 @@ import {
   Lock,
   Repeat,
 } from 'lucide-react';
-import { formatDate } from '../lib/utils';
+import { formatDate, friendlyError } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { isPro as checkIsPro } from '../lib/subscription';
@@ -57,7 +57,7 @@ function getNextAction(status: string, isTradie: boolean): { label: string; hint
     case 'accepted':
       return { label: 'Awaiting payment', hint: 'The client has accepted your quote and is completing payment. You\'ll be notified when funds are secured.' };
     case 'funded':
-      return { label: 'Start the job', hint: 'Payment is secured in escrow. Contact the client to arrange a start date, then mark as "In Progress".' };
+      return { label: 'Starting automatically', hint: 'Payment is secured in escrow. The job will auto-start momentarily.' };
     case 'in_progress':
       return { label: 'Mark as complete', hint: 'Once you\'ve finished the work, mark this job as complete to request payment.' };
     case 'completed':
@@ -84,6 +84,23 @@ export default function JobDetailModal({ isOpen, onClose, job, isUnlocked = true
       setStatusLoading(false);
     }
   }, [job?.id, job?.status]);
+
+  // Auto-progress: when a tradie opens a funded job, auto-start it
+  useEffect(() => {
+    if (!isOpen || !job || !isTradie || !user) return;
+    if (job.status === 'funded') {
+      (async () => {
+        const { error } = await supabase
+          .from('jobs')
+          .update({ status: 'in_progress' })
+          .eq('id', job.id);
+        if (!error) {
+          setLocalStatus('in_progress');
+          onStatusChange?.();
+        }
+      })();
+    }
+  }, [isOpen, job?.id, job?.status, isTradie, user]);
 
   // Trades that typically have multi-stage jobs needing milestones
   const MILESTONE_TRADES = new Set([
@@ -114,6 +131,7 @@ export default function JobDetailModal({ isOpen, onClose, job, isUnlocked = true
   }, [isOpen, job?.id, fetchMilestones]);
 
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [completionChecks, setCompletionChecks] = useState({ workDone: false, siteClean: false, clientNotified: false });
 
   const handleUpdateStatus = async (newStatus: Job['status']) => {
     if (!job || !user || statusLoading) return;
@@ -128,7 +146,7 @@ export default function JobDetailModal({ isOpen, onClose, job, isUnlocked = true
 
       if (error) {
         console.error('Job status update failed:', error);
-        setStatusError(`Update failed: ${error.message}`);
+        setStatusError(friendlyError(error, 'Unable to update the job status. Please try again.'));
       } else {
         setLocalStatus(newStatus);
         onStatusChange?.();
@@ -426,31 +444,52 @@ export default function JobDetailModal({ isOpen, onClose, job, isUnlocked = true
         )}
 
         {isTradie && localStatus === 'funded' && (
-          <button
-            onClick={() => handleUpdateStatus('in_progress')}
-            disabled={statusLoading}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-secondary-600 text-white font-semibold rounded-xl hover:bg-secondary-700 transition-colors"
-          >
-            <Play className="w-4 h-4" />
-            Start Job
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-secondary-50 text-secondary-700 font-medium rounded-xl border border-secondary-200">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Auto-starting...
+          </div>
         )}
 
-        {isTradie && localStatus === 'in_progress' && (
-          <button
-            onClick={() => handleUpdateStatus('completed')}
-            disabled={statusLoading}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
-          >
-            {statusLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <CheckCircle2 className="w-4 h-4" />
-            )}
-            {statusLoading ? 'Completing...' : 'Job Complete'}
-          </button>
-        )}
+        {isTradie && localStatus === 'in_progress' && (() => {
+          const allChecked = completionChecks.workDone && completionChecks.siteClean && completionChecks.clientNotified;
+          return (
+            <div className="flex-1 space-y-2">
+              <div className="flex flex-col gap-1.5 text-xs">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" checked={completionChecks.workDone} onChange={(e) => setCompletionChecks(p => ({ ...p, workDone: e.target.checked }))}
+                    className="w-3.5 h-3.5 rounded border-gray-300 text-green-600 focus:ring-green-500" />
+                  <span className="text-gray-600">All work completed as quoted</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" checked={completionChecks.siteClean} onChange={(e) => setCompletionChecks(p => ({ ...p, siteClean: e.target.checked }))}
+                    className="w-3.5 h-3.5 rounded border-gray-300 text-green-600 focus:ring-green-500" />
+                  <span className="text-gray-600">Site left clean and safe</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" checked={completionChecks.clientNotified} onChange={(e) => setCompletionChecks(p => ({ ...p, clientNotified: e.target.checked }))}
+                    className="w-3.5 h-3.5 rounded border-gray-300 text-green-600 focus:ring-green-500" />
+                  <span className="text-gray-600">Client notified of completion</span>
+                </label>
+              </div>
+              <button
+                onClick={() => handleUpdateStatus('completed')}
+                disabled={statusLoading || !allChecked}
+                className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 font-semibold rounded-xl transition-colors ${
+                  allChecked
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {statusLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4" />
+                )}
+                {statusLoading ? 'Completing...' : allChecked ? 'Job Complete' : 'Complete checklist to finish'}
+              </button>
+            </div>
+          );
+        })()}
 
         {isTradie && localStatus === 'completed' && (
           <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 font-semibold rounded-xl border border-green-200">
