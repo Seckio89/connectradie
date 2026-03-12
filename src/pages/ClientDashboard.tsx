@@ -19,7 +19,8 @@ import WelcomeGuide from '../components/WelcomeGuide';
 import { DashboardStatsSkeleton, ListSkeleton } from '../components/SkeletonLoader';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import AddressAutocomplete from '../components/AddressAutocomplete';
-import { getRecurringJobs, createRecurringJob, cancelRecurringJob, updateRecurringJob, suggestRecurringJob, type RecurringJob } from '../lib/recurringJobs';
+import { getRecurringJobs, createRecurringJob, cancelRecurringJob, updateRecurringJob, suggestRecurringJob, getUpcomingSessions, type RecurringJob, type RecurringSession } from '../lib/recurringJobs';
+import RecurringSessionCard from '../components/RecurringSessionCard';
 
 export default function ClientDashboard() {
   const [savedTradies, setSavedTradies] = useState<TradieWithDetails[]>([]);
@@ -38,6 +39,8 @@ export default function ClientDashboard() {
   const [showRecurringForm, setShowRecurringForm] = useState(false);
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
   const [sentRecurringIds, setSentRecurringIds] = useState<Set<string>>(new Set());
+  const [jobSessions, setJobSessions] = useState<Record<string, RecurringSession[]>>({});
+  const [sessionsLoading, setSessionsLoading] = useState<Set<string>>(new Set());
   const [spendingSummary, setSpendingSummary] = useState({ total: 0, thisMonth: 0, pendingJobs: 0 });
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
   const [showArchived, setShowArchived] = useState(false);
@@ -55,6 +58,23 @@ export default function ClientDashboard() {
     try {
       const jobs = await getRecurringJobs(user.id);
       setRecurringJobs(jobs);
+      // Fetch upcoming sessions for each active job
+      const activeJobs = jobs.filter(j => j.is_active);
+      const loadingIds = new Set(activeJobs.map(j => j.id));
+      setSessionsLoading(loadingIds);
+      const sessionsMap: Record<string, RecurringSession[]> = {};
+      await Promise.all(
+        activeJobs.map(async (job) => {
+          try {
+            const sessions = await getUpcomingSessions(job.id);
+            sessionsMap[job.id] = sessions.slice(0, 4);
+          } catch {
+            sessionsMap[job.id] = [];
+          }
+        }),
+      );
+      setJobSessions(sessionsMap);
+      setSessionsLoading(new Set());
     } catch { /* ignore */ }
   }, [user]);
 
@@ -933,6 +953,29 @@ export default function ClientDashboard() {
                                 Request Quotes
                               </button>
                             </>
+                          )}
+                        </div>
+                        {/* Upcoming Sessions */}
+                        <div className="px-3 pb-3">
+                          <p className="text-xs font-medium text-gray-500 mb-2">Upcoming Sessions</p>
+                          {sessionsLoading.has(job.id) ? (
+                            <div className="flex items-center justify-center py-3">
+                              <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                            </div>
+                          ) : (jobSessions[job.id] ?? []).length > 0 ? (
+                            <div className="space-y-2">
+                              {(jobSessions[job.id] ?? []).map(session => (
+                                <RecurringSessionCard
+                                  key={session.id}
+                                  session={session}
+                                  recurringJobId={job.id}
+                                  userRole="client"
+                                  onUpdate={fetchRecurring}
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-400 italic py-2">No upcoming sessions scheduled</p>
                           )}
                         </div>
                       </div>
