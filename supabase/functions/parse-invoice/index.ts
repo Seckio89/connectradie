@@ -51,6 +51,20 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // P0 Fix 1: Role check — only tradies and admins can parse invoices
+    const { data: callerProfile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!callerProfile || (callerProfile.role !== "tradie" && callerProfile.role !== "admin")) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: only tradies can parse invoices" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     let body: Record<string, unknown>;
     try {
       body = await req.json();
@@ -65,8 +79,8 @@ Deno.serve(async (req: Request) => {
 
     if (!file_base64) {
       return new Response(
-        JSON.stringify({ business_name: "", invoice_number: "", amount: "", gst: "", due_date: "" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "No file provided. Include file_base64 in the request body." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -84,8 +98,21 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    let extractedText = "";
-    extractedText = await extractPdfText(file_base64);
+    // P0 Fix 2: Decode base64 once to avoid triple memory allocation
+    const binary = atob(file_base64);
+    const pdfBytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      pdfBytes[i] = binary.charCodeAt(i);
+    }
+
+    const extractedText = await extractPdfText(pdfBytes, file_base64);
+
+    if (!extractedText || !extractedText.trim()) {
+      return new Response(
+        JSON.stringify({ error: "Could not extract text from this PDF. The file may be image-based or corrupted." }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const details = parseInvoiceDetails(extractedText);
 
@@ -102,11 +129,11 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-async function extractPdfText(base64: string): Promise<string> {
+async function extractPdfText(pdfBytes: Uint8Array, base64: string): Promise<string> {
   const methods = [
-    () => extractWithUnpdf(base64),
+    () => extractWithUnpdf(pdfBytes),
     () => extractWithPdfParse(base64),
-    () => Promise.resolve(basicPdfExtract(base64)),
+    () => Promise.resolve(basicPdfExtract(pdfBytes)),
   ];
 
   for (const method of methods) {
@@ -121,14 +148,9 @@ async function extractPdfText(base64: string): Promise<string> {
   return "";
 }
 
-async function extractWithUnpdf(base64: string): Promise<string> {
+async function extractWithUnpdf(pdfBytes: Uint8Array): Promise<string> {
   const { extractText } = await import("npm:unpdf@0.12.1");
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  const { text } = await extractText(bytes.buffer);
+  const { text } = await extractText(pdfBytes.buffer);
   return text || "";
 }
 
@@ -140,14 +162,15 @@ async function extractWithPdfParse(base64: string): Promise<string> {
   return data.text || "";
 }
 
-function basicPdfExtract(base64: string): string {
+// P0 Fix 3: Cap input size for regex safety + replace ReDoS-prone BT/ET pattern
+const BASIC_EXTRACT_MAX_BYTES = 2 * 1024 * 1024;
+
+function basicPdfExtract(pdfBytes: Uint8Array): string {
   try {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    const content = new TextDecoder("latin1").decode(bytes);
+    const bytesToDecode = pdfBytes.length > BASIC_EXTRACT_MAX_BYTES
+      ? pdfBytes.slice(0, BASIC_EXTRACT_MAX_BYTES)
+      : pdfBytes;
+    const content = new TextDecoder("latin1").decode(bytesToDecode);
     const parts: string[] = [];
 
     const tjRegex = /\(([^)]{1,200})\)\s*T[jJ]/g;
@@ -170,46 +193,33 @@ function basicPdfExtract(base64: string): string {
       }
     }
 
-    const btRegex = /BT\s*([\s\S]*?)\s*ET/g;
-    while ((m = btRegex.exec(content)) !== null) {
-      const block = m[1];
-      const textOps = block.match(/\(([^)]{1,200})\)\s*Tj/g);
-      if (textOps) {
-        for (const op of textOps) {
-          const tm = op.match(/\(([^)]+)\)/);
-          if (tm && tm[1].trim() && !parts.includes(tm[1].trim())) {
-            parts.push(tm[1].trim());
+    // Use indexOf-based scan instead of ReDoS-prone /BT\s*([\s\S]*?)\s*ET/g
+    let searchFrom = 0;
+    while (searchFrom < content.length) {
+      const btIdx = content.indexOf("BT", searchFrom);
+      if (btIdx === -1) break;
+      const etIdx = content.indexOf("ET", btIdx + 2);
+      if (etIdx === -1) break;
+      // Cap block size to 10KB to avoid huge regex scans
+      if (etIdx - btIdx <= 10240) {
+        const block = content.substring(btIdx + 2, etIdx);
+        const textOps = block.match(/\(([^)]{1,200})\)\s*Tj/g);
+        if (textOps) {
+          for (const op of textOps) {
+            const tm = op.match(/\(([^)]+)\)/);
+            if (tm && tm[1].trim() && !parts.includes(tm[1].trim())) {
+              parts.push(tm[1].trim());
+            }
           }
         }
       }
+      searchFrom = etIdx + 2;
     }
 
     return parts.join("\n");
   } catch {
     return "";
   }
-}
-
-function findAllAmounts(text: string): number[] {
-  const amounts: number[] = [];
-  const patterns = [
-    /\$\s?([\d,]+\.\d{2})/g,
-    /\$\s?([\d,]+)/g,
-    /(?:^|[\s:])(\d{1,3}(?:,\d{3})+\.\d{2})(?:\s|$)/gm,
-    /(?:^|[\s:])(\d+\.\d{2})(?:\s|$)/gm,
-  ];
-
-  for (const pattern of patterns) {
-    let m;
-    while ((m = pattern.exec(text)) !== null) {
-      const val = parseFloat(m[1].replace(/,/g, ""));
-      if (val > 0 && !isNaN(val) && !amounts.includes(val)) {
-        amounts.push(val);
-      }
-    }
-  }
-
-  return amounts;
 }
 
 function findTotalAmount(text: string): string {
@@ -496,20 +506,30 @@ function findDueDate(text: string): string {
   };
 
   const parseDate = (line: string): string | null => {
+    // Australian format: DD/MM/YYYY. If one value is >12 it must be the day;
+    // when ambiguous (both ≤12), default to AU convention (first = day).
     const m1 = line.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
     if (m1) {
       const [, a, b, y] = m1;
-      const day = parseInt(a) > 12 ? a : (parseInt(b) > 12 ? b : a);
+      const aNum = parseInt(a);
+      const bNum = parseInt(b);
+      const day = aNum > 12 ? a : (bNum > 12 ? b : a);
       const month = day === a ? b : a;
-      return `${y}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      if (parseInt(month) >= 1 && parseInt(month) <= 12 && parseInt(day) >= 1 && parseInt(day) <= 31) {
+        return `${y}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      }
     }
     const m2 = line.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2})/);
     if (m2) {
       const [, a, b, yy] = m2;
       const y = parseInt(yy) > 50 ? `19${yy}` : `20${yy}`;
-      const day = parseInt(a) > 12 ? a : (parseInt(b) > 12 ? b : a);
+      const aNum = parseInt(a);
+      const bNum = parseInt(b);
+      const day = aNum > 12 ? a : (bNum > 12 ? b : a);
       const month = day === a ? b : a;
-      return `${y}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      if (parseInt(month) >= 1 && parseInt(month) <= 12 && parseInt(day) >= 1 && parseInt(day) <= 31) {
+        return `${y}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      }
     }
     const m3 = line.match(/(\d{1,2})\s+(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(\d{4})/i);
     if (m3) {
