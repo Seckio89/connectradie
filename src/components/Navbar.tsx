@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, X, LayoutDashboard, User } from 'lucide-react';
+import { Menu, X, LayoutDashboard, User, MessageSquare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -11,16 +11,26 @@ export default function Navbar() {
   const isTradie = profile?.role === 'tradie';
   const postJobHref = user ? '/dashboard' : '/register?type=client';
 
-  const navLinks = [
-    // Hide "Post a Job" entirely for tradies; route to dashboard for logged-in clients
-    ...(!isTradie ? [{ name: 'Post a Job', href: postJobHref, isRoute: true }] : []),
-    { name: 'Find a Trade', href: '/search', isRoute: true },
-    { name: 'Explore', href: '/explore', isRoute: true },
-    ...(!user ? [
-      { name: 'For Tradies', href: '/#for-tradies', isRoute: false },
-      { name: 'How it Works', href: '/#how-it-works-clients', isRoute: false },
-    ] : []),
-  ];
+  const navLinks = user
+    ? isTradie
+      ? [
+          { name: 'Find Work', href: '/leads', isRoute: true },
+          { name: 'My Jobs', href: '/jobs', isRoute: true },
+          { name: 'Messages', href: '/messages', isRoute: true },
+        ]
+      : [
+          { name: 'Post a Job', href: postJobHref, isRoute: true },
+          { name: 'Find a Trade', href: '/search', isRoute: true },
+          { name: 'My Jobs', href: '/jobs', isRoute: true },
+          { name: 'Messages', href: '/messages', isRoute: true },
+        ]
+    : [
+        { name: 'Post a Job', href: postJobHref, isRoute: true },
+        { name: 'Find a Trade', href: '/search', isRoute: true },
+        { name: 'Explore', href: '/explore', isRoute: true },
+        { name: 'For Tradies', href: '/#for-tradies', isRoute: false },
+        { name: 'How it Works', href: '/#how-it-works-clients', isRoute: false },
+      ];
 
   const handleSignOut = async () => {
     await signOut();

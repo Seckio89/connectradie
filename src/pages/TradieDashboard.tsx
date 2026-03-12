@@ -546,20 +546,20 @@ export default function TradieDashboard() {
 
         {/* Free Tier Usage */}
         {!isProUser && (
-          <div className="mb-6 bg-white border border-gray-200 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-900">Free Plan Usage</h3>
+          <div className="mb-6 max-w-sm bg-white border border-gray-200 rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold text-gray-900">Free Plan Usage</h3>
               <button onClick={() => setShowSubscriptionModal(true)} className="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors">
                 Upgrade to Pro
               </button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-gray-600">Jobs accepted this month</span>
                   <span className="text-xs font-medium text-gray-900">{monthlyJobs} of {FREE_LIMITS.MAX_JOBS_PER_MONTH}</span>
                 </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${monthlyJobs >= FREE_LIMITS.MAX_JOBS_PER_MONTH ? 'bg-red-500' : monthlyJobs >= FREE_LIMITS.MAX_JOBS_PER_MONTH - 1 ? 'bg-amber-500' : 'bg-warm-500'}`}
                     style={{ width: `${Math.min(100, (monthlyJobs / FREE_LIMITS.MAX_JOBS_PER_MONTH) * 100)}%` }}
@@ -571,7 +571,7 @@ export default function TradieDashboard() {
                   <span className="text-xs text-gray-600">Lead unlocks this month</span>
                   <span className="text-xs font-medium text-gray-900">{monthlyUnlocks} of {FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH}</span>
                 </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${monthlyUnlocks >= FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH ? 'bg-red-500' : monthlyUnlocks >= FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH - 1 ? 'bg-amber-500' : 'bg-warm-500'}`}
                     style={{ width: `${Math.min(100, (monthlyUnlocks / FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH) * 100)}%` }}
