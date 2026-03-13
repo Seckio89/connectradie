@@ -228,7 +228,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       notification.type === 'session_rescheduled' ||
       notification.type === 'session_skipped' ||
       notification.type === 'extra_session_added' ||
-      notification.type === 'invoice_ready'
+      notification.type === 'invoice_ready' ||
+      notification.type === 'payment_auto_released'
     ) {
       navigate('/dashboard');
       setNotificationsOpen(false);

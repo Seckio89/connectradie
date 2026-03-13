@@ -31,6 +31,7 @@ const STATIC_ROUTES: Record<string, NotificationChannel[]> = {
   [NOTIFICATION_TYPES.SESSION_RESCHEDULED]: [CHANNEL_IN_APP],
   [NOTIFICATION_TYPES.SESSION_SKIPPED]: [CHANNEL_IN_APP],
   [NOTIFICATION_TYPES.EXTRA_SESSION_ADDED]: [CHANNEL_IN_APP],
+  [NOTIFICATION_TYPES.PAYMENT_AUTO_RELEASED]: [CHANNEL_EMAIL, CHANNEL_IN_APP],
 };
 
 function resolveConditionalRoutes(payload: NotificationPayload): NotificationChannel[] | null {

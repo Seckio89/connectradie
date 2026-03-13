@@ -79,6 +79,52 @@ function FlashCountdown({ expiry, onExpired }: { expiry: string; onExpired?: () 
   return <span className="font-bold tabular-nums">{timeLeft}</span>;
 }
 
+function AutoReleaseCountdown({ completedAt }: { completedAt: string }) {
+  const [timeLeft, setTimeLeft] = useState('');
+  const [released, setReleased] = useState(false);
+
+  useEffect(() => {
+    const releaseTime = new Date(completedAt).getTime() + 48 * 60 * 60 * 1000;
+    const update = () => {
+      const diff = releaseTime - Date.now();
+      if (diff <= 0) {
+        setReleased(true);
+        return;
+      }
+      const hrs = Math.floor(diff / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      setTimeLeft(hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`);
+    };
+
+    update();
+    const interval = setInterval(update, 60000);
+    return () => clearInterval(interval);
+  }, [completedAt]);
+
+  if (released) {
+    return (
+      <div className="flex items-start gap-2 px-5 py-2.5 bg-emerald-50 border-t border-emerald-100">
+        <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+        <p className="text-xs text-emerald-700">
+          Payment has been auto-released to your tradie.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start gap-2 px-5 py-2.5 bg-amber-50 border-t border-amber-100">
+      <Clock className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+      <div className="text-xs text-amber-800">
+        <p>
+          Payment will auto-release in <span className="font-semibold tabular-nums">{timeLeft}</span>.
+          Release now or raise a dispute if there&apos;s an issue.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 const SLOT_ICONS: Record<string, typeof Sun> = {
   morning: Sun,
   midday: CloudSun,
@@ -1254,8 +1300,13 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
             const isReleased = releasedJobIds.has(lead.id);
             const isReviewed = reviewedJobIds.has(lead.id);
             const isFullyDone = isReleased && isReviewed;
+            const completedAt = (lead as Record<string, unknown>).completed_at as string | null;
             return (
-              <div className="flex items-center justify-between px-5 py-2.5 bg-gray-50 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+              <>
+                {!isReleased && completedAt && (
+                  <AutoReleaseCountdown completedAt={completedAt} />
+                )}
+                <div className="flex items-center justify-between px-5 py-2.5 bg-gray-50 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-2">
                   {isFullyDone ? (
                     <button
@@ -1300,6 +1351,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                   )}
                 </div>
               </div>
+              </>
             );
           })()}
 
@@ -1738,8 +1790,13 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                   const isReleased = releasedJobIds.has(lead.id);
                   const isReviewed = reviewedJobIds.has(lead.id);
                   const isFullyDone = isReleased && isReviewed;
+                  const completedAt2 = (lead as Record<string, unknown>).completed_at as string | null;
                   return (
-                    <div key={lead.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors group">
+                    <div key={lead.id}>
+                      {!isReleased && completedAt2 && (
+                        <AutoReleaseCountdown completedAt={completedAt2} />
+                      )}
+                      <div className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors group">
                       <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -1793,6 +1850,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                           <Archive className="w-3.5 h-3.5" />
                         </button>
                       </div>
+                    </div>
                     </div>
                   );
                 })}

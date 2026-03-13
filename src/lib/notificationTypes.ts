@@ -26,6 +26,7 @@ export const NOTIFICATION_TYPES = {
   SESSION_RESCHEDULED: 'SESSION_RESCHEDULED',
   SESSION_SKIPPED: 'SESSION_SKIPPED',
   EXTRA_SESSION_ADDED: 'EXTRA_SESSION_ADDED',
+  PAYMENT_AUTO_RELEASED: 'PAYMENT_AUTO_RELEASED',
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];
@@ -139,5 +140,9 @@ export const NOTIFICATION_TEMPLATES: Record<
   },
   [NOTIFICATION_TYPES.EXTRA_SESSION_ADDED]: {
     defaultTitle: 'Extra Session Added',
+  },
+  [NOTIFICATION_TYPES.PAYMENT_AUTO_RELEASED]: {
+    defaultTitle: 'Payment Auto-Released',
+    emailSubject: 'Payment of ${amount} Released to Your Tradie',
   },
 };

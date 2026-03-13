@@ -360,6 +360,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
       // Update job: set status to completed (if not already) + add notes/photo.
       const updateData: Record<string, unknown> = {
         status: 'completed',
+        completed_at: new Date().toISOString(),
         completion_notes: notes.trim(),
       };
       if (thumbnailUrl) {
