@@ -111,6 +111,277 @@ export const RECURRING_SERVICE_SUBCATEGORIES: Record<string, string[]> = {
 };
 
 // ---------------------------------------------------------------------------
+// Pre-filled description templates per service subtype
+// ---------------------------------------------------------------------------
+
+export const RECURRING_SERVICE_DESCRIPTIONS: Record<string, string> = {
+  // ── Cleaning ──────────────────────────────────────────────────────────────
+  'Regular Domestic Clean':
+    '1. Vacuum and mop all floors\n2. Clean bathrooms including toilet, sink and shower\n3. Wipe down kitchen benches and appliances\n4. Dust surfaces and wipe down furniture\n5. Empty bins throughout the home',
+  'Deep Clean':
+    '1. Full clean inside oven, fridge and all appliances\n2. Scrub grout, tiles and hard to reach areas in bathrooms\n3. Clean inside cupboards and drawers throughout home\n4. Wash windows, tracks and sills inside\n5. Steam clean or scrub all floors including skirting boards',
+  'End of Lease Clean':
+    '1. Full internal clean of all rooms to rental standard\n2. Oven, stovetop and rangehood deep clean\n3. Carpet steam clean or hard floor polish\n4. Window clean inside including tracks and sills\n5. Bathroom and toilet scrub to bond return standard',
+  'Office Clean':
+    '1. Wipe down all desks, monitors and office equipment\n2. Vacuum or mop floors throughout office\n3. Clean kitchen/breakroom including sink, benches and appliances\n4. Clean bathrooms including toilet, sink and mirrors\n5. Empty all bins and replace liners',
+  'Commercial Clean':
+    '1. Vacuum, sweep and mop all floor areas\n2. Clean and sanitise all bathrooms and amenities\n3. Wipe down all surfaces, desks and common areas\n4. Kitchen and breakroom full clean including appliances\n5. Empty bins and replace liners throughout premises',
+  'Airbnb / Short Stay Turnover':
+    '1. Strip and remake all beds with fresh linen\n2. Full bathroom clean and restock toiletries\n3. Kitchen clean including dishes, benches and appliances\n4. Vacuum and mop all floors\n5. Check and restock supplies, report any damage',
+  'Post Construction Clean':
+    '1. Remove all dust and debris from floors, surfaces and sills\n2. Clean all windows, frames and tracks inside\n3. Wipe down all built-in cupboards, shelves and fixtures\n4. Scrub bathrooms and kitchen to remove construction residue\n5. Final vacuum and mop of all floor areas',
+  'Spring Clean':
+    '1. Deep clean all rooms including behind and under furniture\n2. Wash windows, blinds and curtains\n3. Clean inside all cupboards, wardrobes and storage areas\n4. Degrease kitchen including splashback, oven and rangehood\n5. Scrub bathrooms including grout and tile deep clean',
+  'Move In / Move Out Clean':
+    '1. Full clean of all rooms, floors and surfaces\n2. Clean inside all cupboards, wardrobes and drawers\n3. Bathroom and toilet scrub to a high standard\n4. Kitchen deep clean including oven and appliances\n5. Vacuum carpets or mop hard floors throughout',
+  'Body Corporate Clean':
+    '1. Vacuum and mop all common area floors and lobbies\n2. Wipe down lifts, handrails and entry doors\n3. Clean common area bathrooms and amenities\n4. Remove rubbish and clean bin areas\n5. Dust and wipe all common area surfaces and noticeboards',
+  'Medical / Childcare Clean':
+    '1. Disinfect and sanitise all high touch surfaces\n2. Clean and sanitise bathrooms and amenities to health standard\n3. Vacuum and mop all floors with hospital grade products\n4. Wipe down all equipment, furniture and storage areas\n5. Empty and sanitise all bins with fresh liners',
+  'School / Education Clean':
+    '1. Vacuum and mop all classroom and corridor floors\n2. Wipe down desks, chairs and whiteboards in all rooms\n3. Clean and sanitise all bathrooms and change rooms\n4. Empty bins throughout and replace liners\n5. Clean staffroom including kitchen benches and appliances',
+
+  // ── Lawn & Garden ─────────────────────────────────────────────────────────
+  'Regular Lawn Mow':
+    '1. Mow all lawn areas to an even height\n2. Edge along all pathways, driveways and garden beds\n3. Blow or sweep all clippings from hard surfaces\n4. Trim around obstacles such as trees and garden beds\n5. Leave site clean and tidy',
+  'Lawn Mow & Edge':
+    '1. Mow all lawn areas front and back to even height\n2. Line trim and edge all pathways, driveways and kerbs\n3. Trim around all obstacles including garden beds and fences\n4. Blow all clippings from hard surfaces and drains\n5. Remove or bag all clippings as required',
+  'Full Garden Maintenance':
+    '1. Mow and edge all lawn areas\n2. Prune and trim all shrubs and hedges\n3. Weed all garden beds and remove debris\n4. Blow down all hard surfaces and pathways\n5. Remove all green waste from site',
+  'Hedge Trimming':
+    '1. Trim all hedges to desired shape and height\n2. Remove all cuttings and green waste from site\n3. Tidy edges and base of hedges\n4. Check for dead or damaged growth and remove\n5. Blow down surrounding hard surfaces',
+  'Lawn Fertilising':
+    '1. Assess lawn health and identify any problem areas\n2. Apply appropriate seasonal fertiliser to all lawn areas\n3. Apply weed killer to any broadleaf or clover patches\n4. Water in fertiliser if required\n5. Advise on watering schedule and next treatment',
+  'Weed Control':
+    '1. Spray or hand-pull weeds from all garden beds\n2. Apply pre-emergent weed treatment where needed\n3. Treat lawn weeds with selective herbicide\n4. Clear weeds from paths, driveways and edges\n5. Dispose of all weed material from site',
+  'Garden Bed Maintenance':
+    '1. Weed and tidy all garden beds\n2. Prune and shape any overgrown shrubs or plants\n3. Top up mulch to maintain even coverage\n4. Remove dead plants or debris from beds\n5. Edge garden bed borders for a clean finish',
+  'Pruning & Trimming':
+    '1. Prune all shrubs and small trees to shape\n2. Remove dead, damaged or crossing branches\n3. Thin out dense growth for better airflow\n4. Collect and remove all pruning waste\n5. Blow down hard surfaces and leave site tidy',
+  'Mulching':
+    '1. Prepare garden beds by weeding and raking\n2. Spread fresh mulch to 75mm depth across all beds\n3. Keep mulch clear of plant stems and tree trunks\n4. Edge around paths and lawn for a clean border\n5. Remove any excess mulch and clean up site',
+  'Landscaping Maintenance':
+    '1. Mow, edge and blow all lawn areas\n2. Prune and trim all hedges, shrubs and feature plants\n3. Weed and mulch all garden beds as needed\n4. Check irrigation system for leaks or blocked heads\n5. Remove all green waste and leave site tidy',
+
+  // ── Pool & Spa ────────────────────────────────────────────────────────────
+  'Regular Pool Clean':
+    '1. Skim surface to remove leaves and debris\n2. Vacuum pool floor and walls\n3. Brush pool walls and waterline\n4. Test and balance water chemistry\n5. Check and clean filter basket and pump',
+  'Pool Chemical Balance':
+    '1. Test water for pH, chlorine, alkalinity and stabiliser\n2. Add chemicals to bring levels into correct range\n3. Check salt chlorinator cell output and condition\n4. Inspect water clarity and treat if cloudy\n5. Record readings and note any concerns',
+  'Pool Filter Service':
+    '1. Backwash or disassemble and clean filter media\n2. Inspect filter cartridge or sand for wear and replacement\n3. Check filter pressure gauge readings before and after\n4. Inspect multiport valve and O-rings for leaks\n5. Reassemble and return system to normal operation',
+  'Spa Maintenance':
+    '1. Clean and scrub spa shell and waterline\n2. Test and balance water chemistry\n3. Clean or replace spa filter cartridge\n4. Inspect jets, blower and heater for proper operation\n5. Check sanitiser levels and add as needed',
+  'Full Pool & Spa Service':
+    '1. Full vacuum, skim and brush of pool and spa\n2. Test and balance all chemical levels\n3. Backwash or clean filter system\n4. Inspect pump, chlorinator and equipment\n5. Report any faults or maintenance required',
+
+  // ── Pest Control ──────────────────────────────────────────────────────────
+  'General Pest Control':
+    '1. Internal spray of all rooms including skirting boards\n2. External spray around perimeter of building\n3. Treat roof void and sub floor if accessible\n4. Inspect and treat any visible nests or activity\n5. Provide written report of treatment and recommendations',
+  'Ant Treatment':
+    '1. Identify ant species and locate entry points\n2. Apply targeted bait and barrier spray at entry points\n3. Treat nest sites externally around perimeter\n4. Spray internal skirting boards and affected areas\n5. Advise on prevention measures to reduce re-entry',
+  'Cockroach Treatment':
+    '1. Apply gel bait in all kitchen and bathroom cabinets\n2. Spray internal skirting boards, cracks and crevices\n3. Treat sub floor and roof void if accessible\n4. External barrier spray around perimeter\n5. Advise on sanitation and moisture reduction',
+  'Spider Treatment':
+    '1. Web removal from eaves, windows and exterior walls\n2. Spray all exterior surfaces including fences and sheds\n3. Treat internal skirting boards and window frames\n4. Apply barrier spray around doors and entry points\n5. Inspect roof void and garage for redback activity',
+  'Termite Inspection':
+    '1. Full internal inspection of all rooms and subfloor\n2. External inspection of perimeter and garden areas\n3. Check all timber structures, frames and fencing\n4. Use moisture meter and thermal imaging if required\n5. Provide written report with findings and recommendations',
+  'Rodent Control':
+    '1. Inspect property for rodent entry points and activity\n2. Set bait stations in strategic locations inside and out\n3. Seal accessible entry points with steel wool or mesh\n4. Check roof void and sub floor for signs of nesting\n5. Schedule follow-up inspection and bait station check',
+  'Bed Bug Treatment':
+    '1. Inspect mattresses, bed frames and surrounding furniture\n2. Steam treat all affected areas and fabrics\n3. Apply residual insecticide to bed frame and skirting\n4. Treat cracks, crevices and joins in all furniture\n5. Advise on encasements and prevention measures',
+  'Pre-Purchase Inspection':
+    '1. Full timber pest inspection of all accessible areas\n2. Moisture testing of wet areas and external walls\n3. Inspect sub floor and roof void for pest activity\n4. Check fences, retaining walls and garden structures\n5. Provide detailed written report with photos',
+
+  // ── Window Cleaning ───────────────────────────────────────────────────────
+  'Interior Windows':
+    '1. Clean all interior glass surfaces streak-free\n2. Wipe down all window frames and sills\n3. Clean sliding door tracks and runners\n4. Remove all marks, fingerprints and residue\n5. Leave all glass spotless and clear',
+  'Exterior Windows':
+    '1. Clean all exterior glass using purified water or squeegee\n2. Remove cobwebs and debris from window frames\n3. Clean fly screens and replace after cleaning\n4. Wipe down external window sills and ledges\n5. Leave all exterior glass streak-free',
+  'Interior & Exterior Windows':
+    '1. Clean all window glass inside and outside\n2. Wipe down all window frames and sills\n3. Clean all sliding door tracks and frames\n4. Remove all streaks and water marks\n5. Leave all windows spotless and streak free',
+  'High Rise Windows':
+    '1. Clean all exterior glass using rope access or elevated platform\n2. Clean interior glass on all levels\n3. Wipe frames, sills and tracks throughout\n4. Remove cobwebs and debris from facades\n5. Leave all glass streak-free and spotless',
+  'Commercial Windows':
+    '1. Clean all shopfront and office exterior glass\n2. Clean interior glass and partitions\n3. Wipe down frames, sills and entry doors\n4. Remove signage residue and marks\n5. Leave all commercial glass presentation-ready',
+  'Pressure Washing':
+    '1. Pressure wash all designated hard surfaces\n2. Clean driveways, pathways and entertainment areas\n3. Treat and remove moss, mould and stains\n4. Rinse all surfaces thoroughly\n5. Leave site clean and free of debris',
+  'Solar Panel Clean':
+    '1. Rinse all solar panels with purified water\n2. Gently scrub panels to remove bird droppings and grime\n3. Check panels for visible damage or hot spots\n4. Clean panel frames and mounting rails\n5. Report on panel condition and any concerns',
+
+  // ── Carpet & Flooring ─────────────────────────────────────────────────────
+  'Regular Carpet Clean':
+    '1. Pre-vacuum all carpeted areas\n2. Pre-treat stains and high traffic areas\n3. Hot water extraction clean of all carpets\n4. Deodorise and apply stain protection if requested\n5. Leave carpets clean and fresh',
+  'Steam Clean':
+    '1. Pre-vacuum and pre-treat all stains\n2. Hot water extraction steam clean all areas\n3. Focus on high traffic zones and problem areas\n4. Deodorise and sanitise throughout\n5. Leave carpets damp-dry and fresh',
+  'Dry Clean':
+    '1. Apply dry cleaning compound to all carpet areas\n2. Agitate compound into carpet fibres with machine\n3. Allow compound to absorb dirt and oils\n4. Vacuum up all compound and residue\n5. Leave carpets dry and ready for immediate use',
+  'Stain Treatment':
+    '1. Identify stain types and apply appropriate treatment\n2. Pre-treat all stubborn stains with specialist solution\n3. Agitate and extract treated areas\n4. Repeat treatment on persistent stains\n5. Apply stain protection to treated areas',
+  'End of Lease Carpet Clean':
+    '1. Pre-treat all stains and high traffic areas\n2. Hot water extraction clean of all carpeted areas\n3. Deodorise and sanitise throughout\n4. Clean carpet edges and along skirting boards\n5. Leave carpets to bond return standard',
+  'Upholstery Clean':
+    '1. Pre-vacuum all upholstered furniture\n2. Pre-treat stains and soiled areas\n3. Steam clean or dry clean all upholstery\n4. Deodorise and apply fabric protection\n5. Leave furniture clean and fresh',
+  'Tile & Grout Clean':
+    '1. Sweep and pre-treat all tiled areas\n2. Scrub grout lines with rotary machine\n3. High pressure clean tile surfaces\n4. Extract dirty water and residue\n5. Apply grout sealer to all cleaned areas',
+  'Hardwood Floor Polish':
+    '1. Clean and prepare all timber floor surfaces\n2. Buff floors with fine abrasive pad\n3. Apply fresh coat of floor polish or sealant\n4. Allow to cure and apply second coat if required\n5. Leave floors polished and protected',
+
+  // ── Gutters & Roof ────────────────────────────────────────────────────────
+  'Gutter Clean & Flush':
+    '1. Remove all leaves and debris from gutters by hand\n2. Flush all gutters and downpipes with water\n3. Check downpipes for blockages and clear\n4. Inspect gutter condition and note any damage\n5. Leave all gutters flowing freely',
+  'Gutter Guard Inspection':
+    '1. Inspect all gutter guard mesh for damage or gaps\n2. Remove debris sitting on top of guards\n3. Check guard fixings and re-secure any loose sections\n4. Flush gutters underneath guards to confirm flow\n5. Report on guard condition and recommend replacements',
+  'Downpipe Clear':
+    '1. Check all downpipes for blockages and debris\n2. Flush each downpipe from top with water pressure\n3. Clear any stubborn blockages with plumber snake\n4. Inspect downpipe joins and brackets for damage\n5. Confirm free flow from gutter to stormwater',
+  'Roof Inspection':
+    '1. Visual inspection of all roof surfaces for damage\n2. Check ridge capping, tiles and flashings\n3. Inspect valleys and penetrations for leaks\n4. Check gutter and downpipe condition\n5. Provide written report with photos and recommendations',
+  'Roof Wash':
+    '1. Soft wash or pressure clean all roof surfaces\n2. Remove moss, lichen and mould from tiles\n3. Clean valleys, ridges and flashings\n4. Treat roof with anti-fungal solution\n5. Rinse all surfaces and check for damage',
+
+  // ── Plumbing ──────────────────────────────────────────────────────────────
+  'Regular Maintenance Check':
+    '1. Inspect all taps, toilets and fixtures for leaks\n2. Check hot water system temperature and pressure relief valve\n3. Test water pressure at key outlets\n4. Inspect visible pipes under sinks for corrosion or leaks\n5. Provide report on any issues found and recommended repairs',
+  'Hot Water Service':
+    '1. Flush hot water system tank to remove sediment\n2. Test temperature and pressure relief valve\n3. Check anode rod condition and advise on replacement\n4. Inspect all connections and fittings for leaks\n5. Test water temperature at outlets and adjust if needed',
+  'Leak Inspection':
+    '1. Visual inspection of all accessible plumbing\n2. Test water meter for hidden leaks\n3. Check under all sinks, basins and vanities\n4. Inspect toilet cisterns and connections\n5. Provide report on findings with repair recommendations',
+  'Drain Maintenance':
+    '1. Inspect all floor drains and grates for blockages\n2. Flush drains with high pressure jet if accessible\n3. Check traps under sinks and basins\n4. Clear any slow-draining outlets\n5. Advise on drain condition and any further work needed',
+  'Backflow Prevention Check':
+    '1. Test backflow prevention device as per council requirements\n2. Check valve operation and seal condition\n3. Record test results on official test report\n4. Tag device with test date and next due\n5. Submit test report to local water authority',
+
+  // ── Electrical ────────────────────────────────────────────────────────────
+  'Safety Inspection':
+    '1. Test all power points and light switches for faults\n2. Inspect switchboard for compliance and safety\n3. Test all RCDs and circuit breakers\n4. Check all smoke alarm batteries and expiry dates\n5. Provide written electrical safety report',
+  'RCD Testing':
+    '1. Test all residual current devices for trip time\n2. Record trip times against Australian Standard requirements\n3. Identify any non-compliant or faulty RCDs\n4. Test reset function on all devices\n5. Provide test certificate with results',
+  'Emergency Lighting Check':
+    '1. Test all emergency and exit lights for function\n2. Conduct 90-minute discharge test as required\n3. Check battery condition and charge levels\n4. Replace any failed lamps or batteries\n5. Tag all tested lights with date and results',
+  'Switchboard Maintenance':
+    '1. Visual inspection of switchboard for damage or heat\n2. Tighten all connections and terminal screws\n3. Check circuit breaker operation and labelling\n4. Test main switch and RCD devices\n5. Clean switchboard and update circuit directory',
+  'Solar System Check':
+    '1. Inspect all solar panels for damage or soiling\n2. Check inverter operation and error codes\n3. Test system output against expected performance\n4. Inspect all DC isolators and wiring connections\n5. Provide report on system health and output',
+
+  // ── Air Conditioning & HVAC ───────────────────────────────────────────────
+  'Filter Clean':
+    '1. Remove and clean all return air filters\n2. Wash filters with water and mild detergent\n3. Dry filters completely before reinstalling\n4. Check filter condition and advise on replacement\n5. Reinstall filters and test airflow',
+  'Full Service & Clean':
+    '1. Clean and wash all filters throughout\n2. Clean indoor and outdoor units\n3. Check refrigerant levels and system pressures\n4. Inspect all electrical connections and components\n5. Test full operation and report any faults',
+  'Gas Top Up':
+    '1. Check system refrigerant levels and pressures\n2. Leak test all joints and connections\n3. Top up refrigerant gas to manufacturer specification\n4. Test cooling and heating performance after top up\n5. Record gas type and quantity added',
+  'Annual Maintenance':
+    '1. Clean all filters, coils and drain pans\n2. Check refrigerant charge and system pressures\n3. Inspect all electrical connections and controls\n4. Test thermostat and all operating modes\n5. Provide full service report with recommendations',
+  'Duct Cleaning':
+    '1. Inspect all ductwork for dust, mould and debris\n2. Vacuum and brush clean all supply and return ducts\n3. Clean all grilles, registers and diffusers\n4. Sanitise ductwork with anti-bacterial treatment\n5. Test airflow after cleaning and report findings',
+  'Commercial HVAC Service':
+    '1. Inspect and service all rooftop or plant room units\n2. Clean coils, filters and drain systems\n3. Check refrigerant levels and compressor operation\n4. Test all controls, thermostats and BMS integration\n5. Provide detailed service report with recommendations',
+
+  // ── Security ──────────────────────────────────────────────────────────────
+  'Alarm System Check':
+    '1. Test all alarm sensors including PIR and reed switches\n2. Test siren and strobe operation\n3. Check panel battery backup and charge level\n4. Test communication to monitoring station\n5. Provide test report and note any faults',
+  'CCTV Maintenance':
+    '1. Clean all camera lenses and housings\n2. Check camera angles and adjust as needed\n3. Test recording quality and playback on all cameras\n4. Check DVR/NVR storage capacity and operation\n5. Test remote viewing access and connectivity',
+  'Access Control Service':
+    '1. Test all card readers and keypads for response\n2. Check door lock mechanisms and strikes\n3. Review access logs and user permissions\n4. Test emergency release and fire integration\n5. Update firmware and report any faults',
+  'Fire Safety Inspection':
+    '1. Test all smoke alarms and replace batteries\n2. Inspect fire extinguishers and check expiry tags\n3. Test emergency exit lights and battery backup\n4. Check fire door operation and seals\n5. Provide compliance report with recommendations',
+
+  // ── Handyman ──────────────────────────────────────────────────────────────
+  'Regular Property Maintenance':
+    '1. Inspect and repair any minor faults throughout property\n2. Check and tighten all door handles, hinges and locks\n3. Touch up any minor paint marks or scuffs\n4. Check gutters, downpipes and exterior for issues\n5. Report any major maintenance items requiring attention',
+  'Painting Touch Up':
+    '1. Sand and prepare all areas with chips, scuffs or marks\n2. Apply primer to any bare or patched areas\n3. Touch up paint to match existing colour throughout\n4. Clean up all edges and transitions between colours\n5. Leave all areas clean and even finish',
+  'General Repairs':
+    '1. Fix any reported minor issues around the property\n2. Repair or replace damaged door hardware and fixtures\n3. Patch small holes in walls and touch up paint\n4. Tighten loose fittings, shelves and fixtures\n5. Test all repairs and leave site clean',
+  'Seasonal Maintenance':
+    '1. Check and clean gutters and downpipes\n2. Inspect exterior paint, caulk and seals for wear\n3. Test smoke alarms and replace batteries\n4. Check weatherstripping on all doors and windows\n5. Inspect deck, fencing and outdoor structures',
+
+  // ── Trades without subcategories in RECURRING_SERVICE_SUBCATEGORIES ─────
+  // Painting
+  'Painting':
+    '1. Prepare all surfaces including sanding, filling and priming\n2. Apply two coats of paint to all agreed areas\n3. Cut in around all edges, trims and fixtures\n4. Protect floors, furniture and fittings during work\n5. Clean up all equipment and leave site tidy',
+  // Carpentry
+  'Carpentry':
+    '1. Inspect all timber structures for damage or rot\n2. Repair or replace damaged timber as needed\n3. Sand, oil or stain all timber surfaces\n4. Check and tighten all fixings and hardware\n5. Leave all timber surfaces treated and protected',
+  // Tiling
+  'Tiling':
+    '1. Inspect all tiled surfaces for cracked or loose tiles\n2. Re-grout any deteriorated grout lines\n3. Seal grout and tile surfaces to prevent water damage\n4. Replace any cracked or damaged tiles\n5. Clean all tiled areas and leave site tidy',
+  // Flooring
+  'Flooring':
+    '1. Inspect all floor surfaces for damage or wear\n2. Sand and refinish timber floors as required\n3. Replace any damaged boards, tiles or vinyl\n4. Apply sealant or polish to protect floor surfaces\n5. Leave all floors clean and ready for use',
+  // Concreting
+  'Concreting':
+    '1. Inspect all concrete surfaces for cracks or damage\n2. Clean and prepare surfaces for sealing\n3. Apply concrete sealer to all designated areas\n4. Repair any minor cracks or chips\n5. Leave all concrete surfaces sealed and protected',
+  // Fencing
+  'Fencing':
+    '1. Inspect all fence posts, rails and palings for damage\n2. Re-secure any loose palings or panels\n3. Treat timber with stain, oil or paint as needed\n4. Check and repair gate hinges, latches and locks\n5. Leave all fencing secure and treated',
+  // Decking
+  'Decking':
+    '1. Inspect deck boards, joists and fixings for damage or rot\n2. Sand deck surface to remove grey or rough timber\n3. Apply oil, stain or sealant to all deck surfaces\n4. Check and tighten all screws and brackets\n5. Clean balustrades, stairs and edges',
+  // Rendering
+  'Rendering':
+    '1. Inspect all rendered surfaces for cracks or bubbling\n2. Patch and repair any damaged render areas\n3. Clean all render surfaces of dirt and mould\n4. Apply fresh paint or sealant coat as needed\n5. Leave all rendered surfaces clean and sealed',
+  // Waterproofing
+  'Waterproofing':
+    '1. Inspect all wet area membranes for damage or wear\n2. Check balcony and deck membranes for cracking\n3. Test shower recesses and bath surrounds for leaks\n4. Inspect below-grade walls for moisture ingress\n5. Provide report with recommendations for remediation',
+  // Bricklaying
+  'Bricklaying':
+    '1. Inspect all brickwork for cracked or loose mortar joints\n2. Re-point deteriorated mortar joints as needed\n3. Check for rising damp or water damage in brick walls\n4. Clean and treat any efflorescence or staining\n5. Leave all brickwork structurally sound and clean',
+  // Plastering
+  'Plastering':
+    '1. Inspect all walls and ceilings for cracks or damage\n2. Patch and fill any holes, dents or cracks\n3. Sand all repaired areas smooth and even\n4. Apply finishing coat to blend with surrounding surfaces\n5. Leave all surfaces ready for painting',
+  // Insulation
+  'Insulation':
+    '1. Inspect existing insulation in roof and wall cavities\n2. Check for gaps, compression or damage in batts\n3. Top up or replace insulation in problem areas\n4. Check for moisture, pests or mould in cavities\n5. Provide report on insulation condition and R-value',
+  // Solar
+  'Solar':
+    '1. Clean all solar panels with purified water\n2. Inspect panel mountings and frames for corrosion\n3. Check inverter operation and error logs\n4. Test system output and compare to expected generation\n5. Provide report on system performance and condition',
+  // Gas Fitting
+  'Gas Fitting':
+    '1. Test all gas appliances for correct operation\n2. Check gas line connections for leaks with detector\n3. Inspect gas meter and regulator condition\n4. Test gas pressure at appliance connections\n5. Provide gas safety certificate and report',
+  // Appliance Repair
+  'Appliance Repair':
+    '1. Diagnose reported fault on appliance\n2. Inspect all components and connections\n3. Clean filters, vents and accessible parts\n4. Repair or advise on part replacement\n5. Test appliance operation after service',
+  // Locksmith
+  'Locksmith':
+    '1. Inspect all door and window locks throughout property\n2. Test all locks for smooth operation\n3. Lubricate and adjust lock mechanisms as needed\n4. Re-key or replace any faulty locks\n5. Test all keys and provide spares if requested',
+  // Removalist
+  'Removalist':
+    '1. Wrap and protect all furniture and fragile items\n2. Load all items safely and securely onto truck\n3. Transport to new location with care\n4. Unload and place all items in designated rooms\n5. Remove all packing materials and leave site tidy',
+  // Landscaping
+  'Landscaping':
+    '1. Mow, edge and blow all lawn areas\n2. Prune and shape all shrubs, hedges and feature plants\n3. Weed and mulch all garden beds\n4. Check and adjust irrigation system as needed\n5. Remove all green waste and leave site tidy',
+  // Irrigation
+  'Irrigation':
+    '1. Inspect all sprinkler heads and drip lines\n2. Check controller programming and adjust schedules\n3. Replace any broken or blocked sprinkler heads\n4. Test each zone for correct coverage and pressure\n5. Check for leaks and repair any damaged lines',
+  // Tree Removal
+  'Tree Removal':
+    '1. Assess tree health and plan safe removal method\n2. Section and fell tree safely with all precautions\n3. Remove all branches and trunk from site\n4. Grind stump below ground level if required\n5. Clean up all debris and leave site level and tidy',
+  // Demolition
+  'Demolition':
+    '1. Set up safety barriers and containment as required\n2. Disconnect and cap all services safely\n3. Strip out internal fixtures, fittings and materials\n4. Demolish structure as per scope of work\n5. Remove all waste from site and leave clean and level',
+  // Excavation
+  'Excavation':
+    '1. Mark out dig area and confirm service locations\n2. Excavate to required depth and dimensions\n3. Grade and compact base as required\n4. Remove or stockpile excavated material\n5. Leave site clean and ready for next stage of work',
+  // Skip Bin
+  'Skip Bin':
+    '1. Deliver skip bin to agreed location on property\n2. Place bin on boards to protect driveway surface\n3. Allow agreed hire period for filling\n4. Collect full bin and transport to waste facility\n5. Sort and dispose of waste responsibly',
+  // Assembly
+  'Assembly':
+    '1. Unpack all components and check against instructions\n2. Assemble item following manufacturer guidelines\n3. Secure all fixings, bolts and fasteners properly\n4. Anchor to wall or floor if required for safety\n5. Test operation and leave assembly area clean',
+  // Stonemasonry
+  'Stonemasonry':
+    '1. Inspect all stonework for cracking, movement or damage\n2. Clean stone surfaces of dirt, moss and staining\n3. Re-point mortar joints where deteriorated\n4. Repair or replace any cracked or chipped stones\n5. Apply sealant to protect stone from weather damage',
+  // Glazier
+  'Glazier':
+    '1. Inspect all glass panels and frames for damage\n2. Replace any cracked or broken glass panels\n3. Check window and door seals for drafts or leaks\n4. Adjust sliding door rollers and tracks\n5. Clean all new and repaired glass on completion',
+  // Cabinet Maker
+  'Cabinet Maker':
+    '1. Inspect all cabinets, drawers and doors for wear\n2. Adjust hinges and drawer slides for smooth operation\n3. Repair or replace any damaged shelves or panels\n4. Check and tighten all handles and knobs\n5. Clean and polish all cabinet surfaces',
+};
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 

@@ -19,7 +19,7 @@ import WelcomeGuide from '../components/WelcomeGuide';
 import { DashboardStatsSkeleton, ListSkeleton } from '../components/SkeletonLoader';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import AddressAutocomplete from '../components/AddressAutocomplete';
-import { getRecurringJobs, createRecurringJob, cancelRecurringJob, updateRecurringJob, suggestRecurringJob, getUpcomingSessions, RECURRING_SERVICE_SUBCATEGORIES, type RecurringJob, type RecurringSession } from '../lib/recurringJobs';
+import { getRecurringJobs, createRecurringJob, cancelRecurringJob, updateRecurringJob, suggestRecurringJob, getUpcomingSessions, RECURRING_SERVICE_SUBCATEGORIES, RECURRING_SERVICE_DESCRIPTIONS, type RecurringJob, type RecurringSession } from '../lib/recurringJobs';
 import RecurringSessionCard from '../components/RecurringSessionCard';
 import RecurringInvoiceCard from '../components/RecurringInvoiceCard';
 import type { RecurringInvoice } from '../components/RecurringInvoiceCard';
@@ -1200,16 +1200,22 @@ function RecurringJobForm({ onSave, onCancel, savedTradies }: {
 
   useEffect(() => {
     if (suggestion) {
-      setDescription(suggestion.description);
       setFrequency(suggestion.frequencyMonths);
     }
-  }, [category]);
-
-  // Reset subtype when category changes
-  useEffect(() => {
+    // Reset subtype and description when category changes
     setServiceSubtype('');
     setCustomSubtype('');
+    setDescription('');
   }, [category]);
+
+  // Auto-populate description when service subtype is selected
+  useEffect(() => {
+    if (serviceSubtype && RECURRING_SERVICE_DESCRIPTIONS[serviceSubtype]) {
+      setDescription(RECURRING_SERVICE_DESCRIPTIONS[serviceSubtype]);
+    } else if (serviceSubtype) {
+      setDescription('');
+    }
+  }, [serviceSubtype]);
 
   const resolvedSubtype = hasSubcategories ? serviceSubtype : customSubtype.trim();
 
