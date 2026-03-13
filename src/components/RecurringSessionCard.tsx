@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Calendar, CheckCircle2, SkipForward, Clock, Plus, X, AlertTriangle, Send } from 'lucide-react';
+import { Calendar, CheckCircle2, SkipForward, Clock, Plus, X, AlertTriangle, Send, Trash2 } from 'lucide-react';
 import type { RecurringSession, RecurringSessionStatus } from '../lib/recurringJobs';
 import {
   rescheduleSession,
   skipSession,
   completeSession,
   addExtraSession,
+  cancelExtraSession,
   acceptReschedule,
   insertNotification,
 } from '../lib/recurringJobs';
@@ -16,7 +17,7 @@ const STATUS_STYLES: Record<RecurringSessionStatus, { bg: string; text: string; 
   completed: { bg: 'bg-green-50 border-green-200', text: 'text-green-700', label: 'Completed' },
   rescheduled: { bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-700', label: 'Rescheduled' },
   skipped: { bg: 'bg-gray-50 border-gray-200', text: 'text-gray-500', label: 'Skipped' },
-  extra: { bg: 'bg-purple-50 border-purple-200', text: 'text-purple-700', label: 'Extra' },
+  extra: { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700', label: 'Extra Session' },
 };
 
 const DEFAULT_SESSION_DURATION_HOURS = 2;
@@ -62,6 +63,8 @@ export default function RecurringSessionCard({
   const [blockedDates, setBlockedDates] = useState<Set<string>>(new Set());
   const [clashWarning, setClashWarning] = useState('');
   const [checkingClash, setCheckingClash] = useState(false);
+  const [extraClashWarning, setExtraClashWarning] = useState('');
+  const [checkingExtraClash, setCheckingExtraClash] = useState(false);
 
   const style = STATUS_STYLES[session.status];
   const displayDate = session.actual_date || session.scheduled_date;
@@ -137,6 +140,37 @@ export default function RecurringSessionCard({
     check();
     return () => { cancelled = true; };
   }, [rescheduleDate, tradieId, preferredTime]);
+
+  // Check clash when extra date changes
+  useEffect(() => {
+    if (!extraDate || !tradieId) {
+      setExtraClashWarning('');
+      return;
+    }
+
+    let cancelled = false;
+    const startTime = preferredTime || '09:00:00';
+    const endTime = addHoursToTime(startTime, DEFAULT_SESSION_DURATION_HOURS);
+
+    const check = async () => {
+      setCheckingExtraClash(true);
+      try {
+        const hasClash = await checkClash(tradieId, extraDate, startTime, endTime);
+        if (!cancelled) {
+          setExtraClashWarning(
+            hasClash ? 'You already have a booking on this date — choose another' : '',
+          );
+        }
+      } catch {
+        // non-critical
+      } finally {
+        if (!cancelled) setCheckingExtraClash(false);
+      }
+    };
+
+    check();
+    return () => { cancelled = true; };
+  }, [extraDate, tradieId, preferredTime]);
 
   const handleReschedule = async () => {
     if (!rescheduleDate || !reason.trim() || clashWarning) return;
@@ -236,21 +270,66 @@ export default function RecurringSessionCard({
   };
 
   const handleAddExtra = async () => {
-    if (!extraDate) return;
+    if (!extraDate || extraClashWarning) return;
     setLoading(true);
     try {
+      const parsedHours = parseFloat(extraHours) || 0;
+      const parsedCost = parseFloat(extraCost) || 0;
+
       await addExtraSession(
         recurringJobId,
         extraDate,
-        parseFloat(extraHours) || 0,
-        parseFloat(extraCost) || 0,
+        parsedHours,
+        parsedCost,
         extraNotes.trim(),
+        tradieId,
       );
+
+      // Notify homeowner
+      if (clientId) {
+        const dateStr = new Date(extraDate + 'T00:00:00').toLocaleDateString('en-AU', {
+          day: 'numeric', month: 'short',
+        });
+        await insertNotification(
+          clientId,
+          'extra_session_added',
+          `Your tradie has added an extra session on ${dateStr} for $${parsedCost.toFixed(2)} — this will appear on your next invoice`,
+          { recurring_job_id: recurringJobId, date: extraDate, extra_cost: parsedCost },
+        );
+      }
+
       setShowExtra(false);
       setExtraDate('');
       setExtraHours('');
       setExtraCost('');
       setExtraNotes('');
+      setExtraClashWarning('');
+      onUpdate();
+    } catch {
+      // handled by parent
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelExtra = async () => {
+    setLoading(true);
+    try {
+      await cancelExtraSession(session.id);
+
+      // Notify homeowner
+      if (clientId) {
+        const dateStr = new Date(displayDate + 'T00:00:00').toLocaleDateString('en-AU', {
+          day: 'numeric', month: 'short',
+        });
+        await insertNotification(
+          clientId,
+          'extra_session_cancelled',
+          `An extra session on ${dateStr} has been cancelled`,
+          { recurring_job_id: recurringJobId },
+        );
+      }
+
       onUpdate();
     } catch {
       // handled by parent
@@ -303,10 +382,22 @@ export default function RecurringSessionCard({
       {session.notes && (
         <p className="mt-1 text-xs text-gray-500">{session.notes}</p>
       )}
-      {session.status === 'extra' && (session.extra_hours || session.extra_cost) && (
-        <div className="mt-2 flex gap-3 text-xs text-purple-600">
-          {session.extra_hours ? <span>{session.extra_hours}h extra</span> : null}
-          {session.extra_cost ? <span>${Number(session.extra_cost).toFixed(2)}</span> : null}
+      {session.status === 'extra' && (
+        <div className="mt-2 space-y-1">
+          <div className="flex gap-3 text-xs font-medium text-amber-700">
+            {session.extra_hours ? <span>{session.extra_hours}h extra</span> : null}
+            {session.extra_cost ? <span>${Number(session.extra_cost).toFixed(2)}</span> : null}
+          </div>
+          {isTradie && (
+            <button
+              onClick={handleCancelExtra}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 text-red-600 hover:text-red-700 text-xs font-medium disabled:opacity-50 transition-colors"
+            >
+              <Trash2 className="w-3 h-3" />
+              {loading ? 'Cancelling...' : 'Cancel Extra Session'}
+            </button>
+          )}
         </div>
       )}
 
@@ -424,7 +515,7 @@ export default function RecurringSessionCard({
               </button>
               <button
                 onClick={() => { resetForms(); setShowExtra(true); }}
-                className="inline-flex items-center gap-1.5 text-purple-600 bg-purple-50 border border-purple-200 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-purple-100 transition-colors"
+                className="inline-flex items-center gap-1.5 text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-amber-100 transition-colors"
               >
                 <Plus className="w-3 h-3" />
                 Extra Session
@@ -448,6 +539,19 @@ export default function RecurringSessionCard({
               </button>
             </>
           )}
+        </div>
+      )}
+
+      {/* Extra Session button for completed sessions (tradie only) */}
+      {session.status === 'completed' && isTradie && !showExtra && (
+        <div className="mt-3">
+          <button
+            onClick={() => { resetForms(); setShowExtra(true); }}
+            className="inline-flex items-center gap-1.5 text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-amber-100 transition-colors"
+          >
+            <Plus className="w-3 h-3" />
+            Add Extra Session
+          </button>
         </div>
       )}
 
@@ -543,24 +647,37 @@ export default function RecurringSessionCard({
           <input
             type="date"
             value={extraDate}
+            min={minDate}
             onChange={(e) => setExtraDate(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+              extraClashWarning ? 'border-red-300 bg-red-50' : 'border-gray-200'
+            }`}
           />
+          {checkingExtraClash && (
+            <p className="text-xs text-gray-400 animate-pulse">Checking availability...</p>
+          )}
+          {extraClashWarning && (
+            <div className="flex items-start gap-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-red-600 font-medium">{extraClashWarning}</p>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-medium text-gray-600">Extra hours</label>
+              <label className="block text-xs font-medium text-gray-600">Hours</label>
               <input
                 type="number"
                 step="0.5"
-                min="0"
+                min="0.5"
+                max="12"
                 value={extraHours}
                 onChange={(e) => setExtraHours(e.target.value)}
-                placeholder="0"
+                placeholder="2"
                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600">Extra cost ($)</label>
+              <label className="block text-xs font-medium text-gray-600">Cost (AUD)</label>
               <input
                 type="number"
                 step="0.01"
@@ -572,24 +689,25 @@ export default function RecurringSessionCard({
               />
             </div>
           </div>
-          <label className="block text-xs font-medium text-gray-600">Notes</label>
-          <input
-            type="text"
+          <label className="block text-xs font-medium text-gray-600">Notes (optional)</label>
+          <textarea
             value={extraNotes}
             onChange={(e) => setExtraNotes(e.target.value)}
             placeholder="e.g., Emergency callout for leak"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            rows={2}
+            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
           />
           <div className="flex gap-2">
             <button
               onClick={handleAddExtra}
-              disabled={loading || !extraDate}
-              className="px-4 py-2 text-xs font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
+              disabled={loading || !extraDate || !!extraClashWarning || checkingExtraClash}
+              className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
             >
-              {loading ? 'Adding...' : 'Add Extra Session'}
+              <Plus className="w-3 h-3" />
+              {loading ? 'Adding...' : 'Add Session'}
             </button>
             <button
-              onClick={() => setShowExtra(false)}
+              onClick={() => { setShowExtra(false); setExtraDate(''); setExtraHours(''); setExtraCost(''); setExtraNotes(''); setExtraClashWarning(''); }}
               className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
             >
               Cancel

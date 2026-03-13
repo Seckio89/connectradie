@@ -576,6 +576,7 @@ export async function addExtraSession(
   extraHours: number,
   extraCost: number,
   notes: string,
+  tradieId?: string,
 ): Promise<RecurringSession> {
   const { data, error } = await supabase
     .from('recurring_sessions')
@@ -585,13 +586,44 @@ export async function addExtraSession(
       status: 'extra',
       extra_hours: extraHours,
       extra_cost: extraCost,
-      notes,
+      notes: notes || null,
     })
     .select()
     .single();
 
   if (error) throw new Error(error.message);
+
+  // Block the time slot in tradie_availability if tradieId provided
+  if (tradieId) {
+    try {
+      const { blockTimeSlot } = await import('./availability');
+      await blockTimeSlot(tradieId, date, '07:00:00', '17:00:00', `Extra session: ${notes || 'Additional work'}`, data.id);
+    } catch {
+      // Non-critical — session was created, availability block is best-effort
+    }
+  }
+
   return data as RecurringSession;
+}
+
+/**
+ * Cancel an extra session — sets status to 'skipped' and unblocks the time slot.
+ */
+export async function cancelExtraSession(sessionId: string): Promise<void> {
+  const { error } = await supabase
+    .from('recurring_sessions')
+    .update({ status: 'skipped' })
+    .eq('id', sessionId);
+
+  if (error) throw new Error(error.message);
+
+  // Unblock the time slot (source_job_id was set to session id)
+  try {
+    const { unblockTimeSlot } = await import('./availability');
+    await unblockTimeSlot(sessionId);
+  } catch {
+    // Non-critical
+  }
 }
 
 /**
@@ -675,4 +707,69 @@ export async function insertNotification(
     });
 
   if (error) throw new Error(error.message);
+}
+
+// ---------------------------------------------------------------------------
+// Invoice preview
+// ---------------------------------------------------------------------------
+
+export interface InvoicePreview {
+  regularSessions: RecurringSession[];
+  extraSessions: RecurringSession[];
+  skippedSessions: RecurringSession[];
+  subtotal: number;
+  extrasTotal: number;
+  total: number;
+  billingCycle: string;
+}
+
+/**
+ * Build an invoice preview for a billing period.
+ */
+export async function getInvoicePreview(
+  recurringJobId: string,
+  billingPeriodStart: string,
+  billingPeriodEnd: string,
+): Promise<InvoicePreview> {
+  // Fetch the recurring job for agreed_price and billing_cycle
+  const { data: job, error: jobError } = await supabase
+    .from('recurring_jobs')
+    .select('agreed_price, billing_cycle')
+    .eq('id', recurringJobId)
+    .maybeSingle();
+
+  if (jobError) throw new Error(jobError.message);
+
+  const agreedPrice = (job?.agreed_price as number) ?? 0;
+  const billingCycle = (job?.billing_cycle as string) ?? 'monthly';
+
+  // Fetch all sessions in the billing period
+  const { data: sessions, error: sessionsError } = await supabase
+    .from('recurring_sessions')
+    .select('*')
+    .eq('recurring_job_id', recurringJobId)
+    .gte('scheduled_date', billingPeriodStart)
+    .lte('scheduled_date', billingPeriodEnd)
+    .order('scheduled_date', { ascending: true });
+
+  if (sessionsError) throw new Error(sessionsError.message);
+
+  const allSessions = (sessions ?? []) as RecurringSession[];
+
+  const regularSessions = allSessions.filter((s) => s.status === 'completed');
+  const extraSessions = allSessions.filter((s) => s.status === 'extra');
+  const skippedSessions = allSessions.filter((s) => s.status === 'skipped');
+
+  const subtotal = agreedPrice * regularSessions.length;
+  const extrasTotal = extraSessions.reduce((sum, s) => sum + (s.extra_cost ?? 0), 0);
+
+  return {
+    regularSessions,
+    extraSessions,
+    skippedSessions,
+    subtotal,
+    extrasTotal,
+    total: subtotal + extrasTotal,
+    billingCycle,
+  };
 }
