@@ -19,7 +19,7 @@ import WelcomeGuide from '../components/WelcomeGuide';
 import { DashboardStatsSkeleton, ListSkeleton } from '../components/SkeletonLoader';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import AddressAutocomplete from '../components/AddressAutocomplete';
-import { getRecurringJobs, createRecurringJob, cancelRecurringJob, updateRecurringJob, suggestRecurringJob, getUpcomingSessions, RECURRING_SERVICE_SUBCATEGORIES, RECURRING_SERVICE_DESCRIPTIONS, type RecurringJob, type RecurringSession } from '../lib/recurringJobs';
+import { getRecurringJobs, createRecurringJob, cancelRecurringJob, updateRecurringJob, suggestRecurringJob, getUpcomingSessions, getKeywordSuggestions, RECURRING_SERVICE_SUBCATEGORIES, RECURRING_SERVICE_DESCRIPTIONS, type RecurringJob, type RecurringSession, type KeywordSuggestion } from '../lib/recurringJobs';
 import RecurringSessionCard from '../components/RecurringSessionCard';
 import RecurringInvoiceCard from '../components/RecurringInvoiceCard';
 import type { RecurringInvoice } from '../components/RecurringInvoiceCard';
@@ -1186,6 +1186,8 @@ function RecurringJobForm({ onSave, onCancel, savedTradies }: {
   const [location, setLocation] = useState('');
   const [budget, setBudget] = useState('');
   const [budgetType, setBudgetType] = useState<'quote' | 'set'>('quote');
+  const [keywords, setKeywords] = useState<KeywordSuggestion[]>([]);
+  const [descFocused, setDescFocused] = useState(false);
 
   const tradeKeys = Object.keys(RECURRING_SERVICE_SUBCATEGORIES);
   const subcategories = category ? (RECURRING_SERVICE_SUBCATEGORIES[category] ?? null) : null;
@@ -1215,6 +1217,19 @@ function RecurringJobForm({ onSave, onCancel, savedTradies }: {
     } else if (serviceSubtype) {
       setDescription('');
     }
+  }, [serviceSubtype]);
+
+  // Fetch keyword suggestions when service subtype changes
+  useEffect(() => {
+    if (!serviceSubtype) {
+      setKeywords([]);
+      return;
+    }
+    let cancelled = false;
+    getKeywordSuggestions(serviceSubtype).then(result => {
+      if (!cancelled) setKeywords(result);
+    });
+    return () => { cancelled = true; };
   }, [serviceSubtype]);
 
   const resolvedSubtype = hasSubcategories ? serviceSubtype : customSubtype.trim();
@@ -1298,15 +1313,54 @@ function RecurringJobForm({ onSave, onCancel, savedTradies }: {
         <>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="What needs to be done..."
-              rows={2}
-              onFocus={e => { e.target.rows = 4; }}
-              onBlur={e => { e.target.rows = 2; }}
-              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 resize-none transition-all"
-            />
+            <div className="relative">
+              <textarea
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="What needs to be done..."
+                onFocus={() => setDescFocused(true)}
+                onBlur={() => setDescFocused(false)}
+                className={`w-full px-3 py-2 border rounded-lg text-sm resize-none transition-all duration-200 ${
+                  descFocused
+                    ? 'min-h-[200px] ring-2 ring-emerald-500 ring-offset-1 border-emerald-500'
+                    : 'min-h-[120px] border-gray-200'
+                }`}
+              />
+              <span className={`absolute bottom-1.5 right-2.5 text-xs ${
+                description.length > 500 ? 'text-red-500 font-medium' : description.length > 400 ? 'text-amber-500' : 'text-gray-400'
+              }`}>
+                {description.length} / 500
+              </span>
+            </div>
+            {serviceSubtype && RECURRING_SERVICE_DESCRIPTIONS[serviceSubtype] && (
+              <p className="text-xs text-gray-400 mt-1">Pre-filled based on your service type — edit as needed</p>
+            )}
+            {keywords.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                <span className="text-xs text-gray-400 mr-0.5 self-center">Popular:</span>
+                {keywords.map(kw => {
+                  const isIncluded = description.toLowerCase().includes(kw.keyword.toLowerCase());
+                  return (
+                    <button
+                      key={kw.keyword}
+                      type="button"
+                      onClick={() => {
+                        if (!isIncluded) {
+                          setDescription(prev => prev.trim() ? `${prev.trim()}\n• ${kw.keyword}` : `• ${kw.keyword}`);
+                        }
+                      }}
+                      className={`px-2 py-0.5 rounded-full text-xs font-medium border transition-colors ${
+                        isIncluded
+                          ? 'bg-emerald-100 text-emerald-700 border-emerald-200 cursor-default'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-primary-300 hover:text-primary-700 cursor-pointer'
+                      }`}
+                    >
+                      {kw.keyword}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div>

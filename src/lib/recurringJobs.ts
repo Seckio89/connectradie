@@ -630,7 +630,54 @@ export async function createRecurringJob(
 
   if (error) throw new Error(error.message);
 
+  // Capture raw description for keyword analytics (fire-and-forget)
+  if (data.description && data.service_subtype) {
+    supabase
+      .from('service_description_raw')
+      .insert({
+        service_type: data.service_subtype,
+        trade_category: data.trade_category,
+        description: data.description,
+        client_id: data.client_id ?? user.id,
+      })
+      .then(({ error: rawErr }) => {
+        if (rawErr) console.warn('Failed to capture description for analytics:', rawErr.message);
+      });
+  }
+
   return created as unknown as RecurringJob;
+}
+
+// ---------------------------------------------------------------------------
+// Keyword Suggestions
+// ---------------------------------------------------------------------------
+
+export interface KeywordSuggestion {
+  keyword: string;
+  frequency: number;
+}
+
+/**
+ * Fetch top keyword suggestions for a given service type.
+ * Returns keywords ordered by frequency (most popular first).
+ */
+export async function getKeywordSuggestions(
+  serviceType: string,
+  limit = 15,
+): Promise<KeywordSuggestion[]> {
+  const { data, error } = await supabase
+    .from('service_description_keywords')
+    .select('keyword, frequency')
+    .eq('service_type', serviceType)
+    .order('frequency', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.warn('Failed to fetch keyword suggestions:', error.message);
+    return [];
+  }
+
+  return (data ?? []) as KeywordSuggestion[];
 }
 
 /**
