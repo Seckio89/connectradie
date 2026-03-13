@@ -275,6 +275,98 @@ async function handleEvent(event: Stripe.Event) {
         } else {
           console.info(`Payment record updated for session ${session.id}: ${JSON.stringify(updated)}`);
 
+          // --- Send payment confirmed emails to homeowner and tradie ---
+          try {
+            const amountDollars = ((session.amount_total ?? 0) / 100).toFixed(2);
+            const homeownerId = session.metadata?.user_id;
+            const jobId = session.metadata?.job_id;
+
+            // Look up payment record for tradie_id and homeowner email
+            if (homeownerId) {
+              const { data: homeowner } = await supabase
+                .from('profiles')
+                .select('email, full_name')
+                .eq('id', homeownerId)
+                .maybeSingle();
+
+              // Notify homeowner (in-app + email)
+              await supabase.from('notifications').insert({
+                user_id: homeownerId,
+                title: 'Payment Confirmed',
+                message: `Your payment of $${amountDollars} has been confirmed. Funds are held securely in escrow.`,
+                type: 'payment_received',
+                read: false,
+                metadata: { job_id: jobId, amount: amountDollars },
+              });
+
+              if (homeowner?.email) {
+                const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+                const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+                await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${serviceKey}`,
+                  },
+                  body: JSON.stringify({
+                    to: homeowner.email,
+                    subject: `Payment of $${amountDollars} Confirmed`,
+                    body: `Hi ${homeowner.full_name || 'there'},\n\nYour payment of $${amountDollars} has been confirmed. Funds are held securely in escrow until you approve the completed work.\n\nView your job in the ConnecTradie dashboard.`,
+                    notificationType: 'PAYMENT_RECEIVED',
+                    metadata: { amount: `$${amountDollars}`, job_id: jobId },
+                  }),
+                }).catch((e) => console.error('Failed to send homeowner payment email:', e));
+              }
+
+              // Notify tradie (in-app + email) — look up tradie from job
+              if (jobId) {
+                const { data: job } = await supabase
+                  .from('jobs')
+                  .select('tradie_id')
+                  .eq('id', jobId)
+                  .maybeSingle();
+
+                if (job?.tradie_id) {
+                  const { data: tradie } = await supabase
+                    .from('profiles')
+                    .select('email, full_name')
+                    .eq('id', job.tradie_id)
+                    .maybeSingle();
+
+                  await supabase.from('notifications').insert({
+                    user_id: job.tradie_id,
+                    title: 'Payment Confirmed',
+                    message: `A payment of $${amountDollars} has been confirmed — funds are on the way once the job is approved.`,
+                    type: 'payment_received',
+                    read: false,
+                    metadata: { job_id: jobId, amount: amountDollars },
+                  });
+
+                  if (tradie?.email) {
+                    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+                    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+                    await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${serviceKey}`,
+                      },
+                      body: JSON.stringify({
+                        to: tradie.email,
+                        subject: `Payment of $${amountDollars} Confirmed — Funds on the Way`,
+                        body: `Hi ${tradie.full_name || 'there'},\n\nA payment of $${amountDollars} has been confirmed for your job. Funds will be released to your account once the homeowner approves the completed work.\n\nKeep up the great work!`,
+                        notificationType: 'PAYMENT_RECEIVED',
+                        metadata: { amount: `$${amountDollars}`, job_id: jobId },
+                      }),
+                    }).catch((e) => console.error('Failed to send tradie payment email:', e));
+                  }
+                }
+              }
+            }
+          } catch (emailErr) {
+            console.error('Payment confirmation email error (non-fatal):', emailErr);
+          }
+
           // If this is a job_funding payment, update the job status directly to in_progress
           // (skipping funded intermediate step to reduce manual tradie clicks)
           if (session.metadata?.payment_type === 'job_funding' && session.metadata?.job_id) {

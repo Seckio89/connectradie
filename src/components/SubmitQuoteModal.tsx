@@ -18,6 +18,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Job } from '../types/database';
 import { extractSuburb } from '../lib/contactGating';
+import { sendNotification } from '../lib/notificationService';
+import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
 
 interface QuoteTemplate {
   id: string;
@@ -200,6 +202,30 @@ export default function SubmitQuoteModal({
       }
       setModalState('form');
       return;
+    }
+
+    // Notify homeowner via email + in-app
+    if (job.client_id) {
+      const quoteAmount = useFirmPrice ? parseFloat(firmPrice) : max;
+      const amountLabel = useFirmPrice
+        ? `$${parseFloat(firmPrice).toFixed(2)}`
+        : `$${min.toFixed(2)} – $${max.toFixed(2)}`;
+      sendNotification({
+        type: NOTIFICATION_TYPES.QUOTE_RECEIVED,
+        userId: job.client_id,
+        title: 'New Quote Received',
+        message: `You've received a new quote of ${amountLabel} for your job. Review it now!`,
+        jobId: job.id,
+        link: `/leads?job=${job.id}`,
+        metadata: {
+          amount: amountLabel,
+          job_id: job.id,
+          tradie_id: user.id,
+          quote_amount: quoteAmount,
+        },
+      }).catch(() => {
+        // Non-critical — quote was submitted, email is best-effort
+      });
     }
 
     setModalState('success');
