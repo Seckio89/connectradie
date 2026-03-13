@@ -1,6 +1,96 @@
 import { supabase } from './supabase';
 
 // ---------------------------------------------------------------------------
+// Service subcategories for recurring job setup
+// ---------------------------------------------------------------------------
+
+export const RECURRING_SERVICE_SUBCATEGORIES: Record<string, string[]> = {
+  'House Cleaning': [
+    'Regular Domestic Clean',
+    'Deep Clean',
+    'End of Lease Clean',
+    'Office Clean',
+    'Commercial Clean',
+    'Airbnb / Short Stay Turnover',
+    'Post Construction Clean',
+    'Spring Clean',
+    'Move In / Move Out Clean',
+  ],
+  'Lawn Mowing': [
+    'Regular Lawn Mow',
+    'Lawn Mow & Edge',
+    'Full Garden Maintenance',
+    'Hedge Trimming',
+    'Lawn Fertilising',
+    'Weed Control',
+  ],
+  'Pool Service': [
+    'Regular Pool Clean',
+    'Pool Chemical Balance',
+    'Pool Filter Service',
+    'Full Pool Maintenance',
+  ],
+  'Garden Care': [
+    'Regular Garden Tidy',
+    'Garden Bed Maintenance',
+    'Pruning & Trimming',
+    'Mulching',
+    'Planting',
+    'Full Garden Makeover',
+  ],
+  'Pest Control': [
+    'Regular Pest Inspection',
+    'Ant Treatment',
+    'Cockroach Treatment',
+    'Spider Treatment',
+    'Termite Inspection',
+    'General Pest Control',
+  ],
+  'Window Cleaning': [
+    'Interior Windows',
+    'Exterior Windows',
+    'Interior & Exterior Windows',
+    'High Rise / Commercial Windows',
+    'Pressure Washing',
+  ],
+  'Carpet Cleaning': [
+    'Regular Carpet Clean',
+    'Steam Clean',
+    'Stain Treatment',
+    'End of Lease Carpet Clean',
+    'Upholstery Clean',
+  ],
+  'Gutter Cleaning': [
+    'Gutter Clean & Flush',
+    'Gutter Guard Installation',
+    'Downpipe Clear',
+  ],
+  'Plumbing': [
+    'Regular Maintenance Check',
+    'Hot Water Service',
+    'Leak Inspection',
+    'Drain Maintenance',
+  ],
+  'Electrical': [
+    'Safety Inspection',
+    'Regular Maintenance',
+    'Emergency Lighting Check',
+    'RCD Testing',
+  ],
+  'Air Conditioning': [
+    'Filter Clean',
+    'Full Service & Clean',
+    'Gas Top Up',
+    'Annual Maintenance',
+  ],
+  'Security': [
+    'Alarm System Check',
+    'CCTV Maintenance',
+    'Access Control Service',
+  ],
+};
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -8,6 +98,7 @@ export interface RecurringJobData {
   client_id?: string;
   tradie_id?: string | null;
   trade_category: string;
+  service_subtype?: string;
   description: string;
   frequency_months: number;
   next_due_date: string;
@@ -26,6 +117,7 @@ export interface RecurringJob {
   client_id: string;
   tradie_id: string;
   trade_category: string;
+  service_subtype?: string;
   description: string;
   frequency_months: number;
   next_due_date: string;
@@ -219,20 +311,29 @@ export async function createRecurringJob(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
+  const insertPayload: Record<string, unknown> = {
+    client_id: data.client_id ?? user.id,
+    tradie_id: data.tradie_id || null,
+    trade_category: data.trade_category,
+    description: data.description,
+    frequency_months: data.frequency_months,
+    next_due_date: data.next_due_date,
+    reminder_days_before: data.reminder_days_before,
+    is_active: data.is_active ?? true,
+    original_job_id: data.original_job_id ?? null,
+    times_completed: 0,
+  };
+
+  if (data.service_subtype) insertPayload.service_subtype = data.service_subtype;
+  if (data.location) insertPayload.location = data.location;
+  if (data.agreed_price != null) insertPayload.agreed_price = data.agreed_price;
+  if (data.day_of_week != null) insertPayload.day_of_week = data.day_of_week;
+  if (data.preferred_time) insertPayload.preferred_time = data.preferred_time;
+  if (data.billing_cycle) insertPayload.billing_cycle = data.billing_cycle;
+
   const { data: created, error } = await supabase
     .from('recurring_jobs')
-    .insert({
-      client_id: data.client_id ?? user.id,
-      tradie_id: data.tradie_id || null,
-      trade_category: data.trade_category,
-      description: data.description,
-      frequency_months: data.frequency_months,
-      next_due_date: data.next_due_date,
-      reminder_days_before: data.reminder_days_before,
-      is_active: data.is_active ?? true,
-      original_job_id: data.original_job_id ?? null,
-      times_completed: 0,
-    })
+    .insert(insertPayload)
     .select()
     .single();
 
@@ -277,6 +378,7 @@ export async function updateRecurringJob(
   const updatePayload: Record<string, unknown> = {};
 
   if (data.trade_category !== undefined) updatePayload.trade_category = data.trade_category;
+  if (data.service_subtype !== undefined) updatePayload.service_subtype = data.service_subtype;
   if (data.description !== undefined) updatePayload.description = data.description;
   if (data.frequency_months !== undefined) updatePayload.frequency_months = data.frequency_months;
   if (data.next_due_date !== undefined) updatePayload.next_due_date = data.next_due_date;
@@ -284,6 +386,10 @@ export async function updateRecurringJob(
   if (data.tradie_id !== undefined) updatePayload.tradie_id = data.tradie_id;
   if (data.is_active !== undefined) updatePayload.is_active = data.is_active;
   if (data.location !== undefined) updatePayload.location = data.location;
+  if (data.agreed_price !== undefined) updatePayload.agreed_price = data.agreed_price;
+  if (data.day_of_week !== undefined) updatePayload.day_of_week = data.day_of_week;
+  if (data.preferred_time !== undefined) updatePayload.preferred_time = data.preferred_time;
+  if (data.billing_cycle !== undefined) updatePayload.billing_cycle = data.billing_cycle;
 
   const { error } = await supabase
     .from('recurring_jobs')
@@ -911,7 +1017,7 @@ export async function acceptReschedule(sessionId: string): Promise<void> {
 export async function getTradieUpcomingSessions(
   tradieId: string,
   limit = 5,
-): Promise<(RecurringSession & { recurring_job?: { trade_category: string; description: string; client_id: string; preferred_time: string | null } })[]> {
+): Promise<(RecurringSession & { recurring_job?: { trade_category: string; service_subtype: string | null; description: string; client_id: string; preferred_time: string | null } })[]> {
   const today = new Date().toISOString().split('T')[0];
 
   const { data, error } = await supabase
@@ -920,6 +1026,7 @@ export async function getTradieUpcomingSessions(
       *,
       recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(
         trade_category,
+        service_subtype,
         description,
         client_id,
         preferred_time,

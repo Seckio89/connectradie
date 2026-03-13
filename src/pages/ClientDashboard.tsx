@@ -19,7 +19,7 @@ import WelcomeGuide from '../components/WelcomeGuide';
 import { DashboardStatsSkeleton, ListSkeleton } from '../components/SkeletonLoader';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import AddressAutocomplete from '../components/AddressAutocomplete';
-import { getRecurringJobs, createRecurringJob, cancelRecurringJob, updateRecurringJob, suggestRecurringJob, getUpcomingSessions, type RecurringJob, type RecurringSession } from '../lib/recurringJobs';
+import { getRecurringJobs, createRecurringJob, cancelRecurringJob, updateRecurringJob, suggestRecurringJob, getUpcomingSessions, RECURRING_SERVICE_SUBCATEGORIES, type RecurringJob, type RecurringSession } from '../lib/recurringJobs';
 import RecurringSessionCard from '../components/RecurringSessionCard';
 import RecurringInvoiceCard from '../components/RecurringInvoiceCard';
 import type { RecurringInvoice } from '../components/RecurringInvoiceCard';
@@ -79,7 +79,9 @@ export default function ClientDashboard() {
       );
       setJobSessions(sessionsMap);
       setSessionsLoading(new Set());
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error('fetchRecurring error:', err);
+    }
   }, [user]);
 
   const fetchInvoices = useCallback(async () => {
@@ -860,16 +862,19 @@ export default function ClientDashboard() {
                 <RecurringJobForm
                   onSave={async (data) => {
                     try {
-                      await createRecurringJob(data);
+                      const { budget, ...rest } = data;
+                      await createRecurringJob({ ...rest, agreed_price: budget });
                       setShowRecurringForm(false);
                       fetchRecurring();
                       showToast('Recurring service scheduled');
-                    } catch {
+                    } catch (err) {
+                      console.error('createRecurringJob error:', err);
                       showToast('Failed to create recurring service', true);
                     }
                   }}
                   onCancel={() => setShowRecurringForm(false)}
                   savedTradies={savedTradies}
+                  recurringServices={RECURRING_SERVICES}
                 />
               )}
 
@@ -921,9 +926,10 @@ export default function ClientDashboard() {
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium text-gray-900 truncate capitalize">
-                                {job.trade_category.replace(/_/g, ' ')}
+                                {job.service_subtype || job.trade_category.replace(/_/g, ' ')}
                                 <span className="text-xs text-gray-400 font-normal ml-1">
-                                  · {job.frequency_months === -1 ? 'Weekly' : job.frequency_months === -2 ? 'Fortnightly' : job.frequency_months === 1 ? 'Monthly' : job.frequency_months === 3 ? 'Quarterly' : job.frequency_months === 6 ? 'Every 6mo' : job.frequency_months === 12 ? 'Annually' : `Every ${job.frequency_months}mo`}
+                                  {job.service_subtype && <>{' · '}<span className="capitalize">{job.trade_category.replace(/_/g, ' ')}</span></>}
+                                  {' · '}{job.frequency_months === -1 ? 'Weekly' : job.frequency_months === -2 ? 'Fortnightly' : job.frequency_months === 1 ? 'Monthly' : job.frequency_months === 3 ? 'Quarterly' : job.frequency_months === 6 ? 'Every 6mo' : job.frequency_months === 12 ? 'Annually' : `Every ${job.frequency_months}mo`}
                                 </span>
                               </p>
                               <p className="text-xs text-gray-500 truncate">{job.description}</p>
@@ -1202,17 +1208,24 @@ const RECURRING_SERVICES = [
   { value: 'waterproofing', label: 'Waterproofing' },
 ];
 
-function RecurringJobForm({ onSave, onCancel, savedTradies }: {
-  onSave: (data: { tradie_id: string | null; trade_category: string; description: string; frequency_months: number; next_due_date: string; reminder_days_before: number; location: string; budget?: number }) => Promise<void>;
+function RecurringJobForm({ onSave, onCancel, savedTradies, recurringServices }: {
+  onSave: (data: { tradie_id: string | null; trade_category: string; service_subtype?: string; description: string; frequency_months: number; next_due_date: string; reminder_days_before: number; location: string; budget?: number }) => Promise<void>;
   onCancel: () => void;
   savedTradies: TradieWithDetails[];
+  recurringServices: { value: string; label: string }[];
 }) {
   const [category, setCategory] = useState('');
+  const [serviceSubtype, setServiceSubtype] = useState('');
+  const [customSubtype, setCustomSubtype] = useState('');
   const [saving, setSaving] = useState(false);
   const [selectedTradieId, setSelectedTradieId] = useState('');
   const [location, setLocation] = useState('');
   const [budget, setBudget] = useState('');
   const [budgetType, setBudgetType] = useState<'quote' | 'set'>('quote');
+
+  const selectedLabel = recurringServices.find(s => s.value === category)?.label || '';
+  const subcategories = selectedLabel ? (RECURRING_SERVICE_SUBCATEGORIES[selectedLabel] ?? null) : null;
+  const hasSubcategories = subcategories !== null && subcategories.length > 0;
 
   const suggestion = category ? suggestRecurringJob(category) : null;
   const [description, setDescription] = useState('');
@@ -1230,12 +1243,23 @@ function RecurringJobForm({ onSave, onCancel, savedTradies }: {
     }
   }, [category]);
 
+  // Reset subtype when category changes
+  useEffect(() => {
+    setServiceSubtype('');
+    setCustomSubtype('');
+  }, [category]);
+
+  const resolvedSubtype = hasSubcategories ? serviceSubtype : customSubtype.trim();
+
   const handleSubmit = async () => {
     if (!category || !description.trim()) return;
+    if (hasSubcategories && !serviceSubtype) return;
+    if (!hasSubcategories && !customSubtype.trim() && category) return;
     setSaving(true);
     await onSave({
       tradie_id: selectedTradieId || null,
       trade_category: category,
+      service_subtype: resolvedSubtype || undefined,
       description: description.trim(),
       frequency_months: frequency,
       next_due_date: nextDate,
@@ -1263,20 +1287,46 @@ function RecurringJobForm({ onSave, onCancel, savedTradies }: {
   return (
     <div className="border border-primary-200 rounded-xl p-3 mb-3 bg-primary-50/30 space-y-2">
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Service Type</label>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Trade Category</label>
         <select
           value={category}
           onChange={e => setCategory(e.target.value)}
           className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 bg-white"
         >
-          <option value="">Select a service...</option>
-          {RECURRING_SERVICES.map(s => (
+          <option value="">Select a trade...</option>
+          {recurringServices.map(s => (
             <option key={s.value} value={s.value}>{s.label}</option>
           ))}
         </select>
       </div>
 
       {category && (
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Service Type</label>
+          {hasSubcategories ? (
+            <select
+              value={serviceSubtype}
+              onChange={e => setServiceSubtype(e.target.value)}
+              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 bg-white"
+            >
+              <option value="">Select a service type...</option>
+              {subcategories.map(sub => (
+                <option key={sub} value={sub}>{sub}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={customSubtype}
+              onChange={e => setCustomSubtype(e.target.value)}
+              placeholder="e.g., Annual roof inspection"
+              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+            />
+          )}
+        </div>
+      )}
+
+      {category && (hasSubcategories ? serviceSubtype : customSubtype.trim()) && (
         <>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
@@ -1430,7 +1480,7 @@ function RecurringJobForm({ onSave, onCancel, savedTradies }: {
             <button onClick={onCancel} className="flex-1 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">Cancel</button>
             <button
               onClick={handleSubmit}
-              disabled={saving || !description.trim()}
+              disabled={saving || !description.trim() || (hasSubcategories ? !serviceSubtype : !customSubtype.trim())}
               className="flex-1 px-3 py-1.5 bg-warm-500 text-white rounded-lg text-xs font-medium hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
@@ -1472,7 +1522,7 @@ function RecurringJobEditForm({ job, savedTradies, onSave, onCancel }: {
     <div className="p-3 rounded-xl border border-primary-300 bg-primary-50/40 space-y-2">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-primary-700 uppercase tracking-wide">
-          Edit: {job.trade_category.replace(/_/g, ' ')}
+          Edit: {job.service_subtype || job.trade_category.replace(/_/g, ' ')}
         </p>
         <button onClick={onCancel} className="p-1 text-gray-400 hover:text-gray-600">
           <X className="w-3.5 h-3.5" />

@@ -230,7 +230,7 @@ export default function TradieDashboard() {
   const [monthlyUnlocks, setMonthlyUnlocks] = useState(0);
 
   // Recurring sessions
-  const [recurringSessions, setRecurringSessions] = useState<(RecurringSession & { recurring_job?: { trade_category: string; description: string; client_id: string; preferred_time: string | null } })[]>([]);
+  const [recurringSessions, setRecurringSessions] = useState<(RecurringSession & { recurring_job?: { trade_category: string; service_subtype: string | null; description: string; client_id: string; preferred_time: string | null } })[]>([]);
   const [recurringLoading, setRecurringLoading] = useState(false);
   const [tradieInvoices, setTradieInvoices] = useState<RecurringInvoice[]>([]);
 
