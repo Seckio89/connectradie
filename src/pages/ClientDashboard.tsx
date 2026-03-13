@@ -198,7 +198,7 @@ export default function ClientDashboard() {
       // Create a job from the recurring service
       const jobData: Record<string, unknown> = {
         client_id: user.id,
-        title: `${job.trade_category.replace(/_/g, ' ')} — Recurring Service`,
+        title: `${job.service_subtype || job.trade_category.replace(/_/g, ' ')} — Recurring Service`,
         description: `[${job.trade_category}] ${job.description}`,
         status: 'pending',
         location_address: job.location || null,
@@ -874,7 +874,6 @@ export default function ClientDashboard() {
                   }}
                   onCancel={() => setShowRecurringForm(false)}
                   savedTradies={savedTradies}
-                  recurringServices={RECURRING_SERVICES}
                 />
               )}
 
@@ -1174,45 +1173,10 @@ export default function ClientDashboard() {
   );
 }
 
-const RECURRING_SERVICES = [
-  { value: 'cleaning_weekly', label: 'House Cleaning' },
-  { value: 'lawn_mowing_weekly', label: 'Lawn Mowing' },
-  { value: 'pool_maintenance_weekly', label: 'Pool Service' },
-  { value: 'garden_maintenance', label: 'Garden Care' },
-  { value: 'landscaping', label: 'Landscaping' },
-  { value: 'gutter_cleaning', label: 'Gutter Cleaning' },
-  { value: 'window_cleaning', label: 'Window Cleaning' },
-  { value: 'carpet_cleaning', label: 'Carpet Cleaning' },
-  { value: 'plumbing', label: 'Plumbing' },
-  { value: 'electrical', label: 'Electrical' },
-  { value: 'pest_control', label: 'Pest Control' },
-  { value: 'air_conditioning', label: 'Air Conditioning' },
-  { value: 'hvac', label: 'Heating' },
-  { value: 'roofing', label: 'Roofing' },
-  { value: 'solar', label: 'Solar Panels' },
-  { value: 'painting', label: 'Painting' },
-  { value: 'carpentry', label: 'Carpentry' },
-  { value: 'fencing', label: 'Fencing' },
-  { value: 'tiling', label: 'Tiling' },
-  { value: 'concreting', label: 'Concreting' },
-  { value: 'tree_lopping', label: 'Tree Lopping' },
-  { value: 'termite_inspection', label: 'Termite Inspection' },
-  { value: 'hot_water_service', label: 'Hot Water Service' },
-  { value: 'fire_safety', label: 'Fire Safety' },
-  { value: 'security_systems', label: 'Security Systems' },
-  { value: 'garage_doors', label: 'Garage Doors' },
-  { value: 'appliance_service', label: 'Appliance Service' },
-  { value: 'septic_tank', label: 'Septic Tank' },
-  { value: 'chimney_sweep', label: 'Chimney Sweep' },
-  { value: 'rendering', label: 'Rendering' },
-  { value: 'waterproofing', label: 'Waterproofing' },
-];
-
-function RecurringJobForm({ onSave, onCancel, savedTradies, recurringServices }: {
+function RecurringJobForm({ onSave, onCancel, savedTradies }: {
   onSave: (data: { tradie_id: string | null; trade_category: string; service_subtype?: string; description: string; frequency_months: number; next_due_date: string; reminder_days_before: number; location: string; budget?: number }) => Promise<void>;
   onCancel: () => void;
   savedTradies: TradieWithDetails[];
-  recurringServices: { value: string; label: string }[];
 }) {
   const [category, setCategory] = useState('');
   const [serviceSubtype, setServiceSubtype] = useState('');
@@ -1223,8 +1187,8 @@ function RecurringJobForm({ onSave, onCancel, savedTradies, recurringServices }:
   const [budget, setBudget] = useState('');
   const [budgetType, setBudgetType] = useState<'quote' | 'set'>('quote');
 
-  const selectedLabel = recurringServices.find(s => s.value === category)?.label || '';
-  const subcategories = selectedLabel ? (RECURRING_SERVICE_SUBCATEGORIES[selectedLabel] ?? null) : null;
+  const tradeKeys = Object.keys(RECURRING_SERVICE_SUBCATEGORIES);
+  const subcategories = category ? (RECURRING_SERVICE_SUBCATEGORIES[category] ?? null) : null;
   const hasSubcategories = subcategories !== null && subcategories.length > 0;
 
   const suggestion = category ? suggestRecurringJob(category) : null;
@@ -1287,15 +1251,15 @@ function RecurringJobForm({ onSave, onCancel, savedTradies, recurringServices }:
   return (
     <div className="border border-primary-200 rounded-xl p-3 mb-3 bg-primary-50/30 space-y-2">
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Trade Category</label>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Trade</label>
         <select
           value={category}
           onChange={e => setCategory(e.target.value)}
           className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 bg-white"
         >
           <option value="">Select a trade...</option>
-          {recurringServices.map(s => (
-            <option key={s.value} value={s.value}>{s.label}</option>
+          {tradeKeys.map(trade => (
+            <option key={trade} value={trade}>{trade}</option>
           ))}
         </select>
       </div>

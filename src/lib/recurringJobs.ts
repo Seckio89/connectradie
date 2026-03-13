@@ -5,7 +5,7 @@ import { supabase } from './supabase';
 // ---------------------------------------------------------------------------
 
 export const RECURRING_SERVICE_SUBCATEGORIES: Record<string, string[]> = {
-  'House Cleaning': [
+  'Cleaning': [
     'Regular Domestic Clean',
     'Deep Clean',
     'End of Lease Clean',
@@ -15,78 +15,98 @@ export const RECURRING_SERVICE_SUBCATEGORIES: Record<string, string[]> = {
     'Post Construction Clean',
     'Spring Clean',
     'Move In / Move Out Clean',
+    'Body Corporate Clean',
+    'Medical / Childcare Clean',
+    'School / Education Clean',
   ],
-  'Lawn Mowing': [
+  'Lawn & Garden': [
     'Regular Lawn Mow',
     'Lawn Mow & Edge',
     'Full Garden Maintenance',
     'Hedge Trimming',
     'Lawn Fertilising',
     'Weed Control',
-  ],
-  'Pool Service': [
-    'Regular Pool Clean',
-    'Pool Chemical Balance',
-    'Pool Filter Service',
-    'Full Pool Maintenance',
-  ],
-  'Garden Care': [
-    'Regular Garden Tidy',
     'Garden Bed Maintenance',
     'Pruning & Trimming',
     'Mulching',
-    'Planting',
-    'Full Garden Makeover',
+    'Landscaping Maintenance',
+  ],
+  'Pool & Spa': [
+    'Regular Pool Clean',
+    'Pool Chemical Balance',
+    'Pool Filter Service',
+    'Spa Maintenance',
+    'Full Pool & Spa Service',
   ],
   'Pest Control': [
-    'Regular Pest Inspection',
+    'General Pest Control',
     'Ant Treatment',
     'Cockroach Treatment',
     'Spider Treatment',
     'Termite Inspection',
-    'General Pest Control',
+    'Rodent Control',
+    'Bed Bug Treatment',
+    'Pre-Purchase Inspection',
   ],
   'Window Cleaning': [
     'Interior Windows',
     'Exterior Windows',
     'Interior & Exterior Windows',
-    'High Rise / Commercial Windows',
+    'High Rise Windows',
+    'Commercial Windows',
     'Pressure Washing',
+    'Solar Panel Clean',
   ],
-  'Carpet Cleaning': [
+  'Carpet & Flooring': [
     'Regular Carpet Clean',
     'Steam Clean',
+    'Dry Clean',
     'Stain Treatment',
     'End of Lease Carpet Clean',
     'Upholstery Clean',
+    'Tile & Grout Clean',
+    'Hardwood Floor Polish',
   ],
-  'Gutter Cleaning': [
+  'Gutters & Roof': [
     'Gutter Clean & Flush',
-    'Gutter Guard Installation',
+    'Gutter Guard Inspection',
     'Downpipe Clear',
+    'Roof Inspection',
+    'Roof Wash',
   ],
   'Plumbing': [
     'Regular Maintenance Check',
     'Hot Water Service',
     'Leak Inspection',
     'Drain Maintenance',
+    'Backflow Prevention Check',
   ],
   'Electrical': [
     'Safety Inspection',
-    'Regular Maintenance',
-    'Emergency Lighting Check',
     'RCD Testing',
+    'Emergency Lighting Check',
+    'Switchboard Maintenance',
+    'Solar System Check',
   ],
-  'Air Conditioning': [
+  'Air Conditioning & HVAC': [
     'Filter Clean',
     'Full Service & Clean',
     'Gas Top Up',
     'Annual Maintenance',
+    'Duct Cleaning',
+    'Commercial HVAC Service',
   ],
   'Security': [
     'Alarm System Check',
     'CCTV Maintenance',
     'Access Control Service',
+    'Fire Safety Inspection',
+  ],
+  'Handyman': [
+    'Regular Property Maintenance',
+    'Painting Touch Up',
+    'General Repairs',
+    'Seasonal Maintenance',
   ],
 };
 
