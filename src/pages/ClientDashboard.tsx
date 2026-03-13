@@ -21,6 +21,8 @@ import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import { getRecurringJobs, createRecurringJob, cancelRecurringJob, updateRecurringJob, suggestRecurringJob, getUpcomingSessions, type RecurringJob, type RecurringSession } from '../lib/recurringJobs';
 import RecurringSessionCard from '../components/RecurringSessionCard';
+import RecurringInvoiceCard from '../components/RecurringInvoiceCard';
+import type { RecurringInvoice } from '../components/RecurringInvoiceCard';
 
 export default function ClientDashboard() {
   const [savedTradies, setSavedTradies] = useState<TradieWithDetails[]>([]);
@@ -45,6 +47,7 @@ export default function ClientDashboard() {
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
   const [showArchived, setShowArchived] = useState(false);
   const [releasedJobIds, setReleasedJobIds] = useState<Set<string>>(new Set());
+  const [invoices, setInvoices] = useState<RecurringInvoice[]>([]);
 
   const { user, profile } = useAuth();
   const isClientPro = profile?.is_premium;
@@ -76,6 +79,19 @@ export default function ClientDashboard() {
       );
       setJobSessions(sessionsMap);
       setSessionsLoading(new Set());
+    } catch { /* ignore */ }
+  }, [user]);
+
+  const fetchInvoices = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('recurring_invoices')
+        .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, agreed_price)')
+        .eq('homeowner_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(6);
+      setInvoices((data ?? []) as unknown as RecurringInvoice[]);
     } catch { /* ignore */ }
   }, [user]);
 
@@ -256,6 +272,7 @@ export default function ClientDashboard() {
       fetchUnreadTradieIds();
       fetchTrainingMode();
       fetchRecurring();
+      fetchInvoices();
       fetchSpendingSummary();
       fetchRecentJobs();
     }
@@ -1016,6 +1033,27 @@ export default function ClientDashboard() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+
+            {/* Invoices */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
+                <DollarSign className="w-4 h-4 text-secondary-600" />
+                Invoices
+              </h3>
+              {invoices.length > 0 ? (
+                <div className="space-y-3">
+                  {invoices.map((inv) => (
+                    <RecurringInvoiceCard key={inv.id} invoice={inv} userRole="client" />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <DollarSign className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">No invoices yet</p>
+                  <p className="text-xs text-gray-400 mt-1">Invoices are generated at the end of each billing cycle</p>
                 </div>
               )}
             </div>

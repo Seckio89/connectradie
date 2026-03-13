@@ -28,6 +28,7 @@ import {
   TrendingUp,
   Star,
   MapPin,
+  FileText,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getAuthHeaders } from '../lib/edgeFn';
@@ -49,6 +50,8 @@ import { isPro, FREE_LIMITS, getMonthlyJobAccepts, getMonthlyLeadUnlocks } from 
 import UserTradeBadges from '../components/UserTradeBadges';
 import WelcomeGuide from '../components/WelcomeGuide';
 import RecurringSessionCard from '../components/RecurringSessionCard';
+import RecurringInvoiceCard from '../components/RecurringInvoiceCard';
+import type { RecurringInvoice } from '../components/RecurringInvoiceCard';
 import TradieDateBlocker from '../components/TradieDateBlocker';
 import { getTradieUpcomingSessions } from '../lib/recurringJobs';
 import type { RecurringSession } from '../lib/recurringJobs';
@@ -229,6 +232,20 @@ export default function TradieDashboard() {
   // Recurring sessions
   const [recurringSessions, setRecurringSessions] = useState<(RecurringSession & { recurring_job?: { trade_category: string; description: string; client_id: string; preferred_time: string | null } })[]>([]);
   const [recurringLoading, setRecurringLoading] = useState(false);
+  const [tradieInvoices, setTradieInvoices] = useState<RecurringInvoice[]>([]);
+
+  const fetchTradieInvoices = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('recurring_invoices')
+        .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, agreed_price)')
+        .eq('tradie_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(6);
+      setTradieInvoices((data ?? []) as unknown as RecurringInvoice[]);
+    } catch { /* ignore */ }
+  }, [user]);
 
   const fetchRecurringSessions = useCallback(async () => {
     if (!user) return;
@@ -377,6 +394,7 @@ export default function TradieDashboard() {
       fetchConversations();
       fetchCalendarIntegration();
       fetchRecurringSessions();
+      fetchTradieInvoices();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, tradieDetails?.subscription_tier, currentDate]);
@@ -1512,6 +1530,27 @@ export default function TradieDashboard() {
               <RefreshCw className="w-8 h-8 text-gray-300 mx-auto mb-2" />
               <p className="text-sm text-gray-600">No recurring jobs scheduled</p>
               <p className="text-xs text-gray-400 mt-1">When clients set up recurring services with you, upcoming sessions appear here.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Invoices */}
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-gray-400" />
+            Invoices
+          </h2>
+          {tradieInvoices.length > 0 ? (
+            <div className="space-y-3">
+              {tradieInvoices.map((inv) => (
+                <RecurringInvoiceCard key={inv.id} invoice={inv} userRole="tradie" />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <FileText className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-600">No invoices yet</p>
+              <p className="text-xs text-gray-400 mt-1">Invoices for your recurring services will appear here</p>
             </div>
           )}
         </div>
