@@ -840,15 +840,6 @@ export default function ClientDashboard() {
                 </button>
               </div>
 
-              {!showRecurringForm && recurringJobs.length === 0 && (
-                <button
-                  onClick={() => setShowRecurringForm(true)}
-                  className="w-full text-center text-sm text-primary-600 hover:text-primary-700 font-medium py-2 mb-2 hover:bg-primary-50 rounded-lg transition-colors"
-                >
-                  + Set up a new recurring job
-                </button>
-              )}
-
               {!showRecurringForm && recurringJobs.length > 0 && (
                 <button
                   onClick={() => setShowRecurringForm(true)}
@@ -861,27 +852,31 @@ export default function ClientDashboard() {
               {showRecurringForm && (
                 <RecurringJobForm
                   onSave={async (data) => {
-                    try {
-                      const { budget, ...rest } = data;
-                      await createRecurringJob({ ...rest, agreed_price: budget });
-                      setShowRecurringForm(false);
-                      fetchRecurring();
-                      showToast('Recurring service scheduled');
-                    } catch (err) {
-                      console.error('createRecurringJob error:', err);
-                      showToast('Failed to create recurring service', true);
-                    }
+                    const { budget, ...rest } = data;
+                    await createRecurringJob({ ...rest, agreed_price: budget });
+                    fetchRecurring();
                   }}
                   onCancel={() => setShowRecurringForm(false)}
+                  onDone={() => { setShowRecurringForm(false); showToast('Recurring service scheduled'); }}
+                  onSendQuote={async (job) => {
+                    await sendQuoteRequest(job, 'saved');
+                  }}
                   savedTradies={savedTradies}
                 />
               )}
 
               {recurringJobs.length === 0 && !showRecurringForm ? (
-                <div className="text-center py-4">
-                  <CalendarClock className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">No recurring services set up</p>
-                  <p className="text-xs text-gray-400 mt-1">Schedule regular maintenance to keep your home in top shape</p>
+                <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 text-center">
+                  <RefreshCw className="w-7 h-7 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-gray-800">Set up a recurring service</p>
+                  <p className="text-xs text-gray-500 mt-1">Schedule regular cleaning, lawn mowing, pool service and more. One setup, automatic reminders every cycle.</p>
+                  <button
+                    onClick={() => setShowRecurringForm(true)}
+                    className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Schedule a Service
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -973,52 +968,69 @@ export default function ClientDashboard() {
                             </div>
                           </div>
                         </div>
-                        {/* Quote Request Actions */}
-                        <div className="px-3 pb-2.5 pt-0.5 flex gap-1.5" onClick={e => e.stopPropagation()}>
-                          {sentRecurringIds.has(job.id) ? (
-                            <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs font-medium border border-green-200">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              Sent
-                            </div>
-                          ) : (
-                            <>
-                              {job.tradie?.full_name ? (
+                        {/* Smart CTA */}
+                        <div className="px-3 pb-2.5 pt-0.5" onClick={e => e.stopPropagation()}>
+                          {(() => {
+                            const sessions = jobSessions[job.id] ?? [];
+                            const nextSession = sessions.find(s => s.status === 'scheduled');
+                            const nextSessionDays = nextSession
+                              ? Math.ceil((new Date(nextSession.scheduled_date).getTime() - new Date().getTime()) / 86400000)
+                              : null;
+
+                            if (sentRecurringIds.has(job.id)) {
+                              return (
+                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-xs font-medium border border-gray-200 cursor-not-allowed">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  Awaiting Quote...
+                                </div>
+                              );
+                            }
+                            if (nextSessionDays !== null && nextSessionDays <= 3 && nextSessionDays >= 0) {
+                              return (
+                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-medium border border-amber-200">
+                                  <CalendarClock className="w-3.5 h-3.5" />
+                                  Session in {nextSessionDays === 0 ? 'today' : `${nextSessionDays} day${nextSessionDays !== 1 ? 's' : ''}`}
+                                </div>
+                              );
+                            }
+                            if (sessions.length > 0) {
+                              return (
+                                <button className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 border border-emerald-300 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-50 transition-colors">
+                                  <Eye className="w-3.5 h-3.5" />
+                                  View Sessions
+                                </button>
+                              );
+                            }
+                            if (job.tradie?.full_name) {
+                              return (
                                 <button
                                   onClick={() => sendQuoteRequest(job, 'saved')}
-                                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-warm-500 text-white rounded-lg text-xs font-medium hover:bg-warm-600 transition-colors"
+                                  className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-medium hover:bg-emerald-600 transition-colors"
                                 >
-                                  <Send className="w-3 h-3" />
+                                  <Send className="w-3.5 h-3.5" />
                                   Send to {job.tradie.full_name.split(' ')[0]}
+                                  <ArrowRight className="w-3 h-3" />
                                 </button>
-                              ) : matchingSavedCount > 0 ? (
-                                <button
-                                  onClick={() => sendQuoteRequest(job, 'saved')}
-                                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-warm-500 text-white rounded-lg text-xs font-medium hover:bg-warm-600 transition-colors"
-                                >
-                                  <Send className="w-3 h-3" />
-                                  Send to Saved ({matchingSavedCount})
-                                </button>
-                              ) : null}
-                              <button
-                                onClick={() => sendQuoteRequest(job, 'all')}
-                                className={`${job.tradie?.full_name || matchingSavedCount > 0 ? 'flex-1' : 'w-full'} inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 transition-colors`}
+                              );
+                            }
+                            return (
+                              <Link
+                                to={`/search?trade=${encodeURIComponent(job.trade_category)}`}
+                                className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-medium hover:bg-emerald-600 transition-colors"
                               >
-                                <Briefcase className="w-3 h-3" />
-                                Request Quotes
-                              </button>
-                            </>
-                          )}
+                                <Briefcase className="w-3.5 h-3.5" />
+                                Find a Tradie
+                                <ArrowRight className="w-3 h-3" />
+                              </Link>
+                            );
+                          })()}
                         </div>
-                        {/* Upcoming Sessions */}
-                        <div className="px-3 pb-3">
-                          <p className="text-xs font-medium text-gray-500 mb-2">Upcoming Sessions</p>
-                          {sessionsLoading.has(job.id) ? (
-                            <div className="flex items-center justify-center py-3">
-                              <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                            </div>
-                          ) : (jobSessions[job.id] ?? []).length > 0 ? (
+                        {/* Upcoming Sessions — only when sessions exist */}
+                        {!sessionsLoading.has(job.id) && (jobSessions[job.id] ?? []).length > 0 && (
+                          <div className="px-3 pb-3">
+                            <p className="text-xs font-medium text-gray-500 mb-2">Upcoming Sessions</p>
                             <div className="space-y-2">
-                              {(jobSessions[job.id] ?? []).map(session => (
+                              {(jobSessions[job.id] ?? []).slice(0, 2).map(session => (
                                 <RecurringSessionCard
                                   key={session.id}
                                   session={session}
@@ -1030,11 +1042,19 @@ export default function ClientDashboard() {
                                   onUpdate={fetchRecurring}
                                 />
                               ))}
+                              {(jobSessions[job.id] ?? []).length > 2 && (
+                                <button className="w-full text-center text-xs font-medium text-primary-600 hover:text-primary-700 py-1">
+                                  View all {(jobSessions[job.id] ?? []).length} sessions &rarr;
+                                </button>
+                              )}
                             </div>
-                          ) : (
-                            <p className="text-xs text-gray-400 italic py-2">No upcoming sessions scheduled</p>
-                          )}
-                        </div>
+                          </div>
+                        )}
+                        {sessionsLoading.has(job.id) && (
+                          <div className="px-3 pb-3 flex items-center justify-center py-3">
+                            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -1173,9 +1193,11 @@ export default function ClientDashboard() {
   );
 }
 
-function RecurringJobForm({ onSave, onCancel, savedTradies }: {
+function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies }: {
   onSave: (data: { tradie_id: string | null; trade_category: string; service_subtype?: string; description: string; frequency_months: number; next_due_date: string; reminder_days_before: number; location: string; budget?: number }) => Promise<void>;
   onCancel: () => void;
+  onDone: () => void;
+  onSendQuote: (job: RecurringJob) => Promise<void>;
   savedTradies: TradieWithDetails[];
 }) {
   const [category, setCategory] = useState('');
@@ -1188,6 +1210,9 @@ function RecurringJobForm({ onSave, onCancel, savedTradies }: {
   const [budgetType, setBudgetType] = useState<'quote' | 'set'>('quote');
   const [keywords, setKeywords] = useState<KeywordSuggestion[]>([]);
   const [descFocused, setDescFocused] = useState(false);
+  const [successState, setSuccessState] = useState<{ category: string; subtype: string; frequency: number; tradieId: string; tradieName: string } | null>(null);
+  const [quoteSent, setQuoteSent] = useState(false);
+  const [sendingQuote, setSendingQuote] = useState(false);
 
   const tradeKeys = Object.keys(RECURRING_SERVICE_SUBCATEGORIES);
   const subcategories = category ? (RECURRING_SERVICE_SUBCATEGORIES[category] ?? null) : null;
@@ -1239,17 +1264,29 @@ function RecurringJobForm({ onSave, onCancel, savedTradies }: {
     if (hasSubcategories && !serviceSubtype) return;
     if (!hasSubcategories && !customSubtype.trim() && category) return;
     setSaving(true);
-    await onSave({
-      tradie_id: selectedTradieId || null,
-      trade_category: category,
-      service_subtype: resolvedSubtype || undefined,
-      description: description.trim(),
-      frequency_months: frequency,
-      next_due_date: nextDate,
-      reminder_days_before: 14,
-      location: location.trim(),
-      budget: budget ? Number(budget) : undefined,
-    });
+    try {
+      await onSave({
+        tradie_id: selectedTradieId || null,
+        trade_category: category,
+        service_subtype: resolvedSubtype || undefined,
+        description: description.trim(),
+        frequency_months: frequency,
+        next_due_date: nextDate,
+        reminder_days_before: 14,
+        location: location.trim(),
+        budget: budget ? Number(budget) : undefined,
+      });
+      const selectedTradie = savedTradies.find(t => t.id === selectedTradieId);
+      setSuccessState({
+        category,
+        subtype: resolvedSubtype || category,
+        frequency,
+        tradieId: selectedTradieId,
+        tradieName: selectedTradie?.full_name || '',
+      });
+    } catch (err) {
+      console.error('createRecurringJob error:', err);
+    }
     setSaving(false);
   };
 
@@ -1266,6 +1303,112 @@ function RecurringJobForm({ onSave, onCancel, savedTradies }: {
     if (months === 60) return 'Every 5 years';
     return `Every ${months} months`;
   };
+
+  // Success state panel
+  if (successState) {
+    const tradeLabel = successState.subtype || successState.category.replace(/_/g, ' ');
+    const freqLabel = formatFrequency(successState.frequency);
+
+    return (
+      <div className="border border-emerald-200 rounded-xl p-4 mb-3 bg-emerald-50/50 space-y-3">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 capitalize">{tradeLabel}</p>
+            <p className="text-xs text-gray-500">{successState.category.replace(/_/g, ' ')} &middot; {freqLabel}</p>
+          </div>
+        </div>
+
+        {quoteSent ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-emerald-700 font-medium">
+              <CheckCircle2 className="w-4 h-4" />
+              Quote request sent to {successState.tradieName.split(' ')[0]}
+            </div>
+            <p className="text-xs text-gray-500">We'll notify you when they respond.</p>
+            <button
+              onClick={onDone}
+              className="px-4 py-1.5 border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+            >
+              Done
+            </button>
+          </div>
+        ) : successState.tradieId && successState.tradieName ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-100">
+              <div className="w-7 h-7 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-bold text-primary-600">{successState.tradieName.charAt(0)}</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">{successState.tradieName}</p>
+                <p className="text-xs text-gray-500 capitalize">{successState.category.replace(/_/g, ' ')}</p>
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                setSendingQuote(true);
+                try {
+                  // Build a minimal RecurringJob-like object for sendQuoteRequest
+                  const fakeJob = {
+                    id: '',
+                    client_id: '',
+                    tradie_id: successState.tradieId,
+                    trade_category: successState.category,
+                    service_subtype: successState.subtype,
+                    description: description.trim(),
+                    frequency_months: successState.frequency,
+                    next_due_date: '',
+                    reminder_days_before: 14,
+                    is_active: true,
+                    original_job_id: null,
+                    times_completed: 0,
+                    created_at: '',
+                    updated_at: '',
+                    location: location.trim(),
+                    tradie: { id: successState.tradieId, full_name: successState.tradieName, email: '' },
+                  } as RecurringJob;
+                  await onSendQuote(fakeJob);
+                  setQuoteSent(true);
+                } catch {
+                  // handled by parent
+                }
+                setSendingQuote(false);
+              }}
+              disabled={sendingQuote}
+              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+            >
+              {sendingQuote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Send to {successState.tradieName.split(' ')[0]} & Request Quote
+            </button>
+            <Link
+              to={`/search?trade=${encodeURIComponent(successState.category)}`}
+              className="block text-center text-xs font-medium text-primary-600 hover:text-primary-700"
+            >
+              Or find other tradies &rarr;
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Link
+              to={`/search?trade=${encodeURIComponent(successState.category)}`}
+              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors"
+            >
+              Find a Tradie for this Job
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <button
+              onClick={onDone}
+              className="w-full px-4 py-1.5 border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+            >
+              Done
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="border border-primary-200 rounded-xl p-3 mb-3 bg-primary-50/30 space-y-2">
