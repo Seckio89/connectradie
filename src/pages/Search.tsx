@@ -15,6 +15,7 @@ import { recordProfileView, getDailyViewCount, hasEngagement, getRemainingViews,
 import { useToast } from '../hooks/useToast';
 import { saveSearch, getSavedSearches, deleteSavedSearch, toggleSearchAlerts, type SavedSearch, type SearchFilters } from '../lib/savedSearches';
 import { TRADE_OPTIONS } from '../lib/tradeCategories';
+import { calculateTradeScore, buildScoringFactors } from '../lib/searchRanking';
 
 const tradeCategories = [{ value: '', label: 'All Trades' }, ...TRADE_OPTIONS];
 
@@ -56,8 +57,17 @@ const advancedCategories: Record<string, string[]> = {
   insulation: ['Ceiling Insulation', 'Wall Insulation', 'Floor Insulation', 'Roof Insulation', 'Acoustic Insulation', 'Spray Foam', 'Batts Installation', 'Underfloor Insulation', 'Commercial Insulation'],
 };
 
+interface TradieRatingInfo {
+  averageRating: number;
+  totalReviews: number;
+}
+
 interface TradieRatingMap {
   [tradieId: string]: number;
+}
+
+interface TradieRatingDetailMap {
+  [tradieId: string]: TradieRatingInfo;
 }
 
 export default function Search() {
@@ -80,6 +90,8 @@ export default function Search() {
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [tradieRatings, setTradieRatings] = useState<TradieRatingMap>({});
+  const [tradieRatingDetails, setTradieRatingDetails] = useState<TradieRatingDetailMap>({});
+  const [jobCompletionCounts, setJobCompletionCounts] = useState<Record<string, number>>({});
   const [showViewLimitModal, setShowViewLimitModal] = useState(false);
   const [, setShowSubscriptionModal] = useState(false);
   const [dailyViewCount, setDailyViewCount] = useState(0);
@@ -125,19 +137,25 @@ export default function Search() {
 
   useEffect(() => {
     applyFilters();
-  }, [tradies, ratingFilter, contractorTypeFilter, searchQuery, tradieRatings, emergencyFilter]);
+  }, [tradies, ratingFilter, contractorTypeFilter, searchQuery, tradieRatings, tradieRatingDetails, jobCompletionCounts, emergencyFilter]);
 
   const fetchRatings = async () => {
     const { data } = await supabase
       .from('tradie_ratings')
-      .select('tradie_id, average_rating');
+      .select('tradie_id, average_rating, total_reviews');
 
     if (data) {
       const map: TradieRatingMap = {};
-      data.forEach((r: { tradie_id: string; average_rating: number }) => {
+      const detailMap: TradieRatingDetailMap = {};
+      data.forEach((r: { tradie_id: string; average_rating: number; total_reviews: number }) => {
         map[r.tradie_id] = r.average_rating;
+        detailMap[r.tradie_id] = {
+          averageRating: r.average_rating,
+          totalReviews: r.total_reviews,
+        };
       });
       setTradieRatings(map);
+      setTradieRatingDetails(detailMap);
     }
   };
 
@@ -192,6 +210,21 @@ export default function Search() {
         .select('tradie_id')
         .in('tradie_id', tradieIds)
         .limit(1000);
+
+      // Fetch completed job counts for ranking
+      const { data: completedJobs } = await supabase
+        .from('jobs')
+        .select('tradie_id')
+        .in('tradie_id', tradieIds)
+        .eq('status', 'completed');
+
+      const completionCounts: Record<string, number> = {};
+      if (completedJobs) {
+        for (const j of completedJobs) {
+          completionCounts[j.tradie_id] = (completionCounts[j.tradie_id] || 0) + 1;
+        }
+      }
+      setJobCompletionCounts(prev => ({ ...prev, ...completionCounts }));
 
       const tradiesWithAnySlots = new Set(
         (tradiesWithSlots || []).map((s: { tradie_id: string }) => s.tradie_id)
@@ -267,6 +300,47 @@ export default function Search() {
     if (emergencyFilter) {
       result = result.filter((t) => t.is_emergency_available);
     }
+
+    // Rank results by weighted score (premium tradies still float to top)
+    result.sort((a, b) => {
+      // Premium tradies always rank first
+      const aPremium = a.is_premium ? 1 : 0;
+      const bPremium = b.is_premium ? 1 : 0;
+      if (aPremium !== bPremium) return bPremium - aPremium;
+
+      const aRating = tradieRatingDetails[a.id] || { averageRating: 0, totalReviews: 0 };
+      const bRating = tradieRatingDetails[b.id] || { averageRating: 0, totalReviews: 0 };
+
+      const aScore = calculateTradeScore(buildScoringFactors({
+        abn_verified: a.abn_verified,
+        license_verified: a.license_verified,
+        verification_status: a.verification_status,
+        bio: a.tradie_details?.bio,
+        avatar_url: a.avatar_url,
+        phone: a.phone,
+        postcode: a.postcode,
+        tradie_details: a.tradie_details,
+        averageRating: aRating.averageRating,
+        reviewCount: aRating.totalReviews,
+        jobsCompleted: jobCompletionCounts[a.id] || 0,
+      }));
+
+      const bScore = calculateTradeScore(buildScoringFactors({
+        abn_verified: b.abn_verified,
+        license_verified: b.license_verified,
+        verification_status: b.verification_status,
+        bio: b.tradie_details?.bio,
+        avatar_url: b.avatar_url,
+        phone: b.phone,
+        postcode: b.postcode,
+        tradie_details: b.tradie_details,
+        averageRating: bRating.averageRating,
+        reviewCount: bRating.totalReviews,
+        jobsCompleted: jobCompletionCounts[b.id] || 0,
+      }));
+
+      return bScore - aScore;
+    });
 
     setFilteredTradies(result);
   };
