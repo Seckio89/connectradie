@@ -605,3 +605,74 @@ export async function completeSession(sessionId: string): Promise<void> {
 
   if (error) throw new Error(error.message);
 }
+
+/**
+ * Accept a reschedule proposal — sets actual_date as confirmed.
+ */
+export async function acceptReschedule(sessionId: string): Promise<void> {
+  const { error } = await supabase
+    .from('recurring_sessions')
+    .update({ status: 'scheduled' })
+    .eq('id', sessionId);
+
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Fetch upcoming sessions assigned to a tradie (across all recurring jobs).
+ */
+export async function getTradieUpcomingSessions(
+  tradieId: string,
+  limit = 5,
+): Promise<(RecurringSession & { recurring_job?: { trade_category: string; description: string; client_id: string; preferred_time: string | null } })[]> {
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('recurring_sessions')
+    .select(`
+      *,
+      recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(
+        trade_category,
+        description,
+        client_id,
+        preferred_time,
+        tradie_id
+      )
+    `)
+    .eq('status', 'scheduled')
+    .gte('scheduled_date', today)
+    .order('scheduled_date', { ascending: true })
+    .limit(limit * 3); // fetch extra, filter client-side
+
+  if (error) throw new Error(error.message);
+
+  // Filter to only sessions where the recurring job's tradie matches
+  const filtered = (data ?? []).filter((row: Record<string, unknown>) => {
+    const job = row.recurring_job as { tradie_id?: string } | null;
+    return job?.tradie_id === tradieId;
+  });
+
+  return filtered.slice(0, limit) as (RecurringSession & { recurring_job?: { trade_category: string; description: string; client_id: string; preferred_time: string | null } })[];
+}
+
+/**
+ * Insert a notification for a user (e.g., reschedule proposal).
+ */
+export async function insertNotification(
+  userId: string,
+  type: string,
+  message: string,
+  metadata?: Record<string, unknown>,
+): Promise<void> {
+  const { error } = await supabase
+    .from('notifications')
+    .insert({
+      user_id: userId,
+      type,
+      message,
+      metadata: metadata ?? {},
+      read: false,
+    });
+
+  if (error) throw new Error(error.message);
+}

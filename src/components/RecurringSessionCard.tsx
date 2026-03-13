@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Calendar, CheckCircle2, SkipForward, Clock, Plus, X, AlertTriangle } from 'lucide-react';
+import { Calendar, CheckCircle2, SkipForward, Clock, Plus, X, AlertTriangle, Send } from 'lucide-react';
 import type { RecurringSession, RecurringSessionStatus } from '../lib/recurringJobs';
 import {
   rescheduleSession,
   skipSession,
   completeSession,
   addExtraSession,
+  acceptReschedule,
+  insertNotification,
 } from '../lib/recurringJobs';
 import { getBlockedDates, checkClash } from '../lib/availability';
 
@@ -32,6 +34,7 @@ interface RecurringSessionCardProps {
   recurringJobId: string;
   userRole: 'client' | 'tradie';
   tradieId?: string;
+  clientId?: string;
   preferredTime?: string;
   onUpdate: () => void;
 }
@@ -41,12 +44,14 @@ export default function RecurringSessionCard({
   recurringJobId,
   userRole,
   tradieId,
+  clientId,
   preferredTime,
   onUpdate,
 }: RecurringSessionCardProps) {
   const [showReschedule, setShowReschedule] = useState(false);
   const [showSkip, setShowSkip] = useState(false);
   const [showExtra, setShowExtra] = useState(false);
+  const [showCounterPropose, setShowCounterPropose] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [reason, setReason] = useState('');
   const [extraDate, setExtraDate] = useState('');
@@ -66,11 +71,18 @@ export default function RecurringSessionCard({
     month: 'short',
   });
 
-  const isActionable = session.status === 'scheduled' || session.status === 'rescheduled';
+  const isActionable = session.status === 'scheduled';
+  const isTradie = userRole === 'tradie';
+  const isClient = userRole === 'client';
+
+  // Tradie proposed a reschedule — homeowner can accept or counter-propose
+  const isTradieProposal = session.status === 'rescheduled' && session.reschedule_by === 'tradie';
+  // Client proposed a reschedule — tradie can accept or counter-propose
+  const isClientProposal = session.status === 'rescheduled' && session.reschedule_by === 'client';
 
   // Fetch blocked dates when reschedule form opens
   useEffect(() => {
-    if (!showReschedule || !tradieId) return;
+    if ((!showReschedule && !showCounterPropose) || !tradieId) return;
     let cancelled = false;
 
     const fetchBlocked = async () => {
@@ -85,13 +97,13 @@ export default function RecurringSessionCard({
         );
         if (!cancelled) setBlockedDates(new Set(dates));
       } catch {
-        // non-critical — just won't show blocked dates
+        // non-critical
       }
     };
 
     fetchBlocked();
     return () => { cancelled = true; };
-  }, [showReschedule, tradieId]);
+  }, [showReschedule, showCounterPropose, tradieId]);
 
   // Check clash when reschedule date changes
   useEffect(() => {
@@ -131,10 +143,63 @@ export default function RecurringSessionCard({
     setLoading(true);
     try {
       await rescheduleSession(session.id, rescheduleDate, reason.trim(), userRole);
-      setShowReschedule(false);
-      setRescheduleDate('');
-      setReason('');
-      setClashWarning('');
+
+      // Notify the other party
+      const proposedDateStr = new Date(rescheduleDate + 'T00:00:00').toLocaleDateString('en-AU', {
+        day: 'numeric', month: 'short',
+      });
+
+      if (isTradie && clientId) {
+        await insertNotification(
+          clientId,
+          'reschedule_proposal',
+          `Your tradie has proposed a new date for ${proposedDateStr} — tap to review`,
+          { session_id: session.id, recurring_job_id: recurringJobId, proposed_date: rescheduleDate },
+        );
+      } else if (isClient && tradieId) {
+        await insertNotification(
+          tradieId,
+          'reschedule_proposal',
+          `Your client has proposed a new date for ${proposedDateStr} — tap to review`,
+          { session_id: session.id, recurring_job_id: recurringJobId, proposed_date: rescheduleDate },
+        );
+      }
+
+      resetForms();
+      onUpdate();
+    } catch {
+      // handled by parent
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAcceptReschedule = async () => {
+    setLoading(true);
+    try {
+      await acceptReschedule(session.id);
+
+      // Notify proposer that their date was accepted
+      const acceptedDateStr = new Date(displayDate + 'T00:00:00').toLocaleDateString('en-AU', {
+        day: 'numeric', month: 'short',
+      });
+
+      if (isClient && tradieId) {
+        await insertNotification(
+          tradieId,
+          'reschedule_accepted',
+          `Your proposed date of ${acceptedDateStr} has been accepted`,
+          { session_id: session.id, recurring_job_id: recurringJobId },
+        );
+      } else if (isTradie && clientId) {
+        await insertNotification(
+          clientId,
+          'reschedule_accepted',
+          `Your proposed date of ${acceptedDateStr} has been accepted`,
+          { session_id: session.id, recurring_job_id: recurringJobId },
+        );
+      }
+
       onUpdate();
     } catch {
       // handled by parent
@@ -198,13 +263,18 @@ export default function RecurringSessionCard({
     setShowReschedule(false);
     setShowSkip(false);
     setShowExtra(false);
+    setShowCounterPropose(false);
     setReason('');
     setClashWarning('');
     setRescheduleDate('');
   };
 
-  // Build min attribute for date picker (today)
   const minDate = new Date().toISOString().split('T')[0];
+
+  // Determine if this user is viewing a proposal from the other party
+  const showProposalResponse =
+    (isTradieProposal && isClient && !showCounterPropose) ||
+    (isClientProposal && isTradie && !showCounterPropose);
 
   return (
     <div className={`rounded-xl border p-4 ${style.bg} transition-all`}>
@@ -240,55 +310,159 @@ export default function RecurringSessionCard({
         </div>
       )}
 
-      {/* Action Buttons */}
+      {/* Proposal Response (homeowner sees tradie's proposal, or tradie sees client's proposal) */}
+      {showProposalResponse && (
+        <div className="mt-3 p-3 bg-white rounded-lg border border-gray-200">
+          <p className="text-xs font-medium text-gray-900 mb-2">
+            {isTradieProposal ? 'Your tradie proposed' : 'Your client proposed'} a new date:{' '}
+            <span className="text-emerald-700 font-semibold">
+              {new Date(displayDate + 'T00:00:00').toLocaleDateString('en-AU', {
+                weekday: 'short', day: 'numeric', month: 'short',
+              })}
+            </span>
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleAcceptReschedule}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+            >
+              <CheckCircle2 className="w-3 h-3" />
+              {loading ? 'Accepting...' : 'Accept New Date'}
+            </button>
+            <button
+              onClick={() => { resetForms(); setShowCounterPropose(true); }}
+              className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+            >
+              <Clock className="w-3 h-3" />
+              Propose Different Date
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Counter-propose form */}
+      {showCounterPropose && (
+        <div className="mt-3 space-y-2">
+          <label className="block text-xs font-medium text-gray-600">Propose a different date</label>
+          <input
+            type="date"
+            value={rescheduleDate}
+            min={minDate}
+            onChange={(e) => setRescheduleDate(e.target.value)}
+            className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+              clashWarning ? 'border-red-300 bg-red-50' : 'border-gray-200'
+            }`}
+          />
+          {blockedDates.size > 0 && (
+            <p className="text-xs text-gray-400">
+              {blockedDates.size} date{blockedDates.size !== 1 ? 's' : ''} fully booked
+            </p>
+          )}
+          {checkingClash && (
+            <p className="text-xs text-gray-400 animate-pulse">Checking availability...</p>
+          )}
+          {clashWarning && (
+            <div className="flex items-start gap-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-red-600 font-medium">{clashWarning}</p>
+            </div>
+          )}
+          <label className="block text-xs font-medium text-gray-600">Reason</label>
+          <input
+            type="text"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="e.g., That date doesn't work for me"
+            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={handleReschedule}
+              disabled={loading || !rescheduleDate || !reason.trim() || !!clashWarning || checkingClash}
+              className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+            >
+              <Send className="w-3 h-3" />
+              {loading ? 'Sending...' : 'Send Proposal'}
+            </button>
+            <button
+              onClick={() => { setShowCounterPropose(false); setReason(''); setClashWarning(''); setRescheduleDate(''); }}
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Action Buttons — only for scheduled sessions */}
       {isActionable && !showReschedule && !showSkip && (
         <div className="mt-3 flex flex-wrap gap-1.5">
-          <button
-            onClick={() => { resetForms(); setShowReschedule(true); }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <Clock className="w-3 h-3" />
-            Reschedule
-          </button>
-          <button
-            onClick={() => { resetForms(); setShowSkip(true); }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <SkipForward className="w-3 h-3" />
-            Skip
-          </button>
-          {userRole === 'tradie' && (
+          {isTradie ? (
             <>
+              <button
+                onClick={() => { resetForms(); setShowReschedule(true); }}
+                className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              >
+                <Send className="w-3 h-3" />
+                Propose New Date
+              </button>
+              <button
+                onClick={() => { resetForms(); setShowSkip(true); }}
+                className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              >
+                <SkipForward className="w-3 h-3" />
+                Skip
+              </button>
               <button
                 onClick={handleComplete}
                 disabled={loading}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-warm-500 rounded-lg hover:bg-warm-600 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
               >
                 <CheckCircle2 className="w-3 h-3" />
                 Mark Complete
               </button>
               <button
                 onClick={() => { resetForms(); setShowExtra(true); }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-600 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
+                className="inline-flex items-center gap-1.5 text-purple-600 bg-purple-50 border border-purple-200 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-purple-100 transition-colors"
               >
                 <Plus className="w-3 h-3" />
                 Extra Session
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => { resetForms(); setShowReschedule(true); }}
+                className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              >
+                <Clock className="w-3 h-3" />
+                Reschedule
+              </button>
+              <button
+                onClick={() => { resetForms(); setShowSkip(true); }}
+                className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              >
+                <SkipForward className="w-3 h-3" />
+                Skip
               </button>
             </>
           )}
         </div>
       )}
 
-      {/* Reschedule Form */}
+      {/* Reschedule / Propose Form */}
       {showReschedule && (
         <div className="mt-3 space-y-2">
-          <label className="block text-xs font-medium text-gray-600">New date</label>
+          <label className="block text-xs font-medium text-gray-600">
+            {isTradie ? 'Proposed date' : 'New date'}
+          </label>
           <input
             type="date"
             value={rescheduleDate}
             min={minDate}
             onChange={(e) => setRescheduleDate(e.target.value)}
-            className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+            className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
               clashWarning ? 'border-red-300 bg-red-50' : 'border-gray-200'
             }`}
           />
@@ -311,22 +485,23 @@ export default function RecurringSessionCard({
             type="text"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="e.g., Client unavailable"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            placeholder={isTradie ? 'e.g., Schedule conflict' : 'e.g., Client unavailable'}
+            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
           <div className="flex gap-2">
             <button
               onClick={handleReschedule}
               disabled={loading || !rescheduleDate || !reason.trim() || !!clashWarning || checkingClash}
-              className="px-4 py-2 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
             >
-              {loading ? 'Saving...' : 'Confirm'}
+              <Send className="w-3 h-3" />
+              {loading ? 'Sending...' : isTradie ? 'Send Proposal' : 'Confirm'}
             </button>
             <button
               onClick={() => { setShowReschedule(false); setReason(''); setClashWarning(''); }}
-              className="px-4 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
             >
-              <X className="w-3 h-3" />
+              Cancel
             </button>
           </div>
         </div>
@@ -341,7 +516,7 @@ export default function RecurringSessionCard({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="e.g., On holiday"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
           <div className="flex gap-2">
             <button
@@ -353,9 +528,9 @@ export default function RecurringSessionCard({
             </button>
             <button
               onClick={() => { setShowSkip(false); setReason(''); }}
-              className="px-4 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
             >
-              <X className="w-3 h-3" />
+              Cancel
             </button>
           </div>
         </div>
@@ -369,7 +544,7 @@ export default function RecurringSessionCard({
             type="date"
             value={extraDate}
             onChange={(e) => setExtraDate(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -381,7 +556,7 @@ export default function RecurringSessionCard({
                 value={extraHours}
                 onChange={(e) => setExtraHours(e.target.value)}
                 placeholder="0"
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
             <div>
@@ -393,7 +568,7 @@ export default function RecurringSessionCard({
                 value={extraCost}
                 onChange={(e) => setExtraCost(e.target.value)}
                 placeholder="0.00"
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
           </div>
@@ -403,7 +578,7 @@ export default function RecurringSessionCard({
             value={extraNotes}
             onChange={(e) => setExtraNotes(e.target.value)}
             placeholder="e.g., Emergency callout for leak"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
           <div className="flex gap-2">
             <button
@@ -415,9 +590,9 @@ export default function RecurringSessionCard({
             </button>
             <button
               onClick={() => setShowExtra(false)}
-              className="px-4 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
             >
-              <X className="w-3 h-3" />
+              Cancel
             </button>
           </div>
         </div>

@@ -1003,6 +1003,7 @@ export default function ClientDashboard() {
                                   recurringJobId={job.id}
                                   userRole="client"
                                   tradieId={job.tradie_id}
+                                  clientId={user?.id}
                                   preferredTime={job.preferred_time}
                                   onUpdate={fetchRecurring}
                                 />

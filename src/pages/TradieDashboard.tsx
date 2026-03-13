@@ -48,6 +48,10 @@ import CollapsibleSection from '../components/CollapsibleSection';
 import { isPro, FREE_LIMITS, getMonthlyJobAccepts, getMonthlyLeadUnlocks } from '../lib/subscription';
 import UserTradeBadges from '../components/UserTradeBadges';
 import WelcomeGuide from '../components/WelcomeGuide';
+import RecurringSessionCard from '../components/RecurringSessionCard';
+import TradieDateBlocker from '../components/TradieDateBlocker';
+import { getTradieUpcomingSessions } from '../lib/recurringJobs';
+import type { RecurringSession } from '../lib/recurringJobs';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import {
   requestPushPermission,
@@ -222,6 +226,23 @@ export default function TradieDashboard() {
   const [monthlyJobs, setMonthlyJobs] = useState(0);
   const [monthlyUnlocks, setMonthlyUnlocks] = useState(0);
 
+  // Recurring sessions
+  const [recurringSessions, setRecurringSessions] = useState<(RecurringSession & { recurring_job?: { trade_category: string; description: string; client_id: string; preferred_time: string | null } })[]>([]);
+  const [recurringLoading, setRecurringLoading] = useState(false);
+
+  const fetchRecurringSessions = useCallback(async () => {
+    if (!user) return;
+    setRecurringLoading(true);
+    try {
+      const sessions = await getTradieUpcomingSessions(user.id, 5);
+      setRecurringSessions(sessions);
+    } catch (err) {
+      console.error('fetchRecurringSessions error:', err);
+    } finally {
+      setRecurringLoading(false);
+    }
+  }, [user]);
+
   // Post-onboarding scroll to calendar
   const [searchParams, setSearchParams] = useSearchParams();
   const [showOnboardedBanner, setShowOnboardedBanner] = useState(false);
@@ -355,6 +376,7 @@ export default function TradieDashboard() {
       fetchUnlockedJobs();
       fetchConversations();
       fetchCalendarIntegration();
+      fetchRecurringSessions();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, tradieDetails?.subscription_tier, currentDate]);
@@ -1459,6 +1481,51 @@ export default function TradieDashboard() {
             </div>
           </div>
         )}
+
+        {/* Recurring Jobs */}
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <RefreshCw className="w-5 h-5 text-gray-400" />
+            Recurring Jobs
+          </h2>
+          {recurringLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+            </div>
+          ) : recurringSessions.length > 0 ? (
+            <div className="space-y-3">
+              {recurringSessions.map((s) => (
+                <RecurringSessionCard
+                  key={s.id}
+                  session={s}
+                  recurringJobId={s.recurring_job_id}
+                  userRole="tradie"
+                  tradieId={user?.id}
+                  clientId={s.recurring_job?.client_id}
+                  preferredTime={s.recurring_job?.preferred_time ?? undefined}
+                  onUpdate={fetchRecurringSessions}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <RefreshCw className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-600">No recurring jobs scheduled</p>
+              <p className="text-xs text-gray-400 mt-1">When clients set up recurring services with you, upcoming sessions appear here.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Manage Availability */}
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-gray-400" />
+            Manage Availability
+          </h2>
+          {user && (
+            <TradieDateBlocker tradieId={user.id} onBlocked={fetchSlots} />
+          )}
+        </div>
 
         <SectionErrorBoundary fallbackTitle="Quote insights failed to load">
           <div className="mt-6" data-tour="quote-insights"><QuoteInsightsWidget /></div>
