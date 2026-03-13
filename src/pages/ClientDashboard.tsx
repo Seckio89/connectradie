@@ -1195,9 +1195,7 @@ function RecurringJobForm({ onSave, onCancel, savedTradies }: {
   const [description, setDescription] = useState('');
   const [frequency, setFrequency] = useState(12);
   const [nextDate, setNextDate] = useState(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + 1);
-    return d.toISOString().slice(0, 10);
+    return new Date().toISOString().split('T')[0];
   });
 
   useEffect(() => {
@@ -1432,6 +1430,7 @@ function RecurringJobForm({ onSave, onCancel, savedTradies }: {
             <input
               type="date"
               value={nextDate}
+              min={new Date().toISOString().split('T')[0]}
               onChange={e => setNextDate(e.target.value)}
               className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
             />
