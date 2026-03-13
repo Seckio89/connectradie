@@ -1,5 +1,5 @@
-const CACHE_NAME = 'connecttradie-v1';
-const API_CACHE_NAME = 'connecttradie-api-v1';
+const CACHE_NAME = 'connecttradie-v2';
+const API_CACHE_NAME = 'connecttradie-api-v2';
 const API_CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 const APP_SHELL = [
   '/',

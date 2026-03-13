@@ -546,7 +546,7 @@ export default function TradieDashboard() {
 
         {/* Free Tier Usage */}
         {!isProUser && (
-          <div className="mb-6 max-w-sm bg-white border border-gray-200 rounded-2xl p-4">
+          <div className="mb-6 max-w-sm bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-semibold text-gray-900">Free Plan Usage</h3>
               <button onClick={() => setShowSubscriptionModal(true)} className="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors">

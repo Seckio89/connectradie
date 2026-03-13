@@ -73,3 +73,76 @@ supabase db push                   # apply migrations
 - Client-side escrow release (homeowner triggers, not platform)
 - AUD, Australian state licensing, ABN verification
 - Competitors: hipages, Airtasker, Oneflare, ServiceSeeking
+
+---
+
+## ConnecTradie Design System — Always Follow These Rules
+
+### Colours
+- Primary action: teal/emerald — use Tailwind `emerald-500` (#10b981)
+  for buttons, links, active states only
+- Background: `gray-50` for page, `white` for cards
+- Text: `gray-900` headings, `gray-600` body, `gray-400` placeholder/muted
+- Borders: `gray-200` only — no heavy borders
+- Status badges: use existing pill pattern only
+
+### Layout & Spacing
+- Page wrapper: `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8`
+- Cards: `bg-white rounded-xl shadow-sm p-6` — NOT full width unless
+  it is a data table
+- Card grids: `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`
+- Stack spacing: `space-y-6` between sections
+- NEVER use full-width cards for summary/info components —
+  constrain with max-w-sm, max-w-md, or max-w-lg
+
+### Typography
+- Page title: `text-2xl font-bold text-gray-900`
+- Section heading: `text-lg font-semibold text-gray-900`
+- Body: `text-sm text-gray-600`
+- Labels: `text-xs font-medium text-gray-500 uppercase tracking-wide`
+
+### Buttons
+- Primary: `bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2
+  rounded-lg text-sm font-medium`
+- Secondary: `border border-gray-200 text-gray-700 px-4 py-2
+  rounded-lg text-sm font-medium hover:bg-gray-50`
+- Destructive: `text-red-600 hover:text-red-700 text-sm font-medium`
+- NEVER use full-width buttons unless inside a modal or mobile view
+
+### Status Badges
+- Use: `px-3 py-1 rounded-full text-xs font-medium`
+- Active/success: `bg-emerald-100 text-emerald-700`
+- Pending: `bg-amber-100 text-amber-700`
+- Inactive/cancelled: `bg-gray-100 text-gray-600`
+- Error: `bg-red-100 text-red-700`
+
+### Empty States
+- Icon (muted, medium size) + heading + subtext + ONE CTA button
+- Container: `text-center py-12`
+- Follow the pattern in TradieDashboard.tsx "No Active Jobs" empty state
+
+### Cards — Size Rules
+- Stats/summary cards: `max-w-xs` or `max-w-sm` — NEVER full width
+- Info/alert cards: `max-w-md`
+- Form cards: `max-w-lg`
+- Content/list cards: full width is OK
+- Usage bars/progress indicators: constrain to `max-w-sm`
+
+### Modals
+- Use existing ConfirmModal.tsx pattern
+- Max width: `max-w-md`
+- Always include: title, description, confirm button, cancel button
+
+### Mobile
+- All layouts must be responsive
+- Stack to single column on mobile
+- Touch targets minimum 44px height
+
+### DO NOT
+- Add heavy drop shadows (`shadow-lg` or above)
+- Use colours outside the palette above
+- Create full-width cards for summary information
+- Add decorative borders or dividers unless they already exist nearby
+- Use `text-base` or larger for body copy inside cards
+- Invent new component patterns — reuse what exists in the codebase
+- Modify sidebar or navigation styles

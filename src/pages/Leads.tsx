@@ -366,8 +366,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           supabase
             .from('payments')
             .select('job_id, metadata')
-            .in('job_id', completedJobIds)
-            .eq('payment_type', 'job_funding'),
+            .in('job_id', completedJobIds),
           supabase
             .from('reviews')
             .select('job_id')
@@ -426,9 +425,9 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           && isActive(j)
         ));
       } else if (filter === 'completed') {
-        // All completed jobs (including previously archived ones) — this is the completion history
+        // Completed jobs — respect archive status
         setLeads(jobs.filter(j =>
-          j.status === 'completed' && !j.deleted_at
+          j.status === 'completed' && !j.deleted_at && !j.archived_at
         ));
       } else if (filter === 'archived') {
         // Explicitly archived (non-completed), cancelled, declined, or auto-archivable
@@ -716,7 +715,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       // Find the payment for this job
       const { data: payment } = await supabase
         .from('payments')
-        .select('id')
+        .select('id, metadata')
         .eq('job_id', jobId)
         .eq('status', 'completed')
         .maybeSingle();
@@ -725,8 +724,14 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         // No completed payment found — may already be released
         setReleasedJobIds(prev => new Set(prev).add(jobId));
       } else {
-        await releaseEscrow(payment.id);
-        setReleasedJobIds(prev => new Set(prev).add(jobId));
+        const meta = payment.metadata as Record<string, unknown> | null;
+        if (meta?.transfer_id) {
+          // Already released — skip calling release-escrow again
+          setReleasedJobIds(prev => new Set(prev).add(jobId));
+        } else {
+          await releaseEscrow(payment.id);
+          setReleasedJobIds(prev => new Set(prev).add(jobId));
+        }
       }
 
       navigate(`/review/${jobId}`);

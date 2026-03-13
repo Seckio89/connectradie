@@ -44,7 +44,8 @@ export default function ClientDashboard() {
   const [spendingSummary, setSpendingSummary] = useState({ total: 0, thisMonth: 0, pendingJobs: 0 });
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
   const [showArchived, setShowArchived] = useState(false);
-  const [showCompleted, setShowCompleted] = useState(false);
+  const [releasedJobIds, setReleasedJobIds] = useState<Set<string>>(new Set());
+
   const { user, profile } = useAuth();
   const isClientPro = profile?.is_premium;
 
@@ -115,7 +116,27 @@ export default function ClientDashboard() {
         .eq('client_id', user.id)
         .order('created_at', { ascending: false })
         .limit(20);
-      if (data) setRecentJobs(data as Job[]);
+      if (data) {
+        const jobs = data as Job[];
+        // Check payment status BEFORE rendering jobs to avoid flash
+        const completedIds = jobs.filter(j => j.status === 'completed').map(j => j.id);
+        let released = new Set<string>();
+        if (completedIds.length > 0) {
+          const { data: payments } = await supabase
+            .from('payments')
+            .select('job_id, metadata')
+            .in('job_id', completedIds);
+          if (payments) {
+            for (const p of payments) {
+              const meta = p.metadata as Record<string, unknown> | null;
+              if (meta?.transfer_id) released.add(p.job_id);
+            }
+          }
+        }
+        // Set both at once — no flash
+        setReleasedJobIds(released);
+        setRecentJobs(jobs);
+      }
     } catch (err) {
       console.error('fetchRecentJobs error:', err);
     }
@@ -463,19 +484,6 @@ export default function ClientDashboard() {
                   My Jobs
                 </h2>
                 <div className="flex items-center gap-3">
-                  {recentJobs.some(j => j.status === 'completed' && !j.archived_at) && (
-                    <button
-                      onClick={() => setShowCompleted(!showCompleted)}
-                      className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
-                        showCompleted
-                          ? 'bg-green-50 text-green-700 border border-green-200'
-                          : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Completed ({recentJobs.filter(j => j.status === 'completed' && !j.archived_at).length})
-                    </button>
-                  )}
                   {recentJobs.some(j => j.archived_at) && (
                     <button
                       onClick={() => setShowArchived(!showArchived)}
@@ -495,7 +503,7 @@ export default function ClientDashboard() {
                 </div>
               </div>
 
-              {recentJobs.filter(j => showArchived ? j.archived_at : (!j.archived_at && j.status !== 'completed')).length === 0 && recentJobs.length > 0 && !showCompleted ? (
+              {recentJobs.filter(j => showArchived ? j.archived_at : !j.archived_at).length === 0 && recentJobs.length > 0 ? (
                 <div className="bg-gray-50 rounded-2xl border border-gray-200 p-8 text-center">
                   <Archive className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                   <p className="text-gray-600 font-medium">
@@ -544,93 +552,157 @@ export default function ClientDashboard() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {recentJobs
-                    .filter(j => showArchived ? j.archived_at : (!j.archived_at && j.status !== 'completed'))
-                    .slice(0, showArchived ? 20 : 5)
+                    .filter(j => showArchived ? j.archived_at : !j.archived_at)
+                    .slice(0, showArchived ? 20 : 8)
                     .map((job) => {
                     const categoryMatch = job.description.match(/^\[([^\]]+)\]/);
                     const categoryRaw = categoryMatch ? categoryMatch[1] : null;
                     const category = categoryRaw ? categoryRaw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : null;
-                    const isFlashActive = job.is_flash_boost && job.flash_expiry && new Date(job.flash_expiry) > new Date();
+                    const desc = job.description.replace(/^\[[^\]]+\]\s*/, '');
                     const isArchived = !!job.archived_at;
 
-                    const statusConfig = isArchived
-                      ? { bg: 'bg-gray-50 border-gray-200 opacity-75', label: 'Archived', icon: <Archive className="w-3 h-3 text-gray-400" /> }
-                      : job.status === 'in_progress'
-                      ? { bg: 'bg-blue-50 border-blue-200', label: 'In Progress', icon: <Play className="w-3 h-3 text-blue-600" /> }
-                      : job.status === 'funded'
-                      ? { bg: 'bg-white border-green-200', label: 'Paid', icon: <DollarSign className="w-3 h-3 text-green-600" /> }
-                      : job.quoting_status === 'awarded'
-                      ? { bg: 'bg-white border-secondary-200', label: 'Awarded', icon: <CheckCircle2 className="w-3 h-3 text-secondary-600" /> }
-                      : job.quote_count > 0
-                      ? { bg: 'bg-secondary-50 border-secondary-200', label: `${job.quote_count} Quote${job.quote_count !== 1 ? 's' : ''}`, icon: <Eye className="w-3 h-3 text-secondary-600" /> }
-                      : isFlashActive
-                      ? { bg: 'bg-warm-50 border-warm-200', label: 'Boosted', icon: <Zap className="w-3 h-3 text-warm-600" /> }
-                      : { bg: 'bg-gray-50 border-gray-200', label: 'Waiting for quotes', icon: <Clock className="w-3 h-3 text-gray-500" /> };
+                    const isReleased = releasedJobIds.has(job.id);
+                    const statusLabel = isArchived ? 'Archived'
+                      : job.status === 'completed' && isReleased ? 'Paid'
+                      : job.status === 'completed' ? 'Awaiting Release'
+                      : job.status === 'in_progress' ? 'In Progress'
+                      : job.status === 'funded' ? 'Paid — Tradie Assigned'
+                      : job.status === 'accepted' ? 'Accepted'
+                      : job.quoting_status === 'awarded' ? 'Awarded'
+                      : job.quote_count > 0 ? `${job.quote_count} Quote${job.quote_count !== 1 ? 's' : ''}`
+                      : 'Waiting';
+
+                    const statusColor = isArchived ? 'bg-gray-100 text-gray-600 border-gray-200'
+                      : job.status === 'completed' && isReleased ? 'bg-green-100 text-green-700 border-green-200'
+                      : job.status === 'completed' ? 'bg-amber-100 text-amber-700 border-amber-200'
+                      : job.status === 'in_progress' ? 'bg-blue-100 text-blue-700 border-blue-200'
+                      : job.status === 'funded' ? 'bg-green-100 text-green-700 border-green-200'
+                      : job.quoting_status === 'awarded' ? 'bg-green-100 text-green-700 border-green-200'
+                      : job.quote_count > 0 ? 'bg-secondary-100 text-secondary-700 border-secondary-200'
+                      : 'bg-gray-100 text-gray-600 border-gray-200';
+
+                    const accentColor = isArchived ? 'bg-gray-300'
+                      : job.status === 'completed' && isReleased ? 'bg-green-400'
+                      : job.status === 'completed' ? 'bg-amber-400'
+                      : job.status === 'in_progress' ? 'bg-blue-400'
+                      : job.status === 'funded' ? 'bg-green-400'
+                      : job.quoting_status === 'awarded' ? 'bg-green-400'
+                      : job.quote_count > 0 ? 'bg-secondary-400'
+                      : 'bg-primary-400';
+
+                    const SLOT_LABELS: Record<string, string> = { morning: '7-9 AM', midday: '10 AM-12 PM', afternoon: '1-5 PM' };
 
                     return (
-                      <Link key={job.id} to={`/leads?job=${job.id}`} className={`group relative flex items-center gap-3 px-4 py-3 rounded-xl border ${statusConfig.bg} hover:shadow-sm transition-all`}>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-semibold text-gray-900 truncate capitalize">
-                              {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
-                            </h4>
-                            {category && (
-                              <span className="hidden sm:inline px-1.5 py-0.5 bg-primary-50 text-primary-700 rounded text-[10px] font-medium flex-shrink-0">
-                                {category}
-                              </span>
+                      <Link
+                        key={job.id}
+                        to={`/leads?job=${job.id}`}
+                        className={`group block rounded-2xl overflow-hidden border bg-white shadow-sm hover:shadow-lg hover:border-gray-300 transition-all ${isArchived ? 'opacity-75' : ''}`}
+                      >
+                        <div className="flex">
+                          {/* Left accent bar */}
+                          <div className={`w-1.5 flex-shrink-0 ${accentColor}`} />
+                          <div className="flex-1 min-w-0">
+                            <div className="px-5 py-4">
+                              {/* Header: title + status badge + archive icon */}
+                              <div className="flex items-start justify-between gap-3 mb-2">
+                                <h3 className="text-base font-bold text-gray-900 leading-snug capitalize truncate">
+                                  {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
+                                </h3>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${statusColor}`}>
+                                    {statusLabel}
+                                  </span>
+                                  {!isArchived && (
+                                    <button
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); archiveJob(job.id); }}
+                                      className="p-1 text-gray-300 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                      title="Archive job"
+                                    >
+                                      <Archive className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                  {isArchived && (
+                                    <button
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); unarchiveJob(job.id); }}
+                                      className="p-1 text-gray-300 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                      title="Restore job"
+                                    >
+                                      <ArchiveRestore className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Description */}
+                              <p className="text-sm text-gray-500 mb-3 line-clamp-2 leading-relaxed">{desc}</p>
+
+                              {/* Details row */}
+                              <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap text-xs text-gray-500">
+                                {category && (
+                                  <span className="inline-flex items-center gap-1 text-gray-600 font-medium">
+                                    <Briefcase className="w-3 h-3 text-gray-400" />
+                                    {category}
+                                  </span>
+                                )}
+                                {job.location_address && (
+                                  <span className="inline-flex items-center gap-1">
+                                    <MapPin className="w-3 h-3 text-gray-400" />
+                                    {job.location_address.split(',')[0]}
+                                  </span>
+                                )}
+                                {job.scheduled_date && (
+                                  <span className="inline-flex items-center gap-1">
+                                    <CalendarClock className="w-3 h-3 text-secondary-500" />
+                                    <span className="text-secondary-700 font-medium">
+                                      {new Date(job.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                                    </span>
+                                  </span>
+                                )}
+                                {job.preferred_time_slot && SLOT_LABELS[job.preferred_time_slot] && (
+                                  <span className="inline-flex items-center gap-1">
+                                    <Clock className="w-3 h-3 text-gray-400" />
+                                    {SLOT_LABELS[job.preferred_time_slot]}
+                                  </span>
+                                )}
+                                {job.budget_amount ? (
+                                  <span className="inline-flex items-center font-bold text-emerald-700">
+                                    ${job.budget_amount.toLocaleString()}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            {/* Footer with action */}
+                            {job.status === 'completed' && !isReleased && (
+                              <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
+                                <span className="text-xs text-gray-400">Click to view details</span>
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-600 text-white text-xs font-semibold rounded-lg">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  Release & Review
+                                </span>
+                              </div>
+                            )}
+                            {job.status === 'completed' && isReleased && (
+                              <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
+                                <span className="text-xs text-gray-400">Payment released to tradie</span>
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  Paid
+                                </span>
+                              </div>
+                            )}
+                            {job.status === 'in_progress' && (
+                              <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
+                                <span className="text-xs text-gray-400">Click to check progress</span>
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg">
+                                  <Eye className="w-3.5 h-3.5" />
+                                  View Progress
+                                </span>
+                              </div>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${
-                              statusConfig.label === 'Archived' ? 'text-gray-400' :
-                              statusConfig.label === 'Awarded' ? 'text-green-600' :
-                              statusConfig.label === 'Boosted' ? 'text-warm-600' :
-                              statusConfig.label.includes('Quote') ? 'text-secondary-600' :
-                              statusConfig.label === 'In Progress' ? 'text-blue-600' :
-                              statusConfig.label === 'Paid' ? 'text-green-600' :
-                              'text-gray-500'
-                            }`}>
-                              {statusConfig.icon}
-                              {statusConfig.label}
-                            </span>
-                            {job.location_address && (
-                              <span className="hidden sm:flex text-[11px] text-gray-400 items-center gap-0.5 truncate max-w-[200px]">
-                                <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
-                                {job.location_address.split(',')[0]}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          {!isArchived && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                archiveJob(job.id);
-                              }}
-                              className="p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-gray-500"
-                              title="Archive job"
-                            >
-                              <Archive className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                          {isArchived && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                unarchiveJob(job.id);
-                              }}
-                              className="p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-gray-500"
-                              title="Restore job"
-                            >
-                              <ArchiveRestore className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                          <ArrowRight className="w-3.5 h-3.5 text-gray-300" />
                         </div>
                       </Link>
                     );
@@ -644,46 +716,6 @@ export default function ClientDashboard() {
                     Post Another Job
                   </Link>
 
-                  {/* Completed Jobs — compact summary */}
-                  {showCompleted && recentJobs.filter(j => j.status === 'completed' && !j.archived_at).length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-xs font-semibold text-gray-500 flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-                          Completed
-                        </h3>
-                        <Link to="/leads?filter=completed" className="text-[11px] text-primary-600 hover:text-primary-700 font-medium">
-                          View all
-                        </Link>
-                      </div>
-                      <div className="space-y-1">
-                        {recentJobs
-                          .filter(j => j.status === 'completed' && !j.archived_at)
-                          .slice(0, 3)
-                          .map((job) => {
-                            const categoryRaw = job.description.match(/^\[([^\]]+)\]/)?.[1];
-                            const category = categoryRaw ? categoryRaw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : null;
-                            return (
-                              <Link key={job.id} to={`/leads?job=${job.id}`}
-                                className="group flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
-                                <span className="text-sm text-gray-600 truncate flex-1 capitalize">
-                                  {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
-                                </span>
-                                {category && <span className="text-[10px] text-gray-400 flex-shrink-0">{category}</span>}
-                                <button
-                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); archiveJob(job.id); }}
-                                  className="p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-gray-500"
-                                  title="Archive"
-                                >
-                                  <Archive className="w-3 h-3" />
-                                </button>
-                              </Link>
-                            );
-                          })}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

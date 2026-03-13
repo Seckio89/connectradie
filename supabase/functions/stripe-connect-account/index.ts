@@ -56,6 +56,7 @@ Deno.serve(async (req: Request) => {
       error: authError,
     } = await authClient.auth.getUser(token);
     if (authError || !user) {
+      console.error("Auth failed:", authError?.message, "| token prefix:", token.slice(0, 20), "| supabaseUrl:", supabaseUrl);
       return errorResponse(authError?.message || "Unauthorized", 401);
     }
 

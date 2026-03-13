@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, X, LayoutDashboard, User, MessageSquare } from 'lucide-react';
+import { Menu, X, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -72,28 +72,13 @@ export default function Navbar() {
 
           <div className="hidden md:flex items-center gap-3">
             {user ? (
-              <>
-                <Link
-                  to="/dashboard"
-                  className="flex items-center gap-2 px-4 py-2 text-gray-300 font-medium hover:text-white hover:bg-navy-800 rounded-lg border border-transparent hover:border-navy-700 transition-colors min-h-[44px]"
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  Dashboard
-                </Link>
-                <Link
-                  to="/settings"
-                  className="flex items-center gap-2 px-4 py-2 text-gray-300 font-medium hover:text-white hover:bg-navy-800 rounded-lg border border-transparent hover:border-navy-700 transition-colors min-h-[44px]"
-                >
-                  <User className="w-4 h-4" />
-                  Profile
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="px-4 py-2 text-gray-300 font-medium hover:text-red-400 transition-colors min-h-[44px]"
-                >
-                  Sign Out
-                </button>
-              </>
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-warm-500 text-white font-semibold rounded-lg hover:bg-warm-600 active:scale-95 transition-all duration-200 shadow-sm hover:shadow-md min-h-[44px]"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                Dashboard
+              </Link>
             ) : (
               <>
                 <Link
@@ -149,30 +134,14 @@ export default function Navbar() {
               )}
               <div className="flex flex-col gap-2 mt-4 px-4">
                 {user ? (
-                  <>
-                    <Link
-                      to="/dashboard"
-                      className="flex items-center justify-center gap-2 py-3 text-center text-gray-300 font-medium border border-navy-700 rounded-lg hover:bg-navy-800 transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <LayoutDashboard className="w-4 h-4" />
-                      Dashboard
-                    </Link>
-                    <Link
-                      to="/settings"
-                      className="flex items-center justify-center gap-2 py-3 text-center text-gray-300 font-medium border border-navy-700 rounded-lg hover:bg-navy-800 transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <User className="w-4 h-4" />
-                      Profile
-                    </Link>
-                    <button
-                      onClick={handleSignOut}
-                      className="py-3 text-center text-red-400 font-medium border border-red-900 rounded-lg hover:bg-red-900/20 transition-colors"
-                    >
-                      Sign Out
-                    </button>
-                  </>
+                  <Link
+                    to="/dashboard"
+                    className="flex items-center justify-center gap-2 py-3 text-center bg-warm-500 text-white font-semibold rounded-lg hover:bg-warm-600 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    Dashboard
+                  </Link>
                 ) : (
                   <>
                     <Link

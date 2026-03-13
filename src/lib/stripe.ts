@@ -254,32 +254,63 @@ export interface ConnectAccountDetails {
   dashboardUrl?: string | null;
 }
 
-export async function getConnectAccountDetails(): Promise<ConnectAccountDetails> {
+async function getValidAccessToken(): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not authenticated');
 
-  if (!session) {
-    throw new Error('Not authenticated');
+  // Check if token expires within 60 seconds — if so, refresh first
+  const expiresAt = session.expires_at ?? 0;
+  if (expiresAt * 1000 - Date.now() < 60_000) {
+    const { data: refreshed, error } = await supabase.auth.refreshSession();
+    if (error || !refreshed.session) throw new Error('Session expired. Please log in again.');
+    return refreshed.session.access_token;
   }
+
+  return session.access_token;
+}
+
+export async function getConnectAccountDetails(): Promise<ConnectAccountDetails> {
+  const token = await getValidAccessToken();
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const apiUrl = `${supabaseUrl}/functions/v1/stripe-connect-account`;
 
-  let response: Response;
-  try {
-    response = await fetchWithTimeout(apiUrl, {
+  const makeRequest = async (accessToken: string) => {
+    return fetchWithTimeout(apiUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${session.access_token}`,
+        'Authorization': `Bearer ${accessToken}`,
         'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({}),
     });
+  };
+
+  let response: Response;
+  try {
+    response = await makeRequest(token);
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') {
       throw new Error('Request timed out. Please try again.');
     }
     throw new Error('Unable to reach the payout service. The stripe-connect-account function may not be deployed.');
+  }
+
+  // If 401, refresh token and retry once
+  if (response.status === 401) {
+    const { data: refreshed, error } = await supabase.auth.refreshSession();
+    if (error || !refreshed.session) {
+      throw new Error('Session expired. Please log in again.');
+    }
+    try {
+      response = await makeRequest(refreshed.session.access_token);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        throw new Error('Request timed out. Please try again.');
+      }
+      throw err;
+    }
   }
 
   const text = await response.text();

@@ -68,6 +68,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
   const [assignLoading, setAssignLoading] = useState(false);
   const [acceptSuccess, setAcceptSuccess] = useState(false);
   const [jobCounts, setJobCounts] = useState<Record<string, number>>({});
+  const [paidJobIds, setPaidJobIds] = useState<Set<string>>(new Set());
   const isTradie = profile?.role === 'tradie';
   const isVerified = profile?.verification_status === 'verified';
   const isLicenseExpired = checkLicenseExpired(profile?.verification_status, profile?.license_expiry);
@@ -210,6 +211,29 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
       }
 
       setAllJobs(filteredJobs as JobWithRelations[]);
+
+      // Check which completed jobs have been paid (escrow released)
+      const completedJobIds = filteredJobs.filter(j => j.status === 'completed').map(j => j.id);
+      if (completedJobIds.length > 0) {
+        try {
+          const { data: payments } = await supabase
+            .from('payments')
+            .select('job_id, metadata')
+            .in('job_id', completedJobIds);
+          if (payments) {
+            const paid = new Set<string>();
+            for (const p of payments) {
+              const meta = p.metadata as Record<string, unknown> | null;
+              if (meta?.transfer_id) {
+                paid.add(p.job_id);
+              }
+            }
+            if (paid.size > 0) setPaidJobIds(paid);
+          }
+        } catch (err) {
+          console.error('Error checking payment status:', err);
+        }
+      }
 
       // Compute counts from fetched data
       const counts: Record<string, number> = {};
@@ -855,9 +879,9 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
 
                   {isTradie && job.status === 'completed' && job.completion_notes && (
                     <div className="mt-4 pt-4 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center gap-2 justify-center text-sm text-green-600 font-medium py-2">
+                      <div className={`flex items-center gap-2 justify-center text-sm font-medium py-2 ${paidJobIds.has(job.id) ? 'text-emerald-700' : 'text-green-600'}`}>
                         <CheckCircle2 className="w-4 h-4" />
-                        Payment Requested
+                        {paidJobIds.has(job.id) ? 'Paid' : 'Payment Requested'}
                       </div>
                     </div>
                   )}
