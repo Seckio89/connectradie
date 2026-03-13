@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Calendar, CheckCircle2, AlertCircle, XCircle, Loader2, User, Star, Check, X as XIcon, Play, Package, ClipboardList, Zap, WifiOff, ShieldAlert, Settings, Users, MapPin } from 'lucide-react';
+import { Clock, Calendar, CheckCircle2, AlertCircle, XCircle, Loader2, User, Star, Check, X as XIcon, Play, Package, ClipboardList, Zap, WifiOff, ShieldAlert, Settings, Users, MapPin, Repeat } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { offlineAcceptJob } from '../lib/offlineSync';
 import { autoNameProject } from '../lib/projectAutoName';
 import { formatDate, checkLicenseExpired } from '../lib/utils';
 import { redactSensitiveInfo } from '../lib/redaction';
+import { sendNotification } from '../lib/notificationService';
+import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
+import { useToast } from '../hooks/useToast';
 import type { JobWithRelations } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
@@ -46,6 +49,7 @@ function FlashCountdown({ expiry }: { expiry: string }) {
 export default function Jobs({ embedded = false }: { embedded?: boolean }) {
   const { user, profile, tradieDetails } = useAuth();
   const navigate = useNavigate();
+  const { toast, showToast } = useToast();
   type JobStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'declined' | 'all';
   const [allJobs, setAllJobs] = useState<JobWithRelations[]>([]);
   const [jobs, setJobs] = useState<JobWithRelations[]>([]);
@@ -63,6 +67,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
   const [gateReason, setGateReason] = useState<'unverified' | 'expired'>('unverified');
   const [completionJob, setCompletionJob] = useState<JobWithRelations | null>(null);
   const [quoteJob, setQuoteJob] = useState<JobWithRelations | null>(null);
+  const [proposedStartDate, setProposedStartDate] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<{ id: string; invite_name: string; role: string }[]>([]);
   const [assignJobId, setAssignJobId] = useState<string | null>(null);
   const [assignLoading, setAssignLoading] = useState(false);
@@ -322,23 +327,44 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
   const handleDeclineJob = async (reason: string) => {
     if (!jobToDecline || !user) return;
 
-    try {
-      const { error } = await supabase
-        .from('jobs')
-        .update({
-          status: 'declined',
-          decline_reason: reason,
-          declined_at: new Date().toISOString()
-        })
-        .eq('id', jobToDecline.id);
+    const isDirectJob = jobToDecline.tradie_id === user.id;
+    const clientName = jobToDecline.profiles?.full_name || 'Client';
 
-      if (error) {
-        console.error('handleDeclineJob error:', error);
-        setOperationError('Failed to decline job. Please try again.');
-        return;
+    try {
+      if (isDirectJob) {
+        // Direct job: set to declined
+        const { error } = await supabase
+          .from('jobs')
+          .update({
+            status: 'declined',
+            decline_reason: reason,
+            declined_at: new Date().toISOString(),
+          })
+          .eq('id', jobToDecline.id);
+
+        if (error) {
+          console.error('handleDeclineJob error:', error);
+          setOperationError('Failed to decline job. Please try again.');
+          return;
+        }
+      } else {
+        // Marketplace job: unassign tradie so the job remains open for others
+        const { error } = await supabase
+          .from('jobs')
+          .update({
+            decline_reason: reason,
+            declined_at: new Date().toISOString(),
+          })
+          .eq('id', jobToDecline.id);
+
+        if (error) {
+          console.error('handleDeclineJob error:', error);
+          setOperationError('Failed to decline job. Please try again.');
+          return;
+        }
       }
 
-      // Also mark the tradie's quote as declined so analytics picks it up
+      // Mark the tradie's quote as declined so analytics picks it up
       await supabase
         .from('quotes')
         .update({ status: 'declined' as const })
@@ -352,6 +378,27 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
           .eq('id', jobToDecline.slot_id);
       }
 
+      // Notify the homeowner
+      if (jobToDecline.client_id) {
+        const tradieName = tradieDetails?.business_name || profile?.full_name || 'A tradie';
+        sendNotification({
+          type: NOTIFICATION_TYPES.JOB_DECLINED,
+          userId: jobToDecline.client_id,
+          title: 'Job Declined',
+          message: `${tradieName} has declined your job. Reason: "${reason}"`,
+          jobId: jobToDecline.id,
+          link: `/dashboard`,
+          metadata: {
+            job_id: jobToDecline.id,
+            tradie_id: user.id,
+            decline_reason: reason,
+          },
+        }).catch(() => {
+          // Non-critical — decline was recorded, notification is best-effort
+        });
+      }
+
+      showToast(`Job declined — ${clientName} has been notified`);
       await fetchJobs();
 
       if (filter === 'pending') {
@@ -608,7 +655,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                 >
                   {/* ── Card Header: Category + Status ── */}
                   <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 flex-wrap">
                       {(() => {
                         const cat = job.description.match(/^\[([^\]]+)\]/)?.[1];
                         return cat ? (
@@ -617,6 +664,12 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                           </span>
                         ) : null;
                       })()}
+                      {job.title && /recurring/i.test(job.title) && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium inline-flex items-center gap-1">
+                          <Repeat className="w-3 h-3" />
+                          Recurring
+                        </span>
+                      )}
                       <div className="flex items-center gap-2">
                           <User className="w-4 h-4 text-gray-400" />
                           <h3 className="font-semibold text-gray-900">
@@ -654,9 +707,32 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                   </div>
 
                   {/* ── Job Description (cleaned) ── */}
-                  <p className="text-gray-700 mb-3 line-clamp-2">
-                    {redactSensitiveInfo(job.description.replace(/^\[[^\]]+\]\s*/, ''), true)}
+                  <p className="text-gray-700 mb-3 line-clamp-1">
+                    {redactSensitiveInfo(job.description.replace(/^\[[^\]]+\]\s*/, '').split('\n')[0], true)}
                   </p>
+
+                  {/* ── Structured Info Row ── */}
+                  <div className="flex flex-wrap items-center gap-3 mb-3">
+                    {(() => {
+                      const cat = job.description.match(/^\[([^\]]+)\]/)?.[1];
+                      return cat ? (
+                        <span className="text-xs text-gray-500">
+                          {cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                        </span>
+                      ) : null;
+                    })()}
+                    {job.scheduled_date && (
+                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        Start: {new Date(job.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                      </span>
+                    )}
+                    {job.budget_amount && (
+                      <span className="text-xs text-gray-500 font-medium">
+                        ~${job.budget_amount.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
 
                   {/* ── Key Details Row ── */}
                   <div className="flex flex-wrap items-center gap-3 mb-3">
@@ -921,6 +997,13 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
         job={selectedJob ? { ...selectedJob, profiles: selectedJob.profiles ?? undefined } : null}
         isUnlocked={true}
         onStatusChange={fetchJobs}
+        onQuote={(startDate) => {
+          if (selectedJob) {
+            setProposedStartDate(startDate ?? null);
+            setQuoteJob(selectedJob);
+            setSelectedJob(null);
+          }
+        }}
       />
 
 
@@ -967,13 +1050,23 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
       {quoteJob && (
         <SubmitQuoteModal
           isOpen={!!quoteJob}
-          onClose={() => setQuoteJob(null)}
+          onClose={() => { setQuoteJob(null); setProposedStartDate(null); }}
           job={quoteJob}
+          proposedStartDate={proposedStartDate}
           onQuoteSubmitted={() => {
             setQuoteJob(null);
+            setProposedStartDate(null);
             fetchJobs();
           }}
         />
+      )}
+
+      {/* Toast */}
+      {toast.show && (
+        <div className={`fixed bottom-4 right-4 ${toast.isError ? 'bg-red-600' : 'bg-green-600'} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50 animate-slide-up`}>
+          <div className={`w-2 h-2 ${toast.isError ? 'bg-red-300' : 'bg-green-300'} rounded-full animate-pulse`} />
+          <span className="font-medium">{toast.message}</span>
+        </div>
       )}
     </>
   );

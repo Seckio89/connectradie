@@ -13,6 +13,7 @@ import {
   Bookmark,
   ChevronDown,
   Image,
+  Calendar,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,6 +35,7 @@ interface SubmitQuoteModalProps {
   isOpen: boolean;
   onClose: () => void;
   job: Job;
+  proposedStartDate?: string | null;
   onQuoteSubmitted: () => void;
 }
 
@@ -45,6 +47,7 @@ export default function SubmitQuoteModal({
   isOpen,
   onClose,
   job,
+  proposedStartDate,
   onQuoteSubmitted,
 }: SubmitQuoteModalProps) {
   const { user, profile, tradieDetails } = useAuth();
@@ -191,6 +194,7 @@ export default function SubmitQuoteModal({
       message: message.trim(),
       estimated_duration: estimatedDuration || null,
       includes_materials: includesMaterials,
+      proposed_start_date: proposedStartDate || null,
       status: 'pending',
     });
 
@@ -376,6 +380,20 @@ export default function SubmitQuoteModal({
             </div>
 
             <div className="p-6 space-y-5">
+              {proposedStartDate && (
+                <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                  <Calendar className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-emerald-700">Proposed Start Date</p>
+                    <p className="text-sm font-semibold text-emerald-800">
+                      {new Date(proposedStartDate + 'T00:00:00').toLocaleDateString('en-AU', {
+                        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-sm font-medium text-gray-700">Your Price</label>

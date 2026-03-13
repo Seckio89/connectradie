@@ -12,6 +12,7 @@ import {
   MessageSquare,
   ChevronDown,
   ChevronUp,
+  Calendar,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -443,6 +444,12 @@ export default function QuoteComparisonView({
                       <span className="inline-flex items-center gap-1.5 text-warm-500">
                         <Eye className="w-3.5 h-3.5 flex-shrink-0" />
                         Site visit required
+                      </span>
+                    )}
+                    {quote.proposed_start_date && (
+                      <span className="inline-flex items-center gap-1.5 text-emerald-600">
+                        <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                        Available from {new Date(quote.proposed_start_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
                       </span>
                     )}
                     {quote.message && (

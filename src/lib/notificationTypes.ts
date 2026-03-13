@@ -27,6 +27,7 @@ export const NOTIFICATION_TYPES = {
   SESSION_SKIPPED: 'SESSION_SKIPPED',
   EXTRA_SESSION_ADDED: 'EXTRA_SESSION_ADDED',
   PAYMENT_AUTO_RELEASED: 'PAYMENT_AUTO_RELEASED',
+  JOB_DECLINED: 'JOB_DECLINED',
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];
@@ -144,5 +145,9 @@ export const NOTIFICATION_TEMPLATES: Record<
   [NOTIFICATION_TYPES.PAYMENT_AUTO_RELEASED]: {
     defaultTitle: 'Payment Auto-Released',
     emailSubject: 'Payment of ${amount} Released to Your Tradie',
+  },
+  [NOTIFICATION_TYPES.JOB_DECLINED]: {
+    defaultTitle: 'Job Declined',
+    emailSubject: 'Your Job Has Been Declined by a Tradie',
   },
 };

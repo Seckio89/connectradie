@@ -211,6 +211,7 @@ export type Quote = {
   requires_site_inspection: boolean;
   status: QuoteStatus;
   accepted_at: string | null;
+  proposed_start_date: string | null;
   created_at: string;
   updated_at: string;
 }

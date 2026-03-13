@@ -10,27 +10,27 @@ import {
   Key,
   Image as ImageIcon,
   CheckCircle2,
-  MessageSquare,
   Play,
   Flag,
-  ArrowRight,
   Loader2,
-  Lock,
   Repeat,
+  ClipboardList,
 } from 'lucide-react';
 import { formatDate, friendlyError } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { isPro as checkIsPro } from '../lib/subscription';
 import type { Job, JobMilestone } from '../types/database';
+import type { RecurringJob } from '../lib/recurringJobs';
 import MilestoneEditor from './MilestoneEditor';
 import Modal from './Modal';
+import AvailabilityMiniCalendar from './AvailabilityMiniCalendar';
 
 interface JobDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   job: (Job & { profiles?: { full_name: string; email: string; phone?: string } }) | null;
-  onQuote?: () => void;
+  onQuote?: (proposedStartDate?: string | null) => void;
   isUnlocked?: boolean;
   onStatusChange?: () => void;
 }
@@ -67,11 +67,13 @@ function getNextAction(status: string, isTradie: boolean): { label: string; hint
   }
 }
 
-export default function JobDetailModal({ isOpen, onClose, job, isUnlocked = true, onStatusChange }: JobDetailModalProps) {
+export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlocked = true, onStatusChange }: JobDetailModalProps) {
   const { user, profile, tradieDetails } = useAuth();
   const [milestones, setMilestones] = useState<JobMilestone[]>([]);
   const [statusLoading, setStatusLoading] = useState(false);
   const [localStatus, setLocalStatus] = useState<string>(job?.status || 'pending');
+  const [recurringJob, setRecurringJob] = useState<RecurringJob | null>(null);
+  const [selectedAvailDate, setSelectedAvailDate] = useState<string | null>(null);
 
   const isTradie = profile?.role === 'tradie';
   const isProTradie = isTradie && checkIsPro(tradieDetails?.subscription_tier, profile?.is_premium);
@@ -82,8 +84,35 @@ export default function JobDetailModal({ isOpen, onClose, job, isUnlocked = true
     if (job) {
       setLocalStatus(job.status);
       setStatusLoading(false);
+      setSelectedAvailDate(null);
     }
   }, [job?.id, job?.status]);
+
+  // Fetch linked recurring job if this job is part of a recurring service
+  useEffect(() => {
+    if (!isOpen || !job) {
+      setRecurringJob(null);
+      return;
+    }
+    let cancelled = false;
+
+    const fetchRecurring = async () => {
+      const { data } = await supabase
+        .from('recurring_jobs')
+        .select('*')
+        .eq('original_job_id', job.id)
+        .limit(1)
+        .maybeSingle();
+      if (!cancelled && data) {
+        setRecurringJob(data as RecurringJob);
+      } else if (!cancelled) {
+        setRecurringJob(null);
+      }
+    };
+
+    fetchRecurring();
+    return () => { cancelled = true; };
+  }, [isOpen, job?.id]);
 
   // Auto-progress: when a tradie opens a funded job, auto-start it
   useEffect(() => {
@@ -167,8 +196,28 @@ export default function JobDetailModal({ isOpen, onClose, job, isUnlocked = true
   const categoryRaw = job.description.match(/^\[([^\]]+)\]/)?.[1];
   const category = categoryRaw ? categoryRaw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : null;
   const description = job.description.replace(/^\[[^\]]+\]\s*/, '');
-  const isRecurring = !!(job.title && /recurring/i.test(job.title));
+  const isRecurring = !!recurringJob || !!(job.title && /recurring/i.test(job.title));
   const isDeclined = localStatus === 'declined';
+
+  // Parse description lines for numbered scope of work
+  const descriptionLines = description
+    .split('\n')
+    .map((line) => line.replace(/^\d+\.\s*/, '').trim())
+    .filter((line) => line.length > 0);
+
+  // Recurring schedule helpers
+  const frequencyLabel = recurringJob?.billing_cycle === 'fortnightly'
+    ? 'Fortnightly'
+    : recurringJob?.frequency_months === 1
+      ? 'Monthly'
+      : recurringJob?.frequency_months
+        ? `Every ${recurringJob.frequency_months} months`
+        : null;
+
+  const sessionsPerCycle = recurringJob?.billing_cycle === 'fortnightly' ? 2 : 1;
+  const estimatedValue = recurringJob?.agreed_price
+    ? `$${(recurringJob.agreed_price * sessionsPerCycle).toFixed(2)}`
+    : 'Quote required';
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="lg" closeOnBackdrop={false}>
@@ -176,10 +225,15 @@ export default function JobDetailModal({ isOpen, onClose, job, isUnlocked = true
       <div className="sticky top-0 bg-white px-6 pt-5 pb-4 border-b border-gray-100 z-10">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2.5 mb-1.5">
+            <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
               {category && (
                 <span className="px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-semibold border border-secondary-200 flex-shrink-0">
                   {category}
+                </span>
+              )}
+              {isRecurring && frequencyLabel && (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium flex-shrink-0">
+                  <Repeat className="w-3 h-3 inline mr-1" />{frequencyLabel}
                 </span>
               )}
               <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${
@@ -282,11 +336,79 @@ export default function JobDetailModal({ isOpen, onClose, job, isUnlocked = true
           </div>
         )}
 
-        {/* ── Job Description ── */}
+        {/* ── Scope of Work ── */}
         {description && description.length > 40 && (
           <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs font-semibold text-gray-500 mb-2">Job Description</p>
-            <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{description}</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Scope of Work</p>
+            {descriptionLines.length > 1 ? (
+              <ol className="list-decimal list-inside space-y-1.5">
+                {descriptionLines.map((line, i) => (
+                  <li key={i} className="text-sm text-gray-700 leading-relaxed">{line}</li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{description}</p>
+            )}
+          </div>
+        )}
+
+        {/* ── Service Schedule (recurring only) ── */}
+        {isRecurring && recurringJob && (
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Service Schedule</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {frequencyLabel && (
+                <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3">
+                  <Repeat className="w-4 h-4 text-secondary-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase">Frequency</p>
+                    <p className="text-sm text-gray-700">{frequencyLabel}</p>
+                  </div>
+                </div>
+              )}
+              {recurringJob.next_due_date && (
+                <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3">
+                  <Calendar className="w-4 h-4 text-secondary-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase">Next Due</p>
+                    <p className="text-sm text-gray-700">
+                      {new Date(recurringJob.next_due_date + 'T00:00:00').toLocaleDateString('en-AU', {
+                        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3">
+                <span className="text-base text-secondary-500 font-semibold flex-shrink-0">$</span>
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase">Estimated Value</p>
+                  <p className="text-sm text-gray-700 font-medium">{estimatedValue}</p>
+                </div>
+              </div>
+              {recurringJob.preferred_time && (
+                <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3">
+                  <Clock className="w-4 h-4 text-secondary-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase">Preferred Time</p>
+                    <p className="text-sm text-gray-700">{recurringJob.preferred_time}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Your Availability (tradie only, pending jobs) ── */}
+        {isTradie && localStatus === 'pending' && user && (
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Your Availability</p>
+            <AvailabilityMiniCalendar
+              tradieId={user.id}
+              preferredDate={job.scheduled_date}
+              selectedDate={selectedAvailDate}
+              onSelectDate={setSelectedAvailDate}
+            />
           </div>
         )}
 
@@ -435,6 +557,18 @@ export default function JobDetailModal({ isOpen, onClose, job, isUnlocked = true
         >
           Close
         </button>
+
+        {isTradie && localStatus === 'pending' && onQuote && job.budget_type === 'to_be_quoted' && (
+          <button
+            onClick={() => onQuote(selectedAvailDate)}
+            className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+          >
+            <ClipboardList className="w-4 h-4" />
+            {selectedAvailDate
+              ? `Quote Now — Available ${new Date(selectedAvailDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`
+              : 'Quote Now'}
+          </button>
+        )}
 
         {isTradie && localStatus === 'accepted' && (
           <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-700 font-medium rounded-xl border border-amber-200">
