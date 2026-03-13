@@ -1422,9 +1422,6 @@ function RecurringJobForm({ onSave, onCancel, savedTradies }: {
                   }`}
                 >
                   {opt.label}
-                  {suggestion && suggestion.frequencyMonths === opt.value && (
-                    <span className="ml-1 text-warm-600">★</span>
-                  )}
                 </button>
               ))}
             </div>
