@@ -223,6 +223,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     } else if (notification.type === 'new_lead') {
       navigate(jobId ? `/work?job=${jobId}` : '/work');
       setNotificationsOpen(false);
+    } else if (
+      notification.type === 'session_reminder' ||
+      notification.type === 'session_rescheduled' ||
+      notification.type === 'session_skipped' ||
+      notification.type === 'extra_session_added' ||
+      notification.type === 'invoice_ready'
+    ) {
+      navigate('/dashboard');
+      setNotificationsOpen(false);
     } else {
       // Fallback: if there's a job_id, navigate to the relevant page
       if (jobId) {

@@ -22,6 +22,10 @@ export const NOTIFICATION_TYPES = {
   LICENSE_EXPIRING: 'LICENSE_EXPIRING',
   BOOKING_REMINDER: 'BOOKING_REMINDER',
   NEW_LEAD: 'NEW_LEAD',
+  SESSION_REMINDER: 'SESSION_REMINDER',
+  SESSION_RESCHEDULED: 'SESSION_RESCHEDULED',
+  SESSION_SKIPPED: 'SESSION_SKIPPED',
+  EXTRA_SESSION_ADDED: 'EXTRA_SESSION_ADDED',
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];
@@ -122,5 +126,18 @@ export const NOTIFICATION_TEMPLATES: Record<
   },
   [NOTIFICATION_TYPES.NEW_LEAD]: {
     defaultTitle: 'New Lead Available',
+  },
+  [NOTIFICATION_TYPES.SESSION_REMINDER]: {
+    defaultTitle: 'Upcoming Session Reminder',
+    emailSubject: 'Reminder: Recurring Session Tomorrow',
+  },
+  [NOTIFICATION_TYPES.SESSION_RESCHEDULED]: {
+    defaultTitle: 'Session Rescheduled',
+  },
+  [NOTIFICATION_TYPES.SESSION_SKIPPED]: {
+    defaultTitle: 'Session Skipped',
+  },
+  [NOTIFICATION_TYPES.EXTRA_SESSION_ADDED]: {
+    defaultTitle: 'Extra Session Added',
   },
 };
