@@ -143,34 +143,27 @@ export default function SubmitQuoteModal({
   );
   const messageOptions = QUOTE_MESSAGE_OPTIONS[messageOptionsKey] || QUOTE_MESSAGE_OPTIONS['default'];
 
-  const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
+  const [messageOptionIndex, setMessageOptionIndex] = useState(0);
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Reset selection when modal opens
+  // Auto-load first message option (or saved template) when modal opens
   useEffect(() => {
     if (!isOpen) return;
     const saved = localStorage.getItem('quote_message_template');
     if (saved) {
       setMessage(saved);
-      setSelectedOptionIndex(null);
     } else {
-      setMessage('');
-      setSelectedOptionIndex(null);
+      setMessage(messageOptions[0]);
+      setMessageOptionIndex(0);
     }
     setSaveAsTemplate(false);
-  }, [isOpen]);
+  }, [isOpen, messageOptions]);
 
-  const handleSelectOption = (index: number) => {
-    setSelectedOptionIndex(index);
-    setMessage(messageOptions[index]);
-    setSaveAsTemplate(false);
-    // Focus textarea after selection
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-      }
-    }, 50);
+  const handleCycleMessage = () => {
+    const next = (messageOptionIndex + 1) % messageOptions.length;
+    setMessageOptionIndex(next);
+    setMessage(messageOptions[next]);
   };
 
   const handleSubmit = async () => {
@@ -490,25 +483,19 @@ export default function SubmitQuoteModal({
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Choose a message
-                  </label>
-                  <div className="flex items-center gap-2">
-                    {templates.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowTemplates(!showTemplates)}
-                        className="flex items-center gap-1 text-xs font-medium text-secondary-600 hover:text-secondary-700 px-2 py-1 rounded-lg hover:bg-secondary-50 transition-colors"
-                      >
-                        <Bookmark className="w-3.5 h-3.5" />
-                        Templates
-                        <ChevronDown className={`w-3 h-3 transition-transform ${showTemplates ? 'rotate-180' : ''}`} />
-                      </button>
-                    )}
+                {templates.length > 0 && (
+                  <div className="flex items-center justify-end mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowTemplates(!showTemplates)}
+                      className="flex items-center gap-1 text-xs font-medium text-secondary-600 hover:text-secondary-700 px-2 py-1 rounded-lg hover:bg-secondary-50 transition-colors"
+                    >
+                      <Bookmark className="w-3.5 h-3.5" />
+                      Templates
+                      <ChevronDown className={`w-3 h-3 transition-transform ${showTemplates ? 'rotate-180' : ''}`} />
+                    </button>
                   </div>
-                </div>
-                <p className="text-xs text-gray-400 mb-3">Pick one below — edit it to make it yours</p>
+                )}
 
                 {showTemplates && templates.length > 0 && (
                   <div className="mb-3 border border-secondary-200 rounded-xl overflow-hidden divide-y divide-secondary-100">
@@ -534,57 +521,37 @@ export default function SubmitQuoteModal({
                   </div>
                 )}
 
-                {/* 5 selectable message cards */}
-                <div className="space-y-2 mb-3">
-                  {messageOptions.map((opt, i) => (
+                <textarea
+                  ref={textareaRef}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-sm"
+                />
+
+                <div className="mt-1.5 flex items-center justify-between">
+                  <span className="text-xs text-gray-400">
+                    Not the right tone?{' '}
                     <button
-                      key={i}
                       type="button"
-                      onClick={() => handleSelectOption(i)}
-                      className={`w-full text-left p-3 rounded-lg border transition-colors relative ${
-                        selectedOptionIndex === i
-                          ? 'bg-emerald-50 border-emerald-400'
-                          : 'bg-white border-gray-200 hover:border-emerald-300'
-                      }`}
+                      onClick={handleCycleMessage}
+                      className="text-gray-500 hover:text-gray-700 transition-colors"
                     >
-                      <div className={`absolute top-3 right-3 w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                        selectedOptionIndex === i
-                          ? 'border-emerald-500 bg-emerald-500'
-                          : 'border-gray-300'
-                      }`}>
-                        {selectedOptionIndex === i && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-700 leading-relaxed pr-6">{opt}</p>
+                      Try another &rarr;
                     </button>
-                  ))}
+                  </span>
+                  <span className="text-xs text-gray-300">{messageOptionIndex + 1} of {messageOptions.length}</span>
                 </div>
 
-                {/* Editable textarea — visible once a message is selected or typed */}
-                {message && (
-                  <>
-                    <p className="text-xs text-gray-400 mb-1.5">Edit if you'd like — or send as is</p>
-                    <textarea
-                      ref={textareaRef}
-                      value={message}
-                      onChange={(e) => { setMessage(e.target.value); setSelectedOptionIndex(null); }}
-                      rows={3}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary-500 resize-none text-sm"
-                    />
-
-                    {/* Save as template */}
-                    <label className="flex items-center gap-2 mt-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={saveAsTemplate}
-                        onChange={(e) => setSaveAsTemplate(e.target.checked)}
-                        className="rounded border-gray-300 text-secondary-500 focus:ring-secondary-400"
-                      />
-                      <span className="text-xs text-gray-500">Save this message for future quotes</span>
-                    </label>
-                  </>
-                )}
+                <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={saveAsTemplate}
+                    onChange={(e) => setSaveAsTemplate(e.target.checked)}
+                    className="rounded border-gray-300 text-secondary-500 focus:ring-secondary-400"
+                  />
+                  <span className="text-xs text-gray-500">Save this message for next time</span>
+                </label>
               </div>
 
               <div>
