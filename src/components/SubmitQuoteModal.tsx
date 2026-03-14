@@ -186,9 +186,19 @@ export default function SubmitQuoteModal({
   const [usedChips, setUsedChips] = useState<Set<string>>(new Set());
 
   const handleChipClick = (chip: SmartChip) => {
-    if (usedChips.has(chip.label)) return;
-    setMessage(prev => prev + chip.text);
-    setUsedChips(prev => new Set(prev).add(chip.label));
+    if (usedChips.has(chip.label)) {
+      // Toggle OFF — remove chip text from message
+      setMessage(prev => prev.replace(chip.text, ''));
+      setUsedChips(prev => {
+        const next = new Set(prev);
+        next.delete(chip.label);
+        return next;
+      });
+    } else {
+      // Toggle ON — append chip text to message
+      setMessage(prev => prev + chip.text);
+      setUsedChips(prev => new Set(prev).add(chip.label));
+    }
   };
 
   // Reset used chips when modal opens
@@ -620,11 +630,10 @@ export default function SubmitQuoteModal({
                           key={chip.label}
                           type="button"
                           onClick={() => handleChipClick(chip)}
-                          disabled={isUsed}
-                          className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                          className={`px-3 py-1.5 rounded-full text-xs border transition-colors cursor-pointer ${
                             isUsed
-                              ? 'bg-emerald-50 border-emerald-400 text-emerald-700 cursor-default'
-                              : 'border-gray-200 text-gray-600 hover:border-emerald-500 hover:text-emerald-600 cursor-pointer'
+                              ? 'bg-emerald-50 border-emerald-400 text-emerald-700 hover:bg-emerald-100'
+                              : 'border-gray-200 text-gray-600 hover:border-emerald-500 hover:text-emerald-600'
                           }`}
                         >
                           {chip.label}
