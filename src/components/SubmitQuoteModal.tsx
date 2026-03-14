@@ -43,6 +43,45 @@ const DURATION_UNITS = ['hours', 'days', 'weeks'] as const;
 
 type ModalState = 'form' | 'submitting' | 'success';
 
+interface DurationPill {
+  label: string;
+  value: string;
+  unit: 'hours' | 'days' | 'weeks';
+}
+
+const DURATION_PILLS: Record<string, DurationPill[]> = {
+  short: [
+    { label: '1h', value: '1', unit: 'hours' },
+    { label: '2h', value: '2', unit: 'hours' },
+    { label: 'Half day', value: '4', unit: 'hours' },
+    { label: 'Full day', value: '8', unit: 'hours' },
+  ],
+  medium: [
+    { label: '2h', value: '2', unit: 'hours' },
+    { label: '4h', value: '4', unit: 'hours' },
+    { label: 'Half day', value: '4', unit: 'hours' },
+    { label: 'Full day', value: '8', unit: 'hours' },
+  ],
+  long: [
+    { label: '1 day', value: '1', unit: 'days' },
+    { label: '2-3 days', value: '3', unit: 'days' },
+    { label: '1 week', value: '1', unit: 'weeks' },
+    { label: '2+ weeks', value: '2', unit: 'weeks' },
+  ],
+};
+
+function getDurationPillsForTrade(trade: string): DurationPill[] {
+  const t = trade.toLowerCase();
+  if (/build|carpent|chippy|cabinet|concret|brick|plaster|demolit|scaffold|earthmov|stone/.test(t)) return DURATION_PILLS.long;
+  if (/plumb|electric|sparky|air.?con|hvac|locksmith|antenna|security/.test(t)) return DURATION_PILLS.short;
+  return DURATION_PILLS.medium;
+}
+
+function shouldDefaultMaterials(trade: string): boolean {
+  const t = trade.toLowerCase();
+  return /clean|paint|landscap|garden|lawn|mow/.test(t);
+}
+
 export default function SubmitQuoteModal({
   isOpen,
   onClose,
@@ -145,7 +184,59 @@ export default function SubmitQuoteModal({
 
   const [messageOptionIndex, setMessageOptionIndex] = useState(0);
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [messageExpanded, setMessageExpanded] = useState(false);
+  const [priceHint, setPriceHint] = useState<{ min: number; max: number } | null>(null);
+  const [selectedPill, setSelectedPill] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const durationPills = useMemo(() => getDurationPillsForTrade(tradeType), [tradeType]);
+
+  // Fetch price guidance from similar quotes
+  useEffect(() => {
+    if (!isOpen) return;
+    setPriceHint(null);
+    const postcode = (job.location_address || '').match(/\b(\d{4})\b/)?.[1];
+    if (!postcode) return;
+
+    const postcodePrefix = postcode.slice(0, 2);
+    supabase
+      .from('quotes')
+      .select('price_min, price_max')
+      .ilike('job_id', '%')
+      .limit(50)
+      .then(async () => {
+        const { data } = await supabase.rpc('get_price_guidance', {
+          p_category: categoryRaw,
+          p_postcode_prefix: postcodePrefix,
+        }).single();
+        if (data && data.avg_min && data.avg_max) {
+          setPriceHint({ min: Math.round(data.avg_min / 10) * 10, max: Math.round(data.avg_max / 10) * 10 });
+        }
+      })
+      .catch(() => {});
+
+    // Fallback: direct query if RPC doesn't exist
+    supabase
+      .from('quotes')
+      .select('price_min, price_max, jobs!inner(description, location_address)')
+      .ilike('jobs.description', `[${categoryRaw}]%`)
+      .ilike('jobs.location_address', `%${postcodePrefix}%`)
+      .eq('status', 'pending')
+      .limit(20)
+      .then(({ data }) => {
+        if (!data || data.length < 3) return;
+        const mins = data.map((q: Record<string, unknown>) => q.price_min as number).sort((a: number, b: number) => a - b);
+        const maxes = data.map((q: Record<string, unknown>) => q.price_max as number).sort((a: number, b: number) => a - b);
+        const trimmedMin = mins.slice(1, -1);
+        const trimmedMax = maxes.slice(1, -1);
+        const avgMin = trimmedMin.reduce((a: number, b: number) => a + b, 0) / trimmedMin.length;
+        const avgMax = trimmedMax.reduce((a: number, b: number) => a + b, 0) / trimmedMax.length;
+        if (avgMin > 0 && avgMax > 0) {
+          setPriceHint({ min: Math.round(avgMin / 10) * 10, max: Math.round(avgMax / 10) * 10 });
+        }
+      })
+      .catch(() => {});
+  }, [isOpen, categoryRaw, job.location_address]);
 
   // Auto-load first message option (or saved template) when modal opens
   useEffect(() => {
@@ -158,13 +249,34 @@ export default function SubmitQuoteModal({
       setMessageOptionIndex(0);
     }
     setSaveAsTemplate(false);
-  }, [isOpen, messageOptions]);
+    setMessageExpanded(false);
+    setSelectedPill(null);
+    setIncludesMaterials(shouldDefaultMaterials(tradeType));
+  }, [isOpen, messageOptions, tradeType]);
 
   const handleCycleMessage = () => {
     const next = (messageOptionIndex + 1) % messageOptions.length;
     setMessageOptionIndex(next);
     setMessage(messageOptions[next]);
   };
+
+  const handlePillClick = (pill: DurationPill) => {
+    if (selectedPill === pill.label) {
+      setSelectedPill(null);
+      setDurationValue('');
+      return;
+    }
+    setSelectedPill(pill.label);
+    setDurationValue(pill.value);
+    setDurationUnit(pill.unit);
+    setDurationTBD(false);
+  };
+
+  const hasPriceEntered = useFirmPrice
+    ? !!firmPrice && parseFloat(firmPrice) > 0
+    : !!priceMin && !!priceMax && parseFloat(priceMin) > 0 && parseFloat(priceMax) > 0;
+  const hasDurationEntered = durationTBD || !!durationValue;
+  const canSubmit = hasPriceEntered && hasDurationEntered && !!message.trim();
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -274,6 +386,8 @@ export default function SubmitQuoteModal({
     setIncludesMaterials(false);
     setError('');
     setModalState('form');
+    setMessageExpanded(false);
+    setSelectedPill(null);
     onClose();
   };
 
@@ -480,11 +594,17 @@ export default function SubmitQuoteModal({
                     Provide a range. You can firm up later after speaking with the client.
                   </p>
                 )}
+                {priceHint && (
+                  <p className="mt-1.5 text-xs text-gray-400">
+                    Typical range for similar jobs: ${priceHint.min.toLocaleString()} – ${priceHint.max.toLocaleString()}
+                  </p>
+                )}
               </div>
 
               <div>
-                {templates.length > 0 && (
-                  <div className="flex items-center justify-end mb-2">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-gray-700">Message to Client</label>
+                  {templates.length > 0 && (
                     <button
                       type="button"
                       onClick={() => setShowTemplates(!showTemplates)}
@@ -494,8 +614,8 @@ export default function SubmitQuoteModal({
                       Templates
                       <ChevronDown className={`w-3 h-3 transition-transform ${showTemplates ? 'rotate-180' : ''}`} />
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {showTemplates && templates.length > 0 && (
                   <div className="mb-3 border border-secondary-200 rounded-xl overflow-hidden divide-y divide-secondary-100">
@@ -503,7 +623,7 @@ export default function SubmitQuoteModal({
                       <div key={t.id} className="flex items-center justify-between p-3 hover:bg-secondary-50 transition-colors">
                         <button
                           type="button"
-                          onClick={() => applyTemplate(t)}
+                          onClick={() => { applyTemplate(t); setMessageExpanded(true); }}
                           className="flex-1 text-left"
                         >
                           <span className="text-sm font-medium text-gray-900">{t.name}</span>
@@ -521,43 +641,82 @@ export default function SubmitQuoteModal({
                   </div>
                 )}
 
-                <textarea
-                  ref={textareaRef}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-sm"
-                />
+                {!messageExpanded ? (
+                  <button
+                    type="button"
+                    onClick={() => setMessageExpanded(true)}
+                    className="w-full text-left px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-300 transition-all duration-200"
+                  >
+                    <span>{message.length > 60 ? message.slice(0, 60) + '...' : message}</span>
+                    <span className="ml-2 text-emerald-600 text-sm">Edit</span>
+                  </button>
+                ) : (
+                  <div className="transition-all duration-200">
+                    <textarea
+                      ref={textareaRef}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      rows={4}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-sm"
+                    />
 
-                <div className="mt-1.5 flex items-center justify-between">
-                  <span className="text-xs text-gray-400">
-                    Not the right tone?{' '}
-                    <button
-                      type="button"
-                      onClick={handleCycleMessage}
-                      className="text-gray-500 hover:text-gray-700 transition-colors"
-                    >
-                      Try another &rarr;
-                    </button>
-                  </span>
-                  <span className="text-xs text-gray-300">{messageOptionIndex + 1} of {messageOptions.length}</span>
-                </div>
+                    <div className="mt-1.5 flex items-center justify-between">
+                      <span className="text-xs text-gray-400">
+                        Not the right tone?{' '}
+                        <button
+                          type="button"
+                          onClick={handleCycleMessage}
+                          className="text-gray-500 hover:text-gray-700 transition-colors"
+                        >
+                          Try another &rarr;
+                        </button>
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-300">{messageOptionIndex + 1} of {messageOptions.length}</span>
+                        <button
+                          type="button"
+                          onClick={() => setMessageExpanded(false)}
+                          className="text-xs text-emerald-600 hover:text-emerald-700 transition-colors"
+                        >
+                          Done editing
+                        </button>
+                      </div>
+                    </div>
 
-                <label className="flex items-center gap-2 mt-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={saveAsTemplate}
-                    onChange={(e) => setSaveAsTemplate(e.target.checked)}
-                    className="rounded border-gray-300 text-secondary-500 focus:ring-secondary-400"
-                  />
-                  <span className="text-xs text-gray-500">Save this message for next time</span>
-                </label>
+                    <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={saveAsTemplate}
+                        onChange={(e) => setSaveAsTemplate(e.target.checked)}
+                        className="rounded border-gray-300 text-secondary-500 focus:ring-secondary-400"
+                      />
+                      <span className="text-xs text-gray-500">Save this message for next time</span>
+                    </label>
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Estimated duration
                 </label>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {durationPills.map((pill) => (
+                    <button
+                      key={pill.label}
+                      type="button"
+                      disabled={durationTBD}
+                      onClick={() => handlePillClick(pill)}
+                      className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                        selectedPill === pill.label
+                          ? 'bg-emerald-500 text-white border-emerald-500'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                      } ${durationTBD ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {pill.label}
+                    </button>
+                  ))}
+                </div>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
@@ -565,7 +724,7 @@ export default function SubmitQuoteModal({
                     max="999"
                     placeholder="e.g. 3"
                     value={durationValue}
-                    onChange={(e) => setDurationValue(e.target.value.replace(/[^0-9]/g, ''))}
+                    onChange={(e) => { setDurationValue(e.target.value.replace(/[^0-9]/g, '')); setSelectedPill(null); }}
                     disabled={durationTBD}
                     className={`w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-secondary-400 focus:border-secondary-400 ${
                       durationTBD ? 'bg-gray-100 text-gray-400' : ''
@@ -637,7 +796,10 @@ export default function SubmitQuoteModal({
 
               <button
                 onClick={handleSubmit}
-                className="w-full py-3.5 bg-gradient-to-r from-secondary-500 to-secondary-500 text-white font-semibold rounded-xl hover:from-secondary-600 hover:to-secondary-600 transition-colors shadow-lg shadow-secondary-200 flex items-center justify-center gap-2 text-lg"
+                disabled={!canSubmit}
+                className={`w-full py-3.5 bg-gradient-to-r from-secondary-500 to-secondary-500 text-white font-semibold rounded-xl hover:from-secondary-600 hover:to-secondary-600 transition-colors shadow-lg shadow-secondary-200 flex items-center justify-center gap-2 text-lg ${
+                  !canSubmit ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 <Send className="w-5 h-5" />
                 Submit Quote
