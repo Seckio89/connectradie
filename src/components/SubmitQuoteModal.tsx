@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   X,
   Send,
@@ -132,20 +132,95 @@ export default function SubmitQuoteModal({
   const businessName = tradieDetails?.business_name || profile?.full_name || 'our team';
   const tradeType = tradieDetails?.trade_category || category.toLowerCase();
 
-  const MESSAGE_STARTERS = [
+  const isRecurring = !!(job.title && /recurring/i.test(job.title));
+  const hasBudget = !!job.budget_amount;
+  const allowsInspection = !!job.allows_site_inspection;
+  const clientName = job.contact_name || 'there';
+
+  interface SmartChip {
+    label: string;
+    text: string;
+    condition: boolean;
+  }
+
+  const smartChips: SmartChip[] = useMemo(() => [
     {
-      label: 'Introduce yourself',
-      text: `Hi, I'm from ${businessName}. We specialise in ${tradeType} services and have been in the industry for several years. Happy to discuss the details of your job and provide a competitive quote.`,
+      label: `My experience with ${tradeType}`,
+      text: `I have extensive experience with ${tradeType} and have completed similar work in the ${suburb} area. `,
+      condition: true,
     },
     {
-      label: 'What\'s included',
-      text: `This quote covers all labour and workmanship for the job described. I'll bring all necessary tools and equipment. Please let me know if you have any questions about what's included.`,
+      label: "What's included in my price",
+      text: "My price includes [list what's covered — materials, labour, cleanup]. ",
+      condition: true,
     },
     {
-      label: 'Site visit offer',
-      text: `Hi, I'd love to help with this. I can come out for a quick inspection to give you an accurate quote. I'm flexible on times — let me know what works best for you.`,
+      label: 'My availability to start',
+      text: proposedStartDate
+        ? `I'm available to start from ${new Date(proposedStartDate + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}. `
+        : "I'm available to start this week. ",
+      condition: true,
     },
-  ];
+    {
+      label: 'My experience with regular services',
+      text: 'I regularly service similar properties and understand the importance of consistency and reliability for ongoing work. ',
+      condition: isRecurring,
+    },
+    {
+      label: 'How I handle recurring work',
+      text: 'For regular services I maintain a consistent standard each visit and will communicate any issues promptly. ',
+      condition: isRecurring,
+    },
+    {
+      label: 'Why my price is competitive',
+      text: "My price reflects quality workmanship and I'm transparent about what's included — no hidden costs. ",
+      condition: hasBudget,
+    },
+    {
+      label: "I'd like to do a site visit",
+      text: "I'd recommend a quick site visit before starting so I can give you an accurate assessment and answer any questions. ",
+      condition: allowsInspection,
+    },
+  ].filter(c => c.condition), [tradeType, suburb, proposedStartDate, isRecurring, hasBudget, allowsInspection]);
+
+  const [usedChips, setUsedChips] = useState<Set<string>>(new Set());
+
+  const handleChipClick = (chip: SmartChip) => {
+    if (usedChips.has(chip.label)) return;
+    setMessage(prev => prev + chip.text);
+    setUsedChips(prev => new Set(prev).add(chip.label));
+  };
+
+  // Reset used chips when modal opens
+  useEffect(() => {
+    if (isOpen) setUsedChips(new Set());
+  }, [isOpen]);
+
+  const messageStrength = useMemo(() => {
+    if (!message.trim()) return { score: 0, label: '', tip: '' };
+    const lc = message.toLowerCase();
+    let score = 0;
+    if (new RegExp(suburb.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(lc) || /area|location|suburb/.test(lc)) score++;
+    if (/experience|completed|years|specialist/.test(lc)) score++;
+    if (/available|start|week|begin|commence/.test(lc)) score++;
+    if (/include|covered|materials|labour|cleanup/.test(lc)) score++;
+    if (message.length > 100) score++;
+
+    const levels: Record<number, { label: string; tip: string }> = {
+      0: { label: '', tip: 'Too short — clients skip short messages' },
+      1: { label: '', tip: 'Too short — clients skip short messages' },
+      2: { label: '', tip: 'Good — add your availability to strengthen it' },
+      3: { label: '', tip: 'Good — add your availability to strengthen it' },
+      4: { label: '', tip: 'Strong — this quote stands out' },
+      5: { label: '', tip: 'Excellent — you\'re giving clients everything they need to choose you' },
+    };
+    const level = levels[Math.min(score, 5)];
+    return { score, ...level };
+  }, [message, suburb]);
+
+  const strengthColor = messageStrength.score <= 1 ? 'text-red-500' : messageStrength.score <= 3 ? 'text-amber-500' : 'text-emerald-600';
+
+  const dynamicPlaceholder = `e.g. Hi ${clientName}, I've completed similar ${tradeType} work in the ${suburb} area. My price includes everything listed — [details]. I'm available to start [date]...`;
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -532,53 +607,62 @@ export default function SubmitQuoteModal({
                   </div>
                 )}
 
-                {/* Quick-fill starters for new users with no templates */}
-                {!message.trim() && templates.length === 0 && (
-                  <div className="mb-3">
-                    <p className="text-xs text-gray-500 mb-2">
-                      Not sure what to write? Start with one of these:
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {MESSAGE_STARTERS.map((starter) => (
+                {/* Smart context-aware chips */}
+                <div className="mb-3">
+                  <p className="text-xs text-gray-500 mb-2">
+                    Build your message — tap to add:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {smartChips.map((chip) => {
+                      const isUsed = usedChips.has(chip.label);
+                      return (
                         <button
-                          key={starter.label}
+                          key={chip.label}
                           type="button"
-                          onClick={() => setMessage(starter.text)}
-                          className="px-3 py-1.5 bg-secondary-50 text-secondary-700 text-xs font-medium rounded-lg border border-secondary-200 hover:bg-secondary-100 transition-colors"
+                          onClick={() => handleChipClick(chip)}
+                          disabled={isUsed}
+                          className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                            isUsed
+                              ? 'bg-emerald-50 border-emerald-400 text-emerald-700 cursor-default'
+                              : 'border-gray-200 text-gray-600 hover:border-emerald-500 hover:text-emerald-600 cursor-pointer'
+                          }`}
                         >
-                          {starter.label}
+                          {chip.label}
                         </button>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
-                )}
-
-                {/* Quick-fill starters when textarea is empty but user has templates */}
-                {!message.trim() && templates.length > 0 && !showTemplates && (
-                  <div className="mb-3">
-                    <p className="text-xs text-gray-500 mb-2">Quick start:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {MESSAGE_STARTERS.map((starter) => (
-                        <button
-                          key={starter.label}
-                          type="button"
-                          onClick={() => setMessage(starter.text)}
-                          className="px-3 py-1.5 bg-gray-50 text-gray-600 text-xs font-medium rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
-                        >
-                          {starter.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                </div>
 
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Tell the client what you'll do, what's included in your price, and any relevant experience you have..."
+                  placeholder={dynamicPlaceholder}
                   rows={4}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary-500 resize-none text-sm"
                 />
+
+                {/* Message strength indicator */}
+                {message.trim() && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <span
+                          key={i}
+                          className={`w-2 h-2 rounded-full ${
+                            i <= messageStrength.score ? (
+                              messageStrength.score <= 1 ? 'bg-red-500' :
+                              messageStrength.score <= 3 ? 'bg-amber-500' : 'bg-emerald-500'
+                            ) : 'bg-gray-200'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className={`text-xs ${strengthColor}`}>
+                      {messageStrength.tip}
+                    </span>
+                  </div>
+                )}
 
                 {/* First-time template hint */}
                 {message.trim() && templates.length === 0 && !showSaveTemplate && (
