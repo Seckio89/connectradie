@@ -313,6 +313,20 @@ export default function SubmitQuoteModal({
     setModalState('submitting');
     setError('');
 
+    // Check for existing quote before attempting insert
+    const { data: existingQuote } = await supabase
+      .from('quotes')
+      .select('id')
+      .eq('job_id', job.id)
+      .eq('tradie_id', user.id)
+      .maybeSingle();
+
+    if (existingQuote) {
+      setError('You have already submitted a quote for this job.');
+      setModalState('form');
+      return;
+    }
+
     // Save message as localStorage template if checkbox is checked
     if (saveAsTemplate && message.trim()) {
       localStorage.setItem('quote_message_template', message.trim());
@@ -335,10 +349,16 @@ export default function SubmitQuoteModal({
     });
 
     if (insertError) {
+      console.error('Quote insert failed:', insertError);
       if (insertError.code === '23505') {
         setError('You have already submitted a quote for this job.');
+      } else if (insertError.code === '42501') {
+        // RLS policy violation — job may not be open for quoting
+        setError('This job is no longer accepting quotes.');
+      } else if (insertError.message?.includes('column')) {
+        setError('Quote submission error — please contact support.');
       } else {
-        setError('Failed to submit quote. Please try again.');
+        setError(`Failed to submit quote: ${insertError.message || 'Please try again.'}`);
       }
       setModalState('form');
       return;

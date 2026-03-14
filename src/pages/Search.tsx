@@ -79,6 +79,7 @@ export default function Search() {
   const [searchQuery, setSearchQuery] = useState('');
   const [tradeFilter, setTradeFilter] = useState(searchParams.get('trade') || '');
   const [postcodeFilter, setPostcodeFilter] = useState(searchParams.get('postcode') || '');
+  const [postcodeQuery, setPostcodeQuery] = useState(searchParams.get('postcode') || '');
   const [chatTradie, setChatTradie] = useState<TradieWithDetails | null>(null);
   const [calendarTradie, setCalendarTradie] = useState<TradieWithDetails | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -123,7 +124,7 @@ export default function Search() {
       checkViewLimits();
       fetchSavedSearchesList();
     }
-  }, [tradeFilter, postcodeFilter, user]);
+  }, [tradeFilter, postcodeQuery, user]);
 
   const checkViewLimits = async () => {
     if (!user || !isClient) return;
@@ -173,6 +174,7 @@ export default function Search() {
         id, full_name, email, phone, address, postcode, avatar_url,
         is_premium, role, verified_trades, declared_trades,
         verification_status, call_out_fee, show_callout_fee, callout_fee_waived_on_proceed,
+        is_emergency_available,
         tradie_details (*)
       `)
       .eq('role', 'tradie')
@@ -184,8 +186,8 @@ export default function Search() {
       query.eq('tradie_details.trade_category', tradeFilter);
     }
 
-    if (postcodeFilter.trim()) {
-      query.ilike('postcode', `${postcodeFilter.trim()}%`);
+    if (postcodeQuery.trim()) {
+      query.ilike('postcode', `${postcodeQuery.trim()}%`);
     }
 
     const { data: profiles } = await query;
@@ -349,6 +351,7 @@ export default function Search() {
     setRatingFilter(0);
     setTradeFilter('');
     setPostcodeFilter('');
+    setPostcodeQuery('');
     setLocationCoords(null);
     setContractorTypeFilter('');
     setEmergencyFilter(false);
@@ -513,8 +516,9 @@ export default function Search() {
             <div className="flex-1">
               <AddressAutocomplete
                 value={postcodeFilter}
-                onChange={(value, coordinates) => {
+                onChange={(value, coordinates, details) => {
                   setPostcodeFilter(value);
+                  setPostcodeQuery(details?.postcode || value.replace(/\D/g, '').slice(0, 4) || value);
                   if (coordinates) {
                     setLocationCoords(coordinates);
                   }
@@ -698,7 +702,10 @@ export default function Search() {
                       onClick={() => {
                         const f = s.filters;
                         if (f.trade_category) setTradeFilter(f.trade_category);
-                        if (f.postcode) setPostcodeFilter(f.postcode);
+                        if (f.postcode) {
+                          setPostcodeFilter(f.postcode);
+                          setPostcodeQuery(f.postcode);
+                        }
                         if (f.min_rating) setRatingFilter(f.min_rating);
                         setShowSavedSearches(false);
                         showToast(`Loaded: ${s.name}`);

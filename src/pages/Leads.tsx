@@ -47,6 +47,8 @@ import ConfirmModal from '../components/ConfirmModal';
 import Modal from '../components/Modal';
 import { formatDate, checkLicenseExpired } from '../lib/utils';
 import { extractSuburb } from '../lib/contactGating';
+import { sendNotification } from '../lib/notificationService';
+import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
 import { acceptAndPay, verifyPayment, releaseEscrow } from '../lib/stripePayments';
 import { getJobHints } from '../lib/jobDescriptionHints';
 
@@ -205,6 +207,8 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
   const [releasedJobIds, setReleasedJobIds] = useState<Set<string>>(new Set());
   const [reviewedJobIds, setReviewedJobIds] = useState<Set<string>>(new Set());
   const [viewCompletedJob, setViewCompletedJob] = useState<LeadWithClient | null>(null);
+  const [withdrawQuoteTarget, setWithdrawQuoteTarget] = useState<LeadWithClient | null>(null);
+  const [withdrawing, setWithdrawing] = useState(false);
 
   const isTradie = profile?.role === 'tradie';
   const isVerified = profile?.verification_status === 'verified';
@@ -447,21 +451,23 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         !j.archived_at && !j.deleted_at && j.status !== 'cancelled' && j.status !== 'declined';
 
       if (filter === 'open') {
-        // Posted, no quotes yet, no tradie assigned
+        // Posted, no quotes yet
         setLeads(jobs.filter(j =>
-          j.status === 'pending' && !j.tradie_id && j.quote_count === 0
+          j.status === 'pending' && j.quote_count === 0
+          && j.quoting_status !== 'awarded'
           && isActive(j)
         ));
       } else if (filter === 'quoting') {
-        // Has quotes but no tradie assigned yet
+        // Has quotes but quote not yet accepted/awarded
         setLeads(jobs.filter(j =>
-          j.status === 'pending' && !j.tradie_id && j.quote_count > 0
+          j.status === 'pending' && j.quote_count > 0
+          && j.quoting_status !== 'awarded'
           && isActive(j)
         ));
       } else if (filter === 'accepted') {
-        // Tradie assigned, awaiting payment (not yet funded/in_progress/completed)
+        // Quote accepted (awarded), awaiting payment (not yet funded/in_progress/completed)
         setLeads(jobs.filter(j =>
-          j.tradie_id && ['pending', 'accepted'].includes(j.status)
+          j.quoting_status === 'awarded' && ['pending', 'accepted'].includes(j.status)
           && isActive(j)
         ));
       } else if (filter === 'in_progress') {
@@ -732,6 +738,41 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     setQuoteModalJob(lead);
   };
 
+  const handleWithdrawQuote = async () => {
+    if (!withdrawQuoteTarget?.my_quote || !user) return;
+    setWithdrawing(true);
+    try {
+      const { error: deleteError } = await supabase
+        .from('quotes')
+        .delete()
+        .eq('id', withdrawQuoteTarget.my_quote.id)
+        .eq('tradie_id', user.id);
+
+      if (deleteError) throw deleteError;
+
+      // Notify client
+      if (withdrawQuoteTarget.client_id) {
+        const jobTitle = (withdrawQuoteTarget.title || extractCategory(withdrawQuoteTarget.description) || 'your job').replace(/_/g, ' ');
+        sendNotification({
+          type: NOTIFICATION_TYPES.QUOTE_RECEIVED,
+          userId: withdrawQuoteTarget.client_id,
+          title: 'Quote Withdrawn',
+          message: `A tradie has withdrawn their quote for ${jobTitle}.`,
+          jobId: withdrawQuoteTarget.id,
+          link: `/leads?job=${withdrawQuoteTarget.id}`,
+        }).catch(() => {});
+      }
+
+      setWithdrawQuoteTarget(null);
+      setViewLeadDetail(null);
+      fetchLeads();
+    } catch {
+      setWithdrawQuoteTarget(null);
+    } finally {
+      setWithdrawing(false);
+    }
+  };
+
   const handleDismissLead = (leadId: string) => {
     setDismissedJobIds(prev => {
       const next = new Set(prev);
@@ -835,35 +876,26 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
   const handleDeleteJob = async () => {
     if (!deleteJobTarget || !user) return;
     const jobId = deleteJobTarget.id;
-    const role = isTradie ? 'tradie' : 'client';
 
     try {
+      // Cascade delete related records first
+      await supabase.from('service_reminders').delete().eq('job_id', jobId);
+      await supabase.from('notifications').delete().eq('job_id', jobId);
+      await supabase.from('quotes').delete().eq('job_id', jobId);
+
       const { error } = await supabase
         .from('jobs')
-        .update({ deleted_at: new Date().toISOString(), deleted_by: role })
+        .delete()
         .eq('id', jobId);
 
       if (error) {
-        console.error('Failed to delete job:', error);
+        console.error('Failed to cancel job:', error);
         return;
       }
 
       setLeads((prev) => prev.filter((l) => l.id !== jobId));
-
-      // Create a notification for the job deletion
-      try {
-        await supabase.from('notifications').insert({
-          user_id: user.id,
-          type: 'job_deleted',
-          title: 'Job removed',
-          message: `Your job "${deleteJobTarget.title || cleanDescription(deleteJobTarget.description).slice(0, 40)}" has been removed. You can view it in the Deleted tab.`,
-          read: false,
-        });
-      } catch {
-        // Notification is non-critical — don't block the delete
-      }
     } catch (err) {
-      console.error('Failed to delete job:', err);
+      console.error('Failed to cancel job:', err);
     } finally {
       setDeleteJobTarget(null);
     }
@@ -1108,7 +1140,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                       <button
                         onClick={(e) => { e.stopPropagation(); setDeleteJobTarget(lead); }}
                         className="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Remove job"
+                        title="Cancel job"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -1267,6 +1299,14 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                       {statusConfig.label}
                     </p>
                   </div>
+                  {qs === 'pending' && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setWithdrawQuoteTarget(lead); }}
+                      className="text-xs text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                    >
+                      Withdraw
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -2110,7 +2150,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                   <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
                     <div className={`flex items-center gap-3 px-4 py-3 ${statusConfig.bg} border rounded-xl`}>
                       {statusConfig.icon}
-                      <div>
+                      <div className="flex-1">
                         <p className="text-sm font-semibold text-gray-800">
                           You quoted {vl.my_quote!.firm_price
                             ? `$${vl.my_quote!.firm_price.toLocaleString()}`
@@ -2119,6 +2159,14 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                         </p>
                         <p className={`text-xs ${statusConfig.textColor}`}>{statusConfig.label}</p>
                       </div>
+                      {qs === 'pending' && (
+                        <button
+                          onClick={() => setWithdrawQuoteTarget(vl)}
+                          className="text-xs text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                        >
+                          Withdraw
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -2133,6 +2181,18 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         onClose={() => setShowVerificationGate(false)}
         reason={gateReason}
       />
+
+      {withdrawQuoteTarget && (
+        <ConfirmModal
+          title="Withdraw Quote?"
+          message="Are you sure you want to withdraw your quote? The client will be notified."
+          confirmText={withdrawing ? 'Withdrawing...' : 'Withdraw Quote'}
+          cancelText="Cancel"
+          type="danger"
+          onConfirm={handleWithdrawQuote}
+          onCancel={() => setWithdrawQuoteTarget(null)}
+        />
+      )}
 
       {quoteModalJob && (
         <SubmitQuoteModal
@@ -2351,7 +2411,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                   className="inline-flex items-center gap-1.5 text-red-500 hover:text-red-700 transition-colors text-sm font-medium"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Remove
+                  Cancel Job
                 </button>
                 <div className="flex-1" />
                 <button
@@ -2665,10 +2725,10 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
 
       {deleteJobTarget && (
         <ConfirmModal
-          title="Remove Job"
-          message={`Are you sure you want to remove "${deleteJobTarget.title || cleanDescription(deleteJobTarget.description).slice(0, 60)}"? ${deleteJobTarget.quote_count > 0 ? `This job has ${deleteJobTarget.quote_count} quote${deleteJobTarget.quote_count !== 1 ? 's' : ''}.` : ''} The job will be hidden from tradies and moved to your Deleted tab. You can restore it anytime.`}
-          confirmText="Remove"
-          cancelText="Keep"
+          title="Cancel Job?"
+          message={`Are you sure you want to cancel "${deleteJobTarget.title || cleanDescription(deleteJobTarget.description).slice(0, 60)}"?${deleteJobTarget.quote_count > 0 ? ` Any quotes received will be removed and tradies will be notified.` : ''} This action cannot be undone.`}
+          confirmText="Cancel Job"
+          cancelText="Keep Job"
           onConfirm={handleDeleteJob}
           onCancel={() => setDeleteJobTarget(null)}
           type="danger"

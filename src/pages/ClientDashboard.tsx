@@ -18,6 +18,7 @@ import UserTradeBadges from '../components/UserTradeBadges';
 import WelcomeGuide from '../components/WelcomeGuide';
 import { DashboardStatsSkeleton, ListSkeleton } from '../components/SkeletonLoader';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
+import ConfirmModal from '../components/ConfirmModal';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import { getRecurringJobs, createRecurringJob, cancelRecurringJob, updateRecurringJob, suggestRecurringJob, getUpcomingSessions, getKeywordSuggestions, RECURRING_SERVICE_SUBCATEGORIES, RECURRING_SERVICE_DESCRIPTIONS, type RecurringJob, type RecurringSession, type KeywordSuggestion } from '../lib/recurringJobs';
 import RecurringSessionCard from '../components/RecurringSessionCard';
@@ -47,6 +48,7 @@ export default function ClientDashboard() {
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
   const [showArchived, setShowArchived] = useState(false);
   const [releasedJobIds, setReleasedJobIds] = useState<Set<string>>(new Set());
+  const [cancelJobTarget, setCancelJobTarget] = useState<Job | null>(null);
   const [invoices, setInvoices] = useState<RecurringInvoice[]>([]);
 
   const { user, profile } = useAuth();
@@ -132,6 +134,7 @@ export default function ClientDashboard() {
         .from('jobs')
         .select('*')
         .eq('client_id', user.id)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(20);
       if (data) {
@@ -189,6 +192,25 @@ export default function ClientDashboard() {
     } catch (err) {
       console.error('unarchiveJob error:', err);
       showToast('Failed to restore job', true);
+    }
+  };
+
+  const handleCancelJob = async () => {
+    if (!cancelJobTarget || !user) return;
+    const jobId = cancelJobTarget.id;
+    try {
+      await supabase.from('service_reminders').delete().eq('job_id', jobId);
+      await supabase.from('notifications').delete().eq('job_id', jobId);
+      await supabase.from('quotes').delete().eq('job_id', jobId);
+      const { error } = await supabase.from('jobs').delete().eq('id', jobId);
+      if (error) throw error;
+      setRecentJobs(prev => prev.filter(j => j.id !== jobId));
+      showToast('Job cancelled');
+    } catch (err) {
+      console.error('handleCancelJob error:', err);
+      showToast('Failed to cancel job', true);
+    } finally {
+      setCancelJobTarget(null);
     }
   };
 
@@ -633,6 +655,15 @@ export default function ClientDashboard() {
                                   <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${statusColor}`}>
                                     {statusLabel}
                                   </span>
+                                  {!isArchived && job.status === 'pending' && !job.tradie_id && (
+                                    <button
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCancelJobTarget(job); }}
+                                      className="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                      title="Cancel job"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
                                   {!isArchived && (
                                     <button
                                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); archiveJob(job.id); }}
@@ -1189,6 +1220,18 @@ export default function ClientDashboard() {
           animation: slide-up 0.3s ease-out;
         }
       `}</style>
+
+      {cancelJobTarget && (
+        <ConfirmModal
+          title="Cancel Job?"
+          message={`Are you sure you want to cancel "${(cancelJobTarget.title || 'this job').replace(/_/g, ' ')}"?${cancelJobTarget.quote_count > 0 ? ' Any quotes received will be removed.' : ''} This action cannot be undone.`}
+          confirmText="Cancel Job"
+          cancelText="Keep Job"
+          onConfirm={handleCancelJob}
+          onCancel={() => setCancelJobTarget(null)}
+          type="danger"
+        />
+      )}
     </DashboardLayout>
   );
 }

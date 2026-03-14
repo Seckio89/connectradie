@@ -10,7 +10,7 @@ import { redactSensitiveInfo } from '../lib/redaction';
 import { sendNotification } from '../lib/notificationService';
 import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
 import { useToast } from '../hooks/useToast';
-import type { JobWithRelations } from '../types/database';
+import type { JobWithRelations, Quote } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import JobDetailModal from '../components/JobDetailModal';
@@ -74,6 +74,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
   const [acceptSuccess, setAcceptSuccess] = useState(false);
   const [jobCounts, setJobCounts] = useState<Record<string, number>>({});
   const [paidJobIds, setPaidJobIds] = useState<Set<string>>(new Set());
+  const [myQuotes, setMyQuotes] = useState<Map<string, Quote>>(new Map());
   const isTradie = profile?.role === 'tradie';
   const isVerified = profile?.verification_status === 'verified';
   const isLicenseExpired = checkLicenseExpired(profile?.verification_status, profile?.license_expiry);
@@ -237,6 +238,25 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
           }
         } catch (err) {
           console.error('Error checking payment status:', err);
+        }
+      }
+
+      // Fetch tradie's own quotes for these jobs
+      if (isTradie) {
+        const pendingJobIds = filteredJobs.filter(j => j.status === 'pending').map(j => j.id);
+        if (pendingJobIds.length > 0) {
+          const { data: quotes } = await supabase
+            .from('quotes')
+            .select('*')
+            .eq('tradie_id', user.id)
+            .in('job_id', pendingJobIds);
+          if (quotes) {
+            const map = new Map<string, Quote>();
+            for (const q of quotes as Quote[]) {
+              map.set(q.job_id, q);
+            }
+            setMyQuotes(map);
+          }
         }
       }
 
@@ -801,6 +821,18 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                   {isTradie && job.status === 'pending' && (
                     <div className="mt-4 pt-4 border-t border-gray-200 flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                       {job.budget_type === 'to_be_quoted' ? (
+                        myQuotes.has(job.id) ? (
+                          <div className="inline-flex items-center gap-2 px-4 py-2 bg-secondary-50 border border-secondary-200 rounded-lg">
+                            <CheckCircle2 className="w-4 h-4 text-secondary-600" />
+                            <span className="text-sm font-medium text-secondary-700">
+                              Quoted {myQuotes.get(job.id)!.firm_price
+                                ? `$${myQuotes.get(job.id)!.firm_price!.toLocaleString()}`
+                                : `$${myQuotes.get(job.id)!.price_min.toLocaleString()} – $${myQuotes.get(job.id)!.price_max.toLocaleString()}`
+                              }
+                            </span>
+                            <span className="text-xs text-secondary-500">· Awaiting response</span>
+                          </div>
+                        ) : (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -811,6 +843,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                           <ClipboardList className="w-4 h-4" />
                           Quote Now
                         </button>
+                        )
                       ) : (
                         <button
                           onClick={(e) => {
@@ -997,13 +1030,11 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
         job={selectedJob ? { ...selectedJob, profiles: selectedJob.profiles ?? undefined } : null}
         isUnlocked={true}
         onStatusChange={fetchJobs}
-        onQuote={(startDate) => {
-          if (selectedJob) {
-            setProposedStartDate(startDate ?? null);
-            setQuoteJob(selectedJob);
-            setSelectedJob(null);
-          }
-        }}
+        onQuote={selectedJob && !myQuotes.has(selectedJob.id) ? (startDate) => {
+          setProposedStartDate(startDate ?? null);
+          setQuoteJob(selectedJob);
+          setSelectedJob(null);
+        } : undefined}
       />
 
 
@@ -1026,6 +1057,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
         onClose={() => setJobToDecline(null)}
         onDecline={handleDeclineJob}
         jobDescription={jobToDecline?.description || ''}
+        jobTitle={jobToDecline?.title || undefined}
       />
 
       <VerificationGateModal
