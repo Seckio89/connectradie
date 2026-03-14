@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   X,
   Send,
@@ -133,102 +133,87 @@ export default function SubmitQuoteModal({
   const tradeType = tradieDetails?.trade_category || category.toLowerCase();
 
   const isRecurring = !!(job.title && /recurring/i.test(job.title));
-  const hasBudget = !!job.budget_amount;
-  const allowsInspection = !!job.allows_site_inspection;
-  const clientName = job.contact_name || 'there';
+  const clientFirstName = (job.contact_name || '').split(' ')[0] || 'there';
 
-  interface SmartChip {
-    label: string;
-    text: string;
-    condition: boolean;
-  }
+  // Trade-specific middle sentence for auto-draft
+  const tradeSpecificLine = useMemo(() => {
+    const tc = tradeType.toLowerCase();
+    if (/clean/.test(tc)) return 'I bring all equipment and products.';
+    if (/lawn|garden|landscap|arborist/.test(tc)) return "I'll remove all clippings and leave the place tidy.";
+    if (/pool/.test(tc)) return "I'll test and balance chemicals each visit.";
+    if (/pest/.test(tc)) return 'I use family and pet-safe products.';
+    if (/electric/.test(tc)) return 'All work is fully licensed and insured.';
+    if (/plumb/.test(tc)) return 'Licensed plumber — no call-out surprises.';
+    if (/paint/.test(tc)) return 'I prep properly and use quality paint.';
+    if (/roof|gutter/.test(tc)) return 'Fully insured for all roof work.';
+    if (/air.?con|hvac/.test(tc)) return 'I service all major brands.';
+    if (/tile|tiler/.test(tc)) return 'I waterproof and tile to Australian standards.';
+    return 'Happy to answer any questions before you decide.';
+  }, [tradeType]);
 
-  const smartChips: SmartChip[] = useMemo(() => [
-    {
-      label: 'Experience',
-      text: "I've completed ___ similar jobs in the ___ area. ",
-      condition: true,
-    },
-    {
-      label: "What's included",
-      text: 'My price covers ___, ___, and ___. No hidden costs. ',
-      condition: true,
-    },
-    {
-      label: 'Availability',
-      text: 'I can start ___. ',
-      condition: true,
-    },
-    {
-      label: 'Regular services',
-      text: 'I currently look after ___ regular clients and understand that consistency matters. ',
-      condition: isRecurring,
-    },
-    {
-      label: 'Site visit',
-      text: "I'd recommend a quick site visit first — usually takes ___ minutes and is obligation free. ",
-      condition: allowsInspection,
-    },
-    {
-      label: 'Price breakdown',
-      text: 'My price reflects ___ and everything is included upfront. ',
-      condition: hasBudget,
-    },
-  ].filter(c => c.condition), [isRecurring, hasBudget, allowsInspection]);
+  // Availability sentence for auto-draft
+  const availabilityLine = useMemo(() => {
+    if (proposedStartDate) {
+      const d = new Date(proposedStartDate + 'T00:00:00');
+      return `I'm available from ${d.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}.`;
+    }
+    if (isRecurring) return 'Available for regular ongoing work.';
+    return 'Available this week — just let me know.';
+  }, [proposedStartDate, isRecurring]);
 
-  const [usedChips, setUsedChips] = useState<Set<string>>(new Set());
+  const autoDraft = useMemo(() =>
+    `Hi ${clientFirstName}, happy to help with your ${tradeType} in ${suburb}. ${tradeSpecificLine} ${availabilityLine}`,
+    [clientFirstName, tradeType, suburb, tradeSpecificLine, availabilityLine]
+  );
 
-  const handleChipClick = (chip: SmartChip) => {
-    if (usedChips.has(chip.label)) {
-      // Toggle OFF — remove chip text from message
-      setMessage(prev => prev.replace(chip.text, ''));
-      setUsedChips(prev => {
-        const next = new Set(prev);
-        next.delete(chip.label);
-        return next;
-      });
+  const [usingTemplate, setUsingTemplate] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Pre-fill message when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    const saved = localStorage.getItem('quote_message_template');
+    if (saved) {
+      setMessage(saved);
+      setUsingTemplate(true);
     } else {
-      // Toggle ON — append chip text to message
-      setMessage(prev => prev + chip.text);
-      setUsedChips(prev => new Set(prev).add(chip.label));
+      setMessage(autoDraft);
+      setUsingTemplate(false);
+    }
+  }, [isOpen, autoDraft]);
+
+  // Auto-focus and select text on open
+  useEffect(() => {
+    if (isOpen && modalState === 'form') {
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          textareaRef.current.select();
+        }
+      }, 100);
+    }
+  }, [isOpen, modalState]);
+
+  const handleResetTemplate = () => {
+    localStorage.removeItem('quote_message_template');
+    setMessage(autoDraft);
+    setUsingTemplate(false);
+  };
+
+  const handleSaveMessageTemplate = () => {
+    if (message.trim()) {
+      localStorage.setItem('quote_message_template', message.trim());
+      setUsingTemplate(true);
     }
   };
 
-  // Reset used chips when modal opens
-  useEffect(() => {
-    if (isOpen) setUsedChips(new Set());
-  }, [isOpen]);
-
-  const hasBlanks = message.includes('___');
-
-  const messageStrength = useMemo(() => {
-    if (!message.trim()) return { score: 0, tip: '' };
-    let score = 0;
+  const messageLengthHint = useMemo(() => {
+    if (!message.trim()) return null;
     const wordCount = message.trim().split(/\s+/).length;
-    // Contains at least one number (job count, years, price detail)
-    if (/\d/.test(message)) score++;
-    // Over 80 words
-    if (wordCount > 80) score++;
-    // No unfilled blanks
-    if (!message.includes('___')) score++;
-    // More than 3 sentences (has real substance)
-    if ((message.match(/[.!?]/g) || []).length >= 3) score++;
-    // Uses multiple chip prompts (filled in at least 2)
-    if (usedChips.size >= 2) score++;
-    // Message has some length
-    if (message.length > 100) score++;
-
-    const capped = Math.min(score, 6);
-    if (capped <= 2) return { score: capped, tip: 'Too short — clients skip brief messages' };
-    if (capped === 3) return { score: capped, tip: 'Getting there — add a specific detail' };
-    if (capped === 4) return { score: capped, tip: 'Good — clients will read this' };
-    return { score: capped, tip: 'Strong — this quote stands out' };
-  }, [message, usedChips.size]);
-
-  const strengthColor = messageStrength.score <= 2 ? 'text-red-500' : messageStrength.score === 3 ? 'text-amber-500' : 'text-emerald-600';
-  const strengthBold = messageStrength.score >= 5;
-
-  const dynamicPlaceholder = `e.g. Hi ${clientName}, done heaps of ${tradeType} work around ${suburb} — my price covers everything, nothing extra. Can start Thursday if that works.`;
+    if (wordCount < 30) return { text: 'Too short', color: 'text-amber-500' };
+    if (wordCount <= 80) return { text: 'Good length', color: 'text-emerald-600' };
+    return { text: 'Consider shortening — tradies who write less often win more', color: 'text-amber-500' };
+  }, [message]);
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -259,11 +244,6 @@ export default function SubmitQuoteModal({
 
     if (!message.trim()) {
       setError('Please include a brief message to the client.');
-      return;
-    }
-
-    if (message.includes('___')) {
-      setError('Please complete your message — fill in all the blanks first.');
       return;
     }
 
@@ -563,16 +543,6 @@ export default function SubmitQuoteModal({
                         <ChevronDown className={`w-3 h-3 transition-transform ${showTemplates ? 'rotate-180' : ''}`} />
                       </button>
                     )}
-                    {message.trim() && (
-                      <button
-                        type="button"
-                        onClick={() => setShowSaveTemplate(!showSaveTemplate)}
-                        className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <BookmarkPlus className="w-3.5 h-3.5" />
-                        Save as Template
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -600,105 +570,53 @@ export default function SubmitQuoteModal({
                   </div>
                 )}
 
-                {showSaveTemplate && (
-                  <div className="mb-3 flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={templateName}
-                      onChange={e => setTemplateName(e.target.value)}
-                      placeholder="Template name..."
-                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
-                    />
+                {/* Using saved template indicator */}
+                {usingTemplate && (
+                  <div className="mb-2 flex items-center gap-1.5 text-xs text-gray-500">
+                    <Bookmark className="w-3 h-3" />
+                    <span>Using your saved template</span>
+                    <span className="text-gray-300">·</span>
                     <button
                       type="button"
-                      onClick={handleSaveTemplate}
-                      disabled={!templateName.trim() || savingTemplate}
-                      className="px-3 py-2 bg-secondary-600 text-white text-sm font-medium rounded-lg hover:bg-secondary-700 disabled:opacity-50 transition-colors"
+                      onClick={handleResetTemplate}
+                      className="text-secondary-600 hover:text-secondary-700 font-medium"
                     >
-                      {savingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+                      Reset
                     </button>
                   </div>
                 )}
 
-                {/* Smart context-aware chips */}
-                <div className="mb-3">
-                  <p className="text-xs text-gray-500 mb-2">
-                    Tap a prompt to get started, then fill in the blanks:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {smartChips.map((chip) => {
-                      const isUsed = usedChips.has(chip.label);
-                      return (
-                        <button
-                          key={chip.label}
-                          type="button"
-                          onClick={() => handleChipClick(chip)}
-                          className={`px-3 py-1.5 rounded-full text-xs border transition-colors cursor-pointer ${
-                            isUsed
-                              ? 'bg-emerald-50 border-emerald-400 text-emerald-700 hover:bg-emerald-100'
-                              : 'border-gray-200 text-gray-600 hover:border-emerald-500 hover:text-emerald-600'
-                          }`}
-                        >
-                          {chip.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
                 <textarea
+                  ref={textareaRef}
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder={dynamicPlaceholder}
+                  onChange={(e) => { setMessage(e.target.value); setUsingTemplate(false); }}
+                  placeholder="Write your message to the client..."
                   rows={4}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary-500 resize-none text-sm"
                 />
 
-                {/* Blanks hint */}
-                {message.trim() && hasBlanks && (
-                  <p className="mt-1.5 text-xs text-amber-500">
-                    Fill in the ___ blanks to personalise your message
+                <div className="mt-1.5 flex items-center justify-between">
+                  <p className="text-xs text-gray-400 italic">
+                    Keep it short and specific — clients prefer brief messages
                   </p>
-                )}
-
-                {/* Message strength indicator */}
-                {message.trim() && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <div className="flex gap-0.5">
-                      {[1, 2, 3, 4, 5, 6].map(i => (
-                        <span
-                          key={i}
-                          className={`w-2 h-2 rounded-full ${
-                            i <= messageStrength.score ? (
-                              messageStrength.score <= 2 ? 'bg-red-500' :
-                              messageStrength.score === 3 ? 'bg-amber-500' : 'bg-emerald-500'
-                            ) : 'bg-gray-200'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className={`text-xs ${strengthColor} ${strengthBold ? 'font-semibold' : ''}`}>
-                      {messageStrength.tip}
+                  {messageLengthHint && (
+                    <span className={`text-xs ${messageLengthHint.color}`}>
+                      {messageLengthHint.text}
                     </span>
-                  </div>
-                )}
+                  )}
+                </div>
 
-                {/* First-time template hint */}
-                {message.trim() && templates.length === 0 && !showSaveTemplate && (
-                  <div className="mt-2 flex items-start gap-2 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg">
-                    <BookmarkPlus className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-xs text-gray-500">
-                        Save this as a template to reuse on future quotes.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => setShowSaveTemplate(true)}
-                        className="mt-1 text-xs font-medium text-secondary-600 hover:text-secondary-800 underline"
-                      >
-                        Save as template (optional)
-                      </button>
-                    </div>
+                {/* Save as template for future quotes */}
+                {message.trim() && !usingTemplate && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSaveMessageTemplate}
+                      className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-secondary-600 transition-colors"
+                    >
+                      <BookmarkPlus className="w-3.5 h-3.5" />
+                      Save as template for future quotes
+                    </button>
                   </div>
                 )}
               </div>
