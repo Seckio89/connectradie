@@ -145,43 +145,36 @@ export default function SubmitQuoteModal({
 
   const smartChips: SmartChip[] = useMemo(() => [
     {
-      label: `My experience with ${tradeType}`,
-      text: `I have extensive experience with ${tradeType} and have completed similar work in the ${suburb} area. `,
+      label: 'Experience',
+      text: "I've completed ___ similar jobs in the ___ area. ",
       condition: true,
     },
     {
-      label: "What's included in my price",
-      text: "My price includes [list what's covered — materials, labour, cleanup]. ",
+      label: "What's included",
+      text: 'My price covers ___, ___, and ___. No hidden costs. ',
       condition: true,
     },
     {
-      label: 'My availability to start',
-      text: proposedStartDate
-        ? `I'm available to start from ${new Date(proposedStartDate + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}. `
-        : "I'm available to start this week. ",
+      label: 'Availability',
+      text: 'I can start ___. ',
       condition: true,
     },
     {
-      label: 'My experience with regular services',
-      text: 'I regularly service similar properties and understand the importance of consistency and reliability for ongoing work. ',
+      label: 'Regular services',
+      text: 'I currently look after ___ regular clients and understand that consistency matters. ',
       condition: isRecurring,
     },
     {
-      label: 'How I handle recurring work',
-      text: 'For regular services I maintain a consistent standard each visit and will communicate any issues promptly. ',
-      condition: isRecurring,
-    },
-    {
-      label: 'Why my price is competitive',
-      text: "My price reflects quality workmanship and I'm transparent about what's included — no hidden costs. ",
-      condition: hasBudget,
-    },
-    {
-      label: "I'd like to do a site visit",
-      text: "I'd recommend a quick site visit before starting so I can give you an accurate assessment and answer any questions. ",
+      label: 'Site visit',
+      text: "I'd recommend a quick site visit first — usually takes ___ minutes and is obligation free. ",
       condition: allowsInspection,
     },
-  ].filter(c => c.condition), [tradeType, suburb, proposedStartDate, isRecurring, hasBudget, allowsInspection]);
+    {
+      label: 'Price breakdown',
+      text: 'My price reflects ___ and everything is included upfront. ',
+      condition: hasBudget,
+    },
+  ].filter(c => c.condition), [isRecurring, hasBudget, allowsInspection]);
 
   const [usedChips, setUsedChips] = useState<Set<string>>(new Set());
 
@@ -206,31 +199,36 @@ export default function SubmitQuoteModal({
     if (isOpen) setUsedChips(new Set());
   }, [isOpen]);
 
+  const hasBlanks = message.includes('___');
+
   const messageStrength = useMemo(() => {
-    if (!message.trim()) return { score: 0, label: '', tip: '' };
-    const lc = message.toLowerCase();
+    if (!message.trim()) return { score: 0, tip: '' };
     let score = 0;
-    if (new RegExp(suburb.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(lc) || /area|location|suburb/.test(lc)) score++;
-    if (/experience|completed|years|specialist/.test(lc)) score++;
-    if (/available|start|week|begin|commence/.test(lc)) score++;
-    if (/include|covered|materials|labour|cleanup/.test(lc)) score++;
+    const wordCount = message.trim().split(/\s+/).length;
+    // Contains at least one number (job count, years, price detail)
+    if (/\d/.test(message)) score++;
+    // Over 80 words
+    if (wordCount > 80) score++;
+    // No unfilled blanks
+    if (!message.includes('___')) score++;
+    // More than 3 sentences (has real substance)
+    if ((message.match(/[.!?]/g) || []).length >= 3) score++;
+    // Uses multiple chip prompts (filled in at least 2)
+    if (usedChips.size >= 2) score++;
+    // Message has some length
     if (message.length > 100) score++;
 
-    const levels: Record<number, { label: string; tip: string }> = {
-      0: { label: '', tip: 'Too short — clients skip short messages' },
-      1: { label: '', tip: 'Too short — clients skip short messages' },
-      2: { label: '', tip: 'Good — add your availability to strengthen it' },
-      3: { label: '', tip: 'Good — add your availability to strengthen it' },
-      4: { label: '', tip: 'Strong — this quote stands out' },
-      5: { label: '', tip: 'Excellent — you\'re giving clients everything they need to choose you' },
-    };
-    const level = levels[Math.min(score, 5)];
-    return { score, ...level };
-  }, [message, suburb]);
+    const capped = Math.min(score, 6);
+    if (capped <= 2) return { score: capped, tip: 'Too short — clients skip brief messages' };
+    if (capped === 3) return { score: capped, tip: 'Getting there — add a specific detail' };
+    if (capped === 4) return { score: capped, tip: 'Good — clients will read this' };
+    return { score: capped, tip: 'Strong — this quote stands out' };
+  }, [message, usedChips.size]);
 
-  const strengthColor = messageStrength.score <= 1 ? 'text-red-500' : messageStrength.score <= 3 ? 'text-amber-500' : 'text-emerald-600';
+  const strengthColor = messageStrength.score <= 2 ? 'text-red-500' : messageStrength.score === 3 ? 'text-amber-500' : 'text-emerald-600';
+  const strengthBold = messageStrength.score >= 5;
 
-  const dynamicPlaceholder = `e.g. Hi ${clientName}, I've completed similar ${tradeType} work in the ${suburb} area. My price includes everything listed — [details]. I'm available to start [date]...`;
+  const dynamicPlaceholder = `e.g. Hi ${clientName}, done heaps of ${tradeType} work around ${suburb} — my price covers everything, nothing extra. Can start Thursday if that works.`;
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -261,6 +259,11 @@ export default function SubmitQuoteModal({
 
     if (!message.trim()) {
       setError('Please include a brief message to the client.');
+      return;
+    }
+
+    if (message.includes('___')) {
+      setError('Please complete your message — fill in all the blanks first.');
       return;
     }
 
@@ -620,7 +623,7 @@ export default function SubmitQuoteModal({
                 {/* Smart context-aware chips */}
                 <div className="mb-3">
                   <p className="text-xs text-gray-500 mb-2">
-                    Build your message — tap to add:
+                    Tap a prompt to get started, then fill in the blanks:
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {smartChips.map((chip) => {
@@ -651,23 +654,30 @@ export default function SubmitQuoteModal({
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary-500 resize-none text-sm"
                 />
 
+                {/* Blanks hint */}
+                {message.trim() && hasBlanks && (
+                  <p className="mt-1.5 text-xs text-amber-500">
+                    Fill in the ___ blanks to personalise your message
+                  </p>
+                )}
+
                 {/* Message strength indicator */}
                 {message.trim() && (
                   <div className="mt-2 flex items-center gap-2">
                     <div className="flex gap-0.5">
-                      {[1, 2, 3, 4, 5].map(i => (
+                      {[1, 2, 3, 4, 5, 6].map(i => (
                         <span
                           key={i}
                           className={`w-2 h-2 rounded-full ${
                             i <= messageStrength.score ? (
-                              messageStrength.score <= 1 ? 'bg-red-500' :
-                              messageStrength.score <= 3 ? 'bg-amber-500' : 'bg-emerald-500'
+                              messageStrength.score <= 2 ? 'bg-red-500' :
+                              messageStrength.score === 3 ? 'bg-amber-500' : 'bg-emerald-500'
                             ) : 'bg-gray-200'
                           }`}
                         />
                       ))}
                     </div>
-                    <span className={`text-xs ${strengthColor}`}>
+                    <span className={`text-xs ${strengthColor} ${strengthBold ? 'font-semibold' : ''}`}>
                       {messageStrength.tip}
                     </span>
                   </div>
