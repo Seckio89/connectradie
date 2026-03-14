@@ -491,19 +491,20 @@ export default function JobManagementModal({
                   />
                 </div>
 
-                {/* Job Settings (collapsible) */}
+                {/* Job Preferences (collapsible) */}
                 <button
                   onClick={() => setShowAdvanced(!showAdvanced)}
                   className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  Job Settings
+                  Your Preferences
                   {showAdvanced ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                 </button>
 
                 {showAdvanced && (
                   <div className="space-y-3 pb-1">
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5">How urgent is this for you?</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Priority</label>
+                      <p className="text-[11px] text-gray-400 mb-2">Urgent jobs show a priority badge to the client</p>
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           onClick={() => setPriority('standard')}
@@ -529,8 +530,8 @@ export default function JobManagementModal({
                       />
                       <Clock className="w-4 h-4 text-gray-400" />
                       <div>
-                        <span className="text-sm text-gray-700">Can't start yet</span>
-                        <p className="text-xs text-gray-400">Set a date when you'll be ready to begin</p>
+                        <span className="text-sm text-gray-700">Can&apos;t start yet</span>
+                        <p className="text-xs text-gray-400">Set your earliest start date — the client will see this</p>
                       </div>
                     </label>
                     {isDelayed && (
