@@ -645,10 +645,10 @@ export default function SubmitQuoteModal({
                   <button
                     type="button"
                     onClick={() => setMessageExpanded(true)}
-                    className="w-full text-left px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-300 transition-all duration-200"
+                    className="w-full flex justify-between items-start px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-300 transition-all duration-200"
                   >
-                    <span>{message.length > 60 ? message.slice(0, 60) + '...' : message}</span>
-                    <span className="ml-2 text-emerald-600 text-sm">Edit</span>
+                    <span className="text-left">{message.length > 60 ? message.slice(0, 60) + '...' : message}</span>
+                    <span className="text-emerald-600 text-sm flex-shrink-0 ml-3">Edit</span>
                   </button>
                 ) : (
                   <div className="transition-all duration-200">
