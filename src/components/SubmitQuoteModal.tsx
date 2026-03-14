@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   Wrench,
-  BookmarkPlus,
   Bookmark,
   ChevronDown,
   Image,
@@ -21,6 +20,7 @@ import type { Job } from '../types/database';
 import { extractSuburb } from '../lib/contactGating';
 import { sendNotification } from '../lib/notificationService';
 import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
+import { QUOTE_MESSAGE_OPTIONS, resolveMessageOptionsKey } from '../lib/recurringJobs';
 
 interface QuoteTemplate {
   id: string;
@@ -132,88 +132,46 @@ export default function SubmitQuoteModal({
   const businessName = tradieDetails?.business_name || profile?.full_name || 'our team';
   const tradeType = tradieDetails?.trade_category || category.toLowerCase();
 
-  const isRecurring = !!(job.title && /recurring/i.test(job.title));
-  const clientFirstName = (job.contact_name || '').split(' ')[0] || 'there';
-
-  // Trade-specific middle sentence for auto-draft
-  const tradeSpecificLine = useMemo(() => {
-    const tc = tradeType.toLowerCase();
-    if (/clean/.test(tc)) return 'I bring all equipment and products.';
-    if (/lawn|garden|landscap|arborist/.test(tc)) return "I'll remove all clippings and leave the place tidy.";
-    if (/pool/.test(tc)) return "I'll test and balance chemicals each visit.";
-    if (/pest/.test(tc)) return 'I use family and pet-safe products.';
-    if (/electric/.test(tc)) return 'All work is fully licensed and insured.';
-    if (/plumb/.test(tc)) return 'Licensed plumber — no call-out surprises.';
-    if (/paint/.test(tc)) return 'I prep properly and use quality paint.';
-    if (/roof|gutter/.test(tc)) return 'Fully insured for all roof work.';
-    if (/air.?con|hvac/.test(tc)) return 'I service all major brands.';
-    if (/tile|tiler/.test(tc)) return 'I waterproof and tile to Australian standards.';
-    return 'Happy to answer any questions before you decide.';
-  }, [tradeType]);
-
-  // Availability sentence for auto-draft
-  const availabilityLine = useMemo(() => {
-    if (proposedStartDate) {
-      const d = new Date(proposedStartDate + 'T00:00:00');
-      return `I'm available from ${d.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}.`;
-    }
-    if (isRecurring) return 'Available for regular ongoing work.';
-    return 'Available this week — just let me know.';
-  }, [proposedStartDate, isRecurring]);
-
-  const autoDraft = useMemo(() =>
-    `Hi ${clientFirstName}, happy to help with your ${tradeType} in ${suburb}. ${tradeSpecificLine} ${availabilityLine}`,
-    [clientFirstName, tradeType, suburb, tradeSpecificLine, availabilityLine]
+  // Resolve which message options to show based on job trade/category
+  const messageOptionsKey = useMemo(() =>
+    resolveMessageOptionsKey(
+      (job as Record<string, unknown>).service_subtype as string | undefined,
+      tradeType,
+      category,
+    ),
+    [tradeType, category, job]
   );
+  const messageOptions = QUOTE_MESSAGE_OPTIONS[messageOptionsKey] || QUOTE_MESSAGE_OPTIONS['default'];
 
-  const [usingTemplate, setUsingTemplate] = useState(false);
+  const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Pre-fill message when modal opens
+  // Reset selection when modal opens
   useEffect(() => {
     if (!isOpen) return;
     const saved = localStorage.getItem('quote_message_template');
     if (saved) {
       setMessage(saved);
-      setUsingTemplate(true);
+      setSelectedOptionIndex(null);
     } else {
-      setMessage(autoDraft);
-      setUsingTemplate(false);
+      setMessage('');
+      setSelectedOptionIndex(null);
     }
-  }, [isOpen, autoDraft]);
+    setSaveAsTemplate(false);
+  }, [isOpen]);
 
-  // Auto-focus and select text on open
-  useEffect(() => {
-    if (isOpen && modalState === 'form') {
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.focus();
-          textareaRef.current.select();
-        }
-      }, 100);
-    }
-  }, [isOpen, modalState]);
-
-  const handleResetTemplate = () => {
-    localStorage.removeItem('quote_message_template');
-    setMessage(autoDraft);
-    setUsingTemplate(false);
+  const handleSelectOption = (index: number) => {
+    setSelectedOptionIndex(index);
+    setMessage(messageOptions[index]);
+    setSaveAsTemplate(false);
+    // Focus textarea after selection
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+      }
+    }, 50);
   };
-
-  const handleSaveMessageTemplate = () => {
-    if (message.trim()) {
-      localStorage.setItem('quote_message_template', message.trim());
-      setUsingTemplate(true);
-    }
-  };
-
-  const messageLengthHint = useMemo(() => {
-    if (!message.trim()) return null;
-    const wordCount = message.trim().split(/\s+/).length;
-    if (wordCount < 30) return { text: 'Too short', color: 'text-amber-500' };
-    if (wordCount <= 80) return { text: 'Good length', color: 'text-emerald-600' };
-    return { text: 'Consider shortening — tradies who write less often win more', color: 'text-amber-500' };
-  }, [message]);
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -249,6 +207,11 @@ export default function SubmitQuoteModal({
 
     setModalState('submitting');
     setError('');
+
+    // Save message as localStorage template if checkbox is checked
+    if (saveAsTemplate && message.trim()) {
+      localStorage.setItem('quote_message_template', message.trim());
+    }
 
     const min = useFirmPrice ? parseFloat(firmPrice) : parseFloat(priceMin);
     const max = useFirmPrice ? parseFloat(firmPrice) : parseFloat(priceMax);
@@ -527,9 +490,9 @@ export default function SubmitQuoteModal({
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-1">
                   <label className="block text-sm font-medium text-gray-700">
-                    Message to Client
+                    Choose a message
                   </label>
                   <div className="flex items-center gap-2">
                     {templates.length > 0 && (
@@ -545,6 +508,7 @@ export default function SubmitQuoteModal({
                     )}
                   </div>
                 </div>
+                <p className="text-xs text-gray-400 mb-3">Pick one below — edit it to make it yours</p>
 
                 {showTemplates && templates.length > 0 && (
                   <div className="mb-3 border border-secondary-200 rounded-xl overflow-hidden divide-y divide-secondary-100">
@@ -570,54 +534,56 @@ export default function SubmitQuoteModal({
                   </div>
                 )}
 
-                {/* Using saved template indicator */}
-                {usingTemplate && (
-                  <div className="mb-2 flex items-center gap-1.5 text-xs text-gray-500">
-                    <Bookmark className="w-3 h-3" />
-                    <span>Using your saved template</span>
-                    <span className="text-gray-300">·</span>
+                {/* 5 selectable message cards */}
+                <div className="space-y-2 mb-3">
+                  {messageOptions.map((opt, i) => (
                     <button
+                      key={i}
                       type="button"
-                      onClick={handleResetTemplate}
-                      className="text-secondary-600 hover:text-secondary-700 font-medium"
+                      onClick={() => handleSelectOption(i)}
+                      className={`w-full text-left p-3 rounded-lg border transition-colors relative ${
+                        selectedOptionIndex === i
+                          ? 'bg-emerald-50 border-emerald-400'
+                          : 'bg-white border-gray-200 hover:border-emerald-300'
+                      }`}
                     >
-                      Reset
+                      <div className={`absolute top-3 right-3 w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                        selectedOptionIndex === i
+                          ? 'border-emerald-500 bg-emerald-500'
+                          : 'border-gray-300'
+                      }`}>
+                        {selectedOptionIndex === i && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-700 leading-relaxed pr-6">{opt}</p>
                     </button>
-                  </div>
-                )}
-
-                <textarea
-                  ref={textareaRef}
-                  value={message}
-                  onChange={(e) => { setMessage(e.target.value); setUsingTemplate(false); }}
-                  placeholder="Write your message to the client..."
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary-500 resize-none text-sm"
-                />
-
-                <div className="mt-1.5 flex items-center justify-between">
-                  <p className="text-xs text-gray-400 italic">
-                    Keep it short and specific — clients prefer brief messages
-                  </p>
-                  {messageLengthHint && (
-                    <span className={`text-xs ${messageLengthHint.color}`}>
-                      {messageLengthHint.text}
-                    </span>
-                  )}
+                  ))}
                 </div>
 
-                {/* Save as template for future quotes */}
-                {message.trim() && !usingTemplate && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleSaveMessageTemplate}
-                      className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-secondary-600 transition-colors"
-                    >
-                      <BookmarkPlus className="w-3.5 h-3.5" />
-                      Save as template for future quotes
-                    </button>
-                  </div>
+                {/* Editable textarea — visible once a message is selected or typed */}
+                {message && (
+                  <>
+                    <p className="text-xs text-gray-400 mb-1.5">Edit if you'd like — or send as is</p>
+                    <textarea
+                      ref={textareaRef}
+                      value={message}
+                      onChange={(e) => { setMessage(e.target.value); setSelectedOptionIndex(null); }}
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary-500 resize-none text-sm"
+                    />
+
+                    {/* Save as template */}
+                    <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={saveAsTemplate}
+                        onChange={(e) => setSaveAsTemplate(e.target.checked)}
+                        className="rounded border-gray-300 text-secondary-500 focus:ring-secondary-400"
+                      />
+                      <span className="text-xs text-gray-500">Save this message for future quotes</span>
+                    </label>
+                  </>
                 )}
               </div>
 

@@ -1,6 +1,133 @@
 import { supabase } from './supabase';
 
 // ---------------------------------------------------------------------------
+// Pre-written quote message options per trade (Australian tradie tone)
+// ---------------------------------------------------------------------------
+
+export const QUOTE_MESSAGE_OPTIONS: Record<string, string[]> = {
+  'Cleaning': [
+    "Hi, happy to help with the clean. I bring all my own equipment and products — just need access on the day. Available this week, let me know what suits.",
+    "G'day, I've done plenty of similar cleans in the area and know what's needed. Price covers a full clean, nothing extra. Can start as soon as you need.",
+    "Hi there, I run a small cleaning business and take pride in doing a thorough job every time. Happy to do a walkthrough first if you'd like. Just let me know.",
+    "Hey, seen the job and happy to quote. I'll bring everything needed and leave the place spotless. Flexible on timing — what works for you?",
+    "Hi, I do regular and one-off cleans across the area. My price is all-inclusive, no hidden costs. Can get started this week if that works.",
+  ],
+
+  'Office Clean': [
+    "Hi, I specialise in commercial and office cleaning. I work around your business hours — early morning or after hours, whatever suits. All products and equipment supplied.",
+    "G'day, done plenty of office cleans and understand the need for consistency and reliability. Price covers everything — no extras. Happy to discuss a regular arrangement.",
+    "Hi there, I take commercial cleaning seriously — properly sanitised surfaces, floors, bathrooms, and kitchen every visit. Let me know your schedule and I'll work around it.",
+    "Hey, I can handle the full office clean. Bring all my own gear, work quietly and efficiently, and won't disrupt your team. Available to start this week.",
+    "Hi, regular office cleaning is my bread and butter. I know what businesses need and I'm reliable — same standard every time. Happy to chat about what works for you.",
+  ],
+
+  'Lawn Mowing': [
+    "G'day, happy to take care of the lawn. I mow, edge, and blow down the paths — leave it looking sharp. Can get there this week if the weather holds.",
+    "Hi, I do regular lawn maintenance across the area. My price covers mow, edge, and cleanup — no extra charges. Let me know what day suits.",
+    "Hey, seen the job and can definitely help. Bring my own equipment, do a clean edge and blow down after. Happy to set up a regular run if you need.",
+    "Hi there, I've been mowing lawns in the area for years. Quick, tidy, and reliable. Price is all-in — just tell me when you want it done.",
+    "G'day, I do lawn runs through the area regularly. Can fit you in this week. Mow, edge, and all clippings cleared — job done.",
+  ],
+
+  'Pool Service': [
+    "Hi, happy to take a look at the pool. I'll test the water, balance the chemicals, and give you a full rundown of what it needs. No hidden costs.",
+    "G'day, I do regular pool maintenance and know my way around most systems. Price covers chemicals, filter check, and vacuum. Can start this week.",
+    "Hey, seen the job. I'll get the water balanced and the pool looking good — bring all chemicals and equipment. Happy to set up a regular service if needed.",
+    "Hi there, pool care is what I do. I'll assess the current condition, sort out the chemistry, and leave you with a clear, safe pool. Available this week.",
+    "G'day, I service pools across the area weekly. Reliable, thorough, and I always let you know if anything needs attention. Happy to discuss a regular arrangement.",
+  ],
+
+  'Electrical': [
+    "Hi, licensed electrician here. Happy to take on the job — all work is fully compliant and I carry full insurance. Can provide a detailed quote after a quick look.",
+    "G'day, I've done plenty of similar electrical work and can give you a firm price once I see it in person. All work certified. Available this week.",
+    "Hey, seen the job. I'm a licensed sparky with experience in residential and commercial work. Happy to come out for a look — no obligation. Just let me know.",
+    "Hi there, all electrical work I do is compliant, certified, and backed by a warranty. I give straight pricing — no surprises. Can come out this week.",
+    "G'day, I work in the area and can get to you quickly. Full licence and insurance, honest pricing. Let me know a time that suits for a look.",
+  ],
+
+  'Plumbing': [
+    "Hi, licensed plumber here. Happy to help with the job — can come out for a look and give you a firm price. No call-out surprises.",
+    "G'day, I've handled plenty of similar plumbing work and can give you a straight quote. Fully licensed, all work guaranteed. Available this week.",
+    "Hey, seen the job. I'll come out, assess what's needed, and give you an honest price. I don't charge for things that aren't necessary. Let me know when suits.",
+    "Hi there, I work across the area and can get to you quickly. Upfront pricing, fully licensed, tidy worksite. Happy to come out for a look.",
+    "G'day, I'm a plumber with years of experience on residential jobs. Straight pricing, quality work, and I leave the place clean. Available this week.",
+  ],
+
+  'Painting': [
+    "Hi, I've done plenty of interior and exterior painting in the area. I prep properly — no shortcuts. Happy to come out for a look and give you a firm price.",
+    "G'day, I take prep seriously which is why my finishes last. Price covers full prep, undercoat if needed, and two coats minimum. Can start within the week.",
+    "Hey, seen the job. I use quality paints and take my time to do it right. Happy to discuss colours, finishes, and timing. Give me a call.",
+    "Hi there, painting is all I do and I do it properly. Straight price, clean worksite, and I won't leave until you're happy with the finish.",
+    "G'day, I work across the area and have a good reputation for quality work. Happy to come out for a look — no obligation quote. Let me know what suits.",
+  ],
+
+  'Carpentry': [
+    "Hi, happy to help with the carpentry work. I've done plenty of similar jobs and can give you a firm price after a quick look. Quality finish guaranteed.",
+    "G'day, I'm a chippy with years of experience on residential jobs. I give straight quotes, do quality work, and clean up after myself. Available this week.",
+    "Hey, seen the job. I'll come out, measure up, and give you an honest price. I don't cut corners — the job gets done properly. Let me know when suits.",
+    "Hi there, carpentry is my trade and I take pride in a clean finish. Upfront pricing and I'll keep you in the loop throughout. Happy to come for a look.",
+    "G'day, I work in the area and can get to you this week. Quality materials, proper workmanship, and a tidy finish every time.",
+  ],
+
+  'Pest Control': [
+    "Hi, licensed pest tech here. I use family and pet-safe products and give you a full report after treatment. Happy to come out for an inspection first.",
+    "G'day, I've treated plenty of similar properties in the area. I'll identify what's going on and give you a clear plan before we start. No guesswork.",
+    "Hey, seen the job. I carry full insurance and use registered products only. Treatment is thorough — not just a spray and go. Let me know when suits.",
+    "Hi there, pest control is what I do. I give you a proper inspection, explain what I find, and treat it the right way. Happy to come out this week.",
+    "G'day, I work across the area and know the common pest issues in your suburb. Fast response, quality treatment, and a follow-up if needed.",
+  ],
+
+  'Handyman': [
+    "Hi, happy to help with the job. I can handle most household repairs and maintenance — bring my own tools and materials if needed. Available this week.",
+    "G'day, I've been doing handyman work for years. I give straight prices and get things done properly the first time. Happy to come out for a look.",
+    "Hey, seen the job. I can sort it out — no drama. Let me know when suits and I'll be there. I work cleanly and tidy up after myself.",
+    "Hi there, I do all kinds of maintenance and repair work. Honest pricing, reliable, and I won't leave until the job is done right.",
+    "G'day, I'm in the area regularly and can get to you quickly. Experienced across a wide range of jobs — just let me know what you need.",
+  ],
+
+  'default': [
+    "Hi, happy to help with this job. I've done similar work in the area and can give you a firm price. Available this week — just let me know what suits.",
+    "G'day, I've looked at the job description and I'm confident I can get it done properly. Happy to come out for a look before committing to a price.",
+    "Hey, seen the job and I'm interested. I work cleanly, communicate well, and don't leave until you're happy. Let me know when you want to chat.",
+    "Hi there, I work in your area and can get to you this week. Straight pricing, quality work, and I always tidy up after myself.",
+    "G'day, happy to quote on this. I take pride in doing the job right — not just getting it done. Let me know if you have any questions before deciding.",
+  ],
+};
+
+/**
+ * Resolve which QUOTE_MESSAGE_OPTIONS key to use for a given job.
+ * Checks service_subtype first, then trade_type / category, then falls back to 'default'.
+ */
+export function resolveMessageOptionsKey(
+  serviceSubtype?: string | null,
+  tradeType?: string | null,
+  category?: string | null,
+): string {
+  const sub = (serviceSubtype || '').toLowerCase();
+  const trade = (tradeType || category || '').toLowerCase();
+
+  // Direct subtype matches
+  if (/office\s*clean/.test(sub)) return 'Office Clean';
+
+  // Trade / category matches
+  if (/clean/.test(sub) || /clean/.test(trade)) return 'Cleaning';
+  if (/lawn|mow/.test(sub) || /lawn|mow/.test(trade)) return 'Lawn Mowing';
+  if (/pool|spa/.test(sub) || /pool|spa/.test(trade)) return 'Pool Service';
+  if (/electric|sparky/.test(trade)) return 'Electrical';
+  if (/plumb/.test(trade)) return 'Plumbing';
+  if (/paint/.test(trade)) return 'Painting';
+  if (/carpent|chippy|cabinet/.test(trade)) return 'Carpentry';
+  if (/pest/.test(sub) || /pest/.test(trade)) return 'Pest Control';
+  if (/handyman|handy/.test(trade)) return 'Handyman';
+  if (/garden|landscap|arborist/.test(trade)) return 'Lawn Mowing';
+  if (/roof|gutter/.test(trade)) return 'default';
+  if (/air.?con|hvac/.test(trade)) return 'default';
+  if (/tile|tiler/.test(trade)) return 'default';
+
+  return 'default';
+}
+
+// ---------------------------------------------------------------------------
 // Service subcategories for recurring job setup
 // ---------------------------------------------------------------------------
 
