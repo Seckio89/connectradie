@@ -33,6 +33,7 @@ interface JobDetailModalProps {
   onQuote?: (proposedStartDate?: string | null) => void;
   isUnlocked?: boolean;
   onStatusChange?: () => void;
+  onComplete?: () => void;
 }
 
 // Progress steps in order
@@ -67,7 +68,7 @@ function getNextAction(status: string, isTradie: boolean): { label: string; hint
   }
 }
 
-export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlocked = true, onStatusChange }: JobDetailModalProps) {
+export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlocked = true, onStatusChange, onComplete }: JobDetailModalProps) {
   const { user, profile, tradieDetails } = useAuth();
   const [milestones, setMilestones] = useState<JobMilestone[]>([]);
   const [statusLoading, setStatusLoading] = useState(false);
@@ -160,7 +161,6 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
   }, [isOpen, job?.id, fetchMilestones]);
 
   const [statusError, setStatusError] = useState<string | null>(null);
-  const [completionChecks, setCompletionChecks] = useState({ workDone: false, siteClean: false, clientNotified: false });
 
   const handleUpdateStatus = async (newStatus: Job['status']) => {
     if (!job || !user || statusLoading) return;
@@ -206,13 +206,23 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
     .filter((line) => line.length > 0);
 
   // Recurring schedule helpers
-  const frequencyLabel = recurringJob?.billing_cycle === 'fortnightly'
-    ? 'Fortnightly'
-    : recurringJob?.frequency_months === 1
-      ? 'Monthly'
-      : recurringJob?.frequency_months
-        ? `Every ${recurringJob.frequency_months} months`
-        : null;
+  const frequencyLabel = recurringJob?.frequency_months === -3
+    ? 'Daily'
+    : recurringJob?.frequency_months === -1
+      ? 'Weekly'
+      : recurringJob?.frequency_months === -2 || recurringJob?.billing_cycle === 'fortnightly'
+        ? 'Fortnightly'
+        : recurringJob?.frequency_months === 1
+          ? 'Monthly'
+          : recurringJob?.frequency_months === 3
+            ? 'Quarterly'
+            : recurringJob?.frequency_months === 6
+              ? 'Every 6 months'
+              : recurringJob?.frequency_months === 12
+                ? 'Annually'
+                : recurringJob?.frequency_months
+                  ? `Every ${recurringJob.frequency_months} months`
+                  : null;
 
   const sessionsPerCycle = recurringJob?.billing_cycle === 'fortnightly' ? 2 : 1;
   const estimatedValue = recurringJob?.agreed_price
@@ -445,12 +455,18 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
               </div>
             </div>
           )}
-          {job.budget_amount && (
+          {(job.budget_amount || job.budget_type) && (
             <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3">
               <span className="text-base text-secondary-500 font-semibold flex-shrink-0">$</span>
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase">Budget</p>
-                <p className="text-sm text-gray-700 font-medium">${job.budget_amount.toLocaleString()}</p>
+                <p className="text-sm text-gray-700 font-medium">
+                  {job.budget_amount
+                    ? `$${job.budget_amount.toLocaleString()}${job.budget_type === 'hourly_rate' ? '/hr' : ''}`
+                    : (job.budget_type === 'request_quote' || job.budget_type === 'to_be_quoted')
+                      ? 'Quote requested — client wants you to set the price'
+                      : 'Not specified'}
+                </p>
               </div>
             </div>
           )}
@@ -584,46 +600,15 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
           </div>
         )}
 
-        {isTradie && localStatus === 'in_progress' && (() => {
-          const allChecked = completionChecks.workDone && completionChecks.siteClean && completionChecks.clientNotified;
-          return (
-            <div className="flex-1 space-y-2">
-              <div className="flex flex-col gap-1.5 text-xs">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input type="checkbox" checked={completionChecks.workDone} onChange={(e) => setCompletionChecks(p => ({ ...p, workDone: e.target.checked }))}
-                    className="w-3.5 h-3.5 rounded border-gray-300 text-green-600 focus:ring-green-500" />
-                  <span className="text-gray-600">All work completed as quoted</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input type="checkbox" checked={completionChecks.siteClean} onChange={(e) => setCompletionChecks(p => ({ ...p, siteClean: e.target.checked }))}
-                    className="w-3.5 h-3.5 rounded border-gray-300 text-green-600 focus:ring-green-500" />
-                  <span className="text-gray-600">Site left clean and safe</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input type="checkbox" checked={completionChecks.clientNotified} onChange={(e) => setCompletionChecks(p => ({ ...p, clientNotified: e.target.checked }))}
-                    className="w-3.5 h-3.5 rounded border-gray-300 text-green-600 focus:ring-green-500" />
-                  <span className="text-gray-600">Client notified of completion</span>
-                </label>
-              </div>
-              <button
-                onClick={() => handleUpdateStatus('completed')}
-                disabled={statusLoading || !allChecked}
-                className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 font-semibold rounded-xl transition-colors ${
-                  allChecked
-                    ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                {statusLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
-                {statusLoading ? 'Completing...' : allChecked ? 'Job Complete' : 'Complete checklist to finish'}
-              </button>
-            </div>
-          );
-        })()}
+        {isTradie && localStatus === 'in_progress' && (
+          <button
+            onClick={() => { onClose(); onComplete?.(); }}
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            Mark Complete & Request Payment
+          </button>
+        )}
 
         {isTradie && localStatus === 'completed' && (
           <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 font-semibold rounded-xl border border-green-200">

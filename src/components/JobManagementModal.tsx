@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import {
   X, Loader2, AlertTriangle, Clock, FileText, Archive, ArchiveRestore,
-  MapPin, User, Calendar, Phone, Mail, Play, CheckCircle2,
+  MapPin, User, Calendar, Phone, Mail, CheckCircle2,
   Send, ChevronDown, ChevronUp, Repeat, Image,
-  Zap, Users, Wrench, Key,
+  Zap, Users, Wrench, Key, Eye, EyeOff,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -84,8 +84,8 @@ function getNextStep(status: string): { action: string; hint: string; nextStatus
   switch (status) {
     case 'pending': return { action: 'Waiting for Client', hint: 'Client is reviewing your quote', buttonColor: 'bg-gray-100 text-gray-600' };
     case 'accepted': return { action: 'Awaiting Payment', hint: 'Client accepted — waiting for escrow payment', buttonColor: 'bg-amber-50 text-amber-700' };
-    case 'funded': return { action: 'Start Job', hint: 'Payment secured. Start working and update status.', nextStatus: 'in_progress', buttonColor: 'bg-secondary-600 text-white hover:bg-secondary-700' };
-    case 'in_progress': return { action: 'Mark Complete', hint: 'Finished? Mark complete to request payout.', nextStatus: 'completed', buttonColor: 'bg-secondary-600 text-white hover:bg-secondary-700' };
+    case 'funded': return { action: 'Mark Complete', hint: 'Payment secured. Mark complete when finished to request payout.', nextStatus: 'in_progress', buttonColor: 'bg-green-600 text-white hover:bg-green-700' };
+    case 'in_progress': return { action: 'Mark Complete', hint: 'Finished? Mark complete to request payout.', nextStatus: 'completed', buttonColor: 'bg-green-600 text-white hover:bg-green-700' };
     case 'completed': return { action: 'Job Complete', hint: 'Awaiting client approval and payout release.', buttonColor: 'bg-secondary-50 text-secondary-700' };
     default: return null;
   }
@@ -105,7 +105,7 @@ export default function JobManagementModal({
   const [quote, setQuote] = useState<QuoteData | null>(null);
   const [notes, setNotes] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [priority, setPriority] = useState('standard');
+  const [priority, setPriority] = useState('normal');
   const [isDelayed, setIsDelayed] = useState(false);
   const [delayedUntil, setDelayedUntil] = useState('');
   const [showQuoteModal, setShowQuoteModal] = useState(false);
@@ -140,13 +140,16 @@ export default function JobManagementModal({
     if (jobResult.data) {
       const jobData = jobResult.data as unknown as JobData;
       setJob(jobData);
-      setPriority(jobData.priority || 'standard');
+      setPriority(jobData.priority || 'normal');
       setIsDelayed(jobData.is_delayed || false);
       setDelayedUntil(jobData.delayed_until ? new Date(jobData.delayed_until).toISOString().slice(0, 16) : '');
       setNotes(jobData.notes || '');
     }
     if (quoteResult.data) {
       setQuote(quoteResult.data as QuoteData);
+    } else if (jobResult.data && (jobResult.data as unknown as JobData).status === 'pending') {
+      // Auto-open quote modal for pending jobs with no existing quote
+      setShowQuoteModal(true);
     }
     setQuoteCount(quoteCountResult.count || 0);
     setLoading(false);
@@ -161,6 +164,37 @@ export default function JobManagementModal({
       .eq('id', jobId);
 
     if (!error) {
+      // Notify client about status change
+      if (job.client_id) {
+        const { displayTitle } = parseJobInfo(job);
+        const tradieName = user?.user_metadata?.full_name || 'Your tradie';
+        try {
+          if (nextStatus === 'in_progress') {
+            await supabase.from('notifications').insert({
+              user_id: job.client_id,
+              type: 'job_update',
+              title: 'Work Started',
+              message: `${tradieName} has started work on ${displayTitle}.`,
+              job_id: jobId,
+              metadata: {},
+              read: false,
+            });
+          } else if (nextStatus === 'completed') {
+            await supabase.from('notifications').insert({
+              user_id: job.client_id,
+              type: 'JOB_COMPLETED',
+              title: 'Job Completed',
+              message: `${tradieName} has completed ${displayTitle}. Please review and release payment.`,
+              job_id: jobId,
+              metadata: {},
+              read: false,
+            });
+          }
+        } catch {
+          // Non-critical
+        }
+      }
+
       onJobUpdated();
       // Refresh local state
       setJob(prev => prev ? { ...prev, status: nextStatus } : prev);
@@ -181,7 +215,23 @@ export default function JobManagementModal({
       })
       .eq('id', jobId);
 
-    if (!error) {
+    if (!error && user) {
+      // Sync earliest start date to existing quote (if one exists)
+      const { data: existingQuote } = await supabase
+        .from('quotes')
+        .select('id')
+        .eq('job_id', jobId)
+        .eq('tradie_id', user.id)
+        .maybeSingle();
+
+      if (existingQuote) {
+        const startDate = isDelayed && delayedUntil ? delayedUntil.slice(0, 10) : null;
+        await supabase
+          .from('quotes')
+          .update({ proposed_start_date: startDate })
+          .eq('id', existingQuote.id);
+      }
+
       onJobUpdated();
       onClose();
     }
@@ -236,8 +286,8 @@ export default function JobManagementModal({
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusConfig.color}`}>
                         {statusConfig.label}
                       </span>
-                      {job.priority === 'urgent' && (
-                        <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-semibold rounded-full border border-red-200">URGENT</span>
+                      {job.priority === 'high' && (
+                        <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full border border-orange-200">HIGH PRIORITY</span>
                       )}
                     </div>
                   </div>
@@ -289,7 +339,7 @@ export default function JobManagementModal({
                       disabled={saving}
                       className={`w-full flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 ${nextStep.buttonColor}`}
                     >
-                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : nextStep.nextStatus === 'in_progress' ? <Play className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                       {nextStep.action}
                     </button>
                   ) : (
@@ -360,8 +410,15 @@ export default function JobManagementModal({
                     <div className="rounded-xl px-3 py-2.5 bg-gray-50 border border-gray-200">
                       <p className="text-xs text-gray-500 mb-0.5">Budget</p>
                       <p className="text-sm font-semibold text-gray-800">
-                        {job.budget_amount ? `${job.budget_amount.toLocaleString()} AUD` : 'Awaiting quote'}
+                        {job.budget_amount
+                          ? `$${job.budget_amount.toLocaleString()}${job.budget_type === 'hourly_rate' ? '/hr' : ''}`
+                          : (job.budget_type === 'request_quote' || job.budget_type === 'to_be_quoted')
+                            ? 'Quote requested'
+                            : 'Not specified'}
                       </p>
+                      {(job.budget_type === 'request_quote' || job.budget_type === 'to_be_quoted') && !job.budget_amount && (
+                        <p className="text-xs text-gray-400 mt-0.5">Client wants you to set the price</p>
+                      )}
                     </div>
                     {job.tradie_id ? (
                       <div className="rounded-xl px-3 py-2.5 bg-secondary-50 border border-secondary-200">
@@ -503,21 +560,31 @@ export default function JobManagementModal({
                 {showAdvanced && (
                   <div className="space-y-3 pb-1">
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Priority</label>
-                      <p className="text-[11px] text-gray-400 mb-2">Urgent jobs show a priority badge to the client</p>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-medium text-gray-500">Priority</label>
+                        <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                          <EyeOff className="w-3 h-3" /> Only visible to you
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
                         <button
-                          onClick={() => setPriority('standard')}
+                          onClick={() => setPriority('low')}
                           className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
-                            priority === 'standard' ? 'bg-secondary-500 text-white border-secondary-500' : 'bg-white text-gray-500 border-gray-200'
+                            priority === 'low' ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-500 border-gray-200'
+                          }`}
+                        >Low</button>
+                        <button
+                          onClick={() => setPriority('normal')}
+                          className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
+                            priority === 'normal' ? 'bg-gray-600 text-white border-gray-600' : 'bg-white text-gray-500 border-gray-200'
                           }`}
                         >Normal</button>
                         <button
-                          onClick={() => setPriority('urgent')}
+                          onClick={() => setPriority('high')}
                           className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
-                            priority === 'urgent' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-500 border-gray-200'
+                            priority === 'high' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-500 border-gray-200'
                           }`}
-                        >Urgent</button>
+                        >High</button>
                       </div>
                     </div>
 
@@ -529,9 +596,11 @@ export default function JobManagementModal({
                         className="w-4 h-4 text-secondary-600 rounded focus:ring-secondary-500"
                       />
                       <Clock className="w-4 h-4 text-gray-400" />
-                      <div>
+                      <div className="flex-1">
                         <span className="text-sm text-gray-700">Can&apos;t start yet</span>
-                        <p className="text-xs text-gray-400">Set your earliest start date — the client will see this</p>
+                        <p className="flex items-center gap-1 text-xs text-gray-400">
+                          <Eye className="w-3 h-3" /> Client will see your earliest available date
+                        </p>
                       </div>
                     </label>
                     {isDelayed && (

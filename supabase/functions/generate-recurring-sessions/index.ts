@@ -39,10 +39,12 @@ function addHoursToTime(time: string, hours: number): string {
   return `${String(newH).padStart(2, "0")}:${String(newM).padStart(2, "0")}:00`;
 }
 
-// Frequency conventions: -1 = weekly, -2 = fortnightly, positive = months
+// Frequency conventions: -3 = daily, -1 = weekly, -2 = fortnightly, positive = months
 function calculateNextDueDate(current: string, frequencyMonths: number): string {
   const base = new Date(current);
-  if (frequencyMonths === -1) {
+  if (frequencyMonths === -3) {
+    base.setDate(base.getDate() + 1);
+  } else if (frequencyMonths === -1) {
     base.setDate(base.getDate() + 7);
   } else if (frequencyMonths === -2) {
     base.setDate(base.getDate() + 14);
@@ -89,7 +91,7 @@ Deno.serve(async (req: Request) => {
     // Fetch all active recurring jobs where next_due_date <= today
     const { data: dueJobs, error: fetchError } = await supabase
       .from("recurring_jobs")
-      .select("id, frequency_months, next_due_date, times_completed, tradie_id, preferred_time")
+      .select("id, frequency_months, next_due_date, times_completed, tradie_id, preferred_time, auto_accept")
       .eq("is_active", true)
       .lte("next_due_date", today);
 
@@ -131,13 +133,20 @@ Deno.serve(async (req: Request) => {
         if (existing) {
           skippedDuplicates++;
         } else {
-          // Insert the session
+          // Auto-accept: skip confirmation step, go straight to scheduled
+          const isAutoAccept = !!(job as Record<string, unknown>).auto_accept;
+          const sessionStatus = isAutoAccept ? "scheduled" : "pending_confirmation";
+          const confirmationDeadline = isAutoAccept
+            ? null
+            : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+
           const { data: newSession, error: insertError } = await supabase
             .from("recurring_sessions")
             .insert({
               recurring_job_id: job.id,
               scheduled_date: scheduledDate,
-              status: "scheduled",
+              status: sessionStatus,
+              confirmation_deadline: confirmationDeadline,
             })
             .select("id")
             .single();
@@ -149,13 +158,17 @@ Deno.serve(async (req: Request) => {
 
           sessionsCreated++;
 
-          // Block the tradie's availability for this session
-          if (job.tradie_id && newSession) {
-            const startTime = job.preferred_time || DEFAULT_PREFERRED_TIME;
-            const endTime = addHoursToTime(startTime, DEFAULT_SESSION_DURATION_HOURS);
-            const { error: availError } = await supabase
-              .from("tradie_availability")
-              .upsert(
+          // Block tradie availability if auto-accepted
+          if (isAutoAccept && job.tradie_id && newSession) {
+            try {
+              const startTime = job.preferred_time || "09:00:00";
+              const [h, m] = startTime.split(":").map(Number);
+              const totalMinutes = (h + DEFAULT_SESSION_DURATION_HOURS) * 60 + m;
+              const endH = Math.min(Math.floor(totalMinutes / 60), 23);
+              const endM = totalMinutes % 60;
+              const endTime = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}:00`;
+
+              await supabase.from("tradie_availability").upsert(
                 {
                   tradie_id: job.tradie_id,
                   date: scheduledDate,
@@ -163,14 +176,36 @@ Deno.serve(async (req: Request) => {
                   end_time: endTime,
                   is_blocked: true,
                   reason: "recurring_job",
-                  source_job_id: newSession.id,
                 },
                 { onConflict: "tradie_id,date,start_time" },
               );
-            if (availError) {
-              errors.push(`Job ${job.id}: session created but failed to block availability — ${availError.message}`);
+            } catch {
+              // Non-critical
             }
           }
+
+          // Notify tradie
+          if (job.tradie_id && newSession) {
+            try {
+              await supabase.from("notifications").insert({
+                user_id: job.tradie_id,
+                type: isAutoAccept ? "recurring_job_auto_confirmed" : "recurring_job_confirmation_required",
+                message: isAutoAccept
+                  ? `Your recurring session on ${scheduledDate} has been auto-confirmed and added to your schedule.`
+                  : `You have a recurring session on ${scheduledDate} awaiting your confirmation. Please confirm within 48 hours.`,
+                metadata: {
+                  recurring_job_id: job.id,
+                  session_id: newSession.id,
+                  next_date: scheduledDate,
+                },
+                read: false,
+              });
+            } catch {
+              // Non-critical
+            }
+          }
+
+          // Note: availability blocking now happens when tradie confirms the session
         }
 
         // Advance next_due_date and increment times_completed

@@ -7,10 +7,18 @@ import {
   MessageCircle,
   Users,
   DollarSign,
-  Info,
   CheckCheck,
+  CheckCircle2,
+  XCircle,
+  Star,
+  FileText,
+  CalendarDays,
+  Clock,
   Loader2,
+  Trash2,
+  X,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import EmptyState from '../components/EmptyState';
 import { useAuth } from '../contexts/AuthContext';
@@ -31,24 +39,59 @@ const FILTER_TABS: { key: FilterTab; label: string }[] = [
 
 const PAGE_SIZE = 20;
 
-function getNotificationIcon(type: string) {
+function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconClass: string } {
   switch (type) {
+    case 'QUOTE_RECEIVED':
+    case 'quote_received':
+      return { icon: MessageCircle, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+    case 'JOB_ACCEPTED':
     case 'job_update':
-    case 'booking_request':
-    case 'job':
+      return { icon: CheckCircle2, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+    case 'new_job':
     case 'new_lead':
-      return Briefcase;
+    case 'booking_request':
+      return { icon: Briefcase, bgClass: 'bg-blue-100', iconClass: 'text-blue-600' };
+    case 'payment':
+    case 'PAYMENT_RECEIVED':
+    case 'invoice_ready':
+    case 'INVOICE_RECEIVED':
+    case 'payment_auto_released':
+      return { icon: DollarSign, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+    case 'session_reminder':
+    case 'session_rescheduled':
+    case 'session_skipped':
+    case 'extra_session_added':
+    case 'BOOKING_REMINDER':
+      return { icon: CalendarDays, bgClass: 'bg-purple-100', iconClass: 'text-purple-600' };
+    case 'vacancy_application':
+    case 'team':
+      return { icon: Users, bgClass: 'bg-blue-100', iconClass: 'text-blue-600' };
+    case 'JOB_DECLINED':
+      return { icon: XCircle, bgClass: 'bg-red-100', iconClass: 'text-red-600' };
+    case 'JOB_COMPLETED':
+      return { icon: CheckCircle2, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+    case 'REVIEW_RECEIVED':
+      return { icon: Star, bgClass: 'bg-amber-100', iconClass: 'text-amber-600' };
+    case 'project_update':
+      return { icon: FileText, bgClass: 'bg-blue-100', iconClass: 'text-blue-600' };
+    case 'job_reminder_day_before':
+      return { icon: CalendarDays, bgClass: 'bg-blue-100', iconClass: 'text-blue-600' };
+    case 'job_reminder_two_hours':
+    case 'tradie_en_route':
+      return { icon: Clock, bgClass: 'bg-amber-100', iconClass: 'text-amber-600' };
+    case 'quote_accepted':
+      return { icon: CheckCircle2, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+    case 'job_completed':
+      return { icon: CheckCircle2, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+    case 'recurring_cancelled':
+      return { icon: XCircle, bgClass: 'bg-red-100', iconClass: 'text-red-600' };
+    case 'payment_sent':
+      return { icon: DollarSign, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
     case 'message':
     case 'new_message':
-      return MessageCircle;
-    case 'team':
-    case 'vacancy_application':
-      return Users;
-    case 'payment':
-    case 'invoice':
-      return DollarSign;
+      return { icon: MessageCircle, bgClass: 'bg-blue-100', iconClass: 'text-blue-600' };
     default:
-      return Info;
+      return { icon: Bell, bgClass: 'bg-gray-100', iconClass: 'text-gray-500' };
   }
 }
 
@@ -58,7 +101,17 @@ function getFilterCategory(type: string): FilterTab {
     case 'booking_request':
     case 'job':
     case 'new_lead':
+    case 'new_job':
     case 'project_update':
+    case 'JOB_ACCEPTED':
+    case 'JOB_DECLINED':
+    case 'JOB_COMPLETED':
+    case 'job_reminder_day_before':
+    case 'job_reminder_two_hours':
+    case 'tradie_en_route':
+    case 'quote_accepted':
+    case 'job_completed':
+    case 'recurring_cancelled':
       return 'job';
     case 'message':
     case 'new_message':
@@ -68,6 +121,11 @@ function getFilterCategory(type: string): FilterTab {
       return 'team';
     case 'payment':
     case 'invoice':
+    case 'invoice_ready':
+    case 'PAYMENT_RECEIVED':
+    case 'INVOICE_RECEIVED':
+    case 'payment_auto_released':
+    case 'payment_sent':
       return 'payment';
     default:
       return 'all';
@@ -102,7 +160,7 @@ function ListSkeleton() {
     <div className="divide-y divide-gray-100">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="p-4 flex items-start gap-3 animate-pulse">
-          <div className="w-10 h-10 bg-gray-200 rounded-lg flex-shrink-0" />
+          <div className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0" />
           <div className="flex-1 space-y-2">
             <div className="h-4 bg-gray-200 rounded w-1/3" />
             <div className="h-3 bg-gray-100 rounded w-2/3" />
@@ -123,6 +181,7 @@ export default function Notifications() {
   const [hasMore, setHasMore] = useState(false);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [markingAll, setMarkingAll] = useState(false);
+  const [clearingAll, setClearingAll] = useState(false);
 
   const fetchNotifications = useCallback(async (offset = 0, append = false) => {
     if (!user) return;
@@ -204,6 +263,41 @@ export default function Notifications() {
     setMarkingAll(false);
   };
 
+  const handleDelete = async (e: React.MouseEvent, notificationId: string) => {
+    e.stopPropagation();
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId);
+
+      if (!error) {
+        setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      }
+    } catch {
+      console.error('Failed to delete notification');
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (!user) return;
+    setClearingAll(true);
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (!error) {
+        setNotifications([]);
+      }
+    } catch {
+      console.error('Failed to clear notifications');
+    } finally {
+      setClearingAll(false);
+    }
+  };
+
   const handleClick = async (notification: Notification) => {
     await handleMarkAsRead(notification);
 
@@ -212,21 +306,25 @@ export default function Notifications() {
       return;
     }
 
+    const jobId = notification.job_id || notification.metadata?.job_id;
+
     // Fallback navigation based on type / metadata
     if (notification.type === 'booking_request') {
       if (notification.metadata?.conversation_id) {
         navigate(`/messages?conversation=${notification.metadata.conversation_id}`);
       } else {
-        navigate(profile?.role === 'tradie' ? '/jobs' : '/leads');
+        navigate(profile?.role === 'tradie' ? '/work?tab=active' : '/leads');
       }
     } else if (notification.type === 'job_update' || notification.type === 'project_update') {
-      navigate(profile?.role === 'tradie' ? '/jobs' : '/leads');
+      navigate(profile?.role === 'tradie' ? '/work?tab=active' : '/leads');
     } else if (notification.type === 'vacancy_application') {
       navigate('/work');
     } else if (notification.type === 'message' || notification.type === 'new_message') {
       navigate('/messages');
     } else if (notification.type === 'payment' || notification.type === 'invoice') {
       navigate('/payments');
+    } else if (jobId) {
+      navigate(profile?.role === 'tradie' ? `/work?job=${jobId}` : `/leads?job=${jobId}`);
     }
   };
 
@@ -256,20 +354,36 @@ export default function Notifications() {
               </span>
             )}
           </div>
-          {unreadCount > 0 && (
-            <button
-              onClick={handleMarkAllRead}
-              disabled={markingAll}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors disabled:opacity-50"
-            >
-              {markingAll ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <CheckCheck className="w-4 h-4" />
-              )}
-              Mark all as read
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <button
+                onClick={handleMarkAllRead}
+                disabled={markingAll}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {markingAll ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CheckCheck className="w-4 h-4" />
+                )}
+                Mark all read
+              </button>
+            )}
+            {notifications.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                disabled={clearingAll}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {clearingAll ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                Clear all
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Filter Tabs */}
@@ -282,7 +396,7 @@ export default function Notifications() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
                   isActive
-                    ? 'bg-primary-600 text-white'
+                    ? 'bg-emerald-600 text-white'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
@@ -312,25 +426,22 @@ export default function Notifications() {
             <>
               <div className="divide-y divide-gray-100">
                 {filtered.map(notification => {
-                  const Icon = getNotificationIcon(notification.type);
+                  const style = getNotifStyle(notification.type);
+                  const NotifIcon = style.icon;
                   const isUnread = !notification.read_at;
 
                   return (
-                    <button
+                    <div
                       key={notification.id}
                       onClick={() => handleClick(notification)}
-                      className={`w-full text-left p-4 hover:bg-gray-50 transition-colors flex items-start gap-3 ${
-                        isUnread ? 'bg-primary-50/40' : ''
+                      className={`group w-full text-left p-4 hover:bg-gray-50 transition-colors flex items-start gap-3 cursor-pointer ${
+                        isUnread ? 'bg-emerald-50/40' : ''
                       }`}
                     >
                       <div
-                        className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                          isUnread
-                            ? 'bg-primary-100 text-primary-600'
-                            : 'bg-gray-100 text-gray-500'
-                        }`}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${style.bgClass}`}
                       >
-                        <Icon className="w-5 h-5" />
+                        <NotifIcon className={`w-5 h-5 ${style.iconClass}`} />
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -343,17 +454,25 @@ export default function Notifications() {
                             {notification.title}
                           </h4>
                           {isUnread && (
-                            <span className="w-2 h-2 bg-primary-600 rounded-full flex-shrink-0" />
+                            <span className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0" />
                           )}
+                          <span className="text-xs text-gray-400 ml-auto flex-shrink-0">
+                            {relativeTime(notification.created_at)}
+                          </span>
                         </div>
                         <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
                           {notification.message}
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {relativeTime(notification.created_at)}
-                        </p>
                       </div>
-                    </button>
+
+                      <button
+                        onClick={(e) => handleDelete(e, notification.id)}
+                        className="p-1.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0 rounded hover:bg-red-50"
+                        aria-label="Delete notification"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   );
                 })}
               </div>
@@ -363,7 +482,7 @@ export default function Notifications() {
                   <button
                     onClick={handleLoadMore}
                     disabled={loadingMore}
-                    className="w-full py-2.5 text-sm font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full py-2.5 text-sm font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {loadingMore ? (
                       <>

@@ -18,6 +18,7 @@ interface UseDashboardJobsOptions {
 export function useDashboardJobs({ userId, onSuccess, onError }: UseDashboardJobsOptions) {
   const [jobs, setJobs] = useState<DashboardJob[]>([]);
   const [unlockedJobIds, setUnlockedJobIds] = useState<string[]>([]);
+  const [quotedJobIds, setQuotedJobIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
 
   // Stable refs for callbacks to avoid invalidating useCallback deps every render
@@ -38,6 +39,19 @@ export function useDashboardJobs({ userId, onSuccess, onError }: UseDashboardJob
 
       if (error) throw error;
       setJobs(data || []);
+
+      // Fetch jobs this tradie has already quoted on (for pending counter)
+      const pendingIds = (data || []).filter(j => j.status === 'pending').map(j => j.id);
+      if (pendingIds.length > 0) {
+        const { data: quotes } = await supabase
+          .from('quotes')
+          .select('job_id')
+          .eq('tradie_id', userId)
+          .in('job_id', pendingIds);
+        setQuotedJobIds(new Set((quotes || []).map(q => q.job_id)));
+      } else {
+        setQuotedJobIds(new Set());
+      }
     } catch {
       onErrorRef.current?.('Failed to load jobs. Please refresh.');
     }
@@ -85,6 +99,7 @@ export function useDashboardJobs({ userId, onSuccess, onError }: UseDashboardJob
   return {
     jobs,
     unlockedJobIds,
+    quotedJobIds,
     deleting,
     fetchJobs,
     fetchUnlockedJobs,

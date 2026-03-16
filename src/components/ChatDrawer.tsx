@@ -399,6 +399,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
       .single();
 
     if (!error && data) {
+      const sentContent = (data as Message).content;
       setMessages([...messages, data as Message]);
       setNewMessage('');
       setSelectedSlotId(null);
@@ -415,6 +416,22 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
       setBudgetType('request_quote');
       setBudgetAmount('');
       await fetchAvailableSlots();
+
+      // Notify recipient of new message
+      try {
+        const preview = (sentContent || '').slice(0, 80);
+        await supabase.from('notifications').insert({
+          user_id: tradie.id,
+          type: 'new_message',
+          title: 'New Message',
+          message: preview,
+          job_id: jobId || null,
+          metadata: { conversation_id: conversationId, sender_id: user.id },
+          read: false,
+        });
+      } catch {
+        // Non-critical
+      }
     }
     setSending(false);
   };

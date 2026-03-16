@@ -402,7 +402,7 @@ export default function PostLead() {
       budget_type: budgetType,
       budget_amount: budgetType === 'fixed_budget' && budgetAmount ? parseFloat(budgetAmount) : null,
       is_emergency: isUrgent,
-      priority: isUrgent ? 'urgent' : 'standard',
+      priority: isUrgent ? 'high' : 'normal',
       is_delayed: false,
       is_flash_boost: isUrgent,
       flash_expiry: flashExpiry,

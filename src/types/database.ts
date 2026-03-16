@@ -166,7 +166,7 @@ export type Job = {
   is_emergency: boolean;
   decline_reason: string | null;
   declined_at: string | null;
-  priority: 'standard' | 'urgent';
+  priority: 'low' | 'normal' | 'high';
   is_delayed: boolean;
   delayed_until: string | null;
   notes: string | null;
@@ -849,6 +849,78 @@ export type TradieWithDetails = Profile & {
   availability_hours?: number;
 }
 
+// ── Ongoing Services ────────────────────────────────────────
+
+export type ServiceAgreementFrequency = 'daily' | 'weekly' | 'fortnightly' | 'monthly' | 'as_needed';
+export type ServiceAgreementBillingCycle = 'weekly' | 'fortnightly' | 'monthly' | 'on_request';
+export type ServiceAgreementStatus = 'active' | 'paused' | 'ended';
+export type ServiceVisitType = 'regular' | 'extra' | 'makeup' | 'final';
+export type ServiceVisitStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show';
+export type ServiceInvoiceStatus = 'draft' | 'sent' | 'viewed' | 'paid' | 'overdue' | 'cancelled';
+
+export type ServiceAgreement = {
+  id: string;
+  client_id: string;
+  tradie_id: string;
+  title: string;
+  description: string | null;
+  trade_category: string;
+  address: string;
+  suburb: string | null;
+  state: string | null;
+  postcode: string | null;
+  rate_per_visit: number;
+  rate_includes_gst: boolean;
+  typical_frequency: ServiceAgreementFrequency;
+  typical_day: string | null;
+  typical_time: string | null;
+  notes: string | null;
+  billing_cycle: ServiceAgreementBillingCycle;
+  status: ServiceAgreementStatus;
+  original_job_id: string | null;
+  original_quote_id: string | null;
+  started_at: string;
+  ended_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ServiceVisit = {
+  id: string;
+  agreement_id: string;
+  visit_date: string;
+  visit_type: ServiceVisitType;
+  amount: number;
+  amount_includes_gst: boolean;
+  status: ServiceVisitStatus;
+  notes: string | null;
+  completed_at: string | null;
+  completed_by: string | null;
+  invoice_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ServiceInvoice = {
+  id: string;
+  agreement_id: string;
+  invoice_number: string;
+  period_start: string;
+  period_end: string;
+  subtotal: number;
+  gst_amount: number;
+  total: number;
+  visit_count: number;
+  status: ServiceInvoiceStatus;
+  paid_at: string | null;
+  payment_method: string | null;
+  payment_reference: string | null;
+  sent_at: string | null;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -1162,6 +1234,24 @@ export type Database = {
         Row: TimeEntry;
         Insert: Partial<Omit<TimeEntry, 'id' | 'created_at'>>;
         Update: Partial<Omit<TimeEntry, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      service_agreements: {
+        Row: ServiceAgreement;
+        Insert: Partial<Omit<ServiceAgreement, 'id' | 'created_at' | 'updated_at'>>;
+        Update: Partial<Omit<ServiceAgreement, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      service_visits: {
+        Row: ServiceVisit;
+        Insert: Partial<Omit<ServiceVisit, 'id' | 'created_at' | 'updated_at'>>;
+        Update: Partial<Omit<ServiceVisit, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      service_invoices: {
+        Row: ServiceInvoice;
+        Insert: Partial<Omit<ServiceInvoice, 'id' | 'created_at' | 'updated_at'>>;
+        Update: Partial<Omit<ServiceInvoice, 'id' | 'created_at'>>;
         Relationships: [];
       };
     };

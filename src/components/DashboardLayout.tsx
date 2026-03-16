@@ -16,6 +16,7 @@ import {
   Briefcase,
   ShieldCheck,
   CalendarDays,
+  Clock,
   ClipboardList,
   UserCircle,
   TrendingUp,
@@ -26,6 +27,10 @@ import {
   AlertTriangle,
   Wallet,
   ChevronDown,
+  CheckCircle2,
+  XCircle,
+  Star,
+  FileText,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -34,6 +39,82 @@ import type { LucideIcon } from 'lucide-react';
 import type { Notification } from '../types/database';
 import SubscriptionModal from './SubscriptionModal';
 import PlatformUpdateBanner from './PlatformUpdateBanner';
+
+function relativeTime(dateStr: string): string {
+  const now = Date.now();
+  const date = new Date(dateStr).getTime();
+  const diff = now - date;
+
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return 'just now';
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+
+  const weeks = Math.floor(days / 7);
+  if (weeks < 4) return `${weeks}w ago`;
+
+  return new Date(dateStr).toLocaleDateString();
+}
+
+function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconClass: string } {
+  switch (type) {
+    case 'QUOTE_RECEIVED':
+    case 'quote_received':
+      return { icon: MessageCircle, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
+    case 'JOB_ACCEPTED':
+    case 'job_update':
+      return { icon: CheckCircle2, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
+    case 'new_job':
+    case 'new_lead':
+    case 'booking_request':
+      return { icon: Briefcase, bgClass: 'bg-blue-500/15', iconClass: 'text-blue-400' };
+    case 'payment':
+    case 'PAYMENT_RECEIVED':
+    case 'invoice_ready':
+    case 'INVOICE_RECEIVED':
+    case 'payment_auto_released':
+      return { icon: DollarSign, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
+    case 'session_reminder':
+    case 'session_rescheduled':
+    case 'session_skipped':
+    case 'extra_session_added':
+    case 'BOOKING_REMINDER':
+      return { icon: CalendarDays, bgClass: 'bg-purple-500/15', iconClass: 'text-purple-400' };
+    case 'vacancy_application':
+    case 'team':
+      return { icon: Users, bgClass: 'bg-blue-500/15', iconClass: 'text-blue-400' };
+    case 'JOB_DECLINED':
+      return { icon: XCircle, bgClass: 'bg-red-500/15', iconClass: 'text-red-400' };
+    case 'JOB_COMPLETED':
+      return { icon: CheckCircle2, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
+    case 'REVIEW_RECEIVED':
+      return { icon: Star, bgClass: 'bg-amber-500/15', iconClass: 'text-amber-400' };
+    case 'project_update':
+      return { icon: FileText, bgClass: 'bg-blue-500/15', iconClass: 'text-blue-400' };
+    case 'job_reminder_day_before':
+      return { icon: CalendarDays, bgClass: 'bg-blue-500/15', iconClass: 'text-blue-400' };
+    case 'job_reminder_two_hours':
+    case 'tradie_en_route':
+      return { icon: Clock, bgClass: 'bg-amber-500/15', iconClass: 'text-amber-400' };
+    case 'quote_accepted':
+      return { icon: CheckCircle2, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
+    case 'job_completed':
+      return { icon: CheckCircle2, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
+    case 'recurring_cancelled':
+      return { icon: XCircle, bgClass: 'bg-red-500/15', iconClass: 'text-red-400' };
+    case 'payment_sent':
+      return { icon: DollarSign, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
+    default:
+      return { icon: Bell, bgClass: 'bg-navy-700', iconClass: 'text-navy-300' };
+  }
+}
 
 interface NavSubItem {
   name: string;
@@ -259,6 +340,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Work Hub', href: '/work', icon: ClipboardList, children: [
       { name: 'Leads', href: '/work', icon: ClipboardList },
       { name: 'My Jobs', href: '/work?tab=active', icon: Briefcase },
+      { name: 'Ongoing Services', href: '/work?tab=services', icon: DollarSign },
       { name: 'Hiring', href: '/work?tab=recruitment', icon: Users },
     ] },
     { name: 'Schedule', href: '/schedule', icon: CalendarDays },
@@ -485,9 +567,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </button>
 
                 {notificationsOpen && (
-                  <div className="fixed inset-x-0 top-14 mx-2 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:mx-0 sm:w-96 bg-navy-800 rounded-xl shadow-lg border border-navy-700 z-50 max-h-[80vh] sm:max-h-96 overflow-y-auto">
-                    <div className="p-4 border-b border-navy-700 flex items-center justify-between">
-                      <h3 className="font-semibold text-white">Notifications</h3>
+                  <div className="fixed inset-x-0 top-14 mx-2 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:mx-0 sm:w-96 bg-navy-800 rounded-xl shadow-lg border border-navy-700 z-50 max-h-[80vh] sm:max-h-96 flex flex-col">
+                    <div className="p-3 px-4 border-b border-navy-700 flex items-center justify-between flex-shrink-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-white text-sm">Notifications</h3>
+                        {(() => {
+                          const unread = notifications.filter(n => !n.read_at).length;
+                          if (unread === 0) return null;
+                          return (
+                            <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold text-white bg-red-500 rounded-full">
+                              {unread > 9 ? '9+' : unread}
+                            </span>
+                          );
+                        })()}
+                      </div>
                       {notifications.some(n => !n.read_at) && (
                         <button
                           onClick={handleMarkAllRead}
@@ -498,41 +591,59 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       )}
                     </div>
 
-                    {notifications.length === 0 ? (
-                      <div className="p-8 text-center">
-                        <Bell className="w-12 h-12 text-navy-600 mx-auto mb-3" />
-                        <p className="text-gray-400">No new notifications</p>
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-navy-700">
-                        {notifications.map((notification) => (
-                          <div
-                            key={notification.id}
-                            onClick={() => handleNotificationClick(notification)}
-                            className={`p-4 hover:bg-navy-700 transition-colors cursor-pointer ${
-                              !notification.read_at ? 'bg-warm-500/5' : ''
-                            }`}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                                notification.read_at ? 'bg-navy-600' : 'bg-warm-500'
-                              }`} />
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-white text-sm">
-                                  {notification.title}
-                                </h4>
-                                <p className="text-sm text-gray-300 mt-1">
-                                  {notification.message}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-2">
-                                  {new Date(notification.created_at).toLocaleString()}
-                                </p>
+                    <div className="overflow-y-auto flex-1">
+                      {notifications.length === 0 ? (
+                        <div className="p-8 text-center">
+                          <Bell className="w-10 h-10 text-navy-600 mx-auto mb-2" />
+                          <p className="text-sm font-medium text-gray-400">You're all caught up!</p>
+                          <p className="text-xs text-gray-500 mt-1">No new notifications</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-navy-700/50">
+                          {notifications.map((notification) => {
+                            const style = getNotifStyle(notification.type);
+                            const NotifIcon = style.icon;
+                            const isUnread = !notification.read_at;
+
+                            return (
+                              <div
+                                key={notification.id}
+                                onClick={() => handleNotificationClick(notification)}
+                                className={`flex items-start gap-3 p-3 px-4 hover:bg-navy-700/50 transition-colors cursor-pointer ${
+                                  isUnread ? 'bg-warm-500/5' : ''
+                                }`}
+                              >
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${style.bgClass}`}>
+                                  <NotifIcon className={`w-4 h-4 ${style.iconClass}`} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-sm leading-tight truncate ${isUnread ? 'font-semibold text-white' : 'font-medium text-gray-300'}`}>
+                                    {notification.title}
+                                  </p>
+                                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">
+                                    {notification.message}
+                                  </p>
+                                  <p className="text-[11px] text-gray-500 mt-1">
+                                    {relativeTime(notification.created_at)}
+                                  </p>
+                                </div>
+                                {isUnread && (
+                                  <div className="w-2 h-2 bg-warm-500 rounded-full flex-shrink-0 mt-2" />
+                                )}
                               </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <Link
+                      to="/notifications"
+                      onClick={() => setNotificationsOpen(false)}
+                      className="block p-2.5 text-center text-xs font-medium text-warm-400 hover:text-warm-300 hover:bg-navy-700/50 border-t border-navy-700 transition-colors flex-shrink-0"
+                    >
+                      View all notifications
+                    </Link>
                   </div>
                 )}
               </div>
@@ -697,9 +808,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               setToastNotification(null);
             }}
           >
-            <div className="w-8 h-8 bg-warm-500/15 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Briefcase className="w-4 h-4 text-warm-400" />
-            </div>
+            {(() => {
+              const ts = getNotifStyle(toastNotification.type);
+              const ToastIcon = ts.icon;
+              return (
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${ts.bgClass}`}>
+                  <ToastIcon className={`w-4 h-4 ${ts.iconClass}`} />
+                </div>
+              );
+            })()}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white leading-tight">{toastNotification.title}</p>
               <p className="text-xs text-gray-400 truncate mt-0.5">{toastNotification.message}</p>

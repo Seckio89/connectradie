@@ -503,6 +503,20 @@ export default function Messages() {
       // Clear typing status on send
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       setTypingStatus(selectedConversation.id, false);
+
+      // Notify recipient
+      try {
+        await supabase.from('notifications').insert({
+          user_id: receiverId,
+          type: 'new_message',
+          title: 'New Message',
+          message: messageContent.slice(0, 80),
+          metadata: { conversation_id: selectedConversation.id, sender_id: user.id },
+          read: false,
+        });
+      } catch {
+        // Non-critical
+      }
     } else if (error) {
       // Track failed message for retry
       const failedId = `${Date.now()}`;

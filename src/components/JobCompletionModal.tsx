@@ -3,6 +3,7 @@ import { Camera, Loader2, X, Plus, AlertCircle, Check } from 'lucide-react';
 import Modal from './Modal';
 import { supabase } from '../lib/supabase';
 import type { JobWithRelations } from '../types/database';
+import { calculateNextDueDate, FREQ_WEEKLY, insertNotification } from '../lib/recurringJobs';
 
 // ── Quick-text prompts per trade category ──
 // Each prompt is a tappable chip the tradie can add to their notes.
@@ -392,7 +393,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
           await supabase.from('payments').insert({
             profile_id: job.client_id,
             job_id: job.id,
-            payment_type: 'job_payment',
+            payment_type: 'job_funding',
             amount: amountCents,
             processing_fee: processingFee,
             currency: 'aud',
@@ -413,10 +414,111 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
             title: 'Payment Requested',
             message: `Your tradie has completed the job and requested payment.${paymentAmountDisplay} Please review and release payment.`,
             type: 'payment',
-            data: { job_id: job.id, tradie_id: userId },
+            job_id: job.id,
+            metadata: { tradie_id: userId },
           });
         } catch {
           // Non-blocking — don't let notification failure prevent completion
+        }
+      }
+
+      // Auto-schedule next recurring job if this is a recurring service
+      if (job.title && /recurring/i.test(job.title) && job.client_id && job.tradie_id) {
+        try {
+          // Find the linked recurring_jobs record
+          const { data: recurringJob } = await supabase
+            .from('recurring_jobs')
+            .select('id, frequency_months, is_active, trade_category, service_subtype, agreed_price')
+            .eq('client_id', job.client_id)
+            .eq('tradie_id', job.tradie_id)
+            .eq('is_active', true)
+            .limit(1)
+            .maybeSingle();
+
+          if (recurringJob) {
+            // Calculate next date from the completed job's scheduled date or today
+            const baseDate = job.scheduled_date || new Date().toISOString().split('T')[0];
+            const nextDate = calculateNextDueDate(baseDate, recurringJob.frequency_months);
+            const nextDateStr = nextDate.toISOString().split('T')[0];
+
+            // Check if a session already exists for this date
+            const { data: existingSession } = await supabase
+              .from('recurring_sessions')
+              .select('id')
+              .eq('recurring_job_id', recurringJob.id)
+              .eq('scheduled_date', nextDateStr)
+              .maybeSingle();
+
+            if (!existingSession) {
+              const confirmationDeadline = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+              await supabase.from('recurring_sessions').insert({
+                recurring_job_id: recurringJob.id,
+                scheduled_date: nextDateStr,
+                status: 'pending_confirmation',
+                confirmation_deadline: confirmationDeadline,
+              });
+
+              // Advance next_due_date
+              const followingDate = calculateNextDueDate(nextDateStr, recurringJob.frequency_months);
+              await supabase.from('recurring_jobs').update({
+                next_due_date: followingDate.toISOString().split('T')[0],
+                last_completed_at: new Date().toISOString(),
+                times_completed: recurringJob.frequency_months === FREQ_WEEKLY ? undefined : undefined,
+              }).eq('id', recurringJob.id);
+
+              // Format labels for notifications
+              const tradeLabel = (recurringJob.service_subtype || recurringJob.trade_category || '')
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, (c: string) => c.toUpperCase());
+              const nextDateLabel = new Date(nextDateStr + 'T00:00:00').toLocaleDateString('en-AU', {
+                weekday: 'short', day: 'numeric', month: 'short',
+              });
+              const priceStr = recurringJob.agreed_price ? ` — $${recurringJob.agreed_price.toFixed(2)}` : '';
+
+              // Notify client
+              await insertNotification(
+                job.client_id,
+                'session_completed',
+                `Your ${tradeLabel} service is complete. Next session (${nextDateLabel}${priceStr}) is awaiting tradie confirmation.`,
+                { recurring_job_id: recurringJob.id, next_date: nextDateStr },
+              );
+
+              // Notify tradie to confirm
+              await insertNotification(
+                job.tradie_id,
+                'recurring_job_confirmation_required',
+                `${tradeLabel} complete. Confirm your next session on ${nextDateLabel}${priceStr} within 48 hours.`,
+                { recurring_job_id: recurringJob.id, next_date: nextDateStr },
+              );
+            }
+
+            // Auto-create service_agreement if one doesn't exist yet
+            const { data: existingAgreement } = await supabase
+              .from('service_agreements')
+              .select('id')
+              .eq('client_id', job.client_id)
+              .eq('tradie_id', job.tradie_id)
+              .eq('trade_category', recurringJob.trade_category)
+              .eq('status', 'active')
+              .maybeSingle();
+
+            if (!existingAgreement) {
+              const freqMap: Record<number, string> = { [-3]: 'daily', [-1]: 'weekly', [-2]: 'fortnightly', 1: 'monthly' };
+              await supabase.from('service_agreements').insert({
+                client_id: job.client_id,
+                tradie_id: job.tradie_id,
+                title: recurringJob.service_subtype || recurringJob.trade_category,
+                description: job.description?.replace(/^\[[^\]]+\]\s*/, '') || null,
+                trade_category: recurringJob.trade_category,
+                address: job.location_address || '',
+                rate_per_visit: recurringJob.agreed_price || 0,
+                typical_frequency: freqMap[recurringJob.frequency_months] || 'weekly',
+                status: 'active',
+              });
+            }
+          }
+        } catch {
+          // Non-blocking — don't fail the completion flow
         }
       }
 
@@ -572,28 +674,37 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100">
-          <button
-            onClick={onClose}
-            disabled={submitting}
-            className="px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting || !notesValue.trim()}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              'Request Payment'
-            )}
-          </button>
+        <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+          {!notesValue.trim() && (
+            <p className="text-xs text-gray-400 text-center">Select at least one item or add notes to continue</p>
+          )}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              disabled={submitting}
+              className="px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={submitting || !notesValue.trim()}
+              className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                notesValue.trim()
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                'Request Payment'
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </Modal>

@@ -269,9 +269,9 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         } catch (err) {
           console.error('Payment verification fallback failed:', err);
         }
-        // Switch to in_progress tab — funded jobs appear there.
+        // Switch to accepted tab — funded jobs appear there.
         // The filter change triggers useEffect → fetchLeads() automatically.
-        setFilter('in_progress');
+        setFilter('accepted');
         setQuoteAcceptedBanner('success');
         setTimeout(() => setQuoteAcceptedBanner(false), 10000);
       })();
@@ -320,9 +320,9 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     if (filter === 'boosted') {
       query = query.eq('is_flash_boost', true);
     } else if (filter === 'urgent') {
-      query = query.eq('priority', 'urgent');
+      query = query.eq('priority', 'high');
     } else if (filter === 'scheduled') {
-      query = query.eq('priority', 'standard').not('scheduled_date', 'is', null);
+      query = query.eq('priority', 'normal').not('scheduled_date', 'is', null);
     }
 
     const { data, error } = await query;
@@ -687,7 +687,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
 
     for (const lead of leads) {
       const isFlashActive = lead.is_flash_boost && lead.flash_expiry && new Date(lead.flash_expiry) > now;
-      if (lead.priority === 'urgent' || isFlashActive) {
+      if (lead.priority === 'high' || isFlashActive) {
         urgent.push(lead);
       } else if (lead.scheduled_date) {
         scheduled.push(lead);
@@ -844,10 +844,34 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
   };
 
   const handleDeclineQuote = async (quoteId: string) => {
+    // Fetch quote details before declining (for notification)
+    const { data: quote } = await supabase
+      .from('quotes')
+      .select('tradie_id, job_id')
+      .eq('id', quoteId)
+      .maybeSingle();
+
     await supabase
       .from('quotes')
       .update({ status: 'declined' })
       .eq('id', quoteId);
+
+    // Notify the tradie
+    if (quote?.tradie_id) {
+      try {
+        await supabase.from('notifications').insert({
+          user_id: quote.tradie_id,
+          type: 'JOB_DECLINED',
+          title: 'Quote Not Accepted',
+          message: `${profile?.full_name || 'The client'} chose a different tradie for this job.`,
+          job_id: quote.job_id,
+          metadata: {},
+          read: false,
+        });
+      } catch {
+        // Non-critical
+      }
+    }
   };
 
   const handleMessageTradie = (tradieId: string, jobId: string) => {
@@ -861,13 +885,13 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     const expiry = new Date(Date.now() + BOOST_DURATION_HOURS * 60 * 60 * 1000).toISOString();
     const { error } = await supabase
       .from('jobs')
-      .update({ is_flash_boost: true, flash_expiry: expiry, priority: 'urgent' })
+      .update({ is_flash_boost: true, flash_expiry: expiry, priority: 'high' })
       .eq('id', jobId);
 
     if (!error) {
       setLeads((prev) =>
         prev.map((l) =>
-          l.id === jobId ? { ...l, is_flash_boost: true, flash_expiry: expiry, priority: 'urgent' as const } : l
+          l.id === jobId ? { ...l, is_flash_boost: true, flash_expiry: expiry, priority: 'high' as const } : l
         )
       );
     }
@@ -1016,7 +1040,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     if (lead.quote_count > 0) return `${lead.quote_count} Quote${lead.quote_count !== 1 ? 's' : ''}`;
     if (lead.tradie_id && lead.status !== 'pending') return 'Picked Up';
     if (lead.is_flash_boost) return 'Boosted';
-    if (lead.priority === 'urgent') return 'Urgent';
+    if (lead.priority === 'high') return 'High Priority';
     if (lead.scheduled_date) return 'Scheduled';
     return 'Waiting';
   };
@@ -1035,7 +1059,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     if (lead.quote_count > 0) return 'bg-secondary-100 text-secondary-700 border-secondary-200';
     if (lead.tradie_id && lead.status !== 'pending') return 'bg-green-100 text-green-700 border-green-200';
     if (lead.is_flash_boost) return 'bg-warm-100 text-warm-700 border-warm-200';
-    if (lead.priority === 'urgent') return 'bg-red-100 text-red-700 border-red-200';
+    if (lead.priority === 'high') return 'bg-orange-100 text-orange-700 border-orange-200';
     if (lead.scheduled_date) return 'bg-secondary-100 text-secondary-700 border-secondary-200';
     return 'bg-gray-100 text-gray-600 border-gray-200';
   };
@@ -1068,7 +1092,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       new Date(lead.flash_expiry) > now;
     const category = extractCategory(lead.description);
     const desc = cleanDescription(lead.description);
-    const isUrgent = lead.priority === 'urgent';
+    const isUrgent = lead.priority === 'high';
     const SlotIcon = lead.preferred_time_slot ? SLOT_ICONS[lead.preferred_time_slot] : null;
     const hasQuoted = isTradie && lead.my_quote;
     const slotsRemaining = lead.max_quotes - lead.quote_count;
@@ -1134,6 +1158,12 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-50 text-red-700 rounded-full text-[11px] font-semibold border border-red-200">
                         <Zap className="w-3 h-3" />
                         Urgent
+                      </span>
+                    )}
+                    {isTradie && !!(lead.title && /recurring/i.test(lead.title)) && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-purple-50 text-purple-700 rounded-full text-[11px] font-semibold border border-purple-200">
+                        <RefreshCw className="w-3 h-3" />
+                        Recurring
                       </span>
                     )}
                     {isClientEditable && (
@@ -1957,7 +1987,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         const vl = viewLeadDetail;
         const vlCategory = extractCategory(vl.description);
         const vlDesc = cleanDescription(vl.description);
-        const vlIsUrgent = vl.priority === 'urgent';
+        const vlIsUrgent = vl.priority === 'high';
         const vlIsFlash = vl.is_flash_boost && vl.flash_expiry && new Date(vl.flash_expiry) > new Date();
         const vlSlotIcon = vl.preferred_time_slot ? SLOT_ICONS[vl.preferred_time_slot] : null;
         const vlHasQuoted = isTradie && vl.my_quote;

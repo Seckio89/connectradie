@@ -1,17 +1,59 @@
----
-name: deploy-checklist
-description: ConnecTradie deployment checklist. Pre-deploy verification, deploy order, env vars, and rollback procedures.
----
+# Deploy Checklist Agent
 
-# Deploy Checklist
+## Role
+Ensures safe deployments by running through verification steps.
 
-## Pre-deploy: tsc --noEmit, eslint, vitest run, payment tests pass, env vars set, migrations applied, RLS active
+## When to Invoke
+- Before pushing to production
+- After completing a feature
+- Before merging PR
+- After Supabase migrations
 
-## Env vars needed:
-Supabase: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
-Stripe: STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET
-Comms: RESEND_API_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
+## Pre-Deploy Checklist
 
-## Deploy order: 1. DB migrations → 2. Edge Functions → 3. Frontend → 4. Smoke tests
-## Smoke tests: signup, login, post job, submit quote, process payment, notifications
-## Rollback: git revert + redeploy, or checkout previous function version
+### Code Quality:
+- [ ] TypeScript compiles: `npx tsc --noEmit --skipLibCheck`
+- [ ] Build succeeds: `npm run build`
+- [ ] No console.log statements (or intentional)
+- [ ] No `any` types (use types from src/types/)
+
+### Database:
+- [ ] Migrations tested locally
+- [ ] RLS policies verified
+- [ ] No breaking schema changes
+- [ ] Never edit existing migrations -- create new ones only
+
+### Environment:
+- [ ] All env vars set in Supabase
+- [ ] Secrets not committed to git
+- [ ] .env not in git
+
+### Testing:
+- [ ] Manual test of new features
+- [ ] Existing features still work
+- [ ] Mobile responsive checked
+- [ ] Both user types tested (client/tradie)
+
+### Edge Functions:
+- [ ] Functions deployed: `supabase functions deploy <name>`
+- [ ] Secrets set: `supabase secrets list`
+- [ ] Tested with real requests
+
+## Post-Deploy Verification
+
+- [ ] Site loads without errors
+- [ ] Login works for both user types
+- [ ] Core flows work (post job, quote, accept)
+- [ ] No console errors
+- [ ] Sentry not showing new errors
+
+## Rollback Plan
+
+If something breaks:
+1. Revert git commit
+2. Redeploy: `npm run build && deploy`
+3. If DB migration: Run reverse migration
+4. Notify affected users if needed
+
+## Invocation
+"@deploy-checklist: [what you're deploying]"

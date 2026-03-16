@@ -255,6 +255,28 @@ Deno.serve(async (req: Request) => {
         })
         .eq("id", quote.job_id);
 
+      // Notify tradie that their quote was accepted
+      try {
+        const clientName = (await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .maybeSingle())?.data?.full_name || "A client";
+        const jobTitle = job.title || job.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, " ") || "a job";
+
+        await supabase.from("notifications").insert({
+          user_id: quote.tradie_id,
+          type: "quote_accepted",
+          title: "Quote Accepted!",
+          message: `${clientName} accepted your $${quotePriceDollars.toFixed(2)} quote for ${jobTitle}.`,
+          job_id: quote.job_id,
+          metadata: { amount: quotePriceDollars, client_id: user.id },
+          read: false,
+        });
+      } catch {
+        // Non-critical — don't fail the payment flow
+      }
+
       // Auto-rename the project so the client can identify it
       if (job.project_id) {
         try {

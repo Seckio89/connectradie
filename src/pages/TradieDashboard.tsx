@@ -42,7 +42,6 @@ import ConversationSettingsModal from '../components/ConversationSettingsModal';
 import JobManagementModal from '../components/JobManagementModal';
 import OnboardingChecklist from '../components/OnboardingChecklist';
 import QuoteInsightsWidget from '../components/QuoteInsightsWidget';
-import SmartInsightsWidget from '../components/SmartInsightsWidget';
 import EmptyState from '../components/EmptyState';
 import SubscriptionModal from '../components/SubscriptionModal';
 import CollapsibleSection from '../components/CollapsibleSection';
@@ -52,9 +51,12 @@ import WelcomeGuide from '../components/WelcomeGuide';
 import RecurringSessionCard from '../components/RecurringSessionCard';
 import RecurringInvoiceCard from '../components/RecurringInvoiceCard';
 import type { RecurringInvoice } from '../components/RecurringInvoiceCard';
-import TradieDateBlocker from '../components/TradieDateBlocker';
-import { getTradieUpcomingSessions } from '../lib/recurringJobs';
+import { getTradieUpcomingSessions, cancelRecurringJob } from '../lib/recurringJobs';
 import type { RecurringSession } from '../lib/recurringJobs';
+import AgreementCard from '../components/AgreementCard';
+import GenerateInvoiceModal from '../components/GenerateInvoiceModal';
+import { getActiveAgreements } from '../lib/ongoingServices';
+import type { ServiceAgreement } from '../types/database';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import {
   requestPushPermission,
@@ -159,6 +161,7 @@ export default function TradieDashboard() {
 
   const {
     jobs,
+    quotedJobIds,
     deleting,
     fetchJobs,
     fetchUnlockedJobs,
@@ -229,10 +232,18 @@ export default function TradieDashboard() {
   const [monthlyJobs, setMonthlyJobs] = useState(0);
   const [monthlyUnlocks, setMonthlyUnlocks] = useState(0);
 
+  // Dismissible banners
+  const [showPayoutBanner, setShowPayoutBanner] = useState(() => !localStorage.getItem('dismissedPayoutBanner'));
+  const [showPushBanner, setShowPushBanner] = useState(() => !localStorage.getItem('dismissedPushBanner'));
+
   // Recurring sessions
   const [recurringSessions, setRecurringSessions] = useState<(RecurringSession & { recurring_job?: { trade_category: string; service_subtype: string | null; description: string; client_id: string; preferred_time: string | null } })[]>([]);
   const [recurringLoading, setRecurringLoading] = useState(false);
   const [tradieInvoices, setTradieInvoices] = useState<RecurringInvoice[]>([]);
+
+  // Ongoing service agreements
+  const [agreements, setAgreements] = useState<(ServiceAgreement & { client?: { full_name: string }; tradie?: { full_name: string } })[]>([]);
+  const [invoiceAgreement, setInvoiceAgreement] = useState<(ServiceAgreement & { client?: { full_name: string } }) | null>(null);
 
   const fetchTradieInvoices = useCallback(async () => {
     if (!user) return;
@@ -395,6 +406,7 @@ export default function TradieDashboard() {
       fetchCalendarIntegration();
       fetchRecurringSessions();
       fetchTradieInvoices();
+      getActiveAgreements(user.id, 'tradie').then(setAgreements).catch(() => { /* ignore */ });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, tradieDetails?.subscription_tier, currentDate]);
@@ -678,45 +690,56 @@ export default function TradieDashboard() {
           </div>
         )}
 
-        {/* Recruitment Banner */}
-        <Link
-          to="/work?tab=recruitment"
-          className="mb-6 flex items-center gap-4 p-4 bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-2xl hover:border-primary-300 transition-all group"
-        >
-          <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-primary-200 transition-colors">
-            <Users className="w-5 h-5 text-primary-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-sm">Looking for staff?</h3>
-            <p className="text-xs text-gray-600 mt-0.5">Post a vacancy to find apprentices, qualified tradies, and senior roles</p>
-          </div>
-          <span className="px-3 py-1.5 bg-primary-600 text-white text-xs font-semibold rounded-lg group-hover:bg-primary-700 transition-colors flex-shrink-0">
-            Post a Vacancy
-          </span>
-        </Link>
-
-        {/* Pending Actions Nudge */}
+        {/* Your Next Steps */}
         {(() => {
-          const pendingJobs = jobs.filter(j => j.status === 'pending');
+          const pendingJobs = jobs.filter(j => j.status === 'pending' && !quotedJobIds.has(j.id));
           const inProgressJobs = jobs.filter(j => j.status === 'in_progress');
           const unreadConvos = conversations.filter(c => c.messages.some(m => m.receiver_id === user?.id && !m.read_at));
-          if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0) return null;
+          const pendingConfirmations = recurringSessions.filter(s => s.status === 'pending_confirmation');
+          if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0) return (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mt-6 mb-2">
+              <div className="flex items-center gap-2 text-emerald-700">
+                <CheckCircle2 className="w-5 h-5" />
+                <span className="text-sm font-medium">You're all caught up!</span>
+              </div>
+              <p className="text-xs text-emerald-600 mt-1">No pending actions. Check back later for new leads.</p>
+            </div>
+          );
           return (
-            <div className="bg-white rounded-xl border border-primary-200 p-4 mt-6 mb-2">
-              <p className="text-sm font-semibold text-gray-900 mb-3">Your next steps</p>
-              <div className="flex flex-wrap gap-2">
+            <div className="bg-white rounded-xl border border-gray-200 p-4 mt-6 mb-2">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-500" />
+                  Your Next Steps
+                </p>
+                <span className="bg-amber-100 text-amber-700 text-xs font-medium px-2 py-0.5 rounded-full">
+                  {pendingJobs.length + inProgressJobs.length + unreadConvos.length + pendingConfirmations.length}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {pendingConfirmations.length > 0 && (
+                  <a href="#recurring-jobs" className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <RefreshCw className="w-4 h-4 text-purple-500" />
+                      <span className="text-sm text-gray-700">{pendingConfirmations.length} recurring session{pendingConfirmations.length !== 1 ? 's' : ''} need{pendingConfirmations.length === 1 ? 's' : ''} confirmation</span>
+                    </div>
+                    <span className="text-sm font-medium text-amber-700">Confirm &rarr;</span>
+                  </a>
+                )}
                 {pendingJobs.length > 0 && (
                   <button onClick={() => {
                     setActiveTab('jobs');
-                    // Open the first pending job directly
                     const firstPending = pendingJobs[0];
                     if (firstPending) {
                       setSelectedJob(firstPending.id);
                       setShowJobManagement(true);
                     }
-                  }} className="inline-flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm font-medium text-red-800 hover:bg-red-100 transition-colors">
-                    <Briefcase className="w-4 h-4" />
-                    {pendingJobs.length} pending job{pendingJobs.length !== 1 ? 's' : ''} to review
+                  }} className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Briefcase className="w-4 h-4 text-blue-500" />
+                      <span className="text-sm text-gray-700">{pendingJobs.length} pending job{pendingJobs.length !== 1 ? 's' : ''} to review</span>
+                    </div>
+                    <span className="text-sm font-medium text-emerald-600">View &rarr;</span>
                   </button>
                 )}
                 {inProgressJobs.length > 0 && (
@@ -727,15 +750,21 @@ export default function TradieDashboard() {
                       setSelectedJob(firstInProgress.id);
                       setShowJobManagement(true);
                     }
-                  }} className="inline-flex items-center gap-2 px-3 py-2 bg-secondary-50 border border-secondary-200 rounded-lg text-sm font-medium text-secondary-800 hover:bg-secondary-100 transition-colors">
-                    <Clock className="w-4 h-4" />
-                    {inProgressJobs.length} job{inProgressJobs.length !== 1 ? 's' : ''} in progress
+                  }} className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-4 h-4 text-blue-500" />
+                      <span className="text-sm text-gray-700">{inProgressJobs.length} job{inProgressJobs.length !== 1 ? 's' : ''} in progress</span>
+                    </div>
+                    <span className="text-sm font-medium text-emerald-600">View &rarr;</span>
                   </button>
                 )}
                 {unreadConvos.length > 0 && (
-                  <button onClick={() => setActiveTab('messages')} className="inline-flex items-center gap-2 px-3 py-2 bg-primary-50 border border-primary-200 rounded-lg text-sm font-medium text-primary-800 hover:bg-primary-100 transition-colors">
-                    <MessageSquare className="w-4 h-4" />
-                    {unreadConvos.length} unread conversation{unreadConvos.length !== 1 ? 's' : ''}
+                  <button onClick={() => setActiveTab('messages')} className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <MessageSquare className="w-4 h-4 text-emerald-500" />
+                      <span className="text-sm text-gray-700">{unreadConvos.length} unread message{unreadConvos.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <span className="text-sm font-medium text-emerald-600">Reply &rarr;</span>
                   </button>
                 )}
               </div>
@@ -812,7 +841,7 @@ export default function TradieDashboard() {
                         <div
                           key={job.id}
                           className={`border rounded-xl overflow-hidden transition-all hover:shadow-sm ${
-                            job.priority === 'urgent' ? 'border-red-200 bg-gradient-to-r from-red-50/40 to-white' : 'border-gray-200 hover:border-primary-200'
+                            job.priority === 'high' ? 'border-orange-200 bg-gradient-to-r from-orange-50/40 to-white' : 'border-gray-200 hover:border-primary-200'
                           }`}
                         >
                           <div className="px-4 pt-4 pb-3">
@@ -823,9 +852,9 @@ export default function TradieDashboard() {
                                   <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
                                     {job.status.replace(/_/g, ' ')}
                                   </span>
-                                  {job.priority === 'urgent' && (
-                                    <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-semibold rounded-full border border-red-200 flex-shrink-0">
-                                      URGENT
+                                  {job.priority === 'high' && (
+                                    <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full border border-orange-200 flex-shrink-0">
+                                      HIGH PRIORITY
                                     </span>
                                   )}
                                   {job.is_delayed && (
@@ -873,6 +902,11 @@ export default function TradieDashboard() {
                               <Calendar className="w-3 h-3" />
                               {new Date(job.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                             </span>
+                            {job.budget_amount != null && job.budget_amount > 0 && (
+                              <span className="text-xs font-medium text-gray-900">
+                                ${job.budget_amount.toLocaleString()}
+                              </span>
+                            )}
                           </div>
 
                           {job.notes && (
@@ -1395,7 +1429,7 @@ export default function TradieDashboard() {
               </div>
             </div>
 
-            <Link to="/jobs" className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md hover:border-primary-300 transition-all cursor-pointer">
+            <Link to="/work?tab=active" className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md hover:border-primary-300 transition-all cursor-pointer">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
                   <Users className="w-6 h-6 text-blue-600" />
@@ -1428,7 +1462,8 @@ export default function TradieDashboard() {
         </CollapsibleSection>
         </div>
 
-        {/* Earnings Summary */}
+        {/* Earnings Summary — only show when there's activity */}
+        {(earnings.total > 0 || earnings.thisMonth > 0 || earnings.pendingJobs > 0) && (
         <div className="mt-6 bg-white rounded-2xl border border-gray-200 p-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-blue-50 rounded-lg">
@@ -1439,12 +1474,20 @@ export default function TradieDashboard() {
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-blue-50 rounded-xl p-4 text-center">
               <Calendar className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-              <p className="text-xl font-bold text-blue-700">${earnings.thisMonth.toLocaleString()}</p>
+              {earnings.thisMonth > 0 ? (
+                <p className="text-xl font-bold text-blue-700">${earnings.thisMonth.toLocaleString()}</p>
+              ) : (
+                <p className="text-sm text-blue-600 font-medium mt-1">Quote on leads to start earning</p>
+              )}
               <p className="text-xs text-blue-600 mt-1">This Month</p>
             </div>
             <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
               <TrendingUp className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-              <p className="text-xl font-bold text-gray-800">${earnings.total.toLocaleString()}</p>
+              {earnings.total > 0 ? (
+                <p className="text-xl font-bold text-gray-800">${earnings.total.toLocaleString()}</p>
+              ) : (
+                <p className="text-sm text-gray-500 font-medium mt-1">Complete your first job!</p>
+              )}
               <p className="text-xs text-gray-500 mt-1">All Time</p>
             </div>
             <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
@@ -1454,6 +1497,7 @@ export default function TradieDashboard() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Recent Reviews */}
         {recentReviews.length > 0 && (
@@ -1500,17 +1544,34 @@ export default function TradieDashboard() {
           </div>
         )}
 
-        {/* Recurring Jobs */}
-        <div className="mt-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <RefreshCw className="w-5 h-5 text-gray-400" />
-            Recurring Jobs
-          </h2>
-          {recurringLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+        {/* Ongoing Services — only show when there are agreements */}
+        {agreements.length > 0 && (
+          <div id="ongoing-services" className="mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-gray-400" />
+              Ongoing Services
+            </h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              {agreements.map((agreement) => (
+                <AgreementCard
+                  key={agreement.id}
+                  agreement={agreement}
+                  userRole="tradie"
+                  onRefresh={() => getActiveAgreements(user!.id, 'tradie').then(setAgreements).catch(() => { /* ignore */ })}
+                  onGenerateInvoice={(a) => setInvoiceAgreement(a as typeof agreements[0])}
+                />
+              ))}
             </div>
-          ) : recurringSessions.length > 0 ? (
+          </div>
+        )}
+
+        {/* Recurring Jobs — only show when there are sessions */}
+        {recurringSessions.length > 0 && (
+          <div id="recurring-jobs" className="mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <RefreshCw className="w-5 h-5 text-gray-400" />
+              Recurring Jobs
+            </h2>
             <div className="space-y-3">
               {recurringSessions.map((s) => (
                 <RecurringSessionCard
@@ -1521,61 +1582,45 @@ export default function TradieDashboard() {
                   tradieId={user?.id}
                   clientId={s.recurring_job?.client_id}
                   preferredTime={s.recurring_job?.preferred_time ?? undefined}
+                  agreedPrice={s.recurring_job?.agreed_price}
                   onUpdate={fetchRecurringSessions}
+                  onCancelService={async () => {
+                    if (!confirm('End this recurring service? The client will be notified.')) return;
+                    try {
+                      await cancelRecurringJob(s.recurring_job_id, 'tradie');
+                      fetchRecurringSessions();
+                      showToast('Recurring service ended');
+                    } catch {
+                      showToast('Failed to end service', true);
+                    }
+                  }}
                 />
               ))}
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <RefreshCw className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-600">No recurring jobs scheduled</p>
-              <p className="text-xs text-gray-400 mt-1">When clients set up recurring services with you, upcoming sessions appear here.</p>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Invoices */}
-        <div className="mt-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-gray-400" />
-            Invoices
-          </h2>
-          {tradieInvoices.length > 0 ? (
+        {/* Invoices — only show when there are invoices */}
+        {tradieInvoices.length > 0 && (
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-gray-400" />
+              Invoices
+            </h2>
             <div className="space-y-3">
               {tradieInvoices.map((inv) => (
                 <RecurringInvoiceCard key={inv.id} invoice={inv} userRole="tradie" />
               ))}
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <FileText className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-600">No invoices yet</p>
-              <p className="text-xs text-gray-400 mt-1">Invoices for your recurring services will appear here</p>
-            </div>
-          )}
-        </div>
-
-        {/* Manage Availability */}
-        <div className="mt-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-gray-400" />
-            Manage Availability
-          </h2>
-          {user && (
-            <TradieDateBlocker tradieId={user.id} onBlocked={fetchSlots} />
-          )}
-        </div>
+          </div>
+        )}
 
         <SectionErrorBoundary fallbackTitle="Quote insights failed to load">
           <div className="mt-6" data-tour="quote-insights"><QuoteInsightsWidget /></div>
         </SectionErrorBoundary>
 
-        <SectionErrorBoundary fallbackTitle="Smart insights failed to load">
-          <div className="mt-6"><SmartInsightsWidget /></div>
-        </SectionErrorBoundary>
-
-        {/* Push Notification Banner */}
-        {pushStatus !== 'granted' && pushStatus !== 'unsupported' && (
+        {/* Push Notification Banner — dismissible */}
+        {showPushBanner && pushStatus !== 'granted' && pushStatus !== 'unsupported' && (
           <div className="bg-gradient-to-r from-primary-50 to-warm-50 rounded-2xl border border-primary-200 p-5 mb-6 mt-6">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
@@ -1587,64 +1632,43 @@ export default function TradieDashboard() {
                   <p className="text-sm text-gray-600 mt-0.5">Get instant desktop alerts when high-priority jobs are posted in your area.</p>
                 </div>
               </div>
-              <button
-                onClick={handleEnablePush}
-                disabled={pushEnabling || pushStatus === 'denied'}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex-shrink-0 ${
-                  pushStatus === 'denied'
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-warm-500 text-white hover:bg-warm-600 shadow-sm hover:shadow-md active:scale-95'
-                }`}
-              >
-                {pushEnabling ? <Loader2 className="w-4 h-4 animate-spin" /> : pushStatus === 'denied' ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-                {pushStatus === 'denied' ? 'Blocked in Browser' : 'Enable Desktop Alerts'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {pushStatus === 'granted' && (
-          <div className="bg-gradient-to-r from-green-50 to-secondary-50 rounded-2xl border border-green-200 p-4 mb-6 mt-6">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-                <p className="text-sm font-medium text-green-800">Desktop alerts are active. You'll be notified of urgent leads instantly.</p>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={handleEnablePush}
+                  disabled={pushEnabling || pushStatus === 'denied'}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                    pushStatus === 'denied'
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-warm-500 text-white hover:bg-warm-600 shadow-sm hover:shadow-md active:scale-95'
+                  }`}
+                >
+                  {pushEnabling ? <Loader2 className="w-4 h-4 animate-spin" /> : pushStatus === 'denied' ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                  {pushStatus === 'denied' ? 'Blocked' : 'Enable'}
+                </button>
+                <button
+                  onClick={() => { localStorage.setItem('dismissedPushBanner', 'true'); setShowPushBanner(false); }}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                onClick={async () => {
-                  if (!user) return;
-                  setPushEnabling(true);
-                  try {
-                    if ('serviceWorker' in navigator) {
-                      const registration = await navigator.serviceWorker.getRegistration();
-                      if (registration) {
-                        const subscription = await registration.pushManager.getSubscription();
-                        if (subscription) await subscription.unsubscribe();
-                      }
-                    }
-                    await savePushPreferences(user.id, false, null);
-                    setPushStatus('default');
-                    showToast('Desktop alerts disabled.');
-                  } catch {
-                    showToast('Failed to disable alerts.', true);
-                  }
-                  setPushEnabling(false);
-                }}
-                disabled={pushEnabling}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 hover:text-red-700 bg-white border border-green-200 hover:border-red-200 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
-              >
-                {pushEnabling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BellOff className="w-3.5 h-3.5" />}
-                Disable
-              </button>
             </div>
           </div>
         )}
 
-        <div className="mt-6 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
-          <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-          <span className="text-sm font-semibold text-green-800">95% Payout (5% Platform Fee)</span>
-          <span className="text-sm text-green-600">- Half the fee of free users. You keep more of every job.</span>
-        </div>
+        {showPayoutBanner && (
+          <div className="mt-6 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
+            <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+            <span className="text-sm font-semibold text-green-800">95% Payout (5% Platform Fee)</span>
+            <span className="text-sm text-green-600 flex-1">- Half the fee of free users. You keep more of every job.</span>
+            <button
+              onClick={() => { localStorage.setItem('dismissedPayoutBanner', 'true'); setShowPayoutBanner(false); }}
+              className="p-1 text-green-500 hover:text-green-700 rounded transition-colors flex-shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ─── MODALS ─── */}
@@ -1796,6 +1820,15 @@ export default function TradieDashboard() {
       )}
 
       <SubscriptionModal isOpen={showSubscriptionModal} onClose={() => setShowSubscriptionModal(false)} />
+
+      {invoiceAgreement && (
+        <GenerateInvoiceModal
+          isOpen={!!invoiceAgreement}
+          agreement={invoiceAgreement}
+          onClose={() => setInvoiceAgreement(null)}
+          onSuccess={() => { setInvoiceAgreement(null); getActiveAgreements(user!.id, 'tradie').then(setAgreements).catch(() => { /* ignore */ }); }}
+        />
+      )}
 
       <style>{`
         @keyframes slide-up {

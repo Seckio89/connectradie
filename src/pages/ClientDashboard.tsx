@@ -49,6 +49,7 @@ export default function ClientDashboard() {
   const [showArchived, setShowArchived] = useState(false);
   const [releasedJobIds, setReleasedJobIds] = useState<Set<string>>(new Set());
   const [cancelJobTarget, setCancelJobTarget] = useState<Job | null>(null);
+  const [cancelRecurringTarget, setCancelRecurringTarget] = useState<RecurringJob | null>(null);
   const [invoices, setInvoices] = useState<RecurringInvoice[]>([]);
 
   const { user, profile } = useAuth();
@@ -115,7 +116,7 @@ export default function ClientDashboard() {
       const [totalResult, monthResult, pendingResult] = await Promise.all([
         supabase.from('payments').select('amount').eq('profile_id', user.id).eq('status', 'completed'),
         supabase.from('payments').select('amount').eq('profile_id', user.id).eq('status', 'completed').gte('created_at', monthStart),
-        supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('client_id', user.id).in('status', ['pending', 'accepted', 'in_progress']),
+        supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('client_id', user.id).in('status', ['pending', 'accepted', 'in_progress']).is('archived_at', null),
       ]);
       setSpendingSummary({
         total: (totalResult.data || []).reduce((sum, p) => sum + (p.amount || 0), 0),
@@ -135,6 +136,8 @@ export default function ClientDashboard() {
         .select('*')
         .eq('client_id', user.id)
         .is('deleted_at', null)
+        .is('archived_at', null)
+        .not('status', 'in', '("cancelled","declined")')
         .order('created_at', { ascending: false })
         .limit(20);
       if (data) {
@@ -171,7 +174,7 @@ export default function ClientDashboard() {
         .eq('id', jobId)
         .eq('client_id', user?.id);
       if (error) throw error;
-      setRecentJobs(prev => prev.map(j => j.id === jobId ? { ...j, archived_at: new Date().toISOString() } : j));
+      setRecentJobs(prev => prev.filter(j => j.id !== jobId));
       showToast('Job archived');
     } catch (err) {
       console.error('archiveJob error:', err);
@@ -224,9 +227,10 @@ export default function ClientDashboard() {
         description: `[${job.trade_category}] ${job.description}`,
         status: 'pending',
         location_address: job.location || null,
-        budget_type: 'to_be_quoted',
+        budget_type: job.agreed_price ? 'fixed_budget' : 'request_quote',
+        budget_amount: job.agreed_price || null,
         is_emergency: false,
-        priority: 'standard',
+        priority: 'normal',
         is_delayed: false,
         max_quotes: 5,
       };
@@ -255,7 +259,8 @@ export default function ClientDashboard() {
           type: 'new_job',
           title: 'New quote request',
           message: `${clientName} sent you a recurring ${tradeName} job — review and quote now`,
-          data: { job_id: jobId },
+          job_id: jobId,
+          metadata: {},
         });
       }
 
@@ -270,7 +275,8 @@ export default function ClientDashboard() {
             type: 'new_job',
             title: 'New quote request from a saved client',
             message: `${clientName} is looking for a ${tradeName} — recurring service`,
-            data: { job_id: jobId },
+            job_id: jobId,
+            metadata: {},
           }));
           await supabase.from('notifications').insert(notifications);
         }
@@ -883,12 +889,13 @@ export default function ClientDashboard() {
               {showRecurringForm && (
                 <RecurringJobForm
                   onSave={async (data) => {
-                    const { budget, ...rest } = data;
-                    await createRecurringJob({ ...rest, agreed_price: budget });
-                    fetchRecurring();
+                    const { budget, preferred_time, ...rest } = data;
+                    await createRecurringJob({ ...rest, agreed_price: budget, preferred_time });
+                    // Don't fetchRecurring() here — wait until success panel is dismissed
+                    // to avoid showing duplicate cards (success panel + list card)
                   }}
                   onCancel={() => setShowRecurringForm(false)}
-                  onDone={() => { setShowRecurringForm(false); showToast('Recurring service scheduled'); }}
+                  onDone={() => { setShowRecurringForm(false); fetchRecurring(); showToast('Recurring service scheduled'); }}
                   onSendQuote={async (job) => {
                     await sendQuoteRequest(job, 'saved');
                   }}
@@ -954,7 +961,7 @@ export default function ClientDashboard() {
                                 {job.service_subtype || job.trade_category.replace(/_/g, ' ')}
                                 <span className="text-xs text-gray-400 font-normal ml-1">
                                   {job.service_subtype && <>{' · '}<span className="capitalize">{job.trade_category.replace(/_/g, ' ')}</span></>}
-                                  {' · '}{job.frequency_months === -1 ? 'Weekly' : job.frequency_months === -2 ? 'Fortnightly' : job.frequency_months === 1 ? 'Monthly' : job.frequency_months === 3 ? 'Quarterly' : job.frequency_months === 6 ? 'Every 6mo' : job.frequency_months === 12 ? 'Annually' : `Every ${job.frequency_months}mo`}
+                                  {' · '}{job.frequency_months === -3 ? 'Daily' : job.frequency_months === -1 ? 'Weekly' : job.frequency_months === -2 ? 'Fortnightly' : job.frequency_months === 1 ? 'Monthly' : job.frequency_months === 3 ? 'Quarterly' : job.frequency_months === 6 ? 'Every 6mo' : job.frequency_months === 12 ? 'Annually' : `Every ${job.frequency_months}mo`}
                                 </span>
                               </p>
                               <p className="text-xs text-gray-500 truncate">{job.description}</p>
@@ -986,11 +993,7 @@ export default function ClientDashboard() {
                                 <Pencil className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={async () => {
-                                  await cancelRecurringJob(job.id);
-                                  fetchRecurring();
-                                  showToast('Recurring service cancelled');
-                                }}
+                                onClick={() => setCancelRecurringTarget(job)}
                                 className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                 title="Cancel recurring service"
                               >
@@ -1003,16 +1006,29 @@ export default function ClientDashboard() {
                         <div className="px-3 pb-2.5 pt-0.5" onClick={e => e.stopPropagation()}>
                           {(() => {
                             const sessions = jobSessions[job.id] ?? [];
+                            const pendingSession = sessions.find(s => s.status === 'pending_confirmation');
                             const nextSession = sessions.find(s => s.status === 'scheduled');
                             const nextSessionDays = nextSession
                               ? Math.ceil((new Date(nextSession.scheduled_date).getTime() - new Date().getTime()) / 86400000)
                               : null;
+
+                            // Check if tradie has already completed jobs for this service
+                            const hasCompletedWork = job.times_completed > 0;
 
                             if (sentRecurringIds.has(job.id)) {
                               return (
                                 <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-xs font-medium border border-gray-200 cursor-not-allowed">
                                   <Clock className="w-3.5 h-3.5" />
                                   Awaiting Quote...
+                                </div>
+                              );
+                            }
+                            if (pendingSession) {
+                              const pendingDate = new Date(pendingSession.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+                              return (
+                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-medium border border-amber-200">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  Next: {pendingDate} — awaiting tradie confirmation
                                 </div>
                               );
                             }
@@ -1024,6 +1040,15 @@ export default function ClientDashboard() {
                                 </div>
                               );
                             }
+                            if (nextSession) {
+                              const nextDate = new Date(nextSession.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+                              return (
+                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium border border-emerald-200">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  Next session: {nextDate}
+                                </div>
+                              );
+                            }
                             if (sessions.length > 0) {
                               return (
                                 <button className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 border border-emerald-300 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-50 transition-colors">
@@ -1032,6 +1057,16 @@ export default function ClientDashboard() {
                                 </button>
                               );
                             }
+                            // Service has completed work — next session will be auto-created
+                            if (hasCompletedWork && job.tradie?.full_name) {
+                              return (
+                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium border border-emerald-200">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  Active with {job.tradie.full_name.split(' ')[0]} — next session auto-scheduled
+                                </div>
+                              );
+                            }
+                            // First time — tradie assigned but no work done yet
                             if (job.tradie?.full_name) {
                               return (
                                 <button
@@ -1039,8 +1074,7 @@ export default function ClientDashboard() {
                                   className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-medium hover:bg-emerald-600 transition-colors"
                                 >
                                   <Send className="w-3.5 h-3.5" />
-                                  Send to {job.tradie.full_name.split(' ')[0]}
-                                  <ArrowRight className="w-3 h-3" />
+                                  Send to {job.tradie.full_name.split(' ')[0]} & Request Quote
                                 </button>
                               );
                             }
@@ -1070,6 +1104,7 @@ export default function ClientDashboard() {
                                   tradieId={job.tradie_id}
                                   clientId={user?.id}
                                   preferredTime={job.preferred_time}
+                                  agreedPrice={job.agreed_price}
                                   onUpdate={fetchRecurring}
                                 />
                               ))}
@@ -1232,12 +1267,33 @@ export default function ClientDashboard() {
           type="danger"
         />
       )}
+
+      {cancelRecurringTarget && (
+        <ConfirmModal
+          title="Cancel Recurring Service?"
+          message={`Are you sure you want to cancel "${cancelRecurringTarget.service_subtype || cancelRecurringTarget.trade_category.replace(/_/g, ' ')}"? The tradie will be notified and any scheduled sessions will be cancelled.`}
+          confirmText="Cancel Service"
+          cancelText="Keep Service"
+          onConfirm={async () => {
+            try {
+              await cancelRecurringJob(cancelRecurringTarget.id, 'client');
+              setCancelRecurringTarget(null);
+              fetchRecurring();
+              showToast('Recurring service cancelled');
+            } catch {
+              showToast('Failed to cancel service', true);
+            }
+          }}
+          onCancel={() => setCancelRecurringTarget(null)}
+          type="danger"
+        />
+      )}
     </DashboardLayout>
   );
 }
 
 function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies }: {
-  onSave: (data: { tradie_id: string | null; trade_category: string; service_subtype?: string; description: string; frequency_months: number; next_due_date: string; reminder_days_before: number; location: string; budget?: number }) => Promise<void>;
+  onSave: (data: { tradie_id: string | null; trade_category: string; service_subtype?: string; description: string; frequency_months: number; next_due_date: string; reminder_days_before: number; location: string; budget?: number; preferred_time?: string }) => Promise<void>;
   onCancel: () => void;
   onDone: () => void;
   onSendQuote: (job: RecurringJob) => Promise<void>;
@@ -1264,6 +1320,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
   const suggestion = category ? suggestRecurringJob(category) : null;
   const [description, setDescription] = useState('');
   const [frequency, setFrequency] = useState(12);
+  const [preferredTime, setPreferredTime] = useState('');
   const [nextDate, setNextDate] = useState(() => {
     return new Date().toISOString().split('T')[0];
   });
@@ -1318,6 +1375,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
         reminder_days_before: 14,
         location: location.trim(),
         budget: budget ? Number(budget) : undefined,
+        preferred_time: preferredTime || undefined,
       });
       const selectedTradie = savedTradies.find(t => t.id === selectedTradieId);
       setSuccessState({
@@ -1334,6 +1392,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
   };
 
   const formatFrequency = (months: number) => {
+    if (months === -3) return 'Daily';
     if (months === -1) return 'Weekly';
     if (months === -2) return 'Fortnightly';
     if (months === 1) return 'Monthly';
@@ -1648,6 +1707,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
             <label className="block text-xs font-medium text-gray-600 mb-1.5">How often?</label>
             <div className="flex flex-wrap gap-1.5">
               {([
+                { value: -3, label: 'Daily' },
                 { value: -1, label: 'Weekly' },
                 { value: -2, label: 'Fortnightly' },
                 { value: 1, label: 'Monthly' },
@@ -1671,15 +1731,37 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">First due date</label>
-            <input
-              type="date"
-              value={nextDate}
-              min={new Date().toISOString().split('T')[0]}
-              onChange={e => setNextDate(e.target.value)}
-              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">First date</label>
+              <input
+                type="date"
+                value={nextDate}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={e => setNextDate(e.target.value)}
+                className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Preferred time</label>
+              <select
+                value={preferredTime}
+                onChange={e => setPreferredTime(e.target.value)}
+                className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 bg-white"
+              >
+                <option value="">Flexible</option>
+                <option value="07:00">7:00 AM</option>
+                <option value="08:00">8:00 AM</option>
+                <option value="09:00">9:00 AM</option>
+                <option value="10:00">10:00 AM</option>
+                <option value="11:00">11:00 AM</option>
+                <option value="12:00">12:00 PM</option>
+                <option value="13:00">1:00 PM</option>
+                <option value="14:00">2:00 PM</option>
+                <option value="15:00">3:00 PM</option>
+                <option value="16:00">4:00 PM</option>
+              </select>
+            </div>
           </div>
 
           <div className="flex gap-2 pt-1">
@@ -1807,6 +1889,7 @@ function RecurringJobEditForm({ job, savedTradies, onSave, onCancel }: {
             onChange={e => setFrequency(Number(e.target.value))}
             className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 bg-white"
           >
+            <option value={-3}>Daily</option>
             <option value={-1}>Weekly</option>
             <option value={-2}>Fortnightly</option>
             <option value={1}>Monthly</option>

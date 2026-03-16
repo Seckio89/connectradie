@@ -38,6 +38,19 @@ async function filterChannelsByUserPreferences(
 async function insertInAppNotification(payload: NotificationPayload, channels: NotificationChannel[]): Promise<string | null> {
   if (!shouldSendInApp(channels)) return null;
 
+  // Deduplicate: skip if an identical notification already exists for this user + type + job
+  if (payload.jobId) {
+    const { data: existing } = await supabase
+      .from('notifications')
+      .select('id')
+      .eq('user_id', payload.userId)
+      .eq('type', payload.type.toLowerCase())
+      .eq('job_id', payload.jobId)
+      .maybeSingle();
+
+    if (existing) return existing.id;
+  }
+
   const primaryChannel = CHANNEL_IN_APP;
 
   const { data, error } = await supabase

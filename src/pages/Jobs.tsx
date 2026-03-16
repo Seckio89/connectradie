@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Calendar, CheckCircle2, AlertCircle, XCircle, Loader2, User, Star, Check, X as XIcon, Play, Package, ClipboardList, Zap, WifiOff, ShieldAlert, Settings, Users, MapPin, Repeat } from 'lucide-react';
+import { Clock, Calendar, CheckCircle2, AlertCircle, XCircle, Loader2, User, Star, Check, X as XIcon, Package, ClipboardList, Zap, WifiOff, ShieldAlert, Settings, Users, MapPin, Repeat } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { offlineAcceptJob } from '../lib/offlineSync';
@@ -50,7 +50,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
   const { user, profile, tradieDetails } = useAuth();
   const navigate = useNavigate();
   const { toast, showToast } = useToast();
-  type JobStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'declined' | 'all';
+  type JobStatus = 'pending' | 'active' | 'completed' | 'all';
   const [allJobs, setAllJobs] = useState<JobWithRelations[]>([]);
   const [jobs, setJobs] = useState<JobWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,8 +124,25 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
     }
     if (filter === 'all') {
       setJobs(allJobs);
-    } else if (filter === 'accepted') {
-      setJobs(allJobs.filter(j => j.status === 'accepted' || j.status === 'funded'));
+    } else if (filter === 'active') {
+      // Active = accepted + funded + in_progress (merged)
+      const active = allJobs.filter(j => ['accepted', 'funded', 'in_progress'].includes(j.status));
+      // Sort: today/past jobs first (ready to complete), then future by date
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      active.sort((a, b) => {
+        const dateA = a.scheduled_date ? new Date(a.scheduled_date) : null;
+        const dateB = b.scheduled_date ? new Date(b.scheduled_date) : null;
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        const aReady = new Date(dateA).setHours(0, 0, 0, 0) <= today.getTime();
+        const bReady = new Date(dateB).setHours(0, 0, 0, 0) <= today.getTime();
+        if (aReady && !bReady) return -1;
+        if (!aReady && bReady) return 1;
+        return dateA.getTime() - dateB.getTime();
+      });
+      setJobs(active);
     } else {
       setJobs(allJobs.filter(j => j.status === filter));
     }
@@ -263,8 +280,12 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
       // Compute counts from fetched data
       const counts: Record<string, number> = {};
       for (const j of filteredJobs) {
-        const key = j.status === 'funded' ? 'accepted' : j.status;
-        counts[key] = (counts[key] || 0) + 1;
+        // Merge accepted + funded + in_progress into 'active'
+        if (['accepted', 'funded', 'in_progress'].includes(j.status)) {
+          counts.active = (counts.active || 0) + 1;
+        } else {
+          counts[j.status] = (counts[j.status] || 0) + 1;
+        }
       }
       counts.all = filteredJobs.length;
       setJobCounts(counts);
@@ -332,8 +353,28 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
           location_address: normalizedJob.location_address,
         });
       }
-      setMonthlyAccepts((prev) => prev + 1);
-      setFilter('accepted');
+
+      // Notify client that their job was accepted
+      if (normalizedJob.client_id) {
+        const tradieName = profile?.full_name || 'A tradie';
+        const category = normalizedJob.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || '';
+        const jobTitle = normalizedJob.title || category || 'your job';
+        try {
+          await supabase.from('notifications').insert({
+            user_id: normalizedJob.client_id,
+            type: 'JOB_ACCEPTED',
+            title: 'Job Accepted',
+            message: `${tradieName} has accepted ${jobTitle}. Next step: fund the escrow to secure the booking.`,
+            job_id: normalizedJob.id,
+            metadata: {},
+            read: false,
+          });
+        } catch {
+          // Non-critical
+        }
+      }
+
+      setFilter('active');
       setAcceptSuccess(true);
       setTimeout(() => setAcceptSuccess(false), 8000);
     } else {
@@ -421,9 +462,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
       showToast(`Job declined — ${clientName} has been notified`);
       await fetchJobs();
 
-      if (filter === 'pending') {
-        setFilter('declined');
-      }
+      // Stay on current filter — declined jobs are visible in "All Jobs"
     } catch (err) {
       console.error('handleDeclineJob error:', err);
       setOperationError('Failed to decline job. Please try again.');
@@ -492,7 +531,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
               <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
               <p className="text-sm font-bold text-green-800">Job accepted!</p>
             </div>
-            <p className="text-xs text-green-700 ml-8">Next: Contact the client via Messages to confirm the details, then hit "Start Job" when you're ready to begin work.</p>
+            <p className="text-xs text-green-700 ml-8">Next: Contact the client via Messages to confirm the details. Once payment is secured, you can mark the job complete when finished.</p>
           </div>
         )}
         {offlineQueued && (
@@ -568,10 +607,8 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
         <div className="flex items-center gap-6 border-b border-gray-200 mb-6 overflow-x-auto">
           {([
             { key: 'pending', label: 'Pending' },
-            { key: 'accepted', label: 'Accepted' },
-            { key: 'in_progress', label: 'In Progress' },
+            { key: 'active', label: 'Active' },
             { key: 'completed', label: 'Completed' },
-            { key: 'declined', label: 'Declined' },
             { key: 'all', label: 'All Jobs' },
           ] as { key: JobStatus; label: string }[]).map((tab) => (
             <button
@@ -605,45 +642,37 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
             <EmptyState
               icon={
                 filter === 'pending' ? Clock :
-                filter === 'accepted' ? CheckCircle2 :
-                filter === 'in_progress' ? Play :
+                filter === 'active' ? CheckCircle2 :
                 filter === 'completed' ? Check :
-                filter === 'declined' ? XCircle :
                 ClipboardList
               }
               title={
                 filter === 'pending' ? 'No pending jobs' :
-                filter === 'accepted' ? 'No accepted jobs' :
-                filter === 'in_progress' ? 'No jobs in progress' :
+                filter === 'active' ? 'No active jobs' :
                 filter === 'completed' ? 'No completed jobs yet' :
-                filter === 'declined' ? 'No declined jobs' :
                 'No jobs yet'
               }
               description={
                 isTradie
                   ? filter === 'pending'
                     ? 'When clients book your services, their job requests will show up here.'
-                    : filter === 'accepted'
-                    ? 'Jobs you accept will appear here. Accept a pending job to get started.'
-                    : filter === 'in_progress'
-                    ? 'Jobs move here once you start working on them.'
+                    : filter === 'active'
+                    ? 'Jobs you\'ve won will appear here. Check Pending for new leads.'
                     : filter === 'completed'
                     ? 'Completed jobs will appear here after you mark them as done.'
-                    : filter === 'declined'
-                    ? 'Jobs you decline will appear here temporarily.'
                     : 'When clients book your services, their job requests will show up here.'
                   : 'You haven\'t posted any jobs yet. Post a job and tradies in your area will send you quotes.'
               }
               actionLabel={
                 isTradie
                   ? filter === 'pending' ? 'Set Your Availability'
-                  : filter === 'accepted' ? 'View Pending Jobs'
+                  : filter === 'active' ? 'View Pending Jobs'
                   : undefined
                   : 'Post a Job'
               }
               onAction={() =>
                 isTradie
-                  ? filter === 'accepted' ? setFilter('pending')
+                  ? filter === 'active' ? setFilter('pending')
                   : navigate('/dashboard')
                   : navigate('/post-lead')
               }
@@ -660,258 +689,170 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                   key={job.id}
                   role="button"
                   tabIndex={0}
-                  onClick={() => setSelectedJob(normalizedJob)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
+                  onClick={() => {
+                    // Pending unquoted jobs → go straight to quote modal
+                    if (isTradie && job.status === 'pending' && !myQuotes.has(job.id)) {
+                      setQuoteJob(normalizedJob);
+                    } else {
                       setSelectedJob(normalizedJob);
                     }
                   }}
-                  className={`w-full text-left rounded-xl p-6 transition-all cursor-pointer ${
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (isTradie && job.status === 'pending' && !myQuotes.has(job.id)) {
+                        setQuoteJob(normalizedJob);
+                      } else {
+                        setSelectedJob(normalizedJob);
+                      }
+                    }
+                  }}
+                  className={`w-full text-left rounded-xl transition-all cursor-pointer ${
                     isFlashActive && isTradie
-                      ? 'border-2 border-warm-400 shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] bg-gradient-to-r from-warm-50/50 to-white'
-                      : 'border border-gray-200 hover:border-primary-300 hover:shadow-md'
+                      ? 'border-2 border-warm-400 shadow-[0_0_12px_rgba(251,191,36,0.2)] hover:shadow-[0_0_18px_rgba(251,191,36,0.3)] bg-white'
+                      : 'border border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
                   }`}
                 >
-                  {/* ── Card Header: Category + Status ── */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2.5 flex-wrap">
+                  {/* ── Header ── */}
+                  <div className="px-5 pt-4 pb-3">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-gray-900 truncate">
+                          {job.title || job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job'}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {job.profiles?.full_name || 'Client'}
+                        </p>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
+                        {job.status === 'funded' ? 'Paid' : job.status === 'accepted' ? 'Awaiting Payment' : job.status.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                      {redactSensitiveInfo(job.description.replace(/^\[[^\]]+\]\s*/, '').split('\n')[0], true)}
+                    </p>
+
+                    {/* ── Metadata row ── */}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
                       {(() => {
                         const cat = job.description.match(/^\[([^\]]+)\]/)?.[1];
-                        return cat ? (
-                          <span className="px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-sm font-semibold border border-secondary-200 capitalize">
-                            {cat.replace(/_/g, ' ')}
-                          </span>
-                        ) : null;
+                        return cat ? <span className="capitalize">{cat.replace(/_/g, ' ')}</span> : null;
                       })()}
                       {job.title && /recurring/i.test(job.title) && (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium inline-flex items-center gap-1">
+                        <span className="inline-flex items-center gap-1 text-blue-500">
                           <Repeat className="w-3 h-3" />
                           Recurring
                         </span>
                       )}
-                      <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-gray-400" />
-                          <h3 className="font-semibold text-gray-900">
-                            {job.profiles?.full_name || 'Client'}
-                          </h3>
-                        </div>
-                      </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                          job.status
-                        )}`}
-                      >
-                        {job.status === 'funded' ? 'Paid — Ready to Start' : job.status === 'accepted' ? 'Awaiting Payment' : job.status.replace(/_/g, ' ')}
+                      {job.location_address && (
+                        <span className="inline-flex items-center gap-1 truncate max-w-[180px]">
+                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                          {job.location_address.split(',')[0]}
+                        </span>
+                      )}
+                      {job.budget_amount ? (
+                        <span className="font-medium text-gray-900">${job.budget_amount.toLocaleString()}</span>
+                      ) : (job.budget_type === 'request_quote' || job.budget_type === 'to_be_quoted') ? (
+                        <span>Quote requested</span>
+                      ) : null}
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(job.created_at)}
                       </span>
-                      {isFlashActive && isTradie && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-warm-400 to-warm-400 text-white rounded-full text-xs font-bold shadow-sm animate-pulse">
-                          <Zap className="w-3 h-3" />
-                          Flash Deal
-                        </span>
-                      )}
-                      {!isTradie && isFlashActive && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-warm-50 text-warm-700 rounded-full text-xs font-medium border border-warm-200">
-                          <Zap className="w-3 h-3" />
-                          Boosted
-                        </span>
-                      )}
-                      {job.projects && (
-                        <div className="flex items-center gap-1 px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200">
-                          <Package className="w-3 h-3" />
-                          {job.projects.title}
-                        </div>
-                      )}
                     </div>
                   </div>
 
-                  {/* ── Job Description (cleaned) ── */}
-                  <p className="text-gray-700 mb-3 line-clamp-1">
-                    {redactSensitiveInfo(job.description.replace(/^\[[^\]]+\]\s*/, '').split('\n')[0], true)}
-                  </p>
-
-                  {/* ── Structured Info Row ── */}
-                  <div className="flex flex-wrap items-center gap-3 mb-3">
-                    {(() => {
-                      const cat = job.description.match(/^\[([^\]]+)\]/)?.[1];
-                      return cat ? (
-                        <span className="text-xs text-gray-500">
-                          {cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                        </span>
-                      ) : null;
-                    })()}
-                    {job.scheduled_date && (
-                      <span className="text-xs text-gray-500 flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        Start: {new Date(job.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
-                      </span>
-                    )}
-                    {job.budget_amount && (
-                      <span className="text-xs text-gray-500 font-medium">
-                        ~${job.budget_amount.toLocaleString()}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* ── Key Details Row ── */}
-                  <div className="flex flex-wrap items-center gap-3 mb-3">
-                    {job.location_address && (
-                      <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                        <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                        <span className="truncate max-w-[200px]">{job.location_address}</span>
-                      </div>
-                    )}
-                    {job.budget_amount && (
-                      <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                        <span className="text-gray-400 font-medium text-xs">$</span>
-                        <span>${job.budget_amount.toLocaleString()}</span>
-                      </div>
-                    )}
-                    {job.estimated_duration && (
-                      <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                        <Clock className="w-3.5 h-3.5 text-gray-400" />
-                        <span>{job.estimated_duration}</span>
-                      </div>
-                    )}
-                  </div>
-
                   {isFlashActive && isTradie && (
-                    <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-warm-50 to-warm-50 border border-warm-200 rounded-lg">
-                      <Zap className="w-4 h-4 text-warm-600 flex-shrink-0" />
-                      <span className="text-sm font-medium text-warm-800">
-                        Flash Deal! Priority pickup. Ends in <FlashCountdown expiry={job.flash_expiry!} />
+                    <div className="mx-5 mb-3 flex items-center gap-2 px-3 py-2 bg-warm-50 border border-warm-200 rounded-lg">
+                      <Zap className="w-3.5 h-3.5 text-warm-600 flex-shrink-0" />
+                      <span className="text-xs font-medium text-warm-800">
+                        Flash Deal — ends in <FlashCountdown expiry={job.flash_expiry!} />
                       </span>
                     </div>
                   )}
 
                   {!isTradie && isFlashActive && (
-                    <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-warm-50 border border-warm-200 rounded-lg">
-                      <Zap className="w-4 h-4 text-warm-500 flex-shrink-0" />
-                      <span className="text-sm text-warm-700">
-                        We are boosting your job to find a Tradie faster.
-                      </span>
+                    <div className="mx-5 mb-3 flex items-center gap-2 px-3 py-2 bg-warm-50 border border-warm-200 rounded-lg">
+                      <Zap className="w-3.5 h-3.5 text-warm-500 flex-shrink-0" />
+                      <span className="text-xs text-warm-700">Boosting your job to find a Tradie faster</span>
                     </div>
                   )}
 
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Created {formatDate(job.created_at)}
-                    </div>
-                    {job.scheduled_time && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        Scheduled: {formatDate(job.scheduled_time)} at{' '}
-                        {new Date(job.scheduled_time).toLocaleTimeString('en-AU', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </div>
-                    )}
-                  </div>
-
                   {job.status === 'declined' && job.decline_reason && (
-                    <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
-                      <h4 className="text-sm font-medium text-red-900 mb-2">Decline Reason:</h4>
-                      <p className="text-sm text-red-700">{job.decline_reason}</p>
+                    <div className="mx-5 mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-xs text-red-700"><span className="font-medium">Declined:</span> {job.decline_reason}</p>
                     </div>
                   )}
 
                   {isTradie && job.status === 'pending' && (
-                    <div className="mt-4 pt-4 border-t border-gray-200 flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                      {job.budget_type === 'to_be_quoted' ? (
+                    <div className="px-5 pb-4 pt-1 flex items-center gap-2 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                      {job.budget_type === 'to_be_quoted' || job.budget_type === 'request_quote' ? (
                         myQuotes.has(job.id) ? (
-                          <div className="inline-flex items-center gap-2 px-4 py-2 bg-secondary-50 border border-secondary-200 rounded-lg">
-                            <CheckCircle2 className="w-4 h-4 text-secondary-600" />
-                            <span className="text-sm font-medium text-secondary-700">
+                          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary-50 border border-secondary-200 rounded-lg">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-secondary-600" />
+                            <span className="text-xs font-medium text-secondary-700">
                               Quoted {myQuotes.get(job.id)!.firm_price
                                 ? `$${myQuotes.get(job.id)!.firm_price!.toLocaleString()}`
                                 : `$${myQuotes.get(job.id)!.price_min.toLocaleString()} – $${myQuotes.get(job.id)!.price_max.toLocaleString()}`
                               }
                             </span>
-                            <span className="text-xs text-secondary-500">· Awaiting response</span>
+                            <span className="text-xs text-secondary-400">· Awaiting response</span>
                           </div>
                         ) : (
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setQuoteJob(job);
-                          }}
-                          className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-lg transition-colors text-sm font-medium bg-warm-500 text-white hover:bg-warm-600"
+                          onClick={(e) => { e.stopPropagation(); setQuoteJob(job); }}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 text-sm font-medium transition-colors"
                         >
-                          <ClipboardList className="w-4 h-4" />
+                          <ClipboardList className="w-3.5 h-3.5" />
                           Quote Now
                         </button>
                         )
                       ) : (
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAcceptJob(job);
-                          }}
+                          onClick={(e) => { e.stopPropagation(); handleAcceptJob(job); }}
                           disabled={actionLoading === job.id}
-                          className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium bg-green-600 text-white hover:bg-green-700"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 text-sm font-medium transition-colors"
                         >
-                          {actionLoading === job.id ? (
-                            <>
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              Accepting...
-                            </>
-                          ) : (
-                            <>
-                              <Check className="w-4 h-4" />
-                              Accept Job
-                            </>
-                          )}
+                          {actionLoading === job.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                          {actionLoading === job.id ? 'Accepting...' : 'Accept Job'}
                         </button>
                       )}
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setJobToDecline(job);
-                        }}
+                        onClick={(e) => { e.stopPropagation(); setJobToDecline(job); }}
                         disabled={actionLoading === job.id}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors"
                       >
-                        <XIcon className="w-4 h-4" />
+                        <XIcon className="w-3.5 h-3.5" />
                         Decline
                       </button>
                     </div>
                   )}
 
                   {isTradie && job.status === 'accepted' && (
-                    <div className="mt-4 pt-4 border-t border-gray-200 flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-lg border border-amber-200 text-sm font-medium">
-                        <Clock className="w-4 h-4" />
-                        Awaiting Client Payment
-                      </div>
+                    <div className="px-5 pb-4 pt-1 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-medium">
+                        <Clock className="w-3.5 h-3.5" />
+                        Awaiting client payment
+                      </span>
                     </div>
                   )}
 
-                  {isTradie && job.status === 'funded' && (
-                    <div className="mt-4 pt-4 border-t border-gray-200 flex items-center gap-3 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                  {isTradie && (job.status === 'funded' || job.status === 'in_progress') && (
+                    <div className="px-5 pb-4 pt-1 border-t border-gray-100 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleStartJob(job);
+                          if (job.status === 'funded') handleStartJob(job);
+                          handleCompleteJob(job);
                         }}
                         disabled={actionLoading === job.id}
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-warm-500 text-white rounded-lg hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 text-sm font-medium transition-colors"
                       >
-                        {actionLoading === job.id ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Starting...
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-4 h-4" />
-                            Start Job
-                          </>
-                        )}
+                        {actionLoading === job.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                        {actionLoading === job.id ? 'Processing...' : 'Mark Complete'}
                       </button>
-                      {teamMembers.length > 0 && (
+                      {teamMembers.length > 0 && job.status === 'funded' && (
                         <>
                           {assignJobId === job.id ? (
                             <div className="w-full bg-gray-50 rounded-lg p-3 space-y-2">
@@ -947,39 +888,11 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                     </div>
                   )}
 
-                  {isTradie && job.status === 'in_progress' && (
-                    <div className="mt-4 pt-4 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCompleteJob(job);
-                        }}
-                        disabled={actionLoading === job.id}
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-                      >
-                        {actionLoading === job.id ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Completing...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 className="w-4 h-4" />
-                            Mark Complete
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-
                   {isTradie && job.status === 'completed' && !job.completion_notes && (
-                    <div className="mt-4 pt-4 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
+                    <div className="px-5 pb-4 pt-1 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCompleteJob(job);
-                        }}
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                        onClick={(e) => { e.stopPropagation(); handleCompleteJob(job); }}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 text-sm font-medium transition-colors"
                       >
                         Request Payment
                       </button>
@@ -987,30 +900,27 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                   )}
 
                   {isTradie && job.status === 'completed' && job.completion_notes && (
-                    <div className="mt-4 pt-4 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
-                      <div className={`flex items-center gap-2 justify-center text-sm font-medium py-2 ${paidJobIds.has(job.id) ? 'text-emerald-700' : 'text-green-600'}`}>
-                        <CheckCircle2 className="w-4 h-4" />
-                        {paidJobIds.has(job.id) ? 'Paid' : 'Payment Requested'}
-                      </div>
+                    <div className="px-5 pb-3 pt-1 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${paidJobIds.has(job.id) ? 'text-emerald-600' : 'text-gray-500'}`}>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        {paidJobIds.has(job.id) ? 'Paid' : 'Payment requested'}
+                      </span>
                     </div>
                   )}
 
                   {!isTradie && job.status === 'completed' && job.tradie_id && (
-                    <div className="mt-4 pt-4 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
+                    <div className="px-5 pb-4 pt-1 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
                       {reviewedJobIds.includes(job.id) ? (
-                        <div className="flex items-center gap-2 text-sm text-green-600">
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>Review submitted</span>
-                        </div>
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Review submitted
+                        </span>
                       ) : (
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/review/${job.id}`);
-                          }}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-warm-500 text-white rounded-lg hover:bg-warm-600 transition-colors text-sm font-medium"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/review/${job.id}`); }}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 text-sm font-medium transition-colors"
                         >
-                          <Star className="w-4 h-4" />
+                          <Star className="w-3.5 h-3.5" />
                           Leave a Review
                         </button>
                       )}
@@ -1035,6 +945,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
           setQuoteJob(selectedJob);
           setSelectedJob(null);
         } : undefined}
+        onComplete={selectedJob ? () => handleCompleteJob(selectedJob) : undefined}
       />
 
 

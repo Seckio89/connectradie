@@ -13,6 +13,7 @@ import {
   ChevronDown,
   Image,
   Calendar,
+  Repeat,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -90,10 +91,16 @@ export default function SubmitQuoteModal({
   onQuoteSubmitted,
 }: SubmitQuoteModalProps) {
   const { user, profile, tradieDetails } = useAuth();
+
+  // Use explicit prop, or fall back to job's "Can't start yet" date
+  const effectiveStartDate = proposedStartDate
+    || (job.is_delayed && job.delayed_until ? job.delayed_until.slice(0, 10) : null);
+
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
   const [firmPrice, setFirmPrice] = useState('');
-  const [useFirmPrice, setUseFirmPrice] = useState(false);
+  // Default to firm price — simpler for tradies, range is optional
+  const [useFirmPrice, setUseFirmPrice] = useState(true);
   const [message, setMessage] = useState('');
   const [durationValue, setDurationValue] = useState('');
   const [durationUnit, setDurationUnit] = useState<'hours' | 'days' | 'weeks'>('hours');
@@ -168,6 +175,7 @@ export default function SubmitQuoteModal({
   const desc = job.description.replace(/^\[[^\]]+\]\s*/, '');
   const suburb = extractSuburb(job.location_address || '') || 'Unknown area';
   const slotsRemaining = job.max_quotes - job.quote_count;
+  const isRecurring = !!(job.title && /recurring/i.test(job.title));
   const businessName = tradieDetails?.business_name || profile?.full_name || 'our team';
   const tradeType = tradieDetails?.trade_category || category.toLowerCase();
 
@@ -344,7 +352,7 @@ export default function SubmitQuoteModal({
       message: message.trim(),
       estimated_duration: estimatedDuration || null,
       includes_materials: includesMaterials,
-      proposed_start_date: proposedStartDate || null,
+      proposed_start_date: effectiveStartDate || null,
       status: 'pending',
     });
 
@@ -503,15 +511,23 @@ export default function SubmitQuoteModal({
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-700 line-clamp-3">{desc}</p>
+                {isRecurring && (
+                  <p className="text-xs text-blue-600 flex items-center gap-1.5">
+                    <Repeat className="w-3 h-3 flex-shrink-0" />
+                    Recurring — if accepted, you'll be the regular tradie for this service
+                  </p>
+                )}
+                <p className="text-sm text-gray-700">{desc}</p>
                 <div className="flex items-center gap-4 text-xs text-gray-500">
                   <span className="flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
                     {suburb}
                   </span>
-                  {job.budget_amount && (
-                    <span>Budget: {job.budget_amount.toLocaleString()} AUD</span>
-                  )}
+                  {job.budget_amount ? (
+                    <span>Budget: ${job.budget_amount.toLocaleString()}</span>
+                  ) : (job.budget_type === 'request_quote' || job.budget_type === 'to_be_quoted') ? (
+                    <span>Quote requested</span>
+                  ) : null}
                 </div>
 
                 {/* Job Photos */}
@@ -538,19 +554,30 @@ export default function SubmitQuoteModal({
             </div>
 
             <div className="p-6 space-y-5">
-              {proposedStartDate && (
+              {effectiveStartDate && (
                 <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-xl p-3">
                   <Calendar className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                   <div>
-                    <p className="text-xs font-medium text-emerald-700">Proposed Start Date</p>
+                    <p className="text-xs font-medium text-emerald-700">Earliest Available Date</p>
                     <p className="text-sm font-semibold text-emerald-800">
-                      {new Date(proposedStartDate + 'T00:00:00').toLocaleDateString('en-AU', {
+                      {new Date(effectiveStartDate + 'T00:00:00').toLocaleDateString('en-AU', {
                         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
                       })}
                     </p>
                   </div>
                 </div>
               )}
+
+              {job.budget_amount != null && job.budget_amount > 0 ? (
+                <div className="mb-4 flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
+                  <span className="text-sm text-gray-600">Client's budget:</span>
+                  <span className="text-sm font-medium text-gray-900">${job.budget_amount.toLocaleString()}</span>
+                </div>
+              ) : (job.budget_type === 'request_quote' || job.budget_type === 'to_be_quoted') ? (
+                <div className="mb-4 px-3 py-2 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600">Client wants a quote — submit your best competitive price.</p>
+                </div>
+              ) : null}
 
               <div>
                 <div className="flex items-center justify-between mb-3">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, MapPin, Users, Clock, Plus, X, User, Layers, AlertCircle, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, MapPin, Users, Clock, Plus, X, User, Layers, AlertCircle, Filter, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
@@ -310,7 +310,44 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
         .lte('start_time', end.toISOString()),
     ]);
 
-    setJobs(jobsRes.data || []);
+    // Fetch recurring sessions for this tradie and convert to pseudo-jobs for the calendar
+    const { data: recurringSessions } = await supabase
+      .from('recurring_sessions')
+      .select('id, scheduled_date, status, recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(tradie_id, trade_category, service_subtype, description, location, preferred_time)')
+      .in('status', ['pending_confirmation', 'scheduled'])
+      .gte('scheduled_date', startStr)
+      .lte('scheduled_date', endStr);
+
+    // Convert recurring sessions into Job-shaped objects (filter to this tradie)
+    const myRecurringSessions = (recurringSessions || []).filter((s) => {
+      const rj = s.recurring_job as { tradie_id: string | null } | null;
+      return rj?.tradie_id === user.id;
+    });
+    const recurringPseudoJobs: Job[] = myRecurringSessions.map((s) => {
+      const rj = s.recurring_job as { tradie_id: string | null; trade_category: string; service_subtype: string | null; description: string | null; location: string | null; preferred_time: string | null } | null;
+      const timeStr = rj?.preferred_time;
+      const slot = timeStr ? (
+        parseInt(timeStr.split(':')[0]) < 12 ? 'morning' :
+        parseInt(timeStr.split(':')[0]) < 14 ? 'midday' :
+        parseInt(timeStr.split(':')[0]) < 17 ? 'afternoon' : 'evening'
+      ) : null;
+      return {
+        id: `recurring-${s.id}`,
+        description: `[${(rj?.service_subtype || rj?.trade_category || 'Recurring').toUpperCase()}] ${rj?.description?.split('\n')[0] || 'Recurring session'}`,
+        status: s.status === 'pending_confirmation' ? 'pending' : 'accepted',
+        scheduled_date: s.scheduled_date,
+        preferred_time_slot: slot,
+        location_address: rj?.location || null,
+        contact_name: null,
+        budget_amount: null,
+        budget_type: null,
+        is_emergency: false,
+        project_id: null,
+        tradie_id: user.id,
+      };
+    });
+
+    setJobs([...(jobsRes.data || []), ...recurringPseudoJobs]);
     setTeamMembers(membersRes.data || []);
     setAssignments((assignmentsRes.data as JobAssignment[]) || []);
     setAvailabilitySlots((slotsRes.data || []) as AvailabilitySlot[]);

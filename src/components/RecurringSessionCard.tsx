@@ -5,14 +5,18 @@ import {
   rescheduleSession,
   skipSession,
   completeSession,
+  confirmSession,
+  declineSession,
   addExtraSession,
   cancelExtraSession,
   acceptReschedule,
   insertNotification,
 } from '../lib/recurringJobs';
+import { supabase } from '../lib/supabase';
 import { getBlockedDates, checkClash } from '../lib/availability';
 
 const STATUS_STYLES: Record<RecurringSessionStatus, { bg: string; text: string; label: string }> = {
+  pending_confirmation: { bg: 'bg-amber-50 border-amber-300', text: 'text-amber-700', label: 'Awaiting Confirmation' },
   scheduled: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700', label: 'Scheduled' },
   completed: { bg: 'bg-green-50 border-green-200', text: 'text-green-700', label: 'Completed' },
   rescheduled: { bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-700', label: 'Rescheduled' },
@@ -37,7 +41,9 @@ interface RecurringSessionCardProps {
   tradieId?: string;
   clientId?: string;
   preferredTime?: string;
+  agreedPrice?: number | null;
   onUpdate: () => void;
+  onCancelService?: () => void;
 }
 
 export default function RecurringSessionCard({
@@ -47,7 +53,9 @@ export default function RecurringSessionCard({
   tradieId,
   clientId,
   preferredTime,
+  agreedPrice,
   onUpdate,
+  onCancelService,
 }: RecurringSessionCardProps) {
   const [showReschedule, setShowReschedule] = useState(false);
   const [showSkip, setShowSkip] = useState(false);
@@ -65,6 +73,8 @@ export default function RecurringSessionCard({
   const [checkingClash, setCheckingClash] = useState(false);
   const [extraClashWarning, setExtraClashWarning] = useState('');
   const [checkingExtraClash, setCheckingExtraClash] = useState(false);
+  const [showDeclineForm, setShowDeclineForm] = useState(false);
+  const [declineReason, setDeclineReason] = useState('');
 
   const style = STATUS_STYLES[session.status];
   const displayDate = session.actual_date || session.scheduled_date;
@@ -74,6 +84,7 @@ export default function RecurringSessionCard({
     month: 'short',
   });
 
+  const isPendingConfirmation = session.status === 'pending_confirmation';
   const isActionable = session.status === 'scheduled';
   const isTradie = userRole === 'tradie';
   const isClient = userRole === 'client';
@@ -269,6 +280,45 @@ export default function RecurringSessionCard({
     }
   };
 
+  const handleConfirm = async (enableAutoAccept?: boolean) => {
+    setLoading(true);
+    try {
+      await confirmSession(session.id);
+
+      // Enable auto-accept for future sessions if requested
+      if (enableAutoAccept) {
+        try {
+          await supabase
+            .from('recurring_jobs')
+            .update({ auto_accept: true })
+            .eq('id', recurringJobId);
+        } catch {
+          // Non-critical
+        }
+      }
+
+      onUpdate();
+    } catch {
+      // handled by parent
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDecline = async () => {
+    setLoading(true);
+    try {
+      await declineSession(session.id, declineReason.trim() || undefined);
+      setShowDeclineForm(false);
+      setDeclineReason('');
+      onUpdate();
+    } catch {
+      // handled by parent
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddExtra = async () => {
     if (!extraDate || extraClashWarning) return;
     setLoading(true);
@@ -398,6 +448,94 @@ export default function RecurringSessionCard({
               {loading ? 'Cancelling...' : 'Cancel Extra Session'}
             </button>
           )}
+        </div>
+      )}
+
+      {/* Pending Confirmation — tradie must confirm or decline */}
+      {isPendingConfirmation && isTradie && !showDeclineForm && (
+        <div className="mt-3 p-3 bg-white rounded-lg border border-amber-200">
+          {agreedPrice != null && agreedPrice > 0 && (
+            <p className="text-sm font-semibold text-emerald-600 mb-1">
+              ${agreedPrice.toFixed(2)} <span className="text-xs font-normal text-gray-500">agreed rate</span>
+            </p>
+          )}
+          <p className="text-xs font-medium text-gray-900 mb-1">
+            Please confirm this session by{' '}
+            <span className="text-amber-700 font-semibold">
+              {session.confirmation_deadline
+                ? new Date(session.confirmation_deadline).toLocaleDateString('en-AU', {
+                    weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
+                  })
+                : '48 hours'}
+            </span>
+          </p>
+          <div className="flex flex-wrap gap-2 mb-2">
+            <button
+              onClick={() => handleConfirm(false)}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+            >
+              <CheckCircle2 className="w-3 h-3" />
+              {loading ? 'Confirming...' : 'Confirm'}
+            </button>
+            <button
+              onClick={() => handleConfirm(true)}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-emerald-100 disabled:opacity-50 transition-colors"
+            >
+              <CheckCircle2 className="w-3 h-3" />
+              Confirm & Auto-accept All
+            </button>
+            <button
+              onClick={() => setShowDeclineForm(true)}
+              className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+            >
+              <X className="w-3 h-3" />
+              Can't Do This One
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Pending Confirmation — client sees waiting state */}
+      {isPendingConfirmation && isClient && (
+        <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+          <p className="text-xs text-amber-700 font-medium">
+            <Clock className="w-3 h-3 inline mr-1" />
+            Waiting for tradie to confirm this session
+            {agreedPrice != null && agreedPrice > 0 && (
+              <span className="text-gray-600"> — ${agreedPrice.toFixed(2)} agreed rate</span>
+            )}
+          </p>
+        </div>
+      )}
+
+      {/* Decline form — tradie enters reason */}
+      {showDeclineForm && (
+        <div className="mt-3 space-y-2">
+          <label className="block text-xs font-medium text-gray-600">Reason for declining (optional)</label>
+          <input
+            type="text"
+            value={declineReason}
+            onChange={(e) => setDeclineReason(e.target.value)}
+            placeholder="e.g., Schedule conflict, on leave"
+            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={handleDecline}
+              disabled={loading}
+              className="px-4 py-2 text-xs font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50 transition-colors"
+            >
+              {loading ? 'Declining...' : 'Confirm Decline'}
+            </button>
+            <button
+              onClick={() => { setShowDeclineForm(false); setDeclineReason(''); }}
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 
@@ -713,6 +851,18 @@ export default function RecurringSessionCard({
               Cancel
             </button>
           </div>
+        </div>
+      )}
+
+      {/* End Service — tradie can cancel the entire recurring service */}
+      {isTradie && onCancelService && (session.status === 'scheduled' || session.status === 'pending_confirmation') && (
+        <div className="mt-2 pt-2 border-t border-gray-100">
+          <button
+            onClick={onCancelService}
+            className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
+          >
+            End this recurring service
+          </button>
         </div>
       )}
     </div>

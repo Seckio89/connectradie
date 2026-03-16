@@ -1,43 +1,124 @@
----
-name: edge-function-deployer
-description: Deploy ConnecTradie's 19 Supabase Edge Functions. Covers Deno.serve() pattern, CORS, TypeScript types, deploy commands, and troubleshooting.
----
+# Edge Function Deployer Agent
 
-# Edge Function Deployer
+## Role
+Creates, updates, and deploys Supabase Edge Functions for ConnecTradie.
 
-## Conventions
-- All in supabase/functions/, each has index.ts + types.ts + _shared/ imports
-- Use Deno.serve() (not old serve() export)
-- Always include CORS headers, return typed JSON responses
+## When to Invoke
+- Creating new edge functions
+- Modifying existing functions
+- Deploying functions to Supabase
+- Debugging function errors
 
-## Template
+## Edge Function Structure
+
+### Location
+supabase/functions/[function-name]/index.ts
+
+### Template
 ```typescript
-import { corsHeaders } from '../_shared/cors.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization, X-Client-Info, Apikey",
+};
+
+function errorJson(message: string, status: number) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function jsonResponse(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
-  try {
-    const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-    const body = await req.json()
-    return new Response(JSON.stringify({ data: result }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200
-    })
-  } catch (error) {
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400
-    })
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
-})
+
+  if (req.method !== "POST") {
+    return errorJson("Method not allowed", 405);
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const body = await req.json();
+
+    // Your logic here
+    const result = {};
+
+    return jsonResponse(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Internal server error";
+    return errorJson(message, 500);
+  }
+});
 ```
 
-## Functions (19)
-Payments: create-payment-intent, process-escrow, release-escrow, refund-payment
-Stripe: create-connect-account, stripe-webhook, create-subscription
-Comms: send-notification, send-email, send-sms
-Verification: verify-license, verify-abn, verify-identity
-Jobs: match-tradies, calculate-quote, job-notifications
-Admin: generate-report, sync-analytics, cleanup-expired
+## Environment Variables
 
-## Deploy: supabase functions deploy <name> --project-ref <ref>
-## Common fixes: CORS → check OPTIONS handler, Types → use Tables<'name'>['Insert'], Auth → SERVICE_ROLE_KEY for admin ops
+### Required for all functions:
+- SUPABASE_URL
+- SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_ROLE_KEY (for admin operations)
+
+### Stripe functions:
+- STRIPE_SECRET_KEY
+- STRIPE_WEBHOOK_SECRET
+
+### Check with:
+```bash
+supabase secrets list
+```
+
+### Set with:
+```bash
+supabase secrets set KEY=value
+```
+
+## Deployment
+
+### Deploy single function:
+```bash
+supabase functions deploy function-name
+```
+
+### Deploy all:
+```bash
+supabase functions deploy
+```
+
+### Local testing:
+```bash
+supabase functions serve function-name
+```
+
+## Common Functions
+
+| Function | Purpose |
+|----------|---------|
+| stripe-connect-account | Create/manage Stripe Connect |
+| verify-abn | Verify Australian Business Number |
+| verify-license | Verify trade licenses |
+| parse-invoice | OCR invoice parsing |
+| generate-recurring-sessions | Create recurring job sessions |
+| auto-confirm-sessions | Auto-confirm expired sessions |
+| send-email | Email notifications |
+| send-sms | SMS notifications |
+| release-escrow | Release escrow payment to tradie |
+| accept-and-pay | Accept quote and create Stripe checkout |
+
+## Invocation
+"@edge-function-deployer: [function requirement or issue]"
