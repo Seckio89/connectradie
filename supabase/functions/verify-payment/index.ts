@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
@@ -57,7 +57,67 @@ Deno.serve(async (req: Request) => {
       return errorJson("Invalid JSON body", 400);
     }
 
-    const { paymentId } = body as { paymentId?: string };
+    const { paymentId, checkoutSessionId, invoiceId, type } = body as {
+      paymentId?: string;
+      checkoutSessionId?: string;
+      invoiceId?: string;
+      type?: string;
+    };
+
+    // ── Recurring invoice verification ──────────────────────────────
+    if (type === 'recurring_invoice' && checkoutSessionId && invoiceId) {
+      const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
+
+      // Verify the invoice belongs to this user
+      const { data: invoice } = await supabase
+        .from("recurring_invoices")
+        .select("id, status, homeowner_id, stripe_checkout_session_id")
+        .eq("id", invoiceId)
+        .maybeSingle();
+
+      if (!invoice || invoice.homeowner_id !== user.id) {
+        return errorJson("Invoice not found", 404);
+      }
+
+      if (invoice.status === 'paid') {
+        return new Response(
+          JSON.stringify({ paid: true, message: "Invoice already paid" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Check Stripe checkout session
+      const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
+
+      if (session.payment_status === 'paid') {
+        const paymentIntentId = typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : null;
+
+        await supabase
+          .from("recurring_invoices")
+          .update({
+            status: 'paid',
+            paid_at: new Date().toISOString(),
+            stripe_payment_intent_id: paymentIntentId,
+          })
+          .eq("id", invoiceId);
+
+        console.info(`Recurring invoice ${invoiceId} verified as paid (fallback)`);
+
+        return new Response(
+          JSON.stringify({ paid: true, message: "Invoice verified and marked as paid" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ paid: false, message: `Checkout session status: ${session.payment_status}` }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── Standard payment verification ───────────────────────────────
     if (!paymentId) {
       return errorJson("Missing paymentId", 400);
     }

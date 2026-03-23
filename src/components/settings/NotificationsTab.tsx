@@ -5,14 +5,21 @@ interface NotificationsTabProps {
   pushPermission: string;
   notifSaving: boolean;
   onTogglePush: (enabled: boolean) => void;
+  role?: 'tradie' | 'client' | 'admin';
 }
 
-export default function NotificationsTab({ pushEnabled, pushPermission, notifSaving, onTogglePush }: NotificationsTabProps) {
+export default function NotificationsTab({ pushEnabled, pushPermission, notifSaving, onTogglePush, role }: NotificationsTabProps) {
+  const isClient = role === 'client';
+
   return (
     <div className="space-y-6 p-6 md:p-8">
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-1">Notification Preferences</h3>
-        <p className="text-sm text-gray-600 mb-6">Control how you receive alerts about new leads and urgent jobs.</p>
+        <p className="text-sm text-gray-600 mb-6">
+          {isClient
+            ? 'Control how you receive alerts about quotes, job updates, and scheduled services.'
+            : 'Control how you receive alerts about new leads and urgent jobs.'}
+        </p>
       </div>
 
       <div className="space-y-4">
@@ -23,7 +30,11 @@ export default function NotificationsTab({ pushEnabled, pushPermission, notifSav
             </div>
             <div>
               <p className="font-medium text-gray-900">Web Push Alerts</p>
-              <p className="text-sm text-gray-600">Receive browser notifications for urgent leads</p>
+              <p className="text-sm text-gray-600">
+                {isClient
+                  ? 'Receive browser notifications for quotes and job updates'
+                  : 'Receive browser notifications for urgent leads'}
+              </p>
               <span className="inline-block mt-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">Free</span>
             </div>
           </div>
@@ -58,8 +69,14 @@ export default function NotificationsTab({ pushEnabled, pushPermission, notifSav
               <Smartphone className="w-5 h-5 text-warm-600" />
             </div>
             <div>
-              <p className="font-medium text-gray-900">SMS Alerts for Urgent Jobs</p>
-              <p className="text-sm text-gray-600">Get a text when urgent leads are posted nearby</p>
+              <p className="font-medium text-gray-900">
+                {isClient ? 'SMS Alerts for Job Updates' : 'SMS Alerts for Urgent Jobs'}
+              </p>
+              <p className="text-sm text-gray-600">
+                {isClient
+                  ? 'Get a text when tradies quote or your job status changes'
+                  : 'Get a text when urgent leads are posted nearby'}
+              </p>
               <span className="inline-flex items-center gap-1 mt-1 text-xs font-medium text-secondary-700 bg-secondary-50 px-2 py-0.5 rounded-full border border-secondary-200">Coming Soon</span>
             </div>
           </div>
@@ -75,7 +92,9 @@ export default function NotificationsTab({ pushEnabled, pushPermission, notifSav
           <div>
             <p className="text-sm font-medium text-secondary-900">How it works</p>
             <p className="text-sm text-secondary-800 mt-1">
-              When a client posts an urgent job marked with Flash Boost, all tradies with matching notification preferences in that area are alerted instantly. Web push is free for all users. SMS alerts require a Pro subscription.
+              {isClient
+                ? 'Get notified when tradies submit quotes on your jobs, when job milestones are completed, and when scheduled services are coming up. Web push is free for all users.'
+                : 'When a client posts an urgent job marked with Flash Boost, all tradies with matching notification preferences in that area are alerted instantly. Web push is free for all users. SMS alerts require a Pro subscription.'}
             </p>
           </div>
         </div>

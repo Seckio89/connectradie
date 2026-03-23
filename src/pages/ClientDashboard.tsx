@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { Bell, Plus, Loader2, MapPin, ArrowRight, Crown, RefreshCw, Repeat, Trash2, CalendarClock, DollarSign, Briefcase, Clock, Zap, Eye, CheckCircle2, Archive, ArchiveRestore, Pencil, X, Check, Send, Play } from 'lucide-react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Bell, Plus, Loader2, MapPin, ArrowRight, Crown, RefreshCw, Repeat, Trash2, CalendarClock, DollarSign, Briefcase, Clock, Zap, Eye, CheckCircle2, Archive, ArchiveRestore, Pencil, X, Check, Send, Play, ExternalLink, Pause } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { TradieWithDetails, AvailabilitySlot, Job } from '../types/database';
@@ -10,7 +10,6 @@ import ChatDrawer from '../components/ChatDrawer';
 import AvailabilityCalendar from '../components/AvailabilityCalendar';
 import ActivityFeed from '../components/ActivityFeed';
 import OnboardingChecklist from '../components/OnboardingChecklist';
-import ServiceRemindersWidget from '../components/ServiceRemindersWidget';
 import { redactName } from '../lib/contactGating';
 import SubscriptionModal from '../components/SubscriptionModal';
 // TooltipHint available for future use
@@ -20,7 +19,7 @@ import { DashboardStatsSkeleton, ListSkeleton } from '../components/SkeletonLoad
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import ConfirmModal from '../components/ConfirmModal';
 import AddressAutocomplete from '../components/AddressAutocomplete';
-import { getRecurringJobs, createRecurringJob, cancelRecurringJob, updateRecurringJob, suggestRecurringJob, getUpcomingSessions, getKeywordSuggestions, RECURRING_SERVICE_SUBCATEGORIES, RECURRING_SERVICE_DESCRIPTIONS, type RecurringJob, type RecurringSession, type KeywordSuggestion } from '../lib/recurringJobs';
+import { getRecurringJobs, createRecurringJob, cancelRecurringJob, pauseRecurringJob, resumeRecurringJob, updateRecurringJob, suggestRecurringJob, getUpcomingSessions, getKeywordSuggestions, RECURRING_SERVICE_SUBCATEGORIES, RECURRING_SERVICE_DESCRIPTIONS, type RecurringJob, type RecurringSession, type KeywordSuggestion } from '../lib/recurringJobs';
 import RecurringSessionCard from '../components/RecurringSessionCard';
 import RecurringInvoiceCard from '../components/RecurringInvoiceCard';
 import type { RecurringInvoice } from '../components/RecurringInvoiceCard';
@@ -51,8 +50,10 @@ export default function ClientDashboard() {
   const [cancelJobTarget, setCancelJobTarget] = useState<Job | null>(null);
   const [cancelRecurringTarget, setCancelRecurringTarget] = useState<RecurringJob | null>(null);
   const [invoices, setInvoices] = useState<RecurringInvoice[]>([]);
+  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
 
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const isClientPro = profile?.is_premium;
 
   const showToast = (message: string, isError = false) => {
@@ -74,7 +75,7 @@ export default function ClientDashboard() {
         activeJobs.map(async (job) => {
           try {
             const sessions = await getUpcomingSessions(job.id);
-            sessionsMap[job.id] = sessions.slice(0, 4);
+            sessionsMap[job.id] = sessions;
           } catch {
             sessionsMap[job.id] = [];
           }
@@ -90,13 +91,15 @@ export default function ClientDashboard() {
   const fetchInvoices = useCallback(async () => {
     if (!user) return;
     try {
-      const { data } = await supabase
+      // Outstanding invoices first (sent/overdue/draft)
+      const { data: outstanding } = await supabase
         .from('recurring_invoices')
         .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, agreed_price)')
         .eq('homeowner_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(6);
-      setInvoices((data ?? []) as unknown as RecurringInvoice[]);
+        .in('status', ['sent', 'overdue', 'draft'])
+        .order('created_at', { ascending: false });
+
+      setInvoices((outstanding ?? []) as unknown as RecurringInvoice[]);
     } catch { /* ignore */ }
   }, [user]);
 
@@ -148,12 +151,19 @@ export default function ClientDashboard() {
         if (completedIds.length > 0) {
           const { data: payments } = await supabase
             .from('payments')
-            .select('job_id, metadata')
+            .select('job_id, status, metadata')
             .in('job_id', completedIds);
           if (payments) {
+            const jobsWithPayments = new Set(payments.map(p => p.job_id));
             for (const p of payments) {
               const meta = p.metadata as Record<string, unknown> | null;
-              if (meta?.transfer_id) released.add(p.job_id);
+              if (meta?.transfer_id || p.status === 'released' || p.status === 'completed') {
+                released.add(p.job_id);
+              }
+            }
+            // Jobs with no payment record at all — already released or never had escrow
+            for (const id of completedIds) {
+              if (!jobsWithPayments.has(id)) released.add(id);
             }
           }
         }
@@ -202,9 +212,8 @@ export default function ClientDashboard() {
     if (!cancelJobTarget || !user) return;
     const jobId = cancelJobTarget.id;
     try {
-      await supabase.from('service_reminders').delete().eq('job_id', jobId);
-      await supabase.from('notifications').delete().eq('job_id', jobId);
-      await supabase.from('quotes').delete().eq('job_id', jobId);
+      // Child tables with ON DELETE CASCADE are cleaned up automatically by the DB.
+      // Just delete the job — the migration 20260321100000 ensures all FKs cascade.
       const { error } = await supabase.from('jobs').delete().eq('id', jobId);
       if (error) throw error;
       setRecentJobs(prev => prev.filter(j => j.id !== jobId));
@@ -223,7 +232,7 @@ export default function ClientDashboard() {
       // Create a job from the recurring service
       const jobData: Record<string, unknown> = {
         client_id: user.id,
-        title: `${job.service_subtype || job.trade_category.replace(/_/g, ' ')} — Recurring Service`,
+        title: `${job.service_subtype || job.trade_category.replace(/_/g, ' ')} — Ongoing Service`,
         description: `[${job.trade_category}] ${job.description}`,
         status: 'pending',
         location_address: job.location || null,
@@ -258,7 +267,7 @@ export default function ClientDashboard() {
           user_id: job.tradie_id,
           type: 'new_job',
           title: 'New quote request',
-          message: `${clientName} sent you a recurring ${tradeName} job — review and quote now`,
+          message: `${clientName} sent you an ongoing ${tradeName} service — review and quote now`,
           job_id: jobId,
           metadata: {},
         });
@@ -274,7 +283,7 @@ export default function ClientDashboard() {
             user_id: t.id,
             type: 'new_job',
             title: 'New quote request from a saved client',
-            message: `${clientName} is looking for a ${tradeName} — recurring service`,
+            message: `${clientName} is looking for a ${tradeName} — ongoing service`,
             job_id: jobId,
             metadata: {},
           }));
@@ -588,7 +597,7 @@ export default function ClientDashboard() {
                         <span className="text-lg font-bold text-primary-600">2</span>
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">Browse Tradies</p>
+                        <p className="font-semibold text-gray-900">Find a Tradie</p>
                         <p className="text-sm text-gray-500">Find and save tradies near you</p>
                       </div>
                       <ArrowRight className="w-4 h-4 text-gray-400 ml-auto flex-shrink-0" />
@@ -858,17 +867,77 @@ export default function ClientDashboard() {
               </Link>
             </div>
 
-            <SectionErrorBoundary fallbackTitle="Service reminders failed to load">
-              <ServiceRemindersWidget />
-            </SectionErrorBoundary>
+            {/* Upcoming Visits — from recurring job sessions */}
+            {(() => {
+              const allSessions = Object.entries(jobSessions).flatMap(([jobId, sessions]) => {
+                const job = recurringJobs.find(j => j.id === jobId);
+                if (!job || !job.is_active) return [];
+                return sessions
+                  .filter(s => s.status === 'scheduled' || s.status === 'pending_confirmation')
+                  .map(s => ({ ...s, job }));
+              }).sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()).slice(0, 4);
 
-            {/* Recurring Jobs */}
+              if (allSessions.length === 0) return null;
+
+              return (
+                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                  <div className="px-5 py-4 border-b border-gray-100">
+                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                      <CalendarClock className="w-4 h-4 text-secondary-600" />
+                      Upcoming Visits
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-0.5">Next scheduled sessions from your ongoing services</p>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {allSessions.map((session) => {
+                      const dateStr = new Date(session.scheduled_date).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+                      const label = session.job.service_subtype || session.job.trade_category.replace(/_/g, ' ');
+                      const timeStr = session.job.preferred_time
+                        ? session.job.preferred_time.slice(0, 5).replace(/^0/, '')
+                        : null;
+                      return (
+                        <div key={session.id} className="px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-lg bg-secondary-100 flex items-center justify-center flex-shrink-0">
+                              <CalendarClock className="w-4 h-4 text-secondary-600" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate capitalize">{label}</p>
+                              <p className="text-xs text-gray-500">
+                                {dateStr}
+                                {timeStr && <span className="text-gray-400"> · {timeStr}</span>}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {session.job.agreed_price != null && session.job.agreed_price > 0 && (
+                              <span className="text-xs font-semibold text-emerald-700">
+                                ${session.job.agreed_price.toFixed(2)}
+                              </span>
+                            )}
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                              session.status === 'pending_confirmation'
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-emerald-100 text-emerald-700'
+                            }`}>
+                              {session.status === 'pending_confirmation' ? 'Pending' : 'Scheduled'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Ongoing Services */}
             <div className="bg-white rounded-2xl border border-gray-200 p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <Link to="/leads?tab=services" className="font-semibold text-gray-900 flex items-center gap-2 hover:text-primary-600 transition-colors">
                   <Repeat className="w-4 h-4 text-secondary-600" />
-                  Recurring Services
-                </h3>
+                  Ongoing Services
+                </Link>
                 <button
                   onClick={() => setShowRecurringForm(!showRecurringForm)}
                   className="p-1.5 rounded-lg text-primary-600 hover:bg-primary-50 transition-colors"
@@ -882,7 +951,7 @@ export default function ClientDashboard() {
                   onClick={() => setShowRecurringForm(true)}
                   className="w-full text-center text-xs text-primary-600 hover:text-primary-700 font-medium py-1.5 mb-3 hover:bg-primary-50 rounded-lg transition-colors"
                 >
-                  + Set up a new recurring job
+                  + Set up a new ongoing service
                 </button>
               )}
 
@@ -890,12 +959,32 @@ export default function ClientDashboard() {
                 <RecurringJobForm
                   onSave={async (data) => {
                     const { budget, preferred_time, ...rest } = data;
-                    await createRecurringJob({ ...rest, agreed_price: budget, preferred_time });
-                    // Don't fetchRecurring() here — wait until success panel is dismissed
-                    // to avoid showing duplicate cards (success panel + list card)
+                    const serviceLabel = rest.service_subtype || rest.trade_category.replace(/_/g, ' ');
+                    // 1. Create a jobs record so it enters the quote pipeline (same as one-off)
+                    const { data: job, error: jobErr } = await supabase
+                      .from('jobs')
+                      .insert({
+                        client_id: user!.id,
+                        title: serviceLabel,
+                        description: `[${rest.trade_category}] ${rest.description}`,
+                        status: 'pending',
+                        location_address: rest.location || null,
+                        budget_type: budget ? 'fixed_budget' : 'request_quote',
+                        budget_amount: budget ?? null,
+                        is_emergency: false,
+                        priority: 'normal',
+                        max_quotes: 3,
+                        scheduled_date: rest.next_due_date,
+                        preferred_time_slot: preferred_time || null,
+                      })
+                      .select('id')
+                      .single();
+                    if (jobErr) throw new Error(jobErr.message);
+                    // 2. Create the recurring job linked to the jobs record
+                    await createRecurringJob({ ...rest, agreed_price: budget, preferred_time, original_job_id: job.id });
                   }}
                   onCancel={() => setShowRecurringForm(false)}
-                  onDone={() => { setShowRecurringForm(false); fetchRecurring(); showToast('Recurring service scheduled'); }}
+                  onDone={() => { setShowRecurringForm(false); fetchRecurring(); showToast('Ongoing service scheduled'); }}
                   onSendQuote={async (job) => {
                     await sendQuoteRequest(job, 'saved');
                   }}
@@ -903,10 +992,10 @@ export default function ClientDashboard() {
                 />
               )}
 
-              {recurringJobs.length === 0 && !showRecurringForm ? (
+              {recurringJobs.filter(j => j.is_active).length === 0 && !showRecurringForm ? (
                 <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 text-center">
                   <RefreshCw className="w-7 h-7 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-gray-800">Set up a recurring service</p>
+                  <p className="text-sm font-semibold text-gray-800">Set up an ongoing service</p>
                   <p className="text-xs text-gray-500 mt-1">Schedule regular cleaning, lawn mowing, pool service and more. One setup, automatic reminders every cycle.</p>
                   <button
                     onClick={() => setShowRecurringForm(true)}
@@ -937,7 +1026,7 @@ export default function ClientDashboard() {
                               await updateRecurringJob(job.id, updates);
                               setEditingJobId(null);
                               fetchRecurring();
-                              showToast('Recurring service updated');
+                              showToast('Ongoing service updated');
                             } catch {
                               showToast('Failed to update service', true);
                             }
@@ -954,7 +1043,7 @@ export default function ClientDashboard() {
 
                     return (
                       <div key={job.id} className={`rounded-xl border transition-all ${isOverdue ? 'border-red-200 bg-red-50' : isDueSoon ? 'border-warm-200 bg-warm-50' : 'border-gray-100 bg-gray-50'}`}>
-                        <div className="p-3 cursor-pointer hover:bg-white/50 transition-colors rounded-t-xl" onClick={() => setEditingJobId(job.id)} role="button" tabIndex={0}>
+                        <div className="p-3 cursor-pointer hover:bg-white/50 transition-colors rounded-t-xl" onClick={() => navigate('/leads?tab=services')} role="button" tabIndex={0}>
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium text-gray-900 truncate capitalize">
@@ -988,16 +1077,24 @@ export default function ClientDashboard() {
                               <button
                                 onClick={() => setEditingJobId(job.id)}
                                 className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                                title="Edit recurring service"
+                                title="Edit ongoing service"
                               >
                                 <Pencil className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => setCancelRecurringTarget(job)}
-                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Cancel recurring service"
+                                onClick={async () => {
+                                  try {
+                                    await pauseRecurringJob(job.id, 'client');
+                                    fetchRecurring();
+                                    showToast('Service paused — you can resume it anytime');
+                                  } catch {
+                                    showToast('Failed to pause service', true);
+                                  }
+                                }}
+                                className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
+                                title="Pause ongoing service"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Pause className="w-4 h-4" />
                               </button>
                             </div>
                           </div>
@@ -1050,10 +1147,19 @@ export default function ClientDashboard() {
                               );
                             }
                             if (sessions.length > 0) {
+                              const isExpanded = expandedSessions.has(job.id);
                               return (
-                                <button className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 border border-emerald-300 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-50 transition-colors">
+                                <button
+                                  onClick={() => setExpandedSessions(prev => {
+                                    const next = new Set(prev);
+                                    if (next.has(job.id)) next.delete(job.id);
+                                    else next.add(job.id);
+                                    return next;
+                                  })}
+                                  className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 border border-emerald-300 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-50 transition-colors"
+                                >
                                   <Eye className="w-3.5 h-3.5" />
-                                  View Sessions
+                                  {isExpanded ? 'Hide Sessions' : `View ${sessions.length} Sessions`}
                                 </button>
                               );
                             }
@@ -1090,32 +1196,193 @@ export default function ClientDashboard() {
                             );
                           })()}
                         </div>
-                        {/* Upcoming Sessions — only when sessions exist */}
-                        {!sessionsLoading.has(job.id) && (jobSessions[job.id] ?? []).length > 0 && (
-                          <div className="px-3 pb-3">
-                            <p className="text-xs font-medium text-gray-500 mb-2">Upcoming Sessions</p>
-                            <div className="space-y-2">
-                              {(jobSessions[job.id] ?? []).slice(0, 2).map(session => (
-                                <RecurringSessionCard
-                                  key={session.id}
-                                  session={session}
-                                  recurringJobId={job.id}
-                                  userRole="client"
-                                  tradieId={job.tradie_id}
-                                  clientId={user?.id}
-                                  preferredTime={job.preferred_time}
-                                  agreedPrice={job.agreed_price}
-                                  onUpdate={fetchRecurring}
-                                />
-                              ))}
-                              {(jobSessions[job.id] ?? []).length > 2 && (
-                                <button className="w-full text-center text-xs font-medium text-primary-600 hover:text-primary-700 py-1">
-                                  View all {(jobSessions[job.id] ?? []).length} sessions &rarr;
-                                </button>
+                        {/* Sessions list — upcoming + grouped history */}
+                        {!sessionsLoading.has(job.id) && (jobSessions[job.id] ?? []).length > 0 && (() => {
+                          const allSessions = jobSessions[job.id] ?? [];
+                          const today = new Date().toISOString().split('T')[0];
+                          const upcoming = allSessions.filter(s => (s.actual_date || s.scheduled_date) >= today && s.status !== 'completed' && s.status !== 'skipped');
+                          const past = allSessions.filter(s => !upcoming.includes(s));
+
+                          // Group past sessions by month
+                          const monthGroups: Record<string, RecurringSession[]> = {};
+                          past.forEach(s => {
+                            const d = s.actual_date || s.scheduled_date;
+                            const key = d.slice(0, 7); // "2026-03"
+                            if (!monthGroups[key]) monthGroups[key] = [];
+                            monthGroups[key].push(s);
+                          });
+                          const sortedMonths = Object.keys(monthGroups).sort().reverse();
+
+                          // Find matching invoice for a month
+                          const getInvoiceForMonth = (monthKey: string) => {
+                            return invoices.find(inv => {
+                              if (!inv.billing_period_start) return false;
+                              return inv.billing_period_start.slice(0, 7) === monthKey;
+                            });
+                          };
+
+                          const isExpanded = expandedSessions.has(job.id);
+
+                          return (
+                            <div className="px-3 pb-3">
+                              {/* Upcoming sessions — always shown */}
+                              {upcoming.length > 0 && (
+                                <>
+                                  <p className="text-xs font-medium text-gray-500 mb-2">Upcoming Sessions</p>
+                                  <div className="space-y-2 mb-3">
+                                    {upcoming.slice(0, 3).map(session => (
+                                      <RecurringSessionCard
+                                        key={session.id}
+                                        session={session}
+                                        recurringJobId={job.id}
+                                        userRole="client"
+                                        tradieId={job.tradie_id}
+                                        clientId={user?.id}
+                                        preferredTime={job.preferred_time}
+                                        agreedPrice={job.agreed_price}
+                                        serviceName={job.service_subtype || job.trade_category.replace(/_/g, ' ')}
+                                        onUpdate={fetchRecurring}
+                                      />
+                                    ))}
+                                  </div>
+                                </>
+                              )}
+
+                              {/* Past sessions — grouped by month */}
+                              {sortedMonths.length > 0 && (
+                                <>
+                                  {!isExpanded ? (
+                                    <button
+                                      onClick={() => setExpandedSessions(prev => new Set([...prev, job.id]))}
+                                      className="w-full text-center text-xs font-medium text-primary-600 hover:text-primary-700 py-1.5 hover:bg-primary-50 rounded-lg transition-colors"
+                                    >
+                                      View past sessions ({past.length}) &rarr;
+                                    </button>
+                                  ) : (
+                                    <>
+                                      <p className="text-xs font-medium text-gray-500 mb-2">Past Sessions</p>
+                                      <div className="space-y-2">
+                                        {sortedMonths.map(monthKey => {
+                                          const sessions = monthGroups[monthKey];
+                                          const completed = sessions.filter(s => s.status === 'completed');
+                                          const skipped = sessions.filter(s => s.status === 'skipped');
+                                          const extras = sessions.filter(s => s.status === 'extra');
+                                          const monthLabel = new Date(monthKey + '-01T00:00:00').toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+                                          const totalCost = completed.reduce((sum, s) => sum + (s.extra_cost ? Number(s.extra_cost) : (job.agreed_price ?? 0)), 0) + extras.reduce((sum, s) => sum + (s.extra_cost ? Number(s.extra_cost) : 0), 0);
+                                          const invoice = getInvoiceForMonth(monthKey);
+                                          const isMonthExpanded = expandedSessions.has(`${job.id}_${monthKey}`);
+
+                                          return (
+                                            <div key={monthKey} className="border border-gray-100 rounded-lg overflow-hidden">
+                                              <button
+                                                onClick={() => setExpandedSessions(prev => {
+                                                  const next = new Set(prev);
+                                                  const key = `${job.id}_${monthKey}`;
+                                                  if (next.has(key)) next.delete(key);
+                                                  else next.add(key);
+                                                  return next;
+                                                })}
+                                                className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 transition-colors"
+                                              >
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                  <span className="text-xs font-semibold text-gray-900">{monthLabel}</span>
+                                                  <span className="text-xs text-gray-400">
+                                                    {completed.length} session{completed.length !== 1 ? 's' : ''}
+                                                    {extras.length > 0 ? ` + ${extras.length} extra` : ''}
+                                                    {skipped.length > 0 ? ` · ${skipped.length} skipped` : ''}
+                                                  </span>
+                                                </div>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                  {totalCost > 0 && (
+                                                    <span className="text-xs font-semibold text-gray-700">${totalCost.toFixed(2)}</span>
+                                                  )}
+                                                  {invoice && (
+                                                    invoice.status === 'sent' && invoice.stripe_payment_url ? (
+                                                      <a
+                                                        href={invoice.stripe_payment_url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                                                      >
+                                                        Pay Now
+                                                        <ExternalLink className="w-2.5 h-2.5" />
+                                                      </a>
+                                                    ) : invoice.status === 'sent' ? (
+                                                      <Link
+                                                        to="/payments"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                                                      >
+                                                        Pay Now
+                                                      </Link>
+                                                    ) : (
+                                                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                                        invoice.status === 'paid' ? 'bg-green-100 text-green-700' :
+                                                        'bg-gray-100 text-gray-600'
+                                                      }`}>
+                                                        {invoice.status === 'paid' ? 'Paid' : invoice.status.replace(/_/g, ' ')}
+                                                      </span>
+                                                    )
+                                                  )}
+                                                  <svg className={`w-3.5 h-3.5 text-gray-400 transition-transform ${isMonthExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                                </div>
+                                              </button>
+                                              {isMonthExpanded && (
+                                                <div className="px-3 pb-3 space-y-1.5 border-t border-gray-100 pt-2">
+                                                  {sessions.map(s => {
+                                                    const sDate = new Date((s.actual_date || s.scheduled_date) + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+                                                    const statusMap: Record<string, { text: string; label: string }> = {
+                                                      completed: { text: 'text-green-700', label: 'Completed' },
+                                                      scheduled: { text: 'text-blue-700', label: 'Scheduled' },
+                                                      skipped: { text: 'text-gray-500', label: 'Skipped' },
+                                                      extra: { text: 'text-amber-700', label: 'Extra' },
+                                                      rescheduled: { text: 'text-yellow-700', label: 'Rescheduled' },
+                                                      pending_confirmation: { text: 'text-amber-700', label: 'Pending' },
+                                                    };
+                                                    const sStyle = statusMap[s.status] || { text: 'text-gray-500', label: s.status };
+                                                    return (
+                                                      <div key={s.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-gray-50">
+                                                        <div className="flex items-center gap-2 min-w-0">
+                                                          <span className="text-xs text-gray-700">{sDate}</span>
+                                                          {s.notes && <span className="text-xs text-gray-400 truncate max-w-[120px]">— {s.notes}</span>}
+                                                        </div>
+                                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                                          {s.status === 'extra' && s.extra_cost ? (
+                                                            <span className="text-xs font-medium text-amber-700">${Number(s.extra_cost).toFixed(2)}</span>
+                                                          ) : s.status === 'completed' && job.agreed_price ? (
+                                                            <span className="text-xs font-medium text-gray-600">${job.agreed_price.toFixed(2)}</span>
+                                                          ) : null}
+                                                          <span className={`text-[10px] font-medium ${sStyle.text}`}>{sStyle.label}</span>
+                                                        </div>
+                                                      </div>
+                                                    );
+                                                  })}
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                      <button
+                                        onClick={() => setExpandedSessions(prev => {
+                                          const next = new Set(prev);
+                                          next.delete(job.id);
+                                          // Also collapse any expanded months
+                                          sortedMonths.forEach(m => next.delete(`${job.id}_${m}`));
+                                          return next;
+                                        })}
+                                        className="w-full text-center text-xs font-medium text-gray-500 hover:text-gray-700 py-1.5 mt-2 hover:bg-gray-50 rounded-lg transition-colors"
+                                      >
+                                        Show less
+                                      </button>
+                                    </>
+                                  )}
+                                </>
                               )}
                             </div>
-                          </div>
-                        )}
+                          );
+                        })()}
                         {sessionsLoading.has(job.id) && (
                           <div className="px-3 pb-3 flex items-center justify-center py-3">
                             <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
@@ -1128,12 +1395,85 @@ export default function ClientDashboard() {
               )}
             </div>
 
+            {/* Paused Services — only show most recent resumable one */}
+            {(() => {
+              const inactive = recurringJobs.filter(j => !j.is_active);
+              if (inactive.length === 0) return null;
+              // Sort by next_due_date descending — most recent first
+              const sorted = [...inactive].sort((a, b) =>
+                new Date(b.next_due_date).getTime() - new Date(a.next_due_date).getTime()
+              );
+              // Only the most recent is resumable if its due date is in the future or recent (within 30 days)
+              const now = new Date();
+              const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+              const resumable = sorted.filter(j => new Date(j.next_due_date) >= cutoff);
+              const pastCount = inactive.length - resumable.length;
+
+              return (
+                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                  <div className="px-5 py-4 border-b border-gray-100">
+                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                      <Pause className="w-4 h-4 text-amber-500" />
+                      Paused Services
+                    </h3>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {resumable.slice(0, 3).map(job => {
+                      const tradeLabel = (job.service_subtype || job.trade_category || '').replace(/_/g, ' ');
+                      return (
+                        <div key={job.id} className="px-5 py-3 flex items-center justify-between">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-700 capitalize">{tradeLabel}</p>
+                            {job.tradie && (
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                {(job.tradie as { full_name?: string }).full_name}
+                                {job.agreed_price ? ` · $${job.agreed_price.toFixed(2)}/visit` : ''}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={async () => {
+                              try {
+                                await resumeRecurringJob(job.id, 'client');
+                                fetchRecurring();
+                                showToast('Service resumed');
+                              } catch {
+                                showToast('Failed to resume service', true);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-colors flex-shrink-0"
+                          >
+                            <Play className="w-3 h-3" />
+                            Resume
+                          </button>
+                        </div>
+                      );
+                    })}
+                    {pastCount > 0 && (
+                      <div className="px-5 py-3">
+                        <p className="text-xs text-gray-400">
+                          {pastCount} past service{pastCount !== 1 ? 's' : ''} ended · <Link to="/leads?tab=services" className="text-primary-600 hover:text-primary-700">View all</Link>
+                        </p>
+                      </div>
+                    )}
+                    {resumable.length === 0 && (
+                      <div className="px-5 py-3">
+                        <p className="text-xs text-gray-400">
+                          {inactive.length} past service{inactive.length !== 1 ? 's' : ''} · <Link to="/leads?tab=services" className="text-primary-600 hover:text-primary-700">View all</Link>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Invoices */}
             <div className="bg-white rounded-2xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
+              <Link to="/payments" className="font-semibold text-gray-900 flex items-center gap-2 mb-4 hover:text-primary-600 transition-colors">
                 <DollarSign className="w-4 h-4 text-secondary-600" />
                 Invoices
-              </h3>
+              </Link>
               {invoices.length > 0 ? (
                 <div className="space-y-3">
                   {invoices.map((inv) => (
@@ -1270,16 +1610,16 @@ export default function ClientDashboard() {
 
       {cancelRecurringTarget && (
         <ConfirmModal
-          title="Cancel Recurring Service?"
-          message={`Are you sure you want to cancel "${cancelRecurringTarget.service_subtype || cancelRecurringTarget.trade_category.replace(/_/g, ' ')}"? The tradie will be notified and any scheduled sessions will be cancelled.`}
-          confirmText="Cancel Service"
+          title="Permanently Cancel Service?"
+          message={`This will permanently cancel "${cancelRecurringTarget.service_subtype || cancelRecurringTarget.trade_category.replace(/_/g, ' ')}" — all upcoming sessions will be cancelled and the service agreement will be ended. The tradie will be notified. This cannot be undone.`}
+          confirmText="Cancel Permanently"
           cancelText="Keep Service"
           onConfirm={async () => {
             try {
               await cancelRecurringJob(cancelRecurringTarget.id, 'client');
               setCancelRecurringTarget(null);
               fetchRecurring();
-              showToast('Recurring service cancelled');
+              showToast('Ongoing service cancelled');
             } catch {
               showToast('Failed to cancel service', true);
             }

@@ -256,7 +256,7 @@ export default function JobManagementModal({
   const isFinished = ['completed', 'cancelled', 'declined'].includes(job?.status || '');
   const isArchived = !!job?.archived_at;
   const canSeeContact = ['funded', 'in_progress', 'completed'].includes(job?.status || '');
-  const isRecurring = !!(job?.title && /recurring/i.test(job.title));
+  const isRecurring = !!(job?.title && /ongoing|recurring/i.test(job.title));
 
   if (!isOpen) return null;
 
@@ -398,7 +398,7 @@ export default function JobManagementModal({
                     )}
                     {isRecurring && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-semibold border border-secondary-200">
-                        <Repeat className="w-3 h-3" /> Recurring
+                        <Repeat className="w-3 h-3" /> Ongoing
                       </span>
                     )}
                   </div>

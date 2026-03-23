@@ -49,8 +49,9 @@ import { formatDate, checkLicenseExpired } from '../lib/utils';
 import { extractSuburb } from '../lib/contactGating';
 import { sendNotification } from '../lib/notificationService';
 import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
-import { acceptAndPay, verifyPayment, releaseEscrow } from '../lib/stripePayments';
+import { acceptAndPay, verifyPayment, releaseEscrow, payPriceIncrease } from '../lib/stripePayments';
 import { getJobHints } from '../lib/jobDescriptionHints';
+import ClientServicesTab from '../components/ClientServicesTab';
 
 function FlashCountdown({ expiry, onExpired }: { expiry: string; onExpired?: () => void }) {
   const [timeLeft, setTimeLeft] = useState('');
@@ -83,14 +84,14 @@ function FlashCountdown({ expiry, onExpired }: { expiry: string; onExpired?: () 
 
 function AutoReleaseCountdown({ completedAt }: { completedAt: string }) {
   const [timeLeft, setTimeLeft] = useState('');
-  const [released, setReleased] = useState(false);
+  const [expired, setExpired] = useState(false);
 
   useEffect(() => {
     const releaseTime = new Date(completedAt).getTime() + 48 * 60 * 60 * 1000;
     const update = () => {
       const diff = releaseTime - Date.now();
       if (diff <= 0) {
-        setReleased(true);
+        setExpired(true);
         return;
       }
       const hrs = Math.floor(diff / 3600000);
@@ -103,12 +104,12 @@ function AutoReleaseCountdown({ completedAt }: { completedAt: string }) {
     return () => clearInterval(interval);
   }, [completedAt]);
 
-  if (released) {
+  if (expired) {
     return (
-      <div className="flex items-start gap-2 px-5 py-2.5 bg-emerald-50 border-t border-emerald-100">
-        <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
-        <p className="text-xs text-emerald-700">
-          Payment has been auto-released to your tradie.
+      <div className="flex items-start gap-2 px-5 py-2.5 bg-amber-50 border-t border-amber-100">
+        <Clock className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+        <p className="text-xs text-amber-700">
+          Auto-release window has passed. Please release payment manually to complete this job.
         </p>
       </div>
     );
@@ -154,7 +155,7 @@ function getDateGroupLabel(dateStr: string): string {
   return date.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-type LeadFilter = 'all' | 'pending' | 'accepted' | 'boosted' | 'urgent' | 'scheduled' | 'quoted' | 'history' | 'archived' | 'deleted' | 'open' | 'quoting' | 'in_progress' | 'completed';
+type LeadFilter = 'all' | 'active' | 'pending' | 'accepted' | 'boosted' | 'urgent' | 'scheduled' | 'quoted' | 'history' | 'archived' | 'deleted' | 'open' | 'quoting' | 'in_progress' | 'completed' | 'services';
 
 type LeadWithClient = Job & { client_name?: string; my_quote?: Quote | null };
 
@@ -165,15 +166,18 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
   const [leads, setLeads] = useState<LeadWithClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<LeadFilter>(() => {
-    const urlFilter = new URLSearchParams(window.location.search).get('filter');
-    const validFilters: LeadFilter[] = ['all', 'open', 'quoting', 'accepted', 'in_progress', 'completed', 'archived', 'pending', 'boosted', 'urgent', 'scheduled', 'quoted', 'history', 'deleted'];
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab === 'services') return 'services';
+    const urlFilter = params.get('filter');
+    const validFilters: LeadFilter[] = ['all', 'active', 'open', 'quoting', 'accepted', 'in_progress', 'completed', 'archived', 'pending', 'boosted', 'urgent', 'scheduled', 'quoted', 'history', 'deleted', 'services'];
     return urlFilter && validFilters.includes(urlFilter as LeadFilter) ? urlFilter as LeadFilter : 'all';
   });
   const [showVerificationGate, setShowVerificationGate] = useState(false);
   const [gateReason, setGateReason] = useState<'unverified' | 'expired'>('unverified');
   const [quoteModalJob, setQuoteModalJob] = useState<Job | null>(null);
   const [expandedJobId, setExpandedJobId] = useState<string | null>(searchParams.get('job'));
-  const [quoteAcceptedBanner, setQuoteAcceptedBanner] = useState<false | 'success' | 'cancelled' | 'error'>(false);
+  const [quoteAcceptedBanner, setQuoteAcceptedBanner] = useState<false | 'success' | 'price_increase_success' | 'cancelled' | 'error'>(false);
   const [fetchError, setFetchError] = useState('');
   const [dismissedJobIds, setDismissedJobIds] = useState<Set<string>>(() => {
     try {
@@ -206,6 +210,8 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
   const [releasingJobId, setReleasingJobId] = useState<string | null>(null);
   const [releasedJobIds, setReleasedJobIds] = useState<Set<string>>(new Set());
   const [reviewedJobIds, setReviewedJobIds] = useState<Set<string>>(new Set());
+  const [pendingIncreases, setPendingIncreases] = useState<Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number }>>({});
+  const [paidIncreaseJobIds, setPaidIncreaseJobIds] = useState<Set<string>>(new Set());
   const [viewCompletedJob, setViewCompletedJob] = useState<LeadWithClient | null>(null);
   const [withdrawQuoteTarget, setWithdrawQuoteTarget] = useState<LeadWithClient | null>(null);
   const [withdrawing, setWithdrawing] = useState(false);
@@ -246,33 +252,49 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     const jobParam = searchParams.get('job') || searchParams.get('job_id');
 
     if (paymentStatus === 'success' && jobParam) {
+      // Suppress pending increase banner for this job (webhook may not have cleared it yet)
+      setPaidIncreaseJobIds(prev => new Set(prev).add(jobParam));
       searchParams.delete('payment');
       searchParams.delete('job_id');
       setSearchParams(searchParams, { replace: true });
 
       // Verify payment via Stripe (webhook fallback) then refresh
       (async () => {
+        let isPriceIncreaseReturn = false;
         try {
-          // Find the pending payment for this job
-          const { data: pendingPayment } = await supabase
+          // Check if this is a return from paying a price increase (vs initial job funding)
+          const { data: adjPayment } = await supabase
             .from('payments')
-            .select('id, status')
+            .select('id')
             .eq('job_id', jobParam)
-            .eq('payment_type', 'job_funding')
-            .order('created_at', { ascending: false })
+            .eq('payment_type', 'price_adjustment')
             .limit(1)
             .maybeSingle();
 
-          if (pendingPayment && pendingPayment.status === 'pending') {
-            await verifyPayment(pendingPayment.id);
+          isPriceIncreaseReturn = !!adjPayment;
+
+          if (!isPriceIncreaseReturn) {
+            // Find the pending job_funding payment for webhook fallback verification
+            const { data: pendingPayment } = await supabase
+              .from('payments')
+              .select('id, status')
+              .eq('job_id', jobParam)
+              .eq('payment_type', 'job_funding')
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (pendingPayment && pendingPayment.status === 'pending') {
+              await verifyPayment(pendingPayment.id);
+            }
           }
         } catch (err) {
           console.error('Payment verification fallback failed:', err);
         }
-        // Switch to accepted tab — funded jobs appear there.
+        // Switch to active tab — funded jobs appear there.
         // The filter change triggers useEffect → fetchLeads() automatically.
-        setFilter('accepted');
-        setQuoteAcceptedBanner('success');
+        setFilter('active');
+        setQuoteAcceptedBanner(isPriceIncreaseReturn ? 'price_increase_success' : 'success');
         setTimeout(() => setQuoteAcceptedBanner(false), 10000);
       })();
     } else if (paymentStatus === 'cancelled' && jobParam) {
@@ -289,12 +311,16 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       searchParams.delete('job_id');
       setSearchParams(searchParams, { replace: true });
 
+      // Auto-switch to active tab if the deep-linked job is funded/in_progress
+      if (targetJob && ['funded', 'in_progress'].includes(targetJob.status) && filter !== 'active' && filter !== 'all') {
+        setFilter('active');
+      }
+
       if (targetJob && !isTradie && targetJob.status === 'pending' && !targetJob.tradie_id) {
-        // Open edit modal directly for pending client jobs
+        // Expand quotes section if quotes exist — user can click card to open edit modal
         if (targetJob.quote_count > 0) {
           setExpandedJobId(jobParam);
         }
-        openEditJob(targetJob);
       } else {
         setExpandedJobId(jobParam);
       }
@@ -415,7 +441,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         const [paymentsResult, reviewsResult] = await Promise.all([
           supabase
             .from('payments')
-            .select('job_id, metadata')
+            .select('job_id, status, metadata')
             .in('job_id', completedJobIds),
           supabase
             .from('reviews')
@@ -426,11 +452,16 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
 
         if (paymentsResult.data && paymentsResult.data.length > 0) {
           const alreadyReleased = new Set<string>();
+          const jobsWithPayments = new Set(paymentsResult.data.map(p => p.job_id));
           for (const p of paymentsResult.data) {
             const meta = p.metadata as Record<string, unknown> | null;
-            if (meta?.transfer_id) {
+            if (meta?.transfer_id || p.status === 'released' || p.status === 'completed') {
               alreadyReleased.add(p.job_id);
             }
+          }
+          // Jobs with no payment record — already released or never had escrow
+          for (const id of completedJobIds) {
+            if (!jobsWithPayments.has(id)) alreadyReleased.add(id);
           }
           if (alreadyReleased.size > 0) {
             setReleasedJobIds(prev => {
@@ -439,10 +470,52 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
               return next;
             });
           }
+        } else {
+          // No payment records at all — mark all completed jobs as released
+          setReleasedJobIds(prev => {
+            const next = new Set(prev);
+            completedJobIds.forEach(id => next.add(id));
+            return next;
+          });
         }
 
         if (reviewsResult.data && reviewsResult.data.length > 0) {
           setReviewedJobIds(new Set(reviewsResult.data.map(r => r.job_id)));
+        }
+      }
+
+      // Fetch pending price increases for active jobs
+      const activeJobIds = jobs
+        .filter(j => ['funded', 'in_progress', 'completed'].includes(j.status))
+        .map(j => j.id);
+
+      if (activeJobIds.length > 0) {
+        const { data: activePayments } = await supabase
+          .from('payments')
+          .select('id, job_id, amount, metadata')
+          .in('job_id', activeJobIds)
+          .eq('payment_type', 'job_funding')
+          .eq('status', 'completed');
+
+        if (activePayments) {
+          const increases: Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number }> = {};
+          for (const p of activePayments) {
+            const meta = p.metadata as Record<string, unknown> | null;
+            if (meta?.pending_increase) {
+              const inc = meta.pending_increase as Record<string, unknown>;
+              const diffCents = typeof inc.diff_cents === 'number' ? inc.diff_cents : 0;
+              if (diffCents > 0) {
+                const originalCents = typeof p.amount === 'number' ? p.amount : 0;
+                increases[p.job_id] = {
+                  paymentId: p.id,
+                  amount: diffCents / 100,
+                  originalAmount: originalCents / 100,
+                  finalAmount: (originalCents + diffCents) / 100,
+                };
+              }
+            }
+          }
+          setPendingIncreases(increases);
         }
       }
 
@@ -482,9 +555,15 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           j.status === 'completed' && !j.deleted_at && !j.archived_at
         ));
       } else if (filter === 'archived') {
-        // Explicitly archived (non-completed), cancelled, declined, or auto-archivable
+        // Only show jobs explicitly archived by the user (archived_at set) or
+        // cancelled/declined that haven't been explicitly unarchived
         setLeads(jobs.filter(j =>
-          !j.deleted_at && j.status !== 'completed' && (j.archived_at || j.status === 'cancelled' || j.status === 'declined' || isAutoArchivable(j))
+          !j.deleted_at && j.status !== 'completed' && !!j.archived_at
+        ));
+      } else if (filter === 'active') {
+        // Combined active tab: open, quoting, awarded, in progress
+        setLeads(jobs.filter(j =>
+          isActive(j) && !isAutoArchivable(j) && j.status !== 'completed'
         ));
       } else if (filter === 'all') {
         // All active jobs — hide completed jobs that are fully done (released + reviewed)
@@ -763,6 +842,9 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         }).catch(() => {});
       }
 
+      // Auto-dismiss so the lead doesn't reappear on dashboard or Leads page
+      handleDismissLead(withdrawQuoteTarget.id);
+
       setWithdrawQuoteTarget(null);
       setViewLeadDetail(null);
       fetchLeads();
@@ -804,6 +886,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         .from('payments')
         .select('id, metadata')
         .eq('job_id', jobId)
+        .eq('payment_type', 'job_funding')
         .eq('status', 'completed')
         .maybeSingle();
 
@@ -815,6 +898,11 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         if (meta?.transfer_id) {
           // Already released — skip calling release-escrow again
           setReleasedJobIds(prev => new Set(prev).add(jobId));
+        } else if (meta?.pending_increase && !paidIncreaseJobIds.has(jobId)) {
+          // Price increase pending — redirect to pay the difference
+          const { url } = await payPriceIncrease(payment.id, jobId);
+          window.location.href = url;
+          return;
         } else {
           await releaseEscrow(payment.id);
           setReleasedJobIds(prev => new Set(prev).add(jobId));
@@ -824,6 +912,33 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       navigate(`/review/${jobId}`);
     } catch (err) {
       console.error('Failed to release payment:', err);
+      const errCode = (err as Error & { code?: string })?.code;
+      const errMsg = err instanceof Error ? err.message : '';
+      if (errCode === 'pending_increase_not_paid' || (errMsg.includes('pending') && errMsg.includes('increase'))) {
+        // If the client just returned from paying the increase, the webhook may not
+        // have processed yet. Do NOT redirect to pay again — that risks double-charging.
+        if (paidIncreaseJobIds.has(jobId)) {
+          alert('Your additional payment is still being processed. Please wait a moment and try releasing again.');
+          return;
+        }
+        // Price increase pending — find the payment and redirect
+        try {
+          const { data: payment } = await supabase
+            .from('payments')
+            .select('id')
+            .eq('job_id', jobId)
+            .eq('payment_type', 'job_funding')
+            .eq('status', 'completed')
+            .maybeSingle();
+          if (payment) {
+            const { url } = await payPriceIncrease(payment.id, jobId);
+            window.location.href = url;
+            return;
+          }
+        } catch {
+          // Fall through to default navigation
+        }
+      }
       // Still navigate to review if release fails (payment might already be released)
       navigate(`/review/${jobId}`);
     } finally {
@@ -902,20 +1017,10 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     const jobId = deleteJobTarget.id;
 
     try {
-      // Cascade delete related records first
-      await supabase.from('service_reminders').delete().eq('job_id', jobId);
-      await supabase.from('notifications').delete().eq('job_id', jobId);
-      await supabase.from('quotes').delete().eq('job_id', jobId);
-
-      const { error } = await supabase
-        .from('jobs')
-        .delete()
-        .eq('id', jobId);
-
-      if (error) {
-        console.error('Failed to cancel job:', error);
-        return;
-      }
+      // Child tables use ON DELETE CASCADE (migration 20260321100000),
+      // so just delete the job — DB handles cleanup automatically.
+      const { error } = await supabase.from('jobs').delete().eq('id', jobId);
+      if (error) throw error;
 
       setLeads((prev) => prev.filter((l) => l.id !== jobId));
     } catch (err) {
@@ -1073,11 +1178,8 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
   ];
 
   const clientFilters: { key: LeadFilter; label: string }[] = [
-    { key: 'all', label: 'All Jobs' },
-    { key: 'open', label: 'Open' },
-    { key: 'quoting', label: 'Quoting' },
-    { key: 'accepted', label: 'Awarded' },
-    { key: 'in_progress', label: 'In Progress' },
+    { key: 'active', label: 'Active' },
+    { key: 'services', label: 'Ongoing Services' },
     { key: 'completed', label: 'Completed' },
     { key: 'archived', label: 'Archived' },
   ];
@@ -1110,7 +1212,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           className={`rounded-2xl overflow-hidden transition-all ${
             isClientEditable || isTradie ? 'cursor-pointer ' : ''
           }${
-            isFlashActive && isTradie
+            isFlashActive && isTradie && lead.status === 'pending'
               ? 'border border-warm-200 bg-white shadow-md hover:shadow-xl ring-1 ring-warm-100'
               : isUrgent && isTradie
               ? 'border border-red-200 bg-white shadow-md hover:shadow-xl'
@@ -1123,7 +1225,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           <div className="flex">
             {/* Accent bar */}
             <div className={`w-1.5 flex-shrink-0 ${
-              isFlashActive && isTradie ? 'bg-warm-500'
+              isFlashActive && isTradie && lead.status === 'pending' ? 'bg-warm-500'
               : isUrgent && isTradie ? 'bg-red-400'
               : hasQuoted ? 'bg-secondary-400'
               : 'bg-primary-400'
@@ -1148,7 +1250,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                         {getClientStatusLabel(lead)}
                       </span>
                     )}
-                    {isFlashActive && isTradie && (
+                    {isFlashActive && isTradie && lead.status === 'pending' && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-warm-500 text-white rounded-full text-[11px] font-bold shadow-sm animate-pulse">
                         <Zap className="w-3 h-3" />
                         Flash
@@ -1160,10 +1262,10 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                         Urgent
                       </span>
                     )}
-                    {isTradie && !!(lead.title && /recurring/i.test(lead.title)) && (
+                    {isTradie && !!(lead.title && /ongoing|recurring/i.test(lead.title)) && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-purple-50 text-purple-700 rounded-full text-[11px] font-semibold border border-purple-200">
                         <RefreshCw className="w-3 h-3" />
-                        Recurring
+                        Ongoing
                       </span>
                     )}
                     {isClientEditable && (
@@ -1276,7 +1378,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
               )}
 
               {/* Flash/Boost banners */}
-              {isFlashActive && isTradie && (
+              {isFlashActive && isTradie && lead.status === 'pending' && (
                 <div className="mx-5 mb-3 flex items-center gap-2 px-3 py-2 bg-warm-50 border border-warm-200 rounded-lg">
                   <Zap className="w-3.5 h-3.5 text-warm-600 flex-shrink-0" />
                   <span className="text-xs font-medium text-warm-700">
@@ -1285,7 +1387,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                 </div>
               )}
 
-              {!isTradie && isFlashActive && (
+              {!isTradie && isFlashActive && lead.status === 'pending' && (
                 <div className="mx-5 mb-3 flex items-center justify-between px-3 py-2 bg-gradient-to-r from-warm-50 to-orange-50 border border-warm-200 rounded-lg">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-warm-500 flex-shrink-0" />
@@ -1350,17 +1452,16 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           )}
 
           {!isTradie && lead.status === 'pending' && lead.quote_count > 0 && (
-            <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-              <span className="text-xs text-gray-400">{formatDate(lead.created_at)}</span>
+            <div className="border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={() => setExpandedJobId(expandedJobId === lead.id ? null : lead.id)}
-                className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`w-full flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold transition-colors ${
                   expandedJobId === lead.id
-                    ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    : 'bg-secondary-600 text-white hover:bg-secondary-700 shadow-sm'
+                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                 }`}
               >
-                <Eye className="w-3.5 h-3.5" />
+                <Eye className="w-4 h-4" />
                 {expandedJobId === lead.id ? 'Hide Quotes' : `View ${lead.quote_count} Quote${lead.quote_count !== 1 ? 's' : ''}`}
               </button>
             </div>
@@ -1425,17 +1526,57 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
             );
           })()}
 
-          {!isTradie && lead.status === 'funded' && lead.tradie_id && (
+          {!isTradie && lead.status === 'funded' && lead.tradie_id && !pendingIncreases[lead.id] && (
             <div className="flex items-center gap-2 px-5 py-3 border-t border-gray-100 text-sm text-green-600">
               <CheckCircle2 className="w-4 h-4" />
               Payment received — waiting for tradie to start
             </div>
           )}
 
-          {!isTradie && lead.status === 'in_progress' && lead.tradie_id && (
+          {!isTradie && lead.status === 'in_progress' && lead.tradie_id && !pendingIncreases[lead.id] && (
             <div className="flex items-center gap-2 px-5 py-3 border-t border-gray-100 text-sm text-blue-600">
               <Loader2 className="w-4 h-4" />
               Work in progress
+            </div>
+          )}
+
+          {!isTradie && pendingIncreases[lead.id] && !paidIncreaseJobIds.has(lead.id) && ['funded', 'in_progress'].includes(lead.status) && (
+            <div className="px-5 py-3 border-t border-amber-200 bg-amber-50">
+              <div className="flex items-center gap-2 text-sm font-medium text-amber-800 mb-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>Price adjusted after site visit</span>
+              </div>
+              <div className="flex items-center gap-4 text-xs text-amber-700 mb-3 ml-6">
+                <span>Original: <span className="font-semibold">${pendingIncreases[lead.id].originalAmount.toFixed(2)}</span></span>
+                <span className="text-amber-400">→</span>
+                <span>Final: <span className="font-semibold">${pendingIncreases[lead.id].finalAmount.toFixed(2)}</span></span>
+                <span className="text-amber-400">|</span>
+                <span>Additional: <span className="font-semibold text-amber-900">${pendingIncreases[lead.id].amount.toFixed(2)}</span></span>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const inc = pendingIncreases[lead.id];
+                    setPayingJobId(lead.id);
+                    payPriceIncrease(inc.paymentId, lead.id)
+                      .then(({ url }) => { window.location.href = url; })
+                      .catch((err) => {
+                        console.error('Pay price increase failed:', err);
+                        setPayingJobId(null);
+                      });
+                  }}
+                  disabled={payingJobId === lead.id}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-60"
+                >
+                  {payingJobId === lead.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <CreditCard className="w-3.5 h-3.5" />
+                  )}
+                  Pay Difference
+                </button>
+              </div>
             </div>
           )}
 
@@ -1574,7 +1715,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-secondary-400 to-secondary-400 flex items-center justify-center">
                 <CalendarDays className="w-4 h-4 text-white" />
               </div>
-              <h3 className="font-bold text-gray-900">Scheduled Jobs</h3>
+              <h3 className="font-bold text-gray-900">Ongoing Leads</h3>
               <span className="ml-auto px-2 py-0.5 bg-secondary-100 text-secondary-700 rounded-full text-xs font-semibold">
                 {scheduledGroups.reduce((acc, g) => acc + g.leads.length, 0)}
               </span>
@@ -1653,6 +1794,15 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
               <p className="text-sm font-bold text-green-800">Payment successful!</p>
             </div>
             <p className="text-xs text-green-700 ml-8">Your tradie has been hired and payment is held securely in escrow. The tradie will be notified and can start work.</p>
+          </div>
+        )}
+        {quoteAcceptedBanner === 'price_increase_success' && (
+          <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4">
+            <div className="flex items-center gap-3 mb-1">
+              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+              <p className="text-sm font-bold text-green-800">Additional payment successful!</p>
+            </div>
+            <p className="text-xs text-green-700 ml-8">The adjusted amount is now held securely in escrow. You can release payment once the work is complete.</p>
           </div>
         )}
         {quoteAcceptedBanner === 'cancelled' && (
@@ -1770,7 +1920,9 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
 
         <div>
 
-          {fetchError ? (
+          {filter === 'services' ? (
+            <ClientServicesTab />
+          ) : fetchError ? (
             <div className="bg-white rounded-2xl border border-red-200 p-12 text-center">
               <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Something went wrong</h3>
@@ -1786,39 +1938,13 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           ) : isTradie ? (
             renderTradieGroupedView()
           ) : leads.length === 0 ? (
-            filter === 'all' ? (
+            (filter === 'active' || filter === 'all') ? (
               <EmptyState
                 icon={Briefcase}
-                title="No Jobs Yet"
-                description="You haven't posted any jobs yet. Post one now and tradies in your area will see it."
+                title="No Active Jobs"
+                description="You don't have any active jobs right now. Post one and tradies in your area will start quoting."
                 actionLabel="Post a Job"
                 onAction={() => navigate('/post-lead')}
-              />
-            ) : filter === 'open' ? (
-              <EmptyState
-                icon={Clock}
-                title="No Open Jobs"
-                description="Jobs waiting for tradies to submit quotes will appear here. Post a job to get started."
-                actionLabel="Post a Job"
-                onAction={() => navigate('/post-lead')}
-              />
-            ) : filter === 'quoting' ? (
-              <EmptyState
-                icon={FileText}
-                title="No Jobs Being Quoted"
-                description="When tradies submit quotes on your jobs, they'll move here so you can compare and choose."
-              />
-            ) : filter === 'accepted' ? (
-              <EmptyState
-                icon={CheckCircle2}
-                title="No Awarded Jobs"
-                description="Jobs where you've accepted a quote will appear here, ready for payment."
-              />
-            ) : filter === 'in_progress' ? (
-              <EmptyState
-                icon={Loader2}
-                title="No Jobs In Progress"
-                description="Once you pay and the tradie starts work, active jobs will appear here."
               />
             ) : filter === 'completed' ? (
               <EmptyState
@@ -1830,7 +1956,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
               <EmptyState
                 icon={Archive}
                 title="No Archived Jobs"
-                description="Archived, cancelled, and declined jobs will appear here. You can unarchive them anytime."
+                description="Archived, cancelled, and declined jobs will appear here."
               />
             ) : (
               <EmptyState
@@ -2169,6 +2295,25 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                 </div>
               )}
 
+              {/* Client: View Quotes button */}
+              {!isTradie && vl.status === 'pending' && vl.quote_count > 0 && (
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                  <button
+                    onClick={() => {
+                      setViewLeadDetail(null);
+                      setExpandedJobId(vl.id);
+                      setTimeout(() => {
+                        document.getElementById(`job-${vl.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 100);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 transition-colors shadow-sm"
+                  >
+                    <Eye className="w-4 h-4" />
+                    View {vl.quote_count} Quote{vl.quote_count !== 1 ? 's' : ''}
+                  </button>
+                </div>
+              )}
+
               {isTradie && vlHasQuoted && (() => {
                 const qs = vl.my_quote!.status;
                 const statusConfig = qs === 'accepted'
@@ -2250,7 +2395,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                     <Briefcase className="w-5 h-5 text-secondary-600" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900">{ejCategory || 'Job Details'}</h2>
+                    <h2 className="text-lg font-bold text-gray-900">{ej.title || ejCategory || 'Job Details'}</h2>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getClientStatusColor(ej)}`}>
                         {getClientStatusLabel(ej)}

@@ -111,6 +111,40 @@ export async function logVisit(
     .single();
 
   if (error) throw new Error(error.message);
+
+  // Also create a recurring_session so the extra visit appears on the next auto-invoice
+  try {
+    // Look up the service agreement to find the client/tradie pair
+    const { data: agreement } = await supabase
+      .from('service_agreements')
+      .select('client_id, tradie_id')
+      .eq('id', agreementId)
+      .single();
+
+    if (agreement) {
+      // Find the active recurring job for this client/tradie pair
+      const { data: recurringJob } = await supabase
+        .from('recurring_jobs')
+        .select('id')
+        .eq('client_id', agreement.client_id)
+        .eq('tradie_id', agreement.tradie_id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (recurringJob) {
+        await supabase.from('recurring_sessions').insert({
+          recurring_job_id: recurringJob.id,
+          scheduled_date: visit.visit_date,
+          status: 'extra',
+          extra_cost: visit.amount,
+          notes: visit.notes || null,
+        });
+      }
+    }
+  } catch {
+    // Non-critical — the service_visit is already saved
+  }
+
   return data as ServiceVisit;
 }
 

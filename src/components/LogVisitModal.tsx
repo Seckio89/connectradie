@@ -47,7 +47,7 @@ export default function LogVisitModal({ isOpen, agreement, onClose, onSuccess }:
       <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-md p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">Log Visit</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Log Extra Visit</h2>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
             <X className="w-5 h-5" />
           </button>
@@ -78,12 +78,20 @@ export default function LogVisitModal({ isOpen, agreement, onClose, onSuccess }:
           <label className="block text-xs font-medium text-gray-600 mb-1.5">Type</label>
           <div className="flex gap-2">
             {([
-              { value: 'regular' as const, label: 'Regular visit' },
-              { value: 'extra' as const, label: 'Extra visit' },
+              { value: 'regular' as const, label: 'Same rate' },
+              { value: 'extra' as const, label: 'Custom rate' },
             ]).map(opt => (
               <button
                 key={opt.value}
-                onClick={() => setVisitType(opt.value)}
+                onClick={() => {
+                  setVisitType(opt.value);
+                  if (opt.value === 'extra') {
+                    setUseCustomAmount(true);
+                  } else {
+                    setUseCustomAmount(false);
+                    setAmount(agreement.rate_per_visit);
+                  }
+                }}
                 className={`flex-1 py-2 px-4 rounded-lg border text-sm font-medium transition-colors ${
                   visitType === opt.value
                     ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
@@ -94,6 +102,11 @@ export default function LogVisitModal({ isOpen, agreement, onClose, onSuccess }:
               </button>
             ))}
           </div>
+          <p className="mt-1.5 text-xs text-gray-400">
+            {visitType === 'regular'
+              ? `Charged at the agreed rate of $${agreement.rate_per_visit.toFixed(2)}`
+              : 'Set a custom amount for this visit'}
+          </p>
         </div>
 
         {/* Amount */}
@@ -124,14 +137,16 @@ export default function LogVisitModal({ isOpen, agreement, onClose, onSuccess }:
           )}
         </div>
 
-        {/* Notes */}
+        {/* Purpose */}
         <div className="mb-5">
-          <label className="block text-xs font-medium text-gray-600 mb-1">Notes (optional)</label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            Purpose for extra visit
+          </label>
           <input
             type="text"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="e.g. Tournament cleanup"
+            placeholder="e.g., Emergency callout, extra deep clean, client request"
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
@@ -162,11 +177,11 @@ export default function LogVisitModal({ isOpen, agreement, onClose, onSuccess }:
           </button>
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting || amount <= 0}
+            disabled={isSubmitting || amount <= 0 || !notes.trim()}
             className="flex-1 px-4 py-2.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
           >
             <Check className="w-4 h-4" />
-            {isSubmitting ? 'Logging...' : 'Log Visit'}
+            {isSubmitting ? 'Logging...' : 'Log Extra Visit'}
           </button>
         </div>
       </div>

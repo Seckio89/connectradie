@@ -4,6 +4,7 @@ import Modal from './Modal';
 import { supabase } from '../lib/supabase';
 import type { JobWithRelations } from '../types/database';
 import { calculateNextDueDate, FREQ_WEEKLY, insertNotification } from '../lib/recurringJobs';
+import { getFilteredCompletionPrompts } from '../lib/hintToCompletionMap';
 
 // ── Quick-text prompts per trade category ──
 // Each prompt is a tappable chip the tradie can add to their notes.
@@ -250,9 +251,12 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
   const jobCategory = jobCategoryRaw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   const jobDesc = job.description?.replace(/^\[[^\]]+\]\s*/, '') || 'Job';
 
-  // Get prompts for this trade, falling back to defaults
+  // Get prompts for this trade, filtered to only tasks the client selected
   const matchedCategory = matchPromptCategory(jobCategoryRaw);
-  const prompts = (matchedCategory && COMPLETION_PROMPTS[matchedCategory]) || COMPLETION_PROMPTS[jobCategory] || DEFAULT_PROMPTS;
+  const allPrompts = (matchedCategory && COMPLETION_PROMPTS[matchedCategory]) || COMPLETION_PROMPTS[jobCategory] || DEFAULT_PROMPTS;
+  const prompts = allPrompts === DEFAULT_PROMPTS
+    ? allPrompts
+    : getFilteredCompletionPrompts(matchedCategory || jobCategory, jobDesc, allPrompts);
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -423,7 +427,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
       }
 
       // Auto-schedule next recurring job if this is a recurring service
-      if (job.title && /recurring/i.test(job.title) && job.client_id && job.tradie_id) {
+      if (job.title && /ongoing|recurring/i.test(job.title) && job.client_id && job.tradie_id) {
         try {
           // Find the linked recurring_jobs record
           const { data: recurringJob } = await supabase

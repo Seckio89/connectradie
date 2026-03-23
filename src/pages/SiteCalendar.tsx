@@ -6,6 +6,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { AvailabilitySlot } from '../types/database';
 
+/** Format a Date as YYYY-MM-DD in local timezone (avoids UTC shift) */
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 interface Job {
   id: string;
   description: string;
@@ -234,7 +242,8 @@ function AssignTeamModal({ job, teamMembers, existingAssignments, onClose, onSav
 }
 
 export default function SiteCalendar({ embedded = false }: { embedded?: boolean }) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const isTradie = profile?.role === 'tradie';
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'week' | 'month'>('week');
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -277,51 +286,65 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
     setLoading(true);
 
     const { start, end } = getDateRange();
-    const startStr = start.toISOString().split('T')[0];
-    const endStr = end.toISOString().split('T')[0];
+    const startStr = toLocalDateStr(start);
+    const endStr = toLocalDateStr(end);
+
+    // Role-aware: tradies see jobs they're assigned to; clients see jobs they posted
+    const jobsQuery = supabase
+      .from('jobs')
+      .select('id, description, status, scheduled_date, preferred_time_slot, location_address, contact_name, budget_amount, budget_type, is_emergency, project_id, tradie_id')
+      .not('status', 'in', '(cancelled,declined)')
+      .or(`scheduled_date.gte.${startStr},scheduled_date.lte.${endStr}`)
+      .order('scheduled_date', { ascending: true });
+
+    if (isTradie) {
+      jobsQuery.eq('tradie_id', user.id);
+    } else {
+      jobsQuery.eq('client_id', user.id);
+    }
 
     const [jobsRes, membersRes, assignmentsRes, slotsRes] = await Promise.all([
-      supabase
-        .from('jobs')
-        .select('id, description, status, scheduled_date, preferred_time_slot, location_address, contact_name, budget_amount, budget_type, is_emergency, project_id, tradie_id')
-        .eq('tradie_id', user.id)
-        .not('status', 'in', '(cancelled,declined)')
-        .or(`scheduled_date.gte.${startStr},scheduled_date.lte.${endStr}`)
-        .order('scheduled_date', { ascending: true }),
+      jobsQuery,
 
-      supabase
-        .from('business_team_members')
-        .select('id, invite_name, role, trade_specialty, status')
-        .eq('business_owner_id', user.id)
-        .eq('status', 'active'),
+      isTradie
+        ? supabase
+            .from('business_team_members')
+            .select('id, invite_name, role, trade_specialty, status')
+            .eq('business_owner_id', user.id)
+            .eq('status', 'active')
+        : Promise.resolve({ data: [] as TeamMember[], error: null }),
 
-      supabase
-        .from('job_team_assignments')
-        .select('*')
-        .eq('business_owner_id', user.id)
-        .gte('scheduled_date', startStr)
-        .lte('scheduled_date', endStr),
+      isTradie
+        ? supabase
+            .from('job_team_assignments')
+            .select('*')
+            .eq('business_owner_id', user.id)
+            .gte('scheduled_date', startStr)
+            .lte('scheduled_date', endStr)
+        : Promise.resolve({ data: [] as JobAssignment[], error: null }),
 
-      supabase
-        .from('availability_slots')
-        .select('*')
-        .eq('tradie_id', user.id)
-        .gte('start_time', start.toISOString())
-        .lte('start_time', end.toISOString()),
+      isTradie
+        ? supabase
+            .from('availability_slots')
+            .select('*')
+            .eq('tradie_id', user.id)
+            .gte('start_time', start.toISOString())
+            .lte('start_time', end.toISOString())
+        : Promise.resolve({ data: [] as AvailabilitySlot[], error: null }),
     ]);
 
-    // Fetch recurring sessions for this tradie and convert to pseudo-jobs for the calendar
+    // Fetch recurring sessions and convert to pseudo-jobs for the calendar
     const { data: recurringSessions } = await supabase
       .from('recurring_sessions')
-      .select('id, scheduled_date, status, recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(tradie_id, trade_category, service_subtype, description, location, preferred_time)')
-      .in('status', ['pending_confirmation', 'scheduled'])
+      .select('id, scheduled_date, status, recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(tradie_id, client_id, trade_category, service_subtype, description, location, preferred_time)')
+      .in('status', ['pending_confirmation', 'scheduled', 'completed'])
       .gte('scheduled_date', startStr)
       .lte('scheduled_date', endStr);
 
-    // Convert recurring sessions into Job-shaped objects (filter to this tradie)
+    // Filter sessions to the current user (tradie_id or client_id)
     const myRecurringSessions = (recurringSessions || []).filter((s) => {
-      const rj = s.recurring_job as { tradie_id: string | null } | null;
-      return rj?.tradie_id === user.id;
+      const rj = s.recurring_job as { tradie_id: string | null; client_id: string | null } | null;
+      return isTradie ? rj?.tradie_id === user.id : rj?.client_id === user.id;
     });
     const recurringPseudoJobs: Job[] = myRecurringSessions.map((s) => {
       const rj = s.recurring_job as { tradie_id: string | null; trade_category: string; service_subtype: string | null; description: string | null; location: string | null; preferred_time: string | null } | null;
@@ -333,8 +356,8 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
       ) : null;
       return {
         id: `recurring-${s.id}`,
-        description: `[${(rj?.service_subtype || rj?.trade_category || 'Recurring').toUpperCase()}] ${rj?.description?.split('\n')[0] || 'Recurring session'}`,
-        status: s.status === 'pending_confirmation' ? 'pending' : 'accepted',
+        description: `[${(rj?.service_subtype || rj?.trade_category || 'Ongoing').toUpperCase()}] ${rj?.description?.split('\n')[0] || 'Ongoing service'}`,
+        status: s.status === 'completed' ? 'completed' : s.status === 'pending_confirmation' ? 'pending' : 'accepted',
         scheduled_date: s.scheduled_date,
         preferred_time_slot: slot,
         location_address: rj?.location || null,
@@ -397,7 +420,7 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
   };
 
   const getJobsForDate = (date: Date): CalendarEntry[] => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = toLocalDateStr(date);
     const dayJobs = jobs.filter(j => j.scheduled_date === dateStr);
 
     const entriesForDate = dayJobs.map(job => {
@@ -436,9 +459,9 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
   };
 
   const getAvailabilityForDate = (date: Date): AvailabilitySlot[] => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = toLocalDateStr(date);
     return availabilitySlots.filter(slot => {
-      const slotDate = new Date(slot.start_time).toISOString().split('T')[0];
+      const slotDate = toLocalDateStr(new Date(slot.start_time));
       return slotDate === dateStr;
     });
   };
@@ -556,11 +579,13 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
                 const today = isToday(day);
                 const daySlots = getAvailabilityForDate(day);
                 const hasAvailable = daySlots.some(s => s.status === 'available');
+                const now = new Date();
+                const isPastDay = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 return (
-                  <div key={i} className={`flex flex-col ${today ? 'bg-primary-50/30' : hasAvailable ? 'bg-green-50/40' : ''}`}>
+                  <div key={i} className={`flex flex-col ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-primary-50/30' : hasAvailable ? 'bg-green-50/40' : ''}`}>
                     <div className={`px-2 py-3 text-center border-b border-gray-100 ${today ? 'bg-primary-50' : ''}`}>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">{day.toLocaleDateString('en-AU', { weekday: 'short' })}</p>
-                      <p className={`text-lg font-bold mt-0.5 ${today ? 'text-primary-600' : 'text-gray-900'}`}>{day.getDate()}</p>
+                      <p className={`text-lg font-bold mt-0.5 ${today ? 'text-primary-600' : isPastDay ? 'text-gray-400' : 'text-gray-900'}`}>{day.getDate()}</p>
                       {daySlots.length > 0 && (
                         <div className="flex justify-center gap-0.5 mt-1">
                           {daySlots.map(slot => (
@@ -680,11 +705,13 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
                   const today = isToday(day);
                   const daySlots = getAvailabilityForDate(day);
                   const hasAvailable = daySlots.some(s => s.status === 'available');
+                  const now = new Date();
+                  const isPastDay = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                   return (
-                    <div key={i} className={`min-h-[100px] p-2 ${today ? 'bg-primary-50/30' : hasAvailable ? 'bg-green-50/40 hover:bg-green-50/60' : 'hover:bg-gray-50/50'} transition-colors`}>
+                    <div key={i} className={`min-h-[100px] p-2 ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-primary-50/30' : hasAvailable ? 'bg-green-50/40 hover:bg-green-50/60' : 'hover:bg-gray-50/50'} transition-colors`}>
                       <div className="flex items-center gap-1 mb-1.5">
                         <p className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full ${
-                          today ? 'bg-warm-500 text-white' : 'text-gray-700'
+                          today ? 'bg-warm-500 text-white' : isPastDay ? 'text-gray-400' : 'text-gray-700'
                         }`}>
                           {day.getDate()}
                         </p>

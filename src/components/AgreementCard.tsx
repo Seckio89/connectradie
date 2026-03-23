@@ -15,6 +15,7 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
   const [showLogVisit, setShowLogVisit] = useState(false);
   const [monthlyStats, setMonthlyStats] = useState<MonthlyTotal | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [confirmEnd, setConfirmEnd] = useState(false);
 
   useEffect(() => {
     const now = new Date();
@@ -64,8 +65,8 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
                 </button>
                 {showMenu && (
                   <>
-                    <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-                    <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-20 py-1">
+                    <div className="fixed inset-0 z-10" onClick={() => { setShowMenu(false); setConfirmEnd(false); }} />
+                    <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20 py-1">
                       <button
                         onClick={async () => { await pauseAgreement(agreement.id); setShowMenu(false); onRefresh(); }}
                         className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
@@ -73,12 +74,32 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
                         <Pause className="w-3.5 h-3.5 text-gray-400" />
                         Pause
                       </button>
-                      <button
-                        onClick={async () => { if (confirm('End this service agreement?')) { await endAgreement(agreement.id); setShowMenu(false); onRefresh(); } }}
-                        className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                      >
-                        End Agreement
-                      </button>
+                      {!confirmEnd ? (
+                        <button
+                          onClick={() => setConfirmEnd(true)}
+                          className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                        >
+                          End Agreement
+                        </button>
+                      ) : (
+                        <div className="px-3 py-2 space-y-2">
+                          <p className="text-xs text-gray-600">Are you sure?</p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => { await endAgreement(agreement.id); setShowMenu(false); setConfirmEnd(false); onRefresh(); }}
+                              className="px-2.5 py-1 bg-red-500 text-white text-xs font-medium rounded-md hover:bg-red-600 transition-colors"
+                            >
+                              Yes, end it
+                            </button>
+                            <button
+                              onClick={() => setConfirmEnd(false)}
+                              className="text-xs text-gray-500 hover:text-gray-700 font-medium"
+                            >
+                              No
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
@@ -88,7 +109,7 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
         </div>
 
         {/* Rate & Schedule */}
-        <div className="flex items-center gap-3 mb-3 text-xs text-gray-500">
+        <div className="flex items-center gap-3 mb-2 text-xs text-gray-500">
           <span className="inline-flex items-center gap-1">
             <DollarSign className="w-3 h-3" />
             ${agreement.rate_per_visit}/visit
@@ -99,6 +120,13 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
             {agreement.typical_day && ` (${agreement.typical_day})`}
           </span>
         </div>
+
+        {/* Address */}
+        {agreement.address && (
+          <p className="text-xs text-gray-400 mb-3 truncate">
+            {[agreement.address, agreement.suburb, agreement.state].filter(Boolean).join(', ')}
+          </p>
+        )}
 
         {/* This Month Summary */}
         {monthlyStats && (
@@ -120,10 +148,10 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
             <>
               <button
                 onClick={() => setShowLogVisit(true)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-emerald-300 text-emerald-700 text-xs font-medium rounded-lg hover:bg-emerald-50 transition-colors"
               >
-                <Plus className="w-3.5 h-3.5" />
-                Log Visit
+                <Plus className="w-3 h-3" />
+                Log Extra Visit
               </button>
               {onGenerateInvoice && (
                 <button

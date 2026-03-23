@@ -816,10 +816,12 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                 {Array.from({ length: calStartDay }).map((_, i) => <div key={`e-${i}`} />)}
                 {Array.from({ length: calDaysInMonth }).map((_, i) => {
                   const day = i + 1;
-                  const isToday = day === new Date().getDate() && calMonth.getMonth() === new Date().getMonth() && calMonth.getFullYear() === new Date().getFullYear();
+                  const now = new Date();
+                  const isToday = day === now.getDate() && calMonth.getMonth() === now.getMonth() && calMonth.getFullYear() === now.getFullYear();
                   const isWeekend = new Date(calMonth.getFullYear(), calMonth.getMonth(), day).getDay() % 6 === 0;
+                  const isPast = new Date(calMonth.getFullYear(), calMonth.getMonth(), day) < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                   return (
-                    <div key={day} className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs ${isToday ? 'bg-primary-100 border border-primary-300 font-bold text-primary-700' : isWeekend ? 'bg-gray-50 text-gray-400' : 'text-gray-700'}`}>
+                    <div key={day} className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs ${isPast ? 'opacity-50' : ''} ${isToday ? 'bg-primary-100 border border-primary-300 font-bold text-primary-700' : isWeekend ? 'bg-gray-50 text-gray-400' : isPast ? 'text-gray-400' : 'text-gray-700'}`}>
                       <span>{day}</span>
                       {allMembers.length > 0 && !isWeekend && (
                         <div className="flex gap-0.5 mt-0.5">

@@ -1,15 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
+import { calculatePlatformFee, calculateProcessingFeeCents, resolveTradieTier } from "../_shared/pricing.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
 };
-
-const PROCESSING_FEE_RATE = 0.02;
 
 function errorJson(message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
@@ -109,6 +108,23 @@ Deno.serve(async (req: Request) => {
     if (sessionsError) return errorJson(sessionsError.message, 500);
 
     const allSessions = sessions ?? [];
+
+    // Prevent duplicate invoices for the same billing period
+    const { data: existingInvoice } = await supabase
+      .from("recurring_invoices")
+      .select("id, status")
+      .eq("recurring_job_id", recurringJobId)
+      .eq("billing_period_start", billingPeriodStart)
+      .not("status", "eq", "cancelled")
+      .maybeSingle();
+
+    if (existingInvoice) {
+      return errorJson(
+        `An invoice already exists for this period (${existingInvoice.status}). Cancel it first to regenerate.`,
+        409,
+      );
+    }
+
     const completedSessions = allSessions.filter(
       (s: { status: string }) => s.status === "completed",
     );
@@ -155,8 +171,20 @@ Deno.serve(async (req: Request) => {
       customerId = existingSub.stripe_customer_id;
     }
 
+    // Look up tradie subscription tier for platform fee
+    const { data: tradieSubRecord } = await supabase
+      .from("tradie_details")
+      .select("subscription_tier")
+      .eq("profile_id", job.tradie_id)
+      .maybeSingle();
+
+    const tradieSubscriptionTier = resolveTradieTier(tradieSubRecord?.subscription_tier);
+
+    const platformFeeDollars = calculatePlatformFee(total, tradieSubscriptionTier);
+    const platformFeeCents = Math.round(platformFeeDollars * 100);
+
     const totalCents = Math.round(total * 100);
-    const processingFee = Math.round(totalCents * PROCESSING_FEE_RATE);
+    const processingFee = calculateProcessingFeeCents(totalCents);
 
     // Build month label for invoice
     const periodStart = new Date(billingPeriodStart + "T00:00:00");
@@ -213,8 +241,8 @@ Deno.serve(async (req: Request) => {
       customer_email: customerId ? undefined : homeowner?.email,
       line_items: lineItems,
       mode: "payment",
-      success_url: `${siteUrl}/dashboard?invoice_paid=true`,
-      cancel_url: `${siteUrl}/dashboard?invoice_cancelled=true`,
+      success_url: `${siteUrl}/payments?invoice_paid=true`,
+      cancel_url: `${siteUrl}/payments?invoice_cancelled=true`,
       metadata: {
         type: "recurring_invoice",
         recurring_job_id: recurringJobId,
@@ -222,6 +250,9 @@ Deno.serve(async (req: Request) => {
         billing_period_end: billingPeriodEnd,
         homeowner_id: job.client_id,
         tradie_id: job.tradie_id ?? "",
+        platform_fee: String(platformFeeCents),
+        processing_fee: String(processingFee),
+        tradie_tier: tradieSubscriptionTier,
       },
     });
 
@@ -240,6 +271,7 @@ Deno.serve(async (req: Request) => {
         extras_total: extrasTotal,
         total,
         status: "sent",
+        stripe_checkout_session_id: checkoutSession.id,
         stripe_payment_intent_id: checkoutSession.payment_intent as string | null,
         stripe_payment_url: checkoutSession.url,
         due_date: dueDateStr,
@@ -261,7 +293,7 @@ Deno.serve(async (req: Request) => {
     await supabase.from("notifications").insert({
       user_id: job.client_id,
       type: "invoice_ready",
-      message: `Your ${monthLabel} invoice is ready — ${totalFormatted} due by ${new Date(dueDateStr).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}`,
+      message: `Your ${tradeLabel} invoice for ${monthLabel} is ready — ${totalFormatted} (${completedSessions.length} session${completedSessions.length !== 1 ? 's' : ''}${extraSessions.length > 0 ? ` + ${extraSessions.length} extra` : ''}) due by ${new Date(dueDateStr).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}`,
       metadata: {
         invoice_id: invoice.id,
         recurring_job_id: recurringJobId,

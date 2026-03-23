@@ -77,7 +77,13 @@ export default function Search() {
   const [savedTradieIds, setSavedTradieIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [tradeFilter, setTradeFilter] = useState(searchParams.get('trade') || '');
+  const rawTrade = searchParams.get('trade') || '';
+  const normalizedTrade = rawTrade
+    ? TRADE_OPTIONS.find(
+        t => t.value === rawTrade || t.label.toLowerCase() === rawTrade.toLowerCase()
+      )?.value || rawTrade
+    : '';
+  const [tradeFilter, setTradeFilter] = useState(normalizedTrade);
   const [postcodeFilter, setPostcodeFilter] = useState(searchParams.get('postcode') || '');
   const [postcodeQuery, setPostcodeQuery] = useState(searchParams.get('postcode') || '');
   const [chatTradie, setChatTradie] = useState<TradieWithDetails | null>(null);
@@ -376,6 +382,8 @@ export default function Search() {
     }
 
     const isSaved = savedTradieIds.includes(tradie.id);
+    const isPro = tradie.tradie_details?.subscription_tier === 'pro' || tradie.tradie_details?.subscription_tier === 'business';
+    const displayName = isPro ? (tradie.tradie_details?.business_name || tradie.full_name) : redactName(tradie.full_name);
 
     if (isSaved) {
       await supabase
@@ -385,15 +393,14 @@ export default function Search() {
         .eq('tradie_id', tradie.id);
 
       setSavedTradieIds(savedTradieIds.filter((id) => id !== tradie.id));
-      const isPro = tradie.tradie_details?.subscription_tier === 'pro' || tradie.tradie_details?.subscription_tier === 'business';
-      showToast(`${isPro ? (tradie.tradie_details?.business_name || tradie.full_name) : redactName(tradie.full_name)} removed from saved`);
+      showToast(`${displayName} removed from saved`);
     } else {
       await supabase
         .from('my_trades')
         .insert({ client_id: user.id, tradie_id: tradie.id });
 
       setSavedTradieIds([...savedTradieIds, tradie.id]);
-      showToast(`${isPro ? (tradie.tradie_details?.business_name || tradie.full_name) : redactName(tradie.full_name)} saved!`);
+      showToast(`${displayName} saved!`);
     }
   };
 

@@ -28,7 +28,8 @@ import {
   TrendingUp,
   Star,
   MapPin,
-  FileText,
+  Archive,
+  Zap,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getAuthHeaders } from '../lib/edgeFn';
@@ -48,13 +49,8 @@ import CollapsibleSection from '../components/CollapsibleSection';
 import { isPro, FREE_LIMITS, getMonthlyJobAccepts, getMonthlyLeadUnlocks } from '../lib/subscription';
 import UserTradeBadges from '../components/UserTradeBadges';
 import WelcomeGuide from '../components/WelcomeGuide';
-import RecurringSessionCard from '../components/RecurringSessionCard';
-import RecurringInvoiceCard from '../components/RecurringInvoiceCard';
-import type { RecurringInvoice } from '../components/RecurringInvoiceCard';
-import { getTradieUpcomingSessions, cancelRecurringJob } from '../lib/recurringJobs';
+import { getTradieUpcomingSessions } from '../lib/recurringJobs';
 import type { RecurringSession } from '../lib/recurringJobs';
-import AgreementCard from '../components/AgreementCard';
-import GenerateInvoiceModal from '../components/GenerateInvoiceModal';
 import { getActiveAgreements } from '../lib/ongoingServices';
 import type { ServiceAgreement } from '../types/database';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
@@ -166,6 +162,7 @@ export default function TradieDashboard() {
     fetchJobs,
     fetchUnlockedJobs,
     deleteJob,
+    archiveJob,
     isJobUnlocked,
     activeJobCount,
   } = useDashboardJobs({
@@ -239,24 +236,56 @@ export default function TradieDashboard() {
   // Recurring sessions
   const [recurringSessions, setRecurringSessions] = useState<(RecurringSession & { recurring_job?: { trade_category: string; service_subtype: string | null; description: string; client_id: string; preferred_time: string | null } })[]>([]);
   const [recurringLoading, setRecurringLoading] = useState(false);
-  const [tradieInvoices, setTradieInvoices] = useState<RecurringInvoice[]>([]);
-
   // Ongoing service agreements
   const [agreements, setAgreements] = useState<(ServiceAgreement & { client?: { full_name: string }; tradie?: { full_name: string } })[]>([]);
-  const [invoiceAgreement, setInvoiceAgreement] = useState<(ServiceAgreement & { client?: { full_name: string } }) | null>(null);
 
-  const fetchTradieInvoices = useCallback(async () => {
-    if (!user) return;
+  // New leads matching tradie's trade categories
+  const [newLeads, setNewLeads] = useState<Job[]>([]);
+
+  const fetchNewLeads = useCallback(async () => {
+    if (!user || !profile) return;
     try {
-      const { data } = await supabase
-        .from('recurring_invoices')
-        .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, agreed_price)')
-        .eq('tradie_id', user.id)
+      const trades = [...(profile.declared_trades || []), ...(profile.verified_trades || [])];
+      if (trades.length === 0) return;
+      const uniqueTrades = [...new Set(trades)];
+      // Category is stored as [category] prefix in description, e.g. "[cleaner] Mop floors..."
+      // Build an OR filter matching any of the tradie's trade categories
+      const descriptionFilters = uniqueTrades
+        .map((t) => `description.ilike.[${t}]%`)
+        .join(',');
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('status', 'pending')
+        .is('tradie_id', null)
+        .is('archived_at', null)
+        .or(descriptionFilters)
         .order('created_at', { ascending: false })
-        .limit(6);
-      setTradieInvoices((data ?? []) as unknown as RecurringInvoice[]);
-    } catch { /* ignore */ }
-  }, [user]);
+        .limit(20);
+      if (error) throw error;
+      if (!data || data.length === 0) { setNewLeads([]); return; }
+
+      // Exclude jobs the tradie has already quoted on (any status incl. withdrawn)
+      const jobIds = data.map(j => j.id);
+      const { data: existingQuotes } = await supabase
+        .from('quotes')
+        .select('job_id')
+        .eq('tradie_id', user.id)
+        .in('job_id', jobIds);
+      const quotedIds = new Set((existingQuotes || []).map(q => q.job_id));
+
+      // Also exclude leads the tradie dismissed on the Leads page
+      let dismissedIds = new Set<string>();
+      try {
+        const stored = localStorage.getItem('dismissed_leads');
+        if (stored) dismissedIds = new Set(JSON.parse(stored));
+      } catch { /* ignore */ }
+
+      setNewLeads(data.filter(j => !quotedIds.has(j.id) && !dismissedIds.has(j.id)).slice(0, 5));
+    } catch (err) {
+      console.error('fetchNewLeads error:', err);
+    }
+  }, [user, profile]);
 
   const fetchRecurringSessions = useCallback(async () => {
     if (!user) return;
@@ -384,6 +413,7 @@ export default function TradieDashboard() {
           if (pushStatus === 'granted' && profile?.push_enabled) {
             showUrgentLeadNotification(newJob);
           }
+          fetchNewLeads();
           showToast('New urgent lead posted! Check your leads.');
         }
       )
@@ -405,7 +435,7 @@ export default function TradieDashboard() {
       fetchConversations();
       fetchCalendarIntegration();
       fetchRecurringSessions();
-      fetchTradieInvoices();
+      fetchNewLeads();
       getActiveAgreements(user.id, 'tradie').then(setAgreements).catch(() => { /* ignore */ });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -696,7 +726,7 @@ export default function TradieDashboard() {
           const inProgressJobs = jobs.filter(j => j.status === 'in_progress');
           const unreadConvos = conversations.filter(c => c.messages.some(m => m.receiver_id === user?.id && !m.read_at));
           const pendingConfirmations = recurringSessions.filter(s => s.status === 'pending_confirmation');
-          if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0) return (
+          if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0 && newLeads.length === 0) return (
             <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mt-6 mb-2">
               <div className="flex items-center gap-2 text-emerald-700">
                 <CheckCircle2 className="w-5 h-5" />
@@ -713,15 +743,24 @@ export default function TradieDashboard() {
                   Your Next Steps
                 </p>
                 <span className="bg-amber-100 text-amber-700 text-xs font-medium px-2 py-0.5 rounded-full">
-                  {pendingJobs.length + inProgressJobs.length + unreadConvos.length + pendingConfirmations.length}
+                  {newLeads.length + pendingJobs.length + inProgressJobs.length + unreadConvos.length + pendingConfirmations.length}
                 </span>
               </div>
               <div className="space-y-2">
+                {newLeads.length > 0 && (
+                  <Link to="/work" className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Zap className="w-4 h-4 text-amber-500" />
+                      <span className="text-sm text-gray-700">{newLeads.length} new lead{newLeads.length !== 1 ? 's' : ''} matching your trades</span>
+                    </div>
+                    <span className="text-sm font-medium text-amber-700">View &rarr;</span>
+                  </Link>
+                )}
                 {pendingConfirmations.length > 0 && (
                   <a href="#recurring-jobs" className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors">
                     <div className="flex items-center gap-3">
                       <RefreshCw className="w-4 h-4 text-purple-500" />
-                      <span className="text-sm text-gray-700">{pendingConfirmations.length} recurring session{pendingConfirmations.length !== 1 ? 's' : ''} need{pendingConfirmations.length === 1 ? 's' : ''} confirmation</span>
+                      <span className="text-sm text-gray-700">{pendingConfirmations.length} ongoing service session{pendingConfirmations.length !== 1 ? 's' : ''} need{pendingConfirmations.length === 1 ? 's' : ''} confirmation</span>
                     </div>
                     <span className="text-sm font-medium text-amber-700">Confirm &rarr;</span>
                   </a>
@@ -771,6 +810,61 @@ export default function TradieDashboard() {
             </div>
           );
         })()}
+
+        {/* New Leads */}
+        {newLeads.length > 0 && (
+          <div className="bg-white rounded-2xl border border-amber-200 p-5 mt-6 mb-2 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">New Leads</h3>
+                  <p className="text-xs text-gray-500">Jobs matching your trades</p>
+                </div>
+              </div>
+              <Link to="/work" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                View all &rarr;
+              </Link>
+            </div>
+            <div className="space-y-2">
+              {newLeads.map(lead => {
+                const isUrgent = !!(lead as Record<string, unknown>).is_flash_boost;
+                return (
+                  <Link
+                    key={lead.id}
+                    to="/work"
+                    className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
+                      isUrgent ? 'bg-orange-50 border border-orange-200 hover:bg-orange-100' : 'bg-gray-50 hover:bg-gray-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      {isUrgent ? (
+                        <Zap className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                      ) : (
+                        <Briefcase className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm text-gray-800 font-medium truncate">
+                          {lead.title || lead.trade_category?.replace(/_/g, ' ') || 'New Job'}
+                          {isUrgent && <span className="ml-2 text-xs text-orange-600 font-semibold">URGENT</span>}
+                        </p>
+                        {lead.location_address && (
+                          <p className="text-xs text-gray-500 truncate flex items-center gap-1">
+                            <MapPin className="w-3 h-3 flex-shrink-0" />
+                            {lead.location_address}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-sm font-medium text-emerald-600 flex-shrink-0">Quote &rarr;</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Tabbed Content */}
         <div className="bg-white rounded-2xl border border-gray-200 mb-6 shadow-sm mt-6 ring-1 ring-primary-100/50" data-tour="jobs-tab">
@@ -938,7 +1032,7 @@ export default function TradieDashboard() {
                           return (
                             <div
                               key={job.id}
-                              onClick={() => navigate(`/work?job=${job.id}`)}
+                              onClick={() => navigate(job.title?.includes('Recurring Service') ? '/schedule' : '/work?tab=active')}
                               className="flex items-center gap-3 px-4 py-3 border border-gray-100 rounded-lg bg-gray-50/50 hover:bg-white hover:border-primary-200 cursor-pointer transition-all group"
                             >
                               <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -958,6 +1052,13 @@ export default function TradieDashboard() {
                                   )}
                                 </div>
                               </div>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); archiveJob(job.id); }}
+                                className="p-1.5 text-gray-300 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
+                                title="Archive job"
+                              >
+                                <Archive className="w-3.5 h-3.5" />
+                              </button>
                               <span className="text-xs text-gray-400 group-hover:text-primary-500 transition-colors flex-shrink-0">
                                 View &rarr;
                               </span>
@@ -1277,7 +1378,9 @@ export default function TradieDashboard() {
                       const daySlots = getSlotsForDate(day);
                       const hasAvailable = daySlots.some((s) => s.status === 'available');
                       const hasBooked = daySlots.some((s) => s.status === 'booked');
-                      const isToday = new Date().getDate() === day && new Date().getMonth() === currentDate.getMonth() && new Date().getFullYear() === currentDate.getFullYear();
+                      const now = new Date();
+                      const isToday = now.getDate() === day && now.getMonth() === currentDate.getMonth() && now.getFullYear() === currentDate.getFullYear();
+                      const isPast = new Date(currentDate.getFullYear(), currentDate.getMonth(), day) < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                       const isSelected = selectedDay === day;
                       const availableCount = daySlots.filter((s) => s.status === 'available').length;
                       const bookedCount = daySlots.filter((s) => s.status === 'booked').length;
@@ -1294,6 +1397,7 @@ export default function TradieDashboard() {
                           aria-pressed={isSelected}
                           className={`aspect-square rounded-lg p-1 text-sm transition-all min-w-[40px] min-h-[40px] ${
                             isSelected ? 'bg-warm-500 text-white ring-2 ring-primary-600 ring-offset-2'
+                            : isPast ? 'opacity-50 hover:opacity-75'
                             : hasAvailable && hasBooked ? 'bg-gradient-to-br from-green-50 to-red-50 hover:from-green-100 hover:to-red-100'
                             : hasAvailable ? 'bg-green-50 hover:bg-green-100'
                             : hasBooked ? 'bg-red-50 hover:bg-red-100'
@@ -1302,7 +1406,7 @@ export default function TradieDashboard() {
                           }`}
                         >
                           <div className="flex flex-col items-center">
-                            <span className={`font-medium ${isSelected ? 'text-white' : isToday ? 'text-primary-600 font-bold' : 'text-gray-700'}`}>{day}</span>
+                            <span className={`font-medium ${isPast ? 'text-gray-400' : isSelected ? 'text-white' : isToday ? 'text-primary-600 font-bold' : 'text-gray-700'}`}>{day}</span>
                             <div className="flex gap-1 mt-0.5">
                               {hasAvailable && <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-green-300' : 'bg-green-500'}`} />}
                               {hasBooked && <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-red-300' : 'bg-red-500'}`} />}
@@ -1544,74 +1648,28 @@ export default function TradieDashboard() {
           </div>
         )}
 
-        {/* Ongoing Services — only show when there are agreements */}
-        {agreements.length > 0 && (
-          <div id="ongoing-services" className="mt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-gray-400" />
-              Ongoing Services
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {agreements.map((agreement) => (
-                <AgreementCard
-                  key={agreement.id}
-                  agreement={agreement}
-                  userRole="tradie"
-                  onRefresh={() => getActiveAgreements(user!.id, 'tradie').then(setAgreements).catch(() => { /* ignore */ })}
-                  onGenerateInvoice={(a) => setInvoiceAgreement(a as typeof agreements[0])}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Recurring Jobs — only show when there are sessions */}
-        {recurringSessions.length > 0 && (
-          <div id="recurring-jobs" className="mt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <RefreshCw className="w-5 h-5 text-gray-400" />
-              Recurring Jobs
-            </h2>
-            <div className="space-y-3">
-              {recurringSessions.map((s) => (
-                <RecurringSessionCard
-                  key={s.id}
-                  session={s}
-                  recurringJobId={s.recurring_job_id}
-                  userRole="tradie"
-                  tradieId={user?.id}
-                  clientId={s.recurring_job?.client_id}
-                  preferredTime={s.recurring_job?.preferred_time ?? undefined}
-                  agreedPrice={s.recurring_job?.agreed_price}
-                  onUpdate={fetchRecurringSessions}
-                  onCancelService={async () => {
-                    if (!confirm('End this recurring service? The client will be notified.')) return;
-                    try {
-                      await cancelRecurringJob(s.recurring_job_id, 'tradie');
-                      fetchRecurringSessions();
-                      showToast('Recurring service ended');
-                    } catch {
-                      showToast('Failed to end service', true);
-                    }
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Invoices — only show when there are invoices */}
-        {tradieInvoices.length > 0 && (
+        {/* Services quick-link — full management moved to Schedule > Services */}
+        {(agreements.length > 0 || recurringSessions.length > 0) && (
           <div className="mt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-gray-400" />
-              Invoices
-            </h2>
-            <div className="space-y-3">
-              {tradieInvoices.map((inv) => (
-                <RecurringInvoiceCard key={inv.id} invoice={inv} userRole="tradie" />
-              ))}
-            </div>
+            <Link
+              to="/schedule"
+              className="flex items-center justify-between bg-white rounded-xl border border-gray-200 p-4 hover:border-emerald-300 hover:bg-emerald-50/30 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
+                  <RefreshCw className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Ongoing Services</p>
+                  <p className="text-xs text-gray-500">
+                    {agreements.length > 0 && `${agreements.length} regular client${agreements.length !== 1 ? 's' : ''}`}
+                    {agreements.length > 0 && recurringSessions.length > 0 && ' · '}
+                    {recurringSessions.length > 0 && `${recurringSessions.length} upcoming visit${recurringSessions.length !== 1 ? 's' : ''}`}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-emerald-600 transition-colors" />
+            </Link>
           </div>
         )}
 
@@ -1659,8 +1717,8 @@ export default function TradieDashboard() {
         {showPayoutBanner && (
           <div className="mt-6 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
             <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-            <span className="text-sm font-semibold text-green-800">95% Payout (5% Platform Fee)</span>
-            <span className="text-sm text-green-600 flex-1">- Half the fee of free users. You keep more of every job.</span>
+            <span className="text-sm font-semibold text-green-800">Pro Member — Lowest Fees</span>
+            <span className="text-sm text-green-600 flex-1">You're keeping more of every job with Pro.</span>
             <button
               onClick={() => { localStorage.setItem('dismissedPayoutBanner', 'true'); setShowPayoutBanner(false); }}
               className="p-1 text-green-500 hover:text-green-700 rounded transition-colors flex-shrink-0"
@@ -1821,14 +1879,6 @@ export default function TradieDashboard() {
 
       <SubscriptionModal isOpen={showSubscriptionModal} onClose={() => setShowSubscriptionModal(false)} />
 
-      {invoiceAgreement && (
-        <GenerateInvoiceModal
-          isOpen={!!invoiceAgreement}
-          agreement={invoiceAgreement}
-          onClose={() => setInvoiceAgreement(null)}
-          onSuccess={() => { setInvoiceAgreement(null); getActiveAgreements(user!.id, 'tradie').then(setAgreements).catch(() => { /* ignore */ }); }}
-        />
-      )}
 
       <style>{`
         @keyframes slide-up {

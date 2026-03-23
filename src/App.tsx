@@ -335,7 +335,7 @@ function AppRoutes() {
       <Route
         path="/schedule"
         element={
-          <ProtectedRoute requireTradie>
+          <ProtectedRoute>
             <Schedule />
           </ProtectedRoute>
         }

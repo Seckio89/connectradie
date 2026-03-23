@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { TIER_PRICING, getCurrentTier, type SubscriptionTier } from '../lib/subscription';
+import { TIER_PRICING, PLATFORM_FEES, getCurrentTier, type SubscriptionTier } from '../lib/subscription';
 import { createCheckoutSession, cancelSubscription } from '../lib/stripe';
 
 interface SubscriptionModalProps {
@@ -39,15 +39,13 @@ const FREE_FEATURES = [
   { text: 'Unlimited lead unlocks', icon: Unlock },
   { text: 'Messaging with clients', icon: MessageSquare },
   { text: 'Basic profile listing', icon: Users },
-  { text: '10% platform fee on payments', icon: Percent },
   { text: 'Reviews & ratings', icon: Star },
   { text: 'Verification badges', icon: Shield },
-  { text: 'No per-lead fees or lock-in contracts', icon: Check },
+  { text: 'No per-lead fees or lock-in', icon: Check },
 ];
 
 const PRO_FEATURES = [
   { text: 'Everything in Free, plus:', icon: Check, highlight: false },
-  { text: '5% platform fee — save 50%', icon: Percent, highlight: true },
   { text: 'Business name shown to clients', icon: BadgeCheck, highlight: true },
   { text: 'Priority in search results', icon: TrendingUp, highlight: true },
   { text: 'Verified Pro badge', icon: BadgeCheck, highlight: true },
@@ -58,6 +56,8 @@ const PRO_FEATURES = [
   { text: 'Team management', icon: Users, highlight: false },
   { text: 'Advanced analytics', icon: TrendingUp, highlight: false },
 ];
+
+// Pro+ features kept for future use — not shown in modal yet
 
 export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModalProps) {
   const { user, profile, tradieDetails, refreshProfile } = useAuth();
@@ -227,11 +227,23 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
   if (!isOpen) return null;
 
   const showTestModeButton = trainingModeEnabled;
-  const annualSavingsPro = (TIER_PRICING.pro.monthly - TIER_PRICING.pro.annualMonthly) * 12;
+  const annualSavingsPro = Math.round((TIER_PRICING.pro.monthly - TIER_PRICING.pro.annualMonthly) * 12);
 
   const tierLabel = (tier: SubscriptionTier) => {
+    if (tier === 'pro_plus') return 'Pro+';
     if (tier === 'pro') return 'Pro';
     return 'Free';
+  };
+
+  const feeDescription = (tier: SubscriptionTier) => {
+    const config = PLATFORM_FEES[tier];
+    if (config.type === 'flat') {
+      return `${(config.rate ?? 0) * 100}% flat fee`;
+    }
+    const tiers = config.tiers ?? [];
+    const highest = Math.round(tiers[0]?.rate * 100);
+    const lowest = Math.round(tiers[tiers.length - 1]?.rate * 100);
+    return `${highest}%–${lowest}% sliding fee`;
   };
 
   return (
@@ -266,7 +278,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
               Your membership has been cancelled. You'll revert to the free plan at the end of your billing period.
             </p>
             <p className="text-sm text-gray-500 mb-8 max-w-sm">
-              Free plan: unlimited job accepts with 10% platform fee.
+              You'll still have access to unlimited job accepts on the free plan.
               Upgrade again anytime.
             </p>
             <button
@@ -391,7 +403,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                 currentTier === 'free' ? 'border-primary-200 bg-primary-50/30' : 'border-gray-200'
               }`}>
                 {currentTier === 'free' && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-warm-500 text-white text-xs font-bold rounded-full">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-warm-500 text-white text-xs font-bold rounded-full whitespace-nowrap">
                     Current Plan
                   </div>
                 )}
@@ -407,6 +419,15 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     <span className="text-gray-500 text-sm">/mo</span>
                   </div>
                   <p className="text-xs text-gray-500 mt-1.5">Get listed — no per-lead fees</p>
+                </div>
+
+                {/* Fee summary */}
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                  <div className="flex items-center gap-1.5">
+                    <Percent className="w-3.5 h-3.5 text-gray-500" />
+                    <span className="text-xs font-medium text-gray-700">Low platform fees on completed jobs</span>
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-1">Fees decrease as your job values grow. Upgrade to Pro to save more.</p>
                 </div>
 
                 <div className="space-y-2.5 flex-1">
@@ -466,6 +487,15 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                   {billingCycle === 'monthly' && (
                     <p className="text-xs text-gray-500 mt-1.5">or ${TIER_PRICING.pro.annualMonthly}/mo billed annually</p>
                   )}
+                </div>
+
+                {/* Fee summary */}
+                <div className="mb-4 p-3 bg-warm-50 rounded-lg border border-warm-100">
+                  <div className="flex items-center gap-1.5">
+                    <Percent className="w-3.5 h-3.5 text-warm-600" />
+                    <span className="text-xs font-medium text-warm-700">Lowest platform fees — keep more of every job</span>
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-1">Up to 50% lower fees than free. The bigger the job, the more you save.</p>
                 </div>
 
                 <div className="space-y-2.5 flex-1">

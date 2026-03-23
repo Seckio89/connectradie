@@ -14,6 +14,7 @@ import {
   Info,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { PRICING_CONFIG } from '../config/pricing';
 import DashboardLayout from '../components/DashboardLayout';
 import Breadcrumbs from '../components/Breadcrumbs';
 
@@ -43,11 +44,11 @@ interface SubscriptionRow {
 
 type TabKey = 'client' | 'tradie' | 'revenue' | 'subscriptions';
 
-// Fee structure
-const PLATFORM_FEE_RATE = 0.10; // 10% for free-tier tradies
-const PROCESSING_FEE_RATE = 0.02; // 2% processing
-const STRIPE_FEE_RATE = 0.0175; // 1.75%
-const STRIPE_FEE_FIXED = 30; // 30 cents in cents
+// Fee structure — from PRICING_CONFIG (src/config/pricing.ts)
+const STRIPE_FEE_RATE = PRICING_CONFIG.processing.stripePercentage; // 1.75%
+const STRIPE_FEE_FIXED = Math.round(PRICING_CONFIG.processing.stripeFixed * 100); // 30 cents in cents
+const PLATFORM_MARGIN_RATE = PRICING_CONFIG.processing.platformProcessingMargin; // 1.2%
+const DEFAULT_PLATFORM_FEE_RATE = 0.10; // Free-tier base rate for aggregate estimates
 
 export default function AdminPayments() {
   const [payments, setPayments] = useState<PaymentRow[]>([]);
@@ -104,25 +105,25 @@ export default function AdminPayments() {
   const completedThisMonth = completedPayments.filter(p => new Date(p.created_at) >= monthStart);
   const grossThisMonth = completedThisMonth.reduce((sum, p) => sum + p.amount, 0);
 
-  // Platform revenue = processing fee (2%) + platform fee (10% for free tier)
-  // For simplicity, assume all are free-tier (pro tradies would be 0% platform fee)
-  const totalPlatformFees = Math.round(totalGross * PLATFORM_FEE_RATE);
-  const totalProcessingFees = Math.round(totalGross * PROCESSING_FEE_RATE);
+  // Platform revenue = platform fee (varies by tier) + platform processing margin (1.2%)
+  // For aggregate display, use free-tier base rate (approximate)
+  const totalPlatformFees = Math.round(totalGross * DEFAULT_PLATFORM_FEE_RATE);
+  const totalPlatformMargin = Math.round(totalGross * PLATFORM_MARGIN_RATE);
   const totalStripeFees = completedPayments.reduce(
     (sum, p) => sum + Math.round(p.amount * STRIPE_FEE_RATE) + STRIPE_FEE_FIXED,
     0
   );
-  const totalConnecTradieRevenue = totalPlatformFees + totalProcessingFees;
-  const totalTradiePayout = totalGross - totalPlatformFees - totalProcessingFees - totalStripeFees;
+  const totalConnecTradieRevenue = totalPlatformFees + totalPlatformMargin;
+  const totalTradiePayout = totalGross - totalPlatformFees - totalPlatformMargin - totalStripeFees;
 
-  const monthPlatformFees = Math.round(grossThisMonth * PLATFORM_FEE_RATE);
-  const monthProcessingFees = Math.round(grossThisMonth * PROCESSING_FEE_RATE);
+  const monthPlatformFees = Math.round(grossThisMonth * DEFAULT_PLATFORM_FEE_RATE);
+  const monthPlatformMargin = Math.round(grossThisMonth * PLATFORM_MARGIN_RATE);
   const monthStripeFees = completedThisMonth.reduce(
     (sum, p) => sum + Math.round(p.amount * STRIPE_FEE_RATE) + STRIPE_FEE_FIXED,
     0
   );
-  const monthConnecTradieRevenue = monthPlatformFees + monthProcessingFees;
-  const monthTradiePayout = grossThisMonth - monthPlatformFees - monthProcessingFees - monthStripeFees;
+  const monthConnecTradieRevenue = monthPlatformFees + monthPlatformMargin;
+  const monthTradiePayout = grossThisMonth - monthPlatformFees - monthPlatformMargin - monthStripeFees;
 
   const activeSubscriptions = subscriptions.filter(s => s.status === 'active');
 
@@ -267,15 +268,15 @@ export default function AdminPayments() {
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Fee Breakdown (All Time)</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
-                <p className="text-xs text-gray-500">Platform Fee (10%)</p>
+                <p className="text-xs text-gray-500">Platform Fee (varies by tier)</p>
                 <p className="text-sm font-bold text-gray-900">{formatCurrency(totalPlatformFees)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Processing Fee (2%)</p>
-                <p className="text-sm font-bold text-gray-900">{formatCurrency(totalProcessingFees)}</p>
+                <p className="text-xs text-gray-500">Processing Margin ({(PLATFORM_MARGIN_RATE * 100).toFixed(1)}%)</p>
+                <p className="text-sm font-bold text-gray-900">{formatCurrency(totalPlatformMargin)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Stripe Fees (1.75% + $0.30)</p>
+                <p className="text-xs text-gray-500">Stripe Fees ({(STRIPE_FEE_RATE * 100).toFixed(2)}% + $0.30)</p>
                 <p className="text-sm font-bold text-gray-900">{formatCurrency(totalStripeFees)}</p>
               </div>
               <div>
@@ -441,7 +442,7 @@ export default function AdminPayments() {
                 <div className="flex items-start gap-2 px-3 py-2.5 bg-blue-50 border border-blue-200 rounded-lg">
                   <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-blue-800 leading-relaxed">
-                    Estimated payouts after <strong>platform fee (10%)</strong>, <strong>processing fee (2%)</strong>, and <strong>Stripe fee (1.75% + $0.30)</strong> are deducted.
+                    Estimated payouts after <strong>platform fee (varies by tier)</strong>, <strong>processing margin (1.2%)</strong>, and <strong>Stripe fee (1.75% + $0.30)</strong> are deducted.
                   </p>
                 </div>
               </div>
@@ -470,7 +471,7 @@ export default function AdminPayments() {
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {completedPayments.map(payment => {
-                          const fees = Math.round(payment.amount * (PLATFORM_FEE_RATE + PROCESSING_FEE_RATE + STRIPE_FEE_RATE)) + STRIPE_FEE_FIXED;
+                          const fees = Math.round(payment.amount * (DEFAULT_PLATFORM_FEE_RATE + PLATFORM_MARGIN_RATE + STRIPE_FEE_RATE)) + STRIPE_FEE_FIXED;
                           const net = payment.amount - fees;
                           return (
                             <tr key={payment.id} className="hover:bg-gray-50/50">
@@ -498,7 +499,7 @@ export default function AdminPayments() {
                   {/* Mobile */}
                   <div className="md:hidden space-y-3 p-4">
                     {completedPayments.map(payment => {
-                      const fees = Math.round(payment.amount * (PLATFORM_FEE_RATE + PROCESSING_FEE_RATE + STRIPE_FEE_RATE)) + STRIPE_FEE_FIXED;
+                      const fees = Math.round(payment.amount * (DEFAULT_PLATFORM_FEE_RATE + PLATFORM_MARGIN_RATE + STRIPE_FEE_RATE)) + STRIPE_FEE_FIXED;
                       const net = payment.amount - fees;
                       return (
                         <div key={payment.id} className="bg-white border border-gray-200 rounded-xl p-4 space-y-2">
@@ -525,7 +526,7 @@ export default function AdminPayments() {
               {/* Platform Revenue */}
               <div className="p-4 border-b border-gray-100">
                 <p className="text-xs text-gray-500">
-                  ConnecTradie earns 10% platform fee + 2% processing fee on each completed payment. Stripe fees are paid to Stripe, not ConnecTradie.
+                  ConnecTradie earns a platform fee (varies by subscription tier) + 1.2% processing margin on each completed payment. Stripe fees (1.75% + $0.30) are paid to Stripe, not ConnecTradie.
                 </p>
               </div>
 
@@ -543,14 +544,14 @@ export default function AdminPayments() {
                   <div className="p-5 border-b border-gray-100">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="bg-warm-50 rounded-xl p-4 border border-warm-200">
-                        <p className="text-xs font-medium text-warm-700 mb-1">Platform Fees (10%)</p>
+                        <p className="text-xs font-medium text-warm-700 mb-1">Platform Fees (by tier)</p>
                         <p className="text-xl font-bold text-gray-900">{formatCurrency(totalPlatformFees)}</p>
                         <p className="text-xs text-gray-500 mt-1">{formatCurrency(monthPlatformFees)} this month</p>
                       </div>
                       <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                        <p className="text-xs font-medium text-blue-700 mb-1">Processing Fees (2%)</p>
-                        <p className="text-xl font-bold text-gray-900">{formatCurrency(totalProcessingFees)}</p>
-                        <p className="text-xs text-gray-500 mt-1">{formatCurrency(monthProcessingFees)} this month</p>
+                        <p className="text-xs font-medium text-blue-700 mb-1">Processing Margin ({(PLATFORM_MARGIN_RATE * 100).toFixed(1)}%)</p>
+                        <p className="text-xl font-bold text-gray-900">{formatCurrency(totalPlatformMargin)}</p>
+                        <p className="text-xs text-gray-500 mt-1">{formatCurrency(monthPlatformMargin)} this month</p>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                         <p className="text-xs font-medium text-gray-600 mb-1">Stripe Fees (not ours)</p>
@@ -567,16 +568,16 @@ export default function AdminPayments() {
                         <tr>
                           <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Transaction</th>
                           <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Gross</th>
-                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Platform (10%)</th>
-                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Processing (2%)</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Platform (by tier)</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Margin ({(PLATFORM_MARGIN_RATE * 100).toFixed(1)}%)</th>
                           <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Stripe</th>
                           <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {completedPayments.map(payment => {
-                          const platformFee = Math.round(payment.amount * PLATFORM_FEE_RATE);
-                          const processingFee = Math.round(payment.amount * PROCESSING_FEE_RATE);
+                          const platformFee = Math.round(payment.amount * DEFAULT_PLATFORM_FEE_RATE);
+                          const processingFee = Math.round(payment.amount * PLATFORM_MARGIN_RATE);
                           const stripeFee = Math.round(payment.amount * STRIPE_FEE_RATE) + STRIPE_FEE_FIXED;
                           return (
                             <tr key={payment.id} className="hover:bg-gray-50/50">
@@ -606,8 +607,8 @@ export default function AdminPayments() {
                   {/* Mobile */}
                   <div className="md:hidden space-y-3 p-4">
                     {completedPayments.map(payment => {
-                      const platformFee = Math.round(payment.amount * PLATFORM_FEE_RATE);
-                      const processingFee = Math.round(payment.amount * PROCESSING_FEE_RATE);
+                      const platformFee = Math.round(payment.amount * DEFAULT_PLATFORM_FEE_RATE);
+                      const processingFee = Math.round(payment.amount * PLATFORM_MARGIN_RATE);
                       return (
                         <div key={payment.id} className="bg-white border border-gray-200 rounded-xl p-4 space-y-2">
                           <div className="flex items-center justify-between">
@@ -618,7 +619,7 @@ export default function AdminPayments() {
                           </div>
                           <div className="flex items-center gap-3 text-xs">
                             <span className="text-warm-700 font-semibold">Platform: {formatCurrency(platformFee)}</span>
-                            <span className="text-blue-700 font-semibold">Processing: {formatCurrency(processingFee)}</span>
+                            <span className="text-blue-700 font-semibold">Margin: {formatCurrency(processingFee)}</span>
                           </div>
                           <p className="text-xs text-gray-400">{formatDate(payment.created_at)}</p>
                         </div>
@@ -640,7 +641,7 @@ export default function AdminPayments() {
               <>
                 <div className="p-4 border-b border-gray-100">
                   <p className="text-xs text-gray-500">
-                    Pro subscribers pay 5% platform fee on job payments (vs 10% for free). They keep more of each payment.
+                    Pro subscribers pay lower platform fees (3–5% sliding scale vs 4–10% for free tier). They keep more of each payment.
                   </p>
                 </div>
                 <div className="divide-y divide-gray-100">

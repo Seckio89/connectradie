@@ -675,6 +675,7 @@ export default function Settings() {
                 pushPermission={pushPermission}
                 notifSaving={notifSaving}
                 onTogglePush={handleTogglePush}
+                role={profile?.role as 'tradie' | 'client' | 'admin'}
               />
               <div className="border-t border-gray-200 p-6 md:p-8">
                 <div className="flex items-center gap-3 mb-4">

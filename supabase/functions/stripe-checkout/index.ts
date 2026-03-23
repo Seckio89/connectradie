@@ -9,7 +9,7 @@ const stripe = new Stripe(stripeSecret, { apiVersion: '2023-10-16' });
 // Helper function to create responses with CORS headers
 function corsResponse(body: string | object | null, status = 200) {
   const headers = {
-    'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') || '*',
+    'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') || 'https://connectradie.com.au',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': '*',
   };

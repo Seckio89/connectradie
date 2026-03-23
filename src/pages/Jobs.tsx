@@ -260,7 +260,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
 
       // Fetch tradie's own quotes for these jobs
       if (isTradie) {
-        const pendingJobIds = filteredJobs.filter(j => j.status === 'pending').map(j => j.id);
+        const pendingJobIds = filteredJobs.filter(j => ['pending', 'funded', 'in_progress'].includes(j.status)).map(j => j.id);
         if (pendingJobIds.length > 0) {
           const { data: quotes } = await supabase
             .from('quotes')
@@ -459,10 +459,18 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
         });
       }
 
+      // Auto-dismiss so the lead doesn't reappear on dashboard or Leads page
+      try {
+        const stored = localStorage.getItem('dismissed_leads');
+        const dismissed: string[] = stored ? JSON.parse(stored) : [];
+        if (!dismissed.includes(jobToDecline.id)) {
+          dismissed.push(jobToDecline.id);
+          localStorage.setItem('dismissed_leads', JSON.stringify(dismissed));
+        }
+      } catch { /* ignore localStorage errors */ }
+
       showToast(`Job declined — ${clientName} has been notified`);
       await fetchJobs();
-
-      // Stay on current filter — declined jobs are visible in "All Jobs"
     } catch (err) {
       console.error('handleDeclineJob error:', err);
       setOperationError('Failed to decline job. Please try again.');
@@ -724,8 +732,14 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                           {job.profiles?.full_name || 'Client'}
                         </p>
                       </div>
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
-                        {job.status === 'funded' ? 'Paid' : job.status === 'accepted' ? 'Awaiting Payment' : job.status.replace(/_/g, ' ')}
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${
+                        job.status === 'funded' && myQuotes.get(job.id)?.requires_site_inspection && myQuotes.get(job.id)?.final_price == null
+                          ? 'bg-amber-100 text-amber-700 border-amber-200'
+                          : getStatusColor(job.status)
+                      }`}>
+                        {job.status === 'funded' && myQuotes.get(job.id)?.requires_site_inspection && myQuotes.get(job.id)?.final_price == null
+                          ? 'Set Price'
+                          : job.status === 'funded' ? 'Paid' : job.status === 'accepted' ? 'Awaiting Payment' : job.status.replace(/_/g, ' ')}
                       </span>
                     </div>
 
@@ -739,10 +753,10 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                         const cat = job.description.match(/^\[([^\]]+)\]/)?.[1];
                         return cat ? <span className="capitalize">{cat.replace(/_/g, ' ')}</span> : null;
                       })()}
-                      {job.title && /recurring/i.test(job.title) && (
+                      {job.title && /ongoing|recurring/i.test(job.title) && (
                         <span className="inline-flex items-center gap-1 text-blue-500">
                           <Repeat className="w-3 h-3" />
-                          Recurring
+                          Ongoing
                         </span>
                       )}
                       {job.location_address && (
@@ -763,7 +777,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                     </div>
                   </div>
 
-                  {isFlashActive && isTradie && (
+                  {isFlashActive && isTradie && job.status === 'pending' && (
                     <div className="mx-5 mb-3 flex items-center gap-2 px-3 py-2 bg-warm-50 border border-warm-200 rounded-lg">
                       <Zap className="w-3.5 h-3.5 text-warm-600 flex-shrink-0" />
                       <span className="text-xs font-medium text-warm-800">
@@ -772,7 +786,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                     </div>
                   )}
 
-                  {!isTradie && isFlashActive && (
+                  {!isTradie && isFlashActive && job.status === 'pending' && (
                     <div className="mx-5 mb-3 flex items-center gap-2 px-3 py-2 bg-warm-50 border border-warm-200 rounded-lg">
                       <Zap className="w-3.5 h-3.5 text-warm-500 flex-shrink-0" />
                       <span className="text-xs text-warm-700">Boosting your job to find a Tradie faster</span>
@@ -839,7 +853,24 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                   )}
 
                   {isTradie && (job.status === 'funded' || job.status === 'in_progress') && (
-                    <div className="px-5 pb-4 pt-1 border-t border-gray-100 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="px-5 pb-4 pt-1 border-t border-gray-100 flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+                      {/* Site-visit job at funded: show "Set Final Price" instead of "Mark Complete" */}
+                      {job.status === 'funded' && myQuotes.get(job.id)?.requires_site_inspection && myQuotes.get(job.id)?.final_price == null ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedJob(job);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm font-medium transition-colors"
+                          >
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            Set Final Price
+                          </button>
+                          <span className="text-xs text-amber-700">After site visit</span>
+                        </div>
+                      ) : (
+                      <div className="flex items-center gap-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -884,6 +915,8 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                             </button>
                           )}
                         </>
+                      )}
+                      </div>
                       )}
                     </div>
                   )}

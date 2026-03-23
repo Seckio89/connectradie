@@ -28,7 +28,7 @@ export const PRO_FEATURES = {
 
 export type ProFeature = (typeof PRO_FEATURES)[keyof typeof PRO_FEATURES];
 
-export type SubscriptionTier = 'free' | 'pro';
+export type SubscriptionTier = 'free' | 'pro' | 'pro_plus';
 export type BillingCycle = 'monthly' | 'annual';
 
 export interface TierPricing {
@@ -37,19 +37,91 @@ export interface TierPricing {
   annualMonthly: number;
 }
 
+export interface FeeTier {
+  maxJobValue: number;
+  rate: number;
+}
+
+export interface PlatformFeeConfig {
+  type: 'sliding' | 'flat';
+  tiers?: FeeTier[];
+  rate?: number;
+  cap: number;
+}
+
 export const TIER_PRICING: Record<Exclude<SubscriptionTier, 'free'>, TierPricing> = {
   pro: {
     monthly: 29,
     annual: 249,
     annualMonthly: 20.75,
   },
+  pro_plus: {
+    monthly: 59,
+    annual: 499,
+    annualMonthly: 41.58,
+  },
 };
 
+export const PLATFORM_FEES: Record<SubscriptionTier, PlatformFeeConfig> = {
+  free: {
+    type: 'sliding',
+    tiers: [
+      { maxJobValue: 150, rate: 0.10 },
+      { maxJobValue: 500, rate: 0.08 },
+      { maxJobValue: 1000, rate: 0.06 },
+      { maxJobValue: 5000, rate: 0.05 },
+      { maxJobValue: Infinity, rate: 0.04 },
+    ],
+    cap: 400,
+  },
+  pro: {
+    type: 'sliding',
+    tiers: [
+      { maxJobValue: 500, rate: 0.05 },
+      { maxJobValue: 2500, rate: 0.04 },
+      { maxJobValue: Infinity, rate: 0.03 },
+    ],
+    cap: 250,
+  },
+  pro_plus: {
+    type: 'flat',
+    rate: 0.025,
+    cap: 200,
+  },
+};
+
+/** Calculate the platform fee for a given job value and tier */
+export function calculatePlatformFee(jobValue: number, tier: SubscriptionTier): number {
+  const config = PLATFORM_FEES[tier];
+  let fee: number;
+  if (config.type === 'flat') {
+    fee = jobValue * (config.rate ?? 0);
+  } else {
+    const tiers = config.tiers ?? [];
+    const matchedTier = tiers.find(t => jobValue <= t.maxJobValue) ?? tiers[tiers.length - 1];
+    fee = jobValue * (matchedTier?.rate ?? 0.10);
+  }
+  return Math.min(fee, config.cap);
+}
+
+/** Get a human-readable fee summary for a tier */
+export function getFeeSummary(tier: SubscriptionTier): string {
+  const config = PLATFORM_FEES[tier];
+  if (config.type === 'flat') {
+    return `${(config.rate ?? 0) * 100}% flat (capped at $${config.cap})`;
+  }
+  const tiers = config.tiers ?? [];
+  const highest = tiers[0]?.rate ?? 0;
+  const lowest = tiers[tiers.length - 1]?.rate ?? 0;
+  return `${highest * 100}%–${lowest * 100}% sliding (capped at $${config.cap})`;
+}
+
 export function isPro(subscriptionTier?: string, isPremium?: boolean): boolean {
-  return subscriptionTier === 'pro' || subscriptionTier === 'business' || isPremium === true;
+  return subscriptionTier === 'pro' || subscriptionTier === 'pro_plus' || subscriptionTier === 'business' || isPremium === true;
 }
 
 export function getCurrentTier(subscriptionTier?: string, isPremium?: boolean): SubscriptionTier {
+  if (subscriptionTier === 'pro_plus') return 'pro_plus';
   if (subscriptionTier === 'pro' || subscriptionTier === 'business' || isPremium === true) return 'pro';
   return 'free';
 }

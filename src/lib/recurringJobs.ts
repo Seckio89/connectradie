@@ -923,7 +923,117 @@ export async function updateRecurringJob(
 }
 
 /**
- * Cancel (deactivate) a recurring job.
+ * Pause a recurring job — hides it from active views but preserves sessions and agreements.
+ * The service can be resumed later.
+ */
+export async function pauseRecurringJob(id: string, pausedByRole?: 'client' | 'tradie'): Promise<void> {
+  const { data: job, error: fetchError } = await supabase
+    .from('recurring_jobs')
+    .select('id, client_id, tradie_id, trade_category, service_subtype')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (fetchError) throw new Error(fetchError.message);
+
+  const { error } = await supabase
+    .from('recurring_jobs')
+    .update({ is_active: false })
+    .eq('id', id);
+
+  if (error) throw new Error(error.message);
+
+  // Notify the other party
+  if (job) {
+    const tradeLabel = (job.service_subtype || job.trade_category || 'service')
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+    try {
+      if (pausedByRole === 'client' && job.tradie_id) {
+        await insertNotification(
+          job.tradie_id,
+          'recurring_paused',
+          `Your client has paused the ${tradeLabel} service. Upcoming sessions are on hold.`,
+          { recurring_job_id: id },
+        );
+      } else if (pausedByRole === 'tradie' && job.client_id) {
+        await insertNotification(
+          job.client_id,
+          'recurring_paused',
+          `Your tradie has paused the ${tradeLabel} service. Upcoming sessions are on hold.`,
+          { recurring_job_id: id },
+        );
+      }
+    } catch {
+      // Non-critical
+    }
+  }
+}
+
+/**
+ * Resume a paused recurring job — makes it active again.
+ */
+export async function resumeRecurringJob(id: string, resumedByRole?: 'client' | 'tradie'): Promise<void> {
+  const { data: job, error: fetchError } = await supabase
+    .from('recurring_jobs')
+    .select('id, client_id, tradie_id, trade_category, service_subtype')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (fetchError) throw new Error(fetchError.message);
+
+  const { error } = await supabase
+    .from('recurring_jobs')
+    .update({ is_active: true })
+    .eq('id', id);
+
+  if (error) throw new Error(error.message);
+
+  // Re-activate linked service agreement if it was active before
+  if (job?.client_id && job?.tradie_id) {
+    try {
+      await supabase
+        .from('service_agreements')
+        .update({ status: 'active', ended_at: null })
+        .eq('client_id', job.client_id)
+        .eq('tradie_id', job.tradie_id)
+        .eq('trade_category', job.trade_category)
+        .eq('status', 'ended');
+    } catch {
+      // Non-critical
+    }
+  }
+
+  // Notify the other party
+  if (job) {
+    const tradeLabel = (job.service_subtype || job.trade_category || 'service')
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+    try {
+      if (resumedByRole === 'client' && job.tradie_id) {
+        await insertNotification(
+          job.tradie_id,
+          'recurring_resumed',
+          `Your client has resumed the ${tradeLabel} service.`,
+          { recurring_job_id: id },
+        );
+      } else if (resumedByRole === 'tradie' && job.client_id) {
+        await insertNotification(
+          job.client_id,
+          'recurring_resumed',
+          `Your tradie has resumed the ${tradeLabel} service.`,
+          { recurring_job_id: id },
+        );
+      }
+    } catch {
+      // Non-critical
+    }
+  }
+}
+
+/**
+ * Cancel (deactivate) a recurring job permanently — cancels sessions and ends agreements.
  */
 export async function cancelRecurringJob(id: string, cancelledByRole?: 'client' | 'tradie'): Promise<void> {
   // Fetch job details before cancelling (for notifications)
@@ -1904,7 +2014,7 @@ export async function acceptReschedule(sessionId: string): Promise<void> {
 export async function getTradieUpcomingSessions(
   tradieId: string,
   limit = 5,
-): Promise<(RecurringSession & { recurring_job?: { trade_category: string; service_subtype: string | null; description: string; client_id: string; preferred_time: string | null; agreed_price: number | null } })[]> {
+): Promise<(RecurringSession & { recurring_job?: { trade_category: string; service_subtype: string | null; description: string; client_id: string; preferred_time: string | null; agreed_price: number | null; auto_accept: boolean | null; location: string | null; frequency_months: number; billing_cycle: string | null; last_invoiced_at: string | null; client: { full_name: string } | null } })[]> {
   const today = new Date().toISOString().split('T')[0];
 
   const { data, error } = await supabase
@@ -1918,7 +2028,13 @@ export async function getTradieUpcomingSessions(
         client_id,
         preferred_time,
         agreed_price,
-        tradie_id
+        auto_accept,
+        location,
+        frequency_months,
+        billing_cycle,
+        last_invoiced_at,
+        tradie_id,
+        client:profiles!recurring_jobs_client_id_fkey(full_name)
       )
     `)
     .in('status', ['pending_confirmation', 'scheduled'])
@@ -1934,7 +2050,7 @@ export async function getTradieUpcomingSessions(
     return job?.tradie_id === tradieId;
   });
 
-  return filtered.slice(0, limit) as (RecurringSession & { recurring_job?: { trade_category: string; service_subtype: string | null; description: string; client_id: string; preferred_time: string | null; agreed_price: number | null } })[];
+  return filtered.slice(0, limit) as (RecurringSession & { recurring_job?: { trade_category: string; service_subtype: string | null; description: string; client_id: string; preferred_time: string | null; agreed_price: number | null; auto_accept: boolean | null; location: string | null; frequency_months: number; billing_cycle: string | null; last_invoiced_at: string | null; client: { full_name: string } | null } })[];
 }
 
 /**

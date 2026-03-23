@@ -40,7 +40,7 @@ const proFeatures = [
   { text: 'Bulk availability management', icon: CalendarRange },
   { text: 'Project & milestone tracking', icon: Layers },
   { text: 'Verified Pro badge', icon: BadgeCheck },
-  { text: '5% platform fee — save 50% vs free', icon: Percent },
+  { text: 'Lowest platform fees — keep more per job', icon: Percent },
   { text: 'Priority over free users in search', icon: Star },
 ];
 
@@ -175,9 +175,9 @@ export default function Pricing() {
             </div>
             <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
               <Percent className="w-6 h-6 text-warm-500 mb-3" />
-              <h3 className="font-semibold text-gray-900 mb-1">Half the Platform Fees</h3>
+              <h3 className="font-semibold text-gray-900 mb-1">Keep More of Every Job</h3>
               <p className="text-sm text-gray-600">
-                Pro members pay just 5% platform fee vs 10% on free. That's 50% more in your pocket on every job.
+                Pro members enjoy the lowest platform fees. The bigger the job, the more you save — so you keep more in your pocket.
               </p>
             </div>
           </div>

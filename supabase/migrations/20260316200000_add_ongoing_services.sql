@@ -59,14 +59,17 @@ CREATE INDEX IF NOT EXISTS idx_agreements_tradie ON service_agreements(tradie_id
 
 ALTER TABLE service_agreements ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own agreements" ON service_agreements;
 CREATE POLICY "Users can view their own agreements"
   ON service_agreements FOR SELECT TO authenticated
   USING ((SELECT auth.uid()) = client_id OR (SELECT auth.uid()) = tradie_id);
 
+DROP POLICY IF EXISTS "Tradies can create agreements" ON service_agreements;
 CREATE POLICY "Tradies can create agreements"
   ON service_agreements FOR INSERT TO authenticated
   WITH CHECK ((SELECT auth.uid()) = tradie_id);
 
+DROP POLICY IF EXISTS "Parties can update their agreements" ON service_agreements;
 CREATE POLICY "Parties can update their agreements"
   ON service_agreements FOR UPDATE TO authenticated
   USING ((SELECT auth.uid()) = client_id OR (SELECT auth.uid()) = tradie_id);
@@ -105,6 +108,7 @@ CREATE INDEX IF NOT EXISTS idx_visits_uninvoiced ON service_visits(agreement_id)
 
 ALTER TABLE service_visits ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Agreement parties can view visits" ON service_visits;
 CREATE POLICY "Agreement parties can view visits"
   ON service_visits FOR SELECT TO authenticated
   USING (
@@ -115,6 +119,7 @@ CREATE POLICY "Agreement parties can view visits"
     )
   );
 
+DROP POLICY IF EXISTS "Tradie can manage visits" ON service_visits;
 CREATE POLICY "Tradie can manage visits"
   ON service_visits FOR ALL TO authenticated
   USING (
@@ -159,12 +164,21 @@ CREATE TABLE IF NOT EXISTS service_invoices (
 );
 
 -- Now add FK from service_visits to service_invoices
-ALTER TABLE service_visits
-  ADD CONSTRAINT fk_visit_invoice
-  FOREIGN KEY (invoice_id) REFERENCES service_invoices(id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'fk_visit_invoice' AND table_name = 'service_visits'
+  ) THEN
+    ALTER TABLE service_visits
+      ADD CONSTRAINT fk_visit_invoice
+      FOREIGN KEY (invoice_id) REFERENCES service_invoices(id);
+  END IF;
+END $$;
 
 ALTER TABLE service_invoices ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Agreement parties can view invoices" ON service_invoices;
 CREATE POLICY "Agreement parties can view invoices"
   ON service_invoices FOR SELECT TO authenticated
   USING (
@@ -175,6 +189,7 @@ CREATE POLICY "Agreement parties can view invoices"
     )
   );
 
+DROP POLICY IF EXISTS "Tradie can manage invoices" ON service_invoices;
 CREATE POLICY "Tradie can manage invoices"
   ON service_invoices FOR ALL TO authenticated
   USING (
@@ -193,14 +208,17 @@ CREATE OR REPLACE FUNCTION update_service_updated_at()
 RETURNS TRIGGER LANGUAGE plpgsql SET search_path = public AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END; $$;
 
+DROP TRIGGER IF EXISTS trg_agreements_updated_at ON service_agreements;
 CREATE TRIGGER trg_agreements_updated_at
   BEFORE UPDATE ON service_agreements
   FOR EACH ROW EXECUTE FUNCTION update_service_updated_at();
 
+DROP TRIGGER IF EXISTS trg_visits_updated_at ON service_visits;
 CREATE TRIGGER trg_visits_updated_at
   BEFORE UPDATE ON service_visits
   FOR EACH ROW EXECUTE FUNCTION update_service_updated_at();
 
+DROP TRIGGER IF EXISTS trg_invoices_updated_at ON service_invoices;
 CREATE TRIGGER trg_invoices_updated_at
   BEFORE UPDATE ON service_invoices
   FOR EACH ROW EXECUTE FUNCTION update_service_updated_at();

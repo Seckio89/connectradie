@@ -344,7 +344,7 @@ export default function ConversationSettingsModal({
               </div>
 
               <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Danger Zone</h3>
+                <h3 className="text-sm font-medium text-gray-900 mb-3">Delete Conversation</h3>
                 {showDeleteConfirm ? (
                   <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                     <p className="text-sm text-red-700 mb-4">

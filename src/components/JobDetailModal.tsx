@@ -15,12 +15,15 @@ import {
   Loader2,
   Repeat,
   ClipboardList,
+  DollarSign,
+  AlertCircle,
 } from 'lucide-react';
 import { formatDate, friendlyError } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { isPro as checkIsPro } from '../lib/subscription';
-import type { Job, JobMilestone } from '../types/database';
+import { adjustQuotePrice } from '../lib/stripePayments';
+import type { Job, JobMilestone, Quote } from '../types/database';
 import type { RecurringJob } from '../lib/recurringJobs';
 import MilestoneEditor from './MilestoneEditor';
 import Modal from './Modal';
@@ -58,7 +61,7 @@ function getNextAction(status: string, isTradie: boolean): { label: string; hint
     case 'accepted':
       return { label: 'Awaiting payment', hint: 'The client has accepted your quote and is completing payment. You\'ll be notified when funds are secured.' };
     case 'funded':
-      return { label: 'Starting automatically', hint: 'Payment is secured in escrow. The job will auto-start momentarily.' };
+      return { label: 'Payment secured', hint: 'Payment is secured in escrow.' };
     case 'in_progress':
       return { label: 'Mark as complete', hint: 'Once you\'ve finished the work, mark this job as complete to request payment.' };
     case 'completed':
@@ -76,6 +79,15 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
   const [recurringJob, setRecurringJob] = useState<RecurringJob | null>(null);
   const [selectedAvailDate, setSelectedAvailDate] = useState<string | null>(null);
 
+  // Final price adjustment state
+  const [acceptedQuote, setAcceptedQuote] = useState<Quote | null>(null);
+  const [quoteLoaded, setQuoteLoaded] = useState(false);
+  const [finalPriceInput, setFinalPriceInput] = useState('');
+  const [finalPriceLoading, setFinalPriceLoading] = useState(false);
+  const [finalPriceError, setFinalPriceError] = useState<string | null>(null);
+  const [finalPriceSuccess, setFinalPriceSuccess] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null);
+
   const isTradie = profile?.role === 'tradie';
   const isProTradie = isTradie && checkIsPro(tradieDetails?.subscription_tier, profile?.is_premium);
   const FUNDED_STATUSES = ['funded', 'in_progress', 'completed'];
@@ -86,6 +98,9 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
       setLocalStatus(job.status);
       setStatusLoading(false);
       setSelectedAvailDate(null);
+      setFinalPriceError(null);
+      setFinalPriceSuccess(null);
+      setFinalPriceInput('');
     }
   }, [job?.id, job?.status]);
 
@@ -115,22 +130,66 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
     return () => { cancelled = true; };
   }, [isOpen, job?.id]);
 
-  // Auto-progress: when a tradie opens a funded job, auto-start it
+  // Fetch accepted quote (for final price adjustment on site-visit jobs)
+  useEffect(() => {
+    if (!isOpen || !job || !isTradie) {
+      setAcceptedQuote(null);
+      setQuoteLoaded(false);
+      return;
+    }
+    let cancelled = false;
+    setQuoteLoaded(false);
+
+    const fetchAcceptedQuote = async () => {
+      const { data } = await supabase
+        .from('quotes')
+        .select('*')
+        .eq('job_id', job.id)
+        .eq('status', 'accepted')
+        .maybeSingle();
+      if (!cancelled) {
+        if (data) {
+          setAcceptedQuote(data as Quote);
+          // Pre-fill with original quote price
+          const originalPrice = data.firm_price ?? data.price_max ?? data.price_min;
+          if (originalPrice && !data.final_price) {
+            setFinalPriceInput(String(originalPrice));
+          }
+        } else {
+          setAcceptedQuote(null);
+        }
+        setQuoteLoaded(true);
+      }
+    };
+
+    fetchAcceptedQuote();
+    return () => { cancelled = true; };
+  }, [isOpen, job?.id, isTradie]);
+
+  // Auto-progress: when a tradie opens a funded job, auto-start it.
+  // Skip if the quote requires a site inspection and the final price hasn't been set yet —
+  // the tradie should confirm the final price at the "funded" stage first.
   useEffect(() => {
     if (!isOpen || !job || !isTradie || !user) return;
-    if (job.status === 'funded') {
-      (async () => {
-        const { error } = await supabase
-          .from('jobs')
-          .update({ status: 'in_progress' })
-          .eq('id', job.id);
-        if (!error) {
-          setLocalStatus('in_progress');
-          onStatusChange?.();
-        }
-      })();
-    }
-  }, [isOpen, job?.id, job?.status, isTradie, user]);
+    if (job.status !== 'funded') return;
+
+    // Wait for quote fetch to complete before deciding
+    if (!quoteLoaded) return;
+
+    // Block auto-progress for site-visit jobs until the tradie sets the final price
+    if (acceptedQuote?.requires_site_inspection && acceptedQuote.final_price == null) return;
+
+    (async () => {
+      const { error } = await supabase
+        .from('jobs')
+        .update({ status: 'in_progress' })
+        .eq('id', job.id);
+      if (!error) {
+        setLocalStatus('in_progress');
+        onStatusChange?.();
+      }
+    })();
+  }, [isOpen, job?.id, job?.status, isTradie, user, quoteLoaded, acceptedQuote]);
 
   // Trades that typically have multi-stage jobs needing milestones
   const MILESTONE_TRADES = new Set([
@@ -188,6 +247,66 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
     }
   };
 
+  const handleSetFinalPrice = () => {
+    if (!acceptedQuote || finalPriceLoading) return;
+    const price = parseFloat(finalPriceInput);
+    if (isNaN(price) || price < 1) {
+      setFinalPriceError('Please enter a valid price of at least $1.');
+      return;
+    }
+
+    const originalPrice = acceptedQuote.firm_price ?? acceptedQuote.price_max ?? acceptedQuote.price_min ?? 0;
+    const originalPriceCents = Math.round(originalPrice * 100);
+    const finalPriceCents = Math.round(price * 100);
+
+    let confirmMsg: string;
+    if (finalPriceCents < originalPriceCents) {
+      const diff = (originalPrice - price).toFixed(2);
+      confirmMsg = `This will refund approximately $${diff} to the client. This cannot be undone. Set final price to $${price.toFixed(2)}?`;
+    } else if (finalPriceCents > originalPriceCents) {
+      const diff = (price - originalPrice).toFixed(2);
+      confirmMsg = `This will request an additional $${diff} from the client. Set final price to $${price.toFixed(2)}?`;
+    } else {
+      confirmMsg = `Confirm the final price at $${price.toFixed(2)} (no change from estimate)?`;
+    }
+
+    setConfirmDialog({
+      message: confirmMsg,
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setFinalPriceLoading(true);
+        setFinalPriceError(null);
+        setFinalPriceSuccess(null);
+
+        try {
+          const result = await adjustQuotePrice(acceptedQuote.id, price);
+
+          if (result.action === 'decrease') {
+            setFinalPriceSuccess(
+              `Final price set to $${price.toFixed(2)}. A refund of $${result.refundAmount?.toFixed(2)} is being processed to the client.`
+            );
+          } else if (result.action === 'increase_pending') {
+            setFinalPriceSuccess(
+              `Final price set to $${price.toFixed(2)}. The client has been notified to pay the additional $${result.additionalAmount?.toFixed(2)}.`
+            );
+          } else {
+            setFinalPriceSuccess(`Final price confirmed at $${price.toFixed(2)}.`);
+          }
+
+          // Refresh the accepted quote to reflect final_price
+          setAcceptedQuote({ ...acceptedQuote, final_price: price });
+          onStatusChange?.();
+        } catch (err) {
+          setFinalPriceError(
+            err instanceof Error ? err.message : 'Failed to set final price. Please try again.'
+          );
+        } finally {
+          setFinalPriceLoading(false);
+        }
+      },
+    });
+  };
+
   if (!isOpen || !job) return null;
 
   const currentStep = getStepIndex(localStatus);
@@ -196,7 +315,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
   const categoryRaw = job.description.match(/^\[([^\]]+)\]/)?.[1];
   const category = categoryRaw ? categoryRaw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : null;
   const description = job.description.replace(/^\[[^\]]+\]\s*/, '');
-  const isRecurring = !!recurringJob || !!(job.title && /recurring/i.test(job.title));
+  const isRecurring = !!recurringJob || !!(job.title && /ongoing|recurring/i.test(job.title));
   const isDeclined = localStatus === 'declined';
 
   // Parse description lines for numbered scope of work
@@ -311,6 +430,83 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
         {isDeclined && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
             <p className="text-sm font-semibold text-red-700">This job has been declined</p>
+          </div>
+        )}
+
+        {/* ── Set Final Price (site visit required, tradie only) ── */}
+        {isTradie &&
+          !isDeclined &&
+          acceptedQuote?.requires_site_inspection &&
+          (localStatus === 'funded' || localStatus === 'in_progress') && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <DollarSign className="w-4 h-4 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-900">
+                  {acceptedQuote.final_price != null
+                    ? 'Final Price Set'
+                    : 'Set Final Price After Site Visit'}
+                </p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  {acceptedQuote.final_price != null
+                    ? `Final price: $${acceptedQuote.final_price.toFixed(2)} (original estimate: $${(acceptedQuote.firm_price ?? acceptedQuote.price_max ?? acceptedQuote.price_min).toFixed(2)})`
+                    : 'Visit the site and confirm your final price. If higher than your estimate, the client will need to approve and pay the difference.'}
+                </p>
+              </div>
+            </div>
+
+            {acceptedQuote.final_price == null && (
+              <>
+                <div className="flex items-center gap-2 mt-3">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      value={finalPriceInput}
+                      onChange={(e) => {
+                        setFinalPriceInput(e.target.value);
+                        setFinalPriceError(null);
+                      }}
+                      placeholder="Final price"
+                      className="w-full pl-7 pr-3 py-2.5 border border-amber-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                    />
+                  </div>
+                  <button
+                    onClick={handleSetFinalPrice}
+                    disabled={finalPriceLoading || !finalPriceInput}
+                    className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                      finalPriceLoading || !finalPriceInput
+                        ? 'bg-amber-300 text-amber-100 cursor-not-allowed'
+                        : 'bg-amber-500 text-white hover:bg-amber-600'
+                    }`}
+                  >
+                    {finalPriceLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      'Confirm'
+                    )}
+                  </button>
+                </div>
+
+                {finalPriceError && (
+                  <div className="flex items-start gap-1.5 mt-2 text-xs text-red-600">
+                    <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                    <span>{finalPriceError}</span>
+                  </div>
+                )}
+              </>
+            )}
+
+            {finalPriceSuccess && (
+              <div className="flex items-start gap-1.5 mt-2 text-xs text-green-700 bg-green-50 rounded-lg p-2 border border-green-200">
+                <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                <span>{finalPriceSuccess}</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -593,20 +789,36 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
           </div>
         )}
 
-        {isTradie && localStatus === 'funded' && (
+        {isTradie && localStatus === 'funded' && acceptedQuote?.requires_site_inspection && acceptedQuote.final_price == null && (
+          <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-700 font-medium rounded-xl border border-amber-200">
+            <DollarSign className="w-4 h-4" />
+            Set final price above to continue
+          </div>
+        )}
+        {isTradie && localStatus === 'funded' && !(acceptedQuote?.requires_site_inspection && acceptedQuote.final_price == null) && (
           <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-secondary-50 text-secondary-700 font-medium rounded-xl border border-secondary-200">
             <Loader2 className="w-4 h-4 animate-spin" />
             Auto-starting...
           </div>
         )}
 
-        {isTradie && localStatus === 'in_progress' && (
+        {isTradie && localStatus === 'in_progress' && !(acceptedQuote?.requires_site_inspection && acceptedQuote?.final_price == null) && (
           <button
             onClick={() => { onClose(); onComplete?.(); }}
             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors"
           >
             <CheckCircle2 className="w-4 h-4" />
             Mark Complete & Request Payment
+          </button>
+        )}
+
+        {isTradie && localStatus === 'in_progress' && acceptedQuote?.requires_site_inspection && acceptedQuote?.final_price == null && (
+          <button
+            disabled
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gray-200 text-gray-500 font-semibold rounded-xl cursor-not-allowed"
+          >
+            <AlertCircle className="w-4 h-4" />
+            Set final price first
           </button>
         )}
 
@@ -617,6 +829,30 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
           </div>
         )}
       </div>
+
+      {/* Confirmation dialog overlay */}
+      {confirmDialog && (
+        <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center z-50 p-6">
+          <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Price</h3>
+            <p className="text-sm text-gray-600 mb-5">{confirmDialog.message}</p>
+            <div className="flex items-center gap-3 justify-end">
+              <button
+                onClick={() => setConfirmDialog(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDialog.onConfirm}
+                className="px-4 py-2 text-sm font-medium text-white bg-emerald-500 rounded-lg hover:bg-emerald-600"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 }

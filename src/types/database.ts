@@ -209,6 +209,7 @@ export type Quote = {
   estimated_duration: string | null;
   includes_materials: boolean;
   requires_site_inspection: boolean;
+  final_price: number | null;
   status: QuoteStatus;
   accepted_at: string | null;
   proposed_start_date: string | null;
@@ -604,7 +605,7 @@ export type VacancyApplicationWithApplicant = VacancyApplication & {
   } | null;
 }
 
-export type PaymentType = 'lead_unlock' | 'job_access' | 'job_funding';
+export type PaymentType = 'lead_unlock' | 'job_access' | 'job_funding' | 'price_adjustment';
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 
 export type Payment = {
@@ -619,6 +620,8 @@ export type Payment = {
   currency: string;
   status: PaymentStatus;
   metadata: Record<string, unknown> | null;
+  original_amount: number | null;
+  parent_payment_id: string | null;
   created_at: string;
   completed_at: string | null;
 }

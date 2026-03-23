@@ -9,7 +9,7 @@ function requireEnv(key: string): string {
 }
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
@@ -109,13 +109,14 @@ Deno.serve(async (req: Request) => {
         continue;
       }
 
-      // Find the completed payment for this job that hasn't been transferred yet
+      // Find the main job_funding payment that hasn't been transferred yet
       const { data: payment, error: paymentError } = await supabase
         .from("payments")
         .select(
           "id, amount, stripe_payment_intent_id, metadata",
         )
         .eq("job_id", job.id)
+        .eq("payment_type", "job_funding")
         .eq("status", "completed")
         .maybeSingle();
 
@@ -125,7 +126,7 @@ Deno.serve(async (req: Request) => {
       }
 
       if (!payment) {
-        // No completed payment yet — skip
+        // No completed job_funding payment yet — skip
         continue;
       }
 
@@ -139,6 +140,17 @@ Deno.serve(async (req: Request) => {
         errors.push(`Job ${job.id}: payment has no Stripe payment intent`);
         continue;
       }
+
+      // Sum any completed price_adjustment child payments
+      const { data: childPayments } = await supabase
+        .from("payments")
+        .select("id, amount, metadata")
+        .eq("job_id", job.id)
+        .eq("payment_type", "price_adjustment")
+        .eq("status", "completed");
+
+      const childTotal = (childPayments || []).reduce((s, p) => s + (p.amount || 0), 0);
+      const totalTransferAmount = payment.amount + childTotal;
 
       // Get tradie's Stripe Connect account
       const { data: tradieProfile } = await supabase
@@ -162,7 +174,7 @@ Deno.serve(async (req: Request) => {
       // Create Stripe transfer to tradie's Connect account
       try {
         const transfer = await stripe.transfers.create({
-          amount: payment.amount,
+          amount: totalTransferAmount,
           currency: "aud",
           destination: tradieProfile.stripe_connect_account_id,
           transfer_group: `job_${job.id}`,
@@ -175,7 +187,8 @@ Deno.serve(async (req: Request) => {
           },
         });
 
-        // Update payment metadata with transfer info
+        // Update main payment metadata with transfer info
+        const releasedAt = new Date().toISOString();
         await supabase
           .from("payments")
           .update({
@@ -183,13 +196,29 @@ Deno.serve(async (req: Request) => {
               ...existingMetadata,
               transfer_id: transfer.id,
               transfer_amount: transfer.amount,
-              released_at: new Date().toISOString(),
+              released_at: releasedAt,
               auto_released: true,
             },
           })
           .eq("id", payment.id);
 
-        const amountDollars = `$${(payment.amount / 100).toFixed(2)}`;
+        // Mark child payments as transferred too
+        for (const child of (childPayments || [])) {
+          const childMeta = (child.metadata || {}) as Record<string, unknown>;
+          await supabase
+            .from("payments")
+            .update({
+              metadata: {
+                ...childMeta,
+                transfer_id: transfer.id,
+                released_at: releasedAt,
+                auto_released: true,
+              },
+            })
+            .eq("id", child.id);
+        }
+
+        const amountDollars = `$${(totalTransferAmount / 100).toFixed(2)}`;
         const jobTitle = job.title || "your job";
 
         // Notify homeowner
@@ -291,7 +320,7 @@ Deno.serve(async (req: Request) => {
         }
 
         released++;
-        totalAmount += payment.amount;
+        totalAmount += totalTransferAmount;
         console.info(
           `Auto-released ${amountDollars} for job ${job.id} to tradie ${job.tradie_id} (transfer ${transfer.id})`,
         );

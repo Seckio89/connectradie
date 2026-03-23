@@ -17,6 +17,8 @@ import {
   ChevronRight,
   Camera,
   X,
+  Briefcase,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -77,7 +79,7 @@ const SIMPLE_TRADES = [
 ];
 
 const JOB_TITLE_SUGGESTIONS: Record<string, string[]> = {
-  Cleaner: ['Office clean', 'End of lease clean', 'Deep house clean', 'Window cleaning', 'Carpet steam clean', 'Regular weekly clean'],
+  Cleaner: ['Office clean', 'End of lease clean', 'Deep house clean', 'Window cleaning', 'Carpet steam clean'],
   Plumber: ['Fix leaking tap', 'Blocked drain', 'Hot water system install', 'Toilet repair', 'Burst pipe — urgent', 'Gas fitting'],
   Electrician: ['Install downlights', 'Switchboard upgrade', 'Power point install', 'Ceiling fan install', 'Smoke alarm check', 'EV charger install'],
   Carpenter: ['Build timber deck', 'Custom shelving', 'Built-in wardrobe', 'Door replacement', 'Pergola build', 'Skirting boards'],
@@ -107,7 +109,7 @@ const JOB_TITLE_SUGGESTIONS: Record<string, string[]> = {
   'Security Systems': ['CCTV camera install', 'Alarm system install', 'Video doorbell', 'Intercom install', 'Access control setup', 'Smart home security'],
   'Appliance Repair': ['Washing machine repair', 'Fridge not cooling', 'Dishwasher repair', 'Oven repair', 'Dryer not heating', 'Rangehood fix'],
   Excavation: ['Site cut for build', 'Trenching for pipes', 'Pool excavation', 'Driveway dig', 'Stump removal', 'Bobcat work'],
-  'Private Chef': ['Dinner party for 8', 'Weekly meal prep', 'Special occasion dinner', 'Brunch for 12', 'Kids party catering', 'Date night at home'],
+  'Private Chef': ['Dinner party for 8', 'Special occasion dinner', 'Brunch for 12', 'Kids party catering', 'Date night at home'],
   'Event Catering': ['Wedding for 100 guests', 'Corporate lunch', 'Birthday party', 'Grazing table setup', 'Buffet for 50', 'Cocktail event'],
 };
 
@@ -278,6 +280,10 @@ export default function PostLead() {
   const [searchParams] = useSearchParams();
   const assigneeId = searchParams.get('assignee');
   const prefillCategory = searchParams.get('category') || '';
+
+  // Skip selection screen if deep-linked with assignee or category
+  const skipSelection = Boolean(assigneeId || prefillCategory);
+  const [jobType, setJobType] = useState<'oneoff' | null>(skipSelection ? 'oneoff' : null);
 
   const [category, setCategory] = useState(
     TRADE_CATEGORIES.find(c => c.toLowerCase() === prefillCategory.toLowerCase()) || ''
@@ -567,9 +573,63 @@ export default function PostLead() {
     );
   }
 
+  // ── Job Type Selection Screen ──
+  if (!jobType) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-xl mx-auto py-8">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-gray-900">Post a Job</h1>
+            <p className="text-sm text-gray-600 mt-1">What type of work do you need?</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* One-off Job */}
+            <button
+              onClick={() => setJobType('oneoff')}
+              className="bg-white rounded-xl border border-gray-200 p-6 text-left hover:border-emerald-300 hover:shadow-sm transition-all group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center mb-4 group-hover:bg-emerald-100 transition-colors">
+                <Briefcase className="w-5 h-5 text-emerald-600" />
+              </div>
+              <h2 className="text-base font-semibold text-gray-900 mb-1">One-off Job</h2>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                A single job — fix a leak, paint a room, build a deck. Get quotes and pick a tradie.
+              </p>
+            </button>
+
+            {/* Ongoing Work */}
+            <button
+              onClick={() => navigate('/leads?tab=services')}
+              className="bg-white rounded-xl border border-gray-200 p-6 text-left hover:border-emerald-300 hover:shadow-sm transition-all group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center mb-4 group-hover:bg-amber-100 transition-colors">
+                <RefreshCw className="w-5 h-5 text-amber-600" />
+              </div>
+              <h2 className="text-base font-semibold text-gray-900 mb-1">Ongoing Work</h2>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Regular services — weekly cleaning, lawn mowing, pool maintenance. Set a schedule that repeats.
+              </p>
+            </button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto">
+        {!skipSelection && (
+          <button
+            type="button"
+            onClick={() => setJobType(null)}
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back
+          </button>
+        )}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-warm-100 rounded-xl flex items-center justify-center">

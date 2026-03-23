@@ -1,15 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
+import { calculatePlatformFee, calculateProcessingFeeCents, resolveTradieTier } from "../_shared/pricing.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
 };
-
-const PROCESSING_FEE_RATE = 0.02;
 
 function errorJson(message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
@@ -134,9 +133,23 @@ Deno.serve(async (req: Request) => {
       customerId = existingSub.stripe_customer_id;
     }
 
+    // Look up tradie subscription tier for platform fee
+    const { data: tradieSubRecord } = await supabase
+      .from("tradie_details")
+      .select("subscription_tier")
+      .eq("profile_id", job.tradie_id)
+      .maybeSingle();
+
+    const tradieSubscriptionTier = resolveTradieTier(tradieSubRecord?.subscription_tier);
+
     // Milestone amount is stored as numeric (dollars), convert to cents
-    const baseAmount = Math.round(Number(milestone.amount) * 100);
-    const processingFee = Math.round(baseAmount * PROCESSING_FEE_RATE);
+    const milestoneDollars = Number(milestone.amount);
+    const baseAmount = Math.round(milestoneDollars * 100);
+    const processingFee = calculateProcessingFeeCents(baseAmount);
+
+    // Calculate platform fee based on tradie's subscription tier
+    const platformFeeDollars = calculatePlatformFee(milestoneDollars, tradieSubscriptionTier);
+    const platformFeeCents = Math.round(platformFeeDollars * 100);
 
     if (baseAmount <= 0) {
       return errorJson("Milestone amount must be positive", 400);
@@ -156,6 +169,9 @@ Deno.serve(async (req: Request) => {
         metadata: {
           milestone_id: milestoneId,
           milestone_title: milestone.title,
+          tradie_id: job.tradie_id,
+          platform_fee: platformFeeCents,
+          tradie_tier: tradieSubscriptionTier,
         },
       })
       .select("id")
@@ -208,6 +224,8 @@ Deno.serve(async (req: Request) => {
           payment_record_id: paymentRecord.id,
           base_amount: String(baseAmount),
           processing_fee: String(processingFee),
+          platform_fee: String(platformFeeCents),
+          tradie_tier: tradieSubscriptionTier,
         },
       },
       idempotencyKey ? { idempotencyKey } : undefined,

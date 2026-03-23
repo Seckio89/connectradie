@@ -23,6 +23,7 @@ import {
   BarChart3,
   Users,
   DollarSign,
+  Infinity as InfinityIcon,
   Flag,
   AlertTriangle,
   Wallet,
@@ -39,6 +40,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { Notification } from '../types/database';
 import SubscriptionModal from './SubscriptionModal';
 import PlatformUpdateBanner from './PlatformUpdateBanner';
+import { isPro } from '../lib/subscription';
 
 function relativeTime(dateStr: string): string {
   const now = Date.now();
@@ -90,6 +92,10 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
     case 'vacancy_application':
     case 'team':
       return { icon: Users, bgClass: 'bg-blue-500/15', iconClass: 'text-blue-400' };
+    case 'price_increase_requested':
+      return { icon: DollarSign, bgClass: 'bg-amber-500/15', iconClass: 'text-amber-400' };
+    case 'price_adjusted':
+      return { icon: CheckCircle2, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
     case 'JOB_DECLINED':
       return { icon: XCircle, bgClass: 'bg-red-500/15', iconClass: 'text-red-400' };
     case 'JOB_COMPLETED':
@@ -182,7 +188,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     };
     initNotifications();
 
-    // Subscribe to new notifications in real-time
+    // Subscribe to notification changes in real-time
     const channel = supabase
       .channel(`notifications-${user.id}`)
       .on(
@@ -204,27 +210,52 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           showToast(newNotif);
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const updated = payload.new as Notification;
+          setNotifications(prev =>
+            prev.map(n => n.id === updated.id ? updated : n)
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const deleted = payload.old as Notification;
+          setNotifications(prev => prev.filter(n => n.id !== deleted.id));
+        }
+      )
       .subscribe();
 
-    // Poll every 5s as fallback — catches cases where realtime misses
+    // Poll every 10s as fallback — full refresh to catch read status changes
     const interval = setInterval(async () => {
       const { data } = await supabase
         .from('notifications')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(10);
 
-      if (data && data.id !== lastNotificationIdRef.current) {
-        lastNotificationIdRef.current = data.id;
-        setNotifications(prev => {
-          if (prev.some(n => n.id === data.id)) return prev;
-          return [data as Notification, ...prev];
-        });
-        showToast(data as Notification);
+      if (data) {
+        setNotifications(data as Notification[]);
+        if (data.length > 0) {
+          lastNotificationIdRef.current = data[0].id;
+        }
       }
-    }, 5000);
+    }, 10000);
 
     return () => {
       supabase.removeChannel(channel);
@@ -242,6 +273,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        // Mark all as read when closing by clicking outside
+        if (notificationsOpen && notifications.some(n => !n.read_at)) {
+          handleMarkAllRead();
+        }
         setNotificationsOpen(false);
       }
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
@@ -314,6 +349,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     ) {
       navigate('/dashboard');
       setNotificationsOpen(false);
+    } else if (notification.type === 'price_increase_requested') {
+      navigate(jobId ? `/leads?job=${jobId}` : '/leads');
+      setNotificationsOpen(false);
+    } else if (notification.type === 'price_adjusted') {
+      navigate(jobId ? `/work?job=${jobId}` : '/work');
+      setNotificationsOpen(false);
     } else {
       // Fallback: if there's a job_id, navigate to the relevant page
       if (jobId) {
@@ -328,6 +369,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'My Jobs', href: '/leads', icon: Briefcase },
     { name: 'Saved Tradies', href: '/my-trades', icon: Wrench },
     { name: 'Projects', href: '/projects', icon: Package },
+    { name: 'Schedule', href: '/schedule', icon: CalendarDays },
     { name: 'Invoices & Payments', href: '/payments', icon: DollarSign },
     { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Messages', href: '/messages', icon: MessageCircle },
@@ -340,7 +382,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Work Hub', href: '/work', icon: ClipboardList, children: [
       { name: 'Leads', href: '/work', icon: ClipboardList },
       { name: 'My Jobs', href: '/work?tab=active', icon: Briefcase },
-      { name: 'Ongoing Services', href: '/work?tab=services', icon: DollarSign },
+      { name: 'Ongoing Services', href: '/work?tab=services', icon: InfinityIcon },
       { name: 'Hiring', href: '/work?tab=recruitment', icon: Users },
     ] },
     { name: 'Schedule', href: '/schedule', icon: CalendarDays },
@@ -492,7 +534,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </nav>
 
           <div className="p-4 border-t border-navy-800">
-            {isTradie && tradieDetails?.subscription_tier !== 'pro' && (
+            {isTradie && !isPro(tradieDetails?.subscription_tier, profile?.is_premium) && (
               <button
                 onClick={() => setShowSubscriptionModal(true)}
                 className="w-full flex items-center gap-3 px-4 py-3 mb-3 bg-warm-500/10 border border-warm-500/20 text-warm-400 rounded-lg font-medium hover:bg-warm-500/20 transition-all"
@@ -502,7 +544,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </button>
             )}
 
-            {isTradie && tradieDetails?.subscription_tier === 'pro' && (
+            {isTradie && isPro(tradieDetails?.subscription_tier, profile?.is_premium) && (
               <div className="flex items-center gap-2 px-4 py-2.5 mb-3 bg-warm-500/10 border border-warm-500/20 rounded-lg">
                 <BadgeCheck className="w-5 h-5 text-warm-400" />
                 <span className="text-sm font-medium text-warm-300">Pro Member</span>
@@ -550,7 +592,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex items-center gap-3">
               <div className="relative" ref={notificationRef} data-tour="notifications">
                 <button
-                  onClick={() => setNotificationsOpen(!notificationsOpen)}
+                  onClick={() => {
+                    const wasOpen = notificationsOpen;
+                    setNotificationsOpen(!notificationsOpen);
+                    // Mark all as read when closing the dropdown
+                    if (wasOpen && notifications.some(n => !n.read_at)) {
+                      handleMarkAllRead();
+                    }
+                  }}
                   className="relative p-2.5 text-gray-300 hover:text-white hover:bg-navy-800 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
                   aria-label="Open notifications"
                 >

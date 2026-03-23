@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
+import { calculateProcessingFeeCents } from "../_shared/pricing.ts";
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 function checkRateLimit(
   key: string, maxRequests: number, windowMs: number,
@@ -17,12 +18,10 @@ function checkRateLimit(
 }
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
-
-const PROCESSING_FEE_RATE = 0.02;
 
 const PRICES: Record<string, { amount: number; label: string }> = {
   lead_unlock: { amount: 1500, label: "Lead Unlock - Contact Details" },
@@ -129,14 +128,23 @@ Deno.serve(async (req: Request) => {
     // --- Free tier limit: MAX_LEAD_UNLOCKS_PER_MONTH (3) ---
     if (paymentType === "lead_unlock") {
       const { data: userSub } = await supabase
-        .from("stripe_subscriptions")
+        .from("tradie_details")
         .select("subscription_tier")
         .eq("profile_id", user.id)
         .maybeSingle();
 
+      // Also check profiles.is_premium as fallback (in case tradie_details is out of sync)
+      const { data: userPremiumCheck } = await supabase
+        .from("profiles")
+        .select("is_premium")
+        .eq("id", user.id)
+        .maybeSingle();
+
       const isProUser =
         userSub?.subscription_tier === "pro" ||
-        userSub?.subscription_tier === "business";
+        userSub?.subscription_tier === "pro_plus" ||
+        userSub?.subscription_tier === "business" ||
+        userPremiumCheck?.is_premium === true;
 
       if (!isProUser) {
         const now = new Date();
@@ -190,7 +198,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const baseAmount = priceConfig.amount;
-    const processingFee = Math.round(baseAmount * PROCESSING_FEE_RATE);
+    const processingFee = calculateProcessingFeeCents(baseAmount);
 
     const { data: paymentRecord, error: insertError } = await supabase.from("payments").insert({
       profile_id: user.id,

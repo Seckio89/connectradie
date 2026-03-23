@@ -14,13 +14,12 @@ import {
   Image,
   Calendar,
   Repeat,
+  Eye,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Job } from '../types/database';
 import { extractSuburb } from '../lib/contactGating';
-import { sendNotification } from '../lib/notificationService';
-import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
 import { QUOTE_MESSAGE_OPTIONS, resolveMessageOptionsKey } from '../lib/recurringJobs';
 
 interface QuoteTemplate {
@@ -175,7 +174,7 @@ export default function SubmitQuoteModal({
   const desc = job.description.replace(/^\[[^\]]+\]\s*/, '');
   const suburb = extractSuburb(job.location_address || '') || 'Unknown area';
   const slotsRemaining = job.max_quotes - job.quote_count;
-  const isRecurring = !!(job.title && /recurring/i.test(job.title));
+  const isRecurring = !!(job.title && /ongoing|recurring/i.test(job.title));
   const businessName = tradieDetails?.business_name || profile?.full_name || 'our team';
   const tradeType = tradieDetails?.trade_category || category.toLowerCase();
 
@@ -203,32 +202,10 @@ export default function SubmitQuoteModal({
   useEffect(() => {
     if (!isOpen) return;
     setPriceHint(null);
-    const postcode = (job.location_address || '').match(/\b(\d{4})\b/)?.[1];
-    if (!postcode) return;
 
-    const postcodePrefix = postcode.slice(0, 2);
     supabase
       .from('quotes')
       .select('price_min, price_max')
-      .ilike('job_id', '%')
-      .limit(50)
-      .then(async () => {
-        const { data } = await supabase.rpc('get_price_guidance', {
-          p_category: categoryRaw,
-          p_postcode_prefix: postcodePrefix,
-        }).single();
-        if (data && data.avg_min && data.avg_max) {
-          setPriceHint({ min: Math.round(data.avg_min / 10) * 10, max: Math.round(data.avg_max / 10) * 10 });
-        }
-      })
-      .catch(() => {});
-
-    // Fallback: direct query if RPC doesn't exist
-    supabase
-      .from('quotes')
-      .select('price_min, price_max, jobs!inner(description, location_address)')
-      .ilike('jobs.description', `[${categoryRaw}]%`)
-      .ilike('jobs.location_address', `%${postcodePrefix}%`)
       .eq('status', 'pending')
       .limit(20)
       .then(({ data }) => {
@@ -353,6 +330,7 @@ export default function SubmitQuoteModal({
       estimated_duration: estimatedDuration || null,
       includes_materials: includesMaterials,
       proposed_start_date: effectiveStartDate || null,
+      requires_site_inspection: durationTBD,
       status: 'pending',
     });
 
@@ -372,29 +350,8 @@ export default function SubmitQuoteModal({
       return;
     }
 
-    // Notify homeowner via email + in-app
-    if (job.client_id) {
-      const quoteAmount = useFirmPrice ? parseFloat(firmPrice) : max;
-      const amountLabel = useFirmPrice
-        ? `$${parseFloat(firmPrice).toFixed(2)}`
-        : `$${min.toFixed(2)} – $${max.toFixed(2)}`;
-      sendNotification({
-        type: NOTIFICATION_TYPES.QUOTE_RECEIVED,
-        userId: job.client_id,
-        title: 'New Quote Received',
-        message: `You've received a new quote of ${amountLabel} for your job. Review it now!`,
-        jobId: job.id,
-        link: `/leads?job=${job.id}`,
-        metadata: {
-          amount: amountLabel,
-          job_id: job.id,
-          tradie_id: user.id,
-          quote_amount: quoteAmount,
-        },
-      }).catch(() => {
-        // Non-critical — quote was submitted, email is best-effort
-      });
-    }
+    // In-app notification is handled by the DB trigger `notify_client_new_quote`
+    // (fires on quotes INSERT). No frontend sendNotification needed here.
 
     setModalState('success');
   };
@@ -514,7 +471,7 @@ export default function SubmitQuoteModal({
                 {isRecurring && (
                   <p className="text-xs text-blue-600 flex items-center gap-1.5">
                     <Repeat className="w-3 h-3 flex-shrink-0" />
-                    Recurring — if accepted, you'll be the regular tradie for this service
+                    Ongoing service — if accepted, you'll be the regular tradie for this service
                   </p>
                 )}
                 <p className="text-sm text-gray-700">{desc}</p>
@@ -579,9 +536,56 @@ export default function SubmitQuoteModal({
                 </div>
               ) : null}
 
+              {/* Site Visit Required toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !durationTBD;
+                  setDurationTBD(next);
+                  if (next) setDurationValue('');
+                }}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-left ${
+                  durationTBD
+                    ? 'bg-amber-50 border-amber-300 ring-1 ring-amber-200'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                  durationTBD ? 'bg-amber-100' : 'bg-gray-100'
+                }`}>
+                  <Eye className={`w-4 h-4 ${durationTBD ? 'text-amber-600' : 'text-gray-400'}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-medium ${durationTBD ? 'text-amber-800' : 'text-gray-700'}`}>
+                    Site visit required
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Price and duration are estimates until I inspect the site
+                  </p>
+                </div>
+                <div className={`w-10 h-6 rounded-full transition-colors flex items-center flex-shrink-0 ${
+                  durationTBD ? 'bg-amber-500' : 'bg-gray-300'
+                }`}>
+                  <span className={`inline-block w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
+                    durationTBD ? 'translate-x-5' : 'translate-x-1'
+                  }`} />
+                </div>
+              </button>
+
+              {durationTBD && (
+                <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-amber-700">
+                    The client will see this as an estimated quote. Final price and timeframe will be confirmed after your on-site inspection.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-medium text-gray-700">Your Price</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    {durationTBD ? 'Estimated Price' : 'Your Price'}
+                  </label>
                   <button
                     type="button"
                     onClick={() => { setUseFirmPrice(!useFirmPrice); setError(''); }}
@@ -795,18 +799,6 @@ export default function SubmitQuoteModal({
                     ))}
                   </div>
                 </div>
-                <label className="flex items-center gap-2 mt-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={durationTBD}
-                    onChange={(e) => {
-                      setDurationTBD(e.target.checked);
-                      if (e.target.checked) setDurationValue('');
-                    }}
-                    className="rounded border-gray-300 text-secondary-500 focus:ring-secondary-400"
-                  />
-                  <span className="text-xs text-gray-500">To be confirmed after site visit</span>
-                </label>
               </div>
 
               <div className="flex flex-col gap-3">
@@ -844,7 +836,7 @@ export default function SubmitQuoteModal({
               <button
                 onClick={handleSubmit}
                 disabled={!canSubmit}
-                className={`w-full py-3.5 bg-gradient-to-r from-secondary-500 to-secondary-500 text-white font-semibold rounded-xl hover:from-secondary-600 hover:to-secondary-600 transition-colors shadow-lg shadow-secondary-200 flex items-center justify-center gap-2 text-lg ${
+                className={`w-full py-3.5 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 text-lg ${
                   !canSubmit ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >

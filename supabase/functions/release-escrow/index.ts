@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
@@ -150,13 +150,66 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Block release if a price increase is pending and not yet paid
+    if (existingMetadata.pending_increase) {
+      const { data: childPayment } = await supabase
+        .from("payments")
+        .select("id, status")
+        .eq("parent_payment_id", paymentId)
+        .eq("payment_type", "price_adjustment")
+        .eq("status", "completed")
+        .maybeSingle();
+
+      if (!childPayment) {
+        return new Response(
+          JSON.stringify({
+            error: "A price increase is pending client approval. The additional amount must be paid before escrow can be released.",
+            error_code: "pending_increase_not_paid",
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
+    // Sum any completed price_adjustment child payments
+    const { data: additionalPayments } = await supabase
+      .from("payments")
+      .select("amount, metadata")
+      .eq("parent_payment_id", paymentId)
+      .eq("status", "completed")
+      .eq("payment_type", "price_adjustment");
+
+    let totalBase = payment.amount;
+    let totalPlatformFee = typeof existingMetadata.platform_fee === "number"
+      ? existingMetadata.platform_fee
+      : 0;
+
+    for (const addl of (additionalPayments || [])) {
+      totalBase += addl.amount;
+      const addlPlatformFee = typeof addl.metadata?.platform_fee === "number"
+        ? addl.metadata.platform_fee
+        : 0;
+      totalPlatformFee += addlPlatformFee;
+    }
+
+    // Calculate transfer amount: total base minus total platform fees
+    const platformFeeCents = totalPlatformFee;
+    const transferAmount = totalBase - platformFeeCents;
+
+    if (transferAmount <= 0) {
+      return errorJson("Transfer amount must be positive after platform fee deduction", 400);
+    }
+
     // Create a transfer to the tradie's Connect account
-    // Transfer the base payment amount (excluding processing fee)
+    // Transfer the base payment amount minus platform fee
     const transfer = await stripe.transfers.create(
       {
-        amount: payment.amount,
+        amount: transferAmount,
         currency: "aud",
         destination: tradieProfile.stripe_connect_account_id,
         transfer_group: `job_${payment.job_id}`,
@@ -165,29 +218,43 @@ Deno.serve(async (req: Request) => {
           job_id: payment.job_id,
           client_id: user.id,
           tradie_id: job.tradie_id,
+          platform_fee: String(platformFeeCents),
         },
       },
       idempotencyKey ? { idempotencyKey } : undefined,
     );
 
     // Update payment metadata with transfer info
-    await supabase
+    const { error: metaUpdateError } = await supabase
       .from("payments")
       .update({
         metadata: {
           ...existingMetadata,
           transfer_id: transfer.id,
           transfer_amount: transfer.amount,
+          platform_fee_deducted: platformFeeCents,
           released_at: new Date().toISOString(),
           released_by: user.id,
         },
       })
       .eq("id", paymentId);
 
+    if (metaUpdateError) {
+      // CRITICAL: Transfer succeeded but metadata not saved — risk of duplicate transfer on retry
+      console.error(
+        "CRITICAL: Stripe transfer created but metadata update failed. Transfer ID:",
+        transfer.id,
+        "Payment ID:",
+        paymentId,
+        metaUpdateError
+      );
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         transferId: transfer.id,
+        ...(metaUpdateError ? { warning: "Transfer completed but record update failed. Contact support if this payment appears twice." } : {}),
       }),
       {
         status: 200,

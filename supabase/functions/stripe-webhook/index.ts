@@ -12,7 +12,7 @@ const supabase = createClient(
 );
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') || '*',
+  'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') || 'https://connectradie.com.au',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
 };
@@ -367,19 +367,147 @@ async function handleEvent(event: Stripe.Event) {
             console.error('Payment confirmation email error (non-fatal):', emailErr);
           }
 
-          // If this is a job_funding payment, update the job status directly to in_progress
-          // (skipping funded intermediate step to reduce manual tradie clicks)
+          // If this is a recurring_invoice payment, mark the invoice as paid and transfer to tradie
+          if (session.metadata?.type === 'recurring_invoice') {
+            // Match by checkout session ID (payment_intent is null at session creation time)
+            const { error: invoiceUpdateError } = await supabase
+              .from('recurring_invoices')
+              .update({
+                status: 'paid',
+                paid_at: new Date().toISOString(),
+                stripe_payment_intent_id: typeof session.payment_intent === 'string'
+                  ? session.payment_intent
+                  : null,
+              })
+              .eq('stripe_checkout_session_id', session.id);
+
+            if (invoiceUpdateError) {
+              console.error('Error updating recurring invoice to paid:', invoiceUpdateError);
+            } else {
+              console.info(`Recurring invoice marked as paid (checkout_session: ${session.id})`);
+            }
+
+            // Transfer funds to tradie (minus platform fee)
+            const tradieId = session.metadata?.tradie_id;
+            const platformFeeCents = session.metadata?.platform_fee
+              ? parseInt(session.metadata.platform_fee, 10)
+              : 0;
+
+            if (tradieId) {
+              try {
+                // Get the tradie's Connect account
+                const { data: tradieProfile } = await supabase
+                  .from('profiles')
+                  .select('stripe_connect_account_id, stripe_connect_onboarding_complete')
+                  .eq('id', tradieId)
+                  .maybeSingle();
+
+                if (tradieProfile?.stripe_connect_account_id && tradieProfile?.stripe_connect_onboarding_complete) {
+                  // Calculate transfer: total paid minus processing fee (kept by Stripe) minus platform fee (kept by us)
+                  // session.amount_total includes the processing fee line item
+                  // We need the base service amount minus our platform fee
+                  const processingFeeMeta = session.metadata?.processing_fee
+                    ? parseInt(session.metadata.processing_fee, 10)
+                    : 0;
+                  const baseServiceAmount = (session.amount_total ?? 0) - processingFeeMeta;
+                  const transferAmount = baseServiceAmount - platformFeeCents;
+
+                  if (transferAmount > 0) {
+                    const transfer = await stripe.transfers.create({
+                      amount: transferAmount,
+                      currency: 'aud',
+                      destination: tradieProfile.stripe_connect_account_id,
+                      transfer_group: `recurring_${session.metadata?.recurring_job_id}`,
+                      metadata: {
+                        type: 'recurring_invoice_payout',
+                        recurring_job_id: session.metadata?.recurring_job_id ?? '',
+                        tradie_id: tradieId,
+                        platform_fee: String(platformFeeCents),
+                      },
+                    });
+                    console.info(`Recurring invoice transfer ${transfer.id} of ${transferAmount} cents to tradie ${tradieId} (platform fee: ${platformFeeCents} cents)`);
+                  }
+                } else {
+                  console.warn(`Tradie ${tradieId} has no Connect account — recurring invoice payout skipped`);
+                }
+              } catch (transferErr) {
+                console.error('Error transferring recurring invoice payout to tradie:', transferErr);
+              }
+
+              // Notify the tradie
+              const amountDollars = ((session.amount_total ?? 0) / 100).toFixed(2);
+              await supabase.from('notifications').insert({
+                user_id: tradieId,
+                title: 'Invoice Paid',
+                message: `Your recurring service invoice of $${amountDollars} has been paid. Funds are being transferred to your account.`,
+                type: 'payment_received',
+                read: false,
+              });
+            }
+          }
+
+          // If this is a job_funding payment, update job status to 'funded' (escrow held)
+          // Lifecycle: pending → accepted → funded → in_progress → completed
           if (session.metadata?.payment_type === 'job_funding' && session.metadata?.job_id) {
             const { error: jobUpdateError } = await supabase
               .from('jobs')
-              .update({ status: 'in_progress' })
+              .update({ status: 'funded' })
               .eq('id', session.metadata.job_id)
-              .in('status', ['pending', 'accepted', 'funded']);
+              .in('status', ['pending', 'accepted']);
 
             if (jobUpdateError) {
               console.error('Error updating job status to funded:', jobUpdateError);
             } else {
               console.info(`Job ${session.metadata.job_id} status updated to funded`);
+            }
+          }
+
+          // If this is a price_adjustment payment (additional charge after site visit),
+          // clear the pending_increase from the parent payment and update job budget
+          if (session.metadata?.payment_type === 'price_adjustment' && session.metadata?.parent_payment_id) {
+            try {
+              const parentId = session.metadata.parent_payment_id;
+
+              const { data: parentPayment } = await supabase
+                .from('payments')
+                .select('metadata')
+                .eq('id', parentId)
+                .maybeSingle();
+
+              if (parentPayment) {
+                const meta = { ...(parentPayment.metadata || {}) };
+                delete meta.pending_increase;
+                meta.increase_completed = true;
+                meta.increase_completed_at = new Date().toISOString();
+
+                await supabase
+                  .from('payments')
+                  .update({ metadata: meta })
+                  .eq('id', parentId);
+
+                console.info(`Cleared pending_increase from parent payment ${parentId}`);
+              }
+
+              // Update job budget_amount to the final price from the quote
+              if (session.metadata?.job_id) {
+                const { data: acceptedQuote } = await supabase
+                  .from('quotes')
+                  .select('final_price')
+                  .eq('job_id', session.metadata.job_id)
+                  .eq('status', 'accepted')
+                  .maybeSingle();
+
+                if (acceptedQuote?.final_price) {
+                  await supabase
+                    .from('jobs')
+                    .update({ budget_amount: acceptedQuote.final_price })
+                    .eq('id', session.metadata.job_id);
+
+                  console.info(`Updated job ${session.metadata.job_id} budget to ${acceptedQuote.final_price}`);
+                }
+              }
+            } catch (adjErr) {
+              console.error('Error handling price_adjustment completion:', adjErr);
             }
           }
         }
@@ -477,15 +605,23 @@ async function syncCustomerFromStripe(customerId: string) {
           );
 
         // Remove pro access
-        await supabase
+        const { error: profileCancelError } = await supabase
           .from('profiles')
           .update({ is_premium: false, subscription_expiry: null })
           .eq('id', profileId);
 
-        await supabase
+        if (profileCancelError) {
+          console.error('Error removing profile premium status:', profileCancelError);
+        }
+
+        const { error: tierCancelError } = await supabase
           .from('tradie_details')
           .update({ subscription_tier: 'free' })
           .eq('profile_id', profileId);
+
+        if (tierCancelError) {
+          console.error('Error resetting tradie subscription tier:', tierCancelError);
+        }
       }
       return;
     }
@@ -536,10 +672,14 @@ async function syncCustomerFromStripe(customerId: string) {
       }
 
       // Sync subscription_tier in tradie_details (no-op if user is not a tradie)
-      await supabase
+      const { error: tierUpdateError } = await supabase
         .from('tradie_details')
         .update({ subscription_tier: isActive ? 'pro' : 'free' })
         .eq('profile_id', profileId);
+
+      if (tierUpdateError) {
+        console.error('Error updating tradie subscription tier:', tierUpdateError);
+      }
 
       console.info(
         `Successfully synced subscription for customer: ${customerId}, profile: ${profileId}, active: ${isActive}`,

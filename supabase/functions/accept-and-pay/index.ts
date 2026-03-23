@@ -1,15 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
+import { PRICING_CONFIG, calculatePlatformFee, calculateProcessingFeeCents, resolveTradieTier, TradieTier } from "../_shared/pricing.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
 };
-
-const PROCESSING_FEE_RATE = 0.02;
 
 function errorJson(message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
@@ -79,13 +78,12 @@ Deno.serve(async (req: Request) => {
     }
 
     // Validate redirect URLs to prevent open redirects
-    // Default to "*" to match CORS header default when ALLOWED_ORIGIN is unset
-    const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") || "*";
+    const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au";
     const isValidRedirectUrl = (url: string) => {
+      // Allow all origins in dev mode
+      if (allowedOrigin === "*") return true;
       try {
         const parsed = new URL(url);
-        // Allow wildcard origin (dev mode) or exact hostname match
-        if (allowedOrigin === "*") return true;
         const allowed = new URL(allowedOrigin);
         return parsed.hostname === allowed.hostname;
       } catch {
@@ -137,7 +135,7 @@ Deno.serve(async (req: Request) => {
     // Validate the job
     const { data: job, error: jobError } = await supabase
       .from("jobs")
-      .select("id, client_id, tradie_id, description, status, project_id, location_address")
+      .select("id, client_id, tradie_id, title, description, status, project_id, location_address")
       .eq("id", quote.job_id)
       .maybeSingle();
 
@@ -149,17 +147,25 @@ Deno.serve(async (req: Request) => {
       return errorJson("Only the client on this job can accept a quote", 403);
     }
 
+    // --- Look up tradie subscription tier (used for free-tier limits + platform fee) ---
+    const { data: tradieSubRecord } = await supabase
+      .from("tradie_details")
+      .select("subscription_tier")
+      .eq("profile_id", quote.tradie_id)
+      .maybeSingle();
+
+    const tradieSubscriptionTier = resolveTradieTier(tradieSubRecord?.subscription_tier);
+
+    // Also check profiles.is_premium as fallback (in case tradie_details is out of sync)
+    const { data: tradiePremiumCheck } = await supabase
+      .from("profiles")
+      .select("is_premium")
+      .eq("id", quote.tradie_id)
+      .maybeSingle();
+
     // --- Free tier limit: MAX_JOBS_PER_MONTH (5) for the tradie ---
     if (!alreadyAccepted) {
-      const { data: tradieSub } = await supabase
-        .from("stripe_subscriptions")
-        .select("subscription_tier")
-        .eq("profile_id", quote.tradie_id)
-        .maybeSingle();
-
-      const isTradieProUser =
-        tradieSub?.subscription_tier === "pro" ||
-        tradieSub?.subscription_tier === "business";
+      const isTradieProUser = tradieSubscriptionTier !== "free" || tradiePremiumCheck?.is_premium === true;
 
       if (!isTradieProUser) {
         const now = new Date();
@@ -225,7 +231,11 @@ Deno.serve(async (req: Request) => {
 
     // Convert dollars to cents
     const baseAmountCents = Math.round(quotePriceDollars * 100);
-    const processingFee = Math.round(baseAmountCents * PROCESSING_FEE_RATE);
+    const processingFee = calculateProcessingFeeCents(baseAmountCents);
+
+    // Calculate platform fee based on tradie's subscription tier
+    const platformFeeDollars = calculatePlatformFee(quotePriceDollars, tradieSubscriptionTier);
+    const platformFeeCents = Math.round(platformFeeDollars * 100);
 
     // Get tradie name for metadata
     const { data: tradieProfile } = await supabase
@@ -318,6 +328,8 @@ Deno.serve(async (req: Request) => {
           tradie_id: quote.tradie_id,
           tradie_name: tradieProfile?.full_name || null,
           job_description: job.description,
+          platform_fee: platformFeeCents,
+          tradie_tier: tradieSubscriptionTier,
         },
       })
       .select("id")
@@ -389,6 +401,8 @@ Deno.serve(async (req: Request) => {
           payment_record_id: paymentRecord.id,
           base_amount: String(baseAmountCents),
           processing_fee: String(processingFee),
+          platform_fee: String(platformFeeCents),
+          tradie_tier: tradieSubscriptionTier,
         },
       },
       idempotencyKey ? { idempotencyKey } : undefined,

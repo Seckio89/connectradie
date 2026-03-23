@@ -34,6 +34,7 @@ function addHoursToTime(time: string, hours: number): string {
   return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}:00`;
 }
 
+// Overflow menu for secondary actions
 interface RecurringSessionCardProps {
   session: RecurringSession;
   recurringJobId: string;
@@ -42,8 +43,8 @@ interface RecurringSessionCardProps {
   clientId?: string;
   preferredTime?: string;
   agreedPrice?: number | null;
+  serviceName?: string;
   onUpdate: () => void;
-  onCancelService?: () => void;
 }
 
 export default function RecurringSessionCard({
@@ -54,13 +55,14 @@ export default function RecurringSessionCard({
   clientId,
   preferredTime,
   agreedPrice,
+  serviceName,
   onUpdate,
-  onCancelService,
 }: RecurringSessionCardProps) {
   const [showReschedule, setShowReschedule] = useState(false);
   const [showSkip, setShowSkip] = useState(false);
   const [showExtra, setShowExtra] = useState(false);
   const [showCounterPropose, setShowCounterPropose] = useState(false);
+  const [showManage, setShowManage] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [reason, setReason] = useState('');
   const [extraDate, setExtraDate] = useState('');
@@ -411,16 +413,33 @@ export default function RecurringSessionCard({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
-          <span className="text-sm font-medium text-gray-900">{formattedDate}</span>
-          {session.status === 'rescheduled' && session.scheduled_date !== session.actual_date && (
-            <span className="text-xs text-gray-400 line-through">
-              {new Date(session.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
-            </span>
-          )}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-900">{formattedDate}</span>
+              {session.status === 'rescheduled' && session.scheduled_date !== session.actual_date && (
+                <span className="text-xs text-gray-400 line-through">
+                  {new Date(session.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                </span>
+              )}
+              {preferredTime && (
+                <span className="text-xs text-gray-400">
+                  {preferredTime.slice(0, 5).replace(/^0/, '')}
+                </span>
+              )}
+            </div>
+            {serviceName && (
+              <p className="text-xs text-gray-500 capitalize truncate">{serviceName}</p>
+            )}
+          </div>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${style.bg} ${style.text}`}>
-          {style.label}
-        </span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {agreedPrice != null && agreedPrice > 0 && session.status !== 'extra' && (
+            <span className="text-xs font-semibold text-emerald-700">${agreedPrice.toFixed(2)}</span>
+          )}
+          <span className={`px-3 py-1 rounded-full text-xs font-medium border ${style.bg} ${style.text}`}>
+            {style.label}
+          </span>
+        </div>
       </div>
 
       {/* Notes / Reason */}
@@ -484,7 +503,7 @@ export default function RecurringSessionCard({
               className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-emerald-100 disabled:opacity-50 transition-colors"
             >
               <CheckCircle2 className="w-3 h-3" />
-              Confirm & Auto-accept All
+              Confirm & Auto Accept
             </button>
             <button
               onClick={() => setShowDeclineForm(true)}
@@ -626,23 +645,9 @@ export default function RecurringSessionCard({
 
       {/* Action Buttons — only for scheduled sessions */}
       {isActionable && !showReschedule && !showSkip && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
           {isTradie ? (
             <>
-              <button
-                onClick={() => { resetForms(); setShowReschedule(true); }}
-                className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
-              >
-                <Send className="w-3 h-3" />
-                Propose New Date
-              </button>
-              <button
-                onClick={() => { resetForms(); setShowSkip(true); }}
-                className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
-              >
-                <SkipForward className="w-3 h-3" />
-                Skip
-              </button>
               <button
                 onClick={handleComplete}
                 disabled={loading}
@@ -652,219 +657,264 @@ export default function RecurringSessionCard({
                 Mark Complete
               </button>
               <button
-                onClick={() => { resetForms(); setShowExtra(true); }}
-                className="inline-flex items-center gap-1.5 text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-amber-100 transition-colors"
-              >
-                <Plus className="w-3 h-3" />
-                Extra Session
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => { resetForms(); setShowReschedule(true); }}
-                className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
-              >
-                <Clock className="w-3 h-3" />
-                Reschedule
-              </button>
-              <button
                 onClick={() => { resetForms(); setShowSkip(true); }}
                 className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
               >
                 <SkipForward className="w-3 h-3" />
                 Skip
               </button>
+              <button
+                onClick={() => { resetForms(); setShowReschedule(true); }}
+                className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              >
+                <Clock className="w-3 h-3" />
+                Change Date
+              </button>
+              <button
+                onClick={() => { resetForms(); setShowExtra(true); }}
+                className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                Add Extra Session
+              </button>
+            </>
+          ) : !showManage ? (
+            <button
+              onClick={() => setShowManage(true)}
+              className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+            >
+              Manage
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => { resetForms(); setShowReschedule(true); setShowManage(false); }}
+                className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              >
+                <Clock className="w-3 h-3" />
+                Change Date
+              </button>
+              <button
+                onClick={() => { resetForms(); setShowSkip(true); setShowManage(false); }}
+                className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              >
+                <SkipForward className="w-3 h-3" />
+                Skip This Visit
+              </button>
             </>
           )}
         </div>
       )}
 
-      {/* Extra Session button for completed sessions (tradie only) */}
-      {session.status === 'completed' && isTradie && !showExtra && (
-        <div className="mt-3">
-          <button
-            onClick={() => { resetForms(); setShowExtra(true); }}
-            className="inline-flex items-center gap-1.5 text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-amber-100 transition-colors"
-          >
-            <Plus className="w-3 h-3" />
-            Add Extra Session
-          </button>
-        </div>
-      )}
-
       {/* Reschedule / Propose Form */}
       {showReschedule && (
-        <div className="mt-3 space-y-2">
-          <label className="block text-xs font-medium text-gray-600">
-            {isTradie ? 'Proposed date' : 'New date'}
-          </label>
-          <input
-            type="date"
-            value={rescheduleDate}
-            min={minDate}
-            onChange={(e) => setRescheduleDate(e.target.value)}
-            className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
-              clashWarning ? 'border-red-300 bg-red-50' : 'border-gray-200'
-            }`}
-          />
-          {blockedDates.size > 0 && (
-            <p className="text-xs text-gray-400">
-              {blockedDates.size} date{blockedDates.size !== 1 ? 's' : ''} fully booked in the next 3 months
-            </p>
-          )}
-          {checkingClash && (
-            <p className="text-xs text-gray-400 animate-pulse">Checking availability...</p>
-          )}
-          {clashWarning && (
-            <div className="flex items-start gap-2 p-2 bg-red-50 border border-red-200 rounded-lg">
-              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-red-600 font-medium">{clashWarning}</p>
+        <div className="mt-3 rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+          <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-100">
+            <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              {isTradie ? 'Propose New Date' : 'Change Date'}
+            </h4>
+            <button
+              onClick={() => { setShowReschedule(false); setReason(''); setClashWarning(''); setRescheduleDate(''); }}
+              className="p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="bg-white p-4 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  {isTradie ? 'Proposed Date' : 'New Date'}
+                </label>
+                <input
+                  type="date"
+                  value={rescheduleDate}
+                  min={minDate}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                    clashWarning ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                  }`}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Reason</label>
+                <input
+                  type="text"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder={isTradie ? 'e.g., Schedule conflict' : 'e.g., Not available'}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
             </div>
-          )}
-          <label className="block text-xs font-medium text-gray-600">Reason</label>
-          <input
-            type="text"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder={isTradie ? 'e.g., Schedule conflict' : 'e.g., Client unavailable'}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-          <div className="flex gap-2">
-            <button
-              onClick={handleReschedule}
-              disabled={loading || !rescheduleDate || !reason.trim() || !!clashWarning || checkingClash}
-              className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
-            >
-              <Send className="w-3 h-3" />
-              {loading ? 'Sending...' : isTradie ? 'Send Proposal' : 'Confirm'}
-            </button>
-            <button
-              onClick={() => { setShowReschedule(false); setReason(''); setClashWarning(''); }}
-              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              Cancel
-            </button>
+            {blockedDates.size > 0 && !clashWarning && (
+              <p className="text-xs text-gray-400">
+                {blockedDates.size} date{blockedDates.size !== 1 ? 's' : ''} fully booked in the next 3 months
+              </p>
+            )}
+            {checkingClash && (
+              <p className="text-xs text-gray-400 animate-pulse">Checking availability...</p>
+            )}
+            {clashWarning && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+                <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                <p className="text-xs text-red-600 font-medium">{clashWarning}</p>
+              </div>
+            )}
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                onClick={handleReschedule}
+                disabled={loading || !rescheduleDate || !reason.trim() || !!clashWarning || checkingClash}
+                className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+              >
+                <Send className="w-3 h-3" />
+                {loading ? 'Sending...' : isTradie ? 'Send Proposal' : 'Confirm'}
+              </button>
+              <button
+                onClick={() => { setShowReschedule(false); setReason(''); setClashWarning(''); setRescheduleDate(''); }}
+                className="px-4 py-2 text-xs text-gray-500 hover:text-gray-700 font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Skip Form */}
       {showSkip && (
-        <div className="mt-3 space-y-2">
-          <label className="block text-xs font-medium text-gray-600">Reason for skipping</label>
-          <input
-            type="text"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="e.g., On holiday"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-          <div className="flex gap-2">
-            <button
-              onClick={handleSkip}
-              disabled={loading || !reason.trim()}
-              className="px-4 py-2 text-xs font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50 transition-colors"
-            >
-              {loading ? 'Skipping...' : 'Skip Session'}
-            </button>
+        <div className="mt-3 rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+          <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-100">
+            <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Skip This Visit</h4>
             <button
               onClick={() => { setShowSkip(false); setReason(''); }}
-              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              className="p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              Cancel
+              <X className="w-3.5 h-3.5" />
             </button>
+          </div>
+          <div className="bg-white p-4 space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Reason for skipping</label>
+              <input
+                type="text"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder={isTradie ? 'e.g., Schedule conflict, on leave' : 'e.g., Away, not available'}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                onClick={handleSkip}
+                disabled={loading || !reason.trim()}
+                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+              >
+                <SkipForward className="w-3 h-3" />
+                {loading ? 'Skipping...' : 'Skip Visit'}
+              </button>
+              <button
+                onClick={() => { setShowSkip(false); setReason(''); }}
+                className="px-4 py-2 text-xs text-gray-500 hover:text-gray-700 font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Extra Session Form (tradie only) */}
       {showExtra && (
-        <div className="mt-3 space-y-2">
-          <label className="block text-xs font-medium text-gray-600">Date</label>
-          <input
-            type="date"
-            value={extraDate}
-            min={minDate}
-            onChange={(e) => setExtraDate(e.target.value)}
-            className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
-              extraClashWarning ? 'border-red-300 bg-red-50' : 'border-gray-200'
-            }`}
-          />
-          {checkingExtraClash && (
-            <p className="text-xs text-gray-400 animate-pulse">Checking availability...</p>
-          )}
-          {extraClashWarning && (
-            <div className="flex items-start gap-2 p-2 bg-red-50 border border-red-200 rounded-lg">
-              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-red-600 font-medium">{extraClashWarning}</p>
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-xs font-medium text-gray-600">Hours</label>
-              <input
-                type="number"
-                step="0.5"
-                min="0.5"
-                max="12"
-                value={extraHours}
-                onChange={(e) => setExtraHours(e.target.value)}
-                placeholder="2"
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600">Cost (AUD)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={extraCost}
-                onChange={(e) => setExtraCost(e.target.value)}
-                placeholder="0.00"
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-          </div>
-          <label className="block text-xs font-medium text-gray-600">Notes (optional)</label>
-          <textarea
-            value={extraNotes}
-            onChange={(e) => setExtraNotes(e.target.value)}
-            placeholder="e.g., Emergency callout for leak"
-            rows={2}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-          />
-          <div className="flex gap-2">
-            <button
-              onClick={handleAddExtra}
-              disabled={loading || !extraDate || !!extraClashWarning || checkingExtraClash}
-              className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
-            >
-              <Plus className="w-3 h-3" />
-              {loading ? 'Adding...' : 'Add Session'}
-            </button>
+        <div className="mt-3 rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+          <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-100">
+            <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Add Extra Session</h4>
             <button
               onClick={() => { setShowExtra(false); setExtraDate(''); setExtraHours(''); setExtraCost(''); setExtraNotes(''); setExtraClashWarning(''); }}
-              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              className="p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              Cancel
+              <X className="w-3.5 h-3.5" />
             </button>
+          </div>
+          <div className="bg-white p-4 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
+                <input
+                  type="date"
+                  value={extraDate}
+                  min={minDate}
+                  onChange={(e) => setExtraDate(e.target.value)}
+                  className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                    extraClashWarning ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                  }`}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Hours</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0.5"
+                  max="12"
+                  value={extraHours}
+                  onChange={(e) => setExtraHours(e.target.value)}
+                  placeholder="2"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Cost (AUD)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={extraCost}
+                  onChange={(e) => setExtraCost(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+            {checkingExtraClash && (
+              <p className="text-xs text-gray-400 animate-pulse">Checking availability...</p>
+            )}
+            {extraClashWarning && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+                <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                <p className="text-xs text-red-600 font-medium">{extraClashWarning}</p>
+              </div>
+            )}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Notes (optional)</label>
+              <input
+                type="text"
+                value={extraNotes}
+                onChange={(e) => setExtraNotes(e.target.value)}
+                placeholder="e.g., Emergency callout for leak"
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                onClick={handleAddExtra}
+                disabled={loading || !extraDate || !!extraClashWarning || checkingExtraClash}
+                className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                {loading ? 'Adding...' : 'Add Session'}
+              </button>
+              <button
+                onClick={() => { setShowExtra(false); setExtraDate(''); setExtraHours(''); setExtraCost(''); setExtraNotes(''); setExtraClashWarning(''); }}
+                className="px-4 py-2 text-xs text-gray-500 hover:text-gray-700 font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* End Service — tradie can cancel the entire recurring service */}
-      {isTradie && onCancelService && (session.status === 'scheduled' || session.status === 'pending_confirmation') && (
-        <div className="mt-2 pt-2 border-t border-gray-100">
-          <button
-            onClick={onCancelService}
-            className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
-          >
-            End this recurring service
-          </button>
-        </div>
-      )}
     </div>
   );
 }

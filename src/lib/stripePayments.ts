@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { callEdgeFunction } from './edgeFn';
+import { PRICING_CONFIG } from '../config/pricing';
 
 // ---------------------------------------------------------------------------
 // Idempotency key helper – prevents duplicate payment submissions
@@ -51,18 +52,20 @@ export interface PaymentHistoryItem extends PaymentRecord {
 // Fee constants (AUD, amounts in cents)
 // ---------------------------------------------------------------------------
 
-/** Platform fee rate for free-tier tradies (10%). */
-export const PLATFORM_FEE_RATE_FREE = 0.10;
+/** Platform fee rate for free-tier tradies — first sliding-scale tier (10%). */
+export const PLATFORM_FEE_RATE_FREE = PRICING_CONFIG.tradie.free.platformFee.tiers[0].rate;
 
-/** Platform fee rate for pro-tier tradies (5%). */
-export const PLATFORM_FEE_RATE_PRO = 0.05;
+/** Platform fee rate for pro-tier tradies — first sliding-scale tier (5%). */
+export const PLATFORM_FEE_RATE_PRO = PRICING_CONFIG.tradie.pro.platformFee.tiers[0].rate;
 
-/** ConnecTradie processing fee (2%). */
-export const PROCESSING_FEE_RATE = 0.02;
+/** ConnecTradie processing fee (Stripe 1.75% + platform margin 1.2% = 2.95%). */
+export const PROCESSING_FEE_RATE =
+  PRICING_CONFIG.processing.stripePercentage +
+  PRICING_CONFIG.processing.platformProcessingMargin;
 
 /** Stripe processing fee: 1.75% + 30c per transaction (domestic AU cards). */
-export const STRIPE_FEE_RATE = 0.0175;
-export const STRIPE_FEE_FIXED_CENTS = 30;
+export const STRIPE_FEE_RATE = PRICING_CONFIG.processing.stripePercentage;
+export const STRIPE_FEE_FIXED_CENTS = PRICING_CONFIG.processing.stripeFixed * 100;
 
 // ---------------------------------------------------------------------------
 // Fee calculation
@@ -209,6 +212,43 @@ export async function releaseEscrow(
 ): Promise<{ success: boolean }> {
   const idempotencyKey = generateIdempotencyKey();
   return callEdgeFunction<{ success: boolean }>('release-escrow', { paymentId, idempotencyKey });
+}
+
+/**
+ * Set a final price on a quote after a site inspection.
+ * Handles partial refund (decrease) or pending increase request (increase).
+ */
+export async function adjustQuotePrice(
+  quoteId: string,
+  finalPrice: number,
+): Promise<{ action: string; finalPrice: number; refundAmount?: number; additionalAmount?: number }> {
+  return callEdgeFunction<{ action: string; finalPrice: number; refundAmount?: number; additionalAmount?: number }>(
+    'adjust-quote-price',
+    { quoteId, finalPrice },
+  );
+}
+
+/**
+ * Pay the additional amount for a price increase after site inspection.
+ * Creates a Stripe Checkout session for the difference.
+ */
+export async function payPriceIncrease(
+  paymentId: string,
+  jobId: string,
+): Promise<{ url: string; paymentId: string }> {
+  const idempotencyKey = generateIdempotencyKey();
+  const result = await callEdgeFunction<{ url: string; paymentId: string }>('pay-price-increase', {
+    paymentId,
+    idempotencyKey,
+    successUrl: `${window.location.origin}/leads?payment=success&job_id=${jobId}`,
+    cancelUrl: `${window.location.origin}/leads?payment=cancelled&job_id=${jobId}`,
+  });
+
+  if (!result.url) {
+    throw new Error('No checkout URL received from pay-price-increase');
+  }
+
+  return result;
 }
 
 /**

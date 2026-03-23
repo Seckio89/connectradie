@@ -73,11 +73,16 @@ export async function callEdgeFunction<T = Record<string, unknown>>(
   }
 
   if (!response.ok) {
-    const errorMessage = (data as Record<string, unknown>)?.error;
-    throw new Error(
-      (typeof errorMessage === 'string' ? errorMessage : null) ||
-      `Edge function "${functionName}" failed (${response.status})`
+    const parsed = data as Record<string, unknown>;
+    const errorMessage = typeof parsed?.error === 'string' ? parsed.error : null;
+    const errorCode = typeof parsed?.error_code === 'string' ? parsed.error_code : undefined;
+    const err = new Error(
+      errorMessage || `Edge function "${functionName}" failed (${response.status})`
     );
+    if (errorCode) {
+      (err as Error & { code?: string }).code = errorCode;
+    }
+    throw err;
   }
 
   return data;

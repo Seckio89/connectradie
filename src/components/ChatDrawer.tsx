@@ -658,6 +658,8 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                         const dateKey = date.toLocaleDateString('en-AU');
                         const isSelected = selectedDate === dateKey;
                         const isToday = todayDateString === date.toDateString();
+                        const now = new Date();
+                        const isPast = date < new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
                         return (
                           <button
@@ -668,7 +670,11 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                               hasAvailability
                                 ? isSelected
                                   ? 'bg-warm-500 text-white shadow-md'
+                                  : isPast
+                                  ? 'bg-green-50/50 text-green-500 opacity-50 hover:opacity-75 border border-green-100'
                                   : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
+                                : isPast
+                                ? 'text-gray-300 opacity-50'
                                 : 'text-gray-400 cursor-not-allowed'
                             } ${isToday && !isSelected ? 'ring-2 ring-warm-300' : ''}`}
                           >

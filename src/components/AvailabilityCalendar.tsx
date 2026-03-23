@@ -403,18 +403,17 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                       <button
                         key={day}
                         onClick={() => handleDateClick(day)}
-                        disabled={isPast}
                         className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-all relative min-w-[44px] min-h-[44px] ${
                           isSelected
                             ? 'bg-warm-500 text-white'
+                            : isPast
+                            ? 'opacity-50 hover:opacity-75'
                             : hasSlots
                             ? 'bg-blue-50 text-blue-800 hover:bg-blue-100 font-semibold border border-blue-200'
-                            : isPast
-                            ? 'text-gray-300 cursor-not-allowed'
                             : 'hover:bg-gray-100 text-gray-700'
                         } ${isToday && !isSelected ? 'ring-2 ring-primary-500' : ''}`}
                       >
-                        <span>
+                        <span className={isPast && !isSelected ? 'text-gray-400' : ''}>
                           {day}
                         </span>
                         {hasSlots && !isSelected && (

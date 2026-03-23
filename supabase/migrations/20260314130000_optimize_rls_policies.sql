@@ -7,6 +7,7 @@
 -- ============================================================
 DROP POLICY IF EXISTS "Clients can delete their own pending jobs" ON public.jobs;
 DROP POLICY IF EXISTS "Tradies can delete their declined jobs" ON public.jobs;
+DROP POLICY IF EXISTS "Users can delete own jobs" ON public.jobs;
 
 CREATE POLICY "Users can delete own jobs" ON public.jobs
   FOR DELETE TO authenticated
@@ -21,6 +22,7 @@ CREATE POLICY "Users can delete own jobs" ON public.jobs
 -- ============================================================
 DROP POLICY IF EXISTS "Tradies can delete own quotes" ON public.quotes;
 DROP POLICY IF EXISTS "Clients can delete quotes on their own jobs" ON public.quotes;
+DROP POLICY IF EXISTS "Users can delete relevant quotes" ON public.quotes;
 
 CREATE POLICY "Users can delete relevant quotes" ON public.quotes
   FOR DELETE TO authenticated
@@ -55,6 +57,7 @@ CREATE POLICY "Allow notification inserts for job participants" ON public.notifi
 -- ============================================================
 DROP POLICY IF EXISTS "Homeowner can read own invoices" ON public.recurring_invoices;
 DROP POLICY IF EXISTS "Tradie can read own invoices" ON public.recurring_invoices;
+DROP POLICY IF EXISTS "Users can read own invoices" ON public.recurring_invoices;
 
 CREATE POLICY "Users can read own invoices" ON public.recurring_invoices
   FOR SELECT TO authenticated
@@ -68,6 +71,7 @@ CREATE POLICY "Users can read own invoices" ON public.recurring_invoices
 -- ============================================================
 DROP POLICY IF EXISTS "Homeowner can manage their own sessions" ON public.recurring_sessions;
 DROP POLICY IF EXISTS "Tradie can manage sessions for their recurring jobs" ON public.recurring_sessions;
+DROP POLICY IF EXISTS "Users can manage relevant sessions" ON public.recurring_sessions;
 
 CREATE POLICY "Users can manage relevant sessions" ON public.recurring_sessions
   FOR ALL TO authenticated
@@ -88,12 +92,11 @@ CREATE POLICY "Users can manage relevant sessions" ON public.recurring_sessions
 
 -- ============================================================
 -- TRADIE_AVAILABILITY: Replace ALL + SELECT overlap
--- The ALL policy covers all ops for the tradie, but the SELECT
--- policy (true) is for public read access. When both are
--- permissive, Postgres evaluates both on SELECT queries.
--- Fix: restrict ALL to INSERT/UPDATE/DELETE, keep SELECT as is.
 -- ============================================================
 DROP POLICY IF EXISTS "Tradie can manage own availability" ON public.tradie_availability;
+DROP POLICY IF EXISTS "Tradie can insert own availability" ON public.tradie_availability;
+DROP POLICY IF EXISTS "Tradie can update own availability" ON public.tradie_availability;
+DROP POLICY IF EXISTS "Tradie can delete own availability" ON public.tradie_availability;
 
 CREATE POLICY "Tradie can insert own availability" ON public.tradie_availability
   FOR INSERT TO authenticated

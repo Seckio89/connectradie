@@ -75,6 +75,8 @@ export function useDashboardJobs({ userId, onSuccess, onError }: UseDashboardJob
   const deleteJob = useCallback(async (jobId: string) => {
     setDeleting(true);
     try {
+      // Child tables use ON DELETE CASCADE (migration 20260321100000),
+      // so just delete the job — DB handles cleanup automatically.
       const { error } = await supabase.from('jobs').delete().eq('id', jobId);
       if (error) throw error;
       setJobs((prev) => prev.filter((job) => job.id !== jobId));
@@ -83,6 +85,20 @@ export function useDashboardJobs({ userId, onSuccess, onError }: UseDashboardJob
       onErrorRef.current?.('Failed to delete job. Please try again.');
     } finally {
       setDeleting(false);
+    }
+  }, []);
+
+  const archiveJob = useCallback(async (jobId: string) => {
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .update({ archived_at: new Date().toISOString() })
+        .eq('id', jobId);
+      if (error) throw error;
+      setJobs((prev) => prev.filter((job) => job.id !== jobId));
+      onSuccessRef.current?.('Job archived');
+    } catch {
+      onErrorRef.current?.('Failed to archive job');
     }
   }, []);
 
@@ -104,6 +120,7 @@ export function useDashboardJobs({ userId, onSuccess, onError }: UseDashboardJob
     fetchJobs,
     fetchUnlockedJobs,
     deleteJob,
+    archiveJob,
     isJobUnlocked,
     activeJobCount,
   };

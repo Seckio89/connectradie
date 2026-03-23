@@ -1,15 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
+import { calculateProcessingFeeCents } from "../_shared/pricing.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
 };
-
-const PROCESSING_FEE_RATE = 0.02;
 
 function errorJson(message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
@@ -176,7 +175,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const baseAmount = payment.amount;
-    const processingFee = Math.round(baseAmount * PROCESSING_FEE_RATE);
+    const processingFee = calculateProcessingFeeCents(baseAmount);
 
     // Build line items
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [

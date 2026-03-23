@@ -5,18 +5,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        // #004d40 — deep sea / racing green, primary actions
+        // #06D6A0 — emerald, primary actions (unified with warm/brand)
         primary: {
-          50:  '#E0F2F1',
-          100: '#B2DFDB',
-          200: '#80CBC4',
-          300: '#4DB6AC',
-          400: '#26A69A',
-          500: '#009688',
-          600: '#00796B',
-          700: '#004d40',
-          800: '#003D33',
-          900: '#002E26',
+          50:  '#ECFDF6',
+          100: '#D1FAE9',
+          200: '#A7F3D5',
+          300: '#6EE7BC',
+          400: '#34D89F',
+          500: '#06D6A0',
+          600: '#05AB80',
+          700: '#048163',
+          800: '#035A46',
+          900: '#02362A',
         },
         // #263238 — charcoal / gunmetal, nav & dark surfaces
         navy: {
@@ -52,18 +52,18 @@ export default {
           300: '#E0E0E0',
           400: '#BDBDBD',
         },
-        // Keep secondary & accent for specific use
+        // #06D6A0 — emerald, secondary accents (unified with warm/brand)
         secondary: {
-          50:  '#F2FAF8',
-          100: '#E0F4F0',
-          200: '#C0E8E0',
-          300: '#9DDBD0',
-          400: '#92D1C3',
-          500: '#8BB8A8',
-          600: '#6D9B8B',
-          700: '#577B6E',
-          800: '#3F5B51',
-          900: '#283C35',
+          50:  '#ECFDF6',
+          100: '#D1FAE9',
+          200: '#A7F3D5',
+          300: '#6EE7BC',
+          400: '#34D89F',
+          500: '#06D6A0',
+          600: '#05AB80',
+          700: '#048163',
+          800: '#035A46',
+          900: '#02362A',
         },
         accent: {
           50:  '#FEFEF5',

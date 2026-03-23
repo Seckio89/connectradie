@@ -21,7 +21,8 @@ export default function Navbar() {
       : [
           { name: 'Post a Job', href: postJobHref, isRoute: true },
           { name: 'Find a Trade', href: '/search', isRoute: true },
-          { name: 'My Jobs', href: '/jobs', isRoute: true },
+          { name: 'My Jobs', href: '/leads', isRoute: true },
+          { name: 'Schedule', href: '/schedule', isRoute: true },
           { name: 'Messages', href: '/messages', isRoute: true },
         ]
     : [
@@ -29,7 +30,7 @@ export default function Navbar() {
         { name: 'Find a Trade', href: '/search', isRoute: true },
         { name: 'Explore', href: '/explore', isRoute: true },
         { name: 'For Tradies', href: '/#for-tradies', isRoute: false },
-        { name: 'How it Works', href: '/#how-it-works-clients', isRoute: false },
+        { name: 'Why ConnecTradie', href: '/#how-it-works-clients', isRoute: false },
       ];
 
   const handleSignOut = async () => {

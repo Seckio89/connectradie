@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   DollarSign,
@@ -13,6 +13,7 @@ import {
   RotateCcw,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Receipt,
   ShieldCheck,
   AlertTriangle,
@@ -28,8 +29,10 @@ import { useToast } from '../hooks/useToast';
 import { friendlyError } from '../lib/utils';
 import { ListSkeleton } from '../components/SkeletonLoader';
 import { releaseEscrow, processRefund, createJobPaymentCheckout, verifyPayment } from '../lib/stripePayments';
+import { callEdgeFunction } from '../lib/edgeFn';
 import DashboardLayout from '../components/DashboardLayout';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
+import RecurringInvoiceCard, { type RecurringInvoice } from '../components/RecurringInvoiceCard';
 
 interface PaymentRow {
   id: string;
@@ -52,10 +55,45 @@ type StatusFilter = 'all' | 'pending' | 'completed' | 'refunded' | 'failed';
 
 const PAGE_SIZE = 20;
 
+/**
+ * Reconcile sent invoices — when the client returns from Stripe checkout with
+ * invoice_paid=true, verify their checkout session and mark as paid.
+ */
+async function reconcileSentInvoices(userId: string) {
+  try {
+    const { data: sentInvoices } = await supabase
+      .from('recurring_invoices')
+      .select('id, stripe_checkout_session_id')
+      .eq('homeowner_id', userId)
+      .eq('status', 'sent')
+      .not('stripe_checkout_session_id', 'is', null);
+
+    if (!sentInvoices || sentInvoices.length === 0) return;
+
+    // Call verify-payment for each sent invoice's checkout session
+    for (const inv of sentInvoices) {
+      try {
+        const result = await callEdgeFunction<{ paid: boolean }>('verify-payment', {
+          checkoutSessionId: inv.stripe_checkout_session_id,
+          invoiceId: inv.id,
+          type: 'recurring_invoice',
+        });
+        if (result.paid) {
+          console.info(`Invoice ${inv.id} reconciled as paid`);
+        }
+      } catch {
+        // Non-critical — webhook should handle this eventually
+      }
+    }
+  } catch {
+    // Non-critical
+  }
+}
+
 export default function PaymentHistory() {
   const { user, profile } = useAuth();
   const { toast, showToast } = useToast();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -68,12 +106,76 @@ export default function PaymentHistory() {
   const [showFilters, setShowFilters] = useState(false);
 
   const isTradie = profile?.role === 'tradie';
+  const [releasingId, setReleasingId] = useState<string | null>(null);
+
+  const handleInlineRelease = async (e: React.MouseEvent, paymentId: string) => {
+    e.stopPropagation();
+    setReleasingId(paymentId);
+    try {
+      await releaseEscrow(paymentId);
+      showToast('Payment released to tradie!');
+      fetchPayments();
+      fetchSummary();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to release payment', true);
+    } finally {
+      setReleasingId(null);
+    }
+  };
+
+  // Recurring invoices (clients only)
+  const [recurringInvoices, setRecurringInvoices] = useState<RecurringInvoice[]>([]);
+  const [recurringLoading, setRecurringLoading] = useState(false);
+
+  const fetchRecurringInvoices = useCallback(async () => {
+    if (!user || isTradie) return;
+    setRecurringLoading(true);
+    try {
+      // Outstanding first
+      const { data: outstanding } = await supabase
+        .from('recurring_invoices')
+        .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, agreed_price)')
+        .eq('homeowner_id', user.id)
+        .in('status', ['sent', 'overdue', 'draft'])
+        .order('created_at', { ascending: false });
+
+      // Then paid/cancelled
+      const { data: completed } = await supabase
+        .from('recurring_invoices')
+        .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, agreed_price)')
+        .eq('homeowner_id', user.id)
+        .in('status', ['paid', 'cancelled'])
+        .order('paid_at', { ascending: false });
+
+      setRecurringInvoices([
+        ...((outstanding as unknown as RecurringInvoice[]) || []),
+        ...((completed as unknown as RecurringInvoice[]) || []),
+      ]);
+    } catch (err) {
+      console.error('fetchRecurringInvoices error:', err);
+    }
+    setRecurringLoading(false);
+  }, [user, isTradie]);
+
+  useEffect(() => {
+    if (user && !isTradie) fetchRecurringInvoices();
+  }, [user, isTradie, fetchRecurringInvoices]);
 
   useEffect(() => {
     const paymentStatus = searchParams.get('payment');
     const paymentId = searchParams.get('payment_id');
+    const invoicePaid = searchParams.get('invoice_paid');
+    const invoiceCancelled = searchParams.get('invoice_cancelled');
 
-    if (paymentStatus === 'success' && paymentId) {
+    if (invoicePaid === 'true') {
+      showToast('Invoice payment completed successfully!');
+      // Reconcile any sent invoices that may have been paid (fallback if webhook is delayed)
+      if (user) reconcileSentInvoices(user.id).then(() => fetchRecurringInvoices());
+      setSearchParams({}, { replace: true });
+    } else if (invoiceCancelled === 'true') {
+      showToast('Invoice payment was cancelled.', true);
+      setSearchParams({}, { replace: true });
+    } else if (paymentStatus === 'success' && paymentId) {
       // Verify the payment via Stripe (fallback in case webhook failed)
       verifyPayment(paymentId)
         .then((result) => {
@@ -329,6 +431,39 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const hasActiveFilters = statusFilter !== 'all' || dateFrom || dateTo || typeFilter;
 
+  // Group payments by month
+  const monthGroups = useMemo(() => {
+    const groups: { key: string; label: string; payments: PaymentRow[]; total: number }[] = [];
+    const map = new Map<string, PaymentRow[]>();
+
+    for (const p of payments) {
+      const d = new Date(p.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(p);
+    }
+
+    for (const [key, items] of map) {
+      const [year, month] = key.split('-').map(Number);
+      const label = new Date(year, month - 1).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+      const total = items.filter(p => p.status === 'completed').reduce((s, p) => s + p.amount, 0);
+      groups.push({ key, label, payments: items, total });
+    }
+
+    return groups;
+  }, [payments]);
+
+  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
+
+  const toggleMonth = (key: string) => {
+    setCollapsedMonths(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   if (loading && payments.length === 0) {
     return (
       <DashboardLayout>
@@ -403,6 +538,49 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             <p className="text-2xl font-bold text-secondary-700">{formatCurrency(refundedAmount)}</p>
           </div>
         </div>
+
+        {/* Recurring / Service Invoices (Clients only) */}
+        {!isTradie && (recurringLoading || recurringInvoices.length > 0) && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="w-4 h-4 text-navy-300" />
+              <h2 className="text-sm font-semibold text-navy-800">Service Invoices</h2>
+              {recurringInvoices.length > 0 && (
+                <span className="text-xs text-navy-300 font-medium">({recurringInvoices.length})</span>
+              )}
+            </div>
+            {recurringLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-48 bg-white rounded-xl border border-surface-200 animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {recurringInvoices.filter(i => i.status === 'sent' || i.status === 'overdue' || i.status === 'draft').length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Outstanding</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {recurringInvoices.filter(i => i.status === 'sent' || i.status === 'overdue' || i.status === 'draft').map(inv => (
+                        <RecurringInvoiceCard key={inv.id} invoice={inv} userRole="client" />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {recurringInvoices.filter(i => i.status === 'paid' || i.status === 'cancelled').length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Payment History</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {recurringInvoices.filter(i => i.status === 'paid' || i.status === 'cancelled').map(inv => (
+                        <RecurringInvoiceCard key={inv.id} invoice={inv} userRole="client" />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Transaction Table */}
         <div className="bg-white rounded-2xl border border-surface-200 overflow-hidden">
@@ -505,104 +683,148 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             </div>
           ) : (
             <>
-              {/* Desktop Table */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-surface-50 text-left border-b border-surface-200">
-                      <th className="px-5 py-3 text-xs font-semibold text-navy-400 uppercase tracking-wider">Date</th>
-                      <th className="px-5 py-3 text-xs font-semibold text-navy-400 uppercase tracking-wider">Description</th>
-                      <th className="px-5 py-3 text-xs font-semibold text-navy-400 uppercase tracking-wider text-right">Amount</th>
-                      <th className="px-5 py-3 text-xs font-semibold text-navy-400 uppercase tracking-wider text-center">Status</th>
-                      <th className="px-5 py-3 text-xs font-semibold text-navy-400 uppercase tracking-wider text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-surface-100">
-                    {payments.map(p => {
-                      const category = p.jobs?.description ? getCategory(p.jobs.description) : null;
-                      const desc = p.jobs?.description ? cleanDescription(p.jobs.description) : p.payment_type.replace(/_/g, ' ');
-                      return (
-                        <tr key={p.id} onClick={() => setSelectedPayment(p)}
-                          className="hover:bg-surface-50 cursor-pointer transition-colors group">
-                          <td className="px-5 py-4">
-                            <span className="text-sm text-navy-400">{formatDate(p.created_at)}</span>
-                          </td>
-                          <td className="px-5 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                                p.status === 'completed' ? 'bg-warm-50' :
-                                p.status === 'pending' ? 'bg-accent-50' :
-                                p.status === 'refunded' ? 'bg-secondary-50' : 'bg-surface-100'
-                              }`}>
-                                {p.payment_type === 'job_payment' ? (
+              {/* Grouped by month */}
+              {monthGroups.map((group) => {
+                const isCollapsed = collapsedMonths.has(group.key);
+                return (
+                  <div key={group.key}>
+                    {/* Month header */}
+                    <button
+                      onClick={() => toggleMonth(group.key)}
+                      className="w-full flex items-center justify-between px-5 py-3 bg-surface-50 border-b border-surface-200 hover:bg-surface-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <ChevronDown className={`w-4 h-4 text-navy-400 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
+                        <h3 className="text-sm font-semibold text-navy-800">{group.label}</h3>
+                        <span className="text-xs text-navy-300">{group.payments.length} transaction{group.payments.length !== 1 ? 's' : ''}</span>
+                      </div>
+                      {group.total > 0 && (
+                        <span className="text-sm font-semibold text-navy-700 tabular-nums">{formatCurrency(group.total)}</span>
+                      )}
+                    </button>
+
+                    {!isCollapsed && (
+                      <>
+                        {/* Desktop rows */}
+                        <div className="hidden md:block">
+                          <table className="w-full">
+                            <tbody className="divide-y divide-surface-100">
+                              {group.payments.map(p => {
+                                const category = p.jobs?.description ? getCategory(p.jobs.description) : null;
+                                const desc = p.jobs?.description ? cleanDescription(p.jobs.description) : p.payment_type.replace(/_/g, ' ');
+                                return (
+                                  <tr key={p.id} onClick={() => setSelectedPayment(p)}
+                                    className="hover:bg-surface-50 cursor-pointer transition-colors group">
+                                    <td className="px-5 py-3.5 w-32">
+                                      <span className="text-sm text-navy-400">{new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
+                                    </td>
+                                    <td className="px-5 py-3.5">
+                                      <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                          p.status === 'completed' ? 'bg-warm-50' :
+                                          p.status === 'pending' ? 'bg-accent-50' :
+                                          p.status === 'refunded' ? 'bg-secondary-50' : 'bg-surface-100'
+                                        }`}>
+                                          {p.payment_type === 'job_payment' ? (
+                                            <Receipt className={`w-3.5 h-3.5 ${
+                                              p.status === 'completed' ? 'text-warm-600' :
+                                              p.status === 'pending' ? 'text-accent-600' : 'text-navy-400'
+                                            }`} />
+                                          ) : p.payment_type === 'subscription' ? (
+                                            <CreditCard className="w-3.5 h-3.5 text-primary-500" />
+                                          ) : (
+                                            <DollarSign className="w-3.5 h-3.5 text-navy-400" />
+                                          )}
+                                        </div>
+                                        <div className="min-w-0">
+                                          <p className="text-sm font-medium text-navy-900 truncate max-w-[280px]">{desc}</p>
+                                          {category && <span className="text-xs text-navy-300 font-medium">{category}</span>}
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="px-5 py-3.5 text-right w-28">
+                                      <span className={`text-sm font-semibold tabular-nums ${
+                                        p.status === 'refunded' ? 'text-secondary-600' : 'text-navy-900'
+                                      }`}>
+                                        {p.status === 'refunded' ? '-' : ''}{formatCurrency(p.amount)}
+                                      </span>
+                                    </td>
+                                    <td className="px-5 py-3.5 text-center w-44">
+                                      <div className="flex items-center justify-center gap-2">
+                                        {getStatusBadge(p.status)}
+                                        {!isTradie && p.status === 'completed' && p.stripe_payment_intent_id && !(p.metadata as Record<string, unknown> | null)?.transfer_id && (
+                                          <button
+                                            onClick={(e) => handleInlineRelease(e, p.id)}
+                                            disabled={releasingId === p.id}
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200 transition-colors"
+                                          >
+                                            {releasingId === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                                            Release
+                                          </button>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className="px-5 py-3.5 text-right w-24">
+                                      <span className="text-xs font-medium text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        View
+                                      </span>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Mobile rows */}
+                        <div className="md:hidden divide-y divide-surface-100">
+                          {group.payments.map(p => {
+                            const desc = p.jobs?.description ? cleanDescription(p.jobs.description) : p.payment_type.replace(/_/g, ' ');
+                            const category = p.jobs?.description ? getCategory(p.jobs.description) : null;
+                            return (
+                              <button key={p.id} onClick={() => setSelectedPayment(p)}
+                                className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-surface-50 transition-colors">
+                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                  p.status === 'completed' ? 'bg-warm-50' :
+                                  p.status === 'pending' ? 'bg-accent-50' : 'bg-surface-100'
+                                }`}>
                                   <Receipt className={`w-4 h-4 ${
                                     p.status === 'completed' ? 'text-warm-600' :
                                     p.status === 'pending' ? 'text-accent-600' : 'text-navy-400'
                                   }`} />
-                                ) : p.payment_type === 'subscription' ? (
-                                  <CreditCard className="w-4 h-4 text-primary-500" />
-                                ) : (
-                                  <DollarSign className="w-4 h-4 text-navy-400" />
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-navy-900 truncate max-w-[280px]">{desc}</p>
-                                {category && <span className="text-xs text-navy-300 font-medium">{category}</span>}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-5 py-4 text-right">
-                            <span className={`text-sm font-semibold tabular-nums ${
-                              p.status === 'refunded' ? 'text-secondary-600' : 'text-navy-900'
-                            }`}>
-                              {p.status === 'refunded' ? '-' : ''}{formatCurrency(p.amount)}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4 text-center">{getStatusBadge(p.status)}</td>
-                          <td className="px-5 py-4 text-right">
-                            <span className="text-xs font-medium text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                              View Details
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Cards */}
-              <div className="md:hidden divide-y divide-surface-100">
-                {payments.map(p => {
-                  const desc = p.jobs?.description ? cleanDescription(p.jobs.description) : p.payment_type.replace(/_/g, ' ');
-                  const category = p.jobs?.description ? getCategory(p.jobs.description) : null;
-                  return (
-                    <button key={p.id} onClick={() => setSelectedPayment(p)}
-                      className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-surface-50 transition-colors">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                        p.status === 'completed' ? 'bg-warm-50' :
-                        p.status === 'pending' ? 'bg-accent-50' : 'bg-surface-100'
-                      }`}>
-                        <Receipt className={`w-4.5 h-4.5 ${
-                          p.status === 'completed' ? 'text-warm-600' :
-                          p.status === 'pending' ? 'text-accent-600' : 'text-navy-400'
-                        }`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-navy-900 truncate">{desc}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {category && <span className="text-xs text-navy-300">{category}</span>}
-                          <span className="text-xs text-navy-200">{formatDate(p.created_at)}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-navy-900 truncate">{desc}</p>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    {category && <span className="text-xs text-navy-300">{category}</span>}
+                                    <span className="text-xs text-navy-200">{new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
+                                  </div>
+                                </div>
+                                <div className="text-right flex-shrink-0">
+                                  <p className="text-sm font-semibold text-navy-900 tabular-nums">{formatCurrency(p.amount)}</p>
+                                  <div className="mt-1 flex items-center gap-1.5 justify-end">
+                                    {getStatusBadge(p.status)}
+                                    {!isTradie && p.status === 'completed' && p.stripe_payment_intent_id && !(p.metadata as Record<string, unknown> | null)?.transfer_id && (
+                                      <button
+                                        onClick={(e) => handleInlineRelease(e, p.id)}
+                                        disabled={releasingId === p.id}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200"
+                                      >
+                                        {releasingId === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                                        Release
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
                         </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-sm font-semibold text-navy-900 tabular-nums">{formatCurrency(p.amount)}</p>
-                        <div className="mt-1">{getStatusBadge(p.status)}</div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
 
               {/* Pagination */}
               {totalPages > 1 && (
@@ -897,7 +1119,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
             </div>
           )}
 
-          {/* Approve & Release to Tradie (paid, not yet transferred) */}
+          {/* Escrow — auto-releases after 48h, client can release early */}
           {!isTradie && isCompletedWithStripe && !transferDone && (
             <div className="bg-warm-50 border border-warm-200 rounded-lg p-4">
               <div className="flex items-start gap-3 mb-3">
@@ -905,14 +1127,14 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
                 <div>
                   <p className="text-sm font-semibold text-warm-800">Payment Held in Escrow</p>
                   <p className="text-xs text-warm-700 mt-0.5">
-                    Your payment is held securely. Once you're satisfied with the work, approve to release the funds to the tradie.
+                    Funds will be automatically released to your tradie within 48 hours. You can release early if you're happy with the work.
                   </p>
                 </div>
               </div>
               <button onClick={handleReleaseEscrow} disabled={actionLoading}
                 className="w-full px-4 py-2.5 bg-warm-600 text-white rounded-lg text-sm font-semibold hover:bg-warm-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                Approve & Release
+                Release Now
               </button>
             </div>
           )}
