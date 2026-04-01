@@ -28,7 +28,8 @@ export default function Payouts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [connectLoading, setConnectLoading] = useState(false);
-  const [totalEarned, setTotalEarned] = useState<{ amount: number; count: number }>({ amount: 0, count: 0 });
+  const [escrowHeld, setEscrowHeld] = useState(0);
+  const [escrowCount, setEscrowCount] = useState(0);
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   const [onboardingWarning, setOnboardingWarning] = useState(false);
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
@@ -36,24 +37,20 @@ export default function Payouts() {
   const fetchEarnings = useCallback(async () => {
     if (!user) return;
     try {
-      const [{ data: payData }, { data: invData }] = await Promise.all([
-        supabase
-          .from('payments')
-          .select('amount, jobs!inner(tradie_id)')
-          .eq('jobs.tradie_id', user.id)
-          .eq('status', 'completed')
-          .in('payment_type', ['job_funding', 'price_adjustment']),
-        supabase
-          .from('recurring_invoices')
-          .select('total')
-          .eq('tradie_id', user.id)
-          .eq('status', 'paid'),
-      ]);
-      const payRows = payData || [];
-      const invRows = invData || [];
-      const payTotal = payRows.reduce((s, r) => s + (r.amount || 0), 0);
-      const invTotal = invRows.reduce((s, r) => s + Number(r.total || 0) * 100, 0);
-      setTotalEarned({ amount: payTotal + invTotal, count: payRows.length + invRows.length });
+      // Fetch unreleased escrow payments (completed job_funding with no transfer_id)
+      const { data: escrowData } = await supabase
+        .from('payments')
+        .select('amount, metadata, jobs!inner(tradie_id, status)')
+        .eq('jobs.tradie_id', user.id)
+        .eq('status', 'completed')
+        .eq('payment_type', 'job_funding')
+        .in('jobs.status', ['funded', 'in_progress', 'completed']);
+
+      const unreleased = (escrowData || []).filter(
+        (p) => !(p.metadata as Record<string, unknown>)?.transfer_id
+      );
+      setEscrowHeld(unreleased.reduce((s, r) => s + (r.amount || 0), 0));
+      setEscrowCount(unreleased.length);
     } catch (err) {
       console.error('fetchEarnings error:', err);
     }
@@ -166,7 +163,9 @@ export default function Payouts() {
   const totalPaidOut = useMemo(() => {
     return (accountDetails?.payouts || []).reduce((s, p) => s + p.amount, 0);
   }, [accountDetails?.payouts]);
-  const escrowAmount = Math.max(0, (totalEarned.amount) - totalPaidOut - (accountDetails?.balance?.available ?? 0) - (accountDetails?.balance?.pending ?? 0));
+  const escrowAmount = escrowHeld;
+  const onItsWay = (accountDetails?.balance?.available ?? 0) + (accountDetails?.balance?.pending ?? 0);
+  const computedTotalEarned = escrowAmount + onItsWay + totalPaidOut;
 
   if (loading) {
     return (
@@ -306,42 +305,45 @@ export default function Payouts() {
               </div>
             ) : null}
 
-            {/* Summary — total earned as headline, 3 simple cards for money flow */}
-            <div className="flex items-baseline gap-2 mb-1">
-              <p className="text-sm text-navy-400">Total earned:</p>
-              <p className="text-lg font-bold text-navy-900">{formatCurrency(totalEarned.amount)}</p>
-              <p className="text-xs text-navy-300">({totalEarned.count} payments)</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="w-4 h-4 text-amber-500" />
-                  <span className="text-xs font-medium text-gray-500">Waiting for Client</span>
+            {/* Summary */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+              <div className="flex items-baseline justify-between mb-5">
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Earned</p>
+                  <p className="text-3xl font-bold text-gray-900">{formatCurrency(computedTotalEarned)}</p>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(escrowAmount)}</p>
-                <p className="text-xs text-gray-400 mt-1">Held in escrow until client releases</p>
               </div>
-
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="w-4 h-4 text-emerald-500" />
-                  <span className="text-xs font-medium text-gray-500">On Its Way</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {escrowAmount > 0 && (
+                  <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="w-3.5 h-3.5 text-amber-500" />
+                      <span className="text-xs font-medium text-amber-700">Waiting for Client</span>
+                    </div>
+                    <p className="text-xl font-bold text-amber-900">{formatCurrency(escrowAmount)}</p>
+                    <p className="text-xs text-amber-600 mt-1">
+                      {escrowCount} job{escrowCount !== 1 ? 's' : ''} · Auto-releases after 48 hours
+                    </p>
+                  </div>
+                )}
+                {onItsWay > 0 && (
+                  <div className="rounded-xl bg-secondary-50 border border-secondary-200 p-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <DollarSign className="w-3.5 h-3.5 text-secondary-500" />
+                      <span className="text-xs font-medium text-secondary-700">On Its Way</span>
+                    </div>
+                    <p className="text-xl font-bold text-secondary-900">{formatCurrency(onItsWay)}</p>
+                    <p className="text-xs text-secondary-600 mt-1">Transferring to your bank (2–3 days)</p>
+                  </div>
+                )}
+                <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Banknote className="w-3.5 h-3.5 text-emerald-500" />
+                    <span className="text-xs font-medium text-emerald-700">Paid to Bank</span>
+                  </div>
+                  <p className="text-xl font-bold text-emerald-900">{formatCurrency(totalPaidOut)}</p>
+                  <p className="text-xs text-emerald-600 mt-1">{totalPayoutCount} transfer{totalPayoutCount !== 1 ? 's' : ''}</p>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency((accountDetails.balance?.available ?? 0) + (accountDetails.balance?.pending ?? 0))}</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {(accountDetails.balance?.available ?? 0) > 0
-                    ? `${formatCurrency(accountDetails.balance?.available ?? 0)} ready now`
-                    : 'Transferring to your bank (2-3 days)'}
-                </p>
-              </div>
-
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <div className="flex items-center gap-2 mb-2">
-                  <Banknote className="w-4 h-4 text-gray-400" />
-                  <span className="text-xs font-medium text-gray-500">Paid to Bank</span>
-                </div>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalPaidOut)}</p>
-                <p className="text-xs text-gray-400 mt-1">{totalPayoutCount} transfer{totalPayoutCount !== 1 ? 's' : ''}</p>
               </div>
             </div>
 

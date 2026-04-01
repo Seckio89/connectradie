@@ -50,7 +50,15 @@
       "Bash(npm install:*)",
       "Bash(npm info react-router-dom@6 version)",
       "Bash(supabase db:*)",
-      "Bash(xargs -I {} basename {} .tsx)"
+      "Bash(xargs -I {} basename {} .tsx)",
+      "Bash(supabase functions:*)",
+      "Bash(find supabase/functions -name \"index.ts\" -exec sed -i 's/Deno\\\\.env\\\\.get\\(\"\"ALLOWED_ORIGIN\"\"\\) || \"\"\\\\*\"\"/Deno.env.get\\(\"\"ALLOWED_ORIGIN\"\"\\) || \"\"https:\\\\/\\\\/connectradie.com.au\"\"/g; s/Deno\\\\.env\\\\.get\\(''''ALLOWED_ORIGIN''''\\) || ''''*''''/Deno.env.get\\(''''ALLOWED_ORIGIN''''\\) || ''''https:\\\\/\\\\/connectradie.com.au''''/g' {} +)",
+      "Bash(for fn:*)",
+      "Bash(do echo:*)",
+      "Bash(done)",
+      "Bash(xargs -I {} bash -c \"echo \"\"=== {} ===\"\" && head -80 \"\"{}\"\"\")",
+      "mcp__claude_ai_Stripe__search_stripe_documentation",
+      "Bash(python3:*)"
     ]
   }
 }

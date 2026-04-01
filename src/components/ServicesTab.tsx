@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, FileText, Inbox, Loader2, CheckCircle2, Shield, MapPin, User, Clock, ClipboardList, ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { RefreshCw, FileText, Inbox, Loader2, CheckCircle2, Shield, MapPin, User, Clock, ClipboardList, ChevronDown, ChevronUp, Plus, Calendar } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { callEdgeFunction } from '../lib/edgeFn';
-import { getTradieUpcomingSessions, cancelRecurringJob, pauseRecurringJob, resumeRecurringJob } from '../lib/recurringJobs';
+import { getTradieUpcomingSessions, cancelRecurringJob, pauseRecurringJob, resumeRecurringJob, generateFutureSessions } from '../lib/recurringJobs';
 import type { RecurringSession } from '../lib/recurringJobs';
 import { getActiveAgreements } from '../lib/ongoingServices';
 import type { ServiceAgreement } from '../types/database';
@@ -27,11 +27,13 @@ type RecurringSessionWithJob = RecurringSession & {
     billing_cycle?: string | null;
     last_invoiced_at?: string | null;
     client?: { full_name: string } | null;
+    is_active?: boolean;
+    cancelled_at?: string | null;
   };
 };
 
 // Pause / Resume / Stop controls for an ongoing service
-function ServiceControls({ jobId, isActive, onChanged }: { jobId: string; isActive: boolean; onChanged: () => void }) {
+function ServiceControls({ jobId, isActive, isCancelled, onChanged }: { jobId: string; isActive: boolean; isCancelled: boolean; onChanged: () => void }) {
   const [confirming, setConfirming] = useState<'pause' | 'stop' | null>(null);
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
@@ -76,6 +78,12 @@ function ServiceControls({ jobId, isActive, onChanged }: { jobId: string; isActi
       setConfirming(null);
     }
   };
+
+  if (isCancelled) {
+    return (
+      <span className="text-xs text-gray-400 font-medium">Service ended</span>
+    );
+  }
 
   if (!isActive) {
     return (
@@ -172,8 +180,29 @@ function AcceptModeToggle({ jobId, currentAutoAccept, onToggled }: { jobId: stri
         .update({ auto_accept: newValue })
         .eq('id', jobId);
       if (error) throw error;
+
+      // When switching to auto-accept, pre-generate future sessions
+      if (newValue) {
+        try {
+          // Also upgrade any pending_confirmation sessions to scheduled
+          await supabase
+            .from('recurring_sessions')
+            .update({ status: 'scheduled', confirmation_deadline: null })
+            .eq('recurring_job_id', jobId)
+            .eq('status', 'pending_confirmation');
+
+          const created = await generateFutureSessions(jobId);
+          showToast(created > 0
+            ? `Auto-confirm on — ${created} future session${created !== 1 ? 's' : ''} scheduled`
+            : 'Auto-confirm on — sessions are up to date'
+          );
+        } catch {
+          showToast('Auto-confirm on');
+        }
+      } else {
+        showToast('Switched to manual review');
+      }
       onToggled();
-      showToast(newValue ? 'Switched to auto accept' : 'Switched to manual accept');
     } catch {
       showToast('Something went wrong', true);
     } finally {
@@ -182,41 +211,32 @@ function AcceptModeToggle({ jobId, currentAutoAccept, onToggled }: { jobId: stri
   };
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Session Confirmation</p>
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => handleToggle(true)}
-          disabled={toggling}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${
-            currentAutoAccept
-              ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-              : 'border-gray-200 text-gray-500 hover:bg-gray-50'
-          }`}
-        >
-          <CheckCircle2 className="w-3 h-3" />
-          Auto-Confirm
-        </button>
-        <button
-          onClick={() => handleToggle(false)}
-          disabled={toggling}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${
-            !currentAutoAccept
-              ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-              : 'border-gray-200 text-gray-500 hover:bg-gray-50'
-          }`}
-        >
-          <Shield className="w-3 h-3" />
-          Review First
-        </button>
-        {toggling && <Loader2 className="w-3 h-3 text-gray-400 animate-spin" />}
-      </div>
-      {currentAutoAccept && (
-        <p className="text-xs text-amber-600 flex items-start gap-1.5">
-          <Shield className="w-3 h-3 flex-shrink-0 mt-0.5" />
-          <span>Sessions are auto-confirmed. Switch to <span className="font-medium">Review First</span> to approve each one manually.</span>
-        </p>
-      )}
+    <div className="flex items-center gap-1.5">
+      <button
+        onClick={() => handleToggle(true)}
+        disabled={toggling}
+        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${
+          currentAutoAccept
+            ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+            : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+        }`}
+      >
+        <CheckCircle2 className="w-3 h-3" />
+        Auto-Schedule
+      </button>
+      <button
+        onClick={() => handleToggle(false)}
+        disabled={toggling}
+        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${
+          !currentAutoAccept
+            ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+            : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+        }`}
+      >
+        <Shield className="w-3 h-3" />
+        Manual
+      </button>
+      {toggling && <Loader2 className="w-3 h-3 text-gray-400 animate-spin" />}
     </div>
   );
 }
@@ -670,10 +690,10 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
   );
 }
 
-// Ongoing service job card with full task requirements
+// Ongoing service job card — professional layout
 function JobCard({
   jobId, jobLabel, clientName, freqLabel, location, descLines, agreedPrice,
-  isAutoAccept, isActive, billingCycle, lastInvoicedAt, sessions, userId, onUpdate,
+  isAutoAccept, isActive, isCancelled, billingCycle, lastInvoicedAt, sessions, userId, onUpdate,
   agreement, onAgreementRefresh,
 }: {
   jobId: string;
@@ -685,6 +705,7 @@ function JobCard({
   agreedPrice?: number | null;
   isAutoAccept: boolean;
   isActive: boolean;
+  isCancelled: boolean;
   billingCycle: string;
   lastInvoicedAt: string | null;
   sessions: RecurringSessionWithJob[];
@@ -693,57 +714,80 @@ function JobCard({
   agreement?: (ServiceAgreement & { client?: { full_name: string }; tradie?: { full_name: string } }) | null;
   onAgreementRefresh?: () => void;
 }) {
-  const [showTasks, setShowTasks] = useState(true);
+  const [showTasks, setShowTasks] = useState(false);
   const [showLogVisit, setShowLogVisit] = useState(false);
+  const [showFutureVisits, setShowFutureVisits] = useState(false);
+  const [showInvoice, setShowInvoice] = useState(false);
+
+  const statusBadge = isCancelled
+    ? { bg: 'bg-red-50 border-red-200', text: 'text-red-700', label: 'Ended' }
+    : !isActive
+    ? { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700', label: 'Paused' }
+    : { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700', label: 'Active' };
+
+  // Split sessions: next visit gets full card, rest are compact
+  const nextSession = sessions[0];
+  const futureSessionsList = sessions.slice(1);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      {/* Job header */}
-      <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      {/* ─── Header ─── */}
+      <div className="px-5 py-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold text-gray-900 capitalize">{jobLabel}</p>
-              {!isActive && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700 border border-amber-200">Paused</span>
-              )}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2.5">
+              <h4 className="text-sm font-bold text-gray-900 capitalize">{jobLabel}</h4>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${statusBadge.bg} ${statusBadge.text}`}>
+                {statusBadge.label}
+              </span>
             </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-              <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                <User className="w-3 h-3" />
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5">
+              <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                <User className="w-3 h-3 text-gray-400" />
                 {clientName}
               </span>
               {freqLabel && (
-                <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                  <Clock className="w-3 h-3" />
+                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                  <RefreshCw className="w-3 h-3 text-gray-400" />
                   {freqLabel}
                 </span>
               )}
               {location && (
-                <span className="inline-flex items-center gap-1 text-xs text-gray-500 truncate max-w-[220px]">
-                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500 truncate max-w-[240px]">
+                  <MapPin className="w-3 h-3 flex-shrink-0 text-gray-400" />
                   {location}
+                </span>
+              )}
+              {agreedPrice != null && agreedPrice > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+                  ${agreedPrice.toFixed(2)}/visit
                 </span>
               )}
             </div>
           </div>
-          {agreedPrice != null && agreedPrice > 0 && (
-            <span className="text-sm font-semibold text-emerald-600 flex-shrink-0">
-              ${agreedPrice.toFixed(2)}
-              <span className="text-xs font-normal text-gray-400 ml-0.5">per visit</span>
-            </span>
-          )}
+        </div>
+
+        {/* ─── Quick Controls ─── */}
+        <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+          <AcceptModeToggle
+            jobId={jobId}
+            currentAutoAccept={isAutoAccept}
+            onToggled={onUpdate}
+          />
+          <div className="ml-auto flex items-center gap-2">
+            <ServiceControls jobId={jobId} isActive={isActive} isCancelled={isCancelled} onChanged={onUpdate} />
+          </div>
         </div>
       </div>
 
-      {/* Task requirements — collapsible */}
+      {/* ─── Task Requirements — collapsed by default ─── */}
       {descLines.length > 0 && (
-        <div className="border-b border-gray-100">
+        <div className="border-t border-gray-100">
           <button
             onClick={() => setShowTasks(!showTasks)}
-            className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center justify-between px-5 py-2.5 hover:bg-gray-50/50 transition-colors"
           >
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-700">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600">
               <ClipboardList className="w-3.5 h-3.5 text-gray-400" />
               Task Requirements ({descLines.length})
             </span>
@@ -753,7 +797,7 @@ function JobCard({
             }
           </button>
           {showTasks && (
-            <div className="px-4 pb-3">
+            <div className="px-5 pb-3">
               <ol className="space-y-1.5">
                 {descLines.map((line, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
@@ -769,46 +813,124 @@ function JobCard({
         </div>
       )}
 
-      {/* Visit cards */}
-      <div className="p-4 space-y-3">
-        {sessions.map((s) => (
-          <RecurringSessionCard
-            key={s.id}
-            session={s}
-            recurringJobId={s.recurring_job_id}
-            userRole="tradie"
-            tradieId={userId}
-            clientId={s.recurring_job?.client_id}
-            preferredTime={s.recurring_job?.preferred_time ?? undefined}
-            agreedPrice={s.recurring_job?.agreed_price}
-            onUpdate={onUpdate}
-          />
-        ))}
-      </div>
+      {/* ─── Next Visit — full session card ─── */}
+      {nextSession && (
+        <div className="border-t border-gray-100">
+          <div className="px-5 pt-3 pb-1">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Next Visit</p>
+          </div>
+          <div className="px-5 pb-4">
+            <RecurringSessionCard
+              session={nextSession}
+              recurringJobId={nextSession.recurring_job_id}
+              userRole="tradie"
+              tradieId={userId}
+              clientId={nextSession.recurring_job?.client_id}
+              preferredTime={nextSession.recurring_job?.preferred_time ?? undefined}
+              agreedPrice={nextSession.recurring_job?.agreed_price}
+              onUpdate={onUpdate}
+            />
+          </div>
+        </div>
+      )}
 
-      {/* Invoice + Service controls */}
-      <div className="px-4 py-3 border-t border-gray-100 space-y-3">
-        {agreement && (
-          <button
-            onClick={() => setShowLogVisit(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-emerald-300 text-emerald-700 text-xs font-medium rounded-lg hover:bg-emerald-50 transition-colors"
-          >
-            <Plus className="w-3 h-3" />
-            Log Extra Visit
-          </button>
+      {/* ─── Future Visits ─── */}
+      {futureSessionsList.length > 0 && (
+        <div className="border-t border-gray-100">
+          {isAutoAccept ? (
+            /* Auto-Schedule: compact collapsible date grid */
+            <>
+              <button
+                onClick={() => setShowFutureVisits(!showFutureVisits)}
+                className="w-full flex items-center justify-between px-5 py-2.5 hover:bg-gray-50/50 transition-colors"
+              >
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600">
+                  <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                  {futureSessionsList.length} more scheduled visit{futureSessionsList.length !== 1 ? 's' : ''}
+                </span>
+                {showFutureVisits
+                  ? <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
+                  : <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                }
+              </button>
+              {showFutureVisits && (
+                <div className="px-5 pb-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {futureSessionsList.map((s) => {
+                      const d = new Date((s.actual_date || s.scheduled_date) + 'T00:00:00');
+                      return (
+                        <div key={s.id} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
+                          <Calendar className="w-3 h-3 text-blue-400 flex-shrink-0" />
+                          <span className="text-xs text-gray-700 font-medium">
+                            {d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            /* Manual: full session cards for each visit */
+            <>
+              <div className="px-5 pt-3 pb-1">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Upcoming Visits</p>
+              </div>
+              <div className="px-5 pb-4 space-y-2">
+                {futureSessionsList.map((s) => (
+                  <RecurringSessionCard
+                    key={s.id}
+                    session={s}
+                    recurringJobId={s.recurring_job_id}
+                    userRole="tradie"
+                    tradieId={userId}
+                    clientId={s.recurring_job?.client_id}
+                    preferredTime={s.recurring_job?.preferred_time ?? undefined}
+                    agreedPrice={s.recurring_job?.agreed_price}
+                    onUpdate={onUpdate}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ─── Invoice ─── */}
+      <div className="border-t border-gray-100">
+        <button
+          onClick={() => setShowInvoice(!showInvoice)}
+          className="w-full flex items-center justify-between px-5 py-2.5 hover:bg-gray-50/50 transition-colors"
+        >
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600">
+            <FileText className="w-3.5 h-3.5 text-gray-400" />
+            Invoice & Billing
+          </span>
+          {showInvoice
+            ? <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
+            : <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+          }
+        </button>
+        {showInvoice && (
+          <div className="px-5 pb-4 space-y-3">
+            {agreement && (
+              <button
+                onClick={() => setShowLogVisit(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-emerald-300 text-emerald-700 text-xs font-medium rounded-lg hover:bg-emerald-50 transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                Log Extra Visit
+              </button>
+            )}
+            <InvoiceSection
+              jobId={jobId}
+              billingCycle={billingCycle}
+              lastInvoicedAt={lastInvoicedAt}
+              onSent={onUpdate}
+            />
+          </div>
         )}
-        <InvoiceSection
-          jobId={jobId}
-          billingCycle={billingCycle}
-          lastInvoicedAt={lastInvoicedAt}
-          onSent={onUpdate}
-        />
-        <AcceptModeToggle
-          jobId={jobId}
-          currentAutoAccept={isAutoAccept}
-          onToggled={onUpdate}
-        />
-        <ServiceControls jobId={jobId} isActive={isActive} onChanged={onUpdate} />
       </div>
 
       {/* Log Extra Visit modal */}
@@ -844,7 +966,7 @@ export default function ServicesTab() {
   const fetchRecurringSessions = useCallback(async () => {
     if (!user) return;
     try {
-      const sessions = await getTradieUpcomingSessions(user.id, 10);
+      const sessions = await getTradieUpcomingSessions(user.id, 20);
       setRecurringSessions(sessions);
     } catch { /* ignore */ }
   }, [user]);
@@ -905,10 +1027,10 @@ export default function ServicesTab() {
         {/* ── Ongoing Services ── */}
         {(agreements.length > 0 || recurringSessions.length > 0) && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <RefreshCw className="w-4 h-4 text-gray-400" />
+            <div className="flex items-center gap-2 mb-4">
+              <RefreshCw className="w-4 h-4 text-emerald-500" />
               <h3 className="text-sm font-semibold text-gray-900">Ongoing Services</h3>
-              <span className="text-xs text-gray-400">{Object.keys(groupedByJob).length}</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500">{Object.keys(groupedByJob).length}</span>
             </div>
 
             {/* Service schedule — sessions, tasks, controls */}
@@ -949,6 +1071,7 @@ export default function ServicesTab() {
                     agreedPrice={jobInfo?.agreed_price}
                     isAutoAccept={isAutoAccept}
                     isActive={jobInfo?.is_active !== false}
+                    isCancelled={!!jobInfo?.cancelled_at}
                     billingCycle={jobInfo?.billing_cycle || 'monthly'}
                     lastInvoicedAt={jobInfo?.last_invoiced_at || null}
                     sessions={sessions}

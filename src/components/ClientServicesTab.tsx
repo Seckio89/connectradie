@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, User, Clock, MapPin, Loader2, Pause, Shield, AlertTriangle, X, Briefcase, MoreVertical, Plus, CheckCircle2, FileText as FileTextIcon, Handshake } from 'lucide-react';
+import { RefreshCw, User, Clock, MapPin, Loader2, Pause, Shield, AlertTriangle, X, Briefcase, MoreVertical, Plus, CheckCircle2, FileText as FileTextIcon, Handshake, ChevronDown, RotateCcw, MessageCircle, Building2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { TRADE_OPTIONS } from '../lib/tradeCategories';
 import { useAuth } from '../contexts/AuthContext';
@@ -22,7 +22,10 @@ import RecurringSessionCard from './RecurringSessionCard';
 import RecurringInvoiceCard from './RecurringInvoiceCard';
 import type { RecurringInvoice } from './RecurringInvoiceCard';
 import AddressAutocomplete from './AddressAutocomplete';
+import BecsSetupForm from './BecsSetupForm';
+import SavedPaymentMethod from './SavedPaymentMethod';
 import { useToast } from '../hooks/useToast';
+import { callEdgeFunction } from '../lib/edgeFn';
 
 interface ActiveOneOffJob {
   id: string;
@@ -73,24 +76,26 @@ const HOLD_REASONS = [
 
 // ── Inline Schedule Service Form ──────────────────────────────
 
-function InlineScheduleForm({ userId, onDone, onCancel }: {
+function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
   userId: string;
   onDone: () => void;
   onCancel: () => void;
+  prefill?: { category?: string; subtype?: string; description?: string; location?: string; frequency?: number; budget?: string };
 }) {
-  const [category, setCategory] = useState('');
-  const [serviceSubtype, setServiceSubtype] = useState('');
+  const [category, setCategory] = useState(prefill?.category || '');
+  const [serviceSubtype, setServiceSubtype] = useState(prefill?.subtype || '');
   const [customSubtype, setCustomSubtype] = useState('');
-  const [description, setDescription] = useState('');
-  const [location, setLocation] = useState('');
-  const [budget, setBudget] = useState('');
-  const [budgetType, setBudgetType] = useState<'quote' | 'set'>('quote');
-  const [frequency, setFrequency] = useState(12);
+  const [description, setDescription] = useState(prefill?.description || '');
+  const [location, setLocation] = useState(prefill?.location || '');
+  const [budget, setBudget] = useState(prefill?.budget || '');
+  const [budgetType, setBudgetType] = useState<'quote' | 'set'>(prefill?.budget ? 'set' : 'quote');
+  const [frequency, setFrequency] = useState(prefill?.frequency || 12);
   const [preferredTime, setPreferredTime] = useState('');
   const [nextDate, setNextDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [saving, setSaving] = useState(false);
   const [keywords, setKeywords] = useState<KeywordSuggestion[]>([]);
   const [success, setSuccess] = useState(false);
+  const [allowsSiteInspection, setAllowsSiteInspection] = useState(true);
 
   const tradeKeys = Object.keys(RECURRING_SERVICE_SUBCATEGORIES);
   const subcategories = category ? (RECURRING_SERVICE_SUBCATEGORIES[category] ?? null) : null;
@@ -144,6 +149,7 @@ function InlineScheduleForm({ userId, onDone, onCancel }: {
           max_quotes: 3,
           scheduled_date: nextDate,
           preferred_time_slot: preferredTime || null,
+          allows_site_inspection: allowsSiteInspection,
         })
         .select('id')
         .single();
@@ -201,7 +207,7 @@ function InlineScheduleForm({ userId, onDone, onCancel }: {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+    <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4 max-w-lg">
       <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Schedule a Service</h3>
 
       <div>
@@ -391,6 +397,25 @@ function InlineScheduleForm({ userId, onDone, onCancel }: {
             </div>
           </div>
 
+          <label
+            className="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 hover:border-emerald-300 cursor-pointer transition-colors"
+            htmlFor="recurring-site-inspection"
+          >
+            <input
+              id="recurring-site-inspection"
+              type="checkbox"
+              checked={allowsSiteInspection}
+              onChange={(e) => setAllowsSiteInspection(e.target.checked)}
+              className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 mt-0.5"
+            />
+            <div>
+              <span className="text-sm font-medium text-gray-700">Allow on-site quote</span>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Let the tradie visit before giving a firm price. Recommended for complex or first-time jobs.
+              </p>
+            </div>
+          </label>
+
           <div className="flex gap-3 pt-2">
             <button
               onClick={onCancel}
@@ -414,7 +439,7 @@ function InlineScheduleForm({ userId, onDone, onCancel }: {
 }
 
 export default function ClientServicesTab() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { showToast } = useToast();
 
   const [recurringJobs, setRecurringJobs] = useState<RecurringJob[]>([]);
@@ -428,6 +453,12 @@ export default function ClientServicesTab() {
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [showPastServices, setShowPastServices] = useState(false);
+  const [savedMethods, setSavedMethods] = useState<Map<string, { id: string; bsb_last4: string | null; account_last4: string | null; mandate_status: string }>>(new Map());
+  const [becsSetupJobId, setBecsSetupJobId] = useState<string | null>(null);
+  const [becsClientSecret, setBecsClientSecret] = useState<string | null>(null);
+  const [becsLoading, setBecsLoading] = useState<string | null>(null);
+  const [formPrefill, setFormPrefill] = useState<{ category?: string; subtype?: string; description?: string; location?: string; frequency?: number; budget?: string } | undefined>();
 
   const fetchJobs = useCallback(async () => {
     if (!user) return;
@@ -482,14 +513,52 @@ export default function ClientServicesTab() {
     } catch { /* ignore */ }
   }, [user]);
 
+  const fetchSavedMethods = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('saved_payment_methods')
+        .select('id, recurring_job_id, bsb_last4, account_last4, mandate_status')
+        .eq('client_id', user.id);
+      const map = new Map<string, { id: string; bsb_last4: string | null; account_last4: string | null; mandate_status: string }>();
+      for (const m of data || []) {
+        map.set(m.recurring_job_id, m);
+      }
+      setSavedMethods(map);
+    } catch { /* ignore */ }
+  }, [user]);
+
+  const handleBecsSetup = async (recurringJobId: string) => {
+    setBecsLoading(recurringJobId);
+    try {
+      const result = await callEdgeFunction<{ clientSecret: string }>('setup-becs-payment', { recurringJobId });
+      setBecsClientSecret(result.clientSecret);
+      setBecsSetupJobId(recurringJobId);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to start Direct Debit setup', true);
+    } finally {
+      setBecsLoading(null);
+    }
+  };
+
+  const handleBecsRemove = async (recurringJobId: string) => {
+    try {
+      await callEdgeFunction('remove-becs-payment', { recurringJobId });
+      showToast('Direct debit removed');
+      fetchSavedMethods();
+    } catch {
+      showToast('Failed to remove direct debit', true);
+    }
+  };
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      await Promise.all([fetchJobs(), fetchInvoices(), fetchOneOffJobs(), fetchAgreements()]);
+      await Promise.all([fetchJobs(), fetchInvoices(), fetchOneOffJobs(), fetchAgreements(), fetchSavedMethods()]);
       setLoading(false);
     };
     load();
-  }, [fetchJobs, fetchInvoices, fetchOneOffJobs, fetchAgreements]);
+  }, [fetchJobs, fetchInvoices, fetchOneOffJobs, fetchAgreements, fetchSavedMethods]);
 
   const handlePause = async (jobId: string) => {
     try {
@@ -515,7 +584,8 @@ export default function ClientServicesTab() {
   };
 
   const activeJobs = recurringJobs.filter(j => j.is_active);
-  const pausedJobs = recurringJobs.filter(j => !j.is_active);
+  const pausedJobs = recurringJobs.filter(j => !j.is_active && !j.cancelled_at);
+  const cancelledJobs = recurringJobs.filter(j => !j.is_active && !!j.cancelled_at);
 
   const freqLabel = (months?: number) => {
     if (!months) return null;
@@ -540,8 +610,9 @@ export default function ClientServicesTab() {
         {showForm ? (
           <InlineScheduleForm
             userId={user?.id || ''}
-            onDone={() => { setShowForm(false); fetchJobs(); }}
-            onCancel={() => setShowForm(false)}
+            onDone={() => { setShowForm(false); setFormPrefill(undefined); fetchJobs(); }}
+            onCancel={() => { setShowForm(false); setFormPrefill(undefined); }}
+            prefill={formPrefill}
           />
         ) : (
           <div className="text-center py-16">
@@ -580,8 +651,9 @@ export default function ClientServicesTab() {
       {showForm && (
         <InlineScheduleForm
           userId={user?.id || ''}
-          onDone={() => { setShowForm(false); fetchJobs(); }}
-          onCancel={() => setShowForm(false)}
+          onDone={() => { setShowForm(false); setFormPrefill(undefined); fetchJobs(); }}
+          onCancel={() => { setShowForm(false); setFormPrefill(undefined); }}
+          prefill={formPrefill}
         />
       )}
 
@@ -720,6 +792,49 @@ export default function ClientServicesTab() {
                   </div>
                 )}
 
+                {/* Payment Method */}
+                <div className="px-4 pb-4">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Payment Method</p>
+                  {becsSetupJobId === job.id && becsClientSecret ? (
+                    <BecsSetupForm
+                      clientSecret={becsClientSecret}
+                      name={profile?.full_name || ''}
+                      email={user?.email || ''}
+                      onSuccess={() => {
+                        setBecsSetupJobId(null);
+                        setBecsClientSecret(null);
+                        showToast('Direct debit set up successfully');
+                        fetchSavedMethods();
+                      }}
+                      onCancel={() => {
+                        setBecsSetupJobId(null);
+                        setBecsClientSecret(null);
+                      }}
+                    />
+                  ) : savedMethods.has(job.id) ? (
+                    <SavedPaymentMethod
+                      bsbLast4={savedMethods.get(job.id)!.bsb_last4}
+                      accountLast4={savedMethods.get(job.id)!.account_last4}
+                      mandateStatus={savedMethods.get(job.id)!.mandate_status}
+                      onRemove={() => handleBecsRemove(job.id)}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => handleBecsSetup(job.id)}
+                      disabled={becsLoading === job.id}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 border border-secondary-200 bg-secondary-50 text-secondary-700 rounded-lg hover:bg-secondary-100 text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                      {becsLoading === job.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Building2 className="w-4 h-4" />
+                      )}
+                      Set Up Direct Debit
+                      <span className="text-xs text-secondary-500 font-normal">· Save on fees</span>
+                    </button>
+                  )}
+                </div>
+
                 {/* Hold confirmation panel */}
                 {holdTarget === job.id && (
                   <div className="px-4 py-3 bg-amber-50 border-t border-amber-100">
@@ -840,12 +955,109 @@ export default function ClientServicesTab() {
       )}
 
       {/* ── Past Services ── */}
-      {pausedJobs.length > 0 && (
-        <p className="text-xs text-gray-400 flex items-center gap-1.5">
-          <Clock className="w-3 h-3" />
-          {pausedJobs.length} past service{pausedJobs.length !== 1 ? 's' : ''}
-        </p>
-      )}
+      {(pausedJobs.length > 0 || cancelledJobs.length > 0) && (() => {
+        const pastJobs = [...pausedJobs, ...cancelledJobs].sort((a, b) =>
+          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        );
+        return (
+          <div>
+            <button
+              onClick={() => setShowPastServices(!showPastServices)}
+              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <Clock className="w-4 h-4 text-gray-400" />
+              <span className="font-medium">{pastJobs.length} past service{pastJobs.length !== 1 ? 's' : ''}</span>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showPastServices ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showPastServices && (
+              <div className="mt-3 space-y-2">
+                {pastJobs.map(job => {
+                  const label = ((job as Record<string, unknown>).service_subtype as string) || job.trade_category.replace(/_/g, ' ');
+                  const tradieName = (job as Record<string, unknown> & { tradie?: { full_name?: string } }).tradie?.full_name;
+                  const tradieId = job.tradie_id;
+                  const price = (job as Record<string, unknown>).agreed_price as number | null;
+                  const loc = (job as Record<string, unknown>).location as string | null;
+                  const isPaused = !job.cancelled_at;
+                  const freq = freqLabel(job.frequency_months);
+
+                  return (
+                    <div key={job.id} className="bg-white rounded-xl border border-gray-200 px-4 py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-gray-900 capitalize">{label}</p>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                              isPaused ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-gray-100 text-gray-500 border-gray-200'
+                            }`}>
+                              {isPaused ? 'Paused' : 'Ended'}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                            {tradieName && (
+                              <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                                <User className="w-3 h-3" />
+                                {tradieName}
+                              </span>
+                            )}
+                            {freq && (
+                              <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                                <RefreshCw className="w-3 h-3" />
+                                {freq}
+                              </span>
+                            )}
+                            {job.times_completed > 0 && (
+                              <span className="text-xs text-gray-500">
+                                {job.times_completed} session{job.times_completed !== 1 ? 's' : ''} completed
+                              </span>
+                            )}
+                            {price != null && price > 0 && (
+                              <span className="text-xs font-medium text-emerald-600">${price.toFixed(2)}/visit</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {tradieId && (
+                            <Link
+                              to={`/messages?tradie=${tradieId}`}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                              <MessageCircle className="w-3 h-3" />
+                              Message
+                            </Link>
+                          )}
+                          <button
+                            onClick={() => {
+                              const tradeKeys = Object.keys(RECURRING_SERVICE_SUBCATEGORIES);
+                              const rawCat = job.trade_category.replace(/_/g, ' ');
+                              const matchedKey = tradeKeys.find(k => k.toLowerCase() === rawCat.toLowerCase() || rawCat.toLowerCase().startsWith(k.toLowerCase())) || rawCat;
+                              setFormPrefill({
+                                category: matchedKey,
+                                subtype: ((job as Record<string, unknown>).service_subtype as string) || undefined,
+                                description: job.description || undefined,
+                                location: loc || undefined,
+                                frequency: job.frequency_months,
+                                budget: price ? String(price) : undefined,
+                              });
+                              setShowForm(true);
+                              setShowPastServices(false);
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            Schedule Again
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── Service Agreements ── */}
       {agreements.length > 0 && (

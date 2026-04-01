@@ -33,11 +33,9 @@ interface PaymentRow {
 interface SubscriptionRow {
   id: string;
   profile_id: string;
-  stripe_subscription_id: string;
-  status: string;
-  current_period_start: string | null;
-  current_period_end: string | null;
-  cancel_at_period_end: boolean;
+  subscription_tier: string;
+  subscription_started_at: string | null;
+  stripe_subscription_id: string | null;
   created_at: string;
   profiles: { full_name: string } | null;
 }
@@ -75,8 +73,9 @@ export default function AdminPayments() {
         .order('created_at', { ascending: false })
         .range((page - 1) * pageSize, page * pageSize - 1),
       supabase
-        .from('stripe_subscriptions')
-        .select('*, profiles:profiles!stripe_subscriptions_profile_id_fkey(full_name)')
+        .from('tradie_details')
+        .select('id, profile_id, subscription_tier, subscription_started_at, stripe_subscription_id, created_at, profiles:profiles!tradie_details_profile_id_fkey(full_name)')
+        .eq('subscription_tier', 'pro')
         .order('created_at', { ascending: false }),
     ]);
 
@@ -125,7 +124,7 @@ export default function AdminPayments() {
   const monthConnecTradieRevenue = monthPlatformFees + monthPlatformMargin;
   const monthTradiePayout = grossThisMonth - monthPlatformFees - monthPlatformMargin - monthStripeFees;
 
-  const activeSubscriptions = subscriptions.filter(s => s.status === 'active');
+  const activeSubscriptions = subscriptions; // All returned rows are Pro tier
 
   // Filtering
   const filteredPayments = payments.filter(p => {
@@ -257,7 +256,7 @@ export default function AdminPayments() {
             </div>
             <p className="text-2xl font-bold text-gray-900">{activeSubscriptions.length}</p>
             <p className="text-xs text-gray-400 mt-1">
-              {subscriptions.length} total (all time)
+              Currently active
             </p>
           </div>
         </div>
@@ -650,18 +649,15 @@ export default function AdminPayments() {
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-gray-900">{sub.profiles?.full_name || 'Unknown'}</p>
                         <p className="text-xs text-gray-500 mt-0.5">
-                          {sub.current_period_start && sub.current_period_end
-                            ? `${formatDate(sub.current_period_start)} - ${formatDate(sub.current_period_end)}`
-                            : 'Period not available'}
+                          {sub.subscription_started_at
+                            ? `Pro since ${formatDate(sub.subscription_started_at)}`
+                            : 'Pro subscriber'}
                         </p>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                        {getStatusBadge(sub.status)}
-                        {sub.cancel_at_period_end && (
-                          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
-                            Cancelling
-                          </span>
-                        )}
+                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                          Pro
+                        </span>
                       </div>
                     </div>
                   ))}

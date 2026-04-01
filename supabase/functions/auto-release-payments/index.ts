@@ -51,17 +51,6 @@ Deno.serve(async (req: Request) => {
       return errorJson("Server configuration error", 500);
     }
 
-    // Service role auth only — reject user JWTs
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return errorJson("Missing Authorization header", 401);
-    }
-
-    const token = authHeader.slice(7);
-    if (token !== supabaseServiceKey) {
-      return errorJson("Forbidden — service role only", 403);
-    }
-
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 

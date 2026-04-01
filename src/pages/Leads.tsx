@@ -33,6 +33,7 @@ import {
   DollarSign,
   Star,
   ShieldCheck,
+  Search as SearchIcon,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -1445,9 +1446,19 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           })()}
 
           {!isTradie && !lead.tradie_id && lead.status === 'pending' && lead.quote_count === 0 && (
-            <div className="flex items-center gap-2 px-5 py-2.5 border-t border-gray-100 text-xs text-gray-400">
-              <Loader2 className="w-3 h-3 animate-spin" />
-              Waiting for tradies to submit quotes...
+            <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-100">
+              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Waiting for tradies to submit quotes...
+              </div>
+              <Link
+                to={`/search?trade=${lead.trade_category || ''}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <SearchIcon className="w-3 h-3" />
+                Find a Tradie
+              </Link>
             </div>
           )}
 

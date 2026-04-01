@@ -733,9 +733,22 @@ export async function createRecurringJob(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
+  // If linked to an original job and no tradie specified, inherit the tradie from that job
+  let resolvedTradieId = data.tradie_id || null;
+  if (!resolvedTradieId && data.original_job_id) {
+    const { data: origJob } = await supabase
+      .from('jobs')
+      .select('tradie_id')
+      .eq('id', data.original_job_id)
+      .maybeSingle();
+    if (origJob?.tradie_id) {
+      resolvedTradieId = origJob.tradie_id;
+    }
+  }
+
   const insertPayload: Record<string, unknown> = {
     client_id: data.client_id ?? user.id,
-    tradie_id: data.tradie_id || null,
+    tradie_id: resolvedTradieId,
     trade_category: data.trade_category,
     description: data.description,
     frequency_months: data.frequency_months,
@@ -984,7 +997,7 @@ export async function resumeRecurringJob(id: string, resumedByRole?: 'client' | 
 
   const { error } = await supabase
     .from('recurring_jobs')
-    .update({ is_active: true })
+    .update({ is_active: true, cancelled_at: null })
     .eq('id', id);
 
   if (error) throw new Error(error.message);
@@ -1045,10 +1058,10 @@ export async function cancelRecurringJob(id: string, cancelledByRole?: 'client' 
 
   if (fetchError) throw new Error(fetchError.message);
 
-  // Deactivate the recurring job
+  // Deactivate and mark as cancelled
   const { error } = await supabase
     .from('recurring_jobs')
-    .update({ is_active: false })
+    .update({ is_active: false, cancelled_at: new Date().toISOString() })
     .eq('id', id);
 
   if (error) throw new Error(error.message);
@@ -1183,7 +1196,8 @@ export async function getDueReminders(userId?: string): Promise<DueReminder[]> {
       tradie:profiles!recurring_jobs_tradie_id_fkey(full_name)
     `)
     .eq('client_id', uid)
-    .eq('is_active', true);
+    .eq('is_active', true)
+    .is('cancelled_at', null);
 
   if (error) throw new Error(error.message);
   if (!data) return [];
@@ -1714,7 +1728,7 @@ export async function completeSession(sessionId: string): Promise<void> {
   // 1. Fetch session + parent recurring job details
   const { data: session, error: fetchError } = await supabase
     .from('recurring_sessions')
-    .select('id, recurring_job_id, scheduled_date, recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(id, client_id, tradie_id, trade_category, service_subtype, frequency_months, next_due_date, is_active, times_completed, preferred_time, agreed_price, auto_accept)')
+    .select('id, recurring_job_id, scheduled_date, recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(id, client_id, tradie_id, trade_category, service_subtype, frequency_months, next_due_date, is_active, cancelled_at, times_completed, preferred_time, agreed_price, auto_accept)')
     .eq('id', sessionId)
     .maybeSingle();
 
@@ -1739,13 +1753,14 @@ export async function completeSession(sessionId: string): Promise<void> {
     frequency_months: number;
     next_due_date: string | null;
     is_active: boolean;
+    cancelled_at: string | null;
     times_completed: number;
     preferred_time: string | null;
     agreed_price: number | null;
     auto_accept: boolean;
   } | null;
 
-  if (!job || !job.is_active) return;
+  if (!job || !job.is_active || job.cancelled_at) return;
 
   const now = new Date().toISOString();
 
@@ -1823,6 +1838,15 @@ export async function completeSession(sessionId: string): Promise<void> {
         }
       }
       // Note: if not auto-accepted, availability blocking happens when the tradie confirms (confirmSession)
+
+      // Pre-generate future sessions when auto-accept is on
+      if (isAutoAccept) {
+        try {
+          await generateFutureSessions(job.id);
+        } catch {
+          // Non-critical
+        }
+      }
     }
   } catch {
     // Non-critical — the daily cron will pick it up if immediate generation fails
@@ -1893,6 +1917,18 @@ export async function confirmSession(sessionId: string): Promise<void> {
 
   // Block tradie availability now that session is confirmed
   const job = session.recurring_job as { client_id: string; tradie_id: string | null; trade_category: string; service_subtype: string | null; preferred_time: string | null; agreed_price: number | null } | null;
+
+  // If the recurring job has no tradie assigned yet, assign the confirming tradie
+  if (job && !job.tradie_id) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from('recurring_jobs')
+        .update({ tradie_id: user.id })
+        .eq('id', session.recurring_job_id);
+      job.tradie_id = user.id;
+    }
+  }
 
   if (job?.tradie_id) {
     try {
@@ -2033,6 +2069,8 @@ export async function getTradieUpcomingSessions(
         frequency_months,
         billing_cycle,
         last_invoiced_at,
+        is_active,
+        cancelled_at,
         tradie_id,
         client:profiles!recurring_jobs_client_id_fkey(full_name)
       )
@@ -2051,6 +2089,81 @@ export async function getTradieUpcomingSessions(
   });
 
   return filtered.slice(0, limit) as (RecurringSession & { recurring_job?: { trade_category: string; service_subtype: string | null; description: string; client_id: string; preferred_time: string | null; agreed_price: number | null; auto_accept: boolean | null; location: string | null; frequency_months: number; billing_cycle: string | null; last_invoiced_at: string | null; client: { full_name: string } | null } })[];
+}
+
+// ---------------------------------------------------------------------------
+// Auto-schedule: pre-generate future sessions for auto-accept jobs
+// ---------------------------------------------------------------------------
+
+/**
+ * Generate future recurring sessions so the tradie's schedule is planned out.
+ * For weekly/fortnightly: generates up to 8 future sessions.
+ * For monthly+: generates up to 6 future sessions.
+ * Skips dates that already have a session.
+ */
+export async function generateFutureSessions(
+  recurringJobId: string,
+): Promise<number> {
+  const { data: job, error: jobErr } = await supabase
+    .from('recurring_jobs')
+    .select('id, frequency_months, next_due_date, is_active, cancelled_at, tradie_id, preferred_time')
+    .eq('id', recurringJobId)
+    .maybeSingle();
+
+  if (jobErr || !job || !job.is_active || job.cancelled_at) return 0;
+
+  // Decide how many sessions to generate
+  const count = (job.frequency_months === FREQ_DAILY) ? 14
+    : (job.frequency_months === FREQ_WEEKLY || job.frequency_months === FREQ_FORTNIGHTLY) ? 8
+    : 6;
+
+  // Get existing scheduled dates to avoid duplicates
+  const { data: existing } = await supabase
+    .from('recurring_sessions')
+    .select('scheduled_date')
+    .eq('recurring_job_id', recurringJobId)
+    .in('status', ['scheduled', 'pending_confirmation']);
+
+  const existingDates = new Set((existing ?? []).map(s => s.scheduled_date));
+
+  // Start from the latest existing scheduled date or next_due_date
+  const allDates = (existing ?? []).map(s => s.scheduled_date).sort();
+  let cursor = allDates.length > 0
+    ? allDates[allDates.length - 1]
+    : (job.next_due_date || new Date().toISOString().split('T')[0]);
+
+  let created = 0;
+  const inserts: { recurring_job_id: string; scheduled_date: string; status: string; confirmation_deadline: null }[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const nextDate = calculateNextDueDate(cursor, job.frequency_months);
+    const nextDateStr = nextDate.toISOString().split('T')[0];
+
+    if (!existingDates.has(nextDateStr)) {
+      inserts.push({
+        recurring_job_id: recurringJobId,
+        scheduled_date: nextDateStr,
+        status: 'scheduled',
+        confirmation_deadline: null,
+      });
+      existingDates.add(nextDateStr);
+      created++;
+    }
+    cursor = nextDateStr;
+  }
+
+  if (inserts.length > 0) {
+    await supabase.from('recurring_sessions').insert(inserts);
+
+    // Advance next_due_date to beyond the last generated session
+    const lastDate = inserts[inserts.length - 1].scheduled_date;
+    const followingDate = calculateNextDueDate(lastDate, job.frequency_months);
+    await supabase.from('recurring_jobs').update({
+      next_due_date: followingDate.toISOString().split('T')[0],
+    }).eq('id', recurringJobId);
+  }
+
+  return created;
 }
 
 /**

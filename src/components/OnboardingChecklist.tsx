@@ -117,7 +117,7 @@ export default function OnboardingChecklist() {
   // If already completed (from localStorage), show "all set" immediately without waiting for fetch
   if (allComplete && profile) {
     return (
-      <div className="bg-gradient-to-br from-green-50 to-secondary-50 rounded-2xl border border-green-200 overflow-hidden p-5 text-center">
+      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 overflow-hidden p-5 text-center">
         <div className="flex items-center justify-between mb-3">
           <div />
           <button
@@ -253,7 +253,7 @@ export default function OnboardingChecklist() {
 
   if (allComplete || percentage === 100) {
     return (
-      <div className="bg-gradient-to-br from-green-50 to-secondary-50 rounded-2xl border border-green-200 overflow-hidden p-5 text-center">
+      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 overflow-hidden p-5 text-center">
         <div className="flex items-center justify-between mb-3">
           <div />
           <button
@@ -340,7 +340,7 @@ export default function OnboardingChecklist() {
               disabled={step.complete || isPaymentLoading}
               className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 group ${
                 step.complete
-                  ? 'bg-secondary-50/60 cursor-default'
+                  ? 'bg-emerald-50/60 cursor-default'
                   : isPaymentLoading
                     ? 'bg-gray-50 cursor-wait'
                     : 'hover:bg-gray-50 active:scale-[0.98] cursor-pointer'
@@ -349,12 +349,12 @@ export default function OnboardingChecklist() {
               <div
                 className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
                   step.complete
-                    ? 'bg-secondary-100'
+                    ? 'bg-emerald-100'
                     : 'bg-gray-100 group-hover:bg-primary-50'
                 }`}
               >
                 {step.complete ? (
-                  <CheckCircle2 className="w-4.5 h-4.5 text-secondary-600" />
+                  <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600" />
                 ) : isPaymentLoading ? (
                   <Loader2 className="w-4 h-4 text-primary-600 animate-spin" />
                 ) : (
@@ -364,7 +364,7 @@ export default function OnboardingChecklist() {
               <div className="flex-1 min-w-0">
                 <p
                   className={`text-sm font-medium leading-tight ${
-                    step.complete ? 'text-secondary-700 line-through decoration-secondary-400' : 'text-gray-900'
+                    step.complete ? 'text-emerald-700 line-through decoration-emerald-400' : 'text-gray-900'
                   }`}
                 >
                   {step.label}

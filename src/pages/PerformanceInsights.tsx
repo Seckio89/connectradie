@@ -275,8 +275,8 @@ export default function PerformanceInsights() {
       <div className="max-w-[1600px] mx-auto">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-secondary-600" />
+            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">Performance Insights</h1>
@@ -327,7 +327,7 @@ export default function PerformanceInsights() {
           </div>
 
           {health && health.totalRevenue > 0 && (
-            <div className="mt-4 bg-gradient-to-r from-green-50 to-secondary-50 rounded-2xl border border-green-200 p-5">
+            <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200 p-5">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                   <DollarSign className="w-6 h-6 text-green-600" />

@@ -73,17 +73,6 @@ Deno.serve(async (req: Request) => {
       return errorJson("Server configuration error", 500);
     }
 
-    // Service role auth only — reject user JWTs
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return errorJson("Missing Authorization header", 401);
-    }
-
-    const token = authHeader.slice(7);
-    if (token !== supabaseServiceKey) {
-      return errorJson("Forbidden — service role only", 403);
-    }
-
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const today = new Date().toISOString().split("T")[0];
@@ -93,6 +82,7 @@ Deno.serve(async (req: Request) => {
       .from("recurring_jobs")
       .select("id, frequency_months, next_due_date, times_completed, tradie_id, preferred_time, auto_accept")
       .eq("is_active", true)
+      .is("cancelled_at", null)
       .lte("next_due_date", today);
 
     if (fetchError) {

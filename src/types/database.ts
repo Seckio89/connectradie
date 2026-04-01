@@ -773,6 +773,7 @@ export type RecurringJob = {
   last_completed_at: string | null;
   times_completed: number;
   is_active: boolean;
+  cancelled_at: string | null;
   created_at: string;
   updated_at: string;
 }

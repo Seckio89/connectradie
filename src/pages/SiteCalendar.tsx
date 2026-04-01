@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, MapPin, Users, Clock, Plus, X, User, Layers, AlertCircle, Filter, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, MapPin, Users, Clock, Plus, X, User, Layers, AlertCircle, Filter, RefreshCw, CalendarClock, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
@@ -255,6 +255,22 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
   const [filterMember, setFilterMember] = useState<string>('all');
   const [showOnlyConflicts, setShowOnlyConflicts] = useState(false);
   const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>([]);
+  const [dismissedConflicts, setDismissedConflicts] = useState<Set<string>>(new Set());
+  const [conflictMenuJob, setConflictMenuJob] = useState<string | null>(null);
+  const [rescheduleJob, setRescheduleJob] = useState<Job | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleSlot, setRescheduleSlot] = useState('');
+  const [rescheduleSaving, setRescheduleSaving] = useState(false);
+  const [removeConfirmJob, setRemoveConfirmJob] = useState<Job | null>(null);
+  const [removeSaving, setRemoveSaving] = useState(false);
+
+  // Close conflict menu when clicking outside
+  useEffect(() => {
+    if (!conflictMenuJob) return;
+    const handleClick = () => setConflictMenuJob(null);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [conflictMenuJob]);
 
   useEffect(() => {
     if (user) {
@@ -397,6 +413,69 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
     setAssignments(prev => prev.filter(a => a.id !== assignmentId));
   };
 
+  const handleReschedule = async () => {
+    if (!rescheduleJob || !rescheduleDate) return;
+    setRescheduleSaving(true);
+    try {
+      const isRecurring = rescheduleJob.id.startsWith('recurring-');
+      if (isRecurring) {
+        const sessionId = rescheduleJob.id.replace('recurring-', '');
+        const { error } = await supabase
+          .from('recurring_sessions')
+          .update({ scheduled_date: rescheduleDate })
+          .eq('id', sessionId);
+        if (error) throw error;
+      } else {
+        const updateData: Record<string, string | null> = { scheduled_date: rescheduleDate };
+        if (rescheduleSlot) updateData.preferred_time_slot = rescheduleSlot;
+        const { error } = await supabase
+          .from('jobs')
+          .update(updateData)
+          .eq('id', rescheduleJob.id);
+        if (error) throw error;
+      }
+      setRescheduleJob(null);
+      setRescheduleDate('');
+      setRescheduleSlot('');
+      setConflictMenuJob(null);
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to reschedule:', err);
+    } finally {
+      setRescheduleSaving(false);
+    }
+  };
+
+  const handleRemoveJob = async () => {
+    if (!removeConfirmJob) return;
+    setRemoveSaving(true);
+    try {
+      const isRecurring = removeConfirmJob.id.startsWith('recurring-');
+      if (isRecurring) {
+        const sessionId = removeConfirmJob.id.replace('recurring-', '');
+        const { error } = await supabase
+          .from('recurring_sessions')
+          .update({ status: 'cancelled' })
+          .eq('id', sessionId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('jobs')
+          .update({ status: 'cancelled' })
+          .eq('id', removeConfirmJob.id);
+        if (error) throw error;
+      }
+      setRemoveConfirmJob(null);
+      setConflictMenuJob(null);
+      if (selectedJob?.id === removeConfirmJob.id) setSelectedJob(null);
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to remove job:', err);
+    } finally {
+      setRemoveSaving(false);
+    }
+  };
+
   const getWeekDays = () => {
     const { start } = getDateRange();
     return Array.from({ length: 7 }, (_, i) => {
@@ -432,15 +511,24 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
         }))
         .filter(a => a.member);
 
-      const sameLocationJobs = dayJobs.filter(
-        j => j.id !== job.id && j.location_address && job.location_address &&
-          j.location_address.toLowerCase().includes(job.location_address.split(',')[0].toLowerCase())
+      // Only flag conflicts for non-completed active jobs with overlapping time slots
+      const isCompleted = job.status === 'completed';
+      const timeSlotOverlaps = isCompleted ? [] : dayJobs.filter(
+        j => j.id !== job.id && j.status !== 'completed' &&
+          job.preferred_time_slot && j.preferred_time_slot &&
+          job.preferred_time_slot === j.preferred_time_slot
       );
+
+      // Check if this conflict pair has been dismissed
+      const isDismissed = timeSlotOverlaps.length > 0 && timeSlotOverlaps.every(j => {
+        const pairKey = [job.id, j.id].sort().join('|');
+        return dismissedConflicts.has(pairKey);
+      });
 
       return {
         job,
         assignments: jobAssignments,
-        conflictWarning: sameLocationJobs.length > 0,
+        conflictWarning: timeSlotOverlaps.length > 0 && !isDismissed,
       };
     });
 
@@ -489,10 +577,18 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
     return date.toDateString() === today.toDateString();
   };
 
-  const conflictCount = jobs.filter(j => {
-    const sameDateJobs = jobs.filter(j2 => j2.id !== j.id && j2.scheduled_date === j.scheduled_date);
-    return sameDateJobs.some(j2 => j2.location_address && j.location_address &&
-      j2.location_address.toLowerCase().includes(j.location_address.split(',')[0].toLowerCase()));
+  const activeJobs = jobs.filter(j => j.status !== 'completed');
+  const conflictCount = activeJobs.filter(j => {
+    const sameDateJobs = activeJobs.filter(j2 => j2.id !== j.id && j2.scheduled_date === j.scheduled_date);
+    const overlapping = sameDateJobs.filter(j2 =>
+      j.preferred_time_slot && j2.preferred_time_slot &&
+      j.preferred_time_slot === j2.preferred_time_slot
+    );
+    // Exclude dismissed conflicts
+    return overlapping.some(j2 => {
+      const pairKey = [j.id, j2.id].sort().join('|');
+      return !dismissedConflicts.has(pairKey);
+    });
   }).length;
 
   const selectedJobAssignments = selectedJob
@@ -636,7 +732,46 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
                                   </span>
                                 )}
                                 {conflictWarning && (
-                                  <AlertCircle className="w-3 h-3 text-warm-500 ml-auto flex-shrink-0" />
+                                  <div className="ml-auto flex-shrink-0 relative">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setConflictMenuJob(conflictMenuJob === job.id ? null : job.id);
+                                      }}
+                                      title="Resolve conflict"
+                                      className="p-0.5 rounded hover:bg-warm-200 transition-colors"
+                                    >
+                                      <AlertCircle className="w-3.5 h-3.5 text-warm-600" />
+                                    </button>
+                                    {conflictMenuJob === job.id && (
+                                      <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 w-40">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setRescheduleJob(job);
+                                            setRescheduleDate(job.scheduled_date || '');
+                                            setRescheduleSlot(job.preferred_time_slot || '');
+                                            setConflictMenuJob(null);
+                                          }}
+                                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                                        >
+                                          <CalendarClock className="w-3.5 h-3.5 text-primary-500" />
+                                          Reschedule
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setRemoveConfirmJob(job);
+                                            setConflictMenuJob(null);
+                                          }}
+                                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                          Remove Job
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
                                 )}
                               </div>
 
@@ -755,12 +890,12 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
               Available
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-white border border-gray-200" />
+              <span className="w-3 h-3 rounded bg-warm-50 border border-warm-200" />
               Scheduled job
             </span>
             {conflictCount > 0 && (
               <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-warm-100 border border-warm-200" />
+                <span className="w-3 h-3 rounded bg-red-100 border border-red-200" />
                 Conflict
               </span>
             )}
@@ -916,6 +1051,51 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
                 </div>
               )}
 
+              {/* Conflict resolution actions */}
+              {selectedJob.status !== 'completed' && selectedJob.scheduled_date && (() => {
+                const sameDateJobs = jobs.filter(
+                  j => j.id !== selectedJob.id && j.scheduled_date === selectedJob.scheduled_date &&
+                  j.status !== 'completed' && selectedJob.preferred_time_slot && j.preferred_time_slot &&
+                  selectedJob.preferred_time_slot === j.preferred_time_slot
+                );
+                if (sameDateJobs.length === 0) return null;
+                return (
+                  <div className="bg-warm-50 border border-warm-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertCircle className="w-4 h-4 text-warm-600" />
+                      <p className="text-sm font-medium text-warm-800">Time Conflict</p>
+                    </div>
+                    <p className="text-xs text-warm-700 mb-3">
+                      This job overlaps with {sameDateJobs.length} other {sameDateJobs.length === 1 ? 'job' : 'jobs'} in the same time slot.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setRescheduleJob(selectedJob);
+                          setRescheduleDate(selectedJob.scheduled_date || '');
+                          setRescheduleSlot(selectedJob.preferred_time_slot || '');
+                          setSelectedJob(null);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-warm-300 text-warm-800 rounded-lg text-xs font-medium hover:bg-warm-100 transition-colors"
+                      >
+                        <CalendarClock className="w-3.5 h-3.5" />
+                        Reschedule
+                      </button>
+                      <button
+                        onClick={() => {
+                          setRemoveConfirmJob(selectedJob);
+                          setSelectedJob(null);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-xs font-medium hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Remove Job
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {teamMembers.length > 0 ? (
                 <button
                   onClick={() => setShowAssignModal(true)}
@@ -929,6 +1109,114 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
                   Add team members in the <Link to="/work?tab=recruitment" className="text-primary-600 hover:underline">Hiring</Link> tab to assign them to jobs.
                 </p>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reschedule Modal */}
+      {rescheduleJob && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="flex items-start justify-between p-5 border-b border-gray-100">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Reschedule Job</h3>
+                <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{rescheduleJob.description}</p>
+              </div>
+              <button onClick={() => { setRescheduleJob(null); setRescheduleDate(''); setRescheduleSlot(''); }} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 ml-3">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">New Date</label>
+                <input
+                  type="date"
+                  value={rescheduleDate}
+                  onChange={e => setRescheduleDate(e.target.value)}
+                  min={toLocalDateStr(new Date())}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                />
+              </div>
+              {!rescheduleJob.id.startsWith('recurring-') && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Time Slot</label>
+                  <select
+                    value={rescheduleSlot}
+                    onChange={e => setRescheduleSlot(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white"
+                  >
+                    <option value="">No preference</option>
+                    <option value="morning">Morning</option>
+                    <option value="midday">Midday</option>
+                    <option value="afternoon">Afternoon</option>
+                    <option value="evening">Evening</option>
+                  </select>
+                </div>
+              )}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={() => { setRescheduleJob(null); setRescheduleDate(''); setRescheduleSlot(''); }}
+                  className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReschedule}
+                  disabled={!rescheduleDate || rescheduleSaving}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-medium hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                >
+                  {rescheduleSaving ? (
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <CalendarClock className="w-4 h-4" />
+                  )}
+                  Reschedule
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Confirmation Modal */}
+      {removeConfirmJob && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="p-6 text-center">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Remove This Job?</h3>
+              <p className="text-sm text-gray-500 mb-1 line-clamp-2">{removeConfirmJob.description}</p>
+              {removeConfirmJob.scheduled_date && (
+                <p className="text-xs text-gray-400">
+                  Scheduled for {new Date(removeConfirmJob.scheduled_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+              )}
+              <p className="text-sm text-gray-600 mt-3">
+                This will permanently cancel this {removeConfirmJob.id.startsWith('recurring-') ? 'session' : 'job'}. This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 px-6 pb-6">
+              <button
+                onClick={() => setRemoveConfirmJob(null)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                Keep Job
+              </button>
+              <button
+                onClick={handleRemoveJob}
+                disabled={removeSaving}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                {removeSaving ? (
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                Remove
+              </button>
             </div>
           </div>
         </div>

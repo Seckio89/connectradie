@@ -308,15 +308,39 @@ export default function Notifications() {
 
     const jobId = notification.job_id || notification.metadata?.job_id;
 
+    const isTradie = profile?.role === 'tradie';
+
+    // BECS payment notifications → Payments page
+    const becsPaymentTypes = ['becs_charge_initiated', 'becs_payment_failed', 'payment_auto_released'];
+
+    // BECS setup notifications → Services/Schedule
+    const becsSetupTypes = ['becs_setup_complete', 'becs_setup_failed', 'becs_mandate_revoked'];
+
+    // Ongoing service notification types → Ongoing Services tab
+    const ongoingTypes = [
+      'session_reminder', 'session_rescheduled', 'session_skipped', 'session_completed',
+      'extra_session_added', 'invoice_ready',
+      'recurring_job_confirmation_required', 'recurring_job_auto_confirmed',
+      'recurring_job_confirmed', 'recurring_job_declined',
+      'recurring_paused', 'recurring_resumed', 'recurring_cancelled',
+      'recurring_price_updated', 'price_increase_requested', 'price_adjusted',
+    ];
+
     // Fallback navigation based on type / metadata
-    if (notification.type === 'booking_request') {
+    if (becsPaymentTypes.includes(notification.type)) {
+      navigate('/payments');
+    } else if (becsSetupTypes.includes(notification.type)) {
+      navigate(isTradie ? '/work?tab=services' : '/schedule');
+    } else if (ongoingTypes.includes(notification.type)) {
+      navigate(isTradie ? '/work?tab=services' : '/schedule');
+    } else if (notification.type === 'booking_request') {
       if (notification.metadata?.conversation_id) {
         navigate(`/messages?conversation=${notification.metadata.conversation_id}`);
       } else {
-        navigate(profile?.role === 'tradie' ? '/work?tab=active' : '/leads');
+        navigate(isTradie ? '/work?tab=active' : '/leads');
       }
     } else if (notification.type === 'job_update' || notification.type === 'project_update') {
-      navigate(profile?.role === 'tradie' ? '/work?tab=active' : '/leads');
+      navigate(isTradie ? '/work?tab=active' : '/leads');
     } else if (notification.type === 'vacancy_application') {
       navigate('/work');
     } else if (notification.type === 'message' || notification.type === 'new_message') {
@@ -325,6 +349,9 @@ export default function Notifications() {
       navigate('/payments');
     } else if (jobId) {
       navigate(profile?.role === 'tradie' ? `/work?job=${jobId}` : `/leads?job=${jobId}`);
+    } else {
+      // Fallback: send to main hub
+      navigate(profile?.role === 'tradie' ? '/work' : '/leads');
     }
   };
 

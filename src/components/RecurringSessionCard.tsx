@@ -661,7 +661,7 @@ export default function RecurringSessionCard({
                 className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
               >
                 <SkipForward className="w-3 h-3" />
-                Skip
+                Skip This Visit
               </button>
               <button
                 onClick={() => { resetForms(); setShowReschedule(true); }}

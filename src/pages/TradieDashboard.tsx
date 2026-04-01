@@ -757,13 +757,13 @@ export default function TradieDashboard() {
                   </Link>
                 )}
                 {pendingConfirmations.length > 0 && (
-                  <a href="#recurring-jobs" className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors">
+                  <Link to="/schedule" className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors">
                     <div className="flex items-center gap-3">
                       <RefreshCw className="w-4 h-4 text-purple-500" />
                       <span className="text-sm text-gray-700">{pendingConfirmations.length} ongoing service session{pendingConfirmations.length !== 1 ? 's' : ''} need{pendingConfirmations.length === 1 ? 's' : ''} confirmation</span>
                     </div>
                     <span className="text-sm font-medium text-amber-700">Confirm &rarr;</span>
-                  </a>
+                  </Link>
                 )}
                 {pendingJobs.length > 0 && (
                   <button onClick={() => {
@@ -810,6 +810,25 @@ export default function TradieDashboard() {
             </div>
           );
         })()}
+
+        {/* Ongoing Services shortcut → Work Hub */}
+        <div className="mt-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 text-emerald-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Ongoing Services</h2>
+            {(agreements.length > 0 || recurringSessions.length > 0) && (
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                {agreements.length + recurringSessions.length}
+              </span>
+            )}
+          </div>
+          <Link
+            to="/work?tab=services"
+            className="text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+          >
+            View all in Work Hub →
+          </Link>
+        </div>
 
         {/* New Leads */}
         {newLeads.length > 0 && (
@@ -1648,30 +1667,6 @@ export default function TradieDashboard() {
           </div>
         )}
 
-        {/* Services quick-link — full management moved to Schedule > Services */}
-        {(agreements.length > 0 || recurringSessions.length > 0) && (
-          <div className="mt-6">
-            <Link
-              to="/schedule"
-              className="flex items-center justify-between bg-white rounded-xl border border-gray-200 p-4 hover:border-emerald-300 hover:bg-emerald-50/30 transition-all group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
-                  <RefreshCw className="w-4 h-4 text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Ongoing Services</p>
-                  <p className="text-xs text-gray-500">
-                    {agreements.length > 0 && `${agreements.length} regular client${agreements.length !== 1 ? 's' : ''}`}
-                    {agreements.length > 0 && recurringSessions.length > 0 && ' · '}
-                    {recurringSessions.length > 0 && `${recurringSessions.length} upcoming visit${recurringSessions.length !== 1 ? 's' : ''}`}
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-emerald-600 transition-colors" />
-            </Link>
-          </div>
-        )}
 
         <SectionErrorBoundary fallbackTitle="Quote insights failed to load">
           <div className="mt-6" data-tour="quote-insights"><QuoteInsightsWidget /></div>

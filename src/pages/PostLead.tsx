@@ -279,10 +279,11 @@ export default function PostLead() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const assigneeId = searchParams.get('assignee');
-  const prefillCategory = searchParams.get('category') || '';
+  const inviteTradieId = searchParams.get('tradie');
+  const prefillCategory = searchParams.get('category') || searchParams.get('trade') || '';
 
   // Skip selection screen if deep-linked with assignee or category
-  const skipSelection = Boolean(assigneeId || prefillCategory);
+  const skipSelection = Boolean(assigneeId || prefillCategory || inviteTradieId);
   const [jobType, setJobType] = useState<'oneoff' | null>(skipSelection ? 'oneoff' : null);
 
   const [category, setCategory] = useState(
@@ -476,6 +477,28 @@ export default function PostLead() {
       notifyTradiesForUrgentJob(insertedJob as Job).then((result) => {
         setSmsResult(result);
       });
+    }
+
+    // If coming from Search with a tradie invite, send them a quote invitation notification
+    if (inviteTradieId && user) {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .maybeSingle();
+        const clientName = profile?.full_name || 'A client';
+        await supabase.from('notifications').insert({
+          user_id: inviteTradieId,
+          type: 'new_job',
+          title: 'Quote invitation',
+          message: `${clientName} has invited you to quote on a job`,
+          job_id: jobId,
+          metadata: { invited: true, invited_by: user.id },
+        });
+      } catch (err) {
+        console.error('Failed to send tradie invite notification:', err);
+      }
     }
   };
 

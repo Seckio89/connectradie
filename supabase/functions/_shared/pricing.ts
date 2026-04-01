@@ -47,6 +47,11 @@ export const PRICING_CONFIG = {
     stripeFixed: 0.30,
     platformProcessingMargin: 0.012,
   },
+  becsProcessing: {
+    stripePercentage: 0.01,      // 1% (vs card 1.75%)
+    stripeFixed: 0.30,            // $0.30 fixed
+    platformProcessingMargin: 0.012, // same platform margin
+  },
 } as const;
 
 export type TradieTier = "free" | "pro" | "pro_plus";
@@ -132,6 +137,28 @@ export function calculateTradieFees(jobValue: number, tier: TradieTier): FeeBrea
     totalFees: Math.round(totalFees * 100) / 100,
     tradieReceives: Math.round((jobValue - totalFees) * 100) / 100,
   };
+}
+
+// ---------------------------------------------------------------------------
+// BECS Direct Debit processing fee (in dollars)
+// ---------------------------------------------------------------------------
+export function calculateBecsProcessingFee(jobValueDollars: number): number {
+  return (
+    jobValueDollars * PRICING_CONFIG.becsProcessing.stripePercentage +
+    PRICING_CONFIG.becsProcessing.stripeFixed +
+    jobValueDollars * PRICING_CONFIG.becsProcessing.platformProcessingMargin
+  );
+}
+
+// ---------------------------------------------------------------------------
+// BECS Direct Debit processing fee (in cents)
+// ---------------------------------------------------------------------------
+export function calculateBecsProcessingFeeCents(amountCents: number): number {
+  return Math.round(
+    amountCents * PRICING_CONFIG.becsProcessing.stripePercentage +
+    PRICING_CONFIG.becsProcessing.stripeFixed * 100 +
+    amountCents * PRICING_CONFIG.becsProcessing.platformProcessingMargin
+  );
 }
 
 export function calculatePMFees(jobValue: number, tier: PMTier): FeeBreakdown {

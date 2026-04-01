@@ -187,11 +187,11 @@ export default function SmartInsightsWidget() {
       <div className="flex items-start gap-4">
         <div
           className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
-            isPositive ? 'bg-secondary-100' : 'bg-amber-100'
+            isPositive ? 'bg-emerald-100' : 'bg-amber-100'
           }`}
         >
           {isPositive ? (
-            <TrendingUp className="w-5 h-5 text-secondary-600" />
+            <TrendingUp className="w-5 h-5 text-emerald-600" />
           ) : (
             <Lightbulb className="w-5 h-5 text-amber-600" />
           )}
@@ -200,7 +200,7 @@ export default function SmartInsightsWidget() {
           <div className="flex items-center gap-2 mb-1.5">
             <h3
               className={`text-sm font-bold uppercase tracking-wide ${
-                isPositive ? 'text-secondary-700' : 'text-amber-700'
+                isPositive ? 'text-emerald-700' : 'text-amber-700'
               }`}
             >
               Smart Insight
@@ -211,7 +211,7 @@ export default function SmartInsightsWidget() {
             to="/performance"
             className={`inline-flex items-center gap-1.5 mt-3 text-sm font-semibold transition-colors ${
               isPositive
-                ? 'text-secondary-600 hover:text-secondary-700'
+                ? 'text-emerald-600 hover:text-emerald-700'
                 : 'text-amber-600 hover:text-amber-700'
             }`}
           >

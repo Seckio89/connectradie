@@ -70,8 +70,9 @@ Deno.serve(async (req: Request) => {
     // Fetch all active recurring jobs with auto_invoice enabled
     const { data: jobs, error: jobsError } = await supabase
       .from("recurring_jobs")
-      .select("id, client_id, tradie_id, agreed_price, trade_category, billing_cycle, auto_invoice, invoice_send_day, invoice_send_time, last_invoiced_at, is_active")
+      .select("id, client_id, tradie_id, agreed_price, trade_category, billing_cycle, auto_invoice, invoice_send_day, invoice_send_time, last_invoiced_at, is_active, cancelled_at")
       .eq("is_active", true)
+      .is("cancelled_at", null)
       .eq("auto_invoice", true);
 
     if (jobsError) {
@@ -295,53 +296,163 @@ Deno.serve(async (req: Request) => {
 
         const siteUrl = Deno.env.get("SITE_URL") || "https://connectradie.com.au";
 
-        const checkoutSession = await stripe.checkout.sessions.create({
-          customer: customerId,
-          customer_email: customerId ? undefined : homeowner?.email,
-          line_items: lineItems,
-          mode: "payment",
-          success_url: `${siteUrl}/payments?invoice_paid=true`,
-          cancel_url: `${siteUrl}/payments?invoice_cancelled=true`,
-          metadata: {
-            type: "recurring_invoice",
-            recurring_job_id: job.id,
-            billing_period_start: billingPeriodStart,
-            billing_period_end: billingPeriodEnd,
-            homeowner_id: job.client_id,
-            tradie_id: job.tradie_id ?? "",
-            platform_fee: String(platformFeeCents),
-            processing_fee: String(processingFee),
-            tradie_tier: tradieSubscriptionTier,
-          },
-        });
-
-        // Insert invoice record
-        const { data: invoice, error: insertError } = await supabase
-          .from("recurring_invoices")
-          .insert({
-            recurring_job_id: job.id,
-            homeowner_id: job.client_id,
-            tradie_id: job.tradie_id,
-            billing_period_start: billingPeriodStart,
-            billing_period_end: billingPeriodEnd,
-            regular_sessions_count: completedSessions.length,
-            extra_sessions_count: extraSessions.length,
-            subtotal,
-            extras_total: extrasTotal,
-            total,
-            status: "sent",
-            stripe_checkout_session_id: checkoutSession.id,
-            stripe_payment_intent_id: checkoutSession.payment_intent as string | null,
-            stripe_payment_url: checkoutSession.url,
-            due_date: dueDateStr,
-          })
+        // Check if client has a saved BECS payment method for this job
+        const { data: savedBecs } = await supabase
+          .from("saved_payment_methods")
           .select("id")
-          .single();
+          .eq("recurring_job_id", job.id)
+          .eq("mandate_status", "active")
+          .maybeSingle();
 
-        if (insertError) {
-          console.error(`[auto-invoices] Insert error for job ${job.id}:`, insertError);
+        let invoice: { id: string } | null = null;
+        let usedBecs = false;
+
+        if (savedBecs) {
+          // BECS path: insert invoice first, then charge
+          const { data: becsInvoice, error: becsInsertErr } = await supabase
+            .from("recurring_invoices")
+            .insert({
+              recurring_job_id: job.id,
+              homeowner_id: job.client_id,
+              tradie_id: job.tradie_id,
+              billing_period_start: billingPeriodStart,
+              billing_period_end: billingPeriodEnd,
+              regular_sessions_count: completedSessions.length,
+              extra_sessions_count: extraSessions.length,
+              subtotal,
+              extras_total: extrasTotal,
+              total,
+              status: "processing",
+              payment_method: "au_becs_debit",
+              due_date: dueDateStr,
+            })
+            .select("id")
+            .single();
+
+          if (becsInsertErr) {
+            console.error(`[auto-invoices] BECS insert error for job ${job.id}:`, becsInsertErr);
+            errors++;
+            results.push({ jobId: job.id, status: "error", detail: becsInsertErr.message });
+            continue;
+          }
+
+          invoice = becsInvoice;
+
+          // Call charge-becs-invoice
+          try {
+            const chargeResp = await fetch(`${supabaseUrl}/functions/v1/charge-becs-invoice`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({ invoiceId: becsInvoice.id, recurringJobId: job.id }),
+            });
+
+            if (chargeResp.ok) {
+              usedBecs = true;
+              console.log(`[auto-invoices] BECS charge initiated for job ${job.id}`);
+            } else {
+              const errBody = await chargeResp.text();
+              console.warn(`[auto-invoices] BECS charge failed for job ${job.id}, falling back to card:`, errBody);
+              // Fall through to card checkout fallback below
+            }
+          } catch (becsErr) {
+            console.warn(`[auto-invoices] BECS charge error for job ${job.id}, falling back to card:`, becsErr);
+          }
+
+          // If BECS failed, create card checkout fallback
+          if (!usedBecs) {
+            const checkoutSession = await stripe.checkout.sessions.create({
+              customer: customerId,
+              customer_email: customerId ? undefined : homeowner?.email,
+              line_items: lineItems,
+              mode: "payment",
+              success_url: `${siteUrl}/payments?invoice_paid=true`,
+              cancel_url: `${siteUrl}/payments?invoice_cancelled=true`,
+              metadata: {
+                type: "recurring_invoice",
+                recurring_job_id: job.id,
+                billing_period_start: billingPeriodStart,
+                billing_period_end: billingPeriodEnd,
+                homeowner_id: job.client_id,
+                tradie_id: job.tradie_id ?? "",
+                platform_fee: String(platformFeeCents),
+                processing_fee: String(processingFee),
+                tradie_tier: tradieSubscriptionTier,
+              },
+            });
+
+            await supabase
+              .from("recurring_invoices")
+              .update({
+                status: "sent",
+                payment_method: "card",
+                stripe_checkout_session_id: checkoutSession.id,
+                stripe_payment_intent_id: checkoutSession.payment_intent as string | null,
+                stripe_payment_url: checkoutSession.url,
+              })
+              .eq("id", becsInvoice.id);
+          }
+        }
+
+        // Card path (no saved BECS or BECS not available)
+        if (!savedBecs) {
+          const checkoutSession = await stripe.checkout.sessions.create({
+            customer: customerId,
+            customer_email: customerId ? undefined : homeowner?.email,
+            line_items: lineItems,
+            mode: "payment",
+            success_url: `${siteUrl}/payments?invoice_paid=true`,
+            cancel_url: `${siteUrl}/payments?invoice_cancelled=true`,
+            metadata: {
+              type: "recurring_invoice",
+              recurring_job_id: job.id,
+              billing_period_start: billingPeriodStart,
+              billing_period_end: billingPeriodEnd,
+              homeowner_id: job.client_id,
+              tradie_id: job.tradie_id ?? "",
+              platform_fee: String(platformFeeCents),
+              processing_fee: String(processingFee),
+              tradie_tier: tradieSubscriptionTier,
+            },
+          });
+
+          const { data: cardInvoice, error: insertError } = await supabase
+            .from("recurring_invoices")
+            .insert({
+              recurring_job_id: job.id,
+              homeowner_id: job.client_id,
+              tradie_id: job.tradie_id,
+              billing_period_start: billingPeriodStart,
+              billing_period_end: billingPeriodEnd,
+              regular_sessions_count: completedSessions.length,
+              extra_sessions_count: extraSessions.length,
+              subtotal,
+              extras_total: extrasTotal,
+              total,
+              status: "sent",
+              stripe_checkout_session_id: checkoutSession.id,
+              stripe_payment_intent_id: checkoutSession.payment_intent as string | null,
+              stripe_payment_url: checkoutSession.url,
+              due_date: dueDateStr,
+            })
+            .select("id")
+            .single();
+
+          if (insertError) {
+            console.error(`[auto-invoices] Insert error for job ${job.id}:`, insertError);
+            errors++;
+            results.push({ jobId: job.id, status: "error", detail: insertError.message });
+            continue;
+          }
+
+          invoice = cardInvoice;
+        }
+
+        if (!invoice) {
           errors++;
-          results.push({ jobId: job.id, status: "error", detail: insertError.message });
+          results.push({ jobId: job.id, status: "error", detail: "Failed to create invoice" });
           continue;
         }
 
@@ -353,8 +464,10 @@ Deno.serve(async (req: Request) => {
 
         await supabase.from("notifications").insert({
           user_id: job.client_id,
-          type: "invoice_ready",
-          message: `Your ${tradeLabel} invoice for ${monthLabel} is ready — ${totalFormatted} (${completedSessions.length} session${completedSessions.length !== 1 ? 's' : ''}${extraSessions.length > 0 ? ` + ${extraSessions.length} extra` : ''}) due by ${new Date(dueDateStr).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}`,
+          type: usedBecs ? "becs_charge_initiated" : "invoice_ready",
+          message: usedBecs
+            ? `Your ${tradeLabel} direct debit of ${totalFormatted} for ${monthLabel} has been initiated (${completedSessions.length} session${completedSessions.length !== 1 ? 's' : ''}). Processing takes 3-5 business days.`
+            : `Your ${tradeLabel} invoice for ${monthLabel} is ready — ${totalFormatted} (${completedSessions.length} session${completedSessions.length !== 1 ? 's' : ''}${extraSessions.length > 0 ? ` + ${extraSessions.length} extra` : ''}) due by ${new Date(dueDateStr).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}`,
           metadata: {
             invoice_id: invoice.id,
             recurring_job_id: job.id,

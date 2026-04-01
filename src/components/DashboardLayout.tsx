@@ -339,28 +339,30 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     } else if (notification.type === 'new_lead') {
       navigate(jobId ? `/work?job=${jobId}` : '/work');
       setNotificationsOpen(false);
-    } else if (
-      notification.type === 'session_reminder' ||
-      notification.type === 'session_rescheduled' ||
-      notification.type === 'session_skipped' ||
-      notification.type === 'extra_session_added' ||
-      notification.type === 'invoice_ready' ||
-      notification.type === 'payment_auto_released'
-    ) {
-      navigate('/dashboard');
+    } else if ([
+      'becs_charge_initiated', 'becs_payment_failed', 'payment_auto_released',
+    ].includes(notification.type)) {
+      navigate('/payments');
       setNotificationsOpen(false);
-    } else if (notification.type === 'price_increase_requested') {
-      navigate(jobId ? `/leads?job=${jobId}` : '/leads');
-      setNotificationsOpen(false);
-    } else if (notification.type === 'price_adjusted') {
-      navigate(jobId ? `/work?job=${jobId}` : '/work');
+    } else if ([
+      'session_reminder', 'session_rescheduled', 'session_skipped', 'session_completed',
+      'extra_session_added', 'invoice_ready',
+      'recurring_job_confirmation_required', 'recurring_job_auto_confirmed',
+      'recurring_job_confirmed', 'recurring_job_declined',
+      'recurring_paused', 'recurring_resumed', 'recurring_cancelled',
+      'recurring_price_updated', 'price_increase_requested', 'price_adjusted',
+      'becs_setup_complete', 'becs_setup_failed', 'becs_mandate_revoked',
+    ].includes(notification.type)) {
+      navigate(isTradie ? '/work?tab=services' : '/schedule');
       setNotificationsOpen(false);
     } else {
-      // Fallback: if there's a job_id, navigate to the relevant page
+      // Fallback: navigate to relevant hub
       if (jobId) {
         navigate(isTradie ? `/work?job=${jobId}` : `/leads?job=${jobId}`);
-        setNotificationsOpen(false);
+      } else {
+        navigate(isTradie ? '/work' : '/leads');
       }
+      setNotificationsOpen(false);
     }
   };
 
@@ -848,12 +850,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <div
             className="flex items-start gap-3 px-4 py-3.5 bg-navy-800 border border-navy-600 rounded-lg shadow-lg cursor-pointer hover:bg-navy-750 transition-colors"
             onClick={() => {
-              const jobId = toastNotification.job_id || toastNotification.metadata?.job_id;
-              if (toastNotification.type === 'new_lead') {
-                navigate(jobId ? `/work?job=${jobId}` : '/work');
-              } else if (toastNotification.link) {
-                navigate(toastNotification.link);
-              }
+              handleNotificationClick(toastNotification);
               setToastNotification(null);
             }}
           >

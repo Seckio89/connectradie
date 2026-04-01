@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { Search as SearchIcon, Filter, ChevronDown, Loader2, Star, X, LogIn, Eye, Briefcase, Bookmark, Bell, BellOff, Trash2, Zap, Map as MapIcon, List, Crown } from 'lucide-react';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { Search as SearchIcon, Filter, ChevronDown, Loader2, Star, X, LogIn, Eye, Briefcase, Bookmark, Bell, BellOff, Trash2, Zap, Map as MapIcon, List, Crown, FileText, Plus, MapPin as MapPinIcon } from 'lucide-react';
 import { GoogleMap, MarkerF, useJsApiLoader } from '@react-google-maps/api';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -79,9 +79,21 @@ export default function Search() {
   const [searchQuery, setSearchQuery] = useState('');
   const rawTrade = searchParams.get('trade') || '';
   const normalizedTrade = rawTrade
-    ? TRADE_OPTIONS.find(
-        t => t.value === rawTrade || t.label.toLowerCase() === rawTrade.toLowerCase()
-      )?.value || rawTrade
+    ? (TRADE_OPTIONS.find(t => {
+        const raw = rawTrade.toLowerCase();
+        const val = t.value.toLowerCase();
+        const lbl = t.label.toLowerCase();
+        // Exact match
+        if (val === raw || lbl === raw) return true;
+        // Contains match
+        if (lbl.includes(raw) || raw.includes(lbl) || val.includes(raw) || raw.includes(val)) return true;
+        // Stem match — strip common suffixes (ing, er, or, s) and compare roots
+        const stem = (s: string) => s.replace(/(ing|er|or|ist|tion|s)$/i, '');
+        if (stem(raw) === stem(val) || stem(raw) === stem(lbl)) return true;
+        // Subcategory match
+        if (t.subcategories?.some(s => s.toLowerCase() === raw || s.toLowerCase().includes(raw))) return true;
+        return false;
+      })?.value || rawTrade)
     : '';
   const [tradeFilter, setTradeFilter] = useState(normalizedTrade);
   const [postcodeFilter, setPostcodeFilter] = useState(searchParams.get('postcode') || '');
@@ -110,7 +122,12 @@ export default function Search() {
   const [showSaveForm, setShowSaveForm] = useState(false);
   const { user, profile } = useAuth();
   const { toast, showToast } = useToast();
+  const navigate = useNavigate();
   const isClient = profile?.role === 'client';
+  const [quoteRequestTradie, setQuoteRequestTradie] = useState<TradieWithDetails | null>(null);
+  const [clientPendingJobs, setClientPendingJobs] = useState<{ id: string; title: string; description: string; location_address: string }[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(false);
+  const [sendingInvite, setSendingInvite] = useState(false);
 
   const fetchSavedSearchesList = useCallback(async () => {
     if (!user) return;
@@ -433,6 +450,63 @@ export default function Search() {
     const allowed = await checkAndRecordView(tradie.id);
     if (!allowed) return;
     setCalendarTradie(tradie);
+  };
+
+  const handleRequestQuote = async (tradie: TradieWithDetails) => {
+    if (!user) {
+      setShowAuthPrompt(true);
+      return;
+    }
+    const allowed = await checkAndRecordView(tradie.id);
+    if (!allowed) return;
+    setQuoteRequestTradie(tradie);
+    setLoadingJobs(true);
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('id, title, description, location_address')
+        .eq('client_id', user.id)
+        .in('status', ['pending', 'accepted'])
+        .is('archived_at', null)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) {
+        console.error('Failed to fetch jobs for quote request:', error);
+        setClientPendingJobs([]);
+      } else {
+        setClientPendingJobs(data || []);
+      }
+    } catch (err) {
+      console.error('Quote request job fetch error:', err);
+      setClientPendingJobs([]);
+    } finally {
+      setLoadingJobs(false);
+    }
+  };
+
+  const sendQuoteInvitation = async (jobId: string) => {
+    if (!user || !quoteRequestTradie) return;
+    setSendingInvite(true);
+    try {
+      // Send notification to tradie — don't assign tradie_id so the job stays in Leads
+      const clientName = profile?.full_name || 'A client';
+      await supabase.from('notifications').insert({
+        user_id: quoteRequestTradie.id,
+        type: 'new_job',
+        title: 'Quote invitation',
+        message: `${clientName} has invited you to quote on a job`,
+        job_id: jobId,
+        metadata: { invited: true, invited_by: user.id },
+      });
+
+      showToast('Quote request sent! The tradie will be notified.');
+      setQuoteRequestTradie(null);
+    } catch {
+      showToast('Failed to send quote request. Please try again.', true);
+    } finally {
+      setSendingInvite(false);
+    }
   };
 
   const tradeLabel = tradeCategories.find(c => c.value === tradeFilter)?.label;
@@ -828,6 +902,7 @@ export default function Search() {
                       onViewCalendar={handleViewCalendar}
                       onSave={handleSaveTradie}
                       isSaved={savedTradieIds.includes(tradie.id)}
+                      onRequestQuote={isClient ? handleRequestQuote : undefined}
                     />
                   ))}
                 </div>
@@ -929,6 +1004,90 @@ export default function Search() {
     </div>
   );
 
+  const quoteRequestModal = quoteRequestTradie && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="fixed inset-0 bg-black/50"
+        onClick={() => setQuoteRequestTradie(null)}
+      />
+      <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+        <button
+          onClick={() => setQuoteRequestTradie(null)}
+          className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 rounded-lg"
+        >
+          <X className="w-5 h-5" />
+        </button>
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+            <FileText className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Request Quote</h2>
+            <p className="text-sm text-gray-500">
+              from {quoteRequestTradie.tradie_details?.business_name || quoteRequestTradie.full_name}
+            </p>
+          </div>
+        </div>
+
+        {loadingJobs ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+          </div>
+        ) : clientPendingJobs.length > 0 ? (
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-3">Select a job to invite them to quote on:</p>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {clientPendingJobs.map(job => {
+                const categoryMatch = job.description?.match(/^\[([^\]]+)\]/);
+                const category = categoryMatch ? categoryMatch[1].replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : null;
+                const desc = job.description?.replace(/^\[[^\]]+\]\s*/, '') || '';
+                return (
+                  <button
+                    key={job.id}
+                    onClick={() => sendQuoteInvitation(job.id)}
+                    disabled={sendingInvite}
+                    className="w-full text-left p-3 rounded-xl border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/50 transition-colors disabled:opacity-50"
+                  >
+                    <p className="text-sm font-semibold text-gray-900 capitalize truncate">
+                      {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate mt-0.5">{desc}</p>
+                    {job.location_address && (
+                      <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                        <MapPinIcon className="w-3 h-3" />
+                        {job.location_address.split(',')[0]}
+                      </p>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <button
+                onClick={() => { setQuoteRequestTradie(null); navigate(`/post-lead?trade=${quoteRequestTradie.tradie_details?.trade_type || ''}&tradie=${quoteRequestTradie.id}`); }}
+                className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Post a New Job Instead
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-sm text-gray-600 mb-4">You don't have any open jobs yet. Post one and this tradie will be invited to quote.</p>
+            <button
+              onClick={() => { setQuoteRequestTradie(null); navigate(`/post-lead?trade=${quoteRequestTradie.tradie_details?.trade_type || ''}&tradie=${quoteRequestTradie.id}`); }}
+              className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-emerald-500 text-white text-sm font-medium rounded-xl hover:bg-emerald-600 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Post a Job
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   if (user) {
     return (
       <DashboardLayout>
@@ -983,6 +1142,7 @@ export default function Search() {
         />
 
         {viewLimitModal}
+        {quoteRequestModal}
         {toast.show && (
           <div className={`fixed bottom-4 right-4 ${toast.isError ? 'bg-red-600' : 'bg-green-600'} text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-slide-up`}>
             {toast.message}

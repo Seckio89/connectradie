@@ -24,7 +24,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { isPro as checkIsPro } from '../lib/subscription';
 import { adjustQuotePrice } from '../lib/stripePayments';
 import type { Job, JobMilestone, Quote } from '../types/database';
-import type { RecurringJob } from '../lib/recurringJobs';
+import { insertNotification, type RecurringJob } from '../lib/recurringJobs';
 import MilestoneEditor from './MilestoneEditor';
 import Modal from './Modal';
 import AvailabilityMiniCalendar from './AvailabilityMiniCalendar';
@@ -281,17 +281,47 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
         try {
           const result = await adjustQuotePrice(acceptedQuote.id, price);
 
+          let successMsg: string;
           if (result.action === 'decrease') {
-            setFinalPriceSuccess(
-              `Final price set to $${price.toFixed(2)}. A refund of $${result.refundAmount?.toFixed(2)} is being processed to the client.`
-            );
+            successMsg = `Final price set to $${price.toFixed(2)}. A refund of $${result.refundAmount?.toFixed(2)} is being processed to the client.`;
           } else if (result.action === 'increase_pending') {
-            setFinalPriceSuccess(
-              `Final price set to $${price.toFixed(2)}. The client has been notified to pay the additional $${result.additionalAmount?.toFixed(2)}.`
-            );
+            successMsg = `Final price set to $${price.toFixed(2)}. The client has been notified to pay the additional $${result.additionalAmount?.toFixed(2)}.`;
           } else {
-            setFinalPriceSuccess(`Final price confirmed at $${price.toFixed(2)}.`);
+            successMsg = `Final price confirmed at $${price.toFixed(2)}.`;
           }
+
+          // Propagate price change to recurring service if linked
+          if (recurringJob && job && Math.round(price * 100) !== Math.round(originalPrice * 100)) {
+            try {
+              await supabase
+                .from('recurring_jobs')
+                .update({ agreed_price: price })
+                .eq('id', recurringJob.id);
+
+              await supabase
+                .from('service_agreements')
+                .update({ rate_per_visit: price })
+                .eq('recurring_job_id', recurringJob.id);
+
+              setRecurringJob({ ...recurringJob, agreed_price: price });
+              successMsg += ` The ongoing service rate has also been updated to $${price.toFixed(2)} per visit.`;
+
+              try {
+                await insertNotification(
+                  job.client_id,
+                  'recurring_price_updated',
+                  `Your ongoing service rate has been updated from $${originalPrice.toFixed(2)} to $${price.toFixed(2)} per visit.`,
+                  { recurring_job_id: recurringJob.id, old_price: originalPrice, new_price: price },
+                );
+              } catch {
+                // Non-critical
+              }
+            } catch (err) {
+              console.error('Failed to update recurring service price:', err);
+            }
+          }
+
+          setFinalPriceSuccess(successMsg);
 
           // Refresh the accepted quote to reflect final_price
           setAcceptedQuote({ ...acceptedQuote, final_price: price });
@@ -791,7 +821,6 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
 
         {isTradie && localStatus === 'funded' && acceptedQuote?.requires_site_inspection && acceptedQuote.final_price == null && (
           <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-700 font-medium rounded-xl border border-amber-200">
-            <DollarSign className="w-4 h-4" />
             Set final price above to continue
           </div>
         )}

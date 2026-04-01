@@ -142,6 +142,131 @@ async function handleEvent(event: Stripe.Event) {
     return;
   }
 
+  // Handle setup_intent.succeeded — BECS Direct Debit mandate saved
+  if (event.type === 'setup_intent.succeeded') {
+    const setupIntent = event.data.object as Stripe.SetupIntent;
+    const meta = setupIntent.metadata || {};
+    const recurringJobId = meta.recurring_job_id;
+    const clientId = meta.client_id;
+    const tradieId = meta.tradie_id;
+
+    if (recurringJobId && clientId && setupIntent.payment_method) {
+      try {
+        const pmId = typeof setupIntent.payment_method === 'string'
+          ? setupIntent.payment_method
+          : setupIntent.payment_method.id;
+
+        const pm = await stripe.paymentMethods.retrieve(pmId);
+        const becsDetails = pm.au_becs_debit;
+
+        await supabase.from('saved_payment_methods').upsert({
+          client_id: clientId,
+          tradie_id: tradieId || null,
+          recurring_job_id: recurringJobId,
+          stripe_customer_id: typeof setupIntent.customer === 'string'
+            ? setupIntent.customer : (setupIntent.customer as Stripe.Customer)?.id || '',
+          stripe_payment_method_id: pmId,
+          payment_method_type: 'au_becs_debit',
+          bsb_last4: becsDetails?.bsb_number?.slice(-4) || null,
+          account_last4: becsDetails?.last4 || null,
+          bank_name: null,
+          mandate_status: 'active',
+          stripe_mandate_id: typeof setupIntent.mandate === 'string'
+            ? setupIntent.mandate : null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'recurring_job_id' });
+
+        await supabase
+          .from('recurring_jobs')
+          .update({ preferred_payment_method: 'au_becs_debit' })
+          .eq('id', recurringJobId);
+
+        // Notify client
+        await supabase.from('notifications').insert({
+          user_id: clientId,
+          type: 'becs_setup_complete',
+          title: 'Direct Debit Set Up',
+          message: `Your bank account (****${becsDetails?.last4 || '****'}) has been linked for automatic payments on your recurring service.`,
+          metadata: { recurring_job_id: recurringJobId },
+          read: false,
+        });
+
+        // Notify tradie
+        if (tradieId) {
+          await supabase.from('notifications').insert({
+            user_id: tradieId,
+            type: 'becs_setup_complete',
+            title: 'Client Set Up Direct Debit',
+            message: 'Your client has set up direct debit for automatic invoice payments.',
+            metadata: { recurring_job_id: recurringJobId },
+            read: false,
+          });
+        }
+
+        console.info(`BECS setup complete for recurring_job ${recurringJobId}, client ${clientId}`);
+      } catch (err) {
+        console.error('Failed to process setup_intent.succeeded:', err);
+      }
+    }
+    return;
+  }
+
+  // Handle setup_intent.setup_failed — BECS setup failed
+  if (event.type === 'setup_intent.setup_failed') {
+    const setupIntent = event.data.object as Stripe.SetupIntent;
+    const clientId = setupIntent.metadata?.client_id;
+
+    if (clientId) {
+      await supabase.from('notifications').insert({
+        user_id: clientId,
+        type: 'becs_setup_failed',
+        title: 'Direct Debit Setup Failed',
+        message: 'We could not verify your bank account. Please try again or use a different account.',
+        read: false,
+      });
+      console.info(`BECS setup failed for client ${clientId}`);
+    }
+    return;
+  }
+
+  // Handle mandate.updated — BECS mandate revoked by bank or client
+  if (event.type === 'mandate.updated') {
+    const mandate = event.data.object as Stripe.Mandate;
+    if (mandate.status === 'inactive' || mandate.status === 'revoked' || (mandate as Record<string, unknown>).status === 'revoked') {
+      const mandateId = mandate.id;
+
+      const { data: saved } = await supabase
+        .from('saved_payment_methods')
+        .select('id, client_id, recurring_job_id')
+        .eq('stripe_mandate_id', mandateId)
+        .maybeSingle();
+
+      if (saved) {
+        await supabase
+          .from('saved_payment_methods')
+          .update({ mandate_status: 'revoked', updated_at: new Date().toISOString() })
+          .eq('id', saved.id);
+
+        await supabase
+          .from('recurring_jobs')
+          .update({ preferred_payment_method: 'card' })
+          .eq('id', saved.recurring_job_id);
+
+        await supabase.from('notifications').insert({
+          user_id: saved.client_id,
+          type: 'becs_mandate_revoked',
+          title: 'Direct Debit Cancelled',
+          message: 'Your direct debit authorisation has been revoked. Future invoices will require manual card payment.',
+          metadata: { recurring_job_id: saved.recurring_job_id },
+          read: false,
+        });
+
+        console.info(`BECS mandate ${mandateId} revoked for recurring_job ${saved.recurring_job_id}`);
+      }
+    }
+    return;
+  }
+
   // Handle invoice.payment_failed — subscription payment failure
   if (event.type === 'invoice.payment_failed') {
     const invoice = event.data.object as Stripe.Invoice;
@@ -209,6 +334,82 @@ async function handleEvent(event: Stripe.Event) {
   // Handle payment_intent.payment_failed — one-time payment failure notification
   if (event.type === 'payment_intent.payment_failed') {
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
+
+    // BECS recurring invoice failure — create card fallback
+    if (paymentIntent.metadata?.type === 'recurring_invoice_becs') {
+      const invoiceId = paymentIntent.metadata.invoice_id;
+      const recurringJobId = paymentIntent.metadata.recurring_job_id;
+      const homeownerId = paymentIntent.metadata.homeowner_id;
+
+      if (invoiceId) {
+        try {
+          // Mark BECS as failed
+          await supabase
+            .from('recurring_invoices')
+            .update({
+              becs_charge_status: 'failed',
+              becs_failed_at: new Date().toISOString(),
+            })
+            .eq('id', invoiceId);
+
+          // Fetch invoice to create card fallback checkout
+          const { data: invoice } = await supabase
+            .from('recurring_invoices')
+            .select('total, homeowner_id, tradie_id, recurring_job_id, billing_period_start, billing_period_end')
+            .eq('id', invoiceId)
+            .maybeSingle();
+
+          if (invoice) {
+            const siteUrl = Deno.env.get('SITE_URL') || 'https://connectradie.com.au';
+            const totalCents = Math.round(Number(invoice.total) * 100);
+
+            const checkoutSession = await stripe.checkout.sessions.create({
+              mode: 'payment',
+              payment_method_types: ['card'],
+              line_items: [{ price_data: { currency: 'aud', unit_amount: totalCents, product_data: { name: 'Recurring Service Invoice (Card Fallback)' } }, quantity: 1 }],
+              metadata: {
+                type: 'recurring_invoice',
+                recurring_job_id: recurringJobId,
+                invoice_id: invoiceId,
+                homeowner_id: invoice.homeowner_id,
+                tradie_id: invoice.tradie_id,
+              },
+              success_url: `${siteUrl}/payments?invoice_paid=true`,
+              cancel_url: `${siteUrl}/payments?invoice_cancelled=true`,
+            });
+
+            await supabase
+              .from('recurring_invoices')
+              .update({
+                status: 'sent',
+                payment_method: 'card',
+                stripe_checkout_session_id: checkoutSession.id,
+                stripe_payment_url: checkoutSession.url,
+              })
+              .eq('id', invoiceId);
+          }
+
+          // Notify client
+          if (homeownerId) {
+            await supabase.from('notifications').insert({
+              user_id: homeownerId,
+              type: 'becs_payment_failed',
+              title: 'Direct Debit Unsuccessful',
+              message: 'Your direct debit payment could not be processed. Please pay by card using the link in your invoice.',
+              metadata: { recurring_job_id: recurringJobId, invoice_id: invoiceId },
+              read: false,
+            });
+          }
+
+          console.info(`BECS payment failed for invoice ${invoiceId}, card fallback created`);
+        } catch (err) {
+          console.error('Failed to handle BECS payment failure fallback:', err);
+        }
+      }
+      return;
+    }
+
+    // Generic payment failure
     const userId = paymentIntent.metadata?.user_id;
     const failureMessage = paymentIntent.last_payment_error?.message || 'Unknown error';
 
@@ -223,6 +424,81 @@ async function handleEvent(event: Stripe.Event) {
       console.info(`Payment intent failed for user ${userId}: ${failureMessage}`);
     }
     return;
+  }
+
+  // Handle payment_intent.succeeded — BECS recurring invoice payment confirmation
+  if (event.type === 'payment_intent.succeeded') {
+    const pi = event.data.object as Stripe.PaymentIntent;
+
+    if (pi.metadata?.type === 'recurring_invoice_becs') {
+      const invoiceId = pi.metadata.invoice_id;
+      const recurringJobId = pi.metadata.recurring_job_id;
+      const tradieId = pi.metadata.tradie_id;
+      const platformFeeCents = pi.metadata.platform_fee ? parseInt(pi.metadata.platform_fee, 10) : 0;
+      const processingFeeCents = pi.metadata.processing_fee ? parseInt(pi.metadata.processing_fee, 10) : 0;
+
+      if (invoiceId) {
+        try {
+          // Mark invoice as paid
+          await supabase
+            .from('recurring_invoices')
+            .update({
+              status: 'paid',
+              paid_at: new Date().toISOString(),
+              becs_charge_status: 'succeeded',
+              stripe_payment_intent_id: pi.id,
+            })
+            .eq('id', invoiceId);
+
+          // Transfer to tradie via Connect
+          if (tradieId) {
+            const { data: tradieProfile } = await supabase
+              .from('profiles')
+              .select('stripe_connect_account_id, stripe_connect_onboarding_complete')
+              .eq('id', tradieId)
+              .maybeSingle();
+
+            if (tradieProfile?.stripe_connect_account_id && tradieProfile.stripe_connect_onboarding_complete) {
+              const baseAmount = pi.amount - processingFeeCents;
+              const transferAmount = baseAmount - platformFeeCents;
+
+              if (transferAmount > 0) {
+                const transfer = await stripe.transfers.create({
+                  amount: transferAmount,
+                  currency: 'aud',
+                  destination: tradieProfile.stripe_connect_account_id,
+                  transfer_group: `recurring_${recurringJobId}`,
+                  metadata: {
+                    type: 'recurring_invoice_payout',
+                    recurring_job_id: recurringJobId,
+                    tradie_id: tradieId,
+                    platform_fee: String(platformFeeCents),
+                    payment_method: 'au_becs_debit',
+                  },
+                });
+                console.info(`BECS invoice transfer ${transfer.id} of ${transferAmount} cents to tradie ${tradieId}`);
+              }
+            }
+
+            // Notify tradie
+            const amountDollars = (pi.amount / 100).toFixed(2);
+            await supabase.from('notifications').insert({
+              user_id: tradieId,
+              title: 'Invoice Paid (Direct Debit)',
+              message: `Your recurring service invoice of $${amountDollars} has been paid via direct debit. Funds are being transferred to your account.`,
+              type: 'payment_received',
+              read: false,
+              metadata: { recurring_job_id: recurringJobId, invoice_id: invoiceId },
+            });
+          }
+
+          console.info(`BECS payment succeeded for invoice ${invoiceId}`);
+        } catch (err) {
+          console.error('Failed to process BECS payment_intent.succeeded:', err);
+        }
+      }
+      return;
+    }
   }
 
   const stripeData = event?.data?.object ?? {};

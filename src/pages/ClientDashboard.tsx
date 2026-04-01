@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { Bell, Plus, Loader2, MapPin, ArrowRight, Crown, RefreshCw, Repeat, Trash2, CalendarClock, DollarSign, Briefcase, Clock, Zap, Eye, CheckCircle2, Archive, ArchiveRestore, Pencil, X, Check, Send, Play, ExternalLink, Pause } from 'lucide-react';
+import { Bell, Plus, Loader2, MapPin, ArrowRight, Crown, RefreshCw, Repeat, Trash2, CalendarClock, DollarSign, Briefcase, Clock, Zap, Eye, CheckCircle2, Archive, ArchiveRestore, Pencil, X, Check, Send, Play, ExternalLink, Pause, FileText, Star } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { TradieWithDetails, AvailabilitySlot, Job } from '../types/database';
@@ -46,11 +46,17 @@ export default function ClientDashboard() {
   const [spendingSummary, setSpendingSummary] = useState({ total: 0, thisMonth: 0, pendingJobs: 0 });
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
   const [showArchived, setShowArchived] = useState(false);
+  const [jobTab, setJobTab] = useState<'active' | 'completed'>('active');
   const [releasedJobIds, setReleasedJobIds] = useState<Set<string>>(new Set());
+  const [reviewedJobIds, setReviewedJobIds] = useState<Set<string>>(new Set());
   const [cancelJobTarget, setCancelJobTarget] = useState<Job | null>(null);
   const [cancelRecurringTarget, setCancelRecurringTarget] = useState<RecurringJob | null>(null);
   const [invoices, setInvoices] = useState<RecurringInvoice[]>([]);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
+  const [quoteRequestTradie, setQuoteRequestTradie] = useState<TradieWithDetails | null>(null);
+  const [clientPendingJobs, setClientPendingJobs] = useState<{ id: string; title: string; description: string; location_address: string }[]>([]);
+  const [loadingQuoteJobs, setLoadingQuoteJobs] = useState(false);
+  const [sendingInvite, setSendingInvite] = useState(false);
 
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -167,8 +173,21 @@ export default function ClientDashboard() {
             }
           }
         }
-        // Set both at once — no flash
+        // Check which completed jobs have been reviewed
+        let reviewed = new Set<string>();
+        if (completedIds.length > 0) {
+          const { data: reviews } = await supabase
+            .from('reviews')
+            .select('job_id')
+            .in('job_id', completedIds)
+            .eq('client_id', user.id);
+          if (reviews) {
+            reviewed = new Set(reviews.map(r => r.job_id));
+          }
+        }
+        // Set all at once — no flash
         setReleasedJobIds(released);
+        setReviewedJobIds(reviewed);
         setRecentJobs(jobs);
       }
     } catch (err) {
@@ -480,6 +499,51 @@ export default function ClientDashboard() {
     }
   };
 
+  const handleRequestQuote = async (tradie: TradieWithDetails) => {
+    if (!user) return;
+    setQuoteRequestTradie(tradie);
+    setLoadingQuoteJobs(true);
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('id, title, description, location_address')
+        .eq('client_id', user.id)
+        .in('status', ['pending', 'accepted'])
+        .is('archived_at', null)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) console.error('Failed to fetch jobs:', error);
+      setClientPendingJobs(data || []);
+    } catch {
+      setClientPendingJobs([]);
+    } finally {
+      setLoadingQuoteJobs(false);
+    }
+  };
+
+  const sendQuoteInvitation = async (jobId: string) => {
+    if (!user || !quoteRequestTradie) return;
+    setSendingInvite(true);
+    try {
+      const clientName = profile?.full_name || 'A client';
+      await supabase.from('notifications').insert({
+        user_id: quoteRequestTradie.id,
+        type: 'new_job',
+        title: 'Quote invitation',
+        message: `${clientName} has invited you to quote on a job`,
+        job_id: jobId,
+        metadata: { invited: true, invited_by: user.id },
+      });
+      showToast('Quote request sent! The tradie will be notified.');
+      setQuoteRequestTradie(null);
+    } catch {
+      showToast('Failed to send quote request. Please try again.', true);
+    } finally {
+      setSendingInvite(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <WelcomeGuide role="client" userName={profile?.full_name} />
@@ -540,33 +604,61 @@ export default function ClientDashboard() {
                   My Jobs
                 </h2>
                 <div className="flex items-center gap-3">
-                  {recentJobs.some(j => j.archived_at) && (
-                    <button
-                      onClick={() => setShowArchived(!showArchived)}
-                      className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
-                        showArchived
-                          ? 'bg-warm-50 text-warm-700 border border-warm-200'
-                          : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      <Archive className="w-3.5 h-3.5" />
-                      Archived ({recentJobs.filter(j => j.archived_at).length})
-                    </button>
-                  )}
                   <Link to="/leads" className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
                     View All <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
 
-              {recentJobs.filter(j => showArchived ? j.archived_at : !j.archived_at).length === 0 && recentJobs.length > 0 ? (
+              {/* Job tabs */}
+              <div className="flex items-center gap-1 mb-4">
+                {(['active', 'completed'] as const).map(tab => {
+                  const activeCount = recentJobs.filter(j => !j.archived_at && !(j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id))).length;
+                  const completedCount = recentJobs.filter(j => !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)).length;
+                  const count = tab === 'active' ? activeCount : completedCount;
+                  const isActive = jobTab === tab;
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => { setJobTab(tab); setShowArchived(false); }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        isActive
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {tab === 'active' ? 'Active' : 'Completed'} {count > 0 && `(${count})`}
+                    </button>
+                  );
+                })}
+                {recentJobs.some(j => j.archived_at) && (
+                  <button
+                    onClick={() => { setShowArchived(!showArchived); setJobTab('active'); }}
+                    className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                      showArchived
+                        ? 'bg-warm-50 text-warm-700 border border-warm-200'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Archive className="w-3.5 h-3.5" />
+                    Archived ({recentJobs.filter(j => j.archived_at).length})
+                  </button>
+                )}
+              </div>
+
+              {recentJobs.filter(j => showArchived
+                ? j.archived_at
+                : jobTab === 'active'
+                  ? !j.archived_at && !(j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id))
+                  : !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)
+              ).length === 0 && recentJobs.length > 0 ? (
                 <div className="bg-gray-50 rounded-2xl border border-gray-200 p-8 text-center">
                   <Archive className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                   <p className="text-gray-600 font-medium">
-                    {showArchived ? 'No archived jobs' : 'All jobs archived'}
+                    {showArchived ? 'No archived jobs' : jobTab === 'completed' ? 'No completed jobs yet' : 'No active jobs'}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    {showArchived ? 'Archived jobs will appear here' : 'Toggle "Archived" to view them, or post a new job'}
+                    {showArchived ? 'Archived jobs will appear here' : jobTab === 'completed' ? 'Jobs will appear here once payment is released' : 'Post a job to get started'}
                   </p>
                 </div>
               ) : recentJobs.length === 0 ? (
@@ -610,8 +702,13 @@ export default function ClientDashboard() {
               ) : (
                 <div className="space-y-3">
                   {recentJobs
-                    .filter(j => showArchived ? j.archived_at : !j.archived_at)
-                    .slice(0, showArchived ? 20 : 8)
+                    .filter(j => showArchived
+                      ? j.archived_at
+                      : jobTab === 'active'
+                        ? !j.archived_at && !(j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id))
+                        : !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)
+                    )
+                    .slice(0, 20)
                     .map((job) => {
                     const categoryMatch = job.description.match(/^\[([^\]]+)\]/);
                     const categoryRaw = categoryMatch ? categoryMatch[1] : null;
@@ -620,6 +717,7 @@ export default function ClientDashboard() {
                     const isArchived = !!job.archived_at;
 
                     const isReleased = releasedJobIds.has(job.id);
+                    const isReviewed = reviewedJobIds.has(job.id);
                     const statusLabel = isArchived ? 'Archived'
                       : job.status === 'completed' && isReleased ? 'Paid'
                       : job.status === 'completed' ? 'Awaiting Release'
@@ -749,7 +847,20 @@ export default function ClientDashboard() {
                                 </span>
                               </div>
                             )}
-                            {job.status === 'completed' && isReleased && (
+                            {job.status === 'completed' && isReleased && !isReviewed && (
+                              <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
+                                <span className="text-xs text-gray-400">Payment released — how was the job?</span>
+                                <Link
+                                  to={`/review/${job.id}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-500 text-white text-xs font-semibold rounded-lg hover:bg-warm-600 transition-colors"
+                                >
+                                  <Star className="w-3.5 h-3.5" />
+                                  Leave a Review
+                                </Link>
+                              </div>
+                            )}
+                            {job.status === 'completed' && isReleased && isReviewed && (
                               <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
                                 <span className="text-xs text-gray-400">Payment released to tradie</span>
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg">
@@ -807,6 +918,7 @@ export default function ClientDashboard() {
                         onViewCalendar={setCalendarTradie}
                         onSave={handleRemoveTradie}
                         isSaved={true}
+                        onRequestQuote={handleRequestQuote}
                       />
                     ))}
                   </div>
@@ -958,7 +1070,7 @@ export default function ClientDashboard() {
               {showRecurringForm && (
                 <RecurringJobForm
                   onSave={async (data) => {
-                    const { budget, preferred_time, ...rest } = data;
+                    const { budget, preferred_time, allows_site_inspection, ...rest } = data;
                     const serviceLabel = rest.service_subtype || rest.trade_category.replace(/_/g, ' ');
                     // 1. Create a jobs record so it enters the quote pipeline (same as one-off)
                     const { data: job, error: jobErr } = await supabase
@@ -976,6 +1088,7 @@ export default function ClientDashboard() {
                         max_quotes: 3,
                         scheduled_date: rest.next_due_date,
                         preferred_time_slot: preferred_time || null,
+                        allows_site_inspection: allows_site_inspection ?? true,
                       })
                       .select('id')
                       .single();
@@ -1397,7 +1510,7 @@ export default function ClientDashboard() {
 
             {/* Paused Services — only show most recent resumable one */}
             {(() => {
-              const inactive = recurringJobs.filter(j => !j.is_active);
+              const inactive = recurringJobs.filter(j => !j.is_active && !j.cancelled_at);
               if (inactive.length === 0) return null;
               // Sort by next_due_date descending — most recent first
               const sorted = [...inactive].sort((a, b) =>
@@ -1573,6 +1686,82 @@ export default function ClientDashboard() {
         onClose={() => setShowSubscriptionModal(false)}
       />
 
+      {quoteRequestTradie && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setQuoteRequestTradie(null)} />
+          <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <button onClick={() => setQuoteRequestTradie(null)} className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 rounded-lg">
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                <FileText className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Request Quote</h2>
+                <p className="text-sm text-gray-500">from {quoteRequestTradie.tradie_details?.business_name || quoteRequestTradie.full_name}</p>
+              </div>
+            </div>
+
+            {loadingQuoteJobs ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+              </div>
+            ) : clientPendingJobs.length > 0 ? (
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-3">Select a job to invite them to quote on:</p>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {clientPendingJobs.map(job => {
+                    const categoryMatch = job.description?.match(/^\[([^\]]+)\]/);
+                    const category = categoryMatch ? categoryMatch[1].replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : null;
+                    const desc = job.description?.replace(/^\[[^\]]+\]\s*/, '') || '';
+                    return (
+                      <button
+                        key={job.id}
+                        onClick={() => sendQuoteInvitation(job.id)}
+                        disabled={sendingInvite}
+                        className="w-full text-left p-3 rounded-xl border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/50 transition-colors disabled:opacity-50"
+                      >
+                        <p className="text-sm font-semibold text-gray-900 capitalize truncate">
+                          {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate mt-0.5">{desc}</p>
+                        {job.location_address && (
+                          <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            {job.location_address.split(',')[0]}
+                          </p>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <button
+                    onClick={() => { setQuoteRequestTradie(null); navigate(`/post-lead?trade=${quoteRequestTradie.tradie_details?.trade_type || ''}&tradie=${quoteRequestTradie.id}`); }}
+                    className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Post a New Job Instead
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-gray-600 mb-4">You don't have any open jobs yet. Post one and this tradie will be invited to quote.</p>
+                <button
+                  onClick={() => { setQuoteRequestTradie(null); navigate(`/post-lead?trade=${quoteRequestTradie.tradie_details?.trade_type || ''}&tradie=${quoteRequestTradie.id}`); }}
+                  className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-emerald-500 text-white text-sm font-medium rounded-xl hover:bg-emerald-600 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Post a Job
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {toast.show && (
         <div className={`fixed bottom-4 right-4 ${toast.isError ? 'bg-red-600' : 'bg-green-600'} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50 animate-slide-up`}>
           <div className={`w-2 h-2 ${toast.isError ? 'bg-red-300' : 'bg-green-300'} rounded-full animate-pulse`} />
@@ -1633,7 +1822,7 @@ export default function ClientDashboard() {
 }
 
 function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies }: {
-  onSave: (data: { tradie_id: string | null; trade_category: string; service_subtype?: string; description: string; frequency_months: number; next_due_date: string; reminder_days_before: number; location: string; budget?: number; preferred_time?: string }) => Promise<void>;
+  onSave: (data: { tradie_id: string | null; trade_category: string; service_subtype?: string; description: string; frequency_months: number; next_due_date: string; reminder_days_before: number; location: string; budget?: number; preferred_time?: string; allows_site_inspection?: boolean }) => Promise<void>;
   onCancel: () => void;
   onDone: () => void;
   onSendQuote: (job: RecurringJob) => Promise<void>;
@@ -1652,6 +1841,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
   const [successState, setSuccessState] = useState<{ category: string; subtype: string; frequency: number; tradieId: string; tradieName: string } | null>(null);
   const [quoteSent, setQuoteSent] = useState(false);
   const [sendingQuote, setSendingQuote] = useState(false);
+  const [allowsSiteInspection, setAllowsSiteInspection] = useState(true);
 
   const tradeKeys = Object.keys(RECURRING_SERVICE_SUBCATEGORIES);
   const subcategories = category ? (RECURRING_SERVICE_SUBCATEGORIES[category] ?? null) : null;
@@ -1716,6 +1906,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
         location: location.trim(),
         budget: budget ? Number(budget) : undefined,
         preferred_time: preferredTime || undefined,
+        allows_site_inspection: allowsSiteInspection,
       });
       const selectedTradie = savedTradies.find(t => t.id === selectedTradieId);
       setSuccessState({
@@ -2103,6 +2294,19 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
               </select>
             </div>
           </div>
+
+          <label className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-emerald-300 cursor-pointer transition-colors">
+            <input
+              type="checkbox"
+              checked={allowsSiteInspection}
+              onChange={e => setAllowsSiteInspection(e.target.checked)}
+              className="mt-0.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            <div>
+              <span className="text-sm font-medium text-gray-700">Allow on-site quote</span>
+              <p className="text-xs text-gray-500 mt-0.5">Let the tradie visit before giving a firm price.</p>
+            </div>
+          </label>
 
           <div className="flex gap-2 pt-1">
             <button onClick={onCancel} className="flex-1 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">Cancel</button>

@@ -79,12 +79,16 @@ supabase db push                   # apply migrations
 ## ConnecTradie Design System — Always Follow These Rules
 
 ### Colours
-- Primary action: teal/emerald — use Tailwind `emerald-500` (#10b981)
-  for buttons, links, active states only
+- Primary action: teal/emerald — use Tailwind `emerald-500` (#06D6A0)
+  for buttons, links, CTAs, success states, completion indicators
+- Secondary: ocean blue — use Tailwind `secondary-500` (#2E86DE)
+  for info panels, verification badges, in-progress/pending states,
+  secondary buttons, form focus rings, job workflow states
 - Background: `gray-50` for page, `white` for cards
 - Text: `gray-900` headings, `gray-600` body, `gray-400` placeholder/muted
 - Borders: `gray-200` only — no heavy borders
 - Status badges: use existing pill pattern only
+- Rule: emerald = positive/action/success, secondary = info/interactive/pending
 
 ### Layout & Spacing
 - Page wrapper: `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8`

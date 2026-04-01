@@ -13,7 +13,9 @@ export interface RecurringInvoice {
   subtotal: number;
   extras_total: number;
   total: number;
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'processing';
+  payment_method?: 'card' | 'au_becs_debit' | null;
+  becs_charge_status?: 'pending' | 'succeeded' | 'failed' | null;
   stripe_payment_intent_id: string | null;
   stripe_payment_url: string | null;
   due_date: string | null;
@@ -37,6 +39,7 @@ const STATUS_STYLES: Record<string, string> = {
   paid: 'bg-emerald-100 text-emerald-700',
   overdue: 'bg-red-100 text-red-700',
   cancelled: 'bg-gray-100 text-gray-600',
+  processing: 'bg-secondary-100 text-secondary-700',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -45,6 +48,7 @@ const STATUS_LABELS: Record<string, string> = {
   paid: 'Paid',
   overdue: 'Overdue',
   cancelled: 'Cancelled',
+  processing: 'Processing',
 };
 
 export default function RecurringInvoiceCard({ invoice, userRole }: RecurringInvoiceCardProps) {
@@ -61,10 +65,13 @@ export default function RecurringInvoiceCard({ invoice, userRole }: RecurringInv
     .replace(/\b\w/g, (c) => c.toUpperCase()) ?? 'Service';
 
   const agreedPrice = invoice.recurring_job?.agreed_price ?? 0;
+  const isBecsProcessing = invoice.status === 'processing' && invoice.payment_method === 'au_becs_debit';
+  const becsFailed = invoice.becs_charge_status === 'failed';
   const showPayButton =
     userRole === 'client' &&
     (invoice.status === 'sent' || invoice.status === 'overdue') &&
-    invoice.stripe_payment_url;
+    invoice.stripe_payment_url &&
+    !isBecsProcessing;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 max-w-lg">
@@ -130,11 +137,24 @@ export default function RecurringInvoiceCard({ invoice, userRole }: RecurringInv
 
         {invoice.paid_at && (
           <p className="text-xs text-emerald-600 mt-2">
-            Paid {new Date(invoice.paid_at).toLocaleDateString('en-AU', {
+            Paid {invoice.payment_method === 'au_becs_debit' ? 'via Direct Debit ' : ''}
+            {new Date(invoice.paid_at).toLocaleDateString('en-AU', {
               day: 'numeric',
               month: 'short',
               year: 'numeric',
             })}
+          </p>
+        )}
+
+        {isBecsProcessing && (
+          <p className="text-xs text-secondary-600 mt-2">
+            Direct debit initiated — processing 3-5 business days
+          </p>
+        )}
+
+        {becsFailed && invoice.status === 'sent' && (
+          <p className="text-xs text-amber-600 mt-2">
+            Direct debit was unsuccessful — please pay by card below
           </p>
         )}
 

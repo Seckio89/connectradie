@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { BadgeCheck, Shield, FileCheck, Calendar, MessageCircle, Star, Crown, Truck, ShieldCheck, MapPin, ExternalLink } from 'lucide-react';
+import { BadgeCheck, Shield, FileCheck, Calendar, MessageCircle, Star, Crown, Truck, ShieldCheck, MapPin, ExternalLink, FileText } from 'lucide-react';
 import type { TradieWithDetails } from '../types/database';
 import { getTradieRating, type TradieRating } from '../lib/reviews';
 import { redactName, extractSuburb } from '../lib/contactGating';
@@ -12,9 +12,10 @@ interface TradieCardProps {
   onViewCalendar: (tradie: TradieWithDetails) => void;
   onSave?: (tradie: TradieWithDetails) => void;
   isSaved?: boolean;
+  onRequestQuote?: (tradie: TradieWithDetails) => void;
 }
 
-export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isSaved }: TradieCardProps) {
+export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isSaved, onRequestQuote }: TradieCardProps) {
   const details = tradie.tradie_details;
   const availabilityHours = tradie.availability_hours;
   const hasSetAvailability = availabilityHours != null;
@@ -239,6 +240,15 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
 
       {/* Actions footer */}
       <div className="px-5 py-3.5 bg-gray-50/80 border-t border-gray-100">
+        {onRequestQuote && (
+          <button
+            onClick={() => onRequestQuote(tradie)}
+            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 mb-2.5 text-sm font-medium rounded-xl transition-colors min-h-[40px] bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm shadow-emerald-500/20"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            Request Quote
+          </button>
+        )}
         <div className="flex gap-2.5">
           <button
             onClick={() => onViewCalendar(tradie)}
