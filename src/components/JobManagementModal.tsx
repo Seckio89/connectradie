@@ -14,6 +14,7 @@ import SubmitQuoteModal from './SubmitQuoteModal';
 import ConfirmModal from './ConfirmModal';
 import TradieQuoteActions from './TradieQuoteActions';
 import { adjustQuotePrice, approvePriceReduction } from '../lib/stripePayments';
+import { useSignedUrls } from '../hooks/useSignedUrl';
 
 // ── Types ──
 
@@ -326,6 +327,9 @@ export default function JobManagementModal({
     if (taskLines.length >= 2) return taskLines.slice(0, 8);
     return (matched && COMPLETION_PROMPTS[matched]) || DEFAULT_PROMPTS;
   }, [job?.description, matched]);
+
+  // Resolve signed URLs for the job's photos (job-attachments bucket).
+  const photoSignedUrls = useSignedUrls('job-attachments', job?.images_url || []);
 
   const combinedCompletionNotes = useMemo(() => {
     const promptLines = prompts
@@ -1148,11 +1152,16 @@ export default function JobManagementModal({
                       <Image className="w-3 h-3" /> Photos ({job.images_url.length})
                     </p>
                     <div className="grid grid-cols-3 gap-1.5">
-                      {job.images_url.slice(0, 6).map((url, i) => (
-                        <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-primary-300 transition-colors">
-                          <img src={url} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
-                        </a>
-                      ))}
+                      {job.images_url.slice(0, 6).map((_, i) => {
+                        const signedUrl = photoSignedUrls[i];
+                        return (
+                          <a key={i} href={signedUrl ?? '#'} target="_blank" rel="noopener noreferrer" className="block aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-primary-300 transition-colors">
+                            {signedUrl
+                              ? <img src={signedUrl} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
+                              : <div className="w-full h-full bg-gray-100" />}
+                          </a>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

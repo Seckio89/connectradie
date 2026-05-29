@@ -290,8 +290,9 @@ export default function VerificationCenter() {
           .from('documents')
           .upload(path, licenseFile, { upsert: true });
         if (uploadErr) throw uploadErr;
-        const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path);
-        documentUrls.push(publicUrl);
+        // Store the bucket path so the file remains accessible after the
+        // bucket is flipped to private and signed URLs are required.
+        documentUrls.push(path);
       }
 
       const updatePayload: Record<string, unknown> = {

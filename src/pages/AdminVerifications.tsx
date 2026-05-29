@@ -21,6 +21,7 @@ import { supabase } from '../lib/supabase';
 import DashboardLayout from '../components/DashboardLayout';
 import Breadcrumbs from '../components/Breadcrumbs';
 import type { Profile } from '../types/database';
+import { getSignedUrl } from '../lib/storage';
 
 interface PendingUser extends Profile {
   expanded?: boolean;
@@ -436,17 +437,19 @@ export default function AdminVerifications() {
                             <div>
                               <h4 className="text-sm font-medium text-gray-700 mb-2">Uploaded Documents</h4>
                               <div className="flex flex-wrap gap-2">
-                                {user.documents_url.map((url, idx) => (
-                                  <a
+                                {user.documents_url.map((value, idx) => (
+                                  <button
                                     key={idx}
-                                    href={url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    type="button"
+                                    onClick={async () => {
+                                      const signed = await getSignedUrl('documents', value, 600);
+                                      if (signed) window.open(signed, '_blank', 'noopener,noreferrer');
+                                    }}
                                     className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-primary-600 hover:bg-primary-50 hover:border-primary-200 transition-colors"
                                   >
                                     <ExternalLink className="w-3.5 h-3.5" />
                                     Document {idx + 1}
-                                  </a>
+                                  </button>
                                 ))}
                               </div>
                             </div>

@@ -9,6 +9,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { isPro } from '../lib/subscription';
 import { extractSuburb } from '../lib/contactGating';
 import { redactContactInfo } from '../lib/redaction';
+import { useSignedUrls } from '../hooks/useSignedUrl';
+import { getSignedUrl } from '../lib/storage';
 
 const RequestVariationModal = lazy(() => import('./RequestVariationModal'));
 const CreateInvoiceModal = lazy(() => import('./CreateInvoiceModal'));
@@ -91,6 +93,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
   const isProUser = isPro(tradieDetails?.subscription_tier, profile?.is_premium);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const photoSignedUrls = useSignedUrls('job-attachments', job?.images_url || []);
   const [variations, setVariations] = useState<JobVariation[]>([]);
   const [showVariationModal, setShowVariationModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -247,8 +250,8 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
           .from('documents')
           .upload(filePath, file, { upsert: true });
         if (uploadData?.path) {
-          const { data: urlData } = supabase.storage.from('documents').getPublicUrl(uploadData.path);
-          fileUrl = urlData.publicUrl;
+          // Store the bucket path; downstream parse-invoice fn signs it on demand.
+          fileUrl = uploadData.path;
         }
       }
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-invoice`;
@@ -575,18 +578,25 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
                 <p className="text-xs font-medium text-gray-500">Attached Photos</p>
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {job.images_url.map((url, index) => (
-                  <div key={index} className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
-                    <img
-                      src={url}
-                      alt={`Job photo ${index + 1}`}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
-                      onClick={() => setLightboxUrl(url)}
-                    />
-                  </div>
-                ))}
+                {job.images_url.map((_, index) => {
+                  const signedUrl = photoSignedUrls[index];
+                  return (
+                    <div key={index} className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                      {signedUrl ? (
+                        <img
+                          src={signedUrl}
+                          alt={`Job photo ${index + 1}`}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                          onClick={() => setLightboxUrl(signedUrl)}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-100" />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1206,10 +1216,14 @@ function AddPaymentForm({
                   <FileText className="w-4 h-4 text-secondary-600 flex-shrink-0" />
                   <span className="text-xs font-medium text-secondary-800 truncate flex-1">{sub.file_name || 'Invoice attached'}</span>
                   {sub.file_url && (
-                    <a href={sub.file_url} target="_blank" rel="noopener noreferrer"
+                    <button type="button"
+                      onClick={async () => {
+                        const signed = await getSignedUrl('documents', sub.file_url!, 600);
+                        if (signed) window.open(signed, '_blank', 'noopener,noreferrer');
+                      }}
                       className="text-xs font-medium text-secondary-700 hover:text-secondary-900 flex items-center gap-1 flex-shrink-0">
                       <Eye className="w-3.5 h-3.5" />View
-                    </a>
+                    </button>
                   )}
                   {sub.invoice_id && (
                     <button type="button" onClick={() => setViewingInvoiceId(sub.invoice_id!)}

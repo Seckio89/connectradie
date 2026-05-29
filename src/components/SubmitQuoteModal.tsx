@@ -25,6 +25,7 @@ import type { Job } from '../types/database';
 import { extractSuburb } from '../lib/contactGating';
 import { QUOTE_MESSAGE_OPTIONS, resolveMessageOptionsKey } from '../lib/recurringJobs';
 import { useTradieVerification } from '../hooks/useTradieVerification';
+import { useSignedUrls } from '../hooks/useSignedUrl';
 
 interface QuoteTemplate {
   id: string;
@@ -181,6 +182,9 @@ export default function SubmitQuoteModal({
   // Verification gate: a tradie must have identity + ABN (and licence, for
   // licensed trades) before they can submit a quote. See useTradieVerification.
   const verification = useTradieVerification(categoryRaw === 'Job' ? null : categoryRaw);
+
+  // Resolve signed URLs for the job's photos (job-attachments bucket).
+  const photoSignedUrls = useSignedUrls('job-attachments', job.images_url || []);
   const desc = job.description.replace(/^\[[^\]]+\]\s*/, '');
   const suburb = extractSuburb(job.location_address || '') || 'Unknown area';
   const slotsRemaining = job.max_quotes - job.quote_count;
@@ -576,11 +580,16 @@ export default function SubmitQuoteModal({
                       <Image className="w-3 h-3" /> Photos ({job.images_url.length})
                     </p>
                     <div className="flex gap-2 overflow-x-auto pb-1">
-                      {job.images_url.slice(0, 4).map((url: string, i: number) => (
-                        <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:border-secondary-300 transition-colors">
-                          <img src={url} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
-                        </a>
-                      ))}
+                      {job.images_url.slice(0, 4).map((_: string, i: number) => {
+                        const signedUrl = photoSignedUrls[i];
+                        return (
+                          <a key={i} href={signedUrl ?? '#'} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:border-secondary-300 transition-colors">
+                            {signedUrl
+                              ? <img src={signedUrl} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
+                              : <div className="w-full h-full bg-gray-100" />}
+                          </a>
+                        );
+                      })}
                       {job.images_url.length > 4 && (
                         <div className="flex-shrink-0 w-16 h-16 rounded-lg border border-gray-200 flex items-center justify-center bg-gray-50">
                           <span className="text-xs text-gray-500 font-medium">+{job.images_url.length - 4}</span>

@@ -613,6 +613,8 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
 
       // Upload any photos to the job-attachments bucket and link them to the job.
       if (photos.length > 0) {
+        // Store the in-bucket path, not a public URL — keeps things working
+        // when the bucket is private and signed URLs become required.
         const uploadResults = await Promise.all(
           photos.map(async (photo, i) => {
             const ext = photo.file.name.split('.').pop() || 'jpg';
@@ -621,7 +623,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
               .from('job-attachments')
               .upload(filePath, photo.file, { cacheControl: '3600', upsert: false });
             if (upErr) return null;
-            return supabase.storage.from('job-attachments').getPublicUrl(filePath).data?.publicUrl || null;
+            return filePath;
           }),
         );
         const imageUrls = uploadResults.filter((u): u is string => u !== null);

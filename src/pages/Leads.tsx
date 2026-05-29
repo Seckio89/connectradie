@@ -54,6 +54,8 @@ import { cancelRecurringJob } from '../lib/recurringJobs';
 import { extractSuburb } from '../lib/contactGating';
 import { tradeRequiresLicense } from '../lib/tradeCategories';
 import { useTradieVerification } from '../hooks/useTradieVerification';
+import SignedImage from '../components/SignedImage';
+import { getSignedUrl } from '../lib/storage';
 import { sendNotification } from '../lib/notificationService';
 import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
 import { acceptAndPay, verifyPayment, releaseEscrow, payPriceIncrease } from '../lib/stripePayments';
@@ -1224,7 +1226,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     if (!editJob || !user) return;
     setEditSaving(true);
     try {
-      // Upload new photos
+      // Upload new photos. Store the bucket path (not the public URL) so
+      // we can switch the bucket to private without breaking display.
       const imageUrls: string[] = [];
       for (const photo of editPhotos) {
         if (photo.isExisting) {
@@ -1235,12 +1238,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           const { error: uploadErr } = await supabase.storage
             .from('job-attachments')
             .upload(filePath, photo.file, { cacheControl: '3600', upsert: false });
-          if (!uploadErr) {
-            const { data: urlData } = supabase.storage
-              .from('job-attachments')
-              .getPublicUrl(filePath);
-            if (urlData?.publicUrl) imageUrls.push(urlData.publicUrl);
-          }
+          if (!uploadErr) imageUrls.push(filePath);
         }
       }
 
@@ -2542,14 +2540,17 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   <div>
                     <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Photos</h4>
                     <div className="flex gap-2 overflow-x-auto pb-1">
-                      {vlPhotos.map((url, i) => (
+                      {vlPhotos.map((value, i) => (
                         <button
                           key={i}
                           type="button"
-                          onClick={() => setPreviewPhoto(url)}
+                          onClick={async () => {
+                            const signed = await getSignedUrl('job-attachments', value);
+                            if (signed) setPreviewPhoto(signed);
+                          }}
                           className="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden border border-gray-200 hover:border-primary-300 transition-colors"
                         >
-                          <img src={url} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
+                          <SignedImage bucket="job-attachments" value={value} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
                         </button>
                       ))}
                     </div>
@@ -3260,14 +3261,17 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   <div>
                     <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Photos</h4>
                     <div className="flex gap-2 overflow-x-auto pb-1">
-                      {cjPhotos.map((url, i) => (
+                      {cjPhotos.map((value, i) => (
                         <button
                           key={i}
                           type="button"
-                          onClick={() => setPreviewPhoto(url)}
+                          onClick={async () => {
+                            const signed = await getSignedUrl('job-attachments', value);
+                            if (signed) setPreviewPhoto(signed);
+                          }}
                           className="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border border-gray-200 hover:border-primary-300 transition-colors"
                         >
-                          <img src={url} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
+                          <SignedImage bucket="job-attachments" value={value} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
                         </button>
                       ))}
                     </div>

@@ -26,6 +26,7 @@ import { isPro as checkIsPro } from '../lib/subscription';
 import { adjustQuotePrice } from '../lib/stripePayments';
 import type { Job, JobMilestone, Quote } from '../types/database';
 import { insertNotification, type RecurringJob } from '../lib/recurringJobs';
+import { useSignedUrls } from '../hooks/useSignedUrl';
 import MilestoneEditor from './MilestoneEditor';
 import Modal from './Modal';
 import AvailabilityMiniCalendar from './AvailabilityMiniCalendar';
@@ -74,6 +75,7 @@ function getNextAction(status: string, isTradie: boolean): { label: string; hint
 
 export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlocked = true, onStatusChange, onComplete }: JobDetailModalProps) {
   const { user, profile, tradieDetails } = useAuth();
+  const photoSignedUrls = useSignedUrls('job-attachments', job?.images_url || []);
   const [milestones, setMilestones] = useState<JobMilestone[]>([]);
   const [statusLoading, setStatusLoading] = useState(false);
   const [localStatus, setLocalStatus] = useState<string>(job?.status || 'pending');
@@ -788,17 +790,24 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
               <p className="text-xs font-semibold text-gray-500">Photos ({job.images_url.length})</p>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
-              {job.images_url.map((url, index) => (
-                <div key={index} className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
-                  <img
-                    src={url}
-                    alt={`Photo ${index + 1}`}
-                    loading="lazy"
-                    className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
-                    onClick={() => window.open(url, '_blank')}
-                  />
-                </div>
-              ))}
+              {job.images_url.map((_, index) => {
+                const signedUrl = photoSignedUrls[index];
+                return (
+                  <div key={index} className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                    {signedUrl ? (
+                      <img
+                        src={signedUrl}
+                        alt={`Photo ${index + 1}`}
+                        loading="lazy"
+                        className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                        onClick={() => window.open(signedUrl, '_blank')}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-100" />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

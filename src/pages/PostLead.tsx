@@ -520,6 +520,8 @@ export default function PostLead() {
     // Upload photos in parallel if any
     const jobId = (insertedJob as Job).id;
     if (photos.length > 0) {
+      // Store the in-bucket path (not the public URL) so the file can be
+      // served via signed URLs whether the bucket is public or private.
       const uploadResults = await Promise.all(
         photos.map(async (photo, i) => {
           const ext = photo.file.name.split('.').pop() || 'jpg';
@@ -528,13 +530,10 @@ export default function PostLead() {
             .from('job-attachments')
             .upload(filePath, photo.file, { cacheControl: '3600', upsert: false });
           if (uploadErr) return null;
-          const { data: urlData } = supabase.storage
-            .from('job-attachments')
-            .getPublicUrl(filePath);
-          return urlData?.publicUrl || null;
+          return filePath;
         })
       );
-      const imageUrls = uploadResults.filter((url): url is string => url !== null);
+      const imageUrls = uploadResults.filter((p): p is string => p !== null);
       if (imageUrls.length > 0) {
         await supabase
           .from('jobs')
