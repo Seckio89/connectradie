@@ -40,15 +40,22 @@ export default function ForTradiesSection() {
               </div>
               <div className="p-5 space-y-3">
                 {[
-                  { day: 'Mon 12', job: 'Bathroom reno — Parramatta', team: ['J', 'K'], time: 'Morning', color: 'bg-blue-50 border-blue-200 text-blue-800' },
-                  { day: 'Tue 13', job: 'Electrical switchboard — Penrith', team: ['M'], time: 'Afternoon', color: 'bg-amber-50 border-amber-200 text-amber-800' },
-                  { day: 'Wed 14', job: 'Roof inspection — Blacktown', team: ['J', 'K', 'L'], time: 'Morning', color: 'bg-violet-50 border-violet-200 text-violet-800' },
-                  { day: 'Thu 15', job: 'Kitchen fit-out — Campbelltown', team: ['M', 'K'], time: 'Full Day', color: 'bg-emerald-50 border-emerald-200 text-emerald-800' },
+                  { day: 'Mon 12', job: 'Bathroom reno — Parramatta', team: ['J', 'K'], time: 'Morning', color: 'bg-blue-50 border-blue-200 text-blue-800', conflict: false },
+                  { day: 'Tue 13', job: 'Electrical switchboard — Penrith', team: ['M'], time: 'Afternoon', color: 'bg-amber-50 border-amber-200 text-amber-800', conflict: false },
+                  { day: 'Wed 14', job: 'Roof inspection — Blacktown', team: ['J', 'K', 'L'], time: 'Morning', color: 'bg-violet-50 border-violet-200 text-violet-800', conflict: false },
+                  { day: 'Thu 15', job: 'Kitchen fit-out — Campbelltown', team: ['M', 'K'], time: 'Full Day', color: 'bg-emerald-50 border-emerald-200 text-emerald-800', conflict: false },
+                  { day: 'Fri 16', job: 'Bathroom finish — 14 Smith St, Bondi', team: ['J'], time: '8:00 AM – 12:00 PM', color: 'bg-red-50 border-red-300 text-red-800', conflict: true },
+                  { day: 'Fri 16', job: 'Tile install — 14 Smith St, Bondi', team: ['K'], time: '9:00 AM – 1:00 PM', color: 'bg-red-50 border-red-300 text-red-800', conflict: true },
                 ].map((item, i) => (
                   <div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${item.color}`}>
                     <div className="flex-shrink-0 w-12 text-xs font-semibold opacity-70">{item.day}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{item.job}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium truncate">{item.job}</p>
+                        {item.conflict && (
+                          <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                        )}
+                      </div>
                       <p className="text-xs opacity-60">{item.time}</p>
                     </div>
                     <div className="flex -space-x-1 flex-shrink-0">
@@ -62,7 +69,7 @@ export default function ForTradiesSection() {
                 ))}
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border border-red-200 rounded-xl">
                   <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                  <p className="text-xs text-red-700 font-medium">Fri 16: 2 jobs at same address — conflict detected</p>
+                  <p className="text-xs text-red-700 font-medium">Conflict — same address, overlapping time. Reschedule one to clear.</p>
                 </div>
               </div>
             </div>
