@@ -1047,25 +1047,29 @@ export async function requestQuoteForRecurringJob(
   const jobId = insertedJob.id as string;
 
   if (recurringJob.tradie_id) {
-    await supabase.from('notifications').insert({
-      user_id: recurringJob.tradie_id,
-      type: 'new_job',
-      title: 'New quote request',
-      message: `${clientName} sent you an ongoing ${tradeName} service — review and quote now`,
-      job_id: jobId,
-      metadata: { recurring_job_id: recurringJob.id },
+    await supabase.rpc('create_notification', {
+      p_user_id: recurringJob.tradie_id,
+      p_title: 'New quote request',
+      p_message: `${clientName} sent you an ongoing ${tradeName} service — review and quote now`,
+      p_type: 'new_job',
+      p_channel: 'in_app',
+      p_read: false,
+      p_link: null,
+      p_job_id: jobId,
+      p_metadata: { recurring_job_id: recurringJob.id },
     });
   } else if (savedMatchingTradies && savedMatchingTradies.length > 0) {
-    await supabase.from('notifications').insert(
-      savedMatchingTradies.map(t => ({
-        user_id: t.id,
-        type: 'new_job',
-        title: 'New quote request from a saved client',
-        message: `${clientName} is looking for a ${tradeName} — ongoing service`,
-        job_id: jobId,
-        metadata: { recurring_job_id: recurringJob.id },
-      })),
-    );
+    await Promise.all(savedMatchingTradies.map(t => supabase.rpc('create_notification', {
+      p_user_id: t.id,
+      p_title: 'New quote request from a saved client',
+      p_message: `${clientName} is looking for a ${tradeName} — ongoing service`,
+      p_type: 'new_job',
+      p_channel: 'in_app',
+      p_read: false,
+      p_link: null,
+      p_job_id: jobId,
+      p_metadata: { recurring_job_id: recurringJob.id },
+    })));
   }
 
   return { jobId };
@@ -2446,17 +2450,19 @@ export async function insertNotification(
   metadata?: Record<string, unknown>,
   title?: string,
 ): Promise<void> {
-  const { error } = await supabase
-    .from('notifications')
-    .insert({
-      user_id: userId,
-      type,
-      title: title || getDefaultTitle(type),
-      message,
-      metadata: metadata ?? {},
-      read: false,
-    });
-
+  // Route through the SECURITY DEFINER create_notification RPC. Direct
+  // INSERT on the notifications table is being revoked from authenticated.
+  const { error } = await supabase.rpc('create_notification', {
+    p_user_id: userId,
+    p_title: title || getDefaultTitle(type),
+    p_message: message,
+    p_type: type,
+    p_channel: 'in_app',
+    p_read: false,
+    p_link: null,
+    p_job_id: null,
+    p_metadata: metadata ?? {},
+  });
   if (error) throw new Error(error.message);
 }
 

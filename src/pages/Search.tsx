@@ -491,13 +491,16 @@ export default function Search() {
     try {
       // Send notification to tradie — don't assign tradie_id so the job stays in Leads
       const clientName = profile?.full_name || 'A client';
-      await supabase.from('notifications').insert({
-        user_id: quoteRequestTradie.id,
-        type: 'new_job',
-        title: 'Quote invitation',
-        message: `${clientName} has invited you to quote on a job`,
-        job_id: jobId,
-        metadata: { invited: true, invited_by: user.id },
+      await supabase.rpc('create_notification', {
+        p_user_id: quoteRequestTradie.id,
+        p_title: 'Quote invitation',
+        p_message: `${clientName} has invited you to quote on a job`,
+        p_type: 'new_job',
+        p_channel: 'in_app',
+        p_read: false,
+        p_link: null,
+        p_job_id: jobId,
+        p_metadata: { invited: true, invited_by: user.id },
       });
 
       showToast('Quote request sent! The tradie will be notified.');

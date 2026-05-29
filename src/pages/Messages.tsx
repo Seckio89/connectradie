@@ -507,13 +507,16 @@ export default function Messages() {
 
       // Notify recipient
       try {
-        await supabase.from('notifications').insert({
-          user_id: receiverId,
-          type: 'new_message',
-          title: 'New Message',
-          message: messageContent.slice(0, 80),
-          metadata: { conversation_id: selectedConversation.id, sender_id: user.id },
-          read: false,
+        await supabase.rpc('create_notification', {
+          p_user_id: receiverId,
+          p_title: 'New Message',
+          p_message: messageContent.slice(0, 80),
+          p_type: 'new_message',
+          p_channel: 'in_app',
+          p_read: false,
+          p_link: null,
+          p_job_id: null,
+          p_metadata: { conversation_id: selectedConversation.id, sender_id: user.id },
         });
       } catch {
         // Non-critical

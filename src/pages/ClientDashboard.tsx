@@ -413,13 +413,16 @@ export default function ClientDashboard() {
 
       // Notify the assigned tradie directly
       if (targetMode === 'saved' && job.tradie_id) {
-        await supabase.from('notifications').insert({
-          user_id: job.tradie_id,
-          type: 'new_job',
-          title: 'New quote request',
-          message: `${clientName} sent you an ongoing ${tradeName} service — review and quote now`,
-          job_id: jobId,
-          metadata: {},
+        await supabase.rpc('create_notification', {
+          p_user_id: job.tradie_id,
+          p_title: 'New quote request',
+          p_message: `${clientName} sent you an ongoing ${tradeName} service — review and quote now`,
+          p_type: 'new_job',
+          p_channel: 'in_app',
+          p_read: false,
+          p_link: null,
+          p_job_id: jobId,
+          p_metadata: {},
         });
       }
 
@@ -429,15 +432,17 @@ export default function ClientDashboard() {
           t.tradie_details?.trade_category?.toLowerCase() === job.trade_category.toLowerCase()
         );
         if (matchingTradies.length > 0) {
-          const notifications = matchingTradies.map(t => ({
-            user_id: t.id,
-            type: 'new_job',
-            title: 'New quote request from a saved client',
-            message: `${clientName} is looking for a ${tradeName} — ongoing service`,
-            job_id: jobId,
-            metadata: {},
-          }));
-          await supabase.from('notifications').insert(notifications);
+          await Promise.all(matchingTradies.map(t => supabase.rpc('create_notification', {
+            p_user_id: t.id,
+            p_title: 'New quote request from a saved client',
+            p_message: `${clientName} is looking for a ${tradeName} — ongoing service`,
+            p_type: 'new_job',
+            p_channel: 'in_app',
+            p_read: false,
+            p_link: null,
+            p_job_id: jobId,
+            p_metadata: {},
+          })));
         }
       }
 
@@ -638,13 +643,16 @@ export default function ClientDashboard() {
     setSendingInvite(true);
     try {
       const clientName = profile?.full_name || 'A client';
-      await supabase.from('notifications').insert({
-        user_id: quoteRequestTradie.id,
-        type: 'new_job',
-        title: 'Quote invitation',
-        message: `${clientName} has invited you to quote on a job`,
-        job_id: jobId,
-        metadata: { invited: true, invited_by: user.id },
+      await supabase.rpc('create_notification', {
+        p_user_id: quoteRequestTradie.id,
+        p_title: 'Quote invitation',
+        p_message: `${clientName} has invited you to quote on a job`,
+        p_type: 'new_job',
+        p_channel: 'in_app',
+        p_read: false,
+        p_link: null,
+        p_job_id: jobId,
+        p_metadata: { invited: true, invited_by: user.id },
       });
       showToast('Quote request sent! The tradie will be notified.');
       setQuoteRequestTradie(null);

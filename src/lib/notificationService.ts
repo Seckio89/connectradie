@@ -53,29 +53,30 @@ async function insertInAppNotification(payload: NotificationPayload, channels: N
 
   const primaryChannel = CHANNEL_IN_APP;
 
-  const { data, error } = await supabase
-    .from('notifications')
-    .insert({
-      user_id: payload.userId,
-      title: payload.title || NOTIFICATION_TEMPLATES[payload.type]?.defaultTitle || 'Notification',
-      message: payload.message,
-      type: payload.type.toLowerCase(),
-      notification_type: payload.type,
-      channel: primaryChannel,
-      read: false,
-      metadata: payload.metadata || {},
-      link: payload.link || null,
-      job_id: payload.jobId || null,
-    })
-    .select('id')
-    .maybeSingle();
+  // Route through the SECURITY DEFINER create_notification RPC instead of a
+  // direct INSERT so the row gets created even after we revoke direct INSERT
+  // privileges from the authenticated role on the notifications table. The
+  // RPC validates auth + target user existence and is the only path that
+  // can write notifications going forward.
+  const { data, error } = await supabase.rpc('create_notification', {
+    p_user_id: payload.userId,
+    p_title: payload.title || NOTIFICATION_TEMPLATES[payload.type]?.defaultTitle || 'Notification',
+    p_message: payload.message,
+    p_type: payload.type.toLowerCase(),
+    p_channel: primaryChannel,
+    p_read: false,
+    p_link: payload.link || null,
+    p_job_id: payload.jobId || null,
+    p_metadata: payload.metadata || {},
+  });
 
   if (error) {
     console.error('Failed to insert in-app notification:', error.message);
     return null;
   }
 
-  return data?.id || null;
+  // RPC returns the new id directly (uuid).
+  return (data as string | null) ?? null;
 }
 
 async function dispatchSms(payload: NotificationPayload): Promise<ChannelResult> {
@@ -244,6 +245,52 @@ export async function sendNotification(payload: NotificationPayload): Promise<No
   }
 
   return { notificationId, channels: results };
+}
+
+// ---------------------------------------------------------------------------
+// insertNotification — thin RPC wrapper for sites that don't go through
+// sendNotification(). The shape mirrors the existing INSERT shape so call
+// sites only need to change the table call to this helper. Direct INSERTs on
+// the notifications table will fail after the RLS tighten migration; every
+// caller MUST route through this helper or the create_notification RPC.
+//
+// Returns the new notification id, or null on failure (errors are logged,
+// never thrown — notification inserts are non-critical to most flows).
+// ---------------------------------------------------------------------------
+export interface InsertNotificationInput {
+  user_id: string;
+  title: string;
+  message: string;
+  type: string;
+  channel?: string;
+  read?: boolean;
+  link?: string | null;
+  job_id?: string | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+export async function insertNotification(input: InsertNotificationInput): Promise<string | null> {
+  const { data, error } = await supabase.rpc('create_notification', {
+    p_user_id: input.user_id,
+    p_title: input.title,
+    p_message: input.message,
+    p_type: input.type,
+    p_channel: input.channel ?? 'in_app',
+    p_read: input.read ?? false,
+    p_link: input.link ?? null,
+    p_job_id: input.job_id ?? null,
+    p_metadata: input.metadata ?? null,
+  });
+  if (error) {
+    console.error('insertNotification: rpc failed:', error.message);
+    return null;
+  }
+  return (data as string | null) ?? null;
+}
+
+/** Bulk variant: insert multiple notifications in parallel via RPC. */
+export async function insertNotificationsBatch(rows: InsertNotificationInput[]): Promise<(string | null)[]> {
+  return Promise.all(rows.map(insertNotification));
 }
 
 export async function markNotificationRead(notificationId: string): Promise<boolean> {

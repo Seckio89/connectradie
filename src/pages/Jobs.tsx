@@ -423,14 +423,16 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
         const category = normalizedJob.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || '';
         const jobTitle = normalizedJob.title || category || 'your job';
         try {
-          await supabase.from('notifications').insert({
-            user_id: normalizedJob.client_id,
-            type: 'JOB_ACCEPTED',
-            title: 'Job Accepted',
-            message: `${tradieName} has accepted ${jobTitle}. Next step: fund the escrow to secure the booking.`,
-            job_id: normalizedJob.id,
-            metadata: {},
-            read: false,
+          await supabase.rpc('create_notification', {
+            p_user_id: normalizedJob.client_id,
+            p_title: 'Job Accepted',
+            p_message: `${tradieName} has accepted ${jobTitle}. Next step: fund the escrow to secure the booking.`,
+            p_type: 'JOB_ACCEPTED',
+            p_channel: 'in_app',
+            p_read: false,
+            p_link: null,
+            p_job_id: normalizedJob.id,
+            p_metadata: {},
           });
         } catch {
           // Non-critical

@@ -626,21 +626,29 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
             .maybeSingle();
           const clientId = (qr?.job as { client_id?: string } | null)?.client_id;
           if (clientId) {
-            await supabase.from('notifications').insert({
-              user_id: clientId,
-              type: 'site_visit_time_confirmed',
-              title: 'Site visit confirmed',
-              message: `Your tradie confirmed the site visit for ${whenLabel}.`,
-              read: false,
+            await supabase.rpc('create_notification', {
+              p_user_id: clientId,
+              p_title: 'Site visit confirmed',
+              p_message: `Your tradie confirmed the site visit for ${whenLabel}.`,
+              p_type: 'site_visit_time_confirmed',
+              p_channel: 'in_app',
+              p_read: false,
+              p_link: null,
+              p_job_id: null,
+              p_metadata: null,
             });
           }
         } else if (job.tradie_id) {
-          await supabase.from('notifications').insert({
-            user_id: job.tradie_id,
-            type: 'site_visit_time_proposed',
-            title: 'Site visit time to confirm',
-            message: `The client proposed ${whenLabel} for the site visit. Please confirm or adjust.`,
-            read: false,
+          await supabase.rpc('create_notification', {
+            p_user_id: job.tradie_id,
+            p_title: 'Site visit time to confirm',
+            p_message: `The client proposed ${whenLabel} for the site visit. Please confirm or adjust.`,
+            p_type: 'site_visit_time_proposed',
+            p_channel: 'in_app',
+            p_read: false,
+            p_link: null,
+            p_job_id: null,
+            p_metadata: null,
           });
         }
       } catch (e) {
@@ -724,13 +732,16 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
           .maybeSingle();
         const clientId = (jobRow as { client_id?: string } | null)?.client_id;
         if (clientId) {
-          await supabase.from('notifications').insert({
-            user_id: clientId,
-            type: 'job_time_confirmed',
-            title: 'Visit time confirmed',
-            message: `Your tradie confirmed "${movedTitle}" for ${whenLabel}.`,
-            job_id: job.id,
-            read: false,
+          await supabase.rpc('create_notification', {
+            p_user_id: clientId,
+            p_title: 'Visit time confirmed',
+            p_message: `Your tradie confirmed "${movedTitle}" for ${whenLabel}.`,
+            p_type: 'job_time_confirmed',
+            p_channel: 'in_app',
+            p_read: false,
+            p_link: null,
+            p_job_id: job.id,
+            p_metadata: null,
           });
         }
         return;
@@ -738,13 +749,16 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
 
       // Client proposed a time → ask the assigned tradie to confirm (if assigned).
       if (job.tradie_id) {
-        await supabase.from('notifications').insert({
-          user_id: job.tradie_id,
-          type: 'job_time_proposed',
-          title: 'New time to confirm',
-          message: `The client proposed ${whenLabel} for "${movedTitle}". Please confirm or adjust the time.`,
-          job_id: job.id,
-          read: false,
+        await supabase.rpc('create_notification', {
+          p_user_id: job.tradie_id,
+          p_title: 'New time to confirm',
+          p_message: `The client proposed ${whenLabel} for "${movedTitle}". Please confirm or adjust the time.`,
+          p_type: 'job_time_proposed',
+          p_channel: 'in_app',
+          p_read: false,
+          p_link: null,
+          p_job_id: job.id,
+          p_metadata: null,
         });
       }
 
@@ -775,16 +789,19 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
         tradieId && nameById.get(tradieId) ? `${title} (${nameById.get(tradieId)})` : title;
 
       const other = clashes[0];
-      await supabase.from('notifications').insert({
-        user_id: user.id,
-        type: 'schedule_conflict',
-        title: 'Scheduling conflict',
-        message:
+      await supabase.rpc('create_notification', {
+        p_user_id: user.id,
+        p_title: 'Scheduling conflict',
+        p_message:
           `Heads up — ${withTradie(movedTitle, job.tradie_id)} and ` +
           `${withTradie(jobShortTitle(other), other.tradie_id)} are now both booked for ${whenLabel}. ` +
           `You can reschedule one of them to a different time from your calendar.`,
-        job_id: job.id,
-        read: false,
+        p_type: 'schedule_conflict',
+        p_channel: 'in_app',
+        p_read: false,
+        p_link: null,
+        p_job_id: job.id,
+        p_metadata: null,
       });
     } catch (e) {
       console.warn('Reschedule notifications failed (non-fatal):', e);

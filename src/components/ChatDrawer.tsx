@@ -420,14 +420,16 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
       // Notify recipient of new message
       try {
         const preview = (sentContent || '').slice(0, 80);
-        await supabase.from('notifications').insert({
-          user_id: tradie.id,
-          type: 'new_message',
-          title: 'New Message',
-          message: preview,
-          job_id: jobId || null,
-          metadata: { conversation_id: conversationId, sender_id: user.id },
-          read: false,
+        await supabase.rpc('create_notification', {
+          p_user_id: tradie.id,
+          p_title: 'New Message',
+          p_message: preview,
+          p_type: 'new_message',
+          p_channel: 'in_app',
+          p_read: false,
+          p_link: null,
+          p_job_id: jobId || null,
+          p_metadata: { conversation_id: conversationId, sender_id: user.id },
         });
       } catch {
         // Non-critical

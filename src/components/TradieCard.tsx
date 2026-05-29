@@ -22,6 +22,9 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
   const hasSetAvailability = availabilityHours != null;
   const [rating, setRating] = useState<TradieRating | null>(null);
   const isPro = details?.subscription_tier === 'pro' || details?.subscription_tier === 'business' || tradie.is_premium;
+  // "Verified Pro" upgrade: Pro tier + Stripe Identity confirmed. Surfaced as
+  // the highest-trust badge — gives clients a clear signal beyond ABN/licence.
+  const isVerifiedPro = isPro && tradie.is_identity_verified === true;
   const displayName = isPro ? (details?.business_name || redactName(tradie.full_name)) : redactName(tradie.full_name);
   const suburb = extractSuburb(tradie.address);
 
@@ -84,7 +87,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
               {isPro && (
                 <BadgeCheck className="w-4 h-4 text-primary-500 flex-shrink-0" />
               )}
-              {isPro && <ProBadge size="sm" />}
+              {isPro && <ProBadge size="sm" variant={isVerifiedPro ? 'verified' : 'pro'} />}
             </div>
             <p className="text-xs text-gray-500 capitalize mt-0.5">
               {details?.trade_category || 'Trade Professional'}

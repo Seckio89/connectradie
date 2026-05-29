@@ -564,13 +564,16 @@ export default function PostLead() {
           .eq('id', user.id)
           .maybeSingle();
         const clientName = profile?.full_name || 'A client';
-        await supabase.from('notifications').insert({
-          user_id: inviteTradieId,
-          type: 'new_job',
-          title: 'Quote invitation',
-          message: `${clientName} has invited you to quote on a job`,
-          job_id: jobId,
-          metadata: { invited: true, invited_by: user.id },
+        await supabase.rpc('create_notification', {
+          p_user_id: inviteTradieId,
+          p_title: 'Quote invitation',
+          p_message: `${clientName} has invited you to quote on a job`,
+          p_type: 'new_job',
+          p_channel: 'in_app',
+          p_read: false,
+          p_link: null,
+          p_job_id: jobId,
+          p_metadata: { invited: true, invited_by: user.id },
         });
       } catch (err) {
         console.error('Failed to send tradie invite notification:', err);

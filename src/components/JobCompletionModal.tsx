@@ -428,13 +428,16 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
       // Notify client about payment request (non-blocking)
       if (job.client_id) {
         try {
-          await supabase.from('notifications').insert({
-            user_id: job.client_id,
-            title: 'Payment Requested',
-            message: `Your tradie has completed the job and requested payment.${paymentAmountDisplay} Please review and release payment.`,
-            type: 'payment',
-            job_id: job.id,
-            metadata: { tradie_id: userId },
+          await supabase.rpc('create_notification', {
+            p_user_id: job.client_id,
+            p_title: 'Payment Requested',
+            p_message: `Your tradie has completed the job and requested payment.${paymentAmountDisplay} Please review and release payment.`,
+            p_type: 'payment',
+            p_channel: 'in_app',
+            p_read: false,
+            p_link: null,
+            p_job_id: job.id,
+            p_metadata: { tradie_id: userId },
           });
         } catch {
           // Non-blocking — don't let notification failure prevent completion

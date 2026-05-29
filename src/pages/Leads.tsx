@@ -1113,14 +1113,16 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     // Notify the tradie
     if (quote?.tradie_id) {
       try {
-        await supabase.from('notifications').insert({
-          user_id: quote.tradie_id,
-          type: 'JOB_DECLINED',
-          title: 'Quote Not Accepted',
-          message: `${profile?.full_name || 'The client'} chose a different tradie for this job.`,
-          job_id: quote.job_id,
-          metadata: {},
-          read: false,
+        await supabase.rpc('create_notification', {
+          p_user_id: quote.tradie_id,
+          p_title: 'Quote Not Accepted',
+          p_message: `${profile?.full_name || 'The client'} chose a different tradie for this job.`,
+          p_type: 'JOB_DECLINED',
+          p_channel: 'in_app',
+          p_read: false,
+          p_link: null,
+          p_job_id: quote.job_id,
+          p_metadata: {},
         });
       } catch {
         // Non-critical

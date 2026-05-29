@@ -291,14 +291,16 @@ export default function JobManagementModal({
         const tradieName = user?.user_metadata?.full_name || 'Your tradie';
         try {
           if (nextStatus === 'in_progress') {
-            await supabase.from('notifications').insert({
-              user_id: job.client_id,
-              type: 'job_update',
-              title: 'Work Started',
-              message: `${tradieName} has started work on ${displayTitle}.`,
-              job_id: jobId,
-              metadata: {},
-              read: false,
+            await supabase.rpc('create_notification', {
+              p_user_id: job.client_id,
+              p_title: 'Work Started',
+              p_message: `${tradieName} has started work on ${displayTitle}.`,
+              p_type: 'job_update',
+              p_channel: 'in_app',
+              p_read: false,
+              p_link: null,
+              p_job_id: jobId,
+              p_metadata: {},
             });
           }
         } catch {
@@ -404,14 +406,16 @@ export default function JobManagementModal({
         const { displayTitle } = parseJobInfo(job);
         const tradieName = user?.user_metadata?.full_name || 'Your tradie';
         try {
-          await supabase.from('notifications').insert({
-            user_id: job.client_id,
-            type: 'JOB_COMPLETED',
-            title: 'Job Completed',
-            message: `${tradieName} has completed ${displayTitle}. Please review and release payment.`,
-            job_id: jobId,
-            metadata: {},
-            read: false,
+          await supabase.rpc('create_notification', {
+            p_user_id: job.client_id,
+            p_title: 'Job Completed',
+            p_message: `${tradieName} has completed ${displayTitle}. Please review and release payment.`,
+            p_type: 'JOB_COMPLETED',
+            p_channel: 'in_app',
+            p_read: false,
+            p_link: null,
+            p_job_id: jobId,
+            p_metadata: {},
           });
         } catch { /* non-critical */ }
       }

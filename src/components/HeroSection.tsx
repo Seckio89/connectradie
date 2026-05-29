@@ -61,7 +61,7 @@ export default function HeroSection() {
           <div className="text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-warm-500/10 text-warm-400 rounded-full text-sm font-semibold mb-6 border border-warm-500/20">
               <Lock className="w-4 h-4" />
-              Escrow-protected payments on every job
+              Escrow-held funds · 48-hour auto-release · AU-licensed tradies
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-[-0.02em]">
@@ -70,7 +70,7 @@ export default function HeroSection() {
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-gray-400 leading-relaxed max-w-xl mx-auto lg:mx-0">
-              Escrow payments, verified tradies, real-time scheduling, and direct chat — one platform to manage every job from quote to completion.
+              Australian-owned. Stripe holds the money — we don&apos;t. Funds auto-release to your tradie 48 hours after you mark the job done, so nobody has to chase a payment.
             </p>
 
             <form onSubmit={handleSearch} className="mt-10">
@@ -286,8 +286,8 @@ export default function HeroSection() {
                     <Wallet className="w-4.5 h-4.5 text-warm-400" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-white">Tradie Gets Paid Fast</p>
-                    <p className="text-[10px] text-gray-400 leading-snug mt-0.5">Funds released within 24hrs of approval</p>
+                    <p className="text-xs font-semibold text-white">48-hour Auto-Release</p>
+                    <p className="text-[10px] text-gray-400 leading-snug mt-0.5">Tradies get paid without chasing the client</p>
                   </div>
                 </div>
               </div>

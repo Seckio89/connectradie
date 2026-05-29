@@ -493,7 +493,11 @@ export default function QuoteComparisonView({
                       {(quote.tradie_details?.subscription_tier === 'pro'
                         || quote.tradie_details?.subscription_tier === 'pro_plus'
                         || quote.tradie_details?.subscription_tier === 'business') && (
-                        <ProBadge size="xs" className="flex-shrink-0" />
+                        <ProBadge
+                          size="xs"
+                          variant={quote.tradie_profile?.is_identity_verified ? 'verified' : 'pro'}
+                          className="flex-shrink-0"
+                        />
                       )}
                       {quote.tradie_profile?.verification_status === 'verified' && (
                         <Shield className="w-4 h-4 text-secondary-500 flex-shrink-0" />

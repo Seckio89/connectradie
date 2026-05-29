@@ -1020,13 +1020,16 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
       );
       await supabase.from('recurring_jobs').update({ supplies: updatedSupplies }).eq('id', jobId);
 
-      await supabase.from('notifications').insert({
-        user_id: clientId,
-        type: 'supply_restock_needed',
-        title: 'Supply Restock Needed',
-        message: `${item.name} is running low (${item.stock_level ?? 0} ${item.unit || 'remaining'}). Please arrange a restock.`,
-        metadata: { recurring_job_id: jobId, supply_id: item.id, supply_name: item.name },
-        read: false,
+      await supabase.rpc('create_notification', {
+        p_user_id: clientId,
+        p_title: 'Supply Restock Needed',
+        p_message: `${item.name} is running low (${item.stock_level ?? 0} ${item.unit || 'remaining'}). Please arrange a restock.`,
+        p_type: 'supply_restock_needed',
+        p_channel: 'in_app',
+        p_read: false,
+        p_link: null,
+        p_job_id: null,
+        p_metadata: { recurring_job_id: jobId, supply_id: item.id, supply_name: item.name },
       });
 
       showToast(`Restock alert sent for ${item.name}`);
