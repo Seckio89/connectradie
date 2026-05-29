@@ -619,13 +619,18 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
           weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit',
         });
         if (isTradie) {
+          // Pull the underlying job id + client so we can pass p_job_id to the
+          // create_notification RPC — it enforces a shared-job relationship
+          // between caller and target.
           const { data: qr } = await supabase
             .from('quotes')
-            .select('job:jobs!inner(client_id)')
+            .select('job:jobs!inner(id, client_id)')
             .eq('id', quoteId)
             .maybeSingle();
-          const clientId = (qr?.job as { client_id?: string } | null)?.client_id;
-          if (clientId) {
+          const underlyingJob = qr?.job as { id?: string; client_id?: string } | null;
+          const clientId = underlyingJob?.client_id;
+          const underlyingJobId = underlyingJob?.id;
+          if (clientId && underlyingJobId) {
             await supabase.rpc('create_notification', {
               p_user_id: clientId,
               p_title: 'Site visit confirmed',
@@ -634,22 +639,32 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
               p_channel: 'in_app',
               p_read: false,
               p_link: null,
-              p_job_id: null,
+              p_job_id: underlyingJobId,
               p_metadata: null,
             });
           }
         } else if (job.tradie_id) {
-          await supabase.rpc('create_notification', {
-            p_user_id: job.tradie_id,
-            p_title: 'Site visit time to confirm',
-            p_message: `The client proposed ${whenLabel} for the site visit. Please confirm or adjust.`,
-            p_type: 'site_visit_time_proposed',
-            p_channel: 'in_app',
-            p_read: false,
-            p_link: null,
-            p_job_id: null,
-            p_metadata: null,
-          });
+          // Client proposing a new time to the tradie — pass the real job_id
+          // so the create_notification RPC sees the shared-job relationship.
+          const { data: qr } = await supabase
+            .from('quotes')
+            .select('job_id')
+            .eq('id', quoteId)
+            .maybeSingle();
+          const underlyingJobId = qr?.job_id;
+          if (underlyingJobId) {
+            await supabase.rpc('create_notification', {
+              p_user_id: job.tradie_id,
+              p_title: 'Site visit time to confirm',
+              p_message: `The client proposed ${whenLabel} for the site visit. Please confirm or adjust.`,
+              p_type: 'site_visit_time_proposed',
+              p_channel: 'in_app',
+              p_read: false,
+              p_link: null,
+              p_job_id: underlyingJobId,
+              p_metadata: null,
+            });
+          }
         }
       } catch (e) {
         console.warn('Site-visit reschedule notify failed (non-fatal):', e);
