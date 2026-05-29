@@ -21,6 +21,7 @@ import { redactContactInfo } from '../lib/redaction';
 import type { Job, Quote, QuoteWithTradie } from '../types/database';
 import QuoteStatusBadge from './QuoteStatusBadge';
 import TrustSignals from './TrustSignals';
+import ProBadge from './ProBadge';
 import Modal from './Modal';
 import {
   getClientActions,
@@ -489,8 +490,10 @@ export default function QuoteComparisonView({
                       >
                         {formatTradieDisplayName(quote)}
                       </button>
-                      {quote.tradie_details?.subscription_tier === 'pro' && (
-                        <span className="px-1.5 py-0.5 bg-warm-100 text-warm-600 rounded text-[10px] font-bold uppercase tracking-wide flex-shrink-0">Pro</span>
+                      {(quote.tradie_details?.subscription_tier === 'pro'
+                        || quote.tradie_details?.subscription_tier === 'pro_plus'
+                        || quote.tradie_details?.subscription_tier === 'business') && (
+                        <ProBadge size="xs" className="flex-shrink-0" />
                       )}
                       {quote.tradie_profile?.verification_status === 'verified' && (
                         <Shield className="w-4 h-4 text-secondary-500 flex-shrink-0" />
@@ -968,6 +971,12 @@ function computeRecommendationScore(quote: QuoteWithTradie): number {
   if (quote.tradie_details?.is_insured) score += 5;
   if (quote.firm_price) score += 3;
   if (quote.includes_materials) score += 2;
+  // Pro tier priority placement — Pro tradies are vetted, pay a subscription,
+  // and tend to be more responsive. Worth 7 points so they edge out
+  // verified-only tradies in the recommended sort, but not so much that
+  // bad reviews can't outweigh.
+  const tier = quote.tradie_details?.subscription_tier;
+  if (tier === 'pro' || tier === 'pro_plus' || tier === 'business') score += 7;
 
   const hoursSinceQuote = (Date.now() - new Date(quote.created_at).getTime()) / 3600000;
   if (hoursSinceQuote < 1) score += 5;

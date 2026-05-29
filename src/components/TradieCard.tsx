@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { BadgeCheck, Shield, FileCheck, Calendar, MessageCircle, Star, Crown, Truck, ShieldCheck, MapPin, ExternalLink, FileText } from 'lucide-react';
+import { BadgeCheck, Shield, FileCheck, Calendar, MessageCircle, Star, Truck, ShieldCheck, MapPin, ExternalLink, FileText } from 'lucide-react';
+import ProBadge from './ProBadge';
 import type { TradieWithDetails } from '../types/database';
 import { getTradieRating, type TradieRating } from '../lib/reviews';
 import { redactName, extractSuburb } from '../lib/contactGating';
@@ -83,12 +84,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
               {isPro && (
                 <BadgeCheck className="w-4 h-4 text-primary-500 flex-shrink-0" />
               )}
-              {isPro && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-warm-50 text-warm-700 text-xs font-semibold rounded-full border border-warm-200 leading-none">
-                  <Crown className="w-2.5 h-2.5" />
-                  PRO
-                </span>
-              )}
+              {isPro && <ProBadge size="sm" />}
             </div>
             <p className="text-xs text-gray-500 capitalize mt-0.5">
               {details?.trade_category || 'Trade Professional'}

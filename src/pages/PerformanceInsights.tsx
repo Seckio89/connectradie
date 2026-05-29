@@ -20,6 +20,9 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { extractSuburb } from '../lib/contactGating';
 import DashboardLayout from '../components/DashboardLayout';
+import SubscriptionModal from '../components/SubscriptionModal';
+import { isPro } from '../lib/subscription';
+import ProBadge from '../components/ProBadge';
 
 interface HealthStats {
   quoteWinRate: number;
@@ -65,11 +68,13 @@ interface FocusArea {
 }
 
 export default function PerformanceInsights() {
-  const { user, profile } = useAuth();
+  const { user, profile, tradieDetails } = useAuth();
   const [health, setHealth] = useState<HealthStats | null>(null);
   const [strengths, setStrengths] = useState<StrengthsData | null>(null);
   const [focusAreas, setFocusAreas] = useState<FocusArea[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const isProUser = isPro(tradieDetails?.subscription_tier, profile?.is_premium);
 
   useEffect(() => {
     if (user) fetchAllData();
@@ -281,6 +286,58 @@ export default function PerformanceInsights() {
             </div>
           </div>
         </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Pro tier gate: free tradies see a teaser with the upgrade CTA. Pro
+  // tradies see the full dashboard below.
+  if (!isProUser) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-2xl mb-4">
+              <TrendingUp className="w-8 h-8 text-emerald-600" />
+            </div>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <h1 className="text-3xl font-bold text-white">Performance Insights</h1>
+              <ProBadge size="md" />
+            </div>
+            <p className="text-gray-400">Win rate, response time, conversion, and revenue trends — track every metric that matters.</p>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+            <h2 className="text-base font-semibold text-gray-900 mb-3">What you get with Pro Insights</h2>
+            <ul className="space-y-2.5">
+              {[
+                'Quote win rate with trend indicators',
+                'Average response time — how fast you quote vs the average',
+                'Profile views from homeowners (weekly)',
+                'Average job value across your completed work',
+                'Total revenue ranked against the trade',
+                'Personalised focus areas to win more work',
+              ].map(item => (
+                <li key={item} className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="text-center">
+            <button
+              onClick={() => setShowUpgradeModal(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl shadow-sm transition-colors text-sm"
+            >
+              <TrendingUp className="w-4 h-4" />
+              Upgrade to Pro — $29/mo
+            </button>
+            <p className="mt-3 text-xs text-gray-500">Pro also gives you priority placement in client search and lower platform fees.</p>
+          </div>
+        </div>
+        <SubscriptionModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
       </DashboardLayout>
     );
   }
