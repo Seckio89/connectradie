@@ -49,8 +49,16 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Tomorrow's date (sessions scheduled for tomorrow)
-    const tomorrow = new Date();
+    // Verify caller is using service role key (cron/internal only)
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ") || authHeader.slice(7) !== supabaseServiceKey) {
+      return errorJson("Unauthorized", 401);
+    }
+
+    // Tomorrow's date in AEST (sessions scheduled for tomorrow)
+    const aestOffset = 10 * 60 * 60 * 1000;
+    const nowAest = new Date(Date.now() + aestOffset);
+    const tomorrow = new Date(nowAest);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = tomorrow.toISOString().split("T")[0];
 

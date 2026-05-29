@@ -1,10 +1,13 @@
-import { User, Phone, Mail, Loader2, CheckCircle2 } from 'lucide-react';
+import { User, Phone, Mail, Loader2, CheckCircle2, Building2 } from 'lucide-react';
 import AddressAutocomplete from '../AddressAutocomplete';
 
 interface ProfileTabProps {
   email: string;
   fullName: string;
   setFullName: (v: string) => void;
+  businessName?: string;
+  setBusinessName?: (v: string) => void;
+  isTradie?: boolean;
   phone: string;
   setPhone: (v: string) => void;
   address: string;
@@ -18,7 +21,8 @@ interface ProfileTabProps {
 }
 
 export default function ProfileTab({
-  email, fullName, setFullName, phone, setPhone,
+  email, fullName, setFullName, businessName, setBusinessName, isTradie,
+  phone, setPhone,
   address, setAddress, postcode, setPostcode,
   loading, success, error, onSubmit,
 }: ProfileTabProps) {
@@ -40,6 +44,17 @@ export default function ProfileTab({
           <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Enter your full name" className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500" />
         </div>
       </div>
+
+      {isTradie && setBusinessName && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
+          <div className="relative">
+            <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input type="text" value={businessName || ''} onChange={(e) => setBusinessName(e.target.value)} placeholder="Enter your business name" className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500" />
+          </div>
+          <p className="mt-1 text-xs text-gray-500">Shown to clients on your profile and invoices</p>
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>

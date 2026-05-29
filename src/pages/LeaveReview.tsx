@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Star, CheckCircle2, ChevronRight, MapPin, Loader2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { releaseEscrow } from '../lib/stripePayments';
 import DashboardLayout from '../components/DashboardLayout';
 
 const REVIEW_TAGS = [
@@ -53,6 +54,8 @@ export default function LeaveReview() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [paymentReleased, setPaymentReleased] = useState(false);
+  const [alreadyReleased, setAlreadyReleased] = useState(false);
 
   useEffect(() => {
     if (!jobId || !user) return;
@@ -101,6 +104,21 @@ export default function LeaveReview() {
         if (existingReview) {
           setAlreadyReviewed(true);
         }
+
+        // Check if payment is already released
+        const { data: payment } = await supabase
+          .from('payments')
+          .select('id, metadata')
+          .eq('job_id', jobId)
+          .eq('payment_type', 'job_funding')
+          .eq('status', 'completed')
+          .maybeSingle();
+        if (payment) {
+          const meta = payment.metadata as Record<string, unknown> | null;
+          if (meta?.transfer_id) {
+            setAlreadyReleased(true);
+          }
+        }
       } catch {
         setError('Failed to load job details.');
       } finally {
@@ -144,6 +162,24 @@ export default function LeaveReview() {
         comment.trim(),
         selectedTags.length > 0 ? `[Tags: ${selectedTags.join(', ')}]` : '',
       ].filter(Boolean).join('\n');
+
+      // Release escrow payment if not already released
+      if (!alreadyReleased) {
+        const { data: payment } = await supabase
+          .from('payments')
+          .select('id, metadata')
+          .eq('job_id', job.id)
+          .eq('payment_type', 'job_funding')
+          .eq('status', 'completed')
+          .maybeSingle();
+        if (payment) {
+          const meta = payment.metadata as Record<string, unknown> | null;
+          if (!meta?.transfer_id) {
+            await releaseEscrow(payment.id);
+            setPaymentReleased(true);
+          }
+        }
+      }
 
       const { error: insertError } = await supabase
         .from('reviews')
@@ -205,12 +241,14 @@ export default function LeaveReview() {
             <div className="w-16 h-16 bg-warm-100 rounded-full flex items-center justify-center mx-auto mb-5">
               <CheckCircle2 className="w-8 h-8 text-warm-600" />
             </div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">Review Submitted</h1>
+            <h1 className="text-xl font-bold text-gray-900 mb-2">Review Submitted{paymentReleased ? ' & Payment Released' : ''}</h1>
             <p className="text-sm text-gray-600 mb-1">
               Thank you for reviewing <span className="font-semibold">{tradieName}</span>.
             </p>
             <p className="text-sm text-gray-500 mb-6">
-              Your feedback helps other clients find quality tradies.
+              {paymentReleased
+                ? 'Your feedback has been recorded and payment has been released to your tradie.'
+                : 'Your feedback helps other clients find quality tradies.'}
             </p>
 
             <div className="flex items-center justify-center gap-1 mb-6">
@@ -408,11 +446,21 @@ export default function LeaveReview() {
               </div>
             )}
 
+            {/* Payment release info */}
+            {!alreadyReleased && (
+              <div className="flex items-center gap-2 px-3 py-2.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <p className="text-xs text-emerald-700">
+                  Submitting your review will also release the payment to your tradie.
+                </p>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex gap-3 pt-1">
               <button
                 type="button"
-                onClick={() => navigate('/payments')}
+                onClick={() => navigate('/leads')}
                 className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 Skip for Now
@@ -423,7 +471,7 @@ export default function LeaveReview() {
                 className="flex-1 px-4 py-2.5 bg-warm-500 text-white rounded-lg text-sm font-semibold hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {isSubmitting ? 'Submitting...' : 'Submit Review'}
+                {isSubmitting ? 'Submitting...' : alreadyReleased ? 'Submit Review' : 'Submit Review & Release Payment'}
               </button>
             </div>
           </form>

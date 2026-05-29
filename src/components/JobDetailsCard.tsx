@@ -1,6 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { Calendar, MapPin, Clock, User, Mail, Phone, FileText, Image as ImageIcon, DollarSign, AlertTriangle, Key, Zap, Plus, CheckCircle, XCircle, CreditCard, Package, Info, Upload, X, Receipt, Building2, Trash2, Eye, PenLine, Crown, WifiOff, Lock, Circle, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, Clock, User, Mail, Phone, FileText, Image as ImageIcon, DollarSign, AlertTriangle, Key, Zap, Plus, CheckCircle, XCircle, CreditCard, Package, Info, Upload, X, Receipt, Building2, Trash2, Eye, PenLine, Crown, WifiOff, Lock, Circle, Loader2, Car } from 'lucide-react';
 import type { Job, Profile, Project } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { getAuthHeaders } from '../lib/edgeFn';
@@ -90,6 +90,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
   const { profile, tradieDetails } = useAuth();
   const isProUser = isPro(tradieDetails?.subscription_tier, profile?.is_premium);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [variations, setVariations] = useState<JobVariation[]>([]);
   const [showVariationModal, setShowVariationModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -535,6 +536,12 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
                 <span className="text-gray-700">{job.estimated_duration}</span>
               </div>
             )}
+            {job.parking_available !== null && job.parking_available !== undefined && (
+              <div className="flex items-center gap-2 text-sm">
+                <Car className={`w-4 h-4 flex-shrink-0 ${job.parking_available ? 'text-emerald-500' : 'text-gray-400'}`} />
+                <span className="text-gray-700">{job.parking_available ? 'Parking available on site' : 'No parking on site'}</span>
+              </div>
+            )}
           </div>
 
           {budgetInfo && (
@@ -576,7 +583,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
                       loading="lazy"
                       decoding="async"
                       className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
-                      onClick={() => window.open(url, '_blank')}
+                      onClick={() => setLightboxUrl(url)}
                     />
                   </div>
                 ))}
@@ -686,7 +693,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
                   <div key={idx} className="w-16 h-16 rounded-lg overflow-hidden bg-warm-100 border border-warm-200 flex-shrink-0">
                     <img src={url} alt={`Evidence ${idx + 1}`} loading="lazy" decoding="async"
                       className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
-                      onClick={() => window.open(url, '_blank')} />
+                      onClick={() => setLightboxUrl(url)} />
                   </div>
                 ))}
               </div>
@@ -1406,7 +1413,7 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
                           <div key={pIdx} className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
                             <img src={url} alt={`Evidence ${pIdx + 1}`} loading="lazy" decoding="async"
                               className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
-                              onClick={() => window.open(url, '_blank')} />
+                              onClick={() => setLightboxUrl(url)} />
                           </div>
                         ))}
                       </div>
@@ -1417,6 +1424,27 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
             })}
         </div>
       </div>
+
+      {/* Image Lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <img
+            src={lightboxUrl}
+            alt="Attachment"
+            className="max-w-full max-h-[90vh] rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setLightboxUrl(null)}
+            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

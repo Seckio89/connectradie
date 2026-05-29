@@ -37,17 +37,14 @@ export async function callEdgeFunction<T = Record<string, unknown>>(
   functionName: string,
   body: Record<string, unknown>
 ): Promise<T> {
-  // Get current session — the Supabase client auto-refreshes tokens for queries,
-  // so getSession() should return the latest valid token.
-  let token: string | undefined;
+  // Always refresh to get a guaranteed-valid token for edge functions
+  const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+  let token = refreshed?.access_token;
 
-  const { data: { session } } = await supabase.auth.getSession();
-  token = session?.access_token;
-
-  // If no cached session or it expires soon, force a refresh
-  if (!token || (session?.expires_at && session.expires_at - Math.floor(Date.now() / 1000) < 30)) {
-    const { data: { session: refreshed } } = await supabase.auth.refreshSession();
-    token = refreshed?.access_token;
+  if (!token) {
+    // Fallback to cached session
+    const { data: { session: cached } } = await supabase.auth.getSession();
+    token = cached?.access_token;
   }
 
   if (!token) {
@@ -74,7 +71,13 @@ export async function callEdgeFunction<T = Record<string, unknown>>(
 
   if (!response.ok) {
     const parsed = data as Record<string, unknown>;
-    const errorMessage = typeof parsed?.error === 'string' ? parsed.error : null;
+    const errorMessage = typeof parsed?.error === 'string'
+      ? parsed.error
+      : typeof parsed?.message === 'string'
+      ? parsed.message
+      : typeof parsed?.msg === 'string'
+      ? parsed.msg
+      : null;
     const errorCode = typeof parsed?.error_code === 'string' ? parsed.error_code : undefined;
     const err = new Error(
       errorMessage || `Edge function "${functionName}" failed (${response.status})`

@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { calculatePlatformFee, calculateProcessingFeeCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { calculatePlatformFee, calculateProcessingFeeCents, calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
@@ -133,7 +133,7 @@ Deno.serve(async (req: Request) => {
       customerId = existingSub.stripe_customer_id;
     }
 
-    // Look up tradie subscription tier for platform fee
+    // Look up tradie subscription tier for platform fee and GST status
     const { data: tradieSubRecord } = await supabase
       .from("tradie_details")
       .select("subscription_tier")
@@ -142,9 +142,17 @@ Deno.serve(async (req: Request) => {
 
     const tradieSubscriptionTier = resolveTradieTier(tradieSubRecord?.subscription_tier);
 
+    const { data: tradieProfile } = await supabase
+      .from("profiles")
+      .select("is_gst_registered")
+      .eq("id", job.tradie_id)
+      .maybeSingle();
+    const tradieIsGstRegistered = tradieProfile?.is_gst_registered === true;
+
     // Milestone amount is stored as numeric (dollars), convert to cents
     const milestoneDollars = Number(milestone.amount);
     const baseAmount = Math.round(milestoneDollars * 100);
+    const gst = tradieIsGstRegistered ? calculateGstCents(baseAmount) : 0;
     const processingFee = calculateProcessingFeeCents(baseAmount);
 
     // Calculate platform fee based on tradie's subscription tier
@@ -170,6 +178,7 @@ Deno.serve(async (req: Request) => {
           milestone_id: milestoneId,
           milestone_title: milestone.title,
           tradie_id: job.tradie_id,
+          gst: String(gst),
           platform_fee: platformFeeCents,
           tradie_tier: tradieSubscriptionTier,
         },
@@ -195,6 +204,17 @@ Deno.serve(async (req: Request) => {
         quantity: 1,
       },
     ];
+
+    if (gst > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "aud",
+          product_data: { name: "GST (10%)" },
+          unit_amount: gst,
+        },
+        quantity: 1,
+      });
+    }
 
     if (processingFee > 0) {
       lineItems.push({

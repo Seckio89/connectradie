@@ -256,32 +256,6 @@ export default function HelpFAQ() {
           )}
         </div>
 
-        {/* Video Tutorials */}
-        <div className="mb-10">
-          <h2 className="text-xl font-semibold text-gray-900 mb-1">Video Tutorials</h2>
-          <p className="text-sm text-gray-500 mb-4">(Coming soon - placeholder videos)</p>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {videoTutorials.map((video) => (
-              <div key={video.title} className="space-y-3">
-                <div className="aspect-video rounded-xl overflow-hidden bg-gray-900">
-                  <iframe
-                    src={video.embedUrl}
-                    title={video.title}
-                    className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900">{video.title}</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">{video.description}</p>
-                  <span className="text-xs text-gray-400 mt-1 inline-block">{video.duration}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* FAQ Sections */}
         <div className="space-y-10">
           {filteredSections.map((section) => (

@@ -8,6 +8,7 @@ interface SearchableSelectProps {
   placeholder?: string;
   icon?: React.ReactNode;
   className?: string;
+  clearable?: boolean;
 }
 
 export default function SearchableSelect({
@@ -17,6 +18,7 @@ export default function SearchableSelect({
   placeholder = 'Search...',
   icon,
   className = '',
+  clearable = true,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -83,7 +85,7 @@ export default function SearchableSelect({
           />
         )}
         <div className="flex items-center gap-1 flex-shrink-0">
-          {value && (
+          {value && clearable && (
             <button
               onClick={handleClear}
               className="p-1 hover:bg-gray-100 rounded-md transition-colors"

@@ -58,7 +58,32 @@
       "Bash(done)",
       "Bash(xargs -I {} bash -c \"echo \"\"=== {} ===\"\" && head -80 \"\"{}\"\"\")",
       "mcp__claude_ai_Stripe__search_stripe_documentation",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(where supabase:*)",
+      "Bash(cmd /c \"where supabase\")",
+      "Bash(xxd c:/Users/User/Desktop/project/supabase/functions/_shared/pricing.ts)",
+      "Bash(xxd c:/Users/User/Desktop/project/supabase/functions/accept-and-pay/index.ts)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(awk -F'|' 'NR>2{gsub\\(/^ +| +$/,\"\",$3\\); print $3}')",
+      "Bash(awk -F'|' 'NR>2{gsub\\(/^ +| +$/,\"\",$3\\); if\\($3!=\"\"\\) print $3}')",
+      "Bash(awk -F'|' 'NR>2{gsub\\(/ /,\"\",$3\\); if\\($3!=\"\"\\) print $3}')",
+      "Read(//c/Users/User/.supabase/**)",
+      "Read(//c/Users/User/**)",
+      "Bash(npx vite:*)",
+      "Bash(echo \"EXIT=$?\")",
+      "Skill(schedule)",
+      "Skill(schedule:*)",
+      "PowerShell(npx tsc --noEmit --skipLibCheck)",
+      "Bash(deno --version)",
+      "PowerShell($cmd = Get-Command supabase -ErrorAction SilentlyContinue; if \\($cmd\\) { \"supabase CLI: $\\($cmd.Source\\)\"; supabase --version } else { \"supabase CLI NOT found on PATH\" }; \"---\"; if \\(Test-Path \".\\\\supabase\\\\config.toml\"\\) { \"config.toml: present\" } else { \"config.toml: MISSING\" }; \"---\"; if \\(Test-Path \".\\\\supabase\\\\.temp\\\\project-ref\"\\) { \"linked project-ref: \" + \\(Get-Content \".\\\\supabase\\\\.temp\\\\project-ref\"\\) } else { \"Not linked yet \\(no .temp/project-ref\\)\" })",
+      "Bash(xargs -I{} echo \"Total TS errors across project: {}\")",
+      "Bash(xargs -I{} echo \"Total TS errors: {}\")",
+      "PowerShell(supabase functions deploy auto-release-recurring-payouts --project-ref uoqygmizupdpanplpvor 2>&1)",
+      "Bash(python -c \"p=r'C:\\\\Users\\\\User\\\\.claude\\\\projects\\\\c--Users-User-Desktop-project\\\\0d814284-f20c-483b-ab99-7ca1d6aabb70\\\\tool-results\\\\mcp-claude_ai_Supabase-get_advisors-1779993541751.txt'; print\\(open\\(p\\).read\\(\\)[0:80000]\\)\")",
+      "Bash(python -c \"p=r'C:\\\\Users\\\\User\\\\.claude\\\\projects\\\\c--Users-User-Desktop-project\\\\0d814284-f20c-483b-ab99-7ca1d6aabb70\\\\tool-results\\\\mcp-claude_ai_Supabase-get_advisors-1779993541751.txt'; d=open\\(p\\).read\\(\\); print\\('LEN', len\\(d\\)\\); print\\(d[53902:67937]\\)\")",
+      "Bash(python -c ' *)",
+      "PowerShell(npx tsc --noEmit --skipLibCheck 2>&1)"
     ]
   }
 }

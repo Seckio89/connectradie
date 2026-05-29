@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { Bell, Plus, Loader2, MapPin, ArrowRight, Crown, RefreshCw, Repeat, Trash2, CalendarClock, DollarSign, Briefcase, Clock, Zap, Eye, CheckCircle2, Archive, ArchiveRestore, Pencil, X, Check, Send, Play, ExternalLink, Pause, FileText, Star } from 'lucide-react';
+import { Bell, Plus, Loader2, MapPin, ArrowRight, Crown, RefreshCw, Repeat, Trash2, CalendarClock, DollarSign, Briefcase, Clock, Zap, Eye, CheckCircle2, Archive, ArchiveRestore, Pencil, X, Check, Send, Play, ExternalLink, Pause, FileText, Star, ChevronDown, Gift, AlertCircle, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { TradieWithDetails, AvailabilitySlot, Job } from '../types/database';
@@ -8,7 +8,8 @@ import DashboardLayout from '../components/DashboardLayout';
 import TradieCard from '../components/TradieCard';
 import ChatDrawer from '../components/ChatDrawer';
 import AvailabilityCalendar from '../components/AvailabilityCalendar';
-import ActivityFeed from '../components/ActivityFeed';
+import UpcomingTimeline from '../components/UpcomingTimeline';
+import RecommendedTradies from '../components/RecommendedTradies';
 import OnboardingChecklist from '../components/OnboardingChecklist';
 import { redactName } from '../lib/contactGating';
 import SubscriptionModal from '../components/SubscriptionModal';
@@ -18,19 +19,34 @@ import WelcomeGuide from '../components/WelcomeGuide';
 import { DashboardStatsSkeleton, ListSkeleton } from '../components/SkeletonLoader';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import ConfirmModal from '../components/ConfirmModal';
+import BonusModal from '../components/BonusModal';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import { getRecurringJobs, createRecurringJob, cancelRecurringJob, pauseRecurringJob, resumeRecurringJob, updateRecurringJob, suggestRecurringJob, getUpcomingSessions, getKeywordSuggestions, RECURRING_SERVICE_SUBCATEGORIES, RECURRING_SERVICE_DESCRIPTIONS, type RecurringJob, type RecurringSession, type KeywordSuggestion } from '../lib/recurringJobs';
+import { releaseEscrow, payPriceIncrease, humanizePaymentError } from '../lib/stripePayments';
+import { callEdgeFunction } from '../lib/edgeFn';
 import RecurringSessionCard from '../components/RecurringSessionCard';
 import RecurringInvoiceCard from '../components/RecurringInvoiceCard';
 import type { RecurringInvoice } from '../components/RecurringInvoiceCard';
 
 export default function ClientDashboard() {
   const [savedTradies, setSavedTradies] = useState<TradieWithDetails[]>([]);
-  const [recommendedTradies, setRecommendedTradies] = useState<TradieWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [chatTradie, setChatTradie] = useState<TradieWithDetails | null>(null);
   const [calendarTradie, setCalendarTradie] = useState<TradieWithDetails | null>(null);
   const [availableThisWeek, setAvailableThisWeek] = useState(0);
+  const [showSlotsBanner, setShowSlotsBanner] = useState(() => {
+    // Persist dismissal for the current session — banner reappears on next login
+    // if a saved tradie is still showing fresh availability.
+    return typeof window === 'undefined' || sessionStorage.getItem('dismissed_slots_banner') !== '1';
+  });
+
+  // Auto-dismiss the saved-tradie slots banner after 15s so it doesn't sit there
+  // forever if the client never explicitly closes it.
+  useEffect(() => {
+    if (availableThisWeek <= 0 || !showSlotsBanner) return;
+    const timer = setTimeout(() => setShowSlotsBanner(false), 15000);
+    return () => clearTimeout(timer);
+  }, [availableThisWeek, showSlotsBanner]);
   const [unreadTradieIds, setUnreadTradieIds] = useState<Set<string>>(new Set());
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [trainingModeEnabled, setTrainingModeEnabled] = useState(false);
@@ -40,16 +56,25 @@ export default function ClientDashboard() {
   const [recurringJobs, setRecurringJobs] = useState<RecurringJob[]>([]);
   const [showRecurringForm, setShowRecurringForm] = useState(false);
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
+  const [cancelServiceTarget, setCancelServiceTarget] = useState<{ id: string; label: string } | null>(null);
+  const [expandedDescs, setExpandedDescs] = useState<Set<string>>(new Set());
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancellingService, setCancellingService] = useState(false);
   const [sentRecurringIds, setSentRecurringIds] = useState<Set<string>>(new Set());
   const [jobSessions, setJobSessions] = useState<Record<string, RecurringSession[]>>({});
   const [sessionsLoading, setSessionsLoading] = useState<Set<string>>(new Set());
-  const [spendingSummary, setSpendingSummary] = useState({ total: 0, thisMonth: 0, pendingJobs: 0 });
+  const [spendingSummary, setSpendingSummary] = useState({ total: 0, thisMonth: 0, pendingJobs: 0, activeServices: 0 });
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
   const [showArchived, setShowArchived] = useState(false);
-  const [jobTab, setJobTab] = useState<'active' | 'completed'>('active');
+  const [jobTab, setJobTab] = useState<'active' | 'accepted' | 'completed'>('active');
+  const [recurringJobIds, setRecurringJobIds] = useState<Set<string>>(new Set());
   const [releasedJobIds, setReleasedJobIds] = useState<Set<string>>(new Set());
   const [reviewedJobIds, setReviewedJobIds] = useState<Set<string>>(new Set());
   const [cancelJobTarget, setCancelJobTarget] = useState<Job | null>(null);
+  const [bonusTarget, setBonusTarget] = useState<{ jobId: string; tradieName?: string | null; jobLabel?: string | null } | null>(null);
+  const [releasingJobId, setReleasingJobId] = useState<string | null>(null);
+  const [pendingIncreases, setPendingIncreases] = useState<Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number }>>({});
+  const [payingIncreaseJobId, setPayingIncreaseJobId] = useState<string | null>(null);
   const [cancelRecurringTarget, setCancelRecurringTarget] = useState<RecurringJob | null>(null);
   const [invoices, setInvoices] = useState<RecurringInvoice[]>([]);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
@@ -97,12 +122,14 @@ export default function ClientDashboard() {
   const fetchInvoices = useCallback(async () => {
     if (!user) return;
     try {
-      // Outstanding invoices first (sent/overdue/draft)
+      // Anything that needs the client's eyes — pending_approval was missing
+      // before, which meant invoices on My Jobs ("Awaiting Your Approval")
+      // didn't surface on the dashboard's Invoices widget.
       const { data: outstanding } = await supabase
         .from('recurring_invoices')
-        .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, agreed_price)')
+        .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, service_subtype, agreed_price, description, location), tradie:profiles!recurring_invoices_tradie_id_fkey(full_name)')
         .eq('homeowner_id', user.id)
-        .in('status', ['sent', 'overdue', 'draft'])
+        .in('status', ['pending_approval', 'sent', 'overdue', 'draft'])
         .order('created_at', { ascending: false });
 
       setInvoices((outstanding ?? []) as unknown as RecurringInvoice[]);
@@ -122,15 +149,17 @@ export default function ClientDashboard() {
     try {
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const [totalResult, monthResult, pendingResult] = await Promise.all([
+      const [totalResult, monthResult, pendingResult, servicesResult] = await Promise.all([
         supabase.from('payments').select('amount').eq('profile_id', user.id).eq('status', 'completed'),
         supabase.from('payments').select('amount').eq('profile_id', user.id).eq('status', 'completed').gte('created_at', monthStart),
-        supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('client_id', user.id).in('status', ['pending', 'accepted', 'in_progress']).is('archived_at', null),
+        supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('client_id', user.id).in('status', ['funded', 'in_progress']).is('archived_at', null),
+        supabase.from('recurring_jobs').select('id', { count: 'exact', head: true }).eq('client_id', user.id).eq('is_active', true),
       ]);
       setSpendingSummary({
         total: (totalResult.data || []).reduce((sum, p) => sum + (p.amount || 0), 0),
         thisMonth: (monthResult.data || []).reduce((sum, p) => sum + (p.amount || 0), 0),
         pendingJobs: pendingResult.count || 0,
+        activeServices: servicesResult.count || 0,
       });
     } catch (err) {
       console.error('fetchSpendingSummary error:', err);
@@ -163,11 +192,13 @@ export default function ClientDashboard() {
             const jobsWithPayments = new Set(payments.map(p => p.job_id));
             for (const p of payments) {
               const meta = p.metadata as Record<string, unknown> | null;
-              if (meta?.transfer_id || p.status === 'released' || p.status === 'completed') {
+              // `status === 'completed'` means the client paid into escrow, NOT that funds were released to the tradie.
+              // Only a transfer_id (or explicit 'released' status) means the money has actually moved.
+              if (meta?.transfer_id || p.status === 'released') {
                 released.add(p.job_id);
               }
             }
-            // Jobs with no payment record at all — already released or never had escrow
+            // Jobs with no payment record at all — legacy, treat as released
             for (const id of completedIds) {
               if (!jobsWithPayments.has(id)) released.add(id);
             }
@@ -185,9 +216,66 @@ export default function ClientDashboard() {
             reviewed = new Set(reviews.map(r => r.job_id));
           }
         }
+        // Find jobs linked to recurring services — these belong under "Ongoing Services",
+        // not the regular Active/Accepted tabs. Cover both the original placeholder
+        // (recurring_jobs.original_job_id) and any quote-request jobs (jobs.recurring_job_id).
+        const [recurringLinksRes, recurringJobLinksRes] = await Promise.all([
+          supabase
+            .from('recurring_jobs')
+            .select('original_job_id')
+            .eq('client_id', user.id)
+            .eq('is_active', true)
+            .is('cancelled_at', null)
+            .not('original_job_id', 'is', null)
+            .not('tradie_id', 'is', null),
+          supabase
+            .from('jobs')
+            .select('id')
+            .eq('client_id', user.id)
+            .not('recurring_job_id', 'is', null),
+        ]);
+        const recurringIds = new Set<string>([
+          ...((recurringLinksRes.data ?? []).map(r => r.original_job_id).filter(Boolean) as string[]),
+          ...((recurringJobLinksRes.data ?? []).map(r => r.id).filter(Boolean) as string[]),
+        ]);
+        setRecurringJobIds(recurringIds);
+
+        // Pending price increases — surface them on the job card so the client
+        // doesn't have to dig into Payments to find the "Pay Increase" CTA.
+        // Include 'completed' because tradies sometimes mark complete before the
+        // client has paid the increase; we want the banner to follow the money.
+        const activeJobIds = jobs
+          .filter(j => ['funded', 'in_progress', 'completed'].includes(j.status))
+          .map(j => j.id);
+        const increases: Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number }> = {};
+        if (activeJobIds.length > 0) {
+          const { data: activePayments } = await supabase
+            .from('payments')
+            .select('id, job_id, amount, metadata')
+            .in('job_id', activeJobIds)
+            .eq('payment_type', 'job_funding')
+            .eq('status', 'completed');
+          for (const p of activePayments ?? []) {
+            const meta = p.metadata as Record<string, unknown> | null;
+            if (meta?.transfer_id) continue;
+            const inc = meta?.pending_increase as Record<string, unknown> | undefined;
+            if (!inc) continue;
+            const diffCents = typeof inc.diff_cents === 'number' ? inc.diff_cents : 0;
+            if (diffCents <= 0) continue;
+            const originalCents = typeof p.amount === 'number' ? p.amount : 0;
+            increases[p.job_id] = {
+              paymentId: p.id,
+              amount: diffCents / 100,
+              originalAmount: originalCents / 100,
+              finalAmount: (originalCents + diffCents) / 100,
+            };
+          }
+        }
+
         // Set all at once — no flash
         setReleasedJobIds(released);
         setReviewedJobIds(reviewed);
+        setPendingIncreases(increases);
         setRecentJobs(jobs);
       }
     } catch (err) {
@@ -208,6 +296,48 @@ export default function ClientDashboard() {
     } catch (err) {
       console.error('archiveJob error:', err);
       showToast('Failed to archive job', true);
+    }
+  };
+
+  const handleReleasePayment = async (jobId: string) => {
+    if (releasingJobId) return;
+    setReleasingJobId(jobId);
+    try {
+      const { data: payment } = await supabase
+        .from('payments')
+        .select('id, metadata')
+        .eq('job_id', jobId)
+        .eq('payment_type', 'job_funding')
+        .eq('status', 'completed')
+        .maybeSingle();
+
+      if (!payment) {
+        setReleasedJobIds(prev => new Set(prev).add(jobId));
+      } else {
+        const meta = payment.metadata as Record<string, unknown> | null;
+        if (meta?.transfer_id) {
+          setReleasedJobIds(prev => new Set(prev).add(jobId));
+        } else if (meta?.pending_increase) {
+          showToast('A price adjustment needs to be paid first. Opening that now…', true);
+          navigate(`/leads?filter=active&job=${jobId}`);
+          return;
+        } else {
+          await releaseEscrow(payment.id);
+          setReleasedJobIds(prev => new Set(prev).add(jobId));
+        }
+      }
+      navigate(`/review/${jobId}`);
+    } catch (err) {
+      console.error('Failed to release payment:', err);
+      const rawMsg = err instanceof Error ? err.message : 'Failed to release payment';
+      if (rawMsg.includes('pending') && rawMsg.includes('increase')) {
+        showToast('A price adjustment needs to be paid before release.', true);
+        navigate(`/leads?filter=active&job=${jobId}`);
+      } else {
+        showToast(humanizePaymentError(rawMsg), true);
+      }
+    } finally {
+      setReleasingJobId(null);
     }
   };
 
@@ -261,6 +391,7 @@ export default function ClientDashboard() {
         priority: 'normal',
         is_delayed: false,
         max_quotes: 5,
+        recurring_job_id: job.id,
       };
 
       // If sending to a specific saved tradie, assign them directly
@@ -326,7 +457,6 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (user) {
       fetchSavedTradies();
-      fetchRecommendedTradies();
       fetchUnreadTradieIds();
       fetchTrainingMode();
       fetchRecurring();
@@ -460,25 +590,6 @@ export default function ClientDashboard() {
       .then(() => {});
   };
 
-  const fetchRecommendedTradies = async () => {
-    try {
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select(`*, tradie_details (*)`)
-        .eq('role', 'tradie')
-        .limit(4);
-
-      if (error) throw error;
-
-      if (profiles) {
-        const filtered = (profiles as unknown as TradieWithDetails[]).filter((p) => p.tradie_details);
-        setRecommendedTradies(filtered as TradieWithDetails[]);
-      }
-    } catch {
-      showToast('Failed to load recommendations. Please refresh.', true);
-    }
-  };
-
   const handleRemoveTradie = async (tradie: TradieWithDetails) => {
     if (!user) return;
 
@@ -578,12 +689,12 @@ export default function ClientDashboard() {
           </Link>
         </div>
 
-        {availableThisWeek > 0 && (
+        {availableThisWeek > 0 && showSlotsBanner && (
           <div className="mb-8 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-300 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
               <Bell className="w-5 h-5 text-amber-600 animate-pulse" />
             </div>
-            <div>
+            <div className="flex-1">
               <p className="font-semibold text-amber-900">
                 One of your saved tradies opened up slots this week
               </p>
@@ -591,8 +702,96 @@ export default function ClientDashboard() {
                 Check their calendars now — popular times fill up fast
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowSlotsBanner(false);
+                try { sessionStorage.setItem('dismissed_slots_banner', '1'); } catch { /* private mode — non-critical */ }
+              }}
+              aria-label="Dismiss"
+              className="p-1.5 -m-1 text-amber-600 hover:text-amber-800 hover:bg-amber-100 rounded-lg transition-colors flex-shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         )}
+
+        {(() => {
+          const awaitingRelease = recentJobs.filter(j => !j.archived_at && j.status === 'completed' && !releasedJobIds.has(j.id));
+          if (awaitingRelease.length === 0) return null;
+
+          // Single job — keep the original compact banner
+          if (awaitingRelease.length === 1) {
+            const first = awaitingRelease[0];
+            const category = first.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
+            const label = (first.title || category || 'a job').toString();
+            return (
+              <div className="mb-8 p-4 bg-gradient-to-r from-warm-50 to-emerald-50 border border-warm-300 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="w-10 h-10 bg-warm-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-warm-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-warm-900">Ready to release payment</p>
+                  <p className="text-sm text-warm-800 mt-0.5 truncate">Your tradie has completed {label}. Release payment & leave a review.</p>
+                </div>
+                <button
+                  onClick={() => handleReleasePayment(first.id)}
+                  disabled={releasingJobId === first.id}
+                  className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 bg-warm-600 text-white text-sm font-semibold rounded-lg hover:bg-warm-700 disabled:opacity-60 transition-colors"
+                >
+                  {releasingJobId === first.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  Release & Review
+                </button>
+              </div>
+            );
+          }
+
+          // Multiple — list every job with its own Release & Review button so
+          // none of them get buried under the Accepted tab.
+          return (
+            <div className="mb-8 bg-gradient-to-r from-warm-50 to-emerald-50 border border-warm-300 rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="p-4 flex items-center gap-3 border-b border-warm-200">
+                <div className="w-10 h-10 bg-warm-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-warm-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-warm-900">
+                    {awaitingRelease.length} jobs waiting for payment release
+                  </p>
+                  <p className="text-sm text-warm-800 mt-0.5">Review each one below — money stays in escrow until you release.</p>
+                </div>
+              </div>
+              <div className="divide-y divide-warm-200">
+                {awaitingRelease.map(job => {
+                  const category = job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
+                  const label = (job.title || category || 'Job').toString();
+                  const desc = job.description.replace(/^\[[^\]]+\]\s*/, '');
+                  return (
+                    <div key={job.id} className="px-4 py-3 flex items-center gap-3 hover:bg-warm-50/40 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-warm-900 capitalize truncate">{label}</p>
+                        <p className="text-xs text-warm-700/80 mt-0.5 truncate">{desc}</p>
+                      </div>
+                      {job.budget_amount ? (
+                        <span className="text-sm font-bold text-emerald-700 tabular-nums flex-shrink-0">
+                          ${job.budget_amount.toLocaleString()}
+                        </span>
+                      ) : null}
+                      <button
+                        onClick={() => handleReleasePayment(job.id)}
+                        disabled={releasingJobId === job.id}
+                        className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-600 text-white text-xs font-semibold rounded-lg hover:bg-warm-700 disabled:opacity-60 transition-colors"
+                      >
+                        {releasingJobId === job.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                        Release & Review
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         <div className="grid lg:grid-cols-4 gap-8">
           <div className="lg:col-span-3 space-y-8">
@@ -612,22 +811,27 @@ export default function ClientDashboard() {
 
               {/* Job tabs */}
               <div className="flex items-center gap-1 mb-4">
-                {(['active', 'completed'] as const).map(tab => {
-                  const activeCount = recentJobs.filter(j => !j.archived_at && !(j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id))).length;
-                  const completedCount = recentJobs.filter(j => !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)).length;
-                  const count = tab === 'active' ? activeCount : completedCount;
-                  const isActive = jobTab === tab;
+                {([
+                  { key: 'active' as const, label: 'Active', count: recentJobs.filter(j => !j.archived_at && j.status === 'pending' && !recurringJobIds.has(j.id)).length },
+                  { key: 'accepted' as const, label: 'Accepted', count: recentJobs.filter(j => !j.archived_at && !recurringJobIds.has(j.id) && (['accepted', 'funded', 'in_progress'].includes(j.status) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))).length },
+                  { key: 'completed' as const, label: 'Completed', count: recentJobs.filter(j => !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)).length },
+                ]).map(tab => {
+                  const isActive = jobTab === tab.key;
+                  // Amber underbar on the Accepted tab when there are active jobs sitting
+                  // in it — visual nudge so the client doesn't forget about a paid job
+                  // they need to release or review.
+                  const needsAttention = tab.key === 'accepted' && tab.count > 0;
                   return (
                     <button
-                      key={tab}
-                      onClick={() => { setJobTab(tab); setShowArchived(false); }}
+                      key={tab.key}
+                      onClick={() => { setJobTab(tab.key); setShowArchived(false); }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                         isActive
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                      }`}
+                      } ${needsAttention ? 'shadow-[inset_0_-3px_0_0_#fde68a]' : ''}`}
                     >
-                      {tab === 'active' ? 'Active' : 'Completed'} {count > 0 && `(${count})`}
+                      {tab.label} {tab.count > 0 && `(${tab.count})`}
                     </button>
                   );
                 })}
@@ -649,16 +853,18 @@ export default function ClientDashboard() {
               {recentJobs.filter(j => showArchived
                 ? j.archived_at
                 : jobTab === 'active'
-                  ? !j.archived_at && !(j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id))
-                  : !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)
+                  ? !j.archived_at && j.status === 'pending' && !recurringJobIds.has(j.id)
+                  : jobTab === 'accepted'
+                    ? !j.archived_at && !recurringJobIds.has(j.id) && (['accepted', 'funded', 'in_progress'].includes(j.status) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))
+                    : !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)
               ).length === 0 && recentJobs.length > 0 ? (
                 <div className="bg-gray-50 rounded-2xl border border-gray-200 p-8 text-center">
                   <Archive className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                   <p className="text-gray-600 font-medium">
-                    {showArchived ? 'No archived jobs' : jobTab === 'completed' ? 'No completed jobs yet' : 'No active jobs'}
+                    {showArchived ? 'No archived jobs' : jobTab === 'completed' ? 'No completed jobs yet' : jobTab === 'accepted' ? 'No accepted jobs' : 'No active jobs'}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    {showArchived ? 'Archived jobs will appear here' : jobTab === 'completed' ? 'Jobs will appear here once payment is released' : 'Post a job to get started'}
+                    {showArchived ? 'Archived jobs will appear here' : jobTab === 'completed' ? 'Jobs will appear here once payment is released' : jobTab === 'accepted' ? 'Jobs will move here once a quote is accepted' : 'Post a job to get started'}
                   </p>
                 </div>
               ) : recentJobs.length === 0 ? (
@@ -705,8 +911,10 @@ export default function ClientDashboard() {
                     .filter(j => showArchived
                       ? j.archived_at
                       : jobTab === 'active'
-                        ? !j.archived_at && !(j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id))
-                        : !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)
+                        ? !j.archived_at && j.status === 'pending' && !recurringJobIds.has(j.id)
+                        : jobTab === 'accepted'
+                          ? !j.archived_at && !recurringJobIds.has(j.id) && (['accepted', 'funded', 'in_progress'].includes(j.status) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))
+                          : !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)
                     )
                     .slice(0, 20)
                     .map((job) => {
@@ -840,41 +1048,130 @@ export default function ClientDashboard() {
                             {/* Footer with action */}
                             {job.status === 'completed' && !isReleased && (
                               <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
-                                <span className="text-xs text-gray-400">Click to view details</span>
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-600 text-white text-xs font-semibold rounded-lg">
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span className="text-xs text-gray-400">Tradie finished the work</span>
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleReleasePayment(job.id);
+                                  }}
+                                  disabled={releasingJobId === job.id}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-600 text-white text-xs font-semibold rounded-lg hover:bg-warm-700 disabled:opacity-60 transition-colors"
+                                >
+                                  {releasingJobId === job.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                  )}
                                   Release & Review
-                                </span>
+                                </button>
                               </div>
                             )}
                             {job.status === 'completed' && isReleased && !isReviewed && (
                               <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
                                 <span className="text-xs text-gray-400">Payment released — how was the job?</span>
-                                <Link
-                                  to={`/review/${job.id}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-500 text-white text-xs font-semibold rounded-lg hover:bg-warm-600 transition-colors"
-                                >
-                                  <Star className="w-3.5 h-3.5" />
-                                  Leave a Review
-                                </Link>
+                                <div className="flex items-center gap-2">
+                                  {!recurringJobIds.has(job.id) && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setBonusTarget({
+                                          jobId: job.id,
+                                          jobLabel: (job.title || category || 'the job').toString(),
+                                        });
+                                      }}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-warm-200 text-warm-700 text-xs font-semibold rounded-lg hover:bg-warm-50 transition-colors"
+                                    >
+                                      <Gift className="w-3.5 h-3.5" />
+                                      Give extra
+                                    </button>
+                                  )}
+                                  <Link
+                                    to={`/review/${job.id}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-500 text-white text-xs font-semibold rounded-lg hover:bg-warm-600 transition-colors"
+                                  >
+                                    <Star className="w-3.5 h-3.5" />
+                                    Leave a Review
+                                  </Link>
+                                </div>
                               </div>
                             )}
                             {job.status === 'completed' && isReleased && isReviewed && (
                               <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
                                 <span className="text-xs text-gray-400">Payment released to tradie</span>
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg">
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  Paid
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  {!recurringJobIds.has(job.id) && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setBonusTarget({
+                                          jobId: job.id,
+                                          jobLabel: (job.title || category || 'the job').toString(),
+                                        });
+                                      }}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-warm-200 text-warm-700 text-xs font-semibold rounded-lg hover:bg-warm-50 transition-colors"
+                                    >
+                                      <Gift className="w-3.5 h-3.5" />
+                                      Give extra
+                                    </button>
+                                  )}
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg">
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    Paid
+                                  </span>
+                                </div>
                               </div>
                             )}
-                            {job.status === 'in_progress' && (
+                            {pendingIncreases[job.id] && ['funded', 'in_progress', 'completed'].includes(job.status) && (
+                              <div className="px-5 py-3 border-t border-amber-200 bg-amber-50">
+                                <div className="flex items-center gap-2 text-sm font-medium text-amber-800 mb-2">
+                                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                  <span>Price adjusted after site visit</span>
+                                </div>
+                                <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-xs text-amber-700 mb-3 ml-6">
+                                  <span>Original: <span className="font-semibold">${pendingIncreases[job.id].originalAmount.toFixed(2)}</span></span>
+                                  <span className="text-amber-400">→</span>
+                                  <span>Final: <span className="font-semibold">${pendingIncreases[job.id].finalAmount.toFixed(2)}</span></span>
+                                  <span className="text-amber-400">|</span>
+                                  <span>Additional: <span className="font-semibold text-amber-900">${pendingIncreases[job.id].amount.toFixed(2)}</span></span>
+                                </div>
+                                <div className="flex justify-end">
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      const inc = pendingIncreases[job.id];
+                                      setPayingIncreaseJobId(job.id);
+                                      payPriceIncrease(inc.paymentId, job.id)
+                                        .then(({ url }) => { window.location.href = url; })
+                                        .catch((err) => {
+                                          console.error('Pay price increase failed:', err);
+                                          showToast(err instanceof Error ? err.message : 'Failed to start payment', true);
+                                          setPayingIncreaseJobId(null);
+                                        });
+                                    }}
+                                    disabled={payingIncreaseJobId === job.id}
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-60"
+                                  >
+                                    {payingIncreaseJobId === job.id ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                      <CreditCard className="w-3.5 h-3.5" />
+                                    )}
+                                    Pay Difference — ${pendingIncreases[job.id].amount.toFixed(2)}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                            {job.status === 'in_progress' && !pendingIncreases[job.id] && (
                               <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
                                 <span className="text-xs text-gray-400">Click to check progress</span>
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg">
-                                  <Eye className="w-3.5 h-3.5" />
-                                  View Progress
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 !text-white text-xs font-semibold rounded-lg">
+                                  <Eye className="w-3.5 h-3.5 text-white" />
+                                  In Progress
                                 </span>
                               </div>
                             )}
@@ -925,6 +1222,90 @@ export default function ClientDashboard() {
                 )}
               </div>
             )}
+
+            {/* Three-up summary row — pulled out of the sidebar so the boxes
+                aren't buried below the fold on tall screens. */}
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {/* Invoices */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-5">
+                <Link to="/payments" className="font-semibold text-gray-900 flex items-center gap-2 mb-4 hover:text-primary-600 transition-colors">
+                  <DollarSign className="w-4 h-4 text-secondary-600" />
+                  Invoices
+                </Link>
+                {invoices.length > 0 ? (
+                  <div className="space-y-3">
+                    {invoices.map((inv) => (
+                      <RecurringInvoiceCard
+                        key={inv.id}
+                        invoice={inv}
+                        userRole="client"
+                        onApprove={async (invoiceId) => {
+                          try {
+                            const result = await callEdgeFunction<{ status: string; checkout_url?: string }>(
+                              'approve-invoice',
+                              { invoiceId, action: 'approve', forceCheckout: true },
+                            );
+                            if (result.checkout_url) {
+                              window.location.href = result.checkout_url;
+                            } else {
+                              showToast('Invoice approved — payment is processing');
+                              fetchInvoices();
+                            }
+                          } catch (err) {
+                            console.error('Approve invoice error:', err);
+                            showToast(err instanceof Error ? err.message : 'Something went wrong — please try again', true);
+                          }
+                        }}
+                        onDecline={async (invoiceId, reason) => {
+                          try {
+                            await callEdgeFunction('approve-invoice', { invoiceId, action: 'decline', disputeReason: reason });
+                            showToast('Invoice disputed — the tradie has been notified');
+                            fetchInvoices();
+                          } catch (err) {
+                            showToast(err instanceof Error ? err.message : 'Failed to dispute invoice', true);
+                          }
+                        }}
+                        onAcceptResponse={async (invoiceId) => {
+                          try {
+                            await callEdgeFunction('respond-to-dispute', { invoiceId, action: 'accept_response' });
+                            showToast('Response accepted — invoice is ready for approval');
+                            fetchInvoices();
+                          } catch (err) {
+                            showToast(err instanceof Error ? err.message : 'Failed to accept response', true);
+                          }
+                        }}
+                        onEscalate={async (invoiceId) => {
+                          try {
+                            await callEdgeFunction('respond-to-dispute', { invoiceId, action: 'escalate' });
+                            showToast('Dispute escalated to admin for review');
+                            fetchInvoices();
+                          } catch (err) {
+                            showToast(err instanceof Error ? err.message : 'Failed to escalate dispute', true);
+                          }
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <DollarSign className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">No invoices yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Generated at the end of each billing cycle</p>
+                  </div>
+                )}
+              </div>
+
+              {/* This Week — personal upcoming-events feed (replaced the old
+                  global Platform Activity widget). */}
+              <SectionErrorBoundary fallbackTitle="Timeline failed to load">
+                <UpcomingTimeline />
+              </SectionErrorBoundary>
+
+              {/* Recommended Tradies — ranked, trade-aware, postcode-proximate.
+                  Replaced the old .limit(4) of all tradies that pretended to be
+                  "near" the client. */}
+              <RecommendedTradies />
+            </div>
           </div>
 
           <div className="lg:col-span-1 space-y-6">
@@ -973,75 +1354,15 @@ export default function ClientDashboard() {
                   <span className="text-sm text-gray-600">Active Jobs</span>
                   <span className="text-sm font-semibold text-warm-600">{spendingSummary.pendingJobs}</span>
                 </Link>
+                <Link to="/leads?tab=services" className="flex items-center justify-between hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors">
+                  <span className="text-sm text-gray-600">Ongoing Services</span>
+                  <span className="text-sm font-semibold text-secondary-600">{spendingSummary.activeServices}</span>
+                </Link>
               </div>
               <Link to="/payments" className="mt-4 block text-center text-xs font-medium text-primary-600 hover:text-primary-700">
                 View Payment History
               </Link>
             </div>
-
-            {/* Upcoming Visits — from recurring job sessions */}
-            {(() => {
-              const allSessions = Object.entries(jobSessions).flatMap(([jobId, sessions]) => {
-                const job = recurringJobs.find(j => j.id === jobId);
-                if (!job || !job.is_active) return [];
-                return sessions
-                  .filter(s => s.status === 'scheduled' || s.status === 'pending_confirmation')
-                  .map(s => ({ ...s, job }));
-              }).sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()).slice(0, 4);
-
-              if (allSessions.length === 0) return null;
-
-              return (
-                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                  <div className="px-5 py-4 border-b border-gray-100">
-                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                      <CalendarClock className="w-4 h-4 text-secondary-600" />
-                      Upcoming Visits
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-0.5">Next scheduled sessions from your ongoing services</p>
-                  </div>
-                  <div className="divide-y divide-gray-100">
-                    {allSessions.map((session) => {
-                      const dateStr = new Date(session.scheduled_date).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
-                      const label = session.job.service_subtype || session.job.trade_category.replace(/_/g, ' ');
-                      const timeStr = session.job.preferred_time
-                        ? session.job.preferred_time.slice(0, 5).replace(/^0/, '')
-                        : null;
-                      return (
-                        <div key={session.id} className="px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-9 h-9 rounded-lg bg-secondary-100 flex items-center justify-center flex-shrink-0">
-                              <CalendarClock className="w-4 h-4 text-secondary-600" />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate capitalize">{label}</p>
-                              <p className="text-xs text-gray-500">
-                                {dateStr}
-                                {timeStr && <span className="text-gray-400"> · {timeStr}</span>}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {session.job.agreed_price != null && session.job.agreed_price > 0 && (
-                              <span className="text-xs font-semibold text-emerald-700">
-                                ${session.job.agreed_price.toFixed(2)}
-                              </span>
-                            )}
-                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                              session.status === 'pending_confirmation'
-                                ? 'bg-amber-100 text-amber-700'
-                                : 'bg-emerald-100 text-emerald-700'
-                            }`}>
-                              {session.status === 'pending_confirmation' ? 'Pending' : 'Scheduled'}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })()}
 
             {/* Ongoing Services */}
             <div className="bg-white rounded-2xl border border-gray-200 p-5">
@@ -1094,7 +1415,11 @@ export default function ClientDashboard() {
                       .single();
                     if (jobErr) throw new Error(jobErr.message);
                     // 2. Create the recurring job linked to the jobs record
-                    await createRecurringJob({ ...rest, agreed_price: budget, preferred_time, original_job_id: job.id });
+                    const recurring = await createRecurringJob({ ...rest, agreed_price: budget, preferred_time, original_job_id: job.id });
+                    // 3. Backlink the job to the recurring service so acceptance can sync the agreed price
+                    if (recurring?.id) {
+                      await supabase.from('jobs').update({ recurring_job_id: recurring.id }).eq('id', job.id);
+                    }
                   }}
                   onCancel={() => setShowRecurringForm(false)}
                   onDone={() => { setShowRecurringForm(false); fetchRecurring(); showToast('Ongoing service scheduled'); }}
@@ -1120,7 +1445,12 @@ export default function ClientDashboard() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {recurringJobs.filter(j => j.is_active).map(job => {
+                  {(() => {
+                    const activeRecurring = recurringJobs.filter(j => j.is_active);
+                    const visibleRecurring = activeRecurring.slice(0, 3);
+                    const hiddenRecurringCount = activeRecurring.length - visibleRecurring.length;
+                    return <>
+                  {visibleRecurring.map(job => {
                     const dueDate = new Date(job.next_due_date);
                     const now = new Date();
                     const daysUntil = Math.ceil((dueDate.getTime() - now.getTime()) / 86400000);
@@ -1285,7 +1615,18 @@ export default function ClientDashboard() {
                                 </div>
                               );
                             }
-                            // First time — tradie assigned but no work done yet
+                            // Tradie assigned AND a price already agreed (e.g. via an
+                            // accepted quote) — the service is set up, no quote needed.
+                            // The first session is auto-scheduled by the recurring cron.
+                            if (job.tradie?.full_name && job.agreed_price && job.agreed_price > 0) {
+                              return (
+                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium border border-emerald-200">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  Active with {job.tradie.full_name.split(' ')[0]} · ${job.agreed_price.toFixed(0)}/visit
+                                </div>
+                              );
+                            }
+                            // Tradie assigned but no price yet — request a quote to set the rate.
                             if (job.tradie?.full_name) {
                               return (
                                 <button
@@ -1335,15 +1676,19 @@ export default function ClientDashboard() {
                           };
 
                           const isExpanded = expandedSessions.has(job.id);
+                          const upcomingKey = `${job.id}_upcoming`;
+                          const isUpcomingExpanded = expandedSessions.has(upcomingKey);
+                          const visibleUpcoming = isUpcomingExpanded ? upcoming : upcoming.slice(0, 1);
+                          const hiddenUpcomingCount = upcoming.length - visibleUpcoming.length;
 
                           return (
                             <div className="px-3 pb-3">
-                              {/* Upcoming sessions — always shown */}
+                              {/* Upcoming sessions — next one shown, rest behind toggle */}
                               {upcoming.length > 0 && (
                                 <>
                                   <p className="text-xs font-medium text-gray-500 mb-2">Upcoming Sessions</p>
-                                  <div className="space-y-2 mb-3">
-                                    {upcoming.slice(0, 3).map(session => (
+                                  <div className="space-y-2 mb-2">
+                                    {visibleUpcoming.map(session => (
                                       <RecurringSessionCard
                                         key={session.id}
                                         session={session}
@@ -1358,6 +1703,20 @@ export default function ClientDashboard() {
                                       />
                                     ))}
                                   </div>
+                                  {upcoming.length > 1 && (
+                                    <button
+                                      onClick={() => setExpandedSessions(prev => {
+                                        const next = new Set(prev);
+                                        if (next.has(upcomingKey)) next.delete(upcomingKey);
+                                        else next.add(upcomingKey);
+                                        return next;
+                                      })}
+                                      className="w-full text-center text-xs font-medium text-primary-600 hover:text-primary-700 py-1.5 mb-3 hover:bg-primary-50 rounded-lg transition-colors"
+                                    >
+                                      {isUpcomingExpanded ? 'Show less' : `View ${hiddenUpcomingCount} more upcoming`}
+                                    </button>
+                                  )}
+                                  {upcoming.length === 1 && <div className="mb-3" />}
                                 </>
                               )}
 
@@ -1504,6 +1863,16 @@ export default function ClientDashboard() {
                       </div>
                     );
                   })}
+                  {hiddenRecurringCount > 0 && (
+                    <Link
+                      to="/leads?tab=services"
+                      className="block w-full text-center text-xs font-semibold text-primary-600 hover:text-primary-700 py-2.5 hover:bg-primary-50 rounded-lg transition-colors"
+                    >
+                      View all {activeRecurring.length} ongoing services →
+                    </Link>
+                  )}
+                    </>;
+                  })()}
                 </div>
               )}
             </div>
@@ -1523,43 +1892,107 @@ export default function ClientDashboard() {
               const pastCount = inactive.length - resumable.length;
 
               return (
-                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                  <div className="px-5 py-4 border-b border-gray-100">
+                <details className="bg-white rounded-2xl border border-gray-200 overflow-hidden group">
+                  <summary className="px-5 py-4 border-b border-gray-100 cursor-pointer list-none flex items-center justify-between hover:bg-gray-50 transition-colors">
                     <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                       <Pause className="w-4 h-4 text-amber-500" />
                       Paused Services
+                      <span className="text-xs font-normal text-gray-400">({resumable.length})</span>
                     </h3>
-                  </div>
+                    <ChevronDown className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" />
+                  </summary>
                   <div className="divide-y divide-gray-100">
-                    {resumable.slice(0, 3).map(job => {
+                    {resumable.map(job => {
                       const tradeLabel = (job.service_subtype || job.trade_category || '').replace(/_/g, ' ');
+                      const freqLabel = job.frequency_months === 1 ? 'Monthly' : job.frequency_months === 3 ? 'Quarterly' : job.frequency_months === 6 ? 'Half-yearly' : job.frequency_months === 12 ? 'Yearly' : job.frequency_months < 0 ? (job.frequency_months === -1 ? 'Monthly' : job.frequency_months === -2 ? 'Fortnightly' : 'Weekly') : `Every ${job.frequency_months}mo`;
                       return (
-                        <div key={job.id} className="px-5 py-3 flex items-center justify-between">
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-gray-700 capitalize">{tradeLabel}</p>
-                            {job.tradie && (
-                              <p className="text-xs text-gray-400 mt-0.5">
-                                {(job.tradie as { full_name?: string }).full_name}
-                                {job.agreed_price ? ` · $${job.agreed_price.toFixed(2)}/visit` : ''}
-                              </p>
+                        <details key={job.id} className="group/paused">
+                          <summary className="px-5 py-3 flex items-center justify-between cursor-pointer list-none hover:bg-gray-50 transition-colors">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-gray-900 capitalize">{tradeLabel}</p>
+                              {job.tradie && (
+                                <p className="text-xs text-gray-600 mt-0.5">
+                                  {(job.tradie as { full_name?: string }).full_name}
+                                  {job.agreed_price ? ` · $${job.agreed_price.toFixed(2)}/visit` : ''}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <button
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  try {
+                                    await resumeRecurringJob(job.id, 'client');
+                                    fetchRecurring();
+                                    showToast('Service resumed');
+                                  } catch {
+                                    showToast('Failed to resume service', true);
+                                  }
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-colors"
+                              >
+                                <Play className="w-3 h-3" />
+                                Resume
+                              </button>
+                              <ChevronDown className="w-3.5 h-3.5 text-gray-400 transition-transform group-open/paused:rotate-180" />
+                            </div>
+                          </summary>
+                          <div className="px-5 pb-4 pt-2">
+                            {job.description && (
+                              <div className="mb-2.5">
+                                <div className={`text-xs text-gray-800 ${expandedDescs.has(job.id) ? '' : 'line-clamp-2'}`}>
+                                  {job.description.split(/(?=\d+\.\s)/).filter(Boolean).map((line, i) => (
+                                    <p key={i}>{line.trim()}</p>
+                                  ))}
+                                </div>
+                                {job.description.length > 100 && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setExpandedDescs(prev => {
+                                        const next = new Set(prev);
+                                        if (next.has(job.id)) next.delete(job.id);
+                                        else next.add(job.id);
+                                        return next;
+                                      });
+                                    }}
+                                    className="text-[11px] text-secondary-500 hover:text-secondary-600 font-medium mt-0.5"
+                                  >
+                                    {expandedDescs.has(job.id) ? 'Show less' : 'Show more'}
+                                  </button>
+                                )}
+                              </div>
                             )}
+                            <div className="grid grid-cols-2 gap-2 mb-2.5">
+                              <div className="bg-gray-50 rounded-lg px-2.5 py-1.5">
+                                <p className="text-[10px] text-gray-500 leading-tight">Frequency</p>
+                                <p className="text-xs font-medium text-gray-800">{freqLabel}</p>
+                              </div>
+                              {job.location && (
+                                <div className="bg-gray-50 rounded-lg px-2.5 py-1.5 min-w-0">
+                                  <p className="text-[10px] text-gray-500 leading-tight">Location</p>
+                                  <p className="text-xs font-medium text-gray-800 truncate">{job.location}</p>
+                                </div>
+                              )}
+                              {job.times_completed > 0 && (
+                                <div className="bg-gray-50 rounded-lg px-2.5 py-1.5">
+                                  <p className="text-[10px] text-gray-500 leading-tight">Sessions</p>
+                                  <p className="text-xs font-medium text-gray-800">{job.times_completed}</p>
+                                </div>
+                              )}
+                              <div className="bg-gray-50 rounded-lg px-2.5 py-1.5">
+                                <p className="text-[10px] text-gray-500 leading-tight">Created</p>
+                                <p className="text-xs font-medium text-gray-800">{new Date(job.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => { setCancelServiceTarget({ id: job.id, label: tradeLabel }); setCancelReason(''); }}
+                              className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
+                            >
+                              Cancel Service
+                            </button>
                           </div>
-                          <button
-                            onClick={async () => {
-                              try {
-                                await resumeRecurringJob(job.id, 'client');
-                                fetchRecurring();
-                                showToast('Service resumed');
-                              } catch {
-                                showToast('Failed to resume service', true);
-                              }
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-colors flex-shrink-0"
-                          >
-                            <Play className="w-3 h-3" />
-                            Resume
-                          </button>
-                        </div>
+                        </details>
                       );
                     })}
                     {pastCount > 0 && (
@@ -1577,93 +2010,14 @@ export default function ClientDashboard() {
                       </div>
                     )}
                   </div>
-                </div>
+                </details>
               );
             })()}
-
-            {/* Invoices */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-5">
-              <Link to="/payments" className="font-semibold text-gray-900 flex items-center gap-2 mb-4 hover:text-primary-600 transition-colors">
-                <DollarSign className="w-4 h-4 text-secondary-600" />
-                Invoices
-              </Link>
-              {invoices.length > 0 ? (
-                <div className="space-y-3">
-                  {invoices.map((inv) => (
-                    <RecurringInvoiceCard key={inv.id} invoice={inv} userRole="client" />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-4">
-                  <DollarSign className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">No invoices yet</p>
-                  <p className="text-xs text-gray-400 mt-1">Invoices are generated at the end of each billing cycle</p>
-                </div>
-              )}
-            </div>
 
             <div data-tour="onboarding-checklist">
               <SectionErrorBoundary fallbackTitle="Onboarding checklist failed to load">
                 <OnboardingChecklist />
               </SectionErrorBoundary>
-            </div>
-            <SectionErrorBoundary fallbackTitle="Activity feed failed to load">
-              <ActivityFeed />
-            </SectionErrorBoundary>
-
-            <div className="bg-white rounded-2xl border border-gray-200 p-6" data-tour="recommended-tradies">
-              <h3 className="font-semibold text-gray-900 mb-4">New & Recommended</h3>
-
-              {profile?.postcode && (
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                  <MapPin className="w-4 h-4" />
-                  Near {profile.postcode}
-                </div>
-              )}
-
-              <div className="space-y-4">
-                {recommendedTradies.map((tradie) => (
-                  <div
-                    key={tradie.id}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer active:scale-95"
-                    onClick={() => handleOpenChat(tradie)}
-                  >
-                    <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-bold text-primary-600">
-                        {tradie.full_name?.charAt(0) || 'T'}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 text-sm truncate">
-                        {(tradie.tradie_details?.subscription_tier === 'pro' || tradie.tradie_details?.subscription_tier === 'business')
-                          ? (tradie.tradie_details?.business_name || tradie.full_name)
-                          : redactName(tradie.full_name)}
-                      </p>
-                      <p className="text-xs text-gray-600 capitalize">
-                        {tradie.tradie_details?.trade_category}
-                      </p>
-                      <div className="mt-1">
-                        <UserTradeBadges
-                          verifiedTrades={tradie.verified_trades || []}
-                          declaredTrades={tradie.declared_trades || []}
-                          size="sm"
-                        />
-                      </div>
-                    </div>
-                    {unreadTradieIds.has(tradie.id) && (
-                      <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <Link
-                to="/search"
-                className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 text-primary-600 font-medium hover:bg-primary-50 active:scale-95 rounded-xl transition-all duration-200 min-h-[44px]"
-              >
-                View All
-                <ArrowRight className="w-4 h-4" />
-              </Link>
             </div>
           </div>
         </div>
@@ -1685,6 +2039,82 @@ export default function ClientDashboard() {
         isOpen={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
       />
+
+      {/* Cancel Service Modal */}
+      {cancelServiceTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setCancelServiceTarget(null)} />
+          <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <button onClick={() => setCancelServiceTarget(null)} className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 rounded-lg">
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Cancel Service</h2>
+                <p className="text-sm text-gray-500 capitalize">{cancelServiceTarget.label}</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">This will permanently cancel this service. It cannot be resumed after cancellation.</p>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Reason for cancellation</label>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {['No longer needed', 'Found another provider', 'Too expensive', 'Poor quality', 'Moving house', 'Other'].map(reason => (
+                <button
+                  key={reason}
+                  type="button"
+                  onClick={() => setCancelReason(reason)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                    cancelReason === reason
+                      ? 'bg-red-500 text-white border-red-500'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-red-300'
+                  }`}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+            {cancelReason === 'Other' && (
+              <textarea
+                value={cancelReason === 'Other' ? '' : cancelReason}
+                onChange={(e) => setCancelReason(e.target.value || 'Other')}
+                placeholder="Please describe the reason..."
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500 resize-none mb-3"
+              />
+            )}
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setCancelServiceTarget(null)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                Keep Service
+              </button>
+              <button
+                onClick={async () => {
+                  if (!cancelReason) return;
+                  setCancellingService(true);
+                  try {
+                    await cancelRecurringJob(cancelServiceTarget.id);
+                    fetchRecurring();
+                    showToast('Service cancelled');
+                    setCancelServiceTarget(null);
+                  } catch {
+                    showToast('Failed to cancel service', true);
+                  }
+                  setCancellingService(false);
+                }}
+                disabled={!cancelReason || cancellingService}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {cancellingService ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                Cancel Service
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {quoteRequestTradie && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -1738,7 +2168,7 @@ export default function ClientDashboard() {
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <button
-                    onClick={() => { setQuoteRequestTradie(null); navigate(`/post-lead?trade=${quoteRequestTradie.tradie_details?.trade_type || ''}&tradie=${quoteRequestTradie.id}`); }}
+                    onClick={() => { setQuoteRequestTradie(null); navigate(`/post-lead?category=${encodeURIComponent(quoteRequestTradie.tradie_details?.trade_category || quoteRequestTradie.tradie_details?.trade_type || '')}&tradie=${quoteRequestTradie.id}`); }}
                     className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
@@ -1750,7 +2180,7 @@ export default function ClientDashboard() {
               <div className="text-center py-4">
                 <p className="text-sm text-gray-600 mb-4">You don't have any open jobs yet. Post one and this tradie will be invited to quote.</p>
                 <button
-                  onClick={() => { setQuoteRequestTradie(null); navigate(`/post-lead?trade=${quoteRequestTradie.tradie_details?.trade_type || ''}&tradie=${quoteRequestTradie.id}`); }}
+                  onClick={() => { setQuoteRequestTradie(null); navigate(`/post-lead?category=${encodeURIComponent(quoteRequestTradie.tradie_details?.trade_category || quoteRequestTradie.tradie_details?.trade_type || '')}&tradie=${quoteRequestTradie.id}`); }}
                   className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-emerald-500 text-white text-sm font-medium rounded-xl hover:bg-emerald-600 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
@@ -1760,6 +2190,16 @@ export default function ClientDashboard() {
             )}
           </div>
         </div>
+      )}
+
+      {bonusTarget && (
+        <BonusModal
+          isOpen={!!bonusTarget}
+          onClose={() => setBonusTarget(null)}
+          jobId={bonusTarget.jobId}
+          tradieName={bonusTarget.tradieName}
+          jobLabel={bonusTarget.jobLabel}
+        />
       )}
 
       {toast.show && (

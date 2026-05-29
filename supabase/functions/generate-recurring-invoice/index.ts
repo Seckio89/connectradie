@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
     // ── 1. Fetch the recurring job ──────────────────────────────
     const { data: job, error: jobError } = await supabase
       .from("recurring_jobs")
-      .select("id, client_id, tradie_id, agreed_price, trade_category, billing_cycle")
+      .select("id, client_id, tradie_id, agreed_price, trade_category, billing_cycle, is_active, cancelled_at")
       .eq("id", recurringJobId)
       .maybeSingle();
 
@@ -92,6 +92,11 @@ Deno.serve(async (req: Request) => {
     // Only the tradie assigned to this job (or the homeowner) can generate
     if (user.id !== job.tradie_id && user.id !== job.client_id) {
       return errorJson("Not authorised to generate invoice for this job", 403);
+    }
+
+    // Prevent invoicing cancelled services
+    if (job.cancelled_at) {
+      return errorJson("Cannot generate invoice for a cancelled service", 400);
     }
 
     const agreedPrice = (job.agreed_price as number) ?? 0;
@@ -135,10 +140,20 @@ Deno.serve(async (req: Request) => {
     // ── 3. Calculate totals ─────────────────────────────────────
     const subtotal = agreedPrice * completedSessions.length;
     const extrasTotal = extraSessions.reduce(
-      (sum: number, s: { extra_cost?: number }) => sum + ((s.extra_cost as number) ?? 0),
+      (sum: number, s: { extra_cost?: number; id?: string }) => {
+        const cost = Number(s.extra_cost) || 0;
+        if (cost === 0) {
+          console.warn(`[generate-invoice] Extra session ${s.id} has no cost — invoiced at $0`);
+        }
+        return sum + cost;
+      },
       0,
     );
-    const total = subtotal + extrasTotal;
+    const suppliesTotal = allSessions.reduce(
+      (sum: number, s: { supply_cost?: number }) => sum + (Number(s.supply_cost) || 0),
+      0,
+    );
+    const total = subtotal + extrasTotal + suppliesTotal;
 
     if (total <= 0) {
       return errorJson("No billable sessions in this period", 400);
@@ -183,6 +198,26 @@ Deno.serve(async (req: Request) => {
     const platformFeeDollars = calculatePlatformFee(total, tradieSubscriptionTier);
     const platformFeeCents = Math.round(platformFeeDollars * 100);
 
+    // Resolve the tradie's Connect account — payments route directly to it (destination
+    // charge). If onboarding isn't complete, neither BECS nor card can route funds, so
+    // fail early rather than creating an invoice that can't be charged.
+    const { data: tradieConnect } = await supabase
+      .from("profiles")
+      .select("stripe_connect_account_id, stripe_connect_onboarding_complete")
+      .eq("id", job.tradie_id)
+      .maybeSingle();
+
+    const destinationAccount = tradieConnect?.stripe_connect_onboarding_complete
+      ? tradieConnect.stripe_connect_account_id
+      : null;
+
+    if (!destinationAccount) {
+      return errorJson(
+        "Tradie has not completed payment setup — cannot generate a payable invoice yet.",
+        409,
+      );
+    }
+
     const totalCents = Math.round(total * 100);
     const processingFee = calculateProcessingFeeCents(totalCents);
 
@@ -218,6 +253,17 @@ Deno.serve(async (req: Request) => {
             name: `Extra sessions (${extraSessions.length})`,
           },
           unit_amount: Math.round(extrasTotal * 100),
+        },
+        quantity: 1,
+      });
+    }
+
+    if (suppliesTotal > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "aud",
+          product_data: { name: "Supplies & Materials" },
+          unit_amount: Math.round(suppliesTotal * 100),
         },
         quantity: 1,
       });
@@ -262,6 +308,7 @@ Deno.serve(async (req: Request) => {
           extra_sessions_count: extraSessions.length,
           subtotal,
           extras_total: extrasTotal,
+          supplies_total: suppliesTotal,
           total,
           status: "processing",
           payment_method: "au_becs_debit",
@@ -282,7 +329,9 @@ Deno.serve(async (req: Request) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${supabaseServiceKey}`,
+            // Forward the caller's valid JWT, not the env service key (which can be
+            // stale after a key rotation and gets 401'd by charge-becs-invoice's verify_jwt).
+            "Authorization": authHeader as string,
           },
           body: JSON.stringify({ invoiceId: becsInvoice.id, recurringJobId }),
         });
@@ -303,10 +352,15 @@ Deno.serve(async (req: Request) => {
           customer_email: customerId ? undefined : homeowner?.email,
           line_items: lineItems,
           mode: "payment",
-          success_url: `${siteUrl}/payments?invoice_paid=true`,
+          success_url: `${siteUrl}/payment-success`,
           cancel_url: `${siteUrl}/payments?invoice_cancelled=true`,
+          payment_intent_data: {
+            application_fee_amount: platformFeeCents + processingFee,
+            transfer_data: { destination: destinationAccount },
+          },
           metadata: {
             type: "recurring_invoice",
+            routing: "destination",
             recurring_job_id: recurringJobId,
             billing_period_start: billingPeriodStart,
             billing_period_end: billingPeriodEnd,
@@ -338,10 +392,15 @@ Deno.serve(async (req: Request) => {
         customer_email: customerId ? undefined : homeowner?.email,
         line_items: lineItems,
         mode: "payment",
-        success_url: `${siteUrl}/payments?invoice_paid=true`,
+        success_url: `${siteUrl}/payment-success`,
         cancel_url: `${siteUrl}/payments?invoice_cancelled=true`,
+        payment_intent_data: {
+          application_fee_amount: platformFeeCents + processingFee,
+          transfer_data: { destination: destinationAccount },
+        },
         metadata: {
           type: "recurring_invoice",
+          routing: "destination",
           recurring_job_id: recurringJobId,
           billing_period_start: billingPeriodStart,
           billing_period_end: billingPeriodEnd,
@@ -365,6 +424,7 @@ Deno.serve(async (req: Request) => {
           extra_sessions_count: extraSessions.length,
           subtotal,
           extras_total: extrasTotal,
+          supplies_total: suppliesTotal,
           total,
           status: "sent",
           stripe_checkout_session_id: checkoutSession.id,
@@ -406,9 +466,12 @@ Deno.serve(async (req: Request) => {
     });
 
     // ── 8. Update last_invoiced_at on recurring job ─────────────
+    // Must match the cron: store billing_period_end, not NOW — the auto-invoice cron
+    // computes the next period as last_invoiced_at + 1 day. Using NOW here caused a
+    // silent skip-loop with the cron.
     await supabase
       .from("recurring_jobs")
-      .update({ last_invoiced_at: new Date().toISOString() })
+      .update({ last_invoiced_at: billingPeriodEnd })
       .eq("id", recurringJobId);
 
     return new Response(

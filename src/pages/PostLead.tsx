@@ -122,6 +122,35 @@ const TIME_SLOTS: { key: TimeSlot; label: string; range: string; icon: typeof Su
   { key: 'afternoon', label: 'Afternoon', range: '1:00 PM - 5:00 PM', icon: Sunset },
 ];
 
+// Estimated-duration presets for the optional "specific time" booking. End time is
+// computed from start + minutes so the job lands as a block on both calendars.
+const DURATION_OPTIONS: { label: string; minutes: number }[] = [
+  { label: '1 hour', minutes: 60 },
+  { label: '1.5 hours', minutes: 90 },
+  { label: '2 hours', minutes: 120 },
+  { label: '3 hours', minutes: 180 },
+  { label: '4 hours', minutes: 240 },
+  { label: 'Half day (5h)', minutes: 300 },
+  { label: 'Full day (8h)', minutes: 480 },
+];
+
+function addMinutesToTime(time: string, minutes: number): string {
+  const [h, m] = time.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return time;
+  const total = h * 60 + m + minutes;
+  const eh = Math.floor((total % (24 * 60)) / 60);
+  const em = total % 60;
+  return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+}
+
+function formatTime12(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  if (Number.isNaN(h)) return time;
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
 // Typical peak inspection times by trade — based on industry scheduling patterns
 const TRADE_PEAK_TIMES: Record<string, { slot: TimeSlot; reason: string }> = {
   'Plumber': { slot: 'morning', reason: 'Plumbers typically start early to fit inspections before their first job' },
@@ -274,8 +303,13 @@ function SmartCalendar({
   );
 }
 
+// Free urgent posts per calendar month for non-Pro clients. Pro is unlimited.
+// Beyond the cap, non-Pro clients can either upgrade or pay a per-post boost (Phase 2).
+const URGENT_FREE_LIMIT = 2;
+const URGENT_BOOST_PRICE = 9;
+
 export default function PostLead() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const assigneeId = searchParams.get('assignee');
@@ -286,17 +320,27 @@ export default function PostLead() {
   const skipSelection = Boolean(assigneeId || prefillCategory || inviteTradieId);
   const [jobType, setJobType] = useState<'oneoff' | null>(skipSelection ? 'oneoff' : null);
 
-  const [category, setCategory] = useState(
-    TRADE_CATEGORIES.find(c => c.toLowerCase() === prefillCategory.toLowerCase()) || ''
-  );
+  const [category, setCategory] = useState(() => {
+    if (!prefillCategory) return '';
+    const pf = prefillCategory.toLowerCase();
+    // Exact match first (e.g. "Cleaner" === "cleaner")
+    const exact = TRADE_CATEGORIES.find(c => c.toLowerCase() === pf);
+    if (exact) return exact;
+    // Fuzzy match (e.g. "cleaning" starts with "clean" → "Cleaner")
+    return TRADE_CATEGORIES.find(c => pf.startsWith(c.toLowerCase().replace(/er$|ist$|or$/, ''))
+      || c.toLowerCase().startsWith(pf.replace(/ing$|s$/, ''))) || '';
+  });
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [parkingAvailable, setParkingAvailable] = useState(false);
   const [budgetType, setBudgetType] = useState<'request_quote' | 'fixed_budget'>('request_quote');
   const [budgetAmount, setBudgetAmount] = useState('');
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>(null);
   const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
   const [preferredSlot, setPreferredSlot] = useState<TimeSlot | null>(null);
+  const [specificStartTime, setSpecificStartTime] = useState('');
+  const [durationMinutes, setDurationMinutes] = useState(120);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -309,6 +353,13 @@ export default function PostLead() {
   const titleRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
+  // Urgent-post quota: count this month's high-priority posts so we can show a meter
+  // and gate the urgent option once the free allowance is used.
+  const [urgentUsedThisMonth, setUrgentUsedThisMonth] = useState(0);
+  const isClientPro = !!profile?.is_premium;
+  const urgentRemaining = Math.max(0, URGENT_FREE_LIMIT - urgentUsedThisMonth);
+  const isUrgentAtCap = !isClientPro && urgentRemaining === 0;
+
   // Close title dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -319,6 +370,22 @@ export default function PostLead() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!user || isClientPro) return;
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    (async () => {
+      const { count } = await supabase
+        .from('jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', user.id)
+        .eq('priority', 'high')
+        .gte('created_at', startOfMonth.toISOString());
+      setUrgentUsedThisMonth(count ?? 0);
+    })();
+  }, [user, isClientPro]);
 
   const titleSuggestions = useMemo(() => {
     const suggestions = category ? (JOB_TITLE_SUGGESTIONS[category] || []) : [];
@@ -376,6 +443,10 @@ export default function PostLead() {
       setError('Please select a date for your job.');
       return;
     }
+    if (scheduleMode === 'urgent' && isUrgentAtCap) {
+      setError(`You've used your ${URGENT_FREE_LIMIT} free urgent posts this month. Upgrade to Pro for unlimited, or switch to Scheduled.`);
+      return;
+    }
 
     setSubmitting(true);
     setError('');
@@ -406,6 +477,7 @@ export default function PostLead() {
       description: `[${category}] ${cleanDescription}`,
       status: 'pending',
       location_address: location,
+      parking_available: parkingAvailable,
       budget_type: budgetType,
       budget_amount: budgetType === 'fixed_budget' && budgetAmount ? parseFloat(budgetAmount) : null,
       is_emergency: isUrgent,
@@ -420,6 +492,10 @@ export default function PostLead() {
         ? scheduledDate.toISOString().split('T')[0]
         : null,
       preferred_time_slot: scheduleMode === 'scheduled' && preferredSlot ? preferredSlot : null,
+      start_time: scheduleMode === 'scheduled' && specificStartTime ? specificStartTime : null,
+      end_time: scheduleMode === 'scheduled' && specificStartTime
+        ? addMinutesToTime(specificStartTime, durationMinutes)
+        : null,
       contact_flagged: detection.hasContact,
       contact_flag_reason: flagReasons.length > 0 ? flagReasons.join(', ') : null,
     };
@@ -474,6 +550,7 @@ export default function PostLead() {
     // New lead notifications are handled by database trigger (notify_tradies_on_new_job)
 
     if (isUrgent) {
+      setUrgentUsedThisMonth(prev => prev + 1);
       notifyTradiesForUrgentJob(insertedJob as Job).then((result) => {
         setSmsResult(result);
       });
@@ -535,21 +612,21 @@ export default function PostLead() {
               <h3 className="text-sm font-semibold text-gray-900 mb-3">What happens next</h3>
               <ol className="space-y-3">
                 <li className="flex items-start gap-3">
-                  <span className="w-6 h-6 bg-warm-100 text-warm-700 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 bg-secondary-100 text-secondary-700">1</span>
                   <div>
                     <p className="text-sm font-medium text-gray-900">Tradies review your request</p>
                     <p className="text-xs text-gray-500">{scheduleMode === 'urgent' ? 'Expect responses within minutes' : 'Usually within 24 hours'}</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="w-6 h-6 bg-warm-100 text-warm-700 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</span>
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 bg-secondary-100 text-secondary-700">2</span>
                   <div>
                     <p className="text-sm font-medium text-gray-900">Compare quotes side by side</p>
                     <p className="text-xs text-gray-500">Up to {maxQuotes} tradies can quote — you pick the best fit</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="w-6 h-6 bg-warm-100 text-warm-700 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</span>
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 bg-secondary-100 text-secondary-700">3</span>
                   <div>
                     <p className="text-sm font-medium text-gray-900">Accept a quote and get it done</p>
                     <p className="text-xs text-gray-500">Message your chosen tradie to confirm the date, time, and any details</p>
@@ -564,7 +641,7 @@ export default function PostLead() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 onClick={() => navigate('/leads')}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-secondary-50 border border-secondary-200 text-secondary-700 font-semibold rounded-xl hover:bg-secondary-100 transition-colors"
               >
                 View My Requests
                 <ArrowRight className="w-4 h-4" />
@@ -575,11 +652,14 @@ export default function PostLead() {
                   setCategory('');
                   setDescription('');
                   setLocation('');
+                  setParkingAvailable(false);
                   setBudgetType('request_quote');
                   setBudgetAmount('');
                   setScheduleMode(null);
                   setScheduledDate(null);
                   setPreferredSlot(null);
+                  setSpecificStartTime('');
+                  setDurationMinutes(120);
                   setMaxQuotes(5);
                   setAllowsSiteInspection(true);
                   setSmsResult(null);
@@ -623,7 +703,7 @@ export default function PostLead() {
 
             {/* Ongoing Work */}
             <button
-              onClick={() => navigate('/leads?tab=services')}
+              onClick={() => navigate('/leads?tab=services', { state: { openScheduleForm: true } })}
               className="bg-white rounded-xl border border-gray-200 p-6 text-left hover:border-emerald-300 hover:shadow-sm transition-all group"
             >
               <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center mb-4 group-hover:bg-amber-100 transition-colors">
@@ -679,6 +759,7 @@ export default function PostLead() {
                     onChange={setCategory}
                     placeholder="Select a trade..."
                     icon={<FileText className="w-5 h-5" />}
+                    clearable={false}
                   />
                 </div>
                 <div ref={titleRef} className="relative">
@@ -744,7 +825,7 @@ export default function PostLead() {
                           type="button"
                           disabled={alreadyUsed}
                           onClick={() => {
-                            const separator = description.trim() ? (description.trim().endsWith('.') || description.trim().endsWith(',') ? ' ' : '. ') : '';
+                            const separator = description.trim() ? (description.trim().endsWith('.') || description.trim().endsWith(',') ? ' ' : ', ') : '';
                             setDescription((prev) => prev.trim() + separator + hint);
                           }}
                           className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
@@ -769,6 +850,15 @@ export default function PostLead() {
                     onChange={(value) => setLocation(value)}
                     placeholder="Where is the job?"
                   />
+                  <label className="mt-2.5 inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={parkingAvailable}
+                      onChange={(e) => setParkingAvailable(e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-gray-700">Parking available on site</span>
+                  </label>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -852,9 +942,19 @@ export default function PostLead() {
                   Get quotes within minutes — we notify nearby tradies instantly.
                 </p>
                 <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-warm-100 rounded-lg">
-                  <span className="text-xs font-semibold text-warm-700">+$4.99 Emergency Fee</span>
+                  <span className="text-xs font-semibold text-warm-700">
+                    {isClientPro
+                      ? 'Pro · Unlimited urgent posts'
+                      : isUrgentAtCap
+                        ? `0 of ${URGENT_FREE_LIMIT} free urgent posts left`
+                        : `${urgentRemaining} of ${URGENT_FREE_LIMIT} free urgent posts left this month`}
+                  </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Helps us notify tradies in your area instantly.</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {isClientPro
+                    ? 'Your Pro membership covers unlimited urgent boosts.'
+                    : 'Free urgent allowance resets on the 1st of each month.'}
+                </p>
               </button>
 
               <button
@@ -891,12 +991,51 @@ export default function PostLead() {
               </button>
             </div>
 
-            {scheduleMode === 'urgent' && (
+            {scheduleMode === 'urgent' && !isUrgentAtCap && (
               <div className="mt-4 bg-gradient-to-r from-warm-50 to-warm-50 border border-warm-200 rounded-xl p-4 flex items-start gap-3 animate-in fade-in duration-300">
                 <Zap className="w-5 h-5 text-warm-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-warm-800">
                   <p className="font-medium mb-0.5">Flash Lead</p>
                   <p>Your lead will be boosted for 4 hours. Nearby tradies get instant notifications.</p>
+                </div>
+              </div>
+            )}
+
+            {scheduleMode === 'urgent' && isUrgentAtCap && (
+              <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 animate-in fade-in duration-300">
+                <div className="flex items-start gap-3">
+                  <Zap className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-amber-900 mb-0.5">
+                      You've used your {URGENT_FREE_LIMIT} free urgent posts this month
+                    </p>
+                    <p className="text-sm text-amber-800 mb-3">
+                      Free allowance resets on the 1st. Upgrade to Pro for unlimited urgent boosts, or pay a one-off fee for this post.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => navigate('/pricing')}
+                        className="inline-flex items-center px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg"
+                      >
+                        Upgrade to Pro
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setError(`One-off urgent boost ($${URGENT_BOOST_PRICE}) — coming soon. Upgrade to Pro for unlimited urgent posts now.`)}
+                        className="inline-flex items-center px-4 py-2 border border-amber-300 text-amber-800 text-sm font-medium rounded-lg hover:bg-amber-100"
+                      >
+                        Pay ${URGENT_BOOST_PRICE} for this post
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setScheduleMode('scheduled')}
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                      >
+                        Switch to Scheduled
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -944,8 +1083,6 @@ export default function PostLead() {
                     {TIME_SLOTS.map((slot) => {
                       const Icon = slot.icon;
                       const isSelected = preferredSlot === slot.key;
-                      const peakInfo = TRADE_PEAK_TIMES[category];
-                      const isPeakSlot = peakInfo?.slot === slot.key;
                       return (
                         <button
                           key={slot.key}
@@ -953,24 +1090,24 @@ export default function PostLead() {
                           onClick={() => setPreferredSlot(slot.key)}
                           className={`relative rounded-xl border-2 p-3 text-center transition-all duration-200 ${
                             isSelected
-                              ? 'border-secondary-400 bg-secondary-50 shadow-md'
-                              : isPeakSlot
-                              ? 'border-secondary-200 bg-secondary-50/30 hover:border-secondary-300'
+                              ? scheduleMode === 'urgent'
+                                ? 'border-emerald-300 bg-emerald-50 shadow-sm'
+                                : 'border-secondary-300 bg-secondary-50 shadow-sm'
                               : 'border-gray-200 bg-white hover:border-secondary-300 hover:bg-secondary-50/30'
                           }`}
                         >
-                          {isPeakSlot && (
+                          {isSelected && (
                             <div className="absolute -top-2 right-2">
-                              <span className="inline-block w-2 h-2 bg-secondary-500 rounded-full" title="Most common for this trade" />
+                              <span className={`inline-block w-2 h-2 rounded-full ${scheduleMode === 'urgent' ? 'bg-emerald-500' : 'bg-secondary-500'}`} title="Your selected time" />
                             </div>
                           )}
                           <Icon className={`w-5 h-5 mx-auto mb-1.5 ${
-                            isSelected ? 'text-secondary-600' : isPeakSlot ? 'text-secondary-400' : 'text-gray-400'
+                            isSelected ? (scheduleMode === 'urgent' ? 'text-emerald-600' : 'text-secondary-600') : 'text-gray-400'
                           }`} />
-                          <div className={`text-sm font-semibold ${isSelected ? 'text-secondary-800' : 'text-gray-700'}`}>
+                          <div className={`text-sm font-semibold ${isSelected ? (scheduleMode === 'urgent' ? 'text-emerald-700' : 'text-secondary-700') : 'text-gray-700'}`}>
                             {slot.label}
                           </div>
-                          <div className="text-xs text-gray-400 mt-0.5">{slot.range}</div>
+                          <div className={`text-xs mt-0.5 ${isSelected ? (scheduleMode === 'urgent' ? 'text-emerald-600' : 'text-secondary-600') : 'text-gray-400'}`}>{slot.range}</div>
                         </button>
                       );
                     })}
@@ -984,6 +1121,42 @@ export default function PostLead() {
                       </p>
                     </div>
                   )}
+
+                  {/* Optional: pin a specific start time + estimated duration. When set,
+                      the job appears as a real time block on the client's and (once
+                      assigned) the tradie's calendar. Left blank, it stays slot-flexible. */}
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
+                      Prefer a specific start time? (optional)
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-2.5">
+                      <input
+                        type="time"
+                        value={specificStartTime}
+                        onChange={(e) => setSpecificStartTime(e.target.value)}
+                        className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-secondary-500 outline-none"
+                      />
+                      <select
+                        value={durationMinutes}
+                        onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                        disabled={!specificStartTime}
+                        className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-secondary-500 outline-none disabled:opacity-50 disabled:bg-gray-50"
+                      >
+                        {DURATION_OPTIONS.map((d) => (
+                          <option key={d.minutes} value={d.minutes}>{d.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {specificStartTime ? (
+                      <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-secondary-700">
+                        <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                        Roughly <span className="font-semibold">{formatTime12(specificStartTime)} – {formatTime12(addMinutesToTime(specificStartTime, durationMinutes))}</span>
+                        <span className="text-gray-400">· your preferred time; the tradie confirms the final window</span>
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-[11px] text-gray-400">Leave blank to keep it flexible — the tradie confirms a time after accepting.</p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -1000,7 +1173,9 @@ export default function PostLead() {
                     onClick={() => setBudgetType('request_quote')}
                     className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
                       budgetType === 'request_quote'
-                        ? 'border-secondary-400 bg-secondary-50 text-secondary-700'
+                        ? scheduleMode === 'urgent'
+                          ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                          : 'border-secondary-300 bg-secondary-50 text-secondary-700'
                         : 'border-gray-200 text-gray-600 hover:border-gray-300'
                     }`}
                   >
@@ -1011,7 +1186,9 @@ export default function PostLead() {
                     onClick={() => setBudgetType('fixed_budget')}
                     className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
                       budgetType === 'fixed_budget'
-                        ? 'border-secondary-400 bg-secondary-50 text-secondary-700'
+                        ? scheduleMode === 'urgent'
+                          ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                          : 'border-secondary-300 bg-secondary-50 text-secondary-700'
                         : 'border-gray-200 text-gray-600 hover:border-gray-300'
                     }`}
                   >
@@ -1052,12 +1229,14 @@ export default function PostLead() {
                       onClick={() => setMaxQuotes(num)}
                       className={`py-2.5 px-4 rounded-xl text-left border-2 transition-all ${
                         maxQuotes === num
-                          ? 'border-secondary-400 bg-secondary-50'
+                          ? scheduleMode === 'urgent'
+                            ? 'border-emerald-300 bg-emerald-50'
+                            : 'border-secondary-300 bg-secondary-50'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
-                      <span className={`block text-sm font-semibold ${maxQuotes === num ? 'text-secondary-700' : 'text-gray-700'}`}>{label}</span>
-                      <span className="block text-xs text-gray-500 mt-0.5">{desc}</span>
+                      <span className={`block text-sm font-semibold ${maxQuotes === num ? (scheduleMode === 'urgent' ? 'text-emerald-700' : 'text-secondary-700') : 'text-gray-700'}`}>{label}</span>
+                      <span className={`block text-xs mt-0.5 ${maxQuotes === num ? (scheduleMode === 'urgent' ? 'text-emerald-600' : 'text-secondary-600') : 'text-gray-500'}`}>{desc}</span>
                     </button>
                   ))}
                 </div>
@@ -1103,7 +1282,7 @@ export default function PostLead() {
                 scheduleMode === 'urgent'
                   ? 'bg-gradient-to-r from-warm-500 to-warm-500 text-white hover:from-warm-600 hover:to-warm-600 shadow-lg shadow-warm-200'
                   : scheduleMode === 'scheduled'
-                  ? 'bg-gradient-to-r from-secondary-500 to-secondary-500 text-white hover:from-secondary-600 hover:to-secondary-600 shadow-lg shadow-secondary-200'
+                  ? 'bg-gradient-to-r from-secondary-400 to-secondary-400 text-white hover:from-secondary-500 hover:to-secondary-500 shadow-lg shadow-secondary-100'
                   : 'bg-gray-200 text-gray-500'
               }`}
             >

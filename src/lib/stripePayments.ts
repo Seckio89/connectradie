@@ -58,7 +58,7 @@ export const PLATFORM_FEE_RATE_FREE = PRICING_CONFIG.tradie.free.platformFee.tie
 /** Platform fee rate for pro-tier tradies — first sliding-scale tier (5%). */
 export const PLATFORM_FEE_RATE_PRO = PRICING_CONFIG.tradie.pro.platformFee.tiers[0].rate;
 
-/** ConnecTradie processing fee (Stripe 1.75% + platform margin 1.2% = 2.95%). */
+/** ConnecTradie processing fee (Stripe + platform margin). Derived from PRICING_CONFIG. */
 export const PROCESSING_FEE_RATE =
   PRICING_CONFIG.processing.stripePercentage +
   PRICING_CONFIG.processing.platformProcessingMargin;
@@ -215,6 +215,27 @@ export async function releaseEscrow(
 }
 
 /**
+ * Translate raw payment-flow errors into a clean user-facing message.
+ * Strips Stripe internal URLs, dev-test-card numbers, and code-y language so
+ * users never see something like "use the 4000000000000077 test card".
+ */
+export function humanizePaymentError(message: string | undefined | null): string {
+  const fallback = "We couldn't process that right now. Please try again — if it keeps failing, contact support.";
+  if (!message) return fallback;
+  const lower = message.toLowerCase();
+  if (lower.includes('insufficient') && lower.includes('fund')) {
+    return "Payment couldn't be released due to a temporary platform balance issue. Please try again shortly — if it keeps failing, contact support.";
+  }
+  if (lower.includes('stripe.com') || lower.includes('test card') || /\b4\d{15}\b/.test(message)) {
+    return fallback;
+  }
+  if (lower.includes('account_invalid') || lower.includes('account_inactive')) {
+    return "The tradie's payout account isn't fully set up. Ask them to complete Stripe onboarding before you release the payment.";
+  }
+  return message;
+}
+
+/**
  * Set a final price on a quote after a site inspection.
  * Handles partial refund (decrease) or pending increase request (increase).
  */
@@ -249,6 +270,61 @@ export async function payPriceIncrease(
   }
 
   return result;
+}
+
+/**
+ * Client: send a bonus (tip) to the tradie after the job is paid and released.
+ * Creates a Stripe Checkout session that routes funds directly to the tradie's Connect account.
+ */
+export async function createBonusPayment(
+  originalPaymentId: string,
+  bonusAmount: number,
+  jobId: string,
+): Promise<{ url: string; paymentId: string }> {
+  const idempotencyKey = generateIdempotencyKey();
+  const result = await callEdgeFunction<{ url: string; paymentId: string }>('create-bonus-payment', {
+    originalPaymentId,
+    bonusAmount,
+    idempotencyKey,
+    successUrl: `${window.location.origin}/payments?bonus=success&job_id=${jobId}`,
+    cancelUrl: `${window.location.origin}/dashboard?bonus=cancelled&job_id=${jobId}`,
+  });
+
+  if (!result.url) {
+    throw new Error('No checkout URL received from create-bonus-payment');
+  }
+
+  return result;
+}
+
+/**
+ * Client: request a reduction on an already-paid payment (e.g. overpaid by mistake).
+ * Writes a pending_reduction onto payment.metadata and notifies the tradie.
+ */
+export async function requestPriceReduction(
+  paymentId: string,
+  newTotal: number,
+  reason?: string,
+): Promise<{ success: boolean; proposedAmount: number; refundAmount: number }> {
+  return callEdgeFunction<{ success: boolean; proposedAmount: number; refundAmount: number }>(
+    'client-request-reduction',
+    { paymentId, newTotal, reason: reason ?? null },
+  );
+}
+
+/**
+ * Tradie: approve or decline a client-requested price reduction.
+ * Approve → issues partial Stripe refund and updates the payment amount.
+ * Decline → clears the pending_reduction from metadata.
+ */
+export async function approvePriceReduction(
+  paymentId: string,
+  approve: boolean,
+): Promise<{ action: 'approved' | 'declined'; refundId?: string; refundAmount?: number; newTotal?: number }> {
+  return callEdgeFunction<{ action: 'approved' | 'declined'; refundId?: string; refundAmount?: number; newTotal?: number }>(
+    'approve-price-reduction',
+    { paymentId, approve },
+  );
 }
 
 /**

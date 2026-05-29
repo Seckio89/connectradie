@@ -1,6 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@14.21.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
+import { calculateProcessingFeeCents, calculatePlatformFee, resolveTradieTier } from '../_shared/pricing.ts';
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
@@ -44,13 +45,10 @@ Deno.serve(async (req) => {
     let event: Stripe.Event;
     try {
       event = await stripe.webhooks.constructEventAsync(body, signature, stripeWebhookSecret);
-    } catch (error: any) {
-      console.error(`Webhook signature verification failed: ${error.message}`);
-      console.error(`Webhook secret starts with: ${stripeWebhookSecret?.slice(0, 10)}...`);
-      console.error(`Webhook secret length: ${stripeWebhookSecret?.length}`);
-      console.error(`Signature starts with: ${signature?.slice(0, 20)}...`);
-      console.error(`Body length: ${body?.length}`);
-      return new Response(JSON.stringify({ error: `Signature verification failed: ${error.message}` }), {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown verification error';
+      console.error(`Webhook signature verification failed: ${message}`);
+      return new Response(JSON.stringify({ error: 'Signature verification failed' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -58,14 +56,16 @@ Deno.serve(async (req) => {
 
     console.info(`Webhook received: ${event.type} (${event.id})`);
 
-    EdgeRuntime.waitUntil(handleEvent(event));
+    // Process synchronously so Stripe retries on failure (don't use EdgeRuntime.waitUntil)
+    await handleEvent(event);
 
     return new Response(JSON.stringify({ received: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
     console.error('Error processing webhook:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -96,7 +96,7 @@ async function handleConnectAccountUpdate(account: Stripe.Account) {
   }
 }
 
-async function handleIdentityVerification(session: any) {
+async function handleIdentityVerification(session: Stripe.Identity.VerificationSession) {
   const userId = session.metadata?.user_id;
   if (!userId) {
     console.warn('No user_id in identity session metadata:', session.id);
@@ -127,6 +127,76 @@ async function handleIdentityVerification(session: any) {
       console.info(`Identity verification requires retry for user ${userId} (session ${session.id})`);
     }
   }
+}
+
+// Settle a paid site-visit call-out fee (3-stage flow). Idempotent: the UPDATE is
+// guarded on status='pending' and returns the affected row, so if both
+// checkout.session.completed and payment_intent.succeeded arrive, only the first
+// flips the quote and sends notifications. Callable from either event handler
+// because book-site-visit stamps the same metadata on the session AND the PI.
+async function markSiteVisitFeePaid(
+  meta: Record<string, string | undefined> | null | undefined,
+  opts: { piId: string | null; amountTotalCents: number | null },
+) {
+  const quoteId = meta?.quote_id;
+  if (!quoteId) return;
+  const tradieId = meta?.tradie_id;
+  const clientId = meta?.client_id;
+  const jobId = meta?.job_id || null;
+  // The client chose the visit window before paying; fall back to "now" only if a
+  // legacy/timeless booking comes through. time_confirmed comes through as a string.
+  const visitStart = meta?.visit_start || new Date().toISOString();
+  const visitEnd = meta?.visit_end || null;
+  const timeConfirmed = meta?.time_confirmed === 'true';
+
+  const { data: updated, error } = await supabase
+    .from('quotes')
+    .update({
+      status: 'site_visit_scheduled',
+      site_visit_scheduled_at: visitStart,
+      site_visit_ends_at: visitEnd,
+      site_visit_time_confirmed: timeConfirmed,
+      site_visit_fee_status: 'paid',
+      site_visit_fee_paid_at: new Date().toISOString(),
+      site_visit_fee_payment_intent_id: opts.piId,
+    })
+    .eq('id', quoteId)
+    .eq('status', 'pending')
+    .select('id');
+
+  if (error) {
+    console.error(`Site-visit fee: failed to update quote ${quoteId}:`, error);
+    return;
+  }
+  if (!updated || updated.length === 0) {
+    console.info(`Site-visit fee: quote ${quoteId} not pending (already settled?); skipping notifications.`);
+    return;
+  }
+
+  if (tradieId) {
+    await supabase.from('notifications').insert({
+      user_id: tradieId,
+      type: 'site_visit_requested',
+      title: 'Site visit booked — call-out fee paid',
+      message: 'A client booked a site visit and paid your call-out fee. Their address has been shared. Complete the visit, then submit your final quote.',
+      job_id: jobId,
+      metadata: { quote_id: quoteId, client_id: clientId ?? null },
+      read: false,
+    });
+  }
+  if (clientId) {
+    const amt = ((opts.amountTotalCents ?? 0) / 100).toFixed(2);
+    await supabase.from('notifications').insert({
+      user_id: clientId,
+      type: 'payment_confirmed',
+      title: 'Site visit booked',
+      message: `Your $${amt} call-out fee is paid and your visit is booked. It'll be credited to your final bill if you go ahead with this tradie.`,
+      job_id: jobId,
+      metadata: { quote_id: quoteId },
+      read: false,
+    });
+  }
+  console.info(`Site-visit fee paid; quote ${quoteId} -> site_visit_scheduled`);
 }
 
 async function handleEvent(event: Stripe.Event) {
@@ -302,7 +372,7 @@ async function handleEvent(event: Stripe.Event) {
   // Handle charge.dispute.created — dispute notification to admin
   if (event.type === 'charge.dispute.created') {
     const dispute = event.data.object as Stripe.Dispute;
-    const chargeId = typeof dispute.charge === 'string' ? dispute.charge : (dispute.charge as any)?.id;
+    const chargeId = typeof dispute.charge === 'string' ? dispute.charge : (dispute.charge as Stripe.Charge)?.id;
     const amount = dispute.amount;
     const reason = dispute.reason;
 
@@ -363,20 +433,62 @@ async function handleEvent(event: Stripe.Event) {
             const siteUrl = Deno.env.get('SITE_URL') || 'https://connectradie.com.au';
             const totalCents = Math.round(Number(invoice.total) * 100);
 
-            const checkoutSession = await stripe.checkout.sessions.create({
+            // Calculate fees for the card fallback
+            const { data: tradieDetails } = await supabase
+              .from('tradie_details')
+              .select('subscription_tier')
+              .eq('profile_id', invoice.tradie_id)
+              .maybeSingle();
+            const fallbackTier = resolveTradieTier(tradieDetails?.subscription_tier);
+            const fallbackProcessingFee = calculateProcessingFeeCents(totalCents);
+            const fallbackPlatformFee = Math.round(calculatePlatformFee(Number(invoice.total), fallbackTier) * 100);
+
+            // Route the card fallback directly to the tradie when their Connect account
+            // is ready. If not, fall back to a legacy (platform-collected) session so the
+            // client can still pay — the checkout.session.completed handler then transfers.
+            const { data: fbConnect } = await supabase
+              .from('profiles')
+              .select('stripe_connect_account_id, stripe_connect_onboarding_complete')
+              .eq('id', invoice.tradie_id)
+              .maybeSingle();
+            const fbDestination = fbConnect?.stripe_connect_onboarding_complete
+              ? fbConnect.stripe_connect_account_id
+              : null;
+
+            const fallbackLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+              { price_data: { currency: 'aud', unit_amount: totalCents, product_data: { name: 'Recurring Service Invoice (Card Fallback)' } }, quantity: 1 },
+            ];
+            if (fallbackProcessingFee > 0) {
+              fallbackLineItems.push({ price_data: { currency: 'aud', unit_amount: fallbackProcessingFee, product_data: { name: 'Secure Processing Fee' } }, quantity: 1 });
+            }
+
+            const fallbackSessionParams: Stripe.Checkout.SessionCreateParams = {
               mode: 'payment',
               payment_method_types: ['card'],
-              line_items: [{ price_data: { currency: 'aud', unit_amount: totalCents, product_data: { name: 'Recurring Service Invoice (Card Fallback)' } }, quantity: 1 }],
+              line_items: fallbackLineItems,
               metadata: {
                 type: 'recurring_invoice',
+                routing: fbDestination ? 'destination' : 'legacy',
                 recurring_job_id: recurringJobId,
                 invoice_id: invoiceId,
                 homeowner_id: invoice.homeowner_id,
                 tradie_id: invoice.tradie_id,
+                platform_fee: String(fallbackPlatformFee),
+                processing_fee: String(fallbackProcessingFee),
+                tradie_tier: fallbackTier,
               },
-              success_url: `${siteUrl}/payments?invoice_paid=true`,
+              success_url: `${siteUrl}/payment-success`,
               cancel_url: `${siteUrl}/payments?invoice_cancelled=true`,
-            });
+            };
+
+            if (fbDestination) {
+              fallbackSessionParams.payment_intent_data = {
+                application_fee_amount: fallbackPlatformFee + fallbackProcessingFee,
+                transfer_data: { destination: fbDestination },
+              };
+            }
+
+            const checkoutSession = await stripe.checkout.sessions.create(fallbackSessionParams);
 
             await supabase
               .from('recurring_invoices')
@@ -430,16 +542,31 @@ async function handleEvent(event: Stripe.Event) {
   if (event.type === 'payment_intent.succeeded') {
     const pi = event.data.object as Stripe.PaymentIntent;
 
+    // Site-visit call-out fee — fallback path in case checkout.session.completed
+    // is delayed or not delivered. Idempotent with the checkout handler.
+    if (pi.metadata?.type === 'site_visit_fee') {
+      try {
+        await markSiteVisitFeePaid(pi.metadata as Record<string, string | undefined>, {
+          piId: pi.id,
+          amountTotalCents: pi.amount,
+        });
+      } catch (err) {
+        console.error('Failed to process site_visit_fee payment_intent.succeeded:', err);
+      }
+      return;
+    }
+
     if (pi.metadata?.type === 'recurring_invoice_becs') {
       const invoiceId = pi.metadata.invoice_id;
       const recurringJobId = pi.metadata.recurring_job_id;
       const tradieId = pi.metadata.tradie_id;
+      const homeownerId = pi.metadata.homeowner_id;
       const platformFeeCents = pi.metadata.platform_fee ? parseInt(pi.metadata.platform_fee, 10) : 0;
       const processingFeeCents = pi.metadata.processing_fee ? parseInt(pi.metadata.processing_fee, 10) : 0;
 
       if (invoiceId) {
         try {
-          // Mark invoice as paid
+          // Mark invoice as paid (only if still in a payable state)
           await supabase
             .from('recurring_invoices')
             .update({
@@ -448,45 +575,112 @@ async function handleEvent(event: Stripe.Event) {
               becs_charge_status: 'succeeded',
               stripe_payment_intent_id: pi.id,
             })
-            .eq('id', invoiceId);
+            .eq('id', invoiceId)
+            .in('status', ['processing', 'sent', 'overdue']);
 
           // Transfer to tradie via Connect
           if (tradieId) {
-            const { data: tradieProfile } = await supabase
-              .from('profiles')
-              .select('stripe_connect_account_id, stripe_connect_onboarding_complete')
-              .eq('id', tradieId)
-              .maybeSingle();
+            // Tri-state outcome so the invoice records WHY the payout didn't land —
+            // the sweep cron (auto-release-recurring-payouts) picks up any held_*
+            // state and retries. Without this, transfer errors silently left the
+            // invoice at payout_status=NULL with no retry path.
+            let payoutOutcome: 'transferred' | 'held_onboarding_incomplete' | 'held_no_connect' | 'held_transfer_error' = 'held_no_connect';
 
-            if (tradieProfile?.stripe_connect_account_id && tradieProfile.stripe_connect_onboarding_complete) {
-              const baseAmount = pi.amount - processingFeeCents;
-              const transferAmount = baseAmount - platformFeeCents;
+            // New model: the charge itself was a destination charge (transfer_data +
+            // application_fee), so funds already routed to the tradie in one step — no
+            // separate transfer needed. Legacy PIs (no routing flag) still need a manual
+            // transfer, kept here for the migration window and any in-flight charges.
+            const routedAtCharge = pi.metadata?.routing === 'destination';
 
-              if (transferAmount > 0) {
-                const transfer = await stripe.transfers.create({
-                  amount: transferAmount,
-                  currency: 'aud',
-                  destination: tradieProfile.stripe_connect_account_id,
-                  transfer_group: `recurring_${recurringJobId}`,
-                  metadata: {
-                    type: 'recurring_invoice_payout',
-                    recurring_job_id: recurringJobId,
-                    tradie_id: tradieId,
-                    platform_fee: String(platformFeeCents),
-                    payment_method: 'au_becs_debit',
-                  },
-                });
-                console.info(`BECS invoice transfer ${transfer.id} of ${transferAmount} cents to tradie ${tradieId}`);
+            if (routedAtCharge) {
+              payoutOutcome = 'transferred';
+            } else {
+              const { data: tradieProfile } = await supabase
+                .from('profiles')
+                .select('stripe_connect_account_id, stripe_connect_onboarding_complete')
+                .eq('id', tradieId)
+                .maybeSingle();
+
+              if (tradieProfile?.stripe_connect_account_id && tradieProfile.stripe_connect_onboarding_complete) {
+                const baseAmount = pi.amount - processingFeeCents;
+                const transferAmount = baseAmount - platformFeeCents;
+
+                if (transferAmount > 0) {
+                  // Isolated try/catch: if the transfer throws, the surrounding
+                  // try block would skip the payout_status write below and the
+                  // invoice would sit at NULL forever. Capture the error here so
+                  // we always reach the flag write.
+                  try {
+                    const transfer = await stripe.transfers.create({
+                      amount: transferAmount,
+                      currency: 'aud',
+                      destination: tradieProfile.stripe_connect_account_id,
+                      transfer_group: `recurring_${recurringJobId}`,
+                      metadata: {
+                        type: 'recurring_invoice_payout',
+                        recurring_job_id: recurringJobId,
+                        tradie_id: tradieId,
+                        platform_fee: String(platformFeeCents),
+                        payment_method: 'au_becs_debit',
+                      },
+                    }, { idempotencyKey: `becs_transfer_${invoiceId}_${pi.id}` });
+                    console.info(`BECS invoice transfer ${transfer.id} of ${transferAmount} cents to tradie ${tradieId}`);
+                    payoutOutcome = 'transferred';
+                  } catch (transferErr) {
+                    const msg = transferErr instanceof Error ? transferErr.message : String(transferErr);
+                    console.error(`BECS transfer FAILED for invoice ${invoiceId} — flagging held_transfer_error for sweep retry: ${msg}`);
+                    payoutOutcome = 'held_transfer_error';
+                  }
+                }
+              } else {
+                // Legacy charge collected funds but the tradie has no completed Connect
+                // account — the payout is stranded in the platform balance. Flag it loudly
+                // so it can be released once onboarding completes.
+                console.warn(
+                  `BECS payout HELD for invoice ${invoiceId}: tradie ${tradieId} has no completed Stripe Connect account ` +
+                  `(account_id=${tradieProfile?.stripe_connect_account_id ?? 'none'}, ` +
+                  `onboarding_complete=${tradieProfile?.stripe_connect_onboarding_complete ?? false}). ` +
+                  `Funds remain in platform balance pending onboarding.`,
+                );
+                payoutOutcome = 'held_no_connect';
               }
             }
 
-            // Notify tradie
+            const payoutTransferred = payoutOutcome === 'transferred';
+
+            // Record payout outcome on the invoice — isolated so a flag write can never
+            // block the payment-confirmation notifications below.
+            try {
+              await supabase
+                .from('recurring_invoices')
+                .update({ payout_status: payoutOutcome })
+                .eq('id', invoiceId);
+            } catch (flagErr) {
+              console.error('Failed to record payout_status (non-fatal):', flagErr);
+            }
+
+            // Notify tradie — message reflects whether the payout actually moved
             const amountDollars = (pi.amount / 100).toFixed(2);
             await supabase.from('notifications').insert({
               user_id: tradieId,
-              title: 'Invoice Paid (Direct Debit)',
-              message: `Your recurring service invoice of $${amountDollars} has been paid via direct debit. Funds are being transferred to your account.`,
-              type: 'payment_received',
+              title: payoutTransferred ? 'Invoice Paid (Direct Debit)' : 'Invoice Paid — Action Needed',
+              message: payoutTransferred
+                ? `Your recurring service invoice of $${amountDollars} has been paid via direct debit. Funds are being transferred to your account.`
+                : `Your recurring service invoice of $${amountDollars} has been paid via direct debit, but we can't release your funds yet because your Stripe payout account isn't set up. Complete your payment setup in Settings to receive this payout.`,
+              type: payoutTransferred ? 'payment_received' : 'payout_blocked',
+              read: false,
+              metadata: { recurring_job_id: recurringJobId, invoice_id: invoiceId },
+            });
+          }
+
+          // Notify client that payment was confirmed
+          if (homeownerId) {
+            const amountStr = (pi.amount / 100).toFixed(2);
+            await supabase.from('notifications').insert({
+              user_id: homeownerId,
+              title: 'Payment Confirmed',
+              message: `Your direct debit payment of $${amountStr} has been successfully processed.`,
+              type: 'payment_confirmed',
               read: false,
               metadata: { recurring_job_id: recurringJobId, invoice_id: invoiceId },
             });
@@ -512,6 +706,18 @@ async function handleEvent(event: Stripe.Event) {
     if (session.mode === 'payment' && session.payment_status === 'paid') {
       console.info(`Processing one-time payment checkout: session=${session.id}, payment_record=${session.metadata?.payment_record_id}`);
       try {
+        // ── Site-visit call-out fee (3-stage flow) ──
+        // The fee was routed to the tradie via the destination charge; here we just
+        // flip the quote to site_visit_scheduled and notify both parties.
+        if (session.metadata?.type === 'site_visit_fee') {
+          const piId = typeof session.payment_intent === 'string' ? session.payment_intent : null;
+          await markSiteVisitFeePaid(session.metadata as Record<string, string | undefined>, {
+            piId,
+            amountTotalCents: session.amount_total ?? null,
+          });
+          return; // handled — skip the generic one-time-payment logic below
+        }
+
         // Insert order record
         const customerId = typeof session.customer === 'string' ? session.customer : null;
         if (customerId) {
@@ -552,13 +758,15 @@ async function handleEvent(event: Stripe.Event) {
           console.info(`Payment record updated for session ${session.id}: ${JSON.stringify(updated)}`);
 
           // --- Send payment confirmed emails to homeowner and tradie ---
+          // Bonus payments are handled separately below (different messaging — no escrow).
           try {
             const amountDollars = ((session.amount_total ?? 0) / 100).toFixed(2);
             const homeownerId = session.metadata?.user_id;
             const jobId = session.metadata?.job_id;
+            const isBonus = session.metadata?.payment_type === 'bonus';
 
             // Look up payment record for tradie_id and homeowner email
-            if (homeownerId) {
+            if (homeownerId && !isBonus) {
               const { data: homeowner } = await supabase
                 .from('profiles')
                 .select('email, full_name')
@@ -598,11 +806,16 @@ async function handleEvent(event: Stripe.Event) {
               if (jobId) {
                 const { data: job } = await supabase
                   .from('jobs')
-                  .select('tradie_id')
+                  .select('tradie_id, budget_amount')
                   .eq('id', jobId)
                   .maybeSingle();
 
                 if (job?.tradie_id) {
+                  // Show tradie the job price only — never include processing fees or GST
+                  const tradieAmount = job.budget_amount
+                    ? job.budget_amount.toFixed(2)
+                    : amountDollars;
+
                   const { data: tradie } = await supabase
                     .from('profiles')
                     .select('email, full_name')
@@ -612,10 +825,10 @@ async function handleEvent(event: Stripe.Event) {
                   await supabase.from('notifications').insert({
                     user_id: job.tradie_id,
                     title: 'Payment Confirmed',
-                    message: `A payment of $${amountDollars} has been confirmed — funds are on the way once the job is approved.`,
+                    message: `A payment of $${tradieAmount} has been confirmed — funds are on the way once the job is approved.`,
                     type: 'payment_received',
                     read: false,
-                    metadata: { job_id: jobId, amount: amountDollars },
+                    metadata: { job_id: jobId, amount: tradieAmount },
                   });
 
                   if (tradie?.email) {
@@ -629,10 +842,10 @@ async function handleEvent(event: Stripe.Event) {
                       },
                       body: JSON.stringify({
                         to: tradie.email,
-                        subject: `Payment of $${amountDollars} Confirmed — Funds on the Way`,
-                        body: `Hi ${tradie.full_name || 'there'},\n\nA payment of $${amountDollars} has been confirmed for your job. Funds will be released to your account once the homeowner approves the completed work.\n\nKeep up the great work!`,
+                        subject: `Payment Confirmed — Funds on the Way`,
+                        body: `Hi ${tradie.full_name || 'there'},\n\nA payment of $${tradieAmount} has been confirmed for your job. Funds will be released to your account once the homeowner approves the completed work.\n\nKeep up the great work!`,
                         notificationType: 'PAYMENT_RECEIVED',
-                        metadata: { amount: `$${amountDollars}`, job_id: jobId },
+                        metadata: { amount: `$${tradieAmount}`, job_id: jobId },
                       }),
                     }).catch((e) => console.error('Failed to send tradie payment email:', e));
                   }
@@ -670,44 +883,90 @@ async function handleEvent(event: Stripe.Event) {
               : 0;
 
             if (tradieId) {
-              try {
-                // Get the tradie's Connect account
-                const { data: tradieProfile } = await supabase
-                  .from('profiles')
-                  .select('stripe_connect_account_id, stripe_connect_onboarding_complete')
-                  .eq('id', tradieId)
-                  .maybeSingle();
+              // New model: destination charge already routed funds to the tradie at payment
+              // time — no separate transfer needed. Legacy sessions (no routing flag) still
+              // need a manual transfer, kept for the migration window.
+              const routedAtCharge = session.metadata?.routing === 'destination';
 
-                if (tradieProfile?.stripe_connect_account_id && tradieProfile?.stripe_connect_onboarding_complete) {
-                  // Calculate transfer: total paid minus processing fee (kept by Stripe) minus platform fee (kept by us)
-                  // session.amount_total includes the processing fee line item
-                  // We need the base service amount minus our platform fee
-                  const processingFeeMeta = session.metadata?.processing_fee
-                    ? parseInt(session.metadata.processing_fee, 10)
-                    : 0;
-                  const baseServiceAmount = (session.amount_total ?? 0) - processingFeeMeta;
-                  const transferAmount = baseServiceAmount - platformFeeCents;
-
-                  if (transferAmount > 0) {
-                    const transfer = await stripe.transfers.create({
-                      amount: transferAmount,
-                      currency: 'aud',
-                      destination: tradieProfile.stripe_connect_account_id,
-                      transfer_group: `recurring_${session.metadata?.recurring_job_id}`,
-                      metadata: {
-                        type: 'recurring_invoice_payout',
-                        recurring_job_id: session.metadata?.recurring_job_id ?? '',
-                        tradie_id: tradieId,
-                        platform_fee: String(platformFeeCents),
-                      },
-                    });
-                    console.info(`Recurring invoice transfer ${transfer.id} of ${transferAmount} cents to tradie ${tradieId} (platform fee: ${platformFeeCents} cents)`);
-                  }
-                } else {
-                  console.warn(`Tradie ${tradieId} has no Connect account — recurring invoice payout skipped`);
+              if (routedAtCharge) {
+                try {
+                  await supabase
+                    .from('recurring_invoices')
+                    .update({ payout_status: 'transferred' })
+                    .eq('stripe_checkout_session_id', session.id);
+                } catch (flagErr) {
+                  console.error('Failed to record payout_status (non-fatal):', flagErr);
                 }
-              } catch (transferErr) {
-                console.error('Error transferring recurring invoice payout to tradie:', transferErr);
+              } else {
+                // Tri-state outcome so the invoice records WHY the payout didn't land —
+                // the sweep cron (auto-release-recurring-payouts) picks up any held_*
+                // state and retries. Without this, transfer errors silently left the
+                // invoice at payout_status=NULL with no retry path.
+                let cardPayoutOutcome: 'transferred' | 'held_no_connect' | 'held_transfer_error' | 'skipped_zero_amount' = 'held_no_connect';
+                try {
+                  // Get the tradie's Connect account
+                  const { data: tradieProfile } = await supabase
+                    .from('profiles')
+                    .select('stripe_connect_account_id, stripe_connect_onboarding_complete')
+                    .eq('id', tradieId)
+                    .maybeSingle();
+
+                  if (tradieProfile?.stripe_connect_account_id && tradieProfile?.stripe_connect_onboarding_complete) {
+                    // Calculate transfer: total paid minus processing fee (kept by Stripe) minus platform fee (kept by us)
+                    // session.amount_total includes the processing fee line item
+                    // We need the base service amount minus our platform fee
+                    const processingFeeMeta = session.metadata?.processing_fee
+                      ? parseInt(session.metadata.processing_fee, 10)
+                      : 0;
+                    const baseServiceAmount = (session.amount_total ?? 0) - processingFeeMeta;
+                    const transferAmount = baseServiceAmount - platformFeeCents;
+
+                    if (transferAmount > 0) {
+                      try {
+                        const transfer = await stripe.transfers.create({
+                          amount: transferAmount,
+                          currency: 'aud',
+                          destination: tradieProfile.stripe_connect_account_id,
+                          transfer_group: `recurring_${session.metadata?.recurring_job_id}`,
+                          metadata: {
+                            type: 'recurring_invoice_payout',
+                            recurring_job_id: session.metadata?.recurring_job_id ?? '',
+                            tradie_id: tradieId,
+                            platform_fee: String(platformFeeCents),
+                          },
+                        }, { idempotencyKey: `checkout_transfer_${session.metadata?.invoice_id}_${session.id}` });
+                        console.info(`Recurring invoice transfer ${transfer.id} of ${transferAmount} cents to tradie ${tradieId} (platform fee: ${platformFeeCents} cents)`);
+                        cardPayoutOutcome = 'transferred';
+                      } catch (innerTransferErr) {
+                        const msg = innerTransferErr instanceof Error ? innerTransferErr.message : String(innerTransferErr);
+                        console.error(`Card recurring transfer FAILED for session ${session.id} — flagging held_transfer_error for sweep retry: ${msg}`);
+                        cardPayoutOutcome = 'held_transfer_error';
+                      }
+                    } else {
+                      cardPayoutOutcome = 'skipped_zero_amount';
+                    }
+                  } else {
+                    console.warn(`Tradie ${tradieId} has no Connect account — recurring invoice payout skipped`);
+                    cardPayoutOutcome = 'held_no_connect';
+                  }
+                } catch (transferErr) {
+                  console.error('Error in card recurring invoice payout block:', transferErr);
+                  cardPayoutOutcome = 'held_transfer_error';
+                }
+
+                // Flag the outcome so the sweep cron can pick up any held state.
+                // 'skipped_zero_amount' intentionally leaves payout_status null —
+                // nothing to release. All other outcomes write a definitive state.
+                if (cardPayoutOutcome !== 'skipped_zero_amount') {
+                  try {
+                    await supabase
+                      .from('recurring_invoices')
+                      .update({ payout_status: cardPayoutOutcome })
+                      .eq('stripe_checkout_session_id', session.id);
+                  } catch (flagErr) {
+                    console.error('Failed to record card payout_status (non-fatal):', flagErr);
+                  }
+                }
               }
 
               // Notify the tradie
@@ -720,21 +979,80 @@ async function handleEvent(event: Stripe.Event) {
                 read: false,
               });
             }
+
+            // Notify the client that payment was confirmed
+            const clientId = session.metadata?.homeowner_id;
+            if (clientId) {
+              const amountStr = ((session.amount_total ?? 0) / 100).toFixed(2);
+              await supabase.from('notifications').insert({
+                user_id: clientId,
+                title: 'Payment Confirmed',
+                message: `Your payment of $${amountStr} has been successfully processed.`,
+                type: 'payment_confirmed',
+                read: false,
+                metadata: { recurring_job_id: session.metadata?.recurring_job_id, invoice_id: session.metadata?.invoice_id },
+              });
+            }
           }
 
-          // If this is a job_funding payment, update job status to 'funded' (escrow held)
-          // Lifecycle: pending → accepted → funded → in_progress → completed
+          // If this is a job_funding payment, auto-start the job (skip 'funded' step)
+          // Lifecycle: pending → accepted → in_progress → completed
           if (session.metadata?.payment_type === 'job_funding' && session.metadata?.job_id) {
+            const jobId = session.metadata.job_id;
             const { error: jobUpdateError } = await supabase
               .from('jobs')
-              .update({ status: 'funded' })
-              .eq('id', session.metadata.job_id)
-              .in('status', ['pending', 'accepted']);
+              .update({ status: 'in_progress' })
+              .eq('id', jobId)
+              .in('status', ['pending', 'accepted', 'funded']);
 
             if (jobUpdateError) {
-              console.error('Error updating job status to funded:', jobUpdateError);
+              console.error('Error updating job status to in_progress:', jobUpdateError);
             } else {
-              console.info(`Job ${session.metadata.job_id} status updated to funded`);
+              console.info(`Job ${jobId} auto-started (status: in_progress)`);
+
+              // Notify the tradie that payment is received and job is active
+              try {
+                const { data: job } = await supabase
+                  .from('jobs')
+                  .select('tradie_id, title, description')
+                  .eq('id', jobId)
+                  .maybeSingle();
+
+                if (job?.tradie_id) {
+                  const jobTitle = job.title || job.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job';
+                  await supabase.from('notifications').insert({
+                    user_id: job.tradie_id,
+                    type: 'job_update',
+                    title: 'Payment Received — Job Active',
+                    message: `Payment has been secured for ${jobTitle}. The job is now active — you can start work.`,
+                    job_id: jobId,
+                    metadata: {},
+                    read: false,
+                  });
+                }
+              } catch (notifyErr) {
+                console.error('Non-fatal: failed to notify tradie:', notifyErr);
+              }
+
+              // Auto-dismiss new_lead/new_job notifications for other tradies
+              try {
+                const { data: staleNotifs } = await supabase
+                  .from('notifications')
+                  .select('id')
+                  .in('type', ['new_lead', 'new_job'])
+                  .is('read_at', null)
+                  .contains('metadata', { job_id: jobId });
+
+                if (staleNotifs && staleNotifs.length > 0) {
+                  await supabase
+                    .from('notifications')
+                    .update({ read_at: new Date().toISOString() })
+                    .in('id', staleNotifs.map(n => n.id));
+                  console.info(`Dismissed ${staleNotifs.length} stale notifications for job ${jobId}`);
+                }
+              } catch (dismissErr) {
+                console.error('Non-fatal: failed to dismiss stale notifications:', dismissErr);
+              }
             }
           }
 
@@ -786,6 +1104,84 @@ async function handleEvent(event: Stripe.Event) {
               console.error('Error handling price_adjustment completion:', adjErr);
             }
           }
+
+          // Bonus payment — client tipped the tradie after the job was released.
+          // Destination charge has already routed funds to the tradie's Connect account,
+          // so we just need to send the right notifications (no escrow, no hold).
+          if (session.metadata?.payment_type === 'bonus') {
+            try {
+              const jobIdBonus = session.metadata?.job_id;
+              const tradieIdBonus = session.metadata?.tradie_id;
+              const clientIdBonus = session.metadata?.user_id;
+              const baseCents = session.metadata?.base_amount ? parseInt(session.metadata.base_amount, 10) : 0;
+              const bonusDollars = (baseCents / 100).toFixed(2);
+              const totalDollars = ((session.amount_total ?? 0) / 100).toFixed(2);
+
+              let jobLabel = 'the job';
+              if (jobIdBonus) {
+                const { data: jobRow } = await supabase
+                  .from('jobs')
+                  .select('title, description')
+                  .eq('id', jobIdBonus)
+                  .maybeSingle();
+                if (jobRow) {
+                  jobLabel = jobRow.title
+                    || jobRow.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ')
+                    || 'the job';
+                }
+              }
+
+              // Notify the tradie — funds already on the way
+              if (tradieIdBonus) {
+                await supabase.from('notifications').insert({
+                  user_id: tradieIdBonus,
+                  title: 'You received a bonus!',
+                  message: `Your client sent you a $${bonusDollars} bonus for ${jobLabel}. Funds are on the way to your payout account.`,
+                  type: 'bonus_received',
+                  job_id: jobIdBonus,
+                  read: false,
+                  metadata: { amount: bonusDollars, job_id: jobIdBonus },
+                });
+
+                const { data: tradieRow } = await supabase
+                  .from('profiles')
+                  .select('email, full_name')
+                  .eq('id', tradieIdBonus)
+                  .maybeSingle();
+
+                if (tradieRow?.email) {
+                  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+                  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+                  await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+                    body: JSON.stringify({
+                      to: tradieRow.email,
+                      subject: `You received a $${bonusDollars} bonus`,
+                      body: `Hi ${tradieRow.full_name || 'there'},\n\nYour client just sent you a $${bonusDollars} bonus for ${jobLabel}. Funds are being transferred straight to your payout account.\n\nThanks for the great work!`,
+                      notificationType: 'BONUS_RECEIVED',
+                      metadata: { amount: `$${bonusDollars}`, job_id: jobIdBonus },
+                    }),
+                  }).catch((e) => console.error('Failed to send tradie bonus email:', e));
+                }
+              }
+
+              // Confirm to the client
+              if (clientIdBonus) {
+                await supabase.from('notifications').insert({
+                  user_id: clientIdBonus,
+                  title: 'Bonus Sent',
+                  message: `Your $${bonusDollars} bonus has been sent. Total charged: $${totalDollars}.`,
+                  type: 'bonus_sent',
+                  job_id: jobIdBonus,
+                  read: false,
+                  metadata: { amount: bonusDollars, job_id: jobIdBonus },
+                });
+              }
+            } catch (bonusErr) {
+              console.error('Non-fatal: bonus notification error:', bonusErr);
+            }
+          }
         }
       } catch (error) {
         console.error('Error processing one-time payment:', error);
@@ -831,7 +1227,7 @@ async function handleEvent(event: Stripe.Event) {
   }
 
   // Skip one-time payment intents (not invoice-linked)
-  if (event.type === 'payment_intent.succeeded' && (event.data.object as any).invoice === null) {
+  if (event.type === 'payment_intent.succeeded' && (event.data.object as Stripe.PaymentIntent).invoice === null) {
     return;
   }
 

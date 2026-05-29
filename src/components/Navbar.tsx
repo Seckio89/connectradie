@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Menu, X, LayoutDashboard, User, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const isTradie = profile?.role === 'tradie';
   const postJobHref = user ? '/dashboard' : '/register?type=client';
@@ -49,48 +50,54 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) =>
-              link.isRoute ? (
-                <Link
-                  key={link.name}
-                  to={link.href}
-                  className="text-gray-300 hover:text-warm-400 font-medium transition-colors"
-                >
+          <div className="hidden md:flex items-center gap-6 h-16">
+            {navLinks.map((link) => {
+              const isActive = link.isRoute && location.pathname === link.href;
+              const className = `relative h-full inline-flex items-center text-base font-medium transition-colors ${
+                isActive
+                  ? 'text-warm-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-warm-500'
+                  : 'text-gray-300 hover:text-warm-400'
+              }`;
+              return link.isRoute ? (
+                <Link key={link.name} to={link.href} className={className}>
                   {link.name}
                 </Link>
               ) : (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  className="text-gray-300 hover:text-warm-400 font-medium transition-colors"
-                >
+                <a key={link.name} href={link.href} className={className}>
                   {link.name}
                 </a>
-              )
-            )}
+              );
+            })}
           </div>
 
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-5 h-16">
             {user ? (
               <>
                 <Link
                   to="/dashboard"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-warm-500 text-white font-semibold rounded-lg hover:bg-warm-600 active:scale-95 transition-all duration-200 shadow-sm hover:shadow-md min-h-[44px]"
+                  className={`relative h-full inline-flex items-center gap-1.5 text-base font-medium transition-colors ${
+                    location.pathname === '/dashboard'
+                      ? 'text-warm-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-warm-500'
+                      : 'text-gray-300 hover:text-warm-400'
+                  }`}
                 >
                   <LayoutDashboard className="w-4 h-4" />
                   Dashboard
                 </Link>
                 <Link
                   to="/settings"
-                  className="px-3 py-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-navy-800 min-h-[44px] inline-flex items-center gap-1.5"
+                  className={`relative h-full inline-flex items-center gap-1.5 text-base font-medium transition-colors ${
+                    location.pathname === '/settings'
+                      ? 'text-warm-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-warm-500'
+                      : 'text-gray-300 hover:text-warm-400'
+                  }`}
                 >
                   <User className="w-4 h-4" />
                   Profile
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="px-3 py-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-navy-800 min-h-[44px] inline-flex items-center gap-1.5"
+                  className="h-full inline-flex items-center gap-1.5 text-base font-medium text-gray-400 hover:text-warm-400 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                   Sign Out
@@ -100,13 +107,13 @@ export default function Navbar() {
               <>
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-gray-300 font-medium hover:text-white transition-all duration-200 hover:bg-navy-800 rounded-lg min-h-[44px] inline-flex items-center"
+                  className="h-full inline-flex items-center text-base font-medium text-gray-300 hover:text-warm-400 transition-colors"
                 >
                   Log In
                 </Link>
                 <Link
                   to="/register"
-                  className="px-5 py-2.5 bg-warm-500 text-white font-semibold rounded-lg hover:bg-warm-600 active:scale-95 transition-all duration-200 shadow-sm hover:shadow-md min-h-[44px] inline-flex items-center"
+                  className="h-full inline-flex items-center text-base font-medium text-warm-400 hover:text-warm-300 transition-colors"
                 >
                   Get Started Free
                 </Link>

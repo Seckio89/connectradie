@@ -45,7 +45,9 @@ type TabKey = 'client' | 'tradie' | 'revenue' | 'subscriptions';
 // Fee structure — from PRICING_CONFIG (src/config/pricing.ts)
 const STRIPE_FEE_RATE = PRICING_CONFIG.processing.stripePercentage; // 1.75%
 const STRIPE_FEE_FIXED = Math.round(PRICING_CONFIG.processing.stripeFixed * 100); // 30 cents in cents
-const PLATFORM_MARGIN_RATE = PRICING_CONFIG.processing.platformProcessingMargin; // 1.2%
+const PLATFORM_MARGIN_RATE = PRICING_CONFIG.processing.platformProcessingMargin;
+const PLATFORM_MARGIN_LABEL = `${(PLATFORM_MARGIN_RATE * 100).toFixed(2).replace(/\.?0+$/, '')}%`;
+const STRIPE_FEE_LABEL = `${(STRIPE_FEE_RATE * 100).toFixed(2).replace(/\.?0+$/, '')}% + $${PRICING_CONFIG.processing.stripeFixed.toFixed(2)}`;
 const DEFAULT_PLATFORM_FEE_RATE = 0.10; // Free-tier base rate for aggregate estimates
 
 export default function AdminPayments() {
@@ -104,8 +106,8 @@ export default function AdminPayments() {
   const completedThisMonth = completedPayments.filter(p => new Date(p.created_at) >= monthStart);
   const grossThisMonth = completedThisMonth.reduce((sum, p) => sum + p.amount, 0);
 
-  // Platform revenue = platform fee (varies by tier) + platform processing margin (1.2%)
-  // For aggregate display, use free-tier base rate (approximate)
+  // Platform revenue = platform fee (varies by tier) + platform processing margin.
+  // For aggregate display, use free-tier base rate (approximate).
   const totalPlatformFees = Math.round(totalGross * DEFAULT_PLATFORM_FEE_RATE);
   const totalPlatformMargin = Math.round(totalGross * PLATFORM_MARGIN_RATE);
   const totalStripeFees = completedPayments.reduce(
@@ -271,11 +273,11 @@ export default function AdminPayments() {
                 <p className="text-sm font-bold text-gray-900">{formatCurrency(totalPlatformFees)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Processing Margin ({(PLATFORM_MARGIN_RATE * 100).toFixed(1)}%)</p>
+                <p className="text-xs text-gray-500">Processing Margin ({PLATFORM_MARGIN_LABEL})</p>
                 <p className="text-sm font-bold text-gray-900">{formatCurrency(totalPlatformMargin)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Stripe Fees ({(STRIPE_FEE_RATE * 100).toFixed(2)}% + $0.30)</p>
+                <p className="text-xs text-gray-500">Stripe Fees ({STRIPE_FEE_LABEL})</p>
                 <p className="text-sm font-bold text-gray-900">{formatCurrency(totalStripeFees)}</p>
               </div>
               <div>
@@ -441,7 +443,7 @@ export default function AdminPayments() {
                 <div className="flex items-start gap-2 px-3 py-2.5 bg-blue-50 border border-blue-200 rounded-lg">
                   <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-blue-800 leading-relaxed">
-                    Estimated payouts after <strong>platform fee (varies by tier)</strong>, <strong>processing margin (1.2%)</strong>, and <strong>Stripe fee (1.75% + $0.30)</strong> are deducted.
+                    Estimated payouts after <strong>platform fee (varies by tier)</strong>, <strong>processing margin ({PLATFORM_MARGIN_LABEL})</strong>, and <strong>Stripe fee ({STRIPE_FEE_LABEL})</strong> are deducted.
                   </p>
                 </div>
               </div>
@@ -525,7 +527,7 @@ export default function AdminPayments() {
               {/* Platform Revenue */}
               <div className="p-4 border-b border-gray-100">
                 <p className="text-xs text-gray-500">
-                  ConnecTradie earns a platform fee (varies by subscription tier) + 1.2% processing margin on each completed payment. Stripe fees (1.75% + $0.30) are paid to Stripe, not ConnecTradie.
+                  ConnecTradie earns a platform fee (varies by subscription tier) + {PLATFORM_MARGIN_LABEL} processing margin on each completed payment. Stripe fees ({STRIPE_FEE_LABEL}) are paid to Stripe, not ConnecTradie.
                 </p>
               </div>
 
@@ -548,7 +550,7 @@ export default function AdminPayments() {
                         <p className="text-xs text-gray-500 mt-1">{formatCurrency(monthPlatformFees)} this month</p>
                       </div>
                       <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                        <p className="text-xs font-medium text-blue-700 mb-1">Processing Margin ({(PLATFORM_MARGIN_RATE * 100).toFixed(1)}%)</p>
+                        <p className="text-xs font-medium text-blue-700 mb-1">Processing Margin ({PLATFORM_MARGIN_LABEL})</p>
                         <p className="text-xl font-bold text-gray-900">{formatCurrency(totalPlatformMargin)}</p>
                         <p className="text-xs text-gray-500 mt-1">{formatCurrency(monthPlatformMargin)} this month</p>
                       </div>

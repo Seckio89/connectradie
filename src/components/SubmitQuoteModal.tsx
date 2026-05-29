@@ -15,12 +15,16 @@ import {
   Calendar,
   Repeat,
   Eye,
+  Car,
+  ShieldCheck,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Job } from '../types/database';
 import { extractSuburb } from '../lib/contactGating';
 import { QUOTE_MESSAGE_OPTIONS, resolveMessageOptionsKey } from '../lib/recurringJobs';
+import { useTradieVerification } from '../hooks/useTradieVerification';
 
 interface QuoteTemplate {
   id: string;
@@ -104,6 +108,9 @@ export default function SubmitQuoteModal({
   const [durationValue, setDurationValue] = useState('');
   const [durationUnit, setDurationUnit] = useState<'hours' | 'days' | 'weeks'>('hours');
   const [durationTBD, setDurationTBD] = useState(false);
+  // Call-out fee (3-stage flow): the client pays this at booking, it's routed to
+  // the tradie, and credited against the final price if they proceed. UI clamp $20-$100.
+  const [callOutFee, setCallOutFee] = useState('40');
   const estimatedDuration = durationTBD
     ? 'TBD after inspection'
     : durationValue
@@ -171,11 +178,20 @@ export default function SubmitQuoteModal({
 
   const categoryRaw = job.description.match(/^\[([^\]]+)\]/)?.[1] || 'Job';
   const category = categoryRaw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  // Verification gate: a tradie must have identity + ABN (and licence, for
+  // licensed trades) before they can submit a quote. See useTradieVerification.
+  const verification = useTradieVerification(categoryRaw === 'Job' ? null : categoryRaw);
   const desc = job.description.replace(/^\[[^\]]+\]\s*/, '');
   const suburb = extractSuburb(job.location_address || '') || 'Unknown area';
   const slotsRemaining = job.max_quotes - job.quote_count;
   const isRecurring = !!(job.title && /ongoing|recurring/i.test(job.title));
   const businessName = tradieDetails?.business_name || profile?.full_name || 'our team';
+
+  // Prefill the call-out fee from the tradie's saved default, if they have one.
+  useEffect(() => {
+    const def = (tradieDetails as { default_call_out_fee_cents?: number | null } | null)?.default_call_out_fee_cents;
+    if (def != null && def > 0) setCallOutFee(String(Math.round(def / 100)));
+  }, [tradieDetails]);
   const tradeType = tradieDetails?.trade_category || category.toLowerCase();
 
   // Resolve which message options to show based on job trade/category
@@ -320,6 +336,11 @@ export default function SubmitQuoteModal({
     const min = useFirmPrice ? parseFloat(firmPrice) : parseFloat(priceMin);
     const max = useFirmPrice ? parseFloat(firmPrice) : parseFloat(priceMax);
 
+    // Call-out fee only applies when a site visit is required. Clamp to $20-$100.
+    const callOutFeeCents = durationTBD
+      ? Math.min(10000, Math.max(2000, Math.round((Number(callOutFee) || 40) * 100)))
+      : null;
+
     const { error: insertError } = await supabase.from('quotes').insert({
       job_id: job.id,
       tradie_id: user.id,
@@ -331,6 +352,7 @@ export default function SubmitQuoteModal({
       includes_materials: includesMaterials,
       proposed_start_date: effectiveStartDate || null,
       requires_site_inspection: durationTBD,
+      call_out_fee_cents: callOutFeeCents,
       status: 'pending',
     });
 
@@ -350,6 +372,22 @@ export default function SubmitQuoteModal({
       return;
     }
 
+    // A site-inspection quote moves this job onto the 3-stage flow (book visit →
+    // final quote → pay), so the client books a paid site visit instead of
+    // depositing the full budget up front. The flip is handled server-side by the
+    // `trg_flip_job_three_stage` trigger on `quotes` (SECURITY DEFINER) — it cannot
+    // be done here because RLS blocks a tradie from updating the client's job row
+    // (tradie_id is NULL on a pending job, so the UPDATE would match zero rows).
+
+    // Remember this call-out fee as the tradie's default for next time (non-critical).
+    if (callOutFeeCents) {
+      await supabase
+        .from('tradie_details')
+        .update({ default_call_out_fee_cents: callOutFeeCents })
+        .eq('profile_id', user.id)
+        .then(undefined, (e) => console.warn('Failed to save default call-out fee:', e));
+    }
+
     // In-app notification is handled by the DB trigger `notify_client_new_quote`
     // (fires on quotes INSERT). No frontend sendNotification needed here.
 
@@ -363,7 +401,8 @@ export default function SubmitQuoteModal({
     setPriceMin('');
     setPriceMax('');
     setFirmPrice('');
-    setUseFirmPrice(false);
+    // Default state has site visit OFF → firm price mode
+    setUseFirmPrice(true);
     setMessage('');
     setDurationValue('');
     setDurationUnit('hours');
@@ -413,10 +452,10 @@ export default function SubmitQuoteModal({
                 </p>
                 <div className="bg-secondary-50 border border-secondary-200 rounded-xl p-4 mb-6 max-w-sm text-left">
                   <p className="text-sm font-semibold text-gray-800 mb-2">What happens next?</p>
-                  <ul className="text-xs text-gray-600 space-y-1.5">
-                    <li className="flex items-start gap-2"><span className="text-secondary-500 mt-0.5">1.</span>The client reviews your quote</li>
-                    <li className="flex items-start gap-2"><span className="text-secondary-500 mt-0.5">2.</span>If accepted, they'll pay into escrow</li>
-                    <li className="flex items-start gap-2"><span className="text-secondary-500 mt-0.5">3.</span>You'll be notified to start the job</li>
+                  <ul className="text-xs text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>1</span>The client reviews your quote</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>2</span>If accepted, they'll pay into escrow</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>3</span>You'll be notified to start the job</li>
                   </ul>
                 </div>
               </>
@@ -427,10 +466,10 @@ export default function SubmitQuoteModal({
                 </p>
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 max-w-sm text-left">
                   <p className="text-sm font-semibold text-blue-900 mb-2">What happens next?</p>
-                  <ul className="text-xs text-blue-800 space-y-1.5">
-                    <li className="flex items-start gap-2"><span className="text-blue-400 mt-0.5">1.</span>The client reviews all incoming quotes</li>
-                    <li className="flex items-start gap-2"><span className="text-blue-400 mt-0.5">2.</span>You'll get a notification when they respond</li>
-                    <li className="flex items-start gap-2"><span className="text-blue-400 mt-0.5">3.</span>Track your quote status in the "My Quotes" tab</li>
+                  <ul className="text-xs text-blue-800 space-y-2">
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>1</span>The client reviews all incoming quotes</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>2</span>You'll get a notification when they respond</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>3</span>Track your quote status in the "My Quotes" tab</li>
                   </ul>
                 </div>
               </>
@@ -444,7 +483,44 @@ export default function SubmitQuoteModal({
           </div>
         )}
 
-        {modalState === 'form' && (
+        {/* Verification gate — replaces the form when the tradie can't quote
+            on this trade. Server-side enforcement also exists in
+            submit-final-quote (defence in depth). */}
+        {modalState === 'form' && !verification.loading && !verification.canQuote && (
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 mx-auto bg-amber-100 rounded-full flex items-center justify-center mb-4">
+              <ShieldCheck className="w-8 h-8 text-amber-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Get verified to quote</h2>
+            <p className="text-sm text-gray-600 mb-5 max-w-sm mx-auto">
+              ConnecTradie verifies every tradie before they can quote — it&apos;s how clients trust the platform.
+              {verification.requiresLicense && (
+                <> This job requires a contractor licence for <span className="font-semibold">{category}</span>.</>
+              )}
+            </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-left mb-5 max-w-sm mx-auto">
+              <p className="text-xs font-semibold text-amber-900 uppercase tracking-wide mb-2">Still required:</p>
+              <ul className="space-y-1.5">
+                {verification.blockingReasons.map(reason => (
+                  <li key={reason} className="text-sm text-amber-900 flex items-start gap-2">
+                    <span className="text-amber-600 mt-0.5">•</span>
+                    <span>{reason}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Link
+              to="/verification"
+              onClick={handleClose}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg text-sm transition-colors"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Go to Verification Center
+            </Link>
+          </div>
+        )}
+
+        {modalState === 'form' && verification.canQuote && (
           <>
             <div className="p-6 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3 mb-4">
@@ -475,7 +551,7 @@ export default function SubmitQuoteModal({
                   </p>
                 )}
                 <p className="text-sm text-gray-700">{desc}</p>
-                <div className="flex items-center gap-4 text-xs text-gray-500">
+                <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
                   <span className="flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
                     {suburb}
@@ -485,6 +561,12 @@ export default function SubmitQuoteModal({
                   ) : (job.budget_type === 'request_quote' || job.budget_type === 'to_be_quoted') ? (
                     <span>Quote requested</span>
                   ) : null}
+                  {typeof job.parking_available === 'boolean' && (
+                    <span className={`flex items-center gap-1 ${job.parking_available ? 'text-emerald-600' : 'text-gray-500'}`}>
+                      <Car className="w-3 h-3" />
+                      {job.parking_available ? 'Parking on site' : 'No parking'}
+                    </span>
+                  )}
                 </div>
 
                 {/* Job Photos */}
@@ -542,7 +624,17 @@ export default function SubmitQuoteModal({
                 onClick={() => {
                   const next = !durationTBD;
                   setDurationTBD(next);
-                  if (next) setDurationValue('');
+                  if (next) {
+                    setDurationValue('');
+                    // Site visit ON → range mode (an honest estimate, not a firm number)
+                    setUseFirmPrice(false);
+                    setFirmPrice('');
+                  } else {
+                    // Site visit OFF → firm price only (no range — tradie can quote upfront)
+                    setUseFirmPrice(true);
+                    setPriceMin('');
+                    setPriceMax('');
+                  }
                 }}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-left ${
                   durationTBD
@@ -581,22 +673,42 @@ export default function SubmitQuoteModal({
                 </div>
               )}
 
+              {durationTBD && (
+                <div className="px-3 py-3 bg-white border border-gray-200 rounded-lg space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Car className="w-4 h-4 text-gray-500" />
+                    <label className="text-sm font-medium text-gray-700">Call-out fee for the visit</label>
+                  </div>
+                  <div className="relative max-w-[140px]">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+                    <input
+                      type="number"
+                      min={20}
+                      max={100}
+                      step={5}
+                      value={callOutFee}
+                      onChange={(e) => setCallOutFee(e.target.value)}
+                      onBlur={() => {
+                        const n = Math.round(Number(callOutFee) || 0);
+                        setCallOutFee(String(Math.min(100, Math.max(20, n))));
+                      }}
+                      className="w-full pl-7 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    The client pays this when they book your visit — it goes to you, and comes off their final bill if they go ahead. $20–$100.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-sm font-medium text-gray-700">
-                    {durationTBD ? 'Estimated Price' : 'Your Price'}
+                    {durationTBD ? 'Estimated Range' : 'Your Price'}
+                    {profile?.is_gst_registered && (
+                      <span className="ml-1.5 text-xs font-normal text-gray-500">(ex. GST)</span>
+                    )}
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => { setUseFirmPrice(!useFirmPrice); setError(''); }}
-                    className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
-                      useFirmPrice
-                        ? 'bg-secondary-100 text-secondary-700'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {useFirmPrice ? 'Firm Price' : 'Switch to Firm Price'}
-                  </button>
                 </div>
 
                 {useFirmPrice ? (
@@ -642,9 +754,31 @@ export default function SubmitQuoteModal({
                 )}
                 {!useFirmPrice && (
                   <p className="mt-1.5 text-xs text-gray-500">
-                    Provide a range. You can firm up later after speaking with the client.
+                    Give your best-case and worst-case estimate. You'll confirm the final price after visiting the site.
                   </p>
                 )}
+                {profile?.is_gst_registered && (() => {
+                  const firm = parseFloat(firmPrice);
+                  const min = parseFloat(priceMin);
+                  const max = parseFloat(priceMax);
+                  if (useFirmPrice && firm > 0) {
+                    return (
+                      <p className="mt-1.5 text-xs text-secondary-600">
+                        Client pays <span className="font-semibold">${(firm * 1.1).toFixed(2)}</span> total
+                        <span className="text-gray-400"> (${firm.toFixed(2)} + ${(firm * 0.1).toFixed(2)} GST)</span>
+                      </p>
+                    );
+                  }
+                  if (!useFirmPrice && min > 0 && max > 0) {
+                    return (
+                      <p className="mt-1.5 text-xs text-secondary-600">
+                        Client pays <span className="font-semibold">${(min * 1.1).toFixed(2)} – ${(max * 1.1).toFixed(2)}</span> total
+                        <span className="text-gray-400"> (incl. 10% GST)</span>
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
                 {priceHint && (
                   <p className="mt-1.5 text-xs text-gray-400">
                     Typical range for similar jobs: ${priceHint.min.toLocaleString()} – ${priceHint.max.toLocaleString()}
@@ -790,7 +924,7 @@ export default function SubmitQuoteModal({
                         onClick={() => setDurationUnit(unit)}
                         className={`px-3 py-2 text-sm capitalize transition-colors ${
                           durationUnit === unit && !durationTBD
-                            ? 'bg-secondary-500 text-white'
+                            ? 'bg-secondary-50 text-secondary-700 border border-secondary-300'
                             : 'bg-white text-gray-600 hover:bg-gray-50'
                         } ${durationTBD ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >

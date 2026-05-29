@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { calculateProcessingFeeCents } from "../_shared/pricing.ts";
+import { calculateProcessingFeeCents, calculateGstCents } from "../_shared/pricing.ts";
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 function checkRateLimit(
   key: string, maxRequests: number, windowMs: number,
@@ -198,6 +198,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const baseAmount = priceConfig.amount;
+    const gst = calculateGstCents(baseAmount);
     const processingFee = calculateProcessingFeeCents(baseAmount);
 
     const { data: paymentRecord, error: insertError } = await supabase.from("payments").insert({
@@ -208,6 +209,7 @@ Deno.serve(async (req: Request) => {
       processing_fee: processingFee,
       currency: "aud",
       status: "pending",
+      metadata: { gst: String(gst) },
     }).select("id").single();
 
     if (insertError) {
@@ -221,6 +223,14 @@ Deno.serve(async (req: Request) => {
           currency: "aud",
           product_data: { name: priceConfig.label },
           unit_amount: baseAmount,
+        },
+        quantity: 1,
+      },
+      {
+        price_data: {
+          currency: "aud",
+          product_data: { name: "GST (10%)" },
+          unit_amount: gst,
         },
         quantity: 1,
       },
@@ -250,6 +260,7 @@ Deno.serve(async (req: Request) => {
           payment_type: paymentType,
           job_id: jobId,
           base_amount: String(baseAmount),
+          gst: String(gst),
           processing_fee: String(processingFee),
         },
       },

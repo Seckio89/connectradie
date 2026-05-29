@@ -48,6 +48,17 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Caller has already passed Supabase JWT verification (verify_jwt=true).
+    // Defence-in-depth: require the bearer be a JWT (starts with 'ey').
+    // We deliberately do NOT byte-compare against env var — the auto-injected
+    // SUPABASE_SERVICE_ROLE_KEY can drift from the vault-stored secret used by
+    // pg_cron after key rotations, and that mismatch silently 401'd everything.
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ey")) {
+      return errorJson("Unauthorized", 401);
+    }
+
     const now = new Date();
     const nowIso = now.toISOString();
 
@@ -224,7 +235,114 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    return jsonResponse(results);
+    // ─── 4. QUOTE REQUEST REMINDERS (24h) ─────────────────────
+    // Remind tradies who were invited to quote but haven't responded.
+    const reminderCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data: staleInvites, error: invErr } = await supabase
+      .from("notifications")
+      .select("id, user_id, metadata, created_at")
+      .eq("type", "new_job")
+      .is("read_at", null)
+      .lt("created_at", reminderCutoff);
+
+    if (invErr) {
+      results.errors.push(`quote_reminder fetch: ${invErr.message}`);
+    }
+
+    let quoteReminders = 0;
+    for (const invite of staleInvites ?? []) {
+      try {
+        const meta = invite.metadata as Record<string, unknown> | null;
+        if (!meta?.invited || meta?.reminder_sent) continue;
+
+        const jobId = meta.job_id as string;
+        if (!jobId) continue;
+
+        // Check job is still pending with no quotes from this tradie
+        const { data: job } = await supabase
+          .from("jobs")
+          .select("id, title, status")
+          .eq("id", jobId)
+          .eq("status", "pending")
+          .maybeSingle();
+
+        if (!job) continue;
+
+        // Check tradie hasn't already quoted
+        const { data: existingQuote } = await supabase
+          .from("quotes")
+          .select("id")
+          .eq("job_id", jobId)
+          .eq("tradie_id", invite.user_id)
+          .maybeSingle();
+
+        if (existingQuote) continue;
+
+        // Send reminder
+        const jobTitle = job.title || "a job";
+        await supabase.from("notifications").insert({
+          user_id: invite.user_id,
+          type: "quote_reminder",
+          title: "Quote Reminder",
+          message: `You were invited to quote on ${jobTitle}. The client is still waiting for your response.`,
+          metadata: { job_id: jobId },
+          read: false,
+        });
+
+        // Mark original invite so we don't remind again
+        await supabase
+          .from("notifications")
+          .update({ metadata: { ...meta, reminder_sent: true } })
+          .eq("id", invite.id);
+
+        quoteReminders++;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        results.errors.push(`quote_reminder: ${msg}`);
+      }
+    }
+
+    // ─── 5. AUTO-DISMISS NOTIFICATIONS FOR TAKEN JOBS ────────
+    // When a job is accepted/funded, mark other tradies' new_lead/new_job notifications as read.
+    const { data: takenJobs, error: takenErr } = await supabase
+      .from("jobs")
+      .select("id")
+      .in("status", ["accepted", "funded", "in_progress", "completed"])
+      .not("tradie_id", "is", null);
+
+    if (takenErr) {
+      results.errors.push(`auto_dismiss fetch: ${takenErr.message}`);
+    }
+
+    let dismissed = 0;
+    if (takenJobs && takenJobs.length > 0) {
+      const takenJobIds = takenJobs.map(j => j.id);
+
+      // Find unread new_lead/new_job notifications for these jobs
+      const { data: staleNotifs, error: staleErr } = await supabase
+        .from("notifications")
+        .select("id, metadata")
+        .in("type", ["new_lead", "new_job"])
+        .is("read_at", null);
+
+      if (staleErr) {
+        results.errors.push(`auto_dismiss stale fetch: ${staleErr.message}`);
+      }
+
+      for (const notif of staleNotifs ?? []) {
+        const meta = notif.metadata as Record<string, unknown> | null;
+        const notifJobId = meta?.job_id as string;
+        if (notifJobId && takenJobIds.includes(notifJobId)) {
+          await supabase
+            .from("notifications")
+            .update({ read_at: nowIso })
+            .eq("id", notif.id);
+          dismissed++;
+        }
+      }
+    }
+
+    return jsonResponse({ ...results, quote_reminders: quoteReminders, dismissed });
   } catch (err) {
     console.error("send-scheduled-notifications error:", err);
     const message = err instanceof Error ? err.message : "Internal server error";

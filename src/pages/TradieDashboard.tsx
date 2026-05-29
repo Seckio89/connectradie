@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Calendar,
+  CalendarDays,
   Users,
   Clock,
   ChevronLeft,
@@ -30,17 +31,22 @@ import {
   MapPin,
   Archive,
   Zap,
+  FileText,
+  Car,
+  ArrowRight,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getAuthHeaders } from '../lib/edgeFn';
 import { useAuth } from '../contexts/AuthContext';
 import { redactSensitiveInfo } from '../lib/redaction';
-import { checkLicenseExpired } from '../lib/utils';
+import { checkLicenseExpired, formatDate } from '../lib/utils';
+import { extractSuburb } from '../lib/contactGating';
 import type { AvailabilitySlot, CalendarIntegration, Job } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
 import BulkAvailabilityModal from '../components/BulkAvailabilityModal';
 import ConversationSettingsModal from '../components/ConversationSettingsModal';
 import JobManagementModal from '../components/JobManagementModal';
+import SubmitQuoteModal from '../components/SubmitQuoteModal';
 import OnboardingChecklist from '../components/OnboardingChecklist';
 import QuoteInsightsWidget from '../components/QuoteInsightsWidget';
 import EmptyState from '../components/EmptyState';
@@ -49,8 +55,8 @@ import CollapsibleSection from '../components/CollapsibleSection';
 import { isPro, FREE_LIMITS, getMonthlyJobAccepts, getMonthlyLeadUnlocks } from '../lib/subscription';
 import UserTradeBadges from '../components/UserTradeBadges';
 import WelcomeGuide from '../components/WelcomeGuide';
-import { getTradieUpcomingSessions } from '../lib/recurringJobs';
-import type { RecurringSession } from '../lib/recurringJobs';
+import { getTradieUpcomingSessions, confirmSession, declineSession, getTradieRecurringJobs } from '../lib/recurringJobs';
+import type { RecurringSession, RecurringJob } from '../lib/recurringJobs';
 import { getActiveAgreements } from '../lib/ongoingServices';
 import type { ServiceAgreement } from '../types/database';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
@@ -183,12 +189,14 @@ export default function TradieDashboard() {
 
   // UI-only state (tabs, modals, calendar)
   const [activeTab, setActiveTab] = useState<TabType>('jobs');
+  const [flashMessages, setFlashMessages] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [calendarView, setCalendarView] = useState<'day' | 'week' | 'month'>('month');
   const [showAddSlot, setShowAddSlot] = useState(false);
   const [showManageMenu, setShowManageMenu] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [confirmClearAll, setConfirmClearAll] = useState(false);
+  const [showAllCompleted, setShowAllCompleted] = useState(false);
 
   // Slot editing
   const [editingSlot, setEditingSlot] = useState<AvailabilitySlot | null>(null);
@@ -238,9 +246,16 @@ export default function TradieDashboard() {
   const [recurringLoading, setRecurringLoading] = useState(false);
   // Ongoing service agreements
   const [agreements, setAgreements] = useState<(ServiceAgreement & { client?: { full_name: string }; tradie?: { full_name: string } })[]>([]);
+  const [recurringJobs, setRecurringJobs] = useState<(RecurringJob & { client?: { full_name: string } | null })[]>([]);
 
   // New leads matching tradie's trade categories
   const [newLeads, setNewLeads] = useState<Job[]>([]);
+  const [quoteModalJob, setQuoteModalJob] = useState<Job | null>(null);
+  const [invitedLeadIds, setInvitedLeadIds] = useState<Set<string>>(new Set());
+
+  // Manual-mode recurring services with completed sessions waiting to be invoiced
+  const [pendingInvoiceCount, setPendingInvoiceCount] = useState(0);
+  const [pendingInvoiceTotal, setPendingInvoiceTotal] = useState(0);
 
   const fetchNewLeads = useCallback(async () => {
     if (!user || !profile) return;
@@ -248,14 +263,41 @@ export default function TradieDashboard() {
       const trades = [...(profile.declared_trades || []), ...(profile.verified_trades || [])];
       if (trades.length === 0) return;
       const uniqueTrades = [...new Set(trades)];
-      // Category is stored as [category] prefix in description, e.g. "[cleaner] Mop floors..."
-      // Build an OR filter matching any of the tradie's trade categories
-      const descriptionFilters = uniqueTrades
+      // Category is stored as [Category] prefix in description, e.g. "[Cleaner] Mop floors..."
+      // Also match legacy lowercase variants (e.g. [cleaning])
+      const PROFESSION_ALTERNATES: Record<string, string[]> = {
+        Cleaner: ['cleaning', 'cleaner'],
+        Plumber: ['plumbing', 'plumber'],
+        Electrician: ['electrical', 'electrician'],
+        Builder: ['building', 'builder'],
+        Painter: ['painting', 'painter'],
+        Landscaper: ['landscaping', 'landscaper', 'gardening', 'gardener'],
+        Carpenter: ['carpentry', 'carpenter'],
+        Roofer: ['roofing', 'roofer'],
+        Concreter: ['concreting', 'concreter'],
+        Bricklayer: ['bricklaying', 'bricklayer'],
+        Fencer: ['fencing', 'fencer'],
+        Tiler: ['tiling', 'tiler'],
+        Handyman: ['handyman'],
+        Glazier: ['glazing', 'glazier'],
+        Plasterer: ['plastering', 'plasterer'],
+        Renderer: ['rendering', 'renderer'],
+        HVAC: ['hvac', 'air conditioning'],
+        'Pest Control': ['pest control', 'pest'],
+        Locksmith: ['locksmith'],
+      };
+      const allVariants = new Set<string>();
+      for (const t of uniqueTrades) {
+        allVariants.add(t);
+        const alts = PROFESSION_ALTERNATES[t];
+        if (alts) alts.forEach(a => allVariants.add(a));
+      }
+      const descriptionFilters = [...allVariants]
         .map((t) => `description.ilike.[${t}]%`)
         .join(',');
       const { data, error } = await supabase
         .from('jobs')
-        .select('*')
+        .select('*, profiles!jobs_client_id_fkey(full_name)')
         .eq('status', 'pending')
         .is('tradie_id', null)
         .is('archived_at', null)
@@ -281,7 +323,25 @@ export default function TradieDashboard() {
         if (stored) dismissedIds = new Set(JSON.parse(stored));
       } catch { /* ignore */ }
 
-      setNewLeads(data.filter(j => !quotedIds.has(j.id) && !dismissedIds.has(j.id)).slice(0, 5));
+      const filteredLeads = data.filter(j => !quotedIds.has(j.id) && !dismissedIds.has(j.id)).slice(0, 5);
+      setNewLeads(filteredLeads);
+
+      // Check for quote invitations (jobs where client specifically invited this tradie)
+      if (filteredLeads.length > 0) {
+        const { data: inviteNotifs } = await supabase
+          .from('notifications')
+          .select('metadata')
+          .eq('user_id', user.id)
+          .in('type', ['new_job', 'quote_reminder'])
+          .in('metadata->>job_id', filteredLeads.map(l => l.id));
+
+        const invitedJobIds = new Set<string>();
+        for (const n of inviteNotifs || []) {
+          const meta = n.metadata as Record<string, unknown> | null;
+          if (meta?.invited || meta?.job_id) invitedJobIds.add(meta.job_id as string);
+        }
+        setInvitedLeadIds(invitedJobIds);
+      }
     } catch (err) {
       console.error('fetchNewLeads error:', err);
     }
@@ -337,15 +397,34 @@ export default function TradieDashboard() {
     if (!user) return;
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const [totalResult, monthResult, pendingResult] = await Promise.all([
-      supabase.from('payments').select('amount').eq('profile_id', user.id).eq('status', 'completed'),
-      supabase.from('payments').select('amount').eq('profile_id', user.id).eq('status', 'completed').gte('created_at', monthStart),
-      supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('tradie_id', user.id).in('status', ['accepted', 'in_progress']),
+
+    // Get tradie's jobs, then find payments for those jobs
+    const { data: tradieJobs } = await supabase
+      .from('jobs')
+      .select('id, status, budget_amount')
+      .eq('tradie_id', user.id);
+
+    const jobIds = (tradieJobs || []).map(j => j.id);
+    const activeCount = (tradieJobs || []).filter(j => ['accepted', 'in_progress', 'funded'].includes(j.status)).length;
+
+    if (jobIds.length === 0) {
+      setEarnings({ total: 0, thisMonth: 0, pendingJobs: activeCount });
+      return;
+    }
+
+    const [totalResult, monthResult] = await Promise.all([
+      supabase.from('payments').select('amount').in('job_id', jobIds).eq('payment_type', 'job_funding').in('status', ['completed', 'released']),
+      supabase.from('payments').select('amount').in('job_id', jobIds).eq('payment_type', 'job_funding').in('status', ['completed', 'released']).gte('created_at', monthStart),
     ]);
+
+    // Convert cents to dollars
+    const totalCents = (totalResult.data || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+    const monthCents = (monthResult.data || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+
     setEarnings({
-      total: (totalResult.data || []).reduce((sum, p) => sum + (p.amount || 0), 0),
-      thisMonth: (monthResult.data || []).reduce((sum, p) => sum + (p.amount || 0), 0),
-      pendingJobs: pendingResult.count || 0,
+      total: Math.round(totalCents) / 100,
+      thisMonth: Math.round(monthCents) / 100,
+      pendingJobs: activeCount,
     });
   }, [user]);
 
@@ -389,6 +468,66 @@ export default function TradieDashboard() {
   useEffect(() => {
     setPushStatus(getPushPermissionStatus());
   }, []);
+
+  // Count completed sessions on manual-mode recurring jobs that aren't yet invoiced.
+  // Auto-mode jobs are excluded — the cron handles those.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data: manualJobs } = await supabase
+        .from('recurring_jobs')
+        .select('id, agreed_price')
+        .eq('tradie_id', user.id)
+        .eq('auto_invoice', false)
+        .eq('is_active', true)
+        .is('cancelled_at', null);
+      if (!manualJobs || manualJobs.length === 0) {
+        if (!cancelled) { setPendingInvoiceCount(0); setPendingInvoiceTotal(0); }
+        return;
+      }
+      const jobIds = manualJobs.map(j => j.id);
+      const priceByJob = new Map(manualJobs.map(j => [j.id, Number(j.agreed_price) || 0]));
+
+      const { data: sessions } = await supabase
+        .from('recurring_sessions')
+        .select('id, recurring_job_id, scheduled_date, extra_cost, supply_cost')
+        .in('recurring_job_id', jobIds)
+        .in('status', ['completed', 'extra']);
+      if (!sessions || sessions.length === 0) {
+        if (!cancelled) { setPendingInvoiceCount(0); setPendingInvoiceTotal(0); }
+        return;
+      }
+
+      const { data: invoices } = await supabase
+        .from('recurring_invoices')
+        .select('recurring_job_id, billing_period_start, billing_period_end')
+        .in('recurring_job_id', jobIds)
+        .in('status', ['sent', 'overdue', 'paid']);
+      const invoicesByJob = new Map<string, { start: string; end: string }[]>();
+      (invoices ?? []).forEach(inv => {
+        const arr = invoicesByJob.get(inv.recurring_job_id) ?? [];
+        arr.push({ start: inv.billing_period_start, end: inv.billing_period_end });
+        invoicesByJob.set(inv.recurring_job_id, arr);
+      });
+
+      let count = 0;
+      let total = 0;
+      sessions.forEach(s => {
+        const periods = invoicesByJob.get(s.recurring_job_id) ?? [];
+        const covered = periods.some(p => s.scheduled_date >= p.start && s.scheduled_date <= p.end);
+        if (covered) return;
+        count += 1;
+        total += (priceByJob.get(s.recurring_job_id) ?? 0) + (Number(s.extra_cost) || 0) + (Number(s.supply_cost) || 0);
+      });
+
+      if (!cancelled) {
+        setPendingInvoiceCount(count);
+        setPendingInvoiceTotal(total);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   useEffect(() => {
     const isAnyModalOpen = !!(editingSlot || confirmClearAll || showAddSlotForDay || showDeleteConfirm);
@@ -437,6 +576,9 @@ export default function TradieDashboard() {
       fetchRecurringSessions();
       fetchNewLeads();
       getActiveAgreements(user.id, 'tradie').then(setAgreements).catch(() => { /* ignore */ });
+      getTradieRecurringJobs(user.id)
+        .then(jobs => setRecurringJobs(jobs.filter(j => j.is_active) as (RecurringJob & { client?: { full_name: string } | null })[]))
+        .catch(() => { /* ignore */ });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, tradieDetails?.subscription_tier, currentDate]);
@@ -720,9 +862,87 @@ export default function TradieDashboard() {
           </div>
         )}
 
+        {/* Pending Ongoing Service Requests — prominent, actionable */}
+        {(() => {
+          const pendingConfirmations = recurringSessions.filter(s => s.status === 'pending_confirmation');
+          if (pendingConfirmations.length === 0) return null;
+          return (
+            <div className="bg-white rounded-xl border-2 border-amber-300 shadow-sm p-5 mt-6 mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertCircle className="w-5 h-5 text-amber-500" />
+                <h3 className="text-sm font-bold text-gray-900">New Service Request{pendingConfirmations.length !== 1 ? 's' : ''} Awaiting Your Response</h3>
+                <span className="ml-auto px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full">
+                  {pendingConfirmations.length}
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 mb-4">Confirm or decline these ongoing service visits. Auto-confirms in 48h if no action.</p>
+              <div className="space-y-3">
+                {pendingConfirmations.map((s) => {
+                  const tradeLabel = (s.recurring_job?.service_subtype || s.recurring_job?.trade_category || 'Service')
+                    .replace(/_/g, ' ')
+                    .replace(/\b\w/g, (c) => c.toUpperCase());
+                  const dateLabel = new Date(s.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', {
+                    weekday: 'short', day: 'numeric', month: 'short',
+                  });
+                  const time = s.recurring_job?.preferred_time ? s.recurring_job.preferred_time.slice(0, 5) : null;
+                  return (
+                    <div key={s.id} className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900">{tradeLabel}</p>
+                          <p className="text-xs text-gray-600 mt-0.5">
+                            {dateLabel}{time ? ` · ${time}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={async () => {
+                            try {
+                              await confirmSession(s.id);
+                              await fetchRecurringSessions();
+                            } catch (err) {
+                              console.error('Failed to confirm session:', err);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors"
+                        >
+                          <CheckCircle2 className="w-3 h-3" />
+                          Confirm
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm('Decline this visit? The client will be notified.')) return;
+                            try {
+                              await declineSession(s.id);
+                              await fetchRecurringSessions();
+                            } catch (err) {
+                              console.error('Failed to decline session:', err);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+                        >
+                          <XCircle className="w-3 h-3" />
+                          Decline
+                        </button>
+                        <Link
+                          to="/schedule"
+                          className="text-xs text-gray-500 hover:text-gray-700 font-medium ml-auto"
+                        >
+                          View details &rarr;
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Your Next Steps */}
         {(() => {
-          const pendingJobs = jobs.filter(j => j.status === 'pending' && !quotedJobIds.has(j.id));
+          const pendingJobs = jobs.filter(j => j.status === 'pending' && !quotedJobIds.has(j.id) && j.quoting_status !== 'awarded');
           const inProgressJobs = jobs.filter(j => j.status === 'in_progress');
           const unreadConvos = conversations.filter(c => c.messages.some(m => m.receiver_id === user?.id && !m.read_at));
           const pendingConfirmations = recurringSessions.filter(s => s.status === 'pending_confirmation');
@@ -735,6 +955,7 @@ export default function TradieDashboard() {
               <p className="text-xs text-emerald-600 mt-1">No pending actions. Check back later for new leads.</p>
             </div>
           );
+          if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0) return null;
           return (
             <div className="bg-white rounded-xl border border-gray-200 p-4 mt-6 mb-2">
               <div className="flex items-center justify-between mb-3">
@@ -743,19 +964,10 @@ export default function TradieDashboard() {
                   Your Next Steps
                 </p>
                 <span className="bg-amber-100 text-amber-700 text-xs font-medium px-2 py-0.5 rounded-full">
-                  {newLeads.length + pendingJobs.length + inProgressJobs.length + unreadConvos.length + pendingConfirmations.length}
+                  {pendingJobs.length + inProgressJobs.length + unreadConvos.length + pendingConfirmations.length}
                 </span>
               </div>
               <div className="space-y-2">
-                {newLeads.length > 0 && (
-                  <Link to="/work" className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Zap className="w-4 h-4 text-amber-500" />
-                      <span className="text-sm text-gray-700">{newLeads.length} new lead{newLeads.length !== 1 ? 's' : ''} matching your trades</span>
-                    </div>
-                    <span className="text-sm font-medium text-amber-700">View &rarr;</span>
-                  </Link>
-                )}
                 {pendingConfirmations.length > 0 && (
                   <Link to="/schedule" className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors">
                     <div className="flex items-center gap-3">
@@ -768,37 +980,54 @@ export default function TradieDashboard() {
                 {pendingJobs.length > 0 && (
                   <button onClick={() => {
                     setActiveTab('jobs');
-                    const firstPending = pendingJobs[0];
-                    if (firstPending) {
-                      setSelectedJob(firstPending.id);
+                    // Only auto-open the management modal when there's a single job —
+                    // otherwise drop the tradie on the Jobs tab so they can pick which
+                    // one to action instead of being railroaded into the first.
+                    if (pendingJobs.length === 1) {
+                      setSelectedJob(pendingJobs[0].id);
                       setShowJobManagement(true);
+                    } else {
+                      // Default tab is already 'jobs', so the click is otherwise a no-op
+                      // visually — scroll the cards into view so the tradie can see them.
+                      setTimeout(() => {
+                        document.querySelector('[data-tour="jobs-tab"]')
+                          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 50);
                     }
                   }} className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex items-center gap-3">
                       <Briefcase className="w-4 h-4 text-blue-500" />
                       <span className="text-sm text-gray-700">{pendingJobs.length} pending job{pendingJobs.length !== 1 ? 's' : ''} to review</span>
                     </div>
-                    <span className="text-sm font-medium text-emerald-600">View &rarr;</span>
+                    <span className="text-sm font-medium text-emerald-600">
+                      {pendingJobs.length === 1 ? 'View' : 'See all'} &rarr;
+                    </span>
                   </button>
                 )}
                 {inProgressJobs.length > 0 && (
                   <button onClick={() => {
                     setActiveTab('jobs');
-                    const firstInProgress = inProgressJobs[0];
-                    if (firstInProgress) {
-                      setSelectedJob(firstInProgress.id);
+                    if (inProgressJobs.length === 1) {
+                      setSelectedJob(inProgressJobs[0].id);
                       setShowJobManagement(true);
+                    } else {
+                      setTimeout(() => {
+                        document.querySelector('[data-tour="jobs-tab"]')
+                          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 50);
                     }
                   }} className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex items-center gap-3">
                       <Clock className="w-4 h-4 text-blue-500" />
                       <span className="text-sm text-gray-700">{inProgressJobs.length} job{inProgressJobs.length !== 1 ? 's' : ''} in progress</span>
                     </div>
-                    <span className="text-sm font-medium text-emerald-600">View &rarr;</span>
+                    <span className="text-sm font-medium text-emerald-600">
+                      {inProgressJobs.length === 1 ? 'View' : 'See all'} &rarr;
+                    </span>
                   </button>
                 )}
                 {unreadConvos.length > 0 && (
-                  <button onClick={() => setActiveTab('messages')} className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <button onClick={() => { setActiveTab('messages'); setFlashMessages(true); setTimeout(() => setFlashMessages(false), 2000); }} className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex items-center gap-3">
                       <MessageSquare className="w-4 h-4 text-emerald-500" />
                       <span className="text-sm text-gray-700">{unreadConvos.length} unread message{unreadConvos.length !== 1 ? 's' : ''}</span>
@@ -811,79 +1040,215 @@ export default function TradieDashboard() {
           );
         })()}
 
-        {/* Ongoing Services shortcut → Work Hub */}
-        <div className="mt-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <RefreshCw className="w-4 h-4 text-emerald-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Ongoing Services</h2>
-            {(agreements.length > 0 || recurringSessions.length > 0) && (
-              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                {agreements.length + recurringSessions.length}
-              </span>
-            )}
-          </div>
-          <Link
-            to="/work?tab=services"
-            className="text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
-          >
-            View all in Work Hub →
-          </Link>
-        </div>
+        {/* Ongoing Services are now shown inside the Jobs tab */}
 
-        {/* New Leads */}
-        {newLeads.length > 0 && (
-          <div className="bg-white rounded-2xl border border-amber-200 p-5 mt-6 mb-2 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-amber-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900">New Leads</h3>
-                  <p className="text-xs text-gray-500">Jobs matching your trades</p>
-                </div>
+        {/* Invoices ready to send */}
+        {pendingInvoiceCount > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-5 h-5 text-amber-700" />
               </div>
-              <Link to="/work" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-                View all &rarr;
-              </Link>
+              <div>
+                <p className="text-sm font-semibold text-amber-900">
+                  {pendingInvoiceCount} {pendingInvoiceCount === 1 ? 'session' : 'sessions'} ready to invoice
+                </p>
+                <p className="text-xs text-amber-700">
+                  ~${pendingInvoiceTotal.toLocaleString()} waiting · review and send to get paid
+                </p>
+              </div>
             </div>
-            <div className="space-y-2">
-              {newLeads.map(lead => {
-                const isUrgent = !!(lead as Record<string, unknown>).is_flash_boost;
-                return (
-                  <Link
-                    key={lead.id}
-                    to="/work"
-                    className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
-                      isUrgent ? 'bg-orange-50 border border-orange-200 hover:bg-orange-100' : 'bg-gray-50 hover:bg-gray-100'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      {isUrgent ? (
-                        <Zap className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                      ) : (
-                        <Briefcase className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-sm text-gray-800 font-medium truncate">
-                          {lead.title || lead.trade_category?.replace(/_/g, ' ') || 'New Job'}
-                          {isUrgent && <span className="ml-2 text-xs text-orange-600 font-semibold">URGENT</span>}
-                        </p>
-                        {lead.location_address && (
-                          <p className="text-xs text-gray-500 truncate flex items-center gap-1">
-                            <MapPin className="w-3 h-3 flex-shrink-0" />
-                            {lead.location_address}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-sm font-medium text-emerald-600 flex-shrink-0">Quote &rarr;</span>
-                  </Link>
-                );
-              })}
-            </div>
+            <button
+              onClick={() => navigate('/work?tab=services')}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg transition-colors"
+            >
+              Review &amp; Send
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         )}
+
+        {/* New Leads */}
+        {(() => {
+          if (newLeads.length === 0) return null;
+          const dismissLead = (leadId: string) => {
+            try {
+              const stored = localStorage.getItem('dismissed_leads');
+              const set = new Set<string>(stored ? JSON.parse(stored) : []);
+              set.add(leadId);
+              localStorage.setItem('dismissed_leads', JSON.stringify([...set]));
+            } catch { /* ignore */ }
+            setNewLeads(prev => prev.filter(l => l.id !== leadId));
+
+            // Persist the pass so the nudge cron skips this tradie and the
+            // dismissal survives across devices. Best-effort — UI already
+            // updated optimistically above.
+            if (user) {
+              supabase
+                .from('lead_impressions')
+                .upsert(
+                  { job_id: leadId, tradie_id: user.id, passed_at: new Date().toISOString(), pass_reason: 'manual' },
+                  { onConflict: 'job_id,tradie_id' },
+                )
+                .then(({ error }) => { if (error) console.error('Failed to persist pass:', error); });
+            }
+          };
+          const extractCategory = (description: string) => {
+            const match = description.match(/^\[([^\]]+)\]/);
+            if (!match) return null;
+            return match[1].replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          };
+          const cleanDescription = (description: string) => description.replace(/^\[[^\]]+\]\s*/, '');
+
+          return (
+            <div className="mt-6 mb-2">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">New Leads</h3>
+                    <p className="text-xs text-gray-500">Jobs matching your trades</p>
+                  </div>
+                </div>
+                <Link to="/work" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                  View all &rarr;
+                </Link>
+              </div>
+              <div className="space-y-3">
+                {newLeads.map(lead => {
+                  const isFlashActive = !!lead.is_flash_boost && !!lead.flash_expiry && new Date(lead.flash_expiry) > new Date();
+                  const isUrgent = lead.priority === 'high';
+                  const isInvited = invitedLeadIds.has(lead.id);
+                  const category = extractCategory(lead.description);
+                  const desc = cleanDescription(lead.description);
+                  const title = (lead.title || category || 'Untitled Job').replace(/_/g, ' ');
+                  const clientName = (lead.profiles?.full_name || 'Client').split(' ')[0];
+                  return (
+                    <div
+                      key={lead.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => navigate(`/work?job=${lead.id}`)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/work?job=${lead.id}`); } }}
+                      className={`rounded-2xl overflow-hidden transition-all cursor-pointer ${
+                        isFlashActive
+                          ? 'border border-warm-200 bg-white shadow-md hover:shadow-xl ring-1 ring-warm-100'
+                          : isUrgent
+                          ? 'border border-red-200 bg-white shadow-md hover:shadow-xl'
+                          : isInvited
+                          ? 'border border-secondary-200 bg-white shadow-sm hover:shadow-md'
+                          : 'border border-gray-200 bg-white shadow-sm hover:shadow-lg hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex">
+                        <div className={`w-1.5 flex-shrink-0 ${
+                          isFlashActive ? 'bg-warm-500'
+                          : isUrgent ? 'bg-red-400'
+                          : isInvited ? 'bg-secondary-400'
+                          : 'bg-primary-400'
+                        }`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="px-5 py-4">
+                            <div className="flex items-start justify-between gap-3 mb-2">
+                              <h3 className="text-base font-bold text-gray-900 leading-snug capitalize">{title}</h3>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                {isInvited && (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-secondary-50 text-secondary-700 rounded-full text-[11px] font-semibold border border-secondary-200">
+                                    Invited
+                                  </span>
+                                )}
+                                {isFlashActive && (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-warm-500 text-white rounded-full text-[11px] font-bold shadow-sm animate-pulse">
+                                    <Zap className="w-3 h-3" />
+                                    Flash
+                                  </span>
+                                )}
+                                {!isFlashActive && isUrgent && (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-50 text-red-700 rounded-full text-[11px] font-semibold border border-red-200">
+                                    <Zap className="w-3 h-3" />
+                                    Urgent
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <p className="text-sm text-gray-500 mb-3 line-clamp-2 leading-relaxed">{desc}</p>
+
+                            <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap text-xs text-gray-500">
+                              {category && (
+                                <span className="inline-flex items-center gap-1 text-gray-600 font-medium">
+                                  <Briefcase className="w-3 h-3 text-gray-400" />
+                                  {category}
+                                </span>
+                              )}
+                              {lead.location_address && (
+                                <span className="inline-flex items-center gap-1">
+                                  <MapPin className="w-3 h-3 text-gray-400" />
+                                  {extractSuburb(lead.location_address) || 'Nearby'}
+                                </span>
+                              )}
+                              {lead.scheduled_date && (
+                                <span className="inline-flex items-center gap-1">
+                                  <CalendarDays className="w-3 h-3 text-secondary-500" />
+                                  <span className="text-secondary-700 font-medium">
+                                    {new Date(lead.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                                  </span>
+                                </span>
+                              )}
+                              {lead.budget_amount ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">
+                                  Budget ${lead.budget_amount.toLocaleString()}
+                                </span>
+                              ) : lead.budget_type === 'request_quote' ? (
+                                <span className="inline-flex items-center gap-1 text-blue-600 font-medium">
+                                  <FileText className="w-3 h-3" />
+                                  Quote Requested
+                                </span>
+                              ) : null}
+                              {typeof lead.parking_available === 'boolean' && (
+                                <span className={`inline-flex items-center gap-1 font-medium ${lead.parking_available ? 'text-emerald-600' : 'text-gray-500'}`}>
+                                  <Car className="w-3 h-3" />
+                                  {lead.parking_available ? 'Parking on site' : 'No parking'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                            <span className="text-xs text-gray-400">
+                              Posted by {clientName} · {formatDate(lead.created_at)}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => dismissLead(lead.id)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+                              >
+                                <XCircle className="w-3.5 h-3.5" />
+                                Pass
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (isLicenseExpired) { navigate(`/work?job=${lead.id}`); return; }
+                                  setQuoteModalJob(lead);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-5 py-1.5 rounded-lg text-xs font-semibold bg-warm-500 text-white hover:bg-warm-600 shadow-sm transition-all"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                Submit Quote
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Tabbed Content */}
         <div className="bg-white rounded-2xl border border-gray-200 mb-6 shadow-sm mt-6 ring-1 ring-primary-100/50" data-tour="jobs-tab">
@@ -920,29 +1285,156 @@ export default function TradieDashboard() {
 
               return (
               <div>
-                {/* ─── Active Jobs ─── */}
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-gray-900">Active Jobs</h2>
-                  <Link to="/work?tab=active" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-                    View all in Work Hub &rarr;
-                  </Link>
-                </div>
-                {activeJobs.length === 0 ? (
-                  <div>
-                    <EmptyState
-                      icon={Briefcase}
-                      title="No Active Jobs"
-                      description="Set up your calendar so clients can find and book you for their next project."
-                      actionLabel="Set Your Availability"
-                      onAction={() => navigate('/schedule')}
-                    />
-                    <div className="text-center mt-3 pb-2">
-                      <Link to="/work?tab=recruitment" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-                        Or post a vacancy to find staff &rarr;
-                      </Link>
+                {/* ─── Ongoing Services (inside Jobs tab) ─── */}
+                {(() => {
+                  type OngoingItem = { key: string; label: string; clientName: string; rate: number | null; nextDate: string | null; nextSortKey: number };
+                  const items: OngoingItem[] = [];
+                  const seenClientCategory = new Set<string>();
+                  const FAR_FUTURE = Number.MAX_SAFE_INTEGER;
+
+                  const toSortKey = (iso: string | null | undefined) =>
+                    iso ? new Date(iso + 'T00:00:00').getTime() : FAR_FUTURE;
+
+                  for (const ag of agreements) {
+                    const nextSession = recurringSessions.find(s =>
+                      s.recurring_job?.client_id === ag.client_id && s.recurring_job?.trade_category === ag.trade_category
+                    );
+                    const nextIso = nextSession?.scheduled_date || null;
+                    items.push({
+                      key: `ag-${ag.id}`,
+                      label: (ag.title || ag.trade_category || '').replace(/_/g, ' '),
+                      clientName: ag.client?.full_name || 'Client',
+                      rate: ag.rate_per_visit || null,
+                      nextDate: nextIso
+                        ? new Date(nextIso + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+                        : null,
+                      nextSortKey: toSortKey(nextIso),
+                    });
+                    seenClientCategory.add(`${ag.client_id}|${ag.trade_category}`);
+                  }
+
+                  for (const rj of recurringJobs) {
+                    if (seenClientCategory.has(`${rj.client_id}|${rj.trade_category}`)) continue;
+                    const nextSession = recurringSessions.find(s => s.recurring_job_id === rj.id);
+                    const nextIso = nextSession?.scheduled_date || rj.next_due_date || null;
+                    items.push({
+                      key: `rj-${rj.id}`,
+                      label: (rj.service_subtype || rj.trade_category || '').replace(/_/g, ' '),
+                      clientName: rj.client?.full_name || 'Client',
+                      rate: rj.agreed_price ?? null,
+                      nextDate: nextIso
+                        ? new Date(nextIso + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+                        : null,
+                      nextSortKey: toSortKey(nextIso),
+                    });
+                  }
+
+                  if (items.length === 0) return null;
+
+                  // Sort by next visit (soonest first), cap to 5 on dashboard
+                  items.sort((a, b) => a.nextSortKey - b.nextSortKey);
+                  const DASHBOARD_CAP = 5;
+                  const visible = items.slice(0, DASHBOARD_CAP);
+                  const hidden = items.length - visible.length;
+
+                  const initials = (name: string) =>
+                    name.split(/\s+/).filter(Boolean).slice(0, 2).map(n => n[0]?.toUpperCase() || '').join('') || '?';
+
+                  return (
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <RefreshCw className="w-4 h-4 text-emerald-600" />
+                          <h2 className="text-lg font-bold text-gray-900">Ongoing Services</h2>
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                            {items.length}
+                          </span>
+                        </div>
+                        <Link to="/work?tab=services" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+                          Manage all &rarr;
+                        </Link>
+                      </div>
+                      <div className="space-y-2">
+                        {visible.map(item => (
+                          <Link
+                            key={item.key}
+                            to="/work?tab=services"
+                            className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl hover:border-emerald-200 hover:bg-emerald-50/30 transition-colors group"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-xs flex items-center justify-center flex-shrink-0">
+                                {initials(item.clientName)}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm text-gray-900 font-semibold truncate">{item.clientName}</p>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <span className="capitalize">{item.label}</span>
+                                  {item.rate && item.rate > 0 && (
+                                    <>
+                                      <span className="text-gray-300">·</span>
+                                      <span className="text-emerald-600 font-medium">${item.rate.toFixed(0)}/visit</span>
+                                    </>
+                                  )}
+                                  {item.nextDate && (
+                                    <>
+                                      <span className="text-gray-300">·</span>
+                                      <span className="font-medium text-gray-700">Next: {item.nextDate}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-[11px] font-medium rounded-full flex-shrink-0">
+                              Active
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                      {hidden > 0 && (
+                        <Link to="/work?tab=services" className="block text-center text-xs text-gray-500 hover:text-gray-700 mt-3 py-2">
+                          +{hidden} more in Work Hub &rarr;
+                        </Link>
+                      )}
                     </div>
-                  </div>
-                ) : (
+                  );
+                })()}
+
+                {/* ─── Active Jobs (one-off) ─── */}
+                {(() => {
+                  const hasOngoing = agreements.length > 0 || recurringJobs.length > 0;
+                  const heading = hasOngoing ? 'One-Off Jobs' : 'Active Jobs';
+                  const emptyTitle = hasOngoing ? 'No One-Off Jobs' : 'No Active Jobs';
+                  const emptyDesc = hasOngoing
+                    ? "You have ongoing services above. No one-off jobs in the pipeline right now."
+                    : 'Set up your calendar so clients can find and book you for their next project.';
+                  return (
+                    <>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-bold text-gray-900">{heading}</h2>
+                        <Link to="/work?tab=active" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                          View all in Work Hub &rarr;
+                        </Link>
+                      </div>
+                      {activeJobs.length === 0 && (
+                        <div>
+                          <EmptyState
+                            icon={Briefcase}
+                            title={emptyTitle}
+                            description={emptyDesc}
+                            actionLabel="Set Your Availability"
+                            onAction={() => navigate('/schedule')}
+                          />
+                          <div className="text-center mt-3 pb-2">
+                            <Link to="/work?tab=recruitment" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                              Or post a vacancy to find staff &rarr;
+                            </Link>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+                {activeJobs.length > 0 && (
                   <div className="space-y-3">
                     {activeJobs.map((job: DashboardJob) => {
                       const category = job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
@@ -953,7 +1445,11 @@ export default function TradieDashboard() {
                       return (
                         <div
                           key={job.id}
-                          className={`border rounded-xl overflow-hidden transition-all hover:shadow-sm ${
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => { if (!isLicenseExpired) { setSelectedJob(job.id); setShowJobManagement(true); } }}
+                          onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !isLicenseExpired) { e.preventDefault(); setSelectedJob(job.id); setShowJobManagement(true); } }}
+                          className={`border rounded-xl overflow-hidden transition-all hover:shadow-sm cursor-pointer ${
                             job.priority === 'high' ? 'border-orange-200 bg-gradient-to-r from-orange-50/40 to-white' : 'border-gray-200 hover:border-primary-200'
                           }`}
                         >
@@ -979,7 +1475,7 @@ export default function TradieDashboard() {
                                 <p className="text-sm text-gray-600 line-clamp-2">{redactSensitiveInfo(cleanDesc, unlocked)}</p>
                               </div>
                               <button
-                                onClick={() => { if (!isLicenseExpired) { setSelectedJob(job.id); setShowJobManagement(true); } }}
+                                onClick={(e) => { e.stopPropagation(); if (!isLicenseExpired) { setSelectedJob(job.id); setShowJobManagement(true); } }}
                                 disabled={isLicenseExpired}
                                 className={`p-2 rounded-lg transition-colors flex-shrink-0 ${isLicenseExpired ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
                                 title={isLicenseExpired ? 'License expired' : 'Manage job'}
@@ -1034,60 +1530,74 @@ export default function TradieDashboard() {
                 )}
 
                 {/* ─── Completed Jobs ─── */}
-                {completedJobs.length > 0 && (
-                  <div className="mt-8">
-                    <CollapsibleSection
-                      title={`Completed Jobs (${completedJobs.length})`}
-                      defaultOpen={activeJobs.length === 0}
-                    >
-                      <div className="space-y-2 mt-3">
-                        {completedJobs.map((job: DashboardJob) => {
-                          const category = job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
-                          const displayTitle = job.title || category || 'Job';
-                          const completedDate = job.updated_at
-                            ? new Date(job.updated_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
-                            : null;
+                {completedJobs.length > 0 && (() => {
+                  const visibleCompleted = completedJobs.slice(0, 5);
+                  const hiddenCompleted = completedJobs.slice(5);
+                  const jobsToShow = showAllCompleted ? completedJobs : visibleCompleted;
 
-                          return (
-                            <div
-                              key={job.id}
-                              onClick={() => navigate(job.title?.includes('Recurring Service') ? '/schedule' : '/work?tab=active')}
-                              className="flex items-center gap-3 px-4 py-3 border border-gray-100 rounded-lg bg-gray-50/50 hover:bg-white hover:border-primary-200 cursor-pointer transition-all group"
-                            >
-                              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                <CheckCircle2 className="w-4 h-4 text-green-600" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="text-sm font-medium text-gray-900 truncate capitalize group-hover:text-primary-700 transition-colors">{displayTitle}</h4>
-                                <div className="flex items-center gap-3 mt-0.5">
-                                  <span className="text-xs text-gray-500">{job.profiles?.full_name || 'Client'}</span>
-                                  {completedDate && (
-                                    <span className="text-xs text-gray-400">{completedDate}</span>
-                                  )}
-                                  {job.location_address && (
-                                    <span className="text-xs text-gray-400 truncate max-w-[150px]">
-                                      {job.location_address.split(',')[0]}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); archiveJob(job.id); }}
-                                className="p-1.5 text-gray-300 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
-                                title="Archive job"
+                  return (
+                    <div className="mt-8">
+                      <CollapsibleSection
+                        title={`Completed Jobs (${completedJobs.length})`}
+                        defaultOpen={false}
+                      >
+                        <div className="space-y-2 mt-3">
+                          {jobsToShow.map((job: DashboardJob) => {
+                            const category = job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
+                            const displayTitle = job.title || category || 'Job';
+                            const completedDate = job.updated_at
+                              ? new Date(job.updated_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+                              : null;
+
+                            return (
+                              <div
+                                key={job.id}
+                                onClick={() => navigate(job.title?.includes('Recurring Service') ? '/schedule' : '/work?tab=active')}
+                                className="flex items-center gap-3 px-4 py-3 border border-gray-100 rounded-lg bg-gray-50/50 hover:bg-white hover:border-primary-200 cursor-pointer transition-all group"
                               >
-                                <Archive className="w-3.5 h-3.5" />
-                              </button>
-                              <span className="text-xs text-gray-400 group-hover:text-primary-500 transition-colors flex-shrink-0">
-                                View &rarr;
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </CollapsibleSection>
-                  </div>
-                )}
+                                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="text-sm font-medium text-gray-900 truncate capitalize group-hover:text-primary-700 transition-colors">{displayTitle}</h4>
+                                  <div className="flex items-center gap-3 mt-0.5">
+                                    <span className="text-xs text-gray-500">{job.profiles?.full_name || 'Client'}</span>
+                                    {completedDate && (
+                                      <span className="text-xs text-gray-400">{completedDate}</span>
+                                    )}
+                                    {job.location_address && (
+                                      <span className="text-xs text-gray-400 truncate max-w-[150px]">
+                                        {job.location_address.split(',')[0]}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); archiveJob(job.id); }}
+                                  className="p-1.5 text-gray-300 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
+                                  title="Archive job"
+                                >
+                                  <Archive className="w-3.5 h-3.5" />
+                                </button>
+                                <span className="text-xs text-gray-400 group-hover:text-primary-500 transition-colors flex-shrink-0">
+                                  View &rarr;
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {hiddenCompleted.length > 0 && (
+                          <button
+                            onClick={() => setShowAllCompleted(!showAllCompleted)}
+                            className="mt-3 text-xs text-secondary-600 hover:text-secondary-700 font-medium"
+                          >
+                            {showAllCompleted ? 'Show less' : `Show ${hiddenCompleted.length} more completed job${hiddenCompleted.length !== 1 ? 's' : ''}`}
+                          </button>
+                        )}
+                      </CollapsibleSection>
+                    </div>
+                  );
+                })()}
 
                 {/* ─── Cancelled / Declined Jobs ─── */}
                 {otherJobs.length > 0 && (
@@ -1150,14 +1660,18 @@ export default function TradieDashboard() {
                   />
                 ) : (
                   <div className="space-y-3">
-                    {conversations.map((conv) => (
+                    {conversations.map((conv) => {
+                      const hasUnread = conv.messages.some(m => m.receiver_id === user?.id && !m.read_at);
+                      return (
                       <div
                         key={conv.id}
                         role="button"
                         tabIndex={0}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedConversation(conv); setShowConversationSettings(true); } }}
-                        onClick={() => { setSelectedConversation(conv); setShowConversationSettings(true); }}
-                        className="border border-gray-200 rounded-xl p-4 hover:border-primary-300 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/messages?conversation=${conv.id}`); } }}
+                        onClick={() => navigate(`/messages?conversation=${conv.id}`)}
+                        className={`border rounded-xl p-4 hover:border-primary-300 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                          flashMessages && hasUnread ? 'animate-flash-highlight border-emerald-400' : 'border-gray-200'
+                        }`}
                       >
                         <div className="flex items-start gap-3">
                           <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -1182,7 +1696,8 @@ export default function TradieDashboard() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1841,6 +2356,19 @@ export default function TradieDashboard() {
           jobId={selectedJob}
           onJobUpdated={() => { fetchJobs(); setShowJobManagement(false); setSelectedJob(null); }}
           isLicenseExpired={isLicenseExpired}
+        />
+      )}
+
+      {/* Submit Quote Modal — opened from dashboard New Leads */}
+      {quoteModalJob && (
+        <SubmitQuoteModal
+          isOpen={!!quoteModalJob}
+          onClose={() => setQuoteModalJob(null)}
+          job={quoteModalJob}
+          onQuoteSubmitted={() => {
+            setQuoteModalJob(null);
+            fetchNewLeads();
+          }}
         />
       )}
 

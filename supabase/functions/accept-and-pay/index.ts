@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { PRICING_CONFIG, calculatePlatformFee, calculateProcessingFeeCents, resolveTradieTier, TradieTier } from "../_shared/pricing.ts";
+import { calculatePlatformFee, calculateProcessingFeeCents, calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
@@ -97,7 +97,7 @@ Deno.serve(async (req: Request) => {
     // Look up the quote with tradie details
     const { data: quote, error: quoteError } = await supabase
       .from("quotes")
-      .select("id, job_id, tradie_id, firm_price, price_min, price_max, status")
+      .select("id, job_id, tradie_id, firm_price, price_min, price_max, status, final_price, final_valid_until, call_out_fee_cents, site_visit_fee_status")
       .eq("id", quoteId)
       .maybeSingle();
 
@@ -105,7 +105,14 @@ Deno.serve(async (req: Request) => {
       return errorJson("Quote not found", 404);
     }
 
-    if (quote.status !== "pending" && quote.status !== "accepted") {
+    // Legacy flow_version=1 accepts pending quotes directly. 3-stage flow_version=2
+    // accepts final_submitted quotes (flow_version guard below enforces which is
+    // valid for this job). 'accepted' is allowed in both for checkout resumption.
+    if (
+      quote.status !== "pending"
+      && quote.status !== "accepted"
+      && quote.status !== "final_submitted"
+    ) {
       return errorJson("Quote has already been processed", 409);
     }
 
@@ -135,7 +142,7 @@ Deno.serve(async (req: Request) => {
     // Validate the job
     const { data: job, error: jobError } = await supabase
       .from("jobs")
-      .select("id, client_id, tradie_id, title, description, status, project_id, location_address")
+      .select("id, client_id, tradie_id, title, description, status, project_id, location_address, recurring_job_id, flow_version")
       .eq("id", quote.job_id)
       .maybeSingle();
 
@@ -147,6 +154,58 @@ Deno.serve(async (req: Request) => {
       return errorJson("Only the client on this job can accept a quote", 403);
     }
 
+    // 3-stage flow guard: jobs on flow_version=2 must accept a final_submitted
+    // quote (or resume an already-accepted one). Site-visit booking goes
+    // through the separate book-site-visit function. Legacy flow_version=1
+    // jobs continue to accept 'pending' quotes directly, as before.
+    if (job.flow_version === 2 && quote.status === "pending") {
+      return errorJson(
+        "This quote is still an initial estimate. The tradie must submit a final quote (after their site visit, if required) before it can be accepted.",
+        409,
+      );
+    }
+    if (job.flow_version !== 2 && quote.status === "final_submitted") {
+      return errorJson(
+        "Final-submitted quotes are only valid on the 3-stage quote flow (flow_version 2).",
+        409,
+      );
+    }
+
+    // Expiry check (state machine §5.4 #1): on a fresh acceptance of a
+    // final_submitted quote, the validity period must not have passed.
+    // Resumption (alreadyAccepted) skips this — the client clicked Accept
+    // while it was valid; they're just completing checkout.
+    if (
+      !alreadyAccepted
+      && job.flow_version === 2
+      && quote.status === "final_submitted"
+      && quote.final_valid_until
+    ) {
+      const todayIso = new Date().toISOString().slice(0, 10);
+      if (quote.final_valid_until < todayIso) {
+        return errorJson(
+          `This final quote expired on ${quote.final_valid_until}. The tradie can submit a new quote on this job.`,
+          410,
+        );
+      }
+    }
+
+    // For flow_version=2, the binding price is final_price. If price_min/max
+    // are still the estimate range, use final_price as the authoritative dollars.
+    if (!alreadyAccepted && job.flow_version === 2 && quote.final_price != null && quote.final_price > 0) {
+      quotePriceDollars = Number(quote.final_price);
+    }
+
+    // quotePriceDollars is the FULL agreed value of the job — it's what we record on
+    // the job, sync to the ongoing-service rate, and show in the acceptance notice.
+    // chargeDollars is what we actually collect into escrow NOW: the agreed price minus
+    // any call-out fee the client already paid at booking (that money went to the tradie
+    // then). Fees are computed on chargeDollars so the visit fee isn't fee'd twice.
+    let chargeDollars = quotePriceDollars;
+    if (job.flow_version === 2 && quote.site_visit_fee_status === "paid" && Number(quote.call_out_fee_cents) > 0) {
+      chargeDollars = Math.max(0, quotePriceDollars - Number(quote.call_out_fee_cents) / 100);
+    }
+
     // --- Look up tradie subscription tier (used for free-tier limits + platform fee) ---
     const { data: tradieSubRecord } = await supabase
       .from("tradie_details")
@@ -156,16 +215,16 @@ Deno.serve(async (req: Request) => {
 
     const tradieSubscriptionTier = resolveTradieTier(tradieSubRecord?.subscription_tier);
 
-    // Also check profiles.is_premium as fallback (in case tradie_details is out of sync)
-    const { data: tradiePremiumCheck } = await supabase
+    // Also check profiles.is_premium, GST status, and get tradie name
+    const { data: tradieProfile } = await supabase
       .from("profiles")
-      .select("is_premium")
+      .select("is_premium, is_gst_registered, full_name")
       .eq("id", quote.tradie_id)
       .maybeSingle();
 
     // --- Free tier limit: MAX_JOBS_PER_MONTH (5) for the tradie ---
     if (!alreadyAccepted) {
-      const isTradieProUser = tradieSubscriptionTier !== "free" || tradiePremiumCheck?.is_premium === true;
+      const isTradieProUser = tradieSubscriptionTier !== "free" || tradieProfile?.is_premium === true;
 
       if (!isTradieProUser) {
         const now = new Date();
@@ -229,26 +288,30 @@ Deno.serve(async (req: Request) => {
       customerId = existingSub.stripe_customer_id;
     }
 
-    // Convert dollars to cents
-    const baseAmountCents = Math.round(quotePriceDollars * 100);
+    // Convert dollars to cents — charge/fees use the amount collected now (chargeDollars).
+    const baseAmountCents = Math.round(chargeDollars * 100);
+    const tradieIsGstRegistered = tradieProfile?.is_gst_registered === true;
+    const gst = tradieIsGstRegistered ? calculateGstCents(baseAmountCents) : 0;
     const processingFee = calculateProcessingFeeCents(baseAmountCents);
 
     // Calculate platform fee based on tradie's subscription tier
-    const platformFeeDollars = calculatePlatformFee(quotePriceDollars, tradieSubscriptionTier);
+    const platformFeeDollars = calculatePlatformFee(chargeDollars, tradieSubscriptionTier);
     const platformFeeCents = Math.round(platformFeeDollars * 100);
 
-    // Get tradie name for metadata
-    const { data: tradieProfile } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", quote.tradie_id)
-      .maybeSingle();
+    // Capture pre-mutation state so the payment-record failure path can revert
+    // both the chosen quote and any cascaded siblings cleanly. (Previously the
+    // revert hard-coded 'pending', which would corrupt a v2 quote whose
+    // original status was 'final_submitted'.)
+    const originalQuoteStatus = quote.status as string;
+    let cascadedSiblings: { id: string; previousStatus: string }[] = [];
 
     // Only accept the quote and assign the tradie if not already done
     if (!alreadyAccepted) {
+      // Mark the call-out fee as credited (it was deducted from the charge above).
+      const creditFee = quote.site_visit_fee_status === "paid" && Number(quote.call_out_fee_cents) > 0;
       const { error: quoteUpdateError } = await supabase
         .from("quotes")
-        .update({ status: "accepted" })
+        .update(creditFee ? { status: "accepted", site_visit_fee_status: "credited" } : { status: "accepted" })
         .eq("id", quoteId);
 
       if (quoteUpdateError) {
@@ -264,6 +327,33 @@ Deno.serve(async (req: Request) => {
           budget_amount: quotePriceDollars,
         })
         .eq("id", quote.job_id);
+
+      // If this job belongs to an ongoing service, sync the assigned tradie and the
+      // agreed per-visit rate so the service shows as assigned and future auto-invoices
+      // bill at the accepted price. Resolve via the job back-link, falling back to the
+      // recurring service's original_job_id (older jobs may lack the back-link).
+      try {
+        let recurringJobId = job.recurring_job_id as string | null;
+        if (!recurringJobId) {
+          const { data: rec } = await supabase
+            .from("recurring_jobs")
+            .select("id")
+            .eq("original_job_id", quote.job_id)
+            .maybeSingle();
+          recurringJobId = (rec as { id?: string } | null)?.id ?? null;
+        }
+        if (recurringJobId) {
+          await supabase
+            .from("recurring_jobs")
+            .update({
+              agreed_price: quotePriceDollars,
+              tradie_id: quote.tradie_id,
+            })
+            .eq("id", recurringJobId);
+        }
+      } catch {
+        // Non-critical — don't fail the payment flow
+      }
 
       // Notify tradie that their quote was accepted
       try {
@@ -309,6 +399,57 @@ Deno.serve(async (req: Request) => {
           // Non-critical — don't fail the payment flow
         }
       }
+
+      // Cascade-decline (state machine §5.1): on flow_version=2 jobs, when one
+      // quote is accepted, every other non-terminal quote on the same job is
+      // marked 'declined' and the affected tradies are notified. Capture the
+      // sibling IDs + previous statuses so we can revert cleanly if the
+      // payment-record insert below fails.
+      if (job.flow_version === 2) {
+        const { data: siblings } = await supabase
+          .from("quotes")
+          .select("id, tradie_id, status")
+          .eq("job_id", quote.job_id)
+          .neq("id", quoteId)
+          .in("status", [
+            "pending",
+            "site_visit_scheduled",
+            "site_visit_completed",
+            "final_submitted",
+          ]);
+
+        if (siblings && siblings.length > 0) {
+          cascadedSiblings = siblings.map((s) => ({
+            id: s.id as string,
+            previousStatus: s.status as string,
+          }));
+          const siblingIds = cascadedSiblings.map((s) => s.id);
+          const { error: cascadeError } = await supabase
+            .from("quotes")
+            .update({ status: "declined" })
+            .in("id", siblingIds);
+          if (cascadeError) {
+            console.warn("accept-and-pay: cascade-decline update failed", cascadeError);
+            // Do not fail the acceptance — the cascade is a side effect.
+          }
+
+          // Notify the declined tradies — best effort
+          try {
+            const notifs = siblings.map((s) => ({
+              user_id: s.tradie_id as string,
+              type: "quote_declined_cascade",
+              title: "Quote not selected",
+              message: "Thanks for quoting — the client went with another tradie this time.",
+              job_id: quote.job_id,
+              metadata: { quote_id: s.id, reason: "cascade_decline" },
+              read: false,
+            }));
+            await supabase.from("notifications").insert(notifs);
+          } catch {
+            // Non-critical
+          }
+        }
+      }
     }
 
     // Create payment record
@@ -328,6 +469,7 @@ Deno.serve(async (req: Request) => {
           tradie_id: quote.tradie_id,
           tradie_name: tradieProfile?.full_name || null,
           job_description: job.description,
+          gst: String(gst),
           platform_fee: platformFeeCents,
           tradie_tier: tradieSubscriptionTier,
         },
@@ -337,16 +479,33 @@ Deno.serve(async (req: Request) => {
 
     if (insertError) {
       console.error("Failed to insert payment record:", insertError);
-      // Only revert if we accepted the quote in this call
+      // Only revert if we accepted the quote in this call. Use the captured
+      // originalQuoteStatus rather than a hardcoded 'pending' so that v2 quotes
+      // (whose original status was 'final_submitted') revert correctly.
       if (!alreadyAccepted) {
         await supabase
           .from("quotes")
-          .update({ status: "pending" })
+          .update({ status: originalQuoteStatus })
           .eq("id", quoteId);
         await supabase
           .from("jobs")
           .update({ tradie_id: null, status: "pending", budget_amount: null })
           .eq("id", quote.job_id);
+        // Revert cascaded siblings to their pre-cascade statuses (one per row;
+        // statuses may differ, so we can't do a single bulk update).
+        for (const sibling of cascadedSiblings) {
+          try {
+            await supabase
+              .from("quotes")
+              .update({ status: sibling.previousStatus })
+              .eq("id", sibling.id);
+          } catch (revertErr) {
+            console.warn(
+              `accept-and-pay: failed to revert cascaded sibling ${sibling.id} to ${sibling.previousStatus}`,
+              revertErr,
+            );
+          }
+        }
       }
       return errorJson("Failed to create payment record", 500);
     }
@@ -365,6 +524,17 @@ Deno.serve(async (req: Request) => {
         quantity: 1,
       },
     ];
+
+    if (gst > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "aud",
+          product_data: { name: "GST (10%)" },
+          unit_amount: gst,
+        },
+        quantity: 1,
+      });
+    }
 
     if (processingFee > 0) {
       lineItems.push({
@@ -400,6 +570,7 @@ Deno.serve(async (req: Request) => {
           quote_id: quoteId,
           payment_record_id: paymentRecord.id,
           base_amount: String(baseAmountCents),
+          gst: String(gst),
           processing_fee: String(processingFee),
           platform_fee: String(platformFeeCents),
           tradie_tier: tradieSubscriptionTier,

@@ -128,34 +128,34 @@ export default function MyTrades() {
           </Link>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-8">
-          <div className="flex flex-wrap gap-2">
+        <div className="mb-8">
+          <div className="flex items-center gap-6 border-b border-gray-200 overflow-x-auto">
             <button
               onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+              className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 filter === 'all'
-                  ? 'bg-warm-100 text-warm-700'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'border-warm-500 text-warm-600'
+                  : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
               }`}
             >
               All ({savedTradies.length})
             </button>
             <button
               onClick={() => setFilter('available')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+              className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 filter === 'available'
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'border-warm-500 text-warm-600'
+                  : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
               }`}
             >
               Available Now
             </button>
             <button
               onClick={() => setFilter('verified')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+              className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 filter === 'verified'
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'border-warm-500 text-warm-600'
+                  : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
               }`}
             >
               Verified Only
@@ -164,10 +164,10 @@ export default function MyTrades() {
               <button
                 key={cat}
                 onClick={() => setFilter(cat!)}
-                className={`px-4 py-2 rounded-lg font-medium text-sm capitalize transition-colors ${
+                className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 capitalize transition-colors ${
                   filter === cat
-                    ? 'bg-warm-100 text-warm-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'border-warm-500 text-warm-600'
+                    : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
                 }`}
               >
                 {cat}

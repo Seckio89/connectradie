@@ -1,15 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   X, Loader2, AlertTriangle, Clock, FileText, Archive, ArchiveRestore,
   MapPin, User, Calendar, Phone, Mail, CheckCircle2,
   Send, ChevronDown, ChevronUp, Repeat, Image,
-  Zap, Users, Wrench, Key, Eye, EyeOff,
+  Zap, Users, Key, Eye, EyeOff,
+  DollarSign, Shield, Camera, Plus, Check,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import type { Job } from '../types/database';
+import type { Job, Quote } from '../types/database';
 import { extractSuburb } from '../lib/contactGating';
 import SubmitQuoteModal from './SubmitQuoteModal';
+import ConfirmModal from './ConfirmModal';
+import TradieQuoteActions from './TradieQuoteActions';
+import { adjustQuotePrice, approvePriceReduction } from '../lib/stripePayments';
+
+// ── Types ──
 
 interface JobData {
   id: string;
@@ -38,6 +44,12 @@ interface JobData {
   job_complexity: string | null;
   access_instructions: string | null;
   allows_site_inspection: boolean;
+  completion_notes: string | null;
+  completion_photo_url: string | null;
+  completed_at: string | null;
+  // 1 = legacy single-step flow, 2 = 3-stage estimate/visit/final/pay flow.
+  // See docs/three-stage-quote-flow.md.
+  flow_version: number;
   profiles?: { full_name: string; email: string; phone?: string } | null;
 }
 
@@ -46,9 +58,30 @@ interface QuoteData {
   price_min: number;
   price_max: number;
   firm_price: number | null;
+  final_price: number | null;
+  requires_site_inspection: boolean;
   status: string;
   message: string;
   created_at: string;
+  // 3-stage flow tracking (only meaningful when parent job.flow_version === 2)
+  site_visit_scheduled_at: string | null;
+  site_visit_completed_at: string | null;
+  final_submitted_at: string | null;
+  final_valid_until: string | null;
+}
+
+interface PaymentData {
+  id: string;
+  amount: number;
+  processing_fee: number;
+  status: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+interface PhotoItem {
+  file: File;
+  preview: string;
 }
 
 interface JobManagementModalProps {
@@ -58,6 +91,8 @@ interface JobManagementModalProps {
   onJobUpdated: () => void;
   isLicenseExpired?: boolean;
 }
+
+// ── Helpers ──
 
 function parseJobInfo(job: JobData) {
   const categoryMatch = job.description.match(/^\[([^\]]+)\]/);
@@ -80,16 +115,40 @@ function getStatusConfig(status: string) {
   }
 }
 
-function getNextStep(status: string): { action: string; hint: string; nextStatus?: string; buttonColor: string } | null {
-  switch (status) {
-    case 'pending': return { action: 'Waiting for Client', hint: 'Client is reviewing your quote', buttonColor: 'bg-gray-100 text-gray-600' };
-    case 'accepted': return { action: 'Awaiting Payment', hint: 'Client accepted — waiting for escrow payment', buttonColor: 'bg-amber-50 text-amber-700' };
-    case 'funded': return { action: 'Mark Complete', hint: 'Payment secured. Mark complete when finished to request payout.', nextStatus: 'in_progress', buttonColor: 'bg-green-600 text-white hover:bg-green-700' };
-    case 'in_progress': return { action: 'Mark Complete', hint: 'Finished? Mark complete to request payout.', nextStatus: 'completed', buttonColor: 'bg-green-600 text-white hover:bg-green-700' };
-    case 'completed': return { action: 'Job Complete', hint: 'Awaiting client approval and payout release.', buttonColor: 'bg-secondary-50 text-secondary-700' };
-    default: return null;
+const STATUS_STEPS = ['pending', 'accepted', 'in_progress', 'completed'] as const;
+const STEP_LABELS: Record<string, string> = {
+  pending: 'Quoted',
+  accepted: 'Accepted',
+  in_progress: 'Paid & Active',
+  completed: 'Completed',
+};
+
+// ── Completion prompts (trade-specific) ──
+const COMPLETION_PROMPTS: Record<string, string[]> = {
+  Cleaner: ['All rooms deep cleaned and sanitised', 'Kitchen and bathrooms scrubbed', 'Floors vacuumed and mopped', 'Windows and glass cleaned', 'Rubbish removed from site'],
+  Plumber: ['Leak repaired and pressure tested', 'New fixture installed and tested', 'Blocked drain cleared', 'Compliance certificate issued'],
+  Electrician: ['New circuit installed and tested', 'Switchboard upgraded', 'Safety switch (RCD) installed', 'Certificate of compliance issued'],
+  Builder: ['All structural work complete to plans', 'Practical completion achieved', 'Defect-free handover', 'Site cleaned and cleared'],
+  Painter: ['All surfaces prepped and primed', 'Two coats applied — even coverage', 'Touch-ups completed', 'Drop sheets removed — area cleaned'],
+  Landscaper: ['Garden beds prepared and planted', 'Turf laid and watered in', 'Paving laid and compacted', 'Site levelled and cleared'],
+};
+const DEFAULT_PROMPTS = ['All work completed as quoted', 'Site left clean and tidy', 'Tested and confirmed working', 'Recommend follow-up maintenance'];
+
+function matchCategory(raw: string): string | null {
+  const lower = raw.toLowerCase().replace(/_/g, ' ');
+  const MAP: Record<string, string> = {
+    cleaner: 'Cleaner', cleaning: 'Cleaner', plumber: 'Plumber', plumbing: 'Plumber',
+    electrician: 'Electrician', electrical: 'Electrician', builder: 'Builder', building: 'Builder',
+    painter: 'Painter', painting: 'Painter', landscaper: 'Landscaper', landscaping: 'Landscaper',
+  };
+  if (MAP[lower]) return MAP[lower];
+  for (const [key, value] of Object.entries(MAP)) {
+    if (lower.includes(key)) return value;
   }
+  return null;
 }
+
+// ── Main Component ──
 
 export default function JobManagementModal({
   isOpen,
@@ -103,6 +162,7 @@ export default function JobManagementModal({
   const [saving, setSaving] = useState(false);
   const [job, setJob] = useState<JobData | null>(null);
   const [quote, setQuote] = useState<QuoteData | null>(null);
+  const [payment, setPayment] = useState<PaymentData | null>(null);
   const [notes, setNotes] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [priority, setPriority] = useState('normal');
@@ -110,6 +170,39 @@ export default function JobManagementModal({
   const [delayedUntil, setDelayedUntil] = useState('');
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [quoteCount, setQuoteCount] = useState(0);
+
+  // Completion form state
+  const [completionPhotos, setCompletionPhotos] = useState<PhotoItem[]>([]);
+  const [completionCustomNotes, setCompletionCustomNotes] = useState('');
+  const [selectedPrompts, setSelectedPrompts] = useState<Set<string>>(new Set());
+  const [completionError, setCompletionError] = useState<string | null>(null);
+  const [isGstRegistered, setIsGstRegistered] = useState<boolean | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Final price state (shown for site-visit-required quotes after deposit,
+  // or as a variation request for any funded job once the tradie confirms
+  // they've completed the site visit).
+  const [finalPriceInput, setFinalPriceInput] = useState('');
+  const [finalPriceLoading, setFinalPriceLoading] = useState(false);
+  const [finalPriceError, setFinalPriceError] = useState<string | null>(null);
+  const [finalPriceSuccess, setFinalPriceSuccess] = useState<string | null>(null);
+  // For firm-price variations: tradie has to click "site visit completed" first
+  // so we don't surface a price-change form by default on every funded job.
+  const [variationFormOpen, setVariationFormOpen] = useState(false);
+
+  // In-app confirm modal (replaces native window.confirm for price adjustments)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string;
+    message: string;
+    confirmText: string;
+    type: 'danger' | 'warning' | 'info';
+    onConfirm: () => void;
+  } | null>(null);
+
+  // Client-requested price reduction state
+  const [reductionLoading, setReductionLoading] = useState(false);
+  const [reductionError, setReductionError] = useState<string | null>(null);
+  const [reductionSuccess, setReductionSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && jobId) {
@@ -119,7 +212,7 @@ export default function JobManagementModal({
 
   const loadJob = async () => {
     setLoading(true);
-    const [jobResult, quoteResult, quoteCountResult] = await Promise.all([
+    const [jobResult, quoteResult, quoteCountResult, paymentResult] = await Promise.all([
       supabase
         .from('jobs')
         .select('*, profiles!jobs_client_id_fkey(full_name, email, phone)')
@@ -127,7 +220,7 @@ export default function JobManagementModal({
         .maybeSingle(),
       user ? supabase
         .from('quotes')
-        .select('id, price_min, price_max, firm_price, status, message, created_at')
+        .select('id, price_min, price_max, firm_price, final_price, requires_site_inspection, status, message, created_at, site_visit_scheduled_at, site_visit_completed_at, final_submitted_at, final_valid_until')
         .eq('job_id', jobId)
         .eq('tradie_id', user.id)
         .maybeSingle() : Promise.resolve({ data: null }),
@@ -135,6 +228,14 @@ export default function JobManagementModal({
         .from('quotes')
         .select('id', { count: 'exact', head: true })
         .eq('job_id', jobId),
+      supabase
+        .from('payments')
+        .select('id, amount, processing_fee, status, metadata, created_at')
+        .eq('job_id', jobId)
+        .eq('payment_type', 'job_funding')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
     if (jobResult.data) {
@@ -148,15 +249,35 @@ export default function JobManagementModal({
     if (quoteResult.data) {
       setQuote(quoteResult.data as QuoteData);
     } else if (jobResult.data && (jobResult.data as unknown as JobData).status === 'pending') {
-      // Auto-open quote modal for pending jobs with no existing quote
       setShowQuoteModal(true);
     }
+    if (paymentResult.data) {
+      setPayment(paymentResult.data as PaymentData);
+    }
     setQuoteCount(quoteCountResult.count || 0);
+
+    // Fetch tradie's GST registration status
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_gst_registered')
+        .eq('id', user.id)
+        .maybeSingle();
+      setIsGstRegistered(profile?.is_gst_registered ?? false);
+    }
+
     setLoading(false);
   };
 
   const handleStatusAdvance = async (nextStatus: string) => {
     if (isLicenseExpired || !job) return;
+
+    // For completing a job, use the completion form handler
+    if (nextStatus === 'completed') {
+      await handleCompletion();
+      return;
+    }
+
     setSaving(true);
     const { error } = await supabase
       .from('jobs')
@@ -164,7 +285,6 @@ export default function JobManagementModal({
       .eq('id', jobId);
 
     if (!error) {
-      // Notify client about status change
       if (job.client_id) {
         const { displayTitle } = parseJobInfo(job);
         const tradieName = user?.user_metadata?.full_name || 'Your tradie';
@@ -179,27 +299,256 @@ export default function JobManagementModal({
               metadata: {},
               read: false,
             });
-          } else if (nextStatus === 'completed') {
-            await supabase.from('notifications').insert({
-              user_id: job.client_id,
-              type: 'JOB_COMPLETED',
-              title: 'Job Completed',
-              message: `${tradieName} has completed ${displayTitle}. Please review and release payment.`,
-              job_id: jobId,
-              metadata: {},
-              read: false,
-            });
           }
         } catch {
           // Non-critical
         }
       }
-
       onJobUpdated();
-      // Refresh local state
       setJob(prev => prev ? { ...prev, status: nextStatus } : prev);
     }
     setSaving(false);
+  };
+
+  // ── Completion form logic ──
+  const jobCategoryRaw = job?.description?.match(/^\[([^\]]+)\]/)?.[1] || '';
+  const matched = matchCategory(jobCategoryRaw);
+  // Prefer the actual task lines from the client's description so the checklist
+  // reflects what was quoted (e.g. "Clean bathrooms x 2") rather than generic
+  // trade prompts. Falls back to trade defaults when description has no list.
+  const prompts = useMemo(() => {
+    const body = (job?.description || '').replace(/^\[[^\]]+\]\s*/, '').trim();
+    const lines = body
+      .split(/\r?\n/)
+      .map((l) => l.replace(/^\s*[•\-\*]\s*/, '').trim())
+      .filter((l) => l.length > 0 && l.length <= 120);
+    const taskLines = lines.filter((l) => /^[A-Z0-9]/i.test(l));
+    if (taskLines.length >= 2) return taskLines.slice(0, 8);
+    return (matched && COMPLETION_PROMPTS[matched]) || DEFAULT_PROMPTS;
+  }, [job?.description, matched]);
+
+  const combinedCompletionNotes = useMemo(() => {
+    const promptLines = prompts
+      .filter((p) => selectedPrompts.has(p))
+      .map((p) => `• ${p}`);
+    const parts: string[] = [];
+    if (promptLines.length > 0) parts.push(promptLines.join('\n'));
+    if (completionCustomNotes.trim()) parts.push(completionCustomNotes.trim());
+    return parts.join('\n\n');
+  }, [selectedPrompts, completionCustomNotes, prompts]);
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setCompletionError(null);
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) { setCompletionError('Only image files accepted.'); continue; }
+      if (file.size > 10 * 1024 * 1024) { setCompletionError('Each image must be under 10MB.'); continue; }
+      if (completionPhotos.length >= 5) { setCompletionError('Maximum 5 photos.'); break; }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setCompletionPhotos((prev) => prev.length >= 5 ? prev : [...prev, { file, preview: ev.target?.result as string }]);
+      };
+      reader.readAsDataURL(file);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleCompletion = async () => {
+    if (!combinedCompletionNotes.trim()) {
+      setCompletionError('Please select at least one item or add notes.');
+      return;
+    }
+    if (!job || !user) return;
+
+    setSaving(true);
+    setCompletionError(null);
+
+    try {
+      // Upload photos
+      const photoPaths: string[] = [];
+      for (let i = 0; i < completionPhotos.length; i++) {
+        const photo = completionPhotos[i];
+        const ext = photo.file.name.split('.').pop() || 'jpg';
+        const filePath = `${user.id}/${job.id}-completion-${i}-${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from('job-attachments')
+          .upload(filePath, photo.file, { cacheControl: '3600', upsert: false });
+        if (uploadError) throw new Error(`Failed to upload photo ${i + 1}.`);
+        photoPaths.push(filePath);
+      }
+
+      let thumbnailUrl: string | null = null;
+      if (photoPaths.length > 0) {
+        const { data: signedData } = await supabase.storage
+          .from('job-attachments')
+          .createSignedUrl(photoPaths[0], 60 * 60 * 24 * 365);
+        if (signedData?.signedUrl) thumbnailUrl = signedData.signedUrl;
+      }
+
+      const updateData: Record<string, unknown> = {
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        completion_notes: combinedCompletionNotes.trim(),
+      };
+      if (thumbnailUrl) updateData.completion_photo_url = thumbnailUrl;
+
+      const { error: updateError } = await supabase.from('jobs').update(updateData).eq('id', job.id);
+      if (updateError) throw new Error('Failed to save completion details.');
+
+      // Notify client
+      if (job.client_id) {
+        const { displayTitle } = parseJobInfo(job);
+        const tradieName = user?.user_metadata?.full_name || 'Your tradie';
+        try {
+          await supabase.from('notifications').insert({
+            user_id: job.client_id,
+            type: 'JOB_COMPLETED',
+            title: 'Job Completed',
+            message: `${tradieName} has completed ${displayTitle}. Please review and release payment.`,
+            job_id: jobId,
+            metadata: {},
+            read: false,
+          });
+        } catch { /* non-critical */ }
+      }
+
+      onJobUpdated();
+      setJob(prev => prev ? { ...prev, status: 'completed' } : prev);
+    } catch (err) {
+      setCompletionError(err instanceof Error ? err.message : 'Something went wrong.');
+    }
+    setSaving(false);
+  };
+
+  const submitFinalPrice = async (price: number) => {
+    if (!quote) return;
+    setFinalPriceLoading(true);
+    setFinalPriceError(null);
+    setFinalPriceSuccess(null);
+    try {
+      const result = await adjustQuotePrice(quote.id, price);
+      if (result.action === 'decrease') {
+        setFinalPriceSuccess(`Final price set to $${price.toFixed(2)}. A refund of $${result.refundAmount?.toFixed(2)} is being processed to the client.`);
+      } else if (result.action === 'increase_pending') {
+        setFinalPriceSuccess(`Final price set to $${price.toFixed(2)}. The client has been notified to pay the additional $${result.additionalAmount?.toFixed(2)}.`);
+      } else {
+        setFinalPriceSuccess(`Final price confirmed at $${price.toFixed(2)}.`);
+      }
+      setQuote(prev => prev ? { ...prev, final_price: price } : prev);
+      onJobUpdated();
+    } catch (err) {
+      setFinalPriceError(err instanceof Error ? err.message : 'Failed to set final price.');
+    } finally {
+      setFinalPriceLoading(false);
+    }
+  };
+
+  const handleSetFinalPrice = () => {
+    if (!quote || finalPriceLoading) return;
+    const price = parseFloat(finalPriceInput);
+    if (!price || price <= 0) {
+      setFinalPriceError('Enter a valid final price.');
+      return;
+    }
+    const originalPrice = quote.firm_price ?? quote.price_max ?? quote.price_min;
+    const originalCents = Math.round(originalPrice * 100);
+    const finalCents = Math.round(price * 100);
+
+    let title: string;
+    let message: string;
+    let confirmText: string;
+    let type: 'danger' | 'warning' | 'info' = 'info';
+    if (finalCents < originalCents) {
+      title = 'Confirm price reduction';
+      message = `Setting the final price to $${price.toFixed(2)} will refund approximately $${(originalPrice - price).toFixed(2)} to the client.`;
+      confirmText = 'Set final price';
+      type = 'info';
+    } else if (finalCents > originalCents) {
+      title = 'Request additional payment?';
+      message = `Setting the final price to $${price.toFixed(2)} will request an additional $${(price - originalPrice).toFixed(2)} from the client before work continues.`;
+      confirmText = 'Send for approval';
+      type = 'warning';
+    } else {
+      title = 'Confirm final price';
+      message = `Lock in the final price at $${price.toFixed(2)} (no change from the deposit).`;
+      confirmText = 'Confirm';
+      type = 'info';
+    }
+
+    setConfirmDialog({
+      title,
+      message,
+      confirmText,
+      type,
+      onConfirm: () => {
+        setConfirmDialog(null);
+        void submitFinalPrice(price);
+      },
+    });
+  };
+
+  const submitReductionResponse = async (
+    approve: boolean,
+    proposedDollars: number,
+    refundDollars: number,
+  ) => {
+    if (!payment) return;
+    setReductionLoading(true);
+    setReductionError(null);
+    setReductionSuccess(null);
+    try {
+      const result = await approvePriceReduction(payment.id, approve);
+      if (result.action === 'approved') {
+        setReductionSuccess(`Approved. $${result.refundAmount?.toFixed(2) ?? refundDollars.toFixed(2)} refund is processing. Payment is now $${result.newTotal?.toFixed(2) ?? proposedDollars.toFixed(2)}.`);
+        setPayment(prev => {
+          if (!prev) return prev;
+          const newMeta = { ...(prev.metadata || {}) } as Record<string, unknown>;
+          delete newMeta.pending_reduction;
+          return {
+            ...prev,
+            amount: Math.round((result.newTotal ?? proposedDollars) * 100),
+            metadata: newMeta,
+          };
+        });
+      } else {
+        setReductionSuccess('Reduction request declined. The client has been notified.');
+        setPayment(prev => {
+          if (!prev) return prev;
+          const newMeta = { ...(prev.metadata || {}) } as Record<string, unknown>;
+          delete newMeta.pending_reduction;
+          return { ...prev, metadata: newMeta };
+        });
+      }
+      onJobUpdated();
+    } catch (err) {
+      setReductionError(err instanceof Error ? err.message : 'Failed to respond to the reduction request.');
+    } finally {
+      setReductionLoading(false);
+    }
+  };
+
+  const handleReductionResponse = (approve: boolean) => {
+    if (!payment || reductionLoading) return;
+    const pending = (payment.metadata as Record<string, unknown> | null)?.pending_reduction as
+      | { proposed_amount_cents?: number; diff_cents?: number }
+      | undefined;
+    if (!pending) return;
+
+    const proposedDollars = (pending.proposed_amount_cents ?? 0) / 100;
+    const refundDollars = (pending.diff_cents ?? 0) / 100;
+
+    setConfirmDialog({
+      title: approve ? "Approve reduction request?" : "Decline reduction request?",
+      message: approve
+        ? `The payment will drop to $${proposedDollars.toFixed(2)} and $${refundDollars.toFixed(2)} will be refunded to the client's card. This cannot be undone.`
+        : "The original amount will stay in place and the client will be notified.",
+      confirmText: approve ? 'Approve refund' : 'Decline',
+      type: approve ? 'warning' : 'info',
+      onConfirm: () => {
+        setConfirmDialog(null);
+        void submitReductionResponse(approve, proposedDollars, refundDollars);
+      },
+    });
   };
 
   const handleSave = async () => {
@@ -207,31 +556,15 @@ export default function JobManagementModal({
     setSaving(true);
     const { error } = await supabase
       .from('jobs')
-      .update({
-        priority,
-        is_delayed: isDelayed,
-        delayed_until: isDelayed && delayedUntil ? new Date(delayedUntil).toISOString() : null,
-        notes,
-      })
+      .update({ priority, is_delayed: isDelayed, delayed_until: isDelayed && delayedUntil ? new Date(delayedUntil).toISOString() : null, notes })
       .eq('id', jobId);
 
     if (!error && user) {
-      // Sync earliest start date to existing quote (if one exists)
-      const { data: existingQuote } = await supabase
-        .from('quotes')
-        .select('id')
-        .eq('job_id', jobId)
-        .eq('tradie_id', user.id)
-        .maybeSingle();
-
+      const { data: existingQuote } = await supabase.from('quotes').select('id').eq('job_id', jobId).eq('tradie_id', user.id).maybeSingle();
       if (existingQuote) {
         const startDate = isDelayed && delayedUntil ? delayedUntil.slice(0, 10) : null;
-        await supabase
-          .from('quotes')
-          .update({ proposed_start_date: startDate })
-          .eq('id', existingQuote.id);
+        await supabase.from('quotes').update({ proposed_start_date: startDate }).eq('id', existingQuote.id);
       }
-
       onJobUpdated();
       onClose();
     }
@@ -241,15 +574,8 @@ export default function JobManagementModal({
   const handleArchiveToggle = async () => {
     setSaving(true);
     const newValue = job?.archived_at ? null : new Date().toISOString();
-    const { error } = await supabase
-      .from('jobs')
-      .update({ archived_at: newValue })
-      .eq('id', jobId);
-
-    if (!error) {
-      onJobUpdated();
-      onClose();
-    }
+    const { error } = await supabase.from('jobs').update({ archived_at: newValue }).eq('id', jobId);
+    if (!error) { onJobUpdated(); onClose(); }
     setSaving(false);
   };
 
@@ -257,16 +583,23 @@ export default function JobManagementModal({
   const isArchived = !!job?.archived_at;
   const canSeeContact = ['funded', 'in_progress', 'completed'].includes(job?.status || '');
   const isRecurring = !!(job?.title && /ongoing|recurring/i.test(job.title));
+  // Treat 'funded' as 'in_progress' for the progress bar (auto-start)
+  const mappedStatus = job?.status === 'funded' ? 'in_progress' : job?.status;
+  const currentStepIndex = STATUS_STEPS.indexOf(mappedStatus as typeof STATUS_STEPS[number]);
 
   if (!isOpen) return null;
 
   const parsed = job ? parseJobInfo(job) : null;
   const statusConfig = job ? getStatusConfig(job.status) : null;
-  const nextStep = job ? getNextStep(job.status) : null;
+
+  // Payment display calculations
+  const paymentAmountDollars = payment ? payment.amount / 100 : 0;
+  const gstDollars = payment?.metadata?.gst ? Number(payment.metadata.gst) / 100 : paymentAmountDollars * 0.1;
+  const totalPaid = paymentAmountDollars + gstDollars;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 modal-sheet-overlay">
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col modal-sheet">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-2xl w-full max-h-[92vh] overflow-hidden flex flex-col modal-sheet">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
@@ -289,6 +622,16 @@ export default function JobManagementModal({
                       {job.priority === 'high' && (
                         <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full border border-orange-200">HIGH PRIORITY</span>
                       )}
+                      {job.is_emergency && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-600 rounded-full text-xs font-semibold border border-red-200">
+                          <Zap className="w-3 h-3" /> Emergency
+                        </span>
+                      )}
+                      {isRecurring && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary-50 text-secondary-700 rounded-full text-xs font-semibold border border-secondary-200">
+                          <Repeat className="w-3 h-3" /> Ongoing
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -297,14 +640,32 @@ export default function JobManagementModal({
                 </button>
               </div>
 
-              {parsed.cleanDescription && parsed.cleanDescription !== parsed.displayTitle && (
-                <div className="mt-4 bg-gray-50 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2.5 py-0.5 bg-secondary-50 text-secondary-700 rounded-full text-xs font-semibold border border-secondary-200">
-                      {parsed.category || 'Job'}
-                    </span>
+              {/* ── Status Progress Bar ── */}
+              {!['cancelled', 'declined'].includes(job.status) && (
+                <div className="mt-5">
+                  <div className="flex items-center justify-between">
+                    {STATUS_STEPS.map((step, i) => {
+                      const isActive = i <= currentStepIndex;
+                      const isCurrent = step === job.status;
+                      return (
+                        <div key={step} className="flex-1 flex flex-col items-center relative">
+                          {i > 0 && (
+                            <div className={`absolute top-3 right-1/2 w-full h-0.5 -translate-y-1/2 ${i <= currentStepIndex ? 'bg-emerald-500' : 'bg-gray-200'}`} />
+                          )}
+                          <div className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 ${
+                            isCurrent ? 'bg-emerald-500 border-emerald-500 text-white' :
+                            isActive ? 'bg-emerald-500 border-emerald-500 text-white' :
+                            'bg-white border-gray-300 text-gray-400'
+                          }`}>
+                            {isActive ? <Check className="w-3 h-3" /> : i + 1}
+                          </div>
+                          <span className={`text-[10px] mt-1 font-medium ${isCurrent ? 'text-emerald-700' : isActive ? 'text-gray-600' : 'text-gray-400'}`}>
+                            {STEP_LABELS[step]}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <p className="text-sm text-gray-700 leading-relaxed">{parsed.cleanDescription}</p>
                 </div>
               )}
             </div>
@@ -317,57 +678,80 @@ export default function JobManagementModal({
                 </div>
               )}
 
-              {/* ── Quote Now Button ── */}
-              {job.status === 'pending' && !quote && !isLicenseExpired && (
+              {/* ── Action Banner ── */}
+              {!isLicenseExpired && (
                 <div className="px-6 pt-4">
-                  <button
-                    onClick={() => setShowQuoteModal(true)}
-                    className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 bg-secondary-500 text-white rounded-xl text-sm font-semibold hover:bg-secondary-600 transition-colors shadow-lg shadow-secondary-200"
-                  >
-                    <Send className="w-4 h-4" />
-                    Quote Now
-                  </button>
-                </div>
-              )}
-
-              {/* ── Next Action Banner (non-pending or already quoted) ── */}
-              {nextStep && !isLicenseExpired && !(job.status === 'pending' && !quote) && (
-                <div className="px-6 pt-4">
-                  {nextStep.nextStatus ? (
+                  {job.status === 'pending' && !quote && (
                     <button
-                      onClick={() => handleStatusAdvance(nextStep.nextStatus!)}
-                      disabled={saving}
-                      className={`w-full flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 ${nextStep.buttonColor}`}
+                      onClick={() => setShowQuoteModal(true)}
+                      className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 bg-secondary-500 text-white rounded-xl text-sm font-semibold hover:bg-secondary-600 transition-colors shadow-lg shadow-secondary-200"
                     >
-                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                      {nextStep.action}
+                      <Send className="w-4 h-4" />
+                      Quote Now
                     </button>
-                  ) : (
-                    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${nextStep.buttonColor}`}>
+                  )}
+                  {job.status === 'pending' && quote && (
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-100 text-gray-600">
                       <Clock className="w-4 h-4 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-semibold">{nextStep.action}</p>
-                        <p className="text-xs opacity-80">{nextStep.hint}</p>
+                        <p className="text-sm font-semibold">Waiting for Client</p>
+                        <p className="text-xs opacity-80">Client is reviewing your quote</p>
+                      </div>
+                    </div>
+                  )}
+                  {job.status === 'accepted' && (
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 text-amber-700">
+                      <Clock className="w-4 h-4 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold">Awaiting Payment</p>
+                        <p className="text-xs opacity-80">Client accepted — waiting for escrow payment</p>
+                      </div>
+                    </div>
+                  )}
+                  {job.status === 'funded' && (
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50 text-green-700">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold">Payment Secured — Job Active</p>
+                        <p className="text-xs opacity-80">You can start work. Mark complete when finished.</p>
+                      </div>
+                    </div>
+                  )}
+                  {job.status === 'completed' && (
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary-50 text-secondary-700">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold">Job Complete</p>
+                        <p className="text-xs opacity-80">Awaiting client approval and payout release</p>
                       </div>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* ── Job Details Grid ── */}
-              <div className="px-6 pt-4 space-y-3">
-                {/* Client & Contact */}
-                <div className="border border-gray-200 rounded-xl p-4">
-                  <div className="mb-2">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Client</p>
+              <div className="px-6 pt-4 space-y-4">
+                {/* ── Description ── */}
+                {parsed.cleanDescription && parsed.cleanDescription !== parsed.displayTitle && (
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    {parsed.category && (
+                      <span className="inline-block px-2.5 py-0.5 bg-secondary-50 text-secondary-700 rounded-full text-xs font-semibold border border-secondary-200 mb-2">
+                        {parsed.category}
+                      </span>
+                    )}
+                    <p className="text-sm text-gray-700 leading-relaxed">{parsed.cleanDescription}</p>
                   </div>
+                )}
+
+                {/* ── Client & Contact ── */}
+                <div className="border border-gray-200 rounded-xl p-4">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Client</p>
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 bg-secondary-100 rounded-full flex items-center justify-center flex-shrink-0">
                       <User className="w-4 h-4 text-secondary-600" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 text-sm">{job.profiles?.full_name || 'Client'}</p>
-                      {canSeeContact && (
+                      {canSeeContact ? (
                         <div className="flex items-center gap-3 mt-1">
                           {job.profiles?.phone && (
                             <a href={`tel:${job.profiles.phone}`} className="flex items-center gap-1 text-xs text-secondary-600 hover:text-secondary-700">
@@ -380,31 +764,298 @@ export default function JobManagementModal({
                             </a>
                           )}
                         </div>
-                      )}
-                      {!canSeeContact && (
+                      ) : (
                         <p className="text-xs text-gray-400 mt-0.5">Contact visible after payment is secured</p>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Status Badges */}
-                {(job.is_emergency || isRecurring) && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {job.is_emergency && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-600 rounded-full text-xs font-semibold border border-red-200">
-                        <Zap className="w-3 h-3" /> Emergency
-                      </span>
-                    )}
-                    {isRecurring && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-semibold border border-secondary-200">
-                        <Repeat className="w-3 h-3" /> Ongoing
-                      </span>
-                    )}
+                {/* ── Payment & Escrow Status ── */}
+                {payment && (() => {
+                  const pendingInc = (payment.metadata as Record<string, unknown> | null)?.pending_increase as
+                    | { diff_cents?: number; additional_gst?: number }
+                    | undefined;
+                  const pendingDiffDollars = (pendingInc?.diff_cents ?? 0) / 100;
+                  // Fall back to computing GST on the delta if metadata predates the additional_gst field.
+                  // Without this, "Final once paid" mis-shows totalPaid + base only and the missing $9 looks like a phantom refund.
+                  const pendingGstDollars = pendingInc?.additional_gst != null
+                    ? pendingInc.additional_gst / 100
+                    : (isGstRegistered ? pendingDiffDollars * 0.1 : 0);
+                  const pendingTopUp = pendingDiffDollars + pendingGstDollars;
+                  return (
+                    <div className="border border-gray-200 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <DollarSign className="w-4 h-4 text-emerald-600" />
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Payment Status</p>
+                        <span className={`ml-auto px-2 py-0.5 rounded-full text-xs font-medium ${
+                          payment.status === 'completed' ? 'bg-green-100 text-green-700' :
+                          payment.status === 'released' ? 'bg-emerald-100 text-emerald-700' :
+                          'bg-amber-100 text-amber-700'
+                        }`}>
+                          {payment.status === 'completed' ? 'In Escrow' : payment.status === 'released' ? 'Released' : payment.status}
+                        </span>
+                      </div>
+                      <div className="space-y-1.5 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">{isGstRegistered ? 'Paid (ex. GST)' : 'Paid'}</span>
+                          <span className="font-medium text-gray-900">${paymentAmountDollars.toFixed(2)}</span>
+                        </div>
+                        {isGstRegistered && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">GST (10%)</span>
+                            <span className="font-medium text-gray-900">${gstDollars.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className={`${isGstRegistered ? 'border-t border-gray-200 pt-1.5' : ''} flex justify-between`}>
+                          <span className="font-semibold text-gray-700">In escrow now</span>
+                          <span className="font-bold text-emerald-700">${totalPaid.toFixed(2)}</span>
+                        </div>
+                        {pendingInc && pendingTopUp > 0 && (
+                          <>
+                            <div className="border-t border-amber-200 mt-2 pt-2 flex justify-between">
+                              <span className="text-amber-700">Awaiting top-up from client</span>
+                              <span className="font-medium text-amber-700">+${pendingTopUp.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="font-semibold text-amber-800">Final once paid</span>
+                              <span className="font-bold text-amber-800">${(totalPaid + pendingTopUp).toFixed(2)}</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <div className="mt-3 flex items-center gap-1.5 text-xs text-secondary-500">
+                        <Shield className="w-3 h-3" />
+                        <span>{pendingInc ? 'Escrow updates once the client pays the difference' : 'Funds held securely via Stripe escrow'}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* ── Client requested a price reduction ── */}
+                {payment && (payment.metadata as Record<string, unknown> | null)?.pending_reduction && (() => {
+                  const pr = (payment.metadata as Record<string, unknown>).pending_reduction as
+                    | { proposed_amount_cents?: number; original_amount_cents?: number; diff_cents?: number; reason?: string | null }
+                    | undefined;
+                  if (!pr) return null;
+                  const originalDollars = (pr.original_amount_cents ?? 0) / 100;
+                  const proposedDollars = (pr.proposed_amount_cents ?? 0) / 100;
+                  const refundDollars = (pr.diff_cents ?? 0) / 100;
+                  return (
+                    <div className="bg-secondary-50 border border-secondary-200 rounded-xl p-4">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-8 h-8 rounded-lg bg-secondary-100 flex items-center justify-center flex-shrink-0">
+                          <DollarSign className="w-4 h-4 text-secondary-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-secondary-900">Client Requested a Price Reduction</p>
+                          <p className="text-xs text-secondary-700 mt-0.5">
+                            The client wants to reduce the payment from <span className="font-semibold">${originalDollars.toFixed(2)}</span> to <span className="font-semibold">${proposedDollars.toFixed(2)}</span>.
+                            If you approve, ${refundDollars.toFixed(2)} will be refunded to their card and your payout drops accordingly.
+                          </p>
+                          {pr.reason && (
+                            <p className="text-xs text-secondary-600 mt-1 italic">Client note: "{pr.reason}"</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleReductionResponse(false)}
+                          disabled={reductionLoading}
+                          className="flex-1 px-3 py-2 bg-white border border-secondary-200 text-secondary-700 rounded-lg text-sm font-medium hover:bg-secondary-100 disabled:opacity-50 transition-colors"
+                        >
+                          Decline
+                        </button>
+                        <button
+                          onClick={() => handleReductionResponse(true)}
+                          disabled={reductionLoading}
+                          className="flex-1 px-3 py-2 bg-secondary-600 text-white rounded-lg text-sm font-medium hover:bg-secondary-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          {reductionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                          Approve & refund
+                        </button>
+                      </div>
+                      {reductionError && (
+                        <div className="flex items-start gap-1.5 mt-2 text-xs text-red-600">
+                          <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                          <span>{reductionError}</span>
+                        </div>
+                      )}
+                      {reductionSuccess && (
+                        <div className="flex items-start gap-1.5 mt-2 text-xs text-green-700 bg-green-50 rounded-lg p-2 border border-green-200">
+                          <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                          <span>{reductionSuccess}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {reductionSuccess && !(payment?.metadata as Record<string, unknown> | null)?.pending_reduction && (
+                  <div className="flex items-start gap-1.5 text-xs text-green-700 bg-green-50 rounded-lg p-3 border border-green-200">
+                    <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                    <span>{reductionSuccess}</span>
                   </div>
                 )}
 
-                {/* Budget & How You Got This */}
+                {/* ── Site Visit / Price Variation ──
+                    Two paths to the same backend (adjustQuotePrice):
+                     1. Site-inspection quotes — price was always provisional, so
+                        the input shows immediately once funded.
+                     2. Firm-price quotes — price was supposed to be locked, so
+                        the tradie has to explicitly tap "Site visit completed"
+                        to acknowledge they're requesting a variation. Input
+                        only appears after that click. */}
+                {quote && payment && (job?.status === 'funded' || job?.status === 'in_progress') && (() => {
+                  const isSiteInspect = !!quote.requires_site_inspection;
+                  const inputVisible = quote.final_price == null && (isSiteInspect || variationFormOpen);
+                  const title = quote.final_price != null
+                    ? (isSiteInspect ? 'Final Price Set' : 'Variation Submitted')
+                    : (isSiteInspect ? 'Set Final Price After Site Visit' : 'Need to adjust the price?');
+                  const helper = quote.final_price != null
+                    ? (() => {
+                        const finalDollars = quote.final_price as number;
+                        const paidDollars = paymentAmountDollars;
+                        const pendingInc = (payment.metadata as Record<string, unknown> | null)?.pending_increase as
+                          | { diff_cents?: number }
+                          | undefined;
+                        const pendingDollars = (pendingInc?.diff_cents ?? 0) / 100;
+                        if (pendingDollars > 0) {
+                          return `Final price: $${finalDollars.toFixed(2)} ${isGstRegistered ? '(ex. GST)' : ''} · paid so far $${paidDollars.toFixed(2)} · awaiting client to pay $${pendingDollars.toFixed(2)}${isGstRegistered ? ' + GST' : ''}.`;
+                        }
+                        if (Math.abs(finalDollars - paidDollars) < 0.01) {
+                          return `Final price: $${finalDollars.toFixed(2)} ${isGstRegistered ? '(ex. GST)' : ''} · matches the amount in escrow.`;
+                        }
+                        return `Final price: $${finalDollars.toFixed(2)} ${isGstRegistered ? '(ex. GST)' : ''} · originally paid $${paidDollars.toFixed(2)} (refund issued for the difference).`;
+                      })()
+                    : (isSiteInspect
+                        ? `Enter your final ${isGstRegistered ? 'ex-GST' : ''} price. If higher than the amount paid, the client approves and pays the difference before work continues. If lower, the client gets a refund.`
+                        : variationFormOpen
+                          ? `Enter the new ${isGstRegistered ? 'ex-GST' : ''} price. The client will be asked to approve — if higher they pay the difference, if lower they get a refund.`
+                          : `Only use this if the job has changed since you quoted. The client must approve any price variation before work continues.`);
+
+                  return (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <DollarSign className="w-4 h-4 text-amber-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-amber-900">{title}</p>
+                        <p className="text-xs text-amber-700 mt-0.5">{helper}</p>
+                      </div>
+                    </div>
+
+                    {/* Firm-price gate: explicit opt-in reveals the variation input. */}
+                    {!isSiteInspect && quote.final_price == null && !variationFormOpen && (
+                      <button
+                        onClick={() => setVariationFormOpen(true)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors"
+                      >
+                        <DollarSign className="w-3.5 h-3.5" />
+                        Request a price variation
+                      </button>
+                    )}
+
+                    {inputVisible && (
+                      <>
+                        <div className="flex items-center gap-2 mt-3">
+                          <div className="relative flex-1">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+                            <input
+                              type="number"
+                              min="1"
+                              step="0.01"
+                              value={finalPriceInput}
+                              onChange={(e) => { setFinalPriceInput(e.target.value); setFinalPriceError(null); }}
+                              placeholder={isGstRegistered ? 'Final price (ex. GST)' : 'Final price'}
+                              className="w-full pl-7 pr-3 py-2.5 border border-amber-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                            />
+                          </div>
+                          <button
+                            onClick={handleSetFinalPrice}
+                            disabled={finalPriceLoading || !finalPriceInput}
+                            className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                              finalPriceLoading || !finalPriceInput
+                                ? 'bg-amber-300 text-amber-100 cursor-not-allowed'
+                                : 'bg-amber-500 text-white hover:bg-amber-600'
+                            }`}
+                          >
+                            {finalPriceLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : isSiteInspect ? 'Confirm' : 'Send for approval'}
+                          </button>
+                          {!isSiteInspect && (
+                            <button
+                              onClick={() => { setVariationFormOpen(false); setFinalPriceInput(''); setFinalPriceError(null); }}
+                              className="px-3 py-2.5 text-sm font-medium text-amber-700 hover:bg-amber-100 rounded-lg transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                        </div>
+                        {isGstRegistered && parseFloat(finalPriceInput) > 0 && (
+                          <p className="mt-1.5 text-xs text-amber-700">
+                            Client pays <span className="font-semibold">${(parseFloat(finalPriceInput) * 1.1).toFixed(2)}</span> total
+                            <span className="text-amber-500"> (${parseFloat(finalPriceInput).toFixed(2)} + ${(parseFloat(finalPriceInput) * 0.1).toFixed(2)} GST)</span>
+                          </p>
+                        )}
+                        {finalPriceError && (
+                          <div className="flex items-start gap-1.5 mt-2 text-xs text-red-600">
+                            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                            <span>{finalPriceError}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {finalPriceSuccess && (
+                      <div className="flex items-start gap-1.5 mt-2 text-xs text-green-700 bg-green-50 rounded-lg p-2 border border-green-200">
+                        <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                        <span>{finalPriceSuccess}</span>
+                      </div>
+                    )}
+                  </div>
+                  );
+                })()}
+
+                {/* ── 3-Stage Flow Actions (v2 pre-payment) ──
+                    Renders the tradie-side action surface for v2 jobs:
+                    "mark site visit complete" once the client has booked one,
+                    and "submit final quote" once the visit is done (or fast-
+                    path when no visit was required). The component is a no-op
+                    on flow_version=1 so v1 surfaces continue unchanged. */}
+                {quote && !payment && job?.flow_version === 2 && (
+                  <div className="bg-white border border-secondary-200 rounded-xl p-4">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Next step</p>
+                    <TradieQuoteActions
+                      quote={quote as unknown as Quote}
+                      job={{ id: job.id, flow_version: job.flow_version }}
+                      onChange={() => { loadJob(); onJobUpdated(); }}
+                    />
+                  </div>
+                )}
+
+                {/* ── Your Quote (only when no payment record yet — avoids duplicate price display) ── */}
+                {quote && !payment && (
+                  <div className="bg-secondary-50 border border-secondary-200 rounded-xl px-4 py-3">
+                    <p className="text-xs text-gray-500 mb-0.5">Your Quote</p>
+                    <p className="text-sm font-semibold text-secondary-800">
+                      {quote.firm_price
+                        ? `$${quote.firm_price.toLocaleString()}`
+                        : `$${quote.price_min.toLocaleString()} – $${quote.price_max.toLocaleString()}`}
+                      {isGstRegistered && <span className="text-xs font-normal text-gray-500 ml-1">+ GST</span>}
+                    </p>
+                    {quote.message && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{quote.message}</p>}
+                  </div>
+                )}
+                {/* ── Quote message (when payment exists, show message without duplicate price) ── */}
+                {quote?.message && payment && (
+                  <div className="bg-secondary-50 border border-secondary-200 rounded-xl px-4 py-3">
+                    <p className="text-xs font-medium text-gray-600 mb-1">Your Quote Message</p>
+                    <p className="text-sm text-gray-700 leading-relaxed">{quote.message}</p>
+                  </div>
+                )}
+
+                {/* ── Budget & Quotes (for pending jobs without own quote) ── */}
                 {job.status === 'pending' && !quote && (
                   <div className="grid grid-cols-2 gap-2">
                     <div className="rounded-xl px-3 py-2.5 bg-gray-50 border border-gray-200">
@@ -416,16 +1067,12 @@ export default function JobManagementModal({
                             ? 'Quote requested'
                             : 'Not specified'}
                       </p>
-                      {(job.budget_type === 'request_quote' || job.budget_type === 'to_be_quoted') && !job.budget_amount && (
-                        <p className="text-xs text-gray-400 mt-0.5">Client wants you to set the price</p>
-                      )}
                     </div>
                     {job.tradie_id ? (
                       <div className="rounded-xl px-3 py-2.5 bg-secondary-50 border border-secondary-200">
                         <p className="text-xs text-gray-500 mb-0.5">Sent To You</p>
                         <p className="text-sm font-semibold text-secondary-700 flex items-center gap-1">
-                          <User className="w-3.5 h-3.5" />
-                          Private request
+                          <User className="w-3.5 h-3.5" /> Private request
                         </p>
                       </div>
                     ) : (
@@ -434,28 +1081,13 @@ export default function JobManagementModal({
                         <p className="text-sm font-semibold text-gray-700 flex items-center gap-1">
                           <Users className="w-3.5 h-3.5" />
                           {quoteCount} of {job.max_quotes || 5}
-                          {quoteCount >= (job.max_quotes || 5) && (
-                            <span className="ml-1 px-1.5 py-0.5 bg-red-50 text-red-600 rounded text-xs border border-red-200">Full</span>
-                          )}
                         </p>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* Your existing quote display */}
-                {quote && (
-                  <div className="bg-secondary-50 border border-secondary-200 rounded-xl px-3 py-2.5">
-                    <p className="text-xs text-gray-500 mb-0.5">Your Quote</p>
-                    <p className="text-sm font-semibold text-secondary-800">
-                      {quote.firm_price
-                        ? `$${quote.firm_price.toLocaleString()}`
-                        : `$${quote.price_min.toLocaleString()} – $${quote.price_max.toLocaleString()}`}
-                    </p>
-                  </div>
-                )}
-
-                {/* Key Info Grid */}
+                {/* ── Key Info Grid ── */}
                 <div className="grid grid-cols-2 gap-2.5">
                   {job.location_address && (
                     <div className="border border-gray-200 rounded-xl px-3 py-2.5">
@@ -463,22 +1095,16 @@ export default function JobManagementModal({
                       <p className="text-sm text-gray-800 flex items-start gap-1.5">
                         <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-400" />
                         <span className="line-clamp-2">
-                          {canSeeContact
-                            ? job.location_address
-                            : extractSuburb(job.location_address) || 'Suburb hidden'}
+                          {canSeeContact ? job.location_address : extractSuburb(job.location_address) || 'Suburb hidden'}
                         </span>
                       </p>
-                      {!canSeeContact && (
-                        <p className="text-xs text-gray-400 mt-1">Full address after payment</p>
-                      )}
                     </div>
                   )}
                   {job.preferred_time_slot && (
                     <div className="border border-gray-200 rounded-xl px-3 py-2.5">
                       <p className="text-xs text-gray-400 mb-0.5">Preferred Time</p>
                       <p className="text-sm text-gray-800 flex items-center gap-1.5 capitalize">
-                        <Clock className="w-3.5 h-3.5 text-gray-400" />
-                        {job.preferred_time_slot}
+                        <Clock className="w-3.5 h-3.5 text-gray-400" /> {job.preferred_time_slot}
                       </p>
                     </div>
                   )}
@@ -495,8 +1121,7 @@ export default function JobManagementModal({
                     <div className="border border-gray-200 rounded-xl px-3 py-2.5">
                       <p className="text-xs text-gray-400 mb-0.5">Est. Duration</p>
                       <p className="text-sm text-gray-800 flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-gray-400" />
-                        {job.estimated_duration}
+                        <Clock className="w-3.5 h-3.5 text-gray-400" /> {job.estimated_duration}
                       </p>
                     </div>
                   )}
@@ -508,17 +1133,15 @@ export default function JobManagementModal({
                   </div>
                 </div>
 
-                {/* Access Instructions */}
+                {/* ── Access Instructions ── */}
                 {job.access_instructions && (
                   <div className="border border-gray-200 rounded-xl px-3 py-2.5">
-                    <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
-                      <Key className="w-3 h-3" /> Access Instructions
-                    </p>
+                    <p className="text-xs text-gray-400 mb-1 flex items-center gap-1"><Key className="w-3 h-3" /> Access Instructions</p>
                     <p className="text-sm text-gray-800">{job.access_instructions}</p>
                   </div>
                 )}
 
-                {/* Photos */}
+                {/* ── Photos ── */}
                 {job.images_url && job.images_url.length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
@@ -534,11 +1157,119 @@ export default function JobManagementModal({
                   </div>
                 )}
 
-                {/* Notes */}
+                {/* ── Completion Form (only for in_progress jobs) ── */}
+                {(job.status === 'in_progress' || job.status === 'funded') && !isLicenseExpired && (
+                  <div className="border-2 border-emerald-200 rounded-xl p-4 bg-emerald-50/50">
+                    <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-3">
+                      <Camera className="w-4 h-4 text-emerald-600" />
+                      Complete This Job
+                    </h3>
+
+                    {/* Completion prompts */}
+                    <p className="text-xs text-gray-500 mb-2">Select what was completed:</p>
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {prompts.map((prompt) => (
+                        <button
+                          key={prompt}
+                          onClick={() => {
+                            setSelectedPrompts(prev => {
+                              const next = new Set(prev);
+                              next.has(prompt) ? next.delete(prompt) : next.add(prompt);
+                              return next;
+                            });
+                          }}
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all border ${
+                            selectedPrompts.has(prompt)
+                              ? 'bg-emerald-500 text-white border-emerald-500'
+                              : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-300'
+                          }`}
+                        >
+                          {selectedPrompts.has(prompt) && <Check className="w-3 h-3 inline mr-1" />}
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Additional notes */}
+                    <textarea
+                      value={completionCustomNotes}
+                      onChange={(e) => setCompletionCustomNotes(e.target.value)}
+                      placeholder="Add any additional notes..."
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 resize-none mb-3"
+                    />
+
+                    {/* Photo upload */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handlePhotoSelect}
+                        className="hidden"
+                      />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50"
+                      >
+                        <Plus className="w-3 h-3" /> Add Photos ({completionPhotos.length}/5)
+                      </button>
+                    </div>
+
+                    {completionPhotos.length > 0 && (
+                      <div className="grid grid-cols-5 gap-1.5 mb-3">
+                        {completionPhotos.map((photo, i) => (
+                          <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
+                            <img src={photo.preview} alt="" className="w-full h-full object-cover" />
+                            <button
+                              onClick={() => setCompletionPhotos(prev => prev.filter((_, idx) => idx !== i))}
+                              className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {completionError && (
+                      <p className="text-xs text-red-600 mb-2">{completionError}</p>
+                    )}
+
+                    <button
+                      onClick={handleCompletion}
+                      disabled={saving || (!combinedCompletionNotes.trim())}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                    >
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                      Mark Complete & Request Payout
+                    </button>
+                  </div>
+                )}
+
+                {/* ── Completion Summary (for completed jobs) ── */}
+                {job.status === 'completed' && job.completion_notes && (
+                  <div className="border border-green-200 rounded-xl p-4 bg-green-50/50">
+                    <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      Completion Notes
+                    </h3>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{job.completion_notes}</p>
+                    {job.completion_photo_url && (
+                      <img src={job.completion_photo_url} alt="Completion" className="mt-2 rounded-lg max-h-32 object-cover" />
+                    )}
+                    {job.completed_at && (
+                      <p className="text-xs text-gray-400 mt-2">
+                        Completed {new Date(job.completed_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* ── Your Notes ── */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Your Notes
-                  </label>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Your Notes</label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
@@ -548,7 +1279,7 @@ export default function JobManagementModal({
                   />
                 </div>
 
-                {/* Job Preferences (collapsible) */}
+                {/* ── Preferences (collapsible) ── */}
                 <button
                   onClick={() => setShowAdvanced(!showAdvanced)}
                   className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors"
@@ -562,45 +1293,30 @@ export default function JobManagementModal({
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <label className="block text-xs font-medium text-gray-500">Priority</label>
-                        <span className="flex items-center gap-1 text-[11px] text-gray-400">
-                          <EyeOff className="w-3 h-3" /> Only visible to you
-                        </span>
+                        <span className="flex items-center gap-1 text-[11px] text-gray-400"><EyeOff className="w-3 h-3" /> Only visible to you</span>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
-                        <button
-                          onClick={() => setPriority('low')}
-                          className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
-                            priority === 'low' ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-500 border-gray-200'
-                          }`}
-                        >Low</button>
-                        <button
-                          onClick={() => setPriority('normal')}
-                          className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
-                            priority === 'normal' ? 'bg-gray-600 text-white border-gray-600' : 'bg-white text-gray-500 border-gray-200'
-                          }`}
-                        >Normal</button>
-                        <button
-                          onClick={() => setPriority('high')}
-                          className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
-                            priority === 'high' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-500 border-gray-200'
-                          }`}
-                        >High</button>
+                        {(['low', 'normal', 'high'] as const).map((p) => (
+                          <button
+                            key={p}
+                            onClick={() => setPriority(p)}
+                            className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border capitalize ${
+                              priority === p
+                                ? p === 'low' ? 'bg-blue-500 text-white border-blue-500'
+                                  : p === 'high' ? 'bg-orange-500 text-white border-orange-500'
+                                  : 'bg-gray-600 text-white border-gray-600'
+                                : 'bg-white text-gray-500 border-gray-200'
+                            }`}
+                          >{p}</button>
+                        ))}
                       </div>
                     </div>
-
                     <label className="flex items-center gap-2.5 cursor-pointer border border-gray-200 rounded-lg p-3">
-                      <input
-                        type="checkbox"
-                        checked={isDelayed}
-                        onChange={(e) => setIsDelayed(e.target.checked)}
-                        className="w-4 h-4 text-secondary-600 rounded focus:ring-secondary-500"
-                      />
+                      <input type="checkbox" checked={isDelayed} onChange={(e) => setIsDelayed(e.target.checked)} className="w-4 h-4 text-secondary-600 rounded focus:ring-secondary-500" />
                       <Clock className="w-4 h-4 text-gray-400" />
                       <div className="flex-1">
                         <span className="text-sm text-gray-700">Can&apos;t start yet</span>
-                        <p className="flex items-center gap-1 text-xs text-gray-400">
-                          <Eye className="w-3 h-3" /> Client will see your earliest available date
-                        </p>
+                        <p className="flex items-center gap-1 text-xs text-gray-400"><Eye className="w-3 h-3" /> Client will see your earliest available date</p>
                       </div>
                     </label>
                     {isDelayed && (
@@ -624,19 +1340,14 @@ export default function JobManagementModal({
                   onClick={handleArchiveToggle}
                   disabled={saving}
                   className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50 ${
-                    isArchived
-                      ? 'bg-secondary-50 text-secondary-700 border border-secondary-200 hover:bg-secondary-100'
-                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                    isArchived ? 'bg-secondary-50 text-secondary-700 border border-secondary-200 hover:bg-secondary-100' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                   }`}
                 >
                   {isArchived ? <><ArchiveRestore className="w-4 h-4" /> Unarchive</> : <><Archive className="w-4 h-4" /> Archive Job</>}
                 </button>
               )}
               <div className="flex gap-3">
-                <button
-                  onClick={onClose}
-                  className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
-                >
+                <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
                   Close
                 </button>
                 <button
@@ -654,7 +1365,7 @@ export default function JobManagementModal({
         )}
       </div>
 
-      {/* SubmitQuoteModal — same full form used in Work Hub */}
+      {/* SubmitQuoteModal */}
       {showQuoteModal && job && (
         <SubmitQuoteModal
           isOpen={showQuoteModal}
@@ -665,6 +1376,18 @@ export default function JobManagementModal({
             loadJob();
             onJobUpdated();
           }}
+        />
+      )}
+
+      {/* In-app confirmation for price-adjustment actions (replaces window.confirm) */}
+      {confirmDialog && (
+        <ConfirmModal
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          confirmText={confirmDialog.confirmText}
+          type={confirmDialog.type}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
         />
       )}
     </div>

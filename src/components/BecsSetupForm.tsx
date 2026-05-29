@@ -42,6 +42,7 @@ function BecsFormInner({ clientSecret, name, email, onSuccess, onCancel }: BecsF
       setError(confirmError.message || 'Failed to set up direct debit');
       setLoading(false);
     } else {
+      // Keep loading state visible while parent refreshes payment methods
       onSuccess();
     }
   };

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Briefcase, Package, GraduationCap, Infinity as InfinityIcon, ChevronRight } from 'lucide-react';
+import { Briefcase, Package, GraduationCap, Infinity as InfinityIcon, ChevronRight, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
@@ -9,9 +9,10 @@ import Jobs from './Jobs';
 import TradeCareers from './TradeCareers';
 import ServicesTab from '../components/ServicesTab';
 
-type WorkHubTab = 'leads' | 'jobs' | 'services' | 'hiring';
+type WorkHubTab = 'leads' | 'quotes' | 'jobs' | 'services' | 'hiring';
 
 const tabFromParam: Record<string, WorkHubTab> = {
+  quotes: 'quotes',
   active: 'jobs',
   services: 'services',
   recruitment: 'hiring',
@@ -30,6 +31,7 @@ export default function WorkHub() {
 
   const tabs: { key: WorkHubTab; label: string; icon: typeof Briefcase }[] = [
     { key: 'leads', label: 'Leads', icon: Briefcase },
+    { key: 'quotes', label: 'My Quotes', icon: FileText },
     { key: 'jobs', label: 'My Jobs', icon: Package },
     { key: 'services', label: 'Ongoing Services', icon: InfinityIcon },
     { key: 'hiring', label: 'Hiring', icon: GraduationCap },
@@ -49,6 +51,7 @@ export default function WorkHub() {
         <h1 className="text-xl font-bold text-gray-900 mb-1">Work Hub</h1>
         <p className="text-sm text-gray-500 mb-4">
           {activeTab === 'leads' && 'Browse new job requests from clients and submit your quotes'}
+          {activeTab === 'quotes' && 'Quotes you\'ve submitted — track responses and client decisions'}
           {activeTab === 'jobs' && 'Track jobs you\'ve been assigned and manage active work'}
           {activeTab === 'services' && 'Manage ongoing client relationships, log visits, and generate invoices'}
           {activeTab === 'hiring' && 'Post vacancies and find apprentices or qualified tradies to join your team'}
@@ -63,7 +66,7 @@ export default function WorkHub() {
                 key={tab.key}
                 onClick={() => {
                   setActiveTab(tab.key);
-                  const paramKey = tab.key === 'jobs' ? 'active' : tab.key === 'services' ? 'services' : tab.key === 'hiring' ? 'recruitment' : '';
+                  const paramKey = tab.key === 'quotes' ? 'quotes' : tab.key === 'jobs' ? 'active' : tab.key === 'services' ? 'services' : tab.key === 'hiring' ? 'recruitment' : '';
                   if (paramKey) {
                     setSearchParams({ tab: paramKey }, { replace: true });
                   } else {
@@ -85,6 +88,7 @@ export default function WorkHub() {
 
         <SectionErrorBoundary>
           {activeTab === 'leads' && <Leads embedded />}
+          {activeTab === 'quotes' && <Leads embedded initialFilter="quoted" />}
           {activeTab === 'jobs' && <Jobs embedded />}
           {activeTab === 'services' && <ServicesTab />}
           {activeTab === 'hiring' && <TradeCareers embedded />}

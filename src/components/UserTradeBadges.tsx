@@ -23,7 +23,8 @@ export default function UserTradeBadges({ verifiedTrades, declaredTrades, size =
       {verified.map((trade) => (
         <span
           key={`v-${trade}`}
-          className={`inline-flex items-center gap-1 ${paddingClass} bg-secondary-600 text-white ${textClass} font-semibold rounded-full shadow-sm`}
+          className={`inline-flex items-center gap-1 ${paddingClass} ${textClass} font-semibold rounded-full shadow-sm`}
+          style={{ backgroundColor: '#2E86DE', color: 'white' }}
         >
           <CheckCircle2 className={iconClass} />
           {trade}

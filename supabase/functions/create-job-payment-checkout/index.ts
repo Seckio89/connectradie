@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { calculateProcessingFeeCents } from "../_shared/pricing.ts";
+import { calculateProcessingFeeCents, calculateGstCents } from "../_shared/pricing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
@@ -136,16 +136,25 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Get job details for the line item description
+    // Get job details for the line item description and tradie GST status
     let jobDescription = "Service Payment";
+    let tradieIsGstRegistered = false;
     if (payment.job_id) {
       const { data: job } = await supabase
         .from("jobs")
-        .select("description")
+        .select("description, tradie_id")
         .eq("id", payment.job_id)
         .maybeSingle();
       if (job?.description) {
         jobDescription = job.description.replace(/^\[[^\]]+\]\s*/, "");
+      }
+      if (job?.tradie_id) {
+        const { data: tradieProfile } = await supabase
+          .from("profiles")
+          .select("is_gst_registered")
+          .eq("id", job.tradie_id)
+          .maybeSingle();
+        tradieIsGstRegistered = tradieProfile?.is_gst_registered === true;
       }
     }
 
@@ -175,6 +184,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const baseAmount = payment.amount;
+    const gst = tradieIsGstRegistered ? calculateGstCents(baseAmount) : 0;
     const processingFee = calculateProcessingFeeCents(baseAmount);
 
     // Build line items
@@ -188,6 +198,17 @@ Deno.serve(async (req: Request) => {
         quantity: 1,
       },
     ];
+
+    if (gst > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "aud",
+          product_data: { name: "GST (10%)" },
+          unit_amount: gst,
+        },
+        quantity: 1,
+      });
+    }
 
     if (processingFee > 0) {
       lineItems.push({
@@ -223,6 +244,7 @@ Deno.serve(async (req: Request) => {
           job_id: payment.job_id || "",
           payment_record_id: paymentId,
           base_amount: String(baseAmount),
+          gst: String(gst),
           processing_fee: String(processingFee),
         },
       },

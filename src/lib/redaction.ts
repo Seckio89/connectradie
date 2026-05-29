@@ -197,6 +197,22 @@ function redactMixedNumberSequence(text: string): string {
   return result.join(' ');
 }
 
+// ── Address redaction ──
+const STREET_TYPES = [
+  'street', 'st', 'road', 'rd', 'avenue', 'ave', 'drive', 'dr', 'place', 'pl',
+  'court', 'ct', 'crescent', 'cres', 'parade', 'pde', 'terrace', 'tce',
+  'lane', 'ln', 'way', 'circuit', 'cct', 'boulevard', 'blvd', 'highway', 'hwy',
+  'close', 'cl', 'grove', 'gr', 'mews', 'rise', 'loop', 'track',
+];
+const STREET_PATTERN = new RegExp(
+  `\\b(\\d{1,5}[a-z]?(?:\\/\\d{1,5})?)\\s+([a-z][a-z\\s]{1,30})\\b(${STREET_TYPES.join('|')})\\b[.,]?\\s*([a-z\\s]{2,25})?`,
+  'gi'
+);
+
+function redactAddresses(text: string): string {
+  return text.replace(STREET_PATTERN, '[address shared after job is confirmed]');
+}
+
 // ── Main redaction function ──
 export function redactContactInfo(text: string): string {
   if (!text.trim()) return text;
@@ -223,6 +239,9 @@ export function redactContactInfo(text: string): string {
   // Mixed digit + word sequences (e.g., "zero one one three 7 8 9 0 1")
   redacted = redactMixedNumberSequence(redacted);
 
+  // Street addresses (e.g., "6 spring garden street", "123 Smith Ave", "45/12 Jones Rd")
+  redacted = redactAddresses(redacted);
+
   return redacted;
 }
 
@@ -237,6 +256,7 @@ export type ContactDetection = {
   hasIntentPhrase: boolean;
   hasSeparatedDigits: boolean;
   hasEmailBypass: boolean;
+  hasAddress: boolean;
 };
 
 /**
@@ -259,9 +279,12 @@ export function detectContactInfo(text: string): ContactDetection {
   const hasIntentPhrase = INTENT_PATTERNS.some(p => p.test(normalized));
   const hasSeparatedDigits = detectSeparatedDigits(text);
   const hasEmailBypass = detectEmailBypass(text);
+  const hasAddress = STREET_PATTERN.test(text);
+  // Reset regex lastIndex since it has the global flag
+  STREET_PATTERN.lastIndex = 0;
 
   const hasContact = hasDigitPhone || hasEmail || hasSpelledNumber || hasMixedNumber
-    || hasIntentPhrase || hasSeparatedDigits || hasEmailBypass;
+    || hasIntentPhrase || hasSeparatedDigits || hasEmailBypass || hasAddress;
 
   return {
     hasContact,
@@ -272,6 +295,7 @@ export function detectContactInfo(text: string): ContactDetection {
     hasIntentPhrase,
     hasSeparatedDigits,
     hasEmailBypass,
+    hasAddress,
   };
 }
 

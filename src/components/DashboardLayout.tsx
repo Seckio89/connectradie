@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Wrench,
@@ -23,7 +23,6 @@ import {
   BarChart3,
   Users,
   DollarSign,
-  Infinity as InfinityIcon,
   Flag,
   AlertTriangle,
   Wallet,
@@ -77,12 +76,22 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
     case 'new_lead':
     case 'booking_request':
       return { icon: Briefcase, bgClass: 'bg-blue-500/15', iconClass: 'text-blue-400' };
+    case 'quote_reminder':
+      return { icon: Clock, bgClass: 'bg-amber-500/15', iconClass: 'text-amber-400' };
     case 'payment':
     case 'PAYMENT_RECEIVED':
     case 'invoice_ready':
+    case 'invoice_approval_required':
+    case 'invoice_approval_reminder':
+    case 'invoice_approved':
+    case 'invoice_disputed':
+    case 'invoice_generated':
     case 'INVOICE_RECEIVED':
     case 'payment_auto_released':
-      return { icon: DollarSign, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
+    case 'payment_received':
+    case 'payment_sent':
+    case 'becs_charge_initiated':
+      return { icon: DollarSign, bgClass: 'bg-emerald-500', iconClass: 'text-white' };
     case 'session_reminder':
     case 'session_rescheduled':
     case 'session_skipped':
@@ -115,8 +124,6 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
       return { icon: CheckCircle2, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
     case 'recurring_cancelled':
       return { icon: XCircle, bgClass: 'bg-red-500/15', iconClass: 'text-red-400' };
-    case 'payment_sent':
-      return { icon: DollarSign, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
     default:
       return { icon: Bell, bgClass: 'bg-navy-700', iconClass: 'text-navy-300' };
   }
@@ -160,9 +167,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Auto-expand nav group when navigating to a child route
   useEffect(() => {
-    if (location.pathname === '/work') {
-      setExpandedNav('Work Hub');
-    } else if (location.pathname === '/analytics' || location.pathname === '/performance') {
+    if (location.pathname === '/analytics' || location.pathname === '/performance') {
       setExpandedNav('Insights');
     }
   }, [location.pathname]);
@@ -180,9 +185,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         .limit(10);
 
       if (!error && data) {
-        setNotifications(data as Notification[]);
-        if (data.length > 0) {
-          lastNotificationIdRef.current = data[0].id;
+        const notifs = data as Notification[];
+        setNotifications(notifs);
+        if (notifs.length > 0) {
+          lastNotificationIdRef.current = notifs[0].id;
         }
       }
     };
@@ -250,9 +256,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         .limit(10);
 
       if (data) {
-        setNotifications(data as Notification[]);
-        if (data.length > 0) {
-          lastNotificationIdRef.current = data[0].id;
+        const notifs = data as Notification[];
+        setNotifications(notifs);
+        if (notifs.length > 0) {
+          lastNotificationIdRef.current = notifs[0].id;
         }
       }
     }, 10000);
@@ -270,6 +277,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     toastTimeoutRef.current = setTimeout(() => setToastNotification(null), 10000);
   }
 
+  const handleMarkAllRead = useCallback(async () => {
+    if (!user) return;
+    const success = await markAllNotificationsRead(user.id);
+    if (success) {
+      const now = new Date().toISOString();
+      setNotifications(prev => prev.map(n => ({ ...n, read: true, read_at: now })));
+    }
+  }, [user]);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
@@ -286,7 +302,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [handleMarkAllRead, notifications, notificationsOpen]);
 
   const markAsRead = async (notificationId: string) => {
     const success = await markNotificationRead(notificationId);
@@ -298,37 +314,40 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   };
 
-  const handleMarkAllRead = async () => {
-    if (!user) return;
-    const success = await markAllNotificationsRead(user.id);
-    if (success) {
-      const now = new Date().toISOString();
-      setNotifications(notifications.map(n => ({ ...n, read: true, read_at: now })));
-    }
-  };
-
   const handleNotificationClick = async (notification: Notification) => {
     await markAsRead(notification.id);
     const jobId = notification.job_id || notification.metadata?.job_id;
 
+    // Jobs past the lead stage (accepted / funded / in-progress / completed-awaiting-release) —
+    // tradie lands on WorkHub "My Jobs" tab, client lands on Leads "Active" filter
+    // (which now includes accepted / funded / in-progress / awaiting-release).
+    const activeJobHref = (id?: string) =>
+      isTradie
+        ? `/work?tab=active${id ? `&job=${id}` : ''}`
+        : `/leads?filter=active${id ? `&job=${id}` : ''}`;
+
     if (notification.type === 'QUOTE_RECEIVED' || notification.type === 'quote_received') {
-      // Client clicks quote notification → go to My Jobs with that job expanded
+      // Client clicks quote notification → go to My Jobs with that job expanded (Active tab — job is still pending a client decision)
       navigate(jobId ? `/leads?job=${jobId}` : '/leads');
       setNotificationsOpen(false);
     } else if (notification.type === 'booking_request') {
       if (jobId) {
-        navigate(isTradie ? `/work?job=${jobId}` : `/leads?job=${jobId}`);
+        navigate(activeJobHref(jobId));
         setNotificationsOpen(false);
       } else if (notification.metadata?.conversation_id) {
         navigate(`/messages?conversation=${notification.metadata.conversation_id}`);
         setNotificationsOpen(false);
       }
-    } else if (notification.type === 'job_update') {
-      if (isTradie) {
-        navigate(jobId ? `/work?job=${jobId}` : '/work');
-      } else {
-        navigate(jobId ? `/leads?job=${jobId}` : '/leads');
-      }
+    } else if (
+      notification.type === 'job_update' ||
+      notification.type === 'job_completed' ||
+      notification.type === 'payment_released' ||
+      notification.type === 'payment_confirmed' ||
+      notification.type === 'price_reduction_requested' ||
+      notification.type === 'price_reduction_approved' ||
+      notification.type === 'price_reduction_declined'
+    ) {
+      navigate(activeJobHref(jobId));
       setNotificationsOpen(false);
     } else if (notification.type === 'project_update') {
       navigate('/projects');
@@ -336,7 +355,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     } else if (notification.type === 'vacancy_application') {
       navigate('/work');
       setNotificationsOpen(false);
-    } else if (notification.type === 'new_lead') {
+    } else if (notification.type === 'new_lead' || notification.type === 'quote_reminder' || notification.type === 'new_job') {
+      // Un-dismiss the job so it shows in the leads list
+      if (jobId) {
+        try {
+          const stored = localStorage.getItem('dismissed_leads');
+          if (stored) {
+            const dismissed: string[] = JSON.parse(stored);
+            const updated = dismissed.filter((id: string) => id !== jobId);
+            localStorage.setItem('dismissed_leads', JSON.stringify(updated));
+          }
+        } catch { /* ignore */ }
+      }
       navigate(jobId ? `/work?job=${jobId}` : '/work');
       setNotificationsOpen(false);
     } else if ([
@@ -347,18 +377,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     } else if ([
       'session_reminder', 'session_rescheduled', 'session_skipped', 'session_completed',
       'extra_session_added', 'invoice_ready',
+      'invoice_approval_required', 'invoice_approval_reminder', 'invoice_approved', 'invoice_disputed', 'invoice_generated',
       'recurring_job_confirmation_required', 'recurring_job_auto_confirmed',
       'recurring_job_confirmed', 'recurring_job_declined',
       'recurring_paused', 'recurring_resumed', 'recurring_cancelled',
       'recurring_price_updated', 'price_increase_requested', 'price_adjusted',
+      'reschedule_proposal', 'reschedule_accepted', 'time_proposal',
       'becs_setup_complete', 'becs_setup_failed', 'becs_mandate_revoked',
     ].includes(notification.type)) {
-      navigate(isTradie ? '/work?tab=services' : '/schedule');
+      navigate(isTradie ? '/work?tab=services' : '/leads?tab=services');
       setNotificationsOpen(false);
     } else {
-      // Fallback: navigate to relevant hub
+      // Fallback: notifications with a jobId likely concern a job already in the pipeline,
+      // so route to the active-work tab rather than the default Leads view.
       if (jobId) {
-        navigate(isTradie ? `/work?job=${jobId}` : `/leads?job=${jobId}`);
+        navigate(activeJobHref(jobId));
       } else {
         navigate(isTradie ? '/work' : '/leads');
       }
@@ -381,12 +414,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const tradieNavItems: NavItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'My Profile', href: '/my-profile', icon: UserCircle },
-    { name: 'Work Hub', href: '/work', icon: ClipboardList, children: [
-      { name: 'Leads', href: '/work', icon: ClipboardList },
-      { name: 'My Jobs', href: '/work?tab=active', icon: Briefcase },
-      { name: 'Ongoing Services', href: '/work?tab=services', icon: InfinityIcon },
-      { name: 'Hiring', href: '/work?tab=recruitment', icon: Users },
-    ] },
+    { name: 'Work Hub', href: '/work', icon: ClipboardList },
     { name: 'Schedule', href: '/schedule', icon: CalendarDays },
     { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Messages', href: '/messages', icon: MessageCircle },

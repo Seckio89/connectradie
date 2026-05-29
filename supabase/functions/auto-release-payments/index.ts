@@ -51,6 +51,16 @@ Deno.serve(async (req: Request) => {
       return errorJson("Server configuration error", 500);
     }
 
+    // Caller has already passed Supabase JWT verification (verify_jwt=true).
+    // Defence-in-depth: require the bearer be a JWT (starts with 'ey').
+    // We deliberately do NOT byte-compare against env var — the auto-injected
+    // SUPABASE_SERVICE_ROLE_KEY can drift from the vault-stored secret used by
+    // pg_cron after key rotations, and that mismatch silently 401'd everything.
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ey")) {
+      return errorJson("Unauthorized", 401);
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
@@ -139,7 +149,27 @@ Deno.serve(async (req: Request) => {
         .eq("status", "completed");
 
       const childTotal = (childPayments || []).reduce((s, p) => s + (p.amount || 0), 0);
-      const totalTransferAmount = payment.amount + childTotal;
+
+      // Deduct platform fees (same logic as release-escrow)
+      let totalPlatformFee = typeof existingMetadata.platform_fee === "number"
+        ? existingMetadata.platform_fee
+        : 0;
+
+      for (const child of (childPayments || [])) {
+        const childMeta = (child.metadata || {}) as Record<string, unknown>;
+        const childFee = typeof childMeta.platform_fee === "number"
+          ? childMeta.platform_fee
+          : 0;
+        totalPlatformFee += childFee;
+      }
+
+      const totalBase = payment.amount + childTotal;
+      const totalTransferAmount = totalBase - totalPlatformFee;
+
+      if (totalTransferAmount <= 0) {
+        errors.push(`Job ${job.id}: transfer amount is zero or negative after platform fee deduction`);
+        continue;
+      }
 
       // Get tradie's Stripe Connect account
       const { data: tradieProfile } = await supabase
@@ -174,17 +204,24 @@ Deno.serve(async (req: Request) => {
             tradie_id: job.tradie_id,
             auto_released: "true",
           },
+        }, {
+          idempotencyKey: `auto_release_${payment.id}`,
         });
 
-        // Update main payment metadata with transfer info
+        // Update main payment metadata with transfer info. Drop pending_increase
+        // — the 48hr window expired, the price adjustment is forfeit, the tradie
+        // gets the original quote. Without this the stale flag keeps surfacing
+        // a "Pay Difference" CTA even after the release.
         const releasedAt = new Date().toISOString();
+        const { pending_increase: _droppedIncrease, ...cleanMetadata } = existingMetadata as Record<string, unknown>;
         await supabase
           .from("payments")
           .update({
             metadata: {
-              ...existingMetadata,
+              ...cleanMetadata,
               transfer_id: transfer.id,
               transfer_amount: transfer.amount,
+              platform_fee_deducted: totalPlatformFee,
               released_at: releasedAt,
               auto_released: true,
             },
@@ -209,18 +246,20 @@ Deno.serve(async (req: Request) => {
 
         const amountDollars = `$${(totalTransferAmount / 100).toFixed(2)}`;
         const jobTitle = job.title || "your job";
+        const invoiceNumber = `INV-${payment.id.slice(0, 8).toUpperCase()}`;
 
         // Notify homeowner
         try {
           await supabase.from("notifications").insert({
             user_id: job.client_id,
             title: "Payment Auto-Released",
-            message: `Payment of ${amountDollars} for ${jobTitle} was automatically released to your tradie after 48 hours.`,
+            message: `Payment of ${amountDollars} for ${jobTitle} (${invoiceNumber}) was automatically released to your tradie after 48 hours.`,
             type: "payment_auto_released",
             read: false,
             metadata: {
               job_id: job.id,
               payment_id: payment.id,
+              invoice_number: invoiceNumber,
               amount: amountDollars,
               transfer_id: transfer.id,
             },
@@ -249,8 +288,8 @@ Deno.serve(async (req: Request) => {
               },
               body: JSON.stringify({
                 to: homeowner.email,
-                subject: `Payment of ${amountDollars} Released to Your Tradie`,
-                body: `Hi ${homeowner.full_name || "there"},\n\nYour payment of ${amountDollars} for "${jobTitle}" has been automatically released to your tradie after the 48-hour review window.\n\nIf you have any concerns, please contact our support team.\n\nThank you for using ConnecTradie.`,
+                subject: `Payment of ${amountDollars} Released to Your Tradie (${invoiceNumber})`,
+                body: `Hi ${homeowner.full_name || "there"},\n\nYour payment of ${amountDollars} for "${jobTitle}" (Invoice: ${invoiceNumber}) has been automatically released to your tradie after the 48-hour review window.\n\nIf you have any concerns, please contact our support team.\n\nThank you for using ConnecTradie.`,
                 notificationType: "PAYMENT_AUTO_RELEASED",
                 metadata: { amount: amountDollars, job_id: job.id },
               }),
@@ -267,12 +306,13 @@ Deno.serve(async (req: Request) => {
           await supabase.from("notifications").insert({
             user_id: job.tradie_id,
             title: "Payment Received",
-            message: `Payment of ${amountDollars} for ${jobTitle} has been released to your account.`,
+            message: `Payment of ${amountDollars} for ${jobTitle} (${invoiceNumber}) has been released to your account.`,
             type: "payment_received",
             read: false,
             metadata: {
               job_id: job.id,
               payment_id: payment.id,
+              invoice_number: invoiceNumber,
               amount: amountDollars,
               transfer_id: transfer.id,
             },
@@ -295,8 +335,8 @@ Deno.serve(async (req: Request) => {
               },
               body: JSON.stringify({
                 to: tradieProfile.email,
-                subject: `Payment of ${amountDollars} Released — Funds on the Way`,
-                body: `Hi ${tradieProfile.full_name || "there"},\n\nGreat news! Payment of ${amountDollars} for "${jobTitle}" has been released to your account.\n\nFunds will appear in your bank account within 2-3 business days.\n\nKeep up the great work!`,
+                subject: `Payment of ${amountDollars} Released — Funds on the Way (${invoiceNumber})`,
+                body: `Hi ${tradieProfile.full_name || "there"},\n\nGreat news! Payment of ${amountDollars} for "${jobTitle}" (Invoice: ${invoiceNumber}) has been released to your account.\n\nFunds will appear in your bank account within 2-3 business days.\n\nKeep up the great work!`,
                 notificationType: "PAYMENT_RECEIVED",
                 metadata: { amount: amountDollars, job_id: job.id },
               }),

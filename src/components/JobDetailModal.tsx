@@ -17,6 +17,7 @@ import {
   ClipboardList,
   DollarSign,
   AlertCircle,
+  Car,
 } from 'lucide-react';
 import { formatDate, friendlyError } from '../lib/utils';
 import { supabase } from '../lib/supabase';
@@ -88,7 +89,25 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
   const [finalPriceSuccess, setFinalPriceSuccess] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
+  const [parkingValue, setParkingValue] = useState<boolean | null>(job?.parking_available ?? null);
+  const [parkingSaving, setParkingSaving] = useState(false);
+
   const isTradie = profile?.role === 'tradie';
+  const isJobOwner = !!user && !!job && user.id === job.client_id;
+
+  const handleParkingChange = async (next: boolean) => {
+    if (!job || parkingSaving || next === parkingValue) return;
+    setParkingSaving(true);
+    const previous = parkingValue;
+    setParkingValue(next);
+    const { error } = await supabase.from('jobs').update({ parking_available: next }).eq('id', job.id);
+    setParkingSaving(false);
+    if (error) {
+      setParkingValue(previous);
+    } else {
+      onStatusChange?.();
+    }
+  };
   const isProTradie = isTradie && checkIsPro(tradieDetails?.subscription_tier, profile?.is_premium);
   const FUNDED_STATUSES = ['funded', 'in_progress', 'completed'];
   const canSeeContactInfo = !isTradie || isProTradie || FUNDED_STATUSES.includes(localStatus);
@@ -101,8 +120,9 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
       setFinalPriceError(null);
       setFinalPriceSuccess(null);
       setFinalPriceInput('');
+      setParkingValue(job.parking_available ?? null);
     }
-  }, [job?.id, job?.status]);
+  }, [job?.id, job?.status, job?.parking_available]);
 
   // Fetch linked recurring job if this job is part of a recurring service
   useEffect(() => {
@@ -347,6 +367,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
   const description = job.description.replace(/^\[[^\]]+\]\s*/, '');
   const isRecurring = !!recurringJob || !!(job.title && /ongoing|recurring/i.test(job.title));
   const isDeclined = localStatus === 'declined';
+  const isJobTaken = isTradie && job.tradie_id && job.tradie_id !== user?.id && ['accepted', 'funded', 'in_progress', 'completed'].includes(localStatus);
 
   // Parse description lines for numbered scope of work
   const descriptionLines = description
@@ -406,7 +427,18 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
               </span>
             </div>
             <h2 className="text-lg font-bold text-gray-900 truncate">{description || 'Job Details'}</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Posted {formatDate(job.created_at)}</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Posted {formatDate(job.created_at)}
+              {job.scheduled_date && (
+                <>
+                  <span className="mx-1.5 text-gray-300">·</span>
+                  <span className="text-gray-600 font-medium">
+                    Wanted by {formatDate(job.scheduled_date)}
+                    {job.preferred_time_slot ? ` (${job.preferred_time_slot})` : ''}
+                  </span>
+                </>
+              )}
+            </p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 ml-3">
             <X className="w-5 h-5 text-gray-500" />
@@ -454,6 +486,13 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {isJobTaken && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+            <p className="text-sm font-semibold text-amber-700">This job has been taken by another tradie</p>
+            <p className="text-xs text-amber-600 mt-1">This job is no longer available for quoting.</p>
           </div>
         )}
 
@@ -693,6 +732,38 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
                       ? 'Quote requested — client wants you to set the price'
                       : 'Not specified'}
                 </p>
+              </div>
+            </div>
+          )}
+          {(isJobOwner || parkingValue !== null) && (
+            <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3">
+              <Car className={`w-4 h-4 flex-shrink-0 ${parkingValue ? 'text-emerald-500' : 'text-secondary-500'}`} />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-gray-400 uppercase">Parking on site</p>
+                {isJobOwner ? (
+                  <div className="mt-1 inline-flex rounded-lg border border-gray-200 bg-white overflow-hidden">
+                    <button
+                      type="button"
+                      disabled={parkingSaving}
+                      onClick={() => handleParkingChange(true)}
+                      className={`px-3 py-1 text-xs font-medium transition-colors ${parkingValue === true ? 'bg-emerald-50 text-emerald-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      type="button"
+                      disabled={parkingSaving}
+                      onClick={() => handleParkingChange(false)}
+                      className={`px-3 py-1 text-xs font-medium border-l border-gray-200 transition-colors ${parkingValue === false ? 'bg-gray-100 text-gray-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                    >
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-700 font-medium">
+                    {parkingValue ? 'Available' : 'Not available'}
+                  </p>
+                )}
               </div>
             </div>
           )}

@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { calculateProcessingFeeCents } from "../_shared/pricing.ts";
+import { calculateProcessingFeeCents, calculateGstCents } from "../_shared/pricing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
@@ -143,8 +143,20 @@ Deno.serve(async (req: Request) => {
       customerId = existingSub.stripe_customer_id;
     }
 
+    // Check if tradie is GST registered
+    let tradieIsGstRegistered = false;
+    if (job.tradie_id) {
+      const { data: tradieProfile } = await supabase
+        .from("profiles")
+        .select("is_gst_registered")
+        .eq("id", job.tradie_id)
+        .maybeSingle();
+      tradieIsGstRegistered = tradieProfile?.is_gst_registered === true;
+    }
+
     // Amount is in cents
     const baseAmount = Math.round(amount);
+    const gst = tradieIsGstRegistered ? calculateGstCents(baseAmount) : 0;
     const processingFee = calculateProcessingFeeCents(baseAmount);
 
     // Create payment record
@@ -161,6 +173,7 @@ Deno.serve(async (req: Request) => {
         metadata: {
           deposit_type: "escrow",
           job_description: job.description,
+          gst: String(gst),
         },
       })
       .select("id")
@@ -182,6 +195,17 @@ Deno.serve(async (req: Request) => {
         quantity: 1,
       },
     ];
+
+    if (gst > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "aud",
+          product_data: { name: "GST (10%)" },
+          unit_amount: gst,
+        },
+        quantity: 1,
+      });
+    }
 
     if (processingFee > 0) {
       lineItems.push({
@@ -216,6 +240,7 @@ Deno.serve(async (req: Request) => {
           job_id: jobId,
           payment_record_id: paymentRecord.id,
           base_amount: String(baseAmount),
+          gst: String(gst),
           processing_fee: String(processingFee),
         },
       },

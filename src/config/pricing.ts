@@ -70,7 +70,7 @@ export const PRICING_CONFIG = {
   processing: {
     stripePercentage: 0.0175,
     stripeFixed: 0.30,
-    platformProcessingMargin: 0.012,
+    platformProcessingMargin: 0.0175,
   },
   freeTierGuarantees: [
     'Finding work',

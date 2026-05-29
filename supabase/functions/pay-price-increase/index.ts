@@ -167,6 +167,10 @@ Deno.serve(async (req: Request) => {
     const diffCents = pendingIncrease.diff_cents;
     const processingFee = pendingIncrease.additional_processing_fee;
     const platformFee = pendingIncrease.additional_platform_fee;
+    // GST on the delta — may be absent on legacy pending_increase records (pre-GST-fix), default to 0
+    const additionalGst = typeof pendingIncrease.additional_gst === "number"
+      ? pendingIncrease.additional_gst
+      : 0;
 
     if (
       typeof diffCents !== "number" || diffCents <= 0 ||
@@ -195,6 +199,7 @@ Deno.serve(async (req: Request) => {
           type: "price_increase",
           parent_payment_id: paymentId,
           platform_fee: platformFee,
+          gst: additionalGst,
           tradie_tier: payment.metadata?.tradie_tier || "free",
         },
       })
@@ -245,6 +250,17 @@ Deno.serve(async (req: Request) => {
         quantity: 1,
       },
     ];
+
+    if (additionalGst > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "aud",
+          product_data: { name: "GST (10%)", description: "Goods and Services Tax on the price adjustment." },
+          unit_amount: additionalGst,
+        },
+        quantity: 1,
+      });
+    }
 
     if (processingFee > 0) {
       lineItems.push({

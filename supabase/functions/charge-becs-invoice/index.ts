@@ -42,6 +42,15 @@ Deno.serve(async (req: Request) => {
       return errorJson("Server configuration error", 500);
     }
 
+    // Caller has already passed Supabase JWT verification (verify_jwt=true).
+    // Accept any valid JWT bearer — do NOT byte-compare against the env var, which
+    // drifts from the key the caller actually holds after a key rotation and was
+    // silently 401'ing every internal call (cron auto-charge, generate-recurring-invoice).
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ey")) {
+      return errorJson("Unauthorized", 401);
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
@@ -75,19 +84,43 @@ Deno.serve(async (req: Request) => {
 
     const totalCents = Math.round(Number(invoice.total) * 100);
 
-    // Get tradie tier for platform fee
-    const { data: tradieProfile } = await supabase
-      .from("profiles")
+    // Get tradie tier for platform fee (from tradie_details, not profiles)
+    const { data: tradieDetails } = await supabase
+      .from("tradie_details")
       .select("subscription_tier")
-      .eq("id", invoice.tradie_id)
+      .eq("profile_id", invoice.tradie_id)
       .maybeSingle();
 
-    const tier = resolveTradieTier(tradieProfile?.subscription_tier);
+    const tier = resolveTradieTier(tradieDetails?.subscription_tier);
     const platformFeeCents = Math.round(calculatePlatformFee(Number(invoice.total), tier) * 100);
     const processingFeeCents = calculateBecsProcessingFeeCents(totalCents);
     const chargeAmount = totalCents + processingFeeCents;
 
-    // Create off-session PaymentIntent
+    // Resolve the tradie's Connect account — the charge routes funds directly to it.
+    // If onboarding isn't complete, Stripe would reject a destination charge, so fail
+    // early with a clear message rather than debiting the client into a stranded payout.
+    const { data: tradieConnect } = await supabase
+      .from("profiles")
+      .select("stripe_connect_account_id, stripe_connect_onboarding_complete")
+      .eq("id", invoice.tradie_id)
+      .maybeSingle();
+
+    const destinationAccount = tradieConnect?.stripe_connect_onboarding_complete
+      ? tradieConnect.stripe_connect_account_id
+      : null;
+
+    if (!destinationAccount) {
+      return errorJson(
+        "Tradie has not completed payment setup — cannot charge this invoice yet.",
+        409,
+      );
+    }
+
+    // Platform keeps the platform fee + processing fee; the remainder is transferred
+    // to the tradie automatically as part of the charge (destination charge).
+    const applicationFeeCents = platformFeeCents + processingFeeCents;
+
+    // Create off-session destination charge — funds settle to the tradie in one step.
     const paymentIntentParams: Stripe.PaymentIntentCreateParams = {
       amount: chargeAmount,
       currency: "aud",
@@ -96,8 +129,14 @@ Deno.serve(async (req: Request) => {
       off_session: true,
       confirm: true,
       payment_method_types: ["au_becs_debit"],
+      application_fee_amount: applicationFeeCents,
+      transfer_data: { destination: destinationAccount },
+      // NOTE: no on_behalf_of — au_becs_debit requires the destination account to hold
+      // that capability, which it typically doesn't. transfer_data alone still routes the
+      // net amount straight to the tradie; the platform stays merchant of record.
       metadata: {
         type: "recurring_invoice_becs",
+        routing: "destination",
         invoice_id: invoiceId,
         recurring_job_id: recurringJobId,
         homeowner_id: invoice.homeowner_id,

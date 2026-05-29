@@ -42,6 +42,7 @@ export default function Messages() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [toast, setToast] = useState<{ message: string; show: boolean; isError?: boolean }>({ message: '', show: false });
   const [searchQuery, setSearchQuery] = useState('');
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [failedMessages, setFailedMessages] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const attachmentMenuRef = useRef<HTMLDivElement>(null);
@@ -590,6 +591,28 @@ export default function Messages() {
     const file = event.target.files?.[0];
     if (!file || !selectedConversation || !user) return;
 
+    // Block image uploads in pre-acceptance conversations
+    const isImage = file.type.startsWith('image/');
+    if (isImage) {
+      const otherUserId = selectedConversation.otherParticipants[0]?.user_id;
+      if (otherUserId) {
+        const { data: activeJob } = await supabase
+          .from('jobs')
+          .select('id')
+          .or(`and(client_id.eq.${user.id},tradie_id.eq.${otherUserId}),and(client_id.eq.${otherUserId},tradie_id.eq.${user.id})`)
+          .in('status', ['accepted', 'funded', 'in_progress', 'completed'])
+          .limit(1)
+          .maybeSingle();
+
+        if (!activeJob) {
+          setToast({ message: 'Photos can be shared once the job is confirmed', show: true, isError: true });
+          setTimeout(() => setToast({ message: '', show: false }), 4000);
+          if (event.target) event.target.value = '';
+          return;
+        }
+      }
+    }
+
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       setToast({ message: 'File size must be less than 10MB', show: true, isError: true });
@@ -740,6 +763,17 @@ export default function Messages() {
   const maybeRedact = (text: string, conv: ConversationWithDetails) => {
     if (isContactSharingAllowed(conv)) return text;
     return redactContactInfo(text);
+  };
+
+  const renderRedacted = (text: string) => {
+    const pattern = /\[(phone number hidden|email hidden|address shared after job is confirmed|hidden)\]/g;
+    const parts = text.split(pattern);
+    if (parts.length === 1) return text;
+    return parts.map((part, i) =>
+      pattern.test(`[${part}]`)
+        ? <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded">{`[${part}]`}</span>
+        : part
+    );
   };
 
   return (
@@ -930,9 +964,10 @@ export default function Messages() {
                                 ? () => handleBookingRequestClick(message.id)
                                 : undefined
                             }
+                            style={isOwn ? { color: '#ffffff' } : undefined}
                             className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${
                               isOwn
-                                ? 'bg-primary-700 text-white rounded-br-md'
+                                ? 'bg-secondary-500 text-white rounded-br-md'
                                 : 'bg-white text-gray-900 rounded-bl-md border border-gray-200 shadow-sm'
                             } ${
                               message.is_booking_request
@@ -960,7 +995,7 @@ export default function Messages() {
                                     loading="lazy"
                                     decoding="async"
                                     className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                                    onClick={() => window.open(getAttachmentUrl(message.attachment_url ?? ''), '_blank')}
+                                    onClick={() => setLightboxUrl(getAttachmentUrl(message.attachment_url ?? ''))}
                                   />
                                 ) : (
                                   <a
@@ -968,7 +1003,7 @@ export default function Messages() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${
-                                      isOwn ? 'bg-primary-800 hover:bg-primary-900' : 'bg-gray-100 hover:bg-gray-200'
+                                      isOwn ? 'bg-secondary-600 hover:bg-secondary-700' : 'bg-gray-100 hover:bg-gray-200'
                                     }`}
                                   >
                                     {message.attachment_type === 'pdf' && <FileText className="w-4 h-4" />}
@@ -977,7 +1012,7 @@ export default function Messages() {
                                     <div className="flex-1 min-w-0">
                                       <p className="text-xs font-medium truncate">{message.attachment_name}</p>
                                       {message.attachment_size && (
-                                        <p className={`text-xs ${isOwn ? 'text-primary-300' : 'text-gray-500'}`}>
+                                        <p className={`text-xs ${isOwn ? 'text-secondary-200' : 'text-gray-500'}`}>
                                           {(message.attachment_size / 1024 / 1024).toFixed(2)} MB
                                         </p>
                                       )}
@@ -985,28 +1020,33 @@ export default function Messages() {
                                   </a>
                                 )}
                                 {message.content && !message.content.startsWith('Sent a ') && (
-                                  <p className="text-sm whitespace-pre-wrap">
-                                    {isCrossMessageRedacted ? '[hidden]' : maybeRedact(message.content, selectedConversation)}
+                                  <p style={isOwn ? { color: '#ffffff' } : undefined} className={`text-sm whitespace-pre-wrap ${isOwn ? 'text-white' : 'text-gray-900'}`}>
+                                    {isCrossMessageRedacted
+                                      ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded">[hidden]</span>
+                                      : renderRedacted(maybeRedact(message.content, selectedConversation))}
                                   </p>
                                 )}
                               </div>
                             ) : (
-                              <p className="text-sm whitespace-pre-wrap">
+                              <p style={isOwn ? { color: '#ffffff' } : undefined} className={`text-sm whitespace-pre-wrap ${isOwn ? 'text-white' : 'text-gray-900'}`}>
                                 {isCrossMessageRedacted
-                                  ? '[hidden]'
-                                  : maybeRedact(message.content.replace('[Booking Request] ', ''), selectedConversation)}
+                                  ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded">[hidden]</span>
+                                  : renderRedacted(maybeRedact(message.content.replace('[Booking Request] ', ''), selectedConversation))}
                               </p>
                             )}
 
                             <div className={`flex items-center gap-1 mt-1.5 ${isOwn ? 'justify-end' : ''}`}>
-                              <p className={`text-[11px] ${isOwn ? 'text-primary-300' : 'text-gray-400'}`}>
+                              <p className={`text-[11px] ${isOwn ? 'text-secondary-200' : 'text-gray-400'}`}>
                                 {new Date(message.created_at).toLocaleTimeString('en-AU', {
                                   hour: '2-digit',
                                   minute: '2-digit',
                                 })}
                               </p>
-                              {isOwn && message.read_at && (
-                                <CheckCheck className="w-3 h-3 text-primary-300" aria-label="Seen" />
+                              {isOwn && (
+                                <CheckCheck
+                                  className={`w-3 h-3 ${message.read_at ? 'text-emerald-300' : 'text-secondary-200'}`}
+                                  aria-label={message.read_at ? 'Seen' : 'Sent'}
+                                />
                               )}
                             </div>
                             {message.is_booking_request && (
@@ -1204,6 +1244,26 @@ export default function Messages() {
       {toast.show && (
         <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-white text-sm font-medium animate-slide-in ${toast.isError ? 'bg-red-600' : 'bg-green-600'}`}>
           {toast.message}
+        </div>
+      )}
+      {/* Image Lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <img
+            src={lightboxUrl}
+            alt="Attachment"
+            className="max-w-full max-h-[90vh] rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setLightboxUrl(null)}
+            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
       )}
     </DashboardLayout>

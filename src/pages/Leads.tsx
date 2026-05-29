@@ -34,6 +34,8 @@ import {
   Star,
   ShieldCheck,
   Search as SearchIcon,
+  MessageSquare,
+  Repeat,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -42,12 +44,16 @@ import DashboardLayout from '../components/DashboardLayout';
 import EmptyState from '../components/EmptyState';
 import VerificationGateModal from '../components/VerificationGateModal';
 import SubmitQuoteModal from '../components/SubmitQuoteModal';
+import TradieQuoteActions from '../components/TradieQuoteActions';
 import QuoteComparisonView from '../components/QuoteComparisonView';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import ConfirmModal from '../components/ConfirmModal';
 import Modal from '../components/Modal';
 import { formatDate, checkLicenseExpired } from '../lib/utils';
+import { cancelRecurringJob } from '../lib/recurringJobs';
 import { extractSuburb } from '../lib/contactGating';
+import { tradeRequiresLicense } from '../lib/tradeCategories';
+import { useTradieVerification } from '../hooks/useTradieVerification';
 import { sendNotification } from '../lib/notificationService';
 import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
 import { acceptAndPay, verifyPayment, releaseEscrow, payPriceIncrease } from '../lib/stripePayments';
@@ -83,16 +89,38 @@ function FlashCountdown({ expiry, onExpired }: { expiry: string; onExpired?: () 
   return <span className="font-bold tabular-nums">{timeLeft}</span>;
 }
 
-function AutoReleaseCountdown({ completedAt }: { completedAt: string }) {
+function AutoReleaseCountdown({ completedAt, jobTitle, invoiceNumber }: { completedAt: string; jobTitle?: string; invoiceNumber?: string }) {
   const [timeLeft, setTimeLeft] = useState('');
   const [expired, setExpired] = useState(false);
+  const [cronTimeLeft, setCronTimeLeft] = useState('');
 
   useEffect(() => {
     const releaseTime = new Date(completedAt).getTime() + 48 * 60 * 60 * 1000;
+    // Cron runs every 6 hours at 00:00, 06:00, 12:00, 18:00 UTC
+    const getNextCronRun = () => {
+      const now = new Date();
+      const hours = now.getUTCHours();
+      const nextCronHour = Math.ceil((hours + 1) / 6) * 6;
+      const next = new Date(now);
+      next.setUTCHours(nextCronHour, 0, 0, 0);
+      if (next <= now) next.setUTCHours(next.getUTCHours() + 6);
+      return next.getTime();
+    };
+
     const update = () => {
       const diff = releaseTime - Date.now();
       if (diff <= 0) {
         setExpired(true);
+        // Calculate time until next cron run
+        const nextCron = getNextCronRun();
+        const cronDiff = nextCron - Date.now();
+        if (cronDiff > 0) {
+          const hrs = Math.floor(cronDiff / 3600000);
+          const mins = Math.floor((cronDiff % 3600000) / 60000);
+          setCronTimeLeft(hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`);
+        } else {
+          setCronTimeLeft('shortly');
+        }
         return;
       }
       const hrs = Math.floor(diff / 3600000);
@@ -105,12 +133,15 @@ function AutoReleaseCountdown({ completedAt }: { completedAt: string }) {
     return () => clearInterval(interval);
   }, [completedAt]);
 
+  const label = jobTitle ? `"${jobTitle}"` : 'this job';
+  const invLabel = invoiceNumber ? ` (${invoiceNumber})` : '';
+
   if (expired) {
     return (
-      <div className="flex items-start gap-2 px-5 py-2.5 bg-amber-50 border-t border-amber-100">
-        <Clock className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-        <p className="text-xs text-amber-700">
-          Auto-release window has passed. Please release payment manually to complete this job.
+      <div className="flex items-start gap-2 px-5 py-2.5 bg-red-50 border-t border-red-100">
+        <Clock className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
+        <p className="text-xs text-red-700 font-medium">
+          Payment for {label}{invLabel} will be auto-released in <span className="font-semibold tabular-nums">{cronTimeLeft}</span> if no action is taken.
         </p>
       </div>
     );
@@ -121,7 +152,7 @@ function AutoReleaseCountdown({ completedAt }: { completedAt: string }) {
       <Clock className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
       <div className="text-xs text-amber-800">
         <p>
-          Payment will auto-release in <span className="font-semibold tabular-nums">{timeLeft}</span>.
+          Payment for {label}{invLabel} will auto-release in <span className="font-semibold tabular-nums">{timeLeft}</span>.
           Release now or raise a dispute if there&apos;s an issue.
         </p>
       </div>
@@ -160,26 +191,47 @@ type LeadFilter = 'all' | 'active' | 'pending' | 'accepted' | 'boosted' | 'urgen
 
 type LeadWithClient = Job & { client_name?: string; my_quote?: Quote | null };
 
-export default function Leads({ embedded = false }: { embedded?: boolean }) {
+export default function Leads({ embedded = false, initialFilter }: { embedded?: boolean; initialFilter?: LeadFilter }) {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [leads, setLeads] = useState<LeadWithClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<LeadFilter>(() => {
+    if (initialFilter) return initialFilter;
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
     if (tab === 'services') return 'services';
     const urlFilter = params.get('filter');
     const validFilters: LeadFilter[] = ['all', 'active', 'open', 'quoting', 'accepted', 'in_progress', 'completed', 'archived', 'pending', 'boosted', 'urgent', 'scheduled', 'quoted', 'history', 'deleted', 'services'];
-    return urlFilter && validFilters.includes(urlFilter as LeadFilter) ? urlFilter as LeadFilter : 'all';
+    if (urlFilter && validFilters.includes(urlFilter as LeadFilter)) return urlFilter as LeadFilter;
+    // Default: 'active' for clients, 'all' for tradies
+    return profile?.role === 'tradie' ? 'all' : 'active';
   });
   const [showVerificationGate, setShowVerificationGate] = useState(false);
   const [gateReason, setGateReason] = useState<'unverified' | 'expired'>('unverified');
   const [quoteModalJob, setQuoteModalJob] = useState<Job | null>(null);
   const [expandedJobId, setExpandedJobId] = useState<string | null>(searchParams.get('job'));
-  const [quoteAcceptedBanner, setQuoteAcceptedBanner] = useState<false | 'success' | 'price_increase_success' | 'cancelled' | 'error'>(false);
+  const [quoteAcceptedBanner, setQuoteAcceptedBanner] = useState<false | 'success' | 'recurring_success' | 'price_increase_success' | 'cancelled' | 'error'>(false);
+
+  // Sync filter when URL params change (e.g. notification navigating to ?tab=services)
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    const urlFilter = searchParams.get('filter');
+    if (tab === 'services') {
+      setFilter('services');
+    } else if (urlFilter && urlFilter !== filter) {
+      const validFilters: LeadFilter[] = ['all', 'active', 'open', 'quoting', 'accepted', 'in_progress', 'completed', 'archived', 'pending', 'boosted', 'urgent', 'scheduled', 'quoted', 'history', 'deleted', 'services'];
+      if (validFilters.includes(urlFilter as LeadFilter)) {
+        setFilter(urlFilter as LeadFilter);
+      }
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
   const [fetchError, setFetchError] = useState('');
+  const [highlightedJobId] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('job') || params.get('job_id') || null;
+  });
   const [dismissedJobIds, setDismissedJobIds] = useState<Set<string>>(() => {
     try {
       const stored = localStorage.getItem('dismissed_leads');
@@ -199,6 +251,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
   const editFileRef = useRef<HTMLInputElement>(null);
   const [viewLeadDetail, setViewLeadDetail] = useState<LeadWithClient | null>(null);
   const [acceptedQuotes, setAcceptedQuotes] = useState<Record<string, Quote>>({});
+  const [tradieGstMap, setTradieGstMap] = useState<Record<string, boolean>>({});
   const [payingJobId, setPayingJobId] = useState<string | null>(null);
   const [priceConfirm, setPriceConfirm] = useState<{
     quoteId: string;
@@ -206,11 +259,14 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     min: number;
     max: number;
     agreedPrice: string;
+    isGstRegistered: boolean;
   } | null>(null);
 
   const [releasingJobId, setReleasingJobId] = useState<string | null>(null);
   const [releasedJobIds, setReleasedJobIds] = useState<Set<string>>(new Set());
   const [reviewedJobIds, setReviewedJobIds] = useState<Set<string>>(new Set());
+  const [jobPaymentIds, setJobPaymentIds] = useState<Map<string, string>>(new Map());
+  const [jobPaymentData, setJobPaymentData] = useState<Map<string, { id: string; amount: number; metadata: Record<string, unknown> | null; created_at?: string }>>(new Map());
   const [pendingIncreases, setPendingIncreases] = useState<Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number }>>({});
   const [paidIncreaseJobIds, setPaidIncreaseJobIds] = useState<Set<string>>(new Set());
   const [viewCompletedJob, setViewCompletedJob] = useState<LeadWithClient | null>(null);
@@ -220,6 +276,23 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
   const isTradie = profile?.role === 'tradie';
   const isVerified = profile?.verification_status === 'verified';
   const isLicenseExpired = checkLicenseExpired(profile?.verification_status, profile?.license_expiry);
+
+  // Trade-aware verification gate: ABN required for all trades; licensed
+  // trades (plumber, electrician, builder, etc.) additionally need a
+  // verified contractor licence endorsed for that trade. See
+  // useTradieVerification for the full rule set.
+  const baseVerification = useTradieVerification(null);
+  const canQuoteOnLead = (lead: Job): boolean => {
+    if (!isTradie) return false;
+    if (baseVerification.loading) return true; // optimistic until loaded
+    const v = baseVerification.verification;
+    if (!v.abn) return false;
+    const tradeKey = lead.description?.match(/^\[([^\]]+)\]/)?.[1] || '';
+    if (tradeRequiresLicense(tradeKey)) {
+      return v.license && v.verifiedTrades.includes(tradeKey);
+    }
+    return true;
+  };
 
   const fetchLeads = useCallback(async () => {
     if (!user) return;
@@ -247,6 +320,23 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     }
   }, [user, profile, fetchLeads]);
 
+  // Realtime: refresh when any of the user's jobs change status
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('job-status-changes')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'jobs',
+        filter: `client_id=eq.${user.id}`,
+      }, () => {
+        fetchLeads();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, fetchLeads]);
+
   // Handle payment callbacks and auto-expand job from ?job= query param
   useEffect(() => {
     const paymentStatus = searchParams.get('payment');
@@ -262,6 +352,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       // Verify payment via Stripe (webhook fallback) then refresh
       (async () => {
         let isPriceIncreaseReturn = false;
+        let isRecurringReturn = false;
         try {
           // Check if this is a return from paying a price increase (vs initial job funding)
           const { data: adjPayment } = await supabase
@@ -288,15 +379,46 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
             if (pendingPayment && pendingPayment.status === 'pending') {
               await verifyPayment(pendingPayment.id);
             }
+
+            // Detect ongoing-service jobs so we can land on the right tab
+            const { data: jobMeta } = await supabase
+              .from('jobs')
+              .select('recurring_job_id')
+              .eq('id', jobParam)
+              .maybeSingle();
+            isRecurringReturn = !!jobMeta?.recurring_job_id;
           }
         } catch (err) {
           console.error('Payment verification fallback failed:', err);
         }
-        // Switch to active tab — funded jobs appear there.
+        // Route to the right tab: ongoing services if recurring, else active.
         // The filter change triggers useEffect → fetchLeads() automatically.
-        setFilter('active');
-        setQuoteAcceptedBanner(isPriceIncreaseReturn ? 'price_increase_success' : 'success');
+        setFilter(isRecurringReturn ? 'services' : 'active');
+        setQuoteAcceptedBanner(
+          isPriceIncreaseReturn
+            ? 'price_increase_success'
+            : isRecurringReturn
+              ? 'recurring_success'
+              : 'success'
+        );
         setTimeout(() => setQuoteAcceptedBanner(false), 10000);
+
+        // Poll for status update — webhook may take a few seconds
+        if (!isPriceIncreaseReturn) {
+          let polls = 0;
+          const pollInterval = setInterval(async () => {
+            polls++;
+            const { data: jobCheck } = await supabase
+              .from('jobs')
+              .select('status')
+              .eq('id', jobParam)
+              .maybeSingle();
+            if (jobCheck?.status === 'funded' || jobCheck?.status === 'in_progress' || polls >= 6) {
+              clearInterval(pollInterval);
+              fetchLeads();
+            }
+          }, 3000);
+        }
       })();
     } else if (paymentStatus === 'cancelled' && jobParam) {
       setQuoteAcceptedBanner('cancelled');
@@ -365,7 +487,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       ((myQuotes || []) as Quote[]).forEach((q) => quoteMap.set(q.job_id, q));
 
       let mapped = data
-        .filter((lead: { id: string }) => !dismissedJobIds.has(lead.id))
+        .filter((lead: { id: string }) => lead.id === highlightedJobId || !dismissedJobIds.has(lead.id))
         .map((lead: Job & { profiles: { full_name: string } | null }) => ({
           ...lead,
           client_name: lead.profiles?.full_name || 'Client',
@@ -426,14 +548,32 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
 
         if (quotes && quotes.length > 0) {
           const quoteMap: Record<string, Quote> = {};
+          const tradieIds = new Set<string>();
           for (const q of quotes) {
             quoteMap[q.job_id] = q as Quote;
+            tradieIds.add(q.tradie_id);
           }
           setAcceptedQuotes(quoteMap);
+
+          // Fetch GST registration status for accepted-quote tradies
+          const { data: gstProfiles } = await supabase
+            .from('profiles')
+            .select('id, is_gst_registered')
+            .in('id', [...tradieIds]);
+          if (gstProfiles) {
+            const gstMap: Record<string, boolean> = {};
+            for (const p of gstProfiles) {
+              gstMap[p.id] = p.is_gst_registered === true;
+            }
+            setTradieGstMap(gstMap);
+          }
         }
       }
 
-      // Pre-check which completed jobs already had payment released and reviews left
+      // Pre-check which completed jobs already had payment released and reviews left.
+      // Track both locally so the filter below sees the fresh values (state updates are async).
+      const releasedSet = new Set<string>(releasedJobIds);
+      const reviewedSet = new Set<string>(reviewedJobIds);
       const completedJobIds = jobs
         .filter(j => j.status === 'completed')
         .map(j => j.id);
@@ -442,7 +582,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         const [paymentsResult, reviewsResult] = await Promise.all([
           supabase
             .from('payments')
-            .select('job_id, status, metadata')
+            .select('id, job_id, status, metadata, amount, processing_fee, created_at, payment_type')
             .in('job_id', completedJobIds),
           supabase
             .from('reviews')
@@ -452,36 +592,26 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         ]);
 
         if (paymentsResult.data && paymentsResult.data.length > 0) {
-          const alreadyReleased = new Set<string>();
-          const jobsWithPayments = new Set(paymentsResult.data.map(p => p.job_id));
+          const paymentMap = new Map<string, string>();
+          const paymentDataMap = new Map<string, { id: string; amount: number; metadata: Record<string, unknown> | null; created_at?: string }>();
           for (const p of paymentsResult.data) {
+            if (p.job_id) {
+              paymentMap.set(p.job_id, p.id);
+              paymentDataMap.set(p.job_id, { id: p.id, amount: p.amount, metadata: p.metadata as Record<string, unknown> | null, created_at: p.created_at });
+            }
             const meta = p.metadata as Record<string, unknown> | null;
-            if (meta?.transfer_id || p.status === 'released' || p.status === 'completed') {
-              alreadyReleased.add(p.job_id);
+            if (meta?.transfer_id || p.status === 'released') {
+              releasedSet.add(p.job_id);
             }
           }
-          // Jobs with no payment record — already released or never had escrow
-          for (const id of completedJobIds) {
-            if (!jobsWithPayments.has(id)) alreadyReleased.add(id);
-          }
-          if (alreadyReleased.size > 0) {
-            setReleasedJobIds(prev => {
-              const next = new Set(prev);
-              alreadyReleased.forEach(id => next.add(id));
-              return next;
-            });
-          }
-        } else {
-          // No payment records at all — mark all completed jobs as released
-          setReleasedJobIds(prev => {
-            const next = new Set(prev);
-            completedJobIds.forEach(id => next.add(id));
-            return next;
-          });
+          setJobPaymentIds(paymentMap);
+          setJobPaymentData(paymentDataMap);
+          setReleasedJobIds(releasedSet);
         }
 
         if (reviewsResult.data && reviewsResult.data.length > 0) {
-          setReviewedJobIds(new Set(reviewsResult.data.map(r => r.job_id)));
+          reviewsResult.data.forEach(r => reviewedSet.add(r.job_id));
+          setReviewedJobIds(reviewedSet);
         }
       }
 
@@ -520,9 +650,33 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         }
       }
 
+      // Find jobs linked to recurring services — exclude from Active/Accepted tabs.
+      // These belong under "Ongoing Services" instead. Covers both the original placeholder
+      // (recurring_jobs.original_job_id) and any subsequent "Request a Quote" jobs (jobs.recurring_job_id).
+      const [{ data: recurringLinks }, { data: recurringJobLinks }] = await Promise.all([
+        supabase
+          .from('recurring_jobs')
+          .select('original_job_id')
+          .eq('client_id', user.id)
+          .eq('is_active', true)
+          .is('cancelled_at', null)
+          .not('original_job_id', 'is', null)
+          .not('tradie_id', 'is', null),
+        supabase
+          .from('jobs')
+          .select('id')
+          .eq('client_id', user.id)
+          .not('recurring_job_id', 'is', null),
+      ]);
+      const recurringJobIds = new Set<string>([
+        ...((recurringLinks ?? []).map(r => r.original_job_id).filter(Boolean) as string[]),
+        ...((recurringJobLinks ?? []).map(r => r.id).filter(Boolean) as string[]),
+      ]);
+
       // Client-side filtering for progression tabs
       const isActive = (j: LeadWithClient) =>
         !j.archived_at && !j.deleted_at && j.status !== 'cancelled' && j.status !== 'declined';
+      const isNotRecurring = (j: LeadWithClient) => !recurringJobIds.has(j.id);
 
       if (filter === 'open') {
         // Posted, no quotes yet
@@ -536,12 +690,6 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         setLeads(jobs.filter(j =>
           j.status === 'pending' && j.quote_count > 0
           && j.quoting_status !== 'awarded'
-          && isActive(j)
-        ));
-      } else if (filter === 'accepted') {
-        // Quote accepted (awarded), awaiting payment (not yet funded/in_progress/completed)
-        setLeads(jobs.filter(j =>
-          j.quoting_status === 'awarded' && ['pending', 'accepted'].includes(j.status)
           && isActive(j)
         ));
       } else if (filter === 'in_progress') {
@@ -562,9 +710,14 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           !j.deleted_at && j.status !== 'completed' && !!j.archived_at
         ));
       } else if (filter === 'active') {
-        // Combined active tab: open, quoting, awarded, in progress
+        // Active = everything currently in flight: pending (awaiting quotes/acceptance),
+        // accepted/funded/in_progress, plus completed-but-not-yet-released (action needed
+        // from client to release escrow). Excludes recurring service jobs.
         setLeads(jobs.filter(j =>
-          isActive(j) && !isAutoArchivable(j) && j.status !== 'completed'
+          (j.status === 'pending'
+            || ['accepted', 'funded', 'in_progress'].includes(j.status)
+            || (j.status === 'completed' && !releasedSet.has(j.id)))
+          && isActive(j) && isNotRecurring(j)
         ));
       } else if (filter === 'all') {
         // All active jobs — hide completed jobs that are fully done (released + reviewed)
@@ -609,19 +762,19 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     }
   };
 
-  const handleExportInvoice = async () => {
-    const html2pdfModule = await import('html2pdf.js');
-    const html2pdf = html2pdfModule.default;
+  const handleExportInvoice = () => {
     const now = new Date();
     const invoiceNumber = `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-    const invoiceJobs = leads.filter(l => l.budget_amount && l.budget_amount > 0);
     const userName = profile?.full_name || 'Client';
     const userEmail = profile?.email || '';
-    const isClientView = !isTradie;
+    const invoiceDate = now.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+    const fmtCurrency = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
-    const subtotal = invoiceJobs.reduce((sum, j) => sum + (j.budget_amount || 0), 0);
-    const gst = Math.round(subtotal / 11 * 100) / 100;
-    const exGst = Math.round((subtotal - gst) * 100) / 100;
+    // Use payment data (actual amounts) where available, fallback to budget_amount
+    const invoiceJobs = leads.filter(l => jobPaymentData.has(l.id) || (l.budget_amount && l.budget_amount > 0));
+
+    let totalExGst = 0;
+    let totalGst = 0;
 
     let jobRows = '';
     invoiceJobs.forEach((lead, idx) => {
@@ -630,130 +783,93 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       const completedDate = lead.updated_at
         ? new Date(lead.updated_at).toLocaleDateString('en-AU')
         : new Date(lead.created_at).toLocaleDateString('en-AU');
-      const amount = lead.budget_amount || 0;
+      const payData = jobPaymentData.get(lead.id);
+      const payId = jobPaymentIds.get(lead.id);
+      const invNum = payId ? `INV-${payId.slice(0, 8).toUpperCase()}` : '';
+      const exGst = payData ? payData.amount : ((lead.budget_amount || 0) * 100);
+      const storedGst = payData?.metadata?.gst;
+      const gst = storedGst != null ? Number(storedGst) : Math.round(exGst * 0.1);
+      const total = exGst + gst;
+      totalExGst += exGst;
+      totalGst += gst;
       const bg = idx % 2 === 0 ? '#FFFFFF' : '#F9FAFB';
-      jobRows += '<tr style="background-color:' + bg + ';">' +
-        '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#374151;font-weight:500;">' + category + '</td>' +
-        '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#374151;">' + (desc.length > 70 ? desc.slice(0, 70) + '...' : desc) + '</td>' +
-        '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#374151;text-align:center;">' + lead.status.replace('_', ' ') + '</td>' +
-        '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#6B7280;text-align:center;">' + completedDate + '</td>' +
-        '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#111827;text-align:right;font-weight:600;">$' + amount.toFixed(2) + '</td>' +
+      jobRows += `<tr style="background-color:${bg};">` +
+        `<td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-size:13px;color:#374151;font-weight:500;">${category}</td>` +
+        `<td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-size:13px;color:#374151;">${desc.length > 50 ? desc.slice(0, 50) + '...' : desc}</td>` +
+        `<td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#6b7280;text-align:center;">${invNum}</td>` +
+        `<td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#6b7280;text-align:center;">${completedDate}</td>` +
+        `<td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-size:13px;color:#111827;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCurrency(total)}</td>` +
         '</tr>';
     });
 
     if (!jobRows) {
-      jobRows = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#9CA3AF;font-size:13px;background:#F9FAFB;">No jobs with amounts in this period</td></tr>';
+      jobRows = '<tr><td colspan="5" style="padding:24px;text-align:center;color:#9CA3AF;font-size:13px;background:#F9FAFB;">No completed jobs with payments in this period</td></tr>';
     }
 
-    const invoiceDate = now.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+    const grandTotal = totalExGst + totalGst;
 
-    const container = document.createElement('div');
-    container.style.position = 'fixed';
-    container.style.left = '-9999px';
-    container.style.top = '0';
-    container.style.width = '794px';
-    container.style.background = '#FFFFFF';
-    container.innerHTML = '<div style="font-family:Arial,Helvetica,sans-serif;width:794px;padding:40px 48px;color:#1F2937;background:#FFFFFF;">' +
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${invoiceNumber} - Statement</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:680px;margin:0 auto;padding:40px 32px;color:#1a1a1a;font-size:14px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:24px;border-bottom:2px solid #004d40}
+.brand h1{font-size:22px;color:#004d40;letter-spacing:-0.5px}
+.brand p{color:#9ca3af;font-size:11px;margin-top:2px}
+.invoice-meta{text-align:right}
+.invoice-meta .label{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px}
+.invoice-meta .value{font-size:14px;font-weight:600;color:#1a1a1a}
+.invoice-title{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin:24px 0 8px}
+.bill-to{display:flex;justify-content:space-between;margin:20px 0}
+.bill-to .section-label{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px}
+.bill-to .name{font-size:14px;font-weight:600;color:#1a1a1a}
+.bill-to .email{font-size:12px;color:#6b7280;margin-top:2px}
+table{width:100%;border-collapse:collapse;margin-bottom:4px}
+table th{text-align:left;font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;padding:8px 12px;border-bottom:1px solid #e5e7eb}
+table th:last-child{text-align:right}
+table td{padding:10px 12px;font-size:14px;color:#374151;border-bottom:1px solid #f3f4f6}
+table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabular-nums}
+.total-row{background:#004d40}
+.total-row td{color:#fff;font-weight:700;font-size:15px;border:none;padding:12px}
+.footer{margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;text-align:center;color:#9ca3af;font-size:11px;line-height:1.6}
+@media print{body{padding:20px;margin:0}}
+</style></head><body>
+<div class="header">
+  <div class="brand"><h1>ConnecTradie</h1><p>ABN: XX XXX XXX XXX</p></div>
+  <div class="invoice-meta">
+    <div class="label">Payment Statement</div>
+    <div class="value">${invoiceNumber}</div>
+    <div style="font-size:12px;color:#6b7280;margin-top:4px">${invoiceDate}</div>
+  </div>
+</div>
+<div class="bill-to">
+  <div><div class="section-label">Bill To</div><div class="name">${userName}</div>${userEmail ? `<div class="email">${userEmail}</div>` : ''}</div>
+  <div style="text-align:right"><div class="section-label">Platform</div><div class="name">ConnecTradie Pty Ltd</div><div class="email">support@connectradie.com</div></div>
+</div>
+<p class="invoice-title">Completed Jobs</p>
+<table>
+  <thead><tr>
+    <th>Service</th><th>Description</th><th style="text-align:center">Invoice #</th><th style="text-align:center">Date</th><th>Amount</th>
+  </tr></thead>
+  <tbody>${jobRows}</tbody>
+</table>
+<table style="margin-top:12px">
+  <tbody>
+    <tr><td style="border:none;padding:8px 12px;color:#6b7280">Subtotal (ex. GST)</td><td style="border:none;padding:8px 12px;font-weight:500">${fmtCurrency(totalExGst)}</td></tr>
+    <tr><td style="border:none;padding:8px 12px;color:#6b7280">GST (10%)</td><td style="border:none;padding:8px 12px;font-weight:500">${fmtCurrency(totalGst)}</td></tr>
+    <tr class="total-row"><td>Total (inc. GST)</td><td>${fmtCurrency(grandTotal)}</td></tr>
+  </tbody>
+</table>
+<div class="footer">
+  <p>This is a computer-generated statement. All amounts in AUD include GST where applicable.</p>
+  <p>Generated via ConnecTradie — ${invoiceDate}</p>
+</div>
+</body></html>`;
 
-      // Header
-      '<table style="width:100%;border-collapse:collapse;margin-bottom:0;">' +
-        '<tr><td colspan="2" style="padding-bottom:20px;border-bottom:3px solid #004d40;">' +
-          '<table style="width:100%;border-collapse:collapse;">' +
-            '<tr>' +
-              '<td style="vertical-align:top;width:50%;">' +
-                '<div style="font-size:28px;font-weight:800;color:#004d40;margin:0;">ConnecTradie</div>' +
-                '<div style="font-size:11px;color:#6B7280;margin-top:4px;">ABN: 00 000 000 000</div>' +
-              '</td>' +
-              '<td style="vertical-align:top;text-align:right;width:50%;">' +
-                '<div style="font-size:22px;font-weight:700;color:#1F2937;">TAX INVOICE</div>' +
-                '<div style="font-size:12px;color:#6B7280;margin-top:8px;">Invoice #: <strong style="color:#1F2937;">' + invoiceNumber + '</strong></div>' +
-                '<div style="font-size:12px;color:#6B7280;margin-top:2px;">Date: ' + invoiceDate + '</div>' +
-              '</td>' +
-            '</tr>' +
-          '</table>' +
-        '</td></tr>' +
-      '</table>' +
-
-      // Bill To / Platform
-      '<table style="width:100%;border-collapse:collapse;margin:28px 0;">' +
-        '<tr>' +
-          '<td style="vertical-align:top;width:50%;">' +
-            '<div style="font-size:10px;font-weight:700;color:#004d40;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;">' + (isClientView ? 'Bill To' : 'From') + '</div>' +
-            '<div style="font-size:14px;font-weight:600;color:#1F2937;">' + userName + '</div>' +
-            (userEmail ? '<div style="font-size:12px;color:#6B7280;margin-top:3px;">' + userEmail + '</div>' : '') +
-          '</td>' +
-          '<td style="vertical-align:top;text-align:right;width:50%;">' +
-            '<div style="font-size:10px;font-weight:700;color:#004d40;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;">Platform</div>' +
-            '<div style="font-size:14px;font-weight:600;color:#1F2937;">ConnecTradie Pty Ltd</div>' +
-            '<div style="font-size:12px;color:#6B7280;margin-top:3px;">support@connectradie.com</div>' +
-          '</td>' +
-        '</tr>' +
-      '</table>' +
-
-      // Items Table
-      '<table style="width:100%;border-collapse:collapse;">' +
-        '<thead>' +
-          '<tr style="background-color:#004d40;">' +
-            '<th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Service</th>' +
-            '<th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Description</th>' +
-            '<th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Status</th>' +
-            '<th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Date</th>' +
-            '<th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Amount (AUD)</th>' +
-          '</tr>' +
-        '</thead>' +
-        '<tbody>' + jobRows + '</tbody>' +
-      '</table>' +
-
-      // Totals
-      '<table style="width:100%;border-collapse:collapse;margin-top:16px;">' +
-        '<tr>' +
-          '<td style="width:55%;"></td>' +
-          '<td style="width:45%;">' +
-            '<table style="width:100%;border-collapse:collapse;background:#F9FAFB;border:1px solid #E5E7EB;">' +
-              '<tr><td style="padding:8px 16px;font-size:12px;color:#6B7280;">Subtotal (ex. GST)</td>' +
-                  '<td style="padding:8px 16px;font-size:12px;color:#374151;text-align:right;font-weight:500;">$' + exGst.toFixed(2) + '</td></tr>' +
-              '<tr><td style="padding:8px 16px;font-size:12px;color:#6B7280;border-bottom:2px solid #004d40;">GST (10%)</td>' +
-                  '<td style="padding:8px 16px;font-size:12px;color:#374151;text-align:right;font-weight:500;border-bottom:2px solid #004d40;">$' + gst.toFixed(2) + '</td></tr>' +
-              '<tr><td style="padding:12px 16px;font-size:15px;font-weight:700;color:#004d40;">Total (inc. GST)</td>' +
-                  '<td style="padding:12px 16px;font-size:15px;font-weight:700;color:#004d40;text-align:right;">$' + subtotal.toFixed(2) + '</td></tr>' +
-            '</table>' +
-          '</td>' +
-        '</tr>' +
-      '</table>' +
-
-      // Payment Info
-      '<table style="width:100%;border-collapse:collapse;margin-top:28px;">' +
-        '<tr><td style="padding:16px 20px;background-color:#ECFDF6;border:1px solid #A7F3D5;">' +
-          '<div style="font-size:10px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">Payment Information</div>' +
-          '<div style="font-size:12px;color:#374151;line-height:1.6;">All payments processed securely via Stripe through the ConnecTradie platform. Funds held in escrow until job completion and client approval.</div>' +
-        '</td></tr>' +
-      '</table>' +
-
-      // Footer
-      '<table style="width:100%;border-collapse:collapse;margin-top:28px;">' +
-        '<tr><td style="padding:16px 0 0;border-top:1px solid #E5E7EB;text-align:center;">' +
-          '<div style="font-size:10px;color:#9CA3AF;line-height:1.6;">This is a computer-generated tax invoice. All amounts are in Australian Dollars (AUD) and include GST where applicable.</div>' +
-          '<div style="font-size:10px;color:#9CA3AF;margin-top:4px;">Generated via ConnecTradie — ' + invoiceDate + '</div>' +
-        '</td></tr>' +
-      '</table>' +
-
-    '</div>';
-
-    document.body.appendChild(container);
-
-    try {
-      await html2pdf()
-        .set({
-          margin: [8, 0, 8, 0],
-          filename: 'ConnecTradie-Invoice-' + invoiceNumber + '.pdf',
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        })
-        .from(container.firstElementChild)
-        .save();
-    } finally {
-      document.body.removeChild(container);
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      win.setTimeout(() => { win.print(); }, 400);
     }
   };
 
@@ -815,6 +931,15 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       return;
     }
 
+    // Trade-aware check: the legacy isVerified flag doesn't cover the
+    // per-trade licence requirement. SubmitQuoteModal also enforces this,
+    // but pre-empting the modal makes the gate visible from the lead card.
+    if (isTradie && !canQuoteOnLead(lead)) {
+      setGateReason('unverified');
+      setShowVerificationGate(true);
+      return;
+    }
+
     setQuoteModalJob(lead);
   };
 
@@ -864,6 +989,17 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       return next;
     });
     setLeads(prev => prev.filter(l => l.id !== leadId));
+
+    // Persist the pass so the nudge cron skips this tradie. Best-effort.
+    if (user) {
+      supabase
+        .from('lead_impressions')
+        .upsert(
+          { job_id: leadId, tradie_id: user.id, passed_at: new Date().toISOString(), pass_reason: 'manual' },
+          { onConflict: 'job_id,tradie_id' },
+        )
+        .then(({ error }) => { if (error) console.error('Failed to persist pass:', error); });
+    }
   };
 
   const handleFlashExpired = async (leadId: string) => {
@@ -1018,8 +1154,27 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     const jobId = deleteJobTarget.id;
 
     try {
-      // Child tables use ON DELETE CASCADE (migration 20260321100000),
-      // so just delete the job — DB handles cleanup automatically.
+      // If this lead was created by scheduling a recurring service that hasn't yet
+      // found a tradie, cancel that ongoing service too — otherwise it lingers as an
+      // active service with no work lead. cancelRecurringJob (no-tradie path) deletes
+      // the sessions, the linked job, and the recurring service. If a tradie is
+      // already assigned, leave the recurring service alone — it's proceeding normally.
+      const { data: linkedRecurring } = await supabase
+        .from('recurring_jobs')
+        .select('id, tradie_id')
+        .eq('original_job_id', jobId);
+      for (const r of linkedRecurring || []) {
+        if (!r.tradie_id) {
+          try {
+            await cancelRecurringJob(r.id);
+          } catch (e) {
+            console.warn('Cascade-cancel of linked recurring service failed:', e);
+          }
+        }
+      }
+
+      // Child tables use ON DELETE CASCADE (migration 20260321100000), so just delete
+      // the job — DB handles cleanup. (No-op if cancelRecurringJob already removed it.)
       const { error } = await supabase.from('jobs').delete().eq('id', jobId);
       if (error) throw error;
 
@@ -1091,18 +1246,25 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
 
       const category = editJob.description.match(/^\[([^\]]+)\]/)?.[1] || '';
       const newDescription = category ? `[${category}] ${editDesc.trim()}` : editDesc.trim();
+      // Once a tradie has accepted, the deal is locked: only ship the fields
+      // the client is allowed to change (description, location, photos). Title
+      // and budget aren't included in the update payload, so a tampered form
+      // can't bypass the UI lock.
+      const dealLocked = !!editJob.tradie_id;
       const updateData: Record<string, unknown> = {
-        title: editTitle.trim() || null,
         description: newDescription,
         location_address: editLocation.trim(),
         images_url: imageUrls.length > 0 ? imageUrls : null,
       };
-      if (editBudget) {
-        updateData.budget_amount = parseFloat(editBudget);
-        updateData.budget_type = 'fixed_budget';
-      } else {
-        updateData.budget_amount = null;
-        updateData.budget_type = 'request_quote';
+      if (!dealLocked) {
+        updateData.title = editTitle.trim() || null;
+        if (editBudget) {
+          updateData.budget_amount = parseFloat(editBudget);
+          updateData.budget_type = 'fixed_budget';
+        } else {
+          updateData.budget_amount = null;
+          updateData.budget_type = 'request_quote';
+        }
       }
       const { error } = await supabase
         .from('jobs')
@@ -1137,18 +1299,17 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       const isReviewed = reviewedJobIds.has(lead.id);
       if (isReleased && isReviewed) return 'Completed';
       if (isReleased) return 'Awaiting Review';
-      return 'Awaiting Release';
+      return 'Ready to Release';
     }
     if (lead.status === 'in_progress') return 'In Progress';
     if (lead.status === 'funded') return 'Paid — Tradie Assigned';
     if (lead.status === 'accepted') return 'Accepted — Awaiting Payment';
-    if (lead.quoting_status === 'awarded') return 'Awarded';
+    if (lead.quoting_status === 'awarded') return 'Tradie Assigned';
     if (lead.quote_count > 0) return `${lead.quote_count} Quote${lead.quote_count !== 1 ? 's' : ''}`;
-    if (lead.tradie_id && lead.status !== 'pending') return 'Picked Up';
+    if (lead.tradie_id) return 'Tradie Assigned';
     if (lead.is_flash_boost) return 'Boosted';
     if (lead.priority === 'high') return 'High Priority';
-    if (lead.scheduled_date) return 'Scheduled';
-    return 'Waiting';
+    return 'Awaiting Quotes';
   };
 
   const getClientStatusColor = (lead: Job) => {
@@ -1156,18 +1317,19 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
       const isReleased = releasedJobIds.has(lead.id);
       const isReviewed = reviewedJobIds.has(lead.id);
       if (isReleased && isReviewed) return 'bg-green-100 text-green-800 border-green-300';
-      return 'bg-amber-100 text-amber-700 border-amber-200';
+      if (isReleased) return 'bg-amber-100 text-amber-700 border-amber-200';
+      // Ready to Release — make it stand out as an action-required badge
+      return 'bg-emerald-100 text-emerald-800 border-emerald-300';
     }
     if (lead.status === 'in_progress') return 'bg-blue-100 text-blue-700 border-blue-200';
     if (lead.status === 'funded') return 'bg-green-100 text-green-700 border-green-200';
     if (lead.status === 'accepted') return 'bg-secondary-100 text-secondary-700 border-secondary-200';
     if (lead.quoting_status === 'awarded') return 'bg-green-100 text-green-700 border-green-200';
     if (lead.quote_count > 0) return 'bg-secondary-100 text-secondary-700 border-secondary-200';
-    if (lead.tradie_id && lead.status !== 'pending') return 'bg-green-100 text-green-700 border-green-200';
+    if (lead.tradie_id) return 'bg-green-100 text-green-700 border-green-200';
     if (lead.is_flash_boost) return 'bg-warm-100 text-warm-700 border-warm-200';
     if (lead.priority === 'high') return 'bg-orange-100 text-orange-700 border-orange-200';
-    if (lead.scheduled_date) return 'bg-secondary-100 text-secondary-700 border-secondary-200';
-    return 'bg-gray-100 text-gray-600 border-gray-200';
+    return 'bg-amber-100 text-amber-700 border-amber-200';
   };
 
   const tradieFilters: { key: LeadFilter; label: string }[] = [
@@ -1175,7 +1337,6 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     { key: 'urgent', label: 'Urgent' },
     { key: 'scheduled', label: 'Scheduled' },
     { key: 'boosted', label: 'Flash Deals' },
-    { key: 'quoted', label: 'My Quotes' },
   ];
 
   const clientFilters: { key: LeadFilter; label: string }[] = [
@@ -1201,18 +1362,24 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
     const slotsRemaining = lead.max_quotes - lead.quote_count;
     const isClientViewing = !isTradie;
     const showQuoteComparison = isClientViewing && expandedJobId === lead.id && lead.quote_count > 0;
-    const isClientEditable = isClientViewing && lead.status === 'pending' && !lead.tradie_id && !lead.deleted_at;
+    // Clients can keep editing the job card after the initial post — useful for adding
+    // photos, clarifying the description, or fixing the address while tradies / the
+    // assigned tradie are working on it. We lock editing only once the job is fully
+    // closed (completed / cancelled / declined / archived). The modal itself disables
+    // title + budget once a tradie has accepted, so scope/price can't drift mid-deal.
+    const isClientEditable = isClientViewing
+      && !lead.deleted_at
+      && !lead.archived_at
+      && !['completed', 'cancelled', 'declined'].includes(lead.status);
 
     return (
       <div key={lead.id} id={`job-${lead.id}`}>
         <div
           role="button"
           tabIndex={0}
-          onClick={isClientEditable ? () => openEditJob(lead) : isTradie ? () => setViewLeadDetail(lead) : undefined}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isClientEditable) openEditJob(lead); else if (isTradie) setViewLeadDetail(lead); } }}
-          className={`rounded-2xl overflow-hidden transition-all ${
-            isClientEditable || isTradie ? 'cursor-pointer ' : ''
-          }${
+          onClick={isClientEditable ? () => openEditJob(lead) : () => setViewLeadDetail(lead)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isClientEditable) openEditJob(lead); else setViewLeadDetail(lead); } }}
+          className={`rounded-2xl overflow-hidden transition-all cursor-pointer ${
             isFlashActive && isTradie && lead.status === 'pending'
               ? 'border border-warm-200 bg-white shadow-md hover:shadow-xl ring-1 ring-warm-100'
               : isUrgent && isTradie
@@ -1238,12 +1405,19 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                 {/* Header row: title + status + delete */}
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-bold text-gray-900 leading-snug capitalize">
-                      {(() => {
-                        const raw = lead.title || category || 'Untitled Job';
-                        return raw.replace(/_/g, ' ');
-                      })()}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-gray-900 leading-snug capitalize">
+                        {(() => {
+                          const raw = lead.title || category || 'Untitled Job';
+                          return raw.replace(/_/g, ' ');
+                        })()}
+                      </h3>
+                      {lead.status === 'completed' && jobPaymentIds.get(lead.id) && (
+                        <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-medium flex-shrink-0">
+                          INV-{jobPaymentIds.get(lead.id)!.slice(0, 8).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {!isTradie && (
@@ -1316,8 +1490,8 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                     </span>
                   )}
                   {lead.budget_amount ? (
-                    <span className="inline-flex items-center font-bold text-emerald-700">
-                      ${lead.budget_amount.toLocaleString()}
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">
+                      Budget ${lead.budget_amount.toLocaleString()}
                     </span>
                   ) : lead.budget_type === 'request_quote' ? (
                     <span className="inline-flex items-center gap-1 text-blue-600 font-medium">
@@ -1360,13 +1534,24 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                       <XCircle className="w-3.5 h-3.5" />
                       Pass
                     </button>
-                    <button
-                      onClick={() => handleQuoteClick(lead)}
-                      className="inline-flex items-center gap-1.5 px-5 py-1.5 rounded-lg text-xs font-semibold bg-warm-500 text-white hover:bg-warm-600 shadow-sm transition-all"
-                    >
-                      <FileText className="w-3.5 h-3.5" />
-                      Submit Quote
-                    </button>
+                    {canQuoteOnLead(lead) ? (
+                      <button
+                        onClick={() => handleQuoteClick(lead)}
+                        className="inline-flex items-center gap-1.5 px-5 py-1.5 rounded-lg text-xs font-semibold bg-warm-500 text-white hover:bg-warm-600 shadow-sm transition-all"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        Submit Quote
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleQuoteClick(lead)}
+                        className="inline-flex items-center gap-1.5 px-5 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-white hover:bg-amber-600 shadow-sm transition-all"
+                        title="Get verified to quote on this trade"
+                      >
+                        <Shield className="w-3.5 h-3.5" />
+                        Get Verified
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -1408,6 +1593,22 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
 
           {isTradie && hasQuoted && (() => {
             const qs = lead.my_quote!.status;
+            // 3-stage flow: once a site visit is booked, the tradie manages it here —
+            // mark the visit complete, then submit the binding final price. The static
+            // status bar below only covers the simple accepted/declined/etc. states.
+            const isV2InFlight = lead.flow_version === 2
+              && (qs === 'site_visit_scheduled' || qs === 'site_visit_completed' || qs === 'final_submitted');
+            if (isV2InFlight) {
+              const priceLabel = lead.my_quote!.firm_price
+                ? `$${lead.my_quote!.firm_price.toLocaleString()}`
+                : `$${lead.my_quote!.price_min.toLocaleString()} - $${lead.my_quote!.price_max.toLocaleString()}`;
+              return (
+                <div className="px-5 py-3 bg-gray-50 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                  <p className="text-sm font-semibold text-gray-700 mb-2">Your estimate: {priceLabel}</p>
+                  <TradieQuoteActions quote={lead.my_quote!} job={lead} tradeCategory={lead.description?.match(/^\[([^\]]+)\]/)?.[1]} onChange={fetchLeads} />
+                </div>
+              );
+            }
             const statusConfig = qs === 'accepted'
               ? { bg: 'bg-green-50 border-green-200', icon: <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />, label: 'Quote accepted — the client chose you!', textColor: 'text-green-800' }
               : qs === 'declined'
@@ -1486,18 +1687,42 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
             return (
               <>
                 {!isReleased && completedAt && (
-                  <AutoReleaseCountdown completedAt={completedAt} />
+                  <AutoReleaseCountdown completedAt={completedAt} jobTitle={lead.title || lead.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ')} invoiceNumber={jobPaymentIds.get(lead.id) ? `INV-${jobPaymentIds.get(lead.id)!.slice(0, 8).toUpperCase()}` : undefined} />
                 )}
                 <div className="flex items-center justify-between px-5 py-2.5 bg-gray-50 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-2">
                   {isFullyDone ? (
-                    <button
-                      onClick={() => setViewCompletedJob(lead)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded-lg hover:bg-primary-100 border border-primary-200 transition-colors"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      View
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setViewCompletedJob(lead)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded-lg hover:bg-primary-100 border border-primary-200 transition-colors"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        View
+                      </button>
+                      <button
+                        onClick={() => {
+                          const categoryMatch = lead.description?.match(/^\[([^\]]+)\]/);
+                          const category = categoryMatch ? categoryMatch[1] : lead.title || '';
+                          const desc = lead.description?.replace(/^\[[^\]]+\]\s*/, '') || '';
+                          navigate(`/leads?tab=services`, {
+                            state: {
+                              prefillRecurring: {
+                                category,
+                                description: desc,
+                                location: lead.location_address || '',
+                                budget: lead.budget_amount ? String(lead.budget_amount) : '',
+                                tradieId: lead.tradie_id || '',
+                              }
+                            }
+                          });
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-lg hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        Make Recurring
+                      </button>
+                    </div>
                   ) : !isReleased ? (
                     <button
                       onClick={() => handleReleasePayment(lead.id)}
@@ -1538,20 +1763,38 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           })()}
 
           {!isTradie && lead.status === 'funded' && lead.tradie_id && !pendingIncreases[lead.id] && (
-            <div className="flex items-center gap-2 px-5 py-3 border-t border-gray-100 text-sm text-green-600">
-              <CheckCircle2 className="w-4 h-4" />
-              Payment received — waiting for tradie to start
+            <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-gray-100">
+              <div className="flex items-center gap-2 text-sm text-green-600">
+                <CheckCircle2 className="w-4 h-4" />
+                Payment received — waiting for tradie to start
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleMessageTradie(lead.tradie_id!, lead.id); }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-secondary-700 bg-secondary-50 border border-secondary-200 rounded-lg hover:bg-secondary-100 transition-colors"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                Message tradie
+              </button>
             </div>
           )}
 
           {!isTradie && lead.status === 'in_progress' && lead.tradie_id && !pendingIncreases[lead.id] && (
-            <div className="flex items-center gap-2 px-5 py-3 border-t border-gray-100 text-sm text-blue-600">
-              <Loader2 className="w-4 h-4" />
-              Work in progress
+            <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-gray-100">
+              <div className="flex items-center gap-2 text-sm text-blue-600">
+                <Loader2 className="w-4 h-4" />
+                Work in progress
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleMessageTradie(lead.tradie_id!, lead.id); }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-secondary-700 bg-secondary-50 border border-secondary-200 rounded-lg hover:bg-secondary-100 transition-colors"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                Message tradie
+              </button>
             </div>
           )}
 
-          {!isTradie && pendingIncreases[lead.id] && !paidIncreaseJobIds.has(lead.id) && ['funded', 'in_progress'].includes(lead.status) && (
+          {!isTradie && pendingIncreases[lead.id] && !paidIncreaseJobIds.has(lead.id) && ['funded', 'in_progress', 'completed'].includes(lead.status) && (
             <div className="px-5 py-3 border-t border-amber-200 bg-amber-50">
               <div className="flex items-center gap-2 text-sm font-medium text-amber-800 mb-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -1597,40 +1840,70 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 text-sm text-green-700">
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>Quoted <span className="font-semibold">{(() => {
+                    <span>{(() => {
                       const q = acceptedQuotes[lead.id];
-                      if (q.firm_price) return `$${q.firm_price.toLocaleString()}`;
-                      return `$${q.price_min.toLocaleString()} – $${q.price_max.toLocaleString()}`;
-                    })()}</span></span>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const q = acceptedQuotes[lead.id];
-                      // Range quote → ask client to confirm agreed price first
-                      if (!q.firm_price && q.price_min && q.price_max) {
-                        setPriceConfirm({
-                          quoteId: q.id,
-                          jobId: lead.id,
-                          min: q.price_min,
-                          max: q.price_max,
-                          agreedPrice: '',
-                        });
-                      } else {
-                        setPayingJobId(lead.id);
-                        handleAcceptQuote(q.id, lead.id);
+                      const hasGst = tradieGstMap[q.tradie_id];
+                      const gstLabel = hasGst ? ' + GST' : '';
+                      if (q.firm_price) return <>Quoted <span className="font-semibold">${q.firm_price.toLocaleString()}{gstLabel}</span></>;
+                      if (q.requires_site_inspection && q.price_min) {
+                        const budget = typeof lead.budget_amount === 'number' ? lead.budget_amount : null;
+                        const deposit = Math.max(q.price_min, budget ?? q.price_min);
+                        return <>Deposit <span className="font-semibold">${deposit.toLocaleString()}{gstLabel}</span> <span className="text-gray-400">· final price confirmed after site visit</span></>;
                       }
-                    }}
-                    disabled={payingJobId === lead.id}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-60"
-                  >
-                    {payingJobId === lead.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Shield className="w-4 h-4" />
-                    )}
-                    Pay & Secure
-                  </button>
+                      return <>Quoted <span className="font-semibold">${q.price_min.toLocaleString()} – ${q.price_max.toLocaleString()}{gstLabel}</span></>;
+                    })()}</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleMessageTradie(lead.tradie_id!, lead.id); }}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-secondary-700 bg-secondary-50 border border-secondary-200 rounded-lg hover:bg-secondary-100 transition-colors"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      Message
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const q = acceptedQuotes[lead.id];
+                        // Site-visit range quote → deposit the client's budget (or tradie's min if budget is lower); final price settled via adjust-quote-price after the visit
+                        if (q.requires_site_inspection && q.price_min) {
+                          const budget = typeof lead.budget_amount === 'number' ? lead.budget_amount : null;
+                          const deposit = Math.max(q.price_min, budget ?? q.price_min);
+                          setPayingJobId(lead.id);
+                          handleAcceptQuote(q.id, lead.id, deposit);
+                          return;
+                        }
+                        // Plain range quote (no site visit) → client and tradie have agreed a number → confirm modal
+                        if (!q.firm_price && q.price_min && q.price_max) {
+                          setPriceConfirm({
+                            quoteId: q.id,
+                            jobId: lead.id,
+                            min: q.price_min,
+                            max: q.price_max,
+                            agreedPrice: '',
+                            isGstRegistered: tradieGstMap[q.tradie_id] || false,
+                          });
+                        } else {
+                          setPayingJobId(lead.id);
+                          handleAcceptQuote(q.id, lead.id);
+                        }
+                      }}
+                      disabled={payingJobId === lead.id}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-60"
+                    >
+                      {payingJobId === lead.id ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="w-4 h-4" />
+                          Pay & Secure
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 text-sm text-green-600">
@@ -1667,8 +1940,8 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                 onAcceptQuote={handleAcceptQuote}
                 onDeclineQuote={handleDeclineQuote}
                 onMessageTradie={handleMessageTradie}
-                onConfirmPrice={(quoteId, jobId, min, max) =>
-                  setPriceConfirm({ quoteId, jobId, min, max, agreedPrice: '' })
+                onConfirmPrice={(quoteId, jobId, min, max, tradieId) =>
+                  setPriceConfirm({ quoteId, jobId, min, max, agreedPrice: '', isGstRegistered: tradieGstMap[tradieId] || false })
                 }
               />
             </div>
@@ -1807,6 +2080,15 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
             <p className="text-xs text-green-700 ml-8">Your tradie has been hired and payment is held securely in escrow. The tradie will be notified and can start work.</p>
           </div>
         )}
+        {quoteAcceptedBanner === 'recurring_success' && (
+          <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4">
+            <div className="flex items-center gap-3 mb-1">
+              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+              <p className="text-sm font-bold text-green-800">Your ongoing service is now active!</p>
+            </div>
+            <p className="text-xs text-green-700 ml-8">The agreed price is locked in for every visit. Your service is shown below — manage upcoming visits and invoicing from here.</p>
+          </div>
+        )}
         {quoteAcceptedBanner === 'price_increase_success' && (
           <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4">
             <div className="flex items-center gap-3 mb-1">
@@ -1912,22 +2194,39 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex items-center gap-6 border-b border-gray-200 mb-6 overflow-x-auto">
-          {filters.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                filter === f.key
-                  ? 'border-warm-500 text-warm-600'
-                  : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
+        {/* Filter — dropdown for tradies, tabs for clients */}
+        {isTradie ? (
+          initialFilter !== 'quoted' && (
+            <div className="flex items-center gap-2 mb-6">
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Filter</label>
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value as LeadFilter)}
+                className="text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-warm-500 focus:border-transparent"
+              >
+                {filters.map((f) => (
+                  <option key={f.key} value={f.key}>{f.label}</option>
+                ))}
+              </select>
+            </div>
+          )
+        ) : (
+          <div className="flex items-center gap-6 border-b border-gray-200 mb-6 overflow-x-auto">
+            {filters.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                  filter === f.key
+                    ? 'border-warm-500 text-warm-600'
+                    : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div>
 
@@ -1978,6 +2277,40 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
             )
           ) : filter === 'completed' ? (
             <div>
+              {/* Summary banner for unreleased jobs */}
+              {(() => {
+                const unreleased = leads.filter(l => !releasedJobIds.has(l.id) && (l as Record<string, unknown>).completed_at);
+                if (unreleased.length === 0) return null;
+                const now = Date.now();
+                const expiredJobs = unreleased.filter(l => {
+                  const completedAt = (l as Record<string, unknown>).completed_at as string;
+                  return now - new Date(completedAt).getTime() > 48 * 60 * 60 * 1000;
+                });
+                if (expiredJobs.length === 0) return null;
+                return (
+                  <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-4">
+                    <div className="flex items-start gap-2">
+                      <Clock className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
+                      <div className="text-sm text-red-700">
+                        <p className="font-medium">
+                          {expiredJobs.length} payment{expiredJobs.length !== 1 ? 's' : ''} will be auto-released if no action is taken:
+                        </p>
+                        <ul className="mt-1 space-y-0.5 text-xs text-red-600">
+                          {expiredJobs.map(j => {
+                            const payId = jobPaymentIds.get(j.id);
+                            const invNum = payId ? `INV-${payId.slice(0, 8).toUpperCase()}` : null;
+                            return (
+                              <li key={j.id}>
+                                &bull; {j.title || j.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job'}{invNum ? ` (${invNum})` : ''}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-gray-500">
                   {leads.length} completed job{leads.length !== 1 ? 's' : ''}
@@ -2001,7 +2334,7 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                   return (
                     <div key={lead.id}>
                       {!isReleased && completedAt2 && (
-                        <AutoReleaseCountdown completedAt={completedAt2} />
+                        <AutoReleaseCountdown completedAt={completedAt2} jobTitle={lead.title || lead.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ')} invoiceNumber={jobPaymentIds.get(lead.id) ? `INV-${jobPaymentIds.get(lead.id)!.slice(0, 8).toUpperCase()}` : undefined} />
                       )}
                       <div className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors group">
                       <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
@@ -2010,6 +2343,11 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                           <h4 className="text-sm font-semibold text-gray-900 truncate capitalize">
                             {(lead.title || category || 'Untitled Job').replace(/_/g, ' ')}
                           </h4>
+                          {jobPaymentIds.get(lead.id) && (
+                            <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-medium flex-shrink-0">
+                              INV-{jobPaymentIds.get(lead.id)!.slice(0, 8).toUpperCase()}
+                            </span>
+                          )}
                           {category && (
                             <span className="hidden sm:inline px-1.5 py-0.5 bg-primary-50 text-primary-700 rounded text-[10px] font-medium flex-shrink-0">
                               {category}
@@ -2020,13 +2358,25 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                         {isFullyDone ? (
-                          <button
-                            onClick={() => setViewCompletedJob(lead)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded-lg hover:bg-primary-100 border border-primary-200 transition-colors"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            View
-                          </button>
+                          <>
+                            <button
+                              onClick={() => setViewCompletedJob(lead)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded-lg hover:bg-primary-100 border border-primary-200 transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              View
+                            </button>
+                            {lead.tradie_id && (
+                              <Link
+                                to={`/post-lead?tradie=${lead.tradie_id}`}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-lg hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                                title="Post a new job and invite this tradie to quote"
+                              >
+                                <Repeat className="w-3.5 h-3.5" />
+                                Book again
+                              </Link>
+                            )}
+                          </>
                         ) : !isReleased ? (
                           <button
                             onClick={() => handleReleasePayment(lead.id)}
@@ -2261,13 +2611,15 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                       <p className="text-sm text-gray-700 mt-0.5">{formatDate(vl.created_at)}</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
-                    <Users className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Quote Slots</p>
-                      <p className="text-sm text-gray-700 mt-0.5">{vl.quote_count}/{vl.max_quotes} filled</p>
+                  {vl.quoting_status !== 'awarded' && (
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
+                      <Users className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Quote Slots</p>
+                        <p className="text-sm text-gray-700 mt-0.5">{vl.quote_count}/{vl.max_quotes} filled</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {vl.allows_site_inspection && !['Cleaner', 'Handyman', 'Pest Control', 'Locksmith', 'Appliance Repair', 'Private Chef', 'Event Catering', 'Security Systems', 'Garage Doors'].includes(vlCategory) && (
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-blue-50 rounded-xl">
                       <Eye className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
@@ -2296,13 +2648,23 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                     <XCircle className="w-4 h-4" />
                     Not Interested
                   </button>
-                  <button
-                    onClick={() => { setViewLeadDetail(null); handleQuoteClick(vl); }}
-                    className="inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-lg text-sm font-semibold bg-warm-500 text-white hover:bg-warm-600 shadow-sm transition-all"
-                  >
-                    <FileText className="w-4 h-4" />
-                    Submit Quote
-                  </button>
+                  {canQuoteOnLead(vl) ? (
+                    <button
+                      onClick={() => { setViewLeadDetail(null); handleQuoteClick(vl); }}
+                      className="inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-lg text-sm font-semibold bg-warm-500 text-white hover:bg-warm-600 shadow-sm transition-all"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Submit Quote
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => { setViewLeadDetail(null); handleQuoteClick(vl); }}
+                      className="inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-lg text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 shadow-sm transition-all"
+                    >
+                      <Shield className="w-4 h-4" />
+                      Get Verified
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -2321,6 +2683,26 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                   >
                     <Eye className="w-4 h-4" />
                     View {vl.quote_count} Quote{vl.quote_count !== 1 ? 's' : ''}
+                  </button>
+                </div>
+              )}
+
+              {/* Client: awarded/accepted job — show tradie assigned status */}
+              {!isTradie && vl.tradie_id && vl.quoting_status === 'awarded' && (
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                  <div className="flex items-center gap-3 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-green-800">Tradie assigned</p>
+                      <p className="text-xs text-green-600">This job is managed as an ongoing service</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { setViewLeadDetail(null); setFilter('services'); }}
+                    className="w-full mt-3 flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-500 text-white font-medium rounded-xl hover:bg-emerald-600 transition-colors text-sm"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    View in Ongoing Services
                   </button>
                 </div>
               )}
@@ -2396,14 +2778,18 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
         const ej = editJob;
         const ejCategory = extractCategory(ej.description);
         const ejIsFlash = ej.is_flash_boost && ej.flash_expiry && new Date(ej.flash_expiry) > new Date();
+        // Once a tradie has accepted, lock the fields that define the deal terms
+        // (title + budget). Description / location / photos stay editable so the
+        // client can clarify scope, fix typos, or add reference shots.
+        const dealLocked = !!ej.tradie_id;
         return (
           <Modal isOpen={!!editJob} onClose={() => setEditJob(null)} maxWidth="lg">
             <div className="p-6">
               {/* Header — category as title */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-secondary-100 flex items-center justify-center">
-                    <Briefcase className="w-5 h-5 text-secondary-600" />
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                    <Briefcase className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">{ej.title || ejCategory || 'Job Details'}</h2>
@@ -2450,6 +2836,17 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                 )}
               </div>
 
+              {/* In-progress notice — shown when the deal is locked */}
+              {dealLocked && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-xs text-amber-800">
+                    <p className="font-medium mb-0.5">Tradie accepted — limited edits</p>
+                    <p className="text-amber-700">You can still update the description, location, and photos. Title and budget are locked to preserve the agreed deal.</p>
+                  </div>
+                </div>
+              )}
+
               {/* Title */}
               <div className="mb-4">
                 <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mb-1.5">
@@ -2461,7 +2858,8 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                   onChange={(e) => setEditTitle(e.target.value)}
                   placeholder="Give your job a short title"
                   maxLength={80}
-                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-warm-500 focus:border-warm-500 transition-colors"
+                  disabled={dealLocked}
+                  className={`w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-warm-500 focus:border-warm-500 transition-colors ${dealLocked ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
                 />
               </div>
 
@@ -2538,7 +2936,8 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                       value={editBudget}
                       onChange={(e) => setEditBudget(e.target.value)}
                       placeholder="—"
-                      className="w-full pl-8 pr-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-warm-500 focus:border-warm-500 transition-colors"
+                      disabled={dealLocked}
+                      className={`w-full pl-8 pr-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-warm-500 focus:border-warm-500 transition-colors ${dealLocked ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
                     />
                   </div>
                 </div>
@@ -2679,6 +3078,13 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
                 Price must be between ${priceConfirm.min.toLocaleString()} and ${priceConfirm.max.toLocaleString()}
               </p>
             )}
+            {priceConfirm.isGstRegistered && priceConfirm.agreedPrice && Number(priceConfirm.agreedPrice) > 0 && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-700">
+                  This tradie is GST registered. 10% GST (${(Number(priceConfirm.agreedPrice) * 0.1).toFixed(2)}) will be added at checkout — total: <span className="font-semibold">${(Number(priceConfirm.agreedPrice) * 1.1).toFixed(2)}</span>
+                </p>
+              </div>
+            )}
             <div className="flex justify-end gap-3 pt-2">
               <button
                 onClick={() => setPriceConfirm(null)}
@@ -2719,63 +3125,93 @@ export default function Leads({ embedded = false }: { embedded?: boolean }) {
           ? new Date(cj.updated_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
           : new Date(cj.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
 
-        const handleExportSingleInvoice = async () => {
-          const html2pdfModule = await import('html2pdf.js');
-          const html2pdf = html2pdfModule.default;
-          const now = new Date();
-          const invoiceNumber = `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-          const userName = profile?.full_name || 'Client';
-          const userEmail = profile?.email || '';
-          const amount = cj.budget_amount || 0;
-          const gst = Math.round(amount / 11 * 100) / 100;
-          const exGst = Math.round((amount - gst) * 100) / 100;
-          const invoiceDate = now.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+        const handleExportSingleInvoice = () => {
+          const payData = jobPaymentData.get(cj.id);
+          const payId = jobPaymentIds.get(cj.id);
+          const invoiceNum = payId ? `INV-${payId.slice(0, 8).toUpperCase()}` : `INV-${cj.id.slice(0, 8).toUpperCase()}`;
+          const exGst = payData ? payData.amount : (cj.budget_amount || 0);
+          const storedGst = payData?.metadata?.gst;
+          const gstAmount = storedGst != null ? Number(storedGst) : Math.round(exGst * 0.1);
+          const total = exGst + gstAmount;
           const category = cjCategory || 'Service';
-          const desc = cjDesc.length > 70 ? cjDesc.slice(0, 70) + '...' : cjDesc;
+          const desc = cjDesc;
+          const tradieName = (payData?.metadata?.tradie_name as string) || null;
+          const issueDate = payData?.created_at
+            ? new Date(payData.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
+            : completedDate;
+          const fmtCurrency = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
-          const container = document.createElement('div');
-          container.style.position = 'fixed';
-          container.style.left = '-9999px';
-          container.style.top = '0';
-          container.style.width = '794px';
-          container.style.background = '#FFFFFF';
-          container.innerHTML = '<div style="font-family:Arial,Helvetica,sans-serif;width:794px;padding:40px 48px;color:#1F2937;background:#FFFFFF;">' +
-            '<table style="width:100%;border-collapse:collapse;margin-bottom:0;"><tr><td colspan="2" style="padding-bottom:20px;border-bottom:3px solid #004d40;"><table style="width:100%;border-collapse:collapse;"><tr>' +
-            '<td style="vertical-align:top;width:50%;"><div style="font-size:28px;font-weight:800;color:#004d40;margin:0;">ConnecTradie</div><div style="font-size:11px;color:#6B7280;margin-top:4px;">ABN: 00 000 000 000</div></td>' +
-            '<td style="vertical-align:top;text-align:right;width:50%;"><div style="font-size:22px;font-weight:700;color:#1F2937;">TAX INVOICE</div><div style="font-size:12px;color:#6B7280;margin-top:8px;">Invoice #: <strong style="color:#1F2937;">' + invoiceNumber + '</strong></div><div style="font-size:12px;color:#6B7280;margin-top:2px;">Date: ' + invoiceDate + '</div></td>' +
-            '</tr></table></td></tr></table>' +
-            '<table style="width:100%;border-collapse:collapse;margin:28px 0;"><tr><td style="vertical-align:top;width:50%;"><div style="font-size:10px;font-weight:700;color:#004d40;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;">Bill To</div><div style="font-size:14px;font-weight:600;color:#1F2937;">' + userName + '</div>' + (userEmail ? '<div style="font-size:12px;color:#6B7280;margin-top:3px;">' + userEmail + '</div>' : '') + '</td>' +
-            '<td style="vertical-align:top;text-align:right;width:50%;"><div style="font-size:10px;font-weight:700;color:#004d40;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;">Platform</div><div style="font-size:14px;font-weight:600;color:#1F2937;">ConnecTradie Pty Ltd</div><div style="font-size:12px;color:#6B7280;margin-top:3px;">support@connectradie.com</div></td></tr></table>' +
-            '<table style="width:100%;border-collapse:collapse;"><thead><tr style="background-color:#004d40;">' +
-            '<th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Service</th>' +
-            '<th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Description</th>' +
-            '<th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Date</th>' +
-            '<th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.5px;">Amount (AUD)</th>' +
-            '</tr></thead><tbody>' +
-            '<tr style="background-color:#FFFFFF;"><td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#374151;font-weight:500;">' + category + '</td>' +
-            '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#374151;">' + desc + '</td>' +
-            '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#6B7280;text-align:center;">' + completedDate + '</td>' +
-            '<td style="padding:10px 14px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#111827;text-align:right;font-weight:600;">$' + amount.toFixed(2) + '</td></tr>' +
-            '</tbody></table>' +
-            '<table style="width:100%;border-collapse:collapse;margin-top:16px;"><tr><td style="width:55%;"></td><td style="width:45%;"><table style="width:100%;border-collapse:collapse;background:#F9FAFB;border:1px solid #E5E7EB;">' +
-            '<tr><td style="padding:8px 16px;font-size:12px;color:#6B7280;">Subtotal (ex. GST)</td><td style="padding:8px 16px;font-size:12px;color:#374151;text-align:right;font-weight:500;">$' + exGst.toFixed(2) + '</td></tr>' +
-            '<tr><td style="padding:8px 16px;font-size:12px;color:#6B7280;border-bottom:2px solid #004d40;">GST (10%)</td><td style="padding:8px 16px;font-size:12px;color:#374151;text-align:right;font-weight:500;border-bottom:2px solid #004d40;">$' + gst.toFixed(2) + '</td></tr>' +
-            '<tr><td style="padding:12px 16px;font-size:15px;font-weight:700;color:#004d40;">Total (inc. GST)</td><td style="padding:12px 16px;font-size:15px;font-weight:700;color:#004d40;text-align:right;">$' + amount.toFixed(2) + '</td></tr>' +
-            '</table></td></tr></table>' +
-            '<table style="width:100%;border-collapse:collapse;margin-top:28px;"><tr><td style="padding:16px 0 0;border-top:1px solid #E5E7EB;text-align:center;"><div style="font-size:10px;color:#9CA3AF;line-height:1.6;">This is a computer-generated tax invoice. All amounts are in Australian Dollars (AUD) and include GST where applicable.</div><div style="font-size:10px;color:#9CA3AF;margin-top:4px;">Generated via ConnecTradie — ' + invoiceDate + '</div></td></tr></table>' +
-            '</div>';
+          const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${invoiceNum} - Tax Invoice</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:680px;margin:0 auto;padding:40px 32px;color:#1a1a1a;font-size:14px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:24px;border-bottom:2px solid #004d40}
+.brand h1{font-size:22px;color:#004d40;letter-spacing:-0.5px}
+.brand p{color:#9ca3af;font-size:11px;margin-top:2px}
+.invoice-meta{text-align:right}
+.invoice-meta .label{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px}
+.invoice-meta .value{font-size:14px;font-weight:600;color:#1a1a1a}
+.invoice-title{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin:24px 0 8px}
+.service-box{background:#f5f7f8;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:20px}
+.service-box .cat{display:inline-block;background:#E0F2F1;color:#004d40;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;margin-bottom:8px}
+.service-box .desc{font-size:14px;font-weight:500;color:#1a1a1a}
+.service-box .provider{font-size:12px;color:#6b7280;margin-top:8px}
+table{width:100%;border-collapse:collapse;margin-bottom:4px}
+table th{text-align:left;font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;padding:8px 12px;border-bottom:1px solid #e5e7eb}
+table th:last-child{text-align:right}
+table td{padding:10px 12px;font-size:14px;color:#374151;border-bottom:1px solid #f3f4f6}
+table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabular-nums}
+.total-row{background:#004d40}
+.total-row td{color:#fff;font-weight:700;font-size:15px;border:none;padding:12px}
+.details-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;margin:20px 0}
+.detail-item .dl{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px}
+.detail-item .dv{font-size:13px;font-weight:500;color:#374151;margin-top:2px}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600}
+.completed{background:#ECFDF6;color:#048163}
+.footer{margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;text-align:center;color:#9ca3af;font-size:11px;line-height:1.6}
+@media print{body{padding:20px;margin:0}}
+</style></head><body>
+<div class="header">
+  <div class="brand"><h1>ConnecTradie</h1><p>ABN: XX XXX XXX XXX</p></div>
+  <div class="invoice-meta">
+    <div class="label">Tax Invoice</div>
+    <div class="value">${invoiceNum}</div>
+    <div style="font-size:12px;color:#6b7280;margin-top:4px">${issueDate}</div>
+  </div>
+</div>
+<p class="invoice-title">Service Details</p>
+<div class="service-box">
+  <span class="cat">${category}</span>
+  <span class="badge completed">Completed</span>
+  <div class="desc">${desc}</div>
+  ${tradieName ? `<div class="provider">Service Provider: <strong>${tradieName}</strong></div>` : ''}
+</div>
+<p class="invoice-title">Amount Breakdown</p>
+<table>
+  <thead><tr><th>Description</th><th>Amount (AUD)</th></tr></thead>
+  <tbody>
+    <tr><td>Subtotal (ex. GST)</td><td>${fmtCurrency(exGst)}</td></tr>
+    ${gstAmount > 0 ? `<tr><td>GST (10%)</td><td>${fmtCurrency(gstAmount)}</td></tr>` : ''}
+    <tr class="total-row"><td>Total (inc. GST)</td><td>${fmtCurrency(total)}</td></tr>
+  </tbody>
+</table>
+<div class="details-grid">
+  <div class="detail-item"><div class="dl">Invoice #</div><div class="dv">${invoiceNum}</div></div>
+  <div class="detail-item"><div class="dl">Date Completed</div><div class="dv">${completedDate}</div></div>
+  <div class="detail-item"><div class="dl">Payment Type</div><div class="dv">Job Funding (Escrow)</div></div>
+  <div class="detail-item"><div class="dl">Currency</div><div class="dv">AUD</div></div>
+</div>
+<div class="footer">
+  <p>This invoice is issued by ConnecTradie Pty Ltd for GST purposes under Australian tax law. All prices in AUD include GST where applicable.</p>
+  <p>Retain this document for your records.</p>
+</div>
+</body></html>`;
 
-          document.body.appendChild(container);
-          try {
-            await html2pdf().set({
-              margin: 0,
-              filename: `ConnecTradie-Invoice-${invoiceNumber}.pdf`,
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            }).from(container).save();
-          } finally {
-            document.body.removeChild(container);
+          const win = window.open('', '_blank');
+          if (win) {
+            win.document.write(html);
+            win.document.close();
+            win.setTimeout(() => { win.print(); }, 400);
           }
         };
 

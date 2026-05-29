@@ -217,19 +217,6 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
           )}
         </div>
 
-        {tradie.call_out_fee != null && tradie.call_out_fee > 0 && tradie.show_callout_fee && (
-          <div className="flex items-center gap-1.5 mt-2">
-            <Truck className="w-3 h-3 text-gray-400" />
-            <span className="text-xs text-gray-500">
-              <span className="font-semibold text-gray-700">${tradie.call_out_fee}</span> visit fee
-            </span>
-            {tradie.callout_fee_waived_on_proceed && (
-              <span className="text-xs text-warm-700 font-medium bg-warm-50 px-1.5 py-0.5 rounded border border-warm-100">
-                Waived if you proceed
-              </span>
-            )}
-          </div>
-        )}
 
         {tradie.phone && (
           <p className="mt-2 text-xs text-gray-400">
@@ -239,39 +226,41 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
       </div>
 
       {/* Actions footer */}
-      <div className="px-5 py-3.5 bg-gray-50/80 border-t border-gray-100">
-        {onRequestQuote && (
-          <button
-            onClick={() => onRequestQuote(tradie)}
-            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 mb-2.5 text-sm font-medium rounded-xl transition-colors min-h-[40px] bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm shadow-emerald-500/20"
-          >
-            <FileText className="w-3.5 h-3.5" />
-            Request Quote
-          </button>
-        )}
-        <div className="flex gap-2.5">
-          <button
-            onClick={() => onViewCalendar(tradie)}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-gray-200 bg-white text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors min-h-[40px]"
-          >
-            <Calendar className="w-3.5 h-3.5" />
-            Check Calendar
-          </button>
+      <div className="px-5 py-3 border-t border-gray-100">
+        <div className="flex items-center gap-2">
+          {onRequestQuote && (
+            <button
+              onClick={() => onRequestQuote(tradie)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Request Quote
+            </button>
+          )}
           <button
             onClick={() => onChat(tradie)}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl transition-colors min-h-[40px] bg-warm-500 text-white hover:bg-warm-600 shadow-sm shadow-warm-500/20"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <MessageCircle className="w-3.5 h-3.5" />
             Chat
           </button>
+          <div className="flex items-center gap-0.5 ml-auto">
+            <button
+              onClick={() => onViewCalendar(tradie)}
+              className="p-2 text-secondary-400 hover:text-secondary-600 hover:bg-secondary-50 rounded-lg transition-colors"
+              title="Check Calendar"
+            >
+              <Calendar className="w-4 h-4" />
+            </button>
+            <Link
+              to={`/tradie/${tradie.id}`}
+              className="p-2 text-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+              title="View Full Profile"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
-        <Link
-          to={`/tradie/${tradie.id}`}
-          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 mt-1.5 text-xs text-gray-400 hover:text-primary-600 font-medium transition-colors rounded-lg"
-        >
-          <ExternalLink className="w-3 h-3" />
-          View Full Profile
-        </Link>
       </div>
     </div>
   );

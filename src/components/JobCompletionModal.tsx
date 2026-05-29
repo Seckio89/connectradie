@@ -445,12 +445,12 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
       if (job.client_id && job.tradie_id) {
         try {
           // Find the linked recurring_jobs record — first by original_job_id, then by title/tradie match
-          let recurringJob: { id: string; frequency_months: number; is_active: boolean; trade_category: string; service_subtype: string | null; agreed_price: number | null; auto_accept: boolean | null } | null = null;
+          let recurringJob: { id: string; frequency_months: number; is_active: boolean; trade_category: string; service_subtype: string | null; agreed_price: number | null; auto_accept: boolean | null; tradie_id: string | null } | null = null;
 
           // 1. Check by original_job_id link (from Schedule a Service form)
           const { data: linkedJob } = await supabase
             .from('recurring_jobs')
-            .select('id, frequency_months, is_active, trade_category, service_subtype, agreed_price, auto_accept')
+            .select('id, frequency_months, is_active, trade_category, service_subtype, agreed_price, auto_accept, tradie_id')
             .eq('original_job_id', job.id)
             .limit(1)
             .maybeSingle();
@@ -458,7 +458,8 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
           if (linkedJob) {
             recurringJob = linkedJob;
             // Activate and assign tradie if needed
-            if (!linkedJob.is_active || !linkedJob.trade_category) {
+            const needsUpdate = !linkedJob.is_active || !linkedJob.trade_category || !linkedJob.tradie_id;
+            if (needsUpdate) {
               await supabase.from('recurring_jobs').update({
                 is_active: true,
                 tradie_id: job.tradie_id,
@@ -470,7 +471,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
             const jobTradeCategory = job.description?.match(/^\[([^\]]+)\]/)?.[1] || '';
             let fallbackQuery = supabase
               .from('recurring_jobs')
-              .select('id, frequency_months, is_active, trade_category, service_subtype, agreed_price, auto_accept')
+              .select('id, frequency_months, is_active, trade_category, service_subtype, agreed_price, auto_accept, tradie_id')
               .eq('client_id', job.client_id)
               .eq('tradie_id', job.tradie_id)
               .eq('is_active', true)

@@ -214,8 +214,9 @@ Deno.serve(async (req) => {
     console.log(`Created checkout session ${session.id} for customer ${customerId}`);
 
     return corsResponse({ sessionId: session.id, url: session.url });
-  } catch (error: any) {
-    console.error(`Checkout error: ${error.message}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`Checkout error: ${message}`);
     return corsResponse({ error: 'An internal error occurred' }, 500);
   }
 });
@@ -223,7 +224,7 @@ Deno.serve(async (req) => {
 type ExpectedType = 'string' | { values: string[] };
 type Expectations<T> = { [K in keyof T]: ExpectedType };
 
-function validateParameters<T extends Record<string, any>>(values: T, expected: Expectations<T>): string | undefined {
+function validateParameters<T extends Record<string, string>>(values: T, expected: Expectations<T>): string | undefined {
   for (const parameter in values) {
     const expectation = expected[parameter];
     const value = values[parameter];

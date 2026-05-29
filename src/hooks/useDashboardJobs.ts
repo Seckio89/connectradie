@@ -38,7 +38,26 @@ export function useDashboardJobs({ userId, onSuccess, onError }: UseDashboardJob
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setJobs(data || []);
+
+      // Exclude jobs linked to recurring services — those are managed via Services tab.
+      // Cover both the original placeholder (recurring_jobs.original_job_id) and any
+      // quote-request jobs created later (jobs.recurring_job_id).
+      const recurringJobIds = new Set<string>();
+      const fetched = (data || []) as { id: string; recurring_job_id?: string | null }[];
+      for (const j of fetched) {
+        if (j.recurring_job_id) recurringJobIds.add(j.id);
+      }
+      const { data: recurringLinked } = await supabase
+        .from('recurring_jobs')
+        .select('original_job_id')
+        .eq('tradie_id', userId)
+        .not('original_job_id', 'is', null);
+      for (const r of recurringLinked || []) {
+        if (r.original_job_id) recurringJobIds.add(r.original_job_id);
+      }
+      const filtered = (data || []).filter(j => !recurringJobIds.has(j.id));
+
+      setJobs(filtered);
 
       // Fetch jobs this tradie has already quoted on (for pending counter)
       const pendingIds = (data || []).filter(j => j.status === 'pending').map(j => j.id);

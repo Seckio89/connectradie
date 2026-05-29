@@ -17,6 +17,7 @@ import {
   Loader2,
   Trash2,
   X,
+  AlertTriangle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
@@ -51,18 +52,40 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
     case 'new_lead':
     case 'booking_request':
       return { icon: Briefcase, bgClass: 'bg-blue-100', iconClass: 'text-blue-600' };
+    case 'quote_reminder':
+      return { icon: Clock, bgClass: 'bg-amber-100', iconClass: 'text-amber-600' };
     case 'payment':
     case 'PAYMENT_RECEIVED':
     case 'invoice_ready':
+    case 'invoice_approval_required':
+    case 'invoice_approval_reminder':
+    case 'invoice_approved':
+    case 'invoice_disputed':
+    case 'invoice_generated':
     case 'INVOICE_RECEIVED':
     case 'payment_auto_released':
-      return { icon: DollarSign, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+    case 'payment_received':
+    case 'payment_sent':
+    case 'becs_charge_initiated':
+      return { icon: DollarSign, bgClass: 'bg-emerald-500', iconClass: 'text-white' };
     case 'session_reminder':
     case 'session_rescheduled':
     case 'session_skipped':
     case 'extra_session_added':
     case 'BOOKING_REMINDER':
       return { icon: CalendarDays, bgClass: 'bg-purple-100', iconClass: 'text-purple-600' };
+    case 'recurring_job_auto_confirmed':
+    case 'recurring_job_confirmed':
+    case 'session_completed':
+    case 'recurring_resumed':
+      return { icon: CheckCircle2, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+    case 'recurring_job_confirmation_required':
+      return { icon: Clock, bgClass: 'bg-secondary-100', iconClass: 'text-secondary-600' };
+    case 'recurring_paused':
+      return { icon: Clock, bgClass: 'bg-amber-100', iconClass: 'text-amber-600' };
+    case 'session_overdue':
+    case 'recurring_session_not_completed':
+      return { icon: AlertTriangle, bgClass: 'bg-red-100', iconClass: 'text-red-600' };
     case 'vacancy_application':
     case 'team':
       return { icon: Users, bgClass: 'bg-blue-100', iconClass: 'text-blue-600' };
@@ -85,8 +108,10 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
       return { icon: CheckCircle2, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
     case 'recurring_cancelled':
       return { icon: XCircle, bgClass: 'bg-red-100', iconClass: 'text-red-600' };
-    case 'payment_sent':
-      return { icon: DollarSign, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+    case 'becs_setup_complete':
+      return { icon: CheckCircle2, bgClass: 'bg-emerald-500', iconClass: 'text-white' };
+    case 'supply_restock_needed':
+      return { icon: AlertTriangle, bgClass: 'bg-amber-100', iconClass: 'text-amber-600' };
     case 'message':
     case 'new_message':
       return { icon: MessageCircle, bgClass: 'bg-blue-100', iconClass: 'text-blue-600' };
@@ -112,6 +137,8 @@ function getFilterCategory(type: string): FilterTab {
     case 'quote_accepted':
     case 'job_completed':
     case 'recurring_cancelled':
+    case 'quote_reminder':
+    case 'supply_restock_needed':
       return 'job';
     case 'message':
     case 'new_message':
@@ -308,6 +335,18 @@ export default function Notifications() {
 
     const jobId = notification.job_id || notification.metadata?.job_id;
 
+    // Un-dismiss job from leads list when clicking job-related notifications
+    if (jobId && ['new_lead', 'new_job', 'quote_reminder'].includes(notification.type)) {
+      try {
+        const stored = localStorage.getItem('dismissed_leads');
+        if (stored) {
+          const dismissed: string[] = JSON.parse(stored);
+          const updated = dismissed.filter((id: string) => id !== jobId);
+          localStorage.setItem('dismissed_leads', JSON.stringify(updated));
+        }
+      } catch { /* ignore */ }
+    }
+
     const isTradie = profile?.role === 'tradie';
 
     // BECS payment notifications → Payments page
@@ -324,15 +363,16 @@ export default function Notifications() {
       'recurring_job_confirmed', 'recurring_job_declined',
       'recurring_paused', 'recurring_resumed', 'recurring_cancelled',
       'recurring_price_updated', 'price_increase_requested', 'price_adjusted',
+      'reschedule_proposal', 'reschedule_accepted', 'time_proposal',
     ];
 
     // Fallback navigation based on type / metadata
     if (becsPaymentTypes.includes(notification.type)) {
       navigate('/payments');
     } else if (becsSetupTypes.includes(notification.type)) {
-      navigate(isTradie ? '/work?tab=services' : '/schedule');
+      navigate(isTradie ? '/work?tab=services' : '/leads?tab=services');
     } else if (ongoingTypes.includes(notification.type)) {
-      navigate(isTradie ? '/work?tab=services' : '/schedule');
+      navigate(isTradie ? '/work?tab=services' : '/leads?tab=services');
     } else if (notification.type === 'booking_request') {
       if (notification.metadata?.conversation_id) {
         navigate(`/messages?conversation=${notification.metadata.conversation_id}`);
@@ -414,17 +454,17 @@ export default function Notifications() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-1 mb-4 overflow-x-auto pb-1 -mx-1 px-1">
+        <div className="flex items-center gap-6 border-b border-gray-200 mb-6 overflow-x-auto">
           {FILTER_TABS.map(tab => {
             const isActive = activeTab === tab.key;
             return (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
+                className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                   isActive
-                    ? 'bg-emerald-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'border-warm-500 text-warm-600'
+                    : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
                 }`}
               >
                 {tab.label}

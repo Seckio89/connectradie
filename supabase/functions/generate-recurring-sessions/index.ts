@@ -41,7 +41,7 @@ function addHoursToTime(time: string, hours: number): string {
 
 // Frequency conventions: -3 = daily, -1 = weekly, -2 = fortnightly, positive = months
 function calculateNextDueDate(current: string, frequencyMonths: number): string {
-  const base = new Date(current);
+  const base = new Date(current + "T00:00:00");
   if (frequencyMonths === -3) {
     base.setDate(base.getDate() + 1);
   } else if (frequencyMonths === -1) {
@@ -49,7 +49,12 @@ function calculateNextDueDate(current: string, frequencyMonths: number): string 
   } else if (frequencyMonths === -2) {
     base.setDate(base.getDate() + 14);
   } else if (frequencyMonths > 0) {
+    // Clamp to last day of target month to prevent drift (e.g. Jan 31 + 1m = Feb 28)
+    const targetDay = base.getDate();
+    base.setDate(1);
     base.setMonth(base.getMonth() + frequencyMonths);
+    const lastDay = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+    base.setDate(Math.min(targetDay, lastDay));
   }
   return base.toISOString().split("T")[0];
 }
@@ -75,7 +80,15 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const today = new Date().toISOString().split("T")[0];
+    // Verify caller is using service role key (cron/internal only)
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ") || authHeader.slice(7) !== supabaseServiceKey) {
+      return errorJson("Unauthorized", 401);
+    }
+
+    // Use AEST (UTC+10) since this is an Australian platform
+    const aestOffset = 10 * 60 * 60 * 1000;
+    const today = new Date(Date.now() + aestOffset).toISOString().split("T")[0];
 
     // Fetch all active recurring jobs where next_due_date <= today
     const { data: dueJobs, error: fetchError } = await supabase
@@ -83,6 +96,7 @@ Deno.serve(async (req: Request) => {
       .select("id, frequency_months, next_due_date, times_completed, tradie_id, preferred_time, auto_accept")
       .eq("is_active", true)
       .is("cancelled_at", null)
+      .not("tradie_id", "is", null)
       .lte("next_due_date", today);
 
     if (fetchError) {
@@ -196,20 +210,17 @@ Deno.serve(async (req: Request) => {
           }
 
           // Note: availability blocking now happens when tradie confirms the session
-        }
 
-        // Advance next_due_date and increment times_completed
-        const nextDue = calculateNextDueDate(scheduledDate, job.frequency_months);
-        const { error: updateError } = await supabase
-          .from("recurring_jobs")
-          .update({
-            next_due_date: nextDue,
-            times_completed: (job.times_completed ?? 0) + 1,
-          })
-          .eq("id", job.id);
+          // Advance next_due_date (only when session was actually created)
+          const nextDue = calculateNextDueDate(scheduledDate, job.frequency_months);
+          const { error: updateError } = await supabase
+            .from("recurring_jobs")
+            .update({ next_due_date: nextDue })
+            .eq("id", job.id);
 
-        if (updateError) {
-          errors.push(`Job ${job.id}: session created but failed to advance due date — ${updateError.message}`);
+          if (updateError) {
+            errors.push(`Job ${job.id}: session created but failed to advance due date — ${updateError.message}`);
+          }
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);

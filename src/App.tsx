@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useDarkMode } from './hooks/useDarkMode';
 import { replayOnReconnect } from './lib/serviceWorker';
 import { trackPageView } from './lib/analytics';
 import { Loader2 } from 'lucide-react';
@@ -55,6 +56,8 @@ const HelpFAQ = lazy(() => import('./pages/HelpFAQ'));
 const Pricing = lazy(() => import('./pages/Pricing'));
 const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
 const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
+const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
+const Invoice = lazy(() => import('./pages/Invoice'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const LeaveReview = lazy(() => import('./pages/LeaveReview'));
 
@@ -161,6 +164,14 @@ function RouteTracker() {
   return null;
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 function AppRoutes() {
   useEffect(() => {
     replayOnReconnect();
@@ -212,6 +223,8 @@ function AppRoutes() {
       <Route path="/contact" element={<Contact />} />
       <Route path="/help" element={<HelpFAQ />} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/payment-success" element={<PaymentSuccess />} />
+      <Route path="/invoice/:paymentId" element={<Invoice />} />
       <Route
         path="/my-trades"
         element={
@@ -405,12 +418,14 @@ function AppRoutes() {
 }
 
 export default function App() {
+  useDarkMode();
   return (
     <Sentry.ErrorBoundary fallback={<p className="p-8 text-center text-red-600">Something went wrong. Please refresh the page.</p>}>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <OfflineBanner />
         <a href="#main-content" className="skip-to-content">Skip to content</a>
         <RouteTracker />
+        <ScrollToTop />
         <AuthProvider>
           <AppRoutes />
         </AuthProvider>

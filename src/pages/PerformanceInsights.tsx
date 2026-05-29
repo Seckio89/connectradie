@@ -29,6 +29,8 @@ interface HealthStats {
   profileViews: number;
   completedJobs: number;
   totalRevenue: number;
+  /** Avg hours from job posted -> tradie's quote submitted. null = no data. */
+  avgResponseTimeHours: number | null;
 }
 
 interface StrengthsData {
@@ -85,7 +87,7 @@ export default function PerformanceInsights() {
       const [quotesRes, jobsRes, viewsRes, reviewsRes, portfolioRes] = await Promise.all([
         supabase
           .from('quotes')
-          .select('status, price_min, price_max, firm_price, created_at')
+          .select('status, price_min, price_max, firm_price, created_at, jobs:job_id(created_at)')
           .eq('tradie_id', user.id),
         supabase
           .from('jobs')
@@ -128,6 +130,17 @@ export default function PerformanceInsights() {
         0
       );
 
+      // Avg response time: hours from job's created_at -> tradie's quote
+      // created_at, across every quote that has a job we can join to.
+      const responsesWithJob = (quotes as Array<{ created_at: string; jobs?: { created_at?: string } | null }>)
+        .filter(q => q.jobs?.created_at);
+      const avgResponseTimeHours = responsesWithJob.length > 0
+        ? responsesWithJob.reduce((sum, q) => {
+            const ms = new Date(q.created_at).getTime() - new Date(q.jobs!.created_at!).getTime();
+            return sum + ms / (1000 * 60 * 60);
+          }, 0) / responsesWithJob.length
+        : null;
+
       setHealth({
         quoteWinRate: winRate,
         totalQuotes: quotes.length,
@@ -136,6 +149,7 @@ export default function PerformanceInsights() {
         profileViews: views.length,
         completedJobs: completedJobs.length,
         totalRevenue: Math.round(totalRevenue),
+        avgResponseTimeHours,
       });
 
       const suburbCounts: Record<string, number> = {};
@@ -245,6 +259,7 @@ export default function PerformanceInsights() {
         wonQuotes: 0,
         avgJobValue: 0,
         profileViews: 0,
+        avgResponseTimeHours: null,
         completedJobs: 0,
         totalRevenue: 0,
       });
@@ -292,7 +307,7 @@ export default function PerformanceInsights() {
             <BarChart3 className="w-5 h-5 text-gray-500" />
             <h2 className="text-lg font-bold text-white">Health Check</h2>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <HealthCard
               icon={Target}
               label="Quote Win Rate"
@@ -323,6 +338,30 @@ export default function PerformanceInsights() {
               detail="Homeowners who viewed your profile this week"
               color="amber"
               trend={health && health.profileViews >= 10 ? 'up' : undefined}
+            />
+            <HealthCard
+              icon={Award}
+              label="Avg Response Time"
+              value={
+                health && health.avgResponseTimeHours != null
+                  ? health.avgResponseTimeHours < 1
+                    ? `${Math.round(health.avgResponseTimeHours * 60)}m`
+                    : health.avgResponseTimeHours < 24
+                      ? `${health.avgResponseTimeHours.toFixed(1)}h`
+                      : `${(health.avgResponseTimeHours / 24).toFixed(1)}d`
+                  : '--'
+              }
+              detail="Time from job posted to your quote — faster wins more leads"
+              color="sky"
+              trend={
+                health && health.avgResponseTimeHours != null
+                  ? health.avgResponseTimeHours <= 4
+                    ? 'up'
+                    : health.avgResponseTimeHours <= 24
+                      ? undefined
+                      : 'down'
+                  : undefined
+              }
             />
           </div>
 

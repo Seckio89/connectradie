@@ -15,7 +15,7 @@ import NotificationsTab from '../components/settings/NotificationsTab';
 import AdminToolsTab from '../components/settings/AdminToolsTab';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import { calculateProfileCompletion, getProfileCompletionTasks, friendlyError } from '../lib/utils';
-import { requestPushPermission, subscribeToPush, savePushPreferences, getPushPermissionStatus } from '../lib/notifications';
+import { requestPushPermission, subscribeToPush, savePushPreferences, saveSmsPreference, getPushPermissionStatus } from '../lib/notifications';
 
 type TabType = 'profile' | 'professional' | 'security' | 'verification' | 'notifications' | 'admin';
 
@@ -30,6 +30,7 @@ export default function Settings() {
     return 'profile';
   });
   const [fullName, setFullName] = useState('');
+  const [businessName, setBusinessName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [postcode, setPostcode] = useState('');
@@ -48,7 +49,7 @@ export default function Settings() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const [pushEnabled, setPushEnabled] = useState(false);
-  const [, setSmsEnabled] = useState(false);
+  const [smsEnabled, setSmsEnabled] = useState(false);
   const [pushPermission, setPushPermission] = useState<string>('default');
   const [notifSaving, setNotifSaving] = useState(false);
 
@@ -59,7 +60,6 @@ export default function Settings() {
   const isTradie = profile?.role === 'tradie';
   const isAdmin = profile?.role === 'admin';
   const showTradieFeatures = isTradie || isAdmin;
-  const isSubscriptionAdmin = profile?.role === 'admin';
   const normalizedProfile = profile
     ? {
         ...profile,
@@ -80,7 +80,10 @@ export default function Settings() {
       setPushEnabled(profile.push_enabled || false);
       setSmsEnabled(profile.sms_alerts_enabled || false);
     }
-  }, [profile]);
+    if (tradieDetails) {
+      setBusinessName(tradieDetails.business_name || '');
+    }
+  }, [profile, tradieDetails]);
 
   useEffect(() => {
     if (!user) return;
@@ -151,6 +154,23 @@ export default function Settings() {
     setNotifSaving(false);
   };
 
+  const handleToggleSms = async (enabled: boolean) => {
+    if (!user) return;
+    setNotifSaving(true);
+
+    const saved = await saveSmsPreference(user.id, enabled);
+    if (saved) {
+      setSmsEnabled(enabled);
+      setToastMessage(enabled ? 'SMS alerts enabled.' : 'SMS alerts disabled.');
+      setToastType('success');
+    } else {
+      setToastMessage('Failed to save SMS preference.');
+      setToastType('error');
+    }
+    setShowToast(true);
+    setNotifSaving(false);
+  };
+
   useEffect(() => {
     if (!user || profileCompletion < 100) {
       setShowCompleteBanner(false);
@@ -170,11 +190,12 @@ export default function Settings() {
   }, [location.state]);
 
   useEffect(() => {
-    if (isSubscriptionAdmin) {
+    if (isAdmin) {
       loadTrainingMode();
       loadSubscribedUsers();
     }
-  }, [isSubscriptionAdmin]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
 
   const loadTrainingMode = async () => {
     const { data } = await supabase
@@ -290,6 +311,13 @@ export default function Settings() {
     if (updateError) {
       setError('Failed to update profile. Please try again.');
     } else {
+      // Save business name to tradie_details if tradie
+      if (isTradie && businessName !== (tradieDetails?.business_name || '')) {
+        await supabase
+          .from('tradie_details')
+          .update({ business_name: businessName.trim() })
+          .eq('profile_id', user.id);
+      }
       await refreshProfile();
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
@@ -434,14 +462,14 @@ export default function Settings() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
           <p className="text-gray-500 mt-1">Manage your account settings and profile</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="flex flex-col sm:flex-row items-center gap-6 p-6 md:p-8 pb-6 border-b border-gray-200">
+          <div className="flex flex-col sm:flex-row items-center gap-6 p-6 md:p-8 pb-8 border-b border-gray-200">
             <div className="flex flex-col items-center gap-3">
               <button
                 type="button"
@@ -505,7 +533,7 @@ export default function Settings() {
                   ) : (
                     <button
                       onClick={() => setShowSubscriptionModal(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-warm-50 text-warm-700 text-sm font-medium rounded-full border border-warm-200 hover:bg-warm-100 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 text-warm-600 text-sm font-medium rounded-full border border-warm-200 hover:bg-warm-100 transition-colors"
                     >
                       <Crown className="w-3.5 h-3.5" />
                       Upgrade to Pro
@@ -559,15 +587,15 @@ export default function Settings() {
             </div>
           )}
 
-          <div className="border-b border-gray-200">
-            <div className="flex gap-1 p-2 px-6 md:px-8 overflow-x-auto scrollbar-hide">
+          <div className="border-b border-gray-200 mt-2">
+            <div className="flex items-center gap-4 sm:gap-6 lg:gap-8 px-6 md:px-8 pt-2 overflow-x-auto scrollbar-hide">
               <button
                 type="button"
                 onClick={() => setActiveTab('profile')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors min-h-[44px] ${
+                className={`flex items-center gap-2 pb-3 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'profile'
-                    ? 'bg-warm-50 text-warm-700'
-                    : 'text-gray-500 hover:bg-gray-50'
+                    ? 'border-warm-500 text-warm-600'
+                    : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
                 }`}
               >
                 <User className="w-4 h-4" />
@@ -577,10 +605,10 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() => setActiveTab('professional')}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors min-h-[44px] ${
+                  className={`flex items-center gap-2 pb-3 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors ${
                     activeTab === 'professional'
-                      ? 'bg-warm-50 text-warm-700'
-                      : 'text-gray-500 hover:bg-gray-50'
+                      ? 'border-warm-500 text-warm-600'
+                      : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
                   }`}
                 >
                   <Settings2 className="w-4 h-4" />
@@ -590,10 +618,10 @@ export default function Settings() {
               <button
                 type="button"
                 onClick={() => setActiveTab('security')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors min-h-[44px] ${
+                className={`flex items-center gap-2 pb-3 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'security'
-                    ? 'bg-warm-50 text-warm-700'
-                    : 'text-gray-500 hover:bg-gray-50'
+                    ? 'border-warm-500 text-warm-600'
+                    : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
                 }`}
               >
                 <Lock className="w-4 h-4" />
@@ -603,10 +631,10 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() => setActiveTab('verification')}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors min-h-[44px] ${
+                  className={`flex items-center gap-2 pb-3 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors ${
                     activeTab === 'verification'
-                      ? 'bg-warm-50 text-warm-700'
-                      : 'text-gray-500 hover:bg-gray-50'
+                      ? 'border-warm-500 text-warm-600'
+                      : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
                   }`}
                 >
                   <Shield className="w-4 h-4" />
@@ -616,23 +644,23 @@ export default function Settings() {
               <button
                 type="button"
                 onClick={() => setActiveTab('notifications')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors min-h-[44px] ${
+                className={`flex items-center gap-2 pb-3 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'notifications'
-                    ? 'bg-warm-50 text-warm-700'
-                    : 'text-gray-500 hover:bg-gray-50'
+                    ? 'border-warm-500 text-warm-600'
+                    : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
                 }`}
               >
                 <Bell className="w-4 h-4" />
                 Notifications
               </button>
-              {isSubscriptionAdmin && (
+              {isAdmin && (
                 <button
                   type="button"
                   onClick={() => setActiveTab('admin')}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors min-h-[44px] ${
+                  className={`flex items-center gap-2 pb-3 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors ${
                     activeTab === 'admin'
-                      ? 'bg-warm-50 text-warm-700'
-                      : 'text-gray-500 hover:bg-gray-50'
+                      ? 'border-warm-500 text-warm-600'
+                      : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
                   }`}
                 >
                   <Wrench className="w-4 h-4" />
@@ -647,6 +675,9 @@ export default function Settings() {
               email={profile?.email || ''}
               fullName={fullName}
               setFullName={setFullName}
+              businessName={businessName}
+              setBusinessName={setBusinessName}
+              isTradie={isTradie}
               phone={phone}
               setPhone={setPhone}
               address={address}
@@ -675,6 +706,8 @@ export default function Settings() {
                 pushPermission={pushPermission}
                 notifSaving={notifSaving}
                 onTogglePush={handleTogglePush}
+                smsEnabled={smsEnabled}
+                onToggleSms={handleToggleSms}
                 role={profile?.role as 'tradie' | 'client' | 'admin'}
               />
               <div className="border-t border-gray-200 p-6 md:p-8">
@@ -690,14 +723,14 @@ export default function Settings() {
                 <div className="flex gap-3 theme-toggle-group">
                   <button
                     onClick={() => { if (isDark) toggleDarkMode(); }}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-colors ${!isDark ? 'border-warm-500 bg-warm-50 text-warm-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-colors ${!isDark ? 'border-warm-500 text-warm-600' : 'border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'}`}
                   >
                     <Sun className="w-4 h-4" />
                     Light
                   </button>
                   <button
                     onClick={() => { if (!isDark) toggleDarkMode(); }}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-colors ${isDark ? 'border-warm-500 bg-warm-50 text-warm-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-colors ${isDark ? 'border-warm-500 text-warm-600' : 'border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'}`}
                   >
                     <Moon className="w-4 h-4" />
                     Dark
@@ -707,7 +740,7 @@ export default function Settings() {
             </>
           )}
 
-          {activeTab === 'admin' && isSubscriptionAdmin && (
+          {activeTab === 'admin' && isAdmin && (
             <AdminToolsTab
               trainingModeEnabled={trainingModeEnabled}
               trainingModeLoading={trainingModeLoading}

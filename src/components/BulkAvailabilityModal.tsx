@@ -72,7 +72,10 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
   const { daysInMonth, startingDay, year, month } = getDaysInMonth(viewMonth);
 
   const formatDateKey = (date: Date): string => {
-    return date.toISOString().split('T')[0];
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   };
 
   const toggleDate = (day: number) => {
@@ -97,10 +100,13 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
   };
 
   const selectDateRange = (type: 'weekdays' | 'weekend' | 'all') => {
-    const newSelected = new Set(selectedDates);
+    const newSelected = new Set<string>();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
+      if (date < today) continue; // skip past dates
       const dateKey = formatDateKey(date);
       const dayOfWeek = date.getDay();
 

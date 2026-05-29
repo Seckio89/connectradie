@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Wallet,
   DollarSign,
@@ -10,9 +10,13 @@ import {
   Shield,
   Download,
   ChevronDown,
+  ChevronRight,
   Banknote,
+  Briefcase,
+  FileText,
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import JobManagementModal from '../components/JobManagementModal';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getConnectAccountDetails, createConnectOnboardingSession } from '../lib/stripe';
@@ -33,6 +37,23 @@ export default function Payouts() {
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   const [onboardingWarning, setOnboardingWarning] = useState(false);
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
+  const [collapsedPaymentMonths, setCollapsedPaymentMonths] = useState<Set<string>>(new Set());
+  const [collapsedPaymentWeeks, setCollapsedPaymentWeeks] = useState<Set<string>>(new Set());
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [customInvoiceTemplate, setCustomInvoiceTemplate] = useState<string | null>(null);
+  const templateInputRef = useRef<HTMLInputElement>(null);
+  const [recentPayments, setRecentPayments] = useState<{
+    id: string;
+    job_id: string;
+    amount: number;
+    status: string;
+    created_at: string;
+    metadata: Record<string, unknown> | null;
+    jobs: { title: string; description: string; status: string; client_id: string } | null;
+    client_name: string;
+    jobStatus: string;
+    isRecurring: boolean;
+  }[]>([]);
 
   const fetchEarnings = useCallback(async () => {
     if (!user) return;
@@ -51,6 +72,162 @@ export default function Payouts() {
       );
       setEscrowHeld(unreleased.reduce((s, r) => s + (r.amount || 0), 0));
       setEscrowCount(unreleased.length);
+
+      // Fetch recent job payments for this tradie (last 5 days)
+      const fiveDaysAgo = new Date();
+      fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+      const { data: jobPayments } = await supabase
+        .from('payments')
+        .select('id, job_id, amount, status, created_at, metadata, jobs!inner(title, description, status, client_id)')
+        .eq('jobs.tradie_id', user.id)
+        .eq('payment_type', 'job_funding')
+        .gte('created_at', fiveDaysAgo.toISOString())
+        .order('created_at', { ascending: false });
+
+      if (jobPayments && jobPayments.length > 0) {
+        // Fetch client names
+        const clientIds = [...new Set(jobPayments.map(p => (p.jobs as unknown as { client_id: string }).client_id))];
+        const { data: clients } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', clientIds);
+        const clientMap = new Map((clients || []).map(c => [c.id, c.full_name || 'Client']));
+
+        // Collect recurring_job_ids from metadata to check their status
+        const recurringJobIds = jobPayments
+          .map(p => (p.metadata as Record<string, unknown> | null)?.recurring_job_id as string | undefined)
+          .filter((id): id is string => !!id);
+
+        const recurringStatusMap = new Map<string, string>();
+        if (recurringJobIds.length > 0) {
+          const uniqueIds = [...new Set(recurringJobIds)];
+          const { data: recurringJobs } = await supabase
+            .from('recurring_jobs')
+            .select('id, status')
+            .in('id', uniqueIds);
+          if (recurringJobs) {
+            for (const rj of recurringJobs) {
+              recurringStatusMap.set(rj.id, rj.status);
+            }
+          }
+        }
+
+        const mapped = jobPayments.map(p => {
+          const job = p.jobs as unknown as { title: string; description: string; status: string; client_id: string };
+          const meta = p.metadata as Record<string, unknown> | null;
+          const recurringId = meta?.recurring_job_id as string | undefined;
+          const isRecurring = !!recurringId || /recurring|ongoing/i.test(job.title || '') || /recurring|ongoing/i.test(job.description || '');
+
+          // Determine recurring service status
+          let recurringStatus = '';
+          if (recurringId && recurringStatusMap.has(recurringId)) {
+            recurringStatus = recurringStatusMap.get(recurringId)!;
+          }
+          const isCancelledRecurring = recurringStatus === 'cancelled' || recurringStatus === 'ended';
+
+          return {
+            id: p.id,
+            job_id: (p as unknown as { job_id: string }).job_id,
+            amount: p.amount,
+            status: p.status,
+            created_at: p.created_at,
+            metadata: meta,
+            jobs: job,
+            client_name: clientMap.get(job.client_id) || 'Client',
+            jobStatus: isCancelledRecurring ? 'cancelled' : job.status,
+            isRecurring,
+          };
+        });
+
+        // Fetch recurring invoice payments for this tradie
+        try {
+          const { data: invData } = await supabase
+            .from('recurring_invoices')
+            .select('id, total, status, created_at, paid_at, homeowner_id, billing_period_start, billing_period_end, regular_sessions_count, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, service_subtype)')
+            .eq('tradie_id', user.id)
+            .eq('status', 'paid')
+            .order('paid_at', { ascending: false });
+
+          if (invData && invData.length > 0) {
+            // Fetch client names for invoices
+            const invClientIds = [...new Set(invData.map(inv => inv.homeowner_id))];
+            const { data: invClients } = await supabase
+              .from('profiles')
+              .select('id, full_name')
+              .in('id', invClientIds);
+            const invClientMap = new Map((invClients || []).map(c => [c.id, c.full_name || 'Client']));
+
+            const invoiceRows = invData.map(inv => {
+              const rj = inv.recurring_job as { trade_category?: string; service_subtype?: string | null } | null;
+              const label = (rj?.service_subtype || rj?.trade_category || 'Service')
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, (c: string) => c.toUpperCase());
+              const sessions = inv.regular_sessions_count || 0;
+              const period = `${new Date(inv.billing_period_start + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} – ${new Date(inv.billing_period_end + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`;
+
+              return {
+                id: `inv_${inv.id}`,
+                job_id: '',
+                amount: Math.round(Number(inv.total) * 100),
+                status: 'completed',
+                created_at: inv.paid_at || inv.created_at,
+                metadata: null,
+                jobs: { title: `${label} Invoice`, description: `Service Invoice — ${sessions} session${sessions !== 1 ? 's' : ''} (${period})`, status: 'completed', client_id: inv.homeowner_id },
+                client_name: invClientMap.get(inv.homeowner_id) || 'Client',
+                jobStatus: 'completed',
+                isRecurring: true,
+              };
+            });
+
+            mapped.push(...invoiceRows);
+          }
+        } catch { /* ignore */ }
+
+        // Sort combined results by date
+        mapped.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        setRecentPayments(mapped);
+      } else {
+        // No recent job payments — still fetch recurring invoices
+        try {
+          const { data: invData } = await supabase
+            .from('recurring_invoices')
+            .select('id, total, status, created_at, paid_at, homeowner_id, billing_period_start, billing_period_end, regular_sessions_count, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, service_subtype)')
+            .eq('tradie_id', user.id)
+            .eq('status', 'paid')
+            .order('paid_at', { ascending: false });
+
+          if (invData && invData.length > 0) {
+            const invClientIds = [...new Set(invData.map(inv => inv.homeowner_id))];
+            const { data: invClients } = await supabase
+              .from('profiles')
+              .select('id, full_name')
+              .in('id', invClientIds);
+            const invClientMap = new Map((invClients || []).map(c => [c.id, c.full_name || 'Client']));
+
+            setRecentPayments(invData.map(inv => {
+              const rj = inv.recurring_job as { trade_category?: string; service_subtype?: string | null } | null;
+              const label = (rj?.service_subtype || rj?.trade_category || 'Service')
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, (c: string) => c.toUpperCase());
+              const sessions = inv.regular_sessions_count || 0;
+              const period = `${new Date(inv.billing_period_start + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} – ${new Date(inv.billing_period_end + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`;
+
+              return {
+                id: `inv_${inv.id}`,
+                job_id: '',
+                amount: Math.round(Number(inv.total) * 100),
+                status: 'completed',
+                created_at: inv.paid_at || inv.created_at,
+                metadata: null,
+                jobs: { title: `${label} Invoice`, description: `Service Invoice — ${sessions} session${sessions !== 1 ? 's' : ''} (${period})`, status: 'completed', client_id: inv.homeowner_id },
+                client_name: invClientMap.get(inv.homeowner_id) || 'Client',
+                jobStatus: 'completed',
+                isRecurring: true,
+              };
+            }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+          }
+        } catch { /* ignore */ }
+      }
     } catch (err) {
       console.error('fetchEarnings error:', err);
     }
@@ -72,11 +249,32 @@ export default function Payouts() {
       fetchDetails();
       fetchEarnings();
       fetchOnboardingStatus();
+      // Load saved invoice template
+      const saved = localStorage.getItem('ct_invoice_template');
+      if (saved) setCustomInvoiceTemplate(saved);
     } else {
       setLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
+
+  const handleTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setCustomInvoiceTemplate(dataUrl);
+      localStorage.setItem('ct_invoice_template', dataUrl);
+    };
+    reader.readAsDataURL(file);
+    if (templateInputRef.current) templateInputRef.current.value = '';
+  };
+
+  const handleRemoveTemplate = () => {
+    setCustomInvoiceTemplate(null);
+    localStorage.removeItem('ct_invoice_template');
+  };
 
   const fetchDetails = async () => {
     setLoading(true);
@@ -135,6 +333,83 @@ export default function Payouts() {
     });
   };
 
+  // Group recent payments by month → week
+  const paymentMonthGroups = useMemo(() => {
+    if (recentPayments.length === 0) return [];
+
+    const getWeekStart = (date: Date) => {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday start
+      d.setDate(diff);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    };
+
+    const getWeekEnd = (weekStart: Date) => {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + 6);
+      return d;
+    };
+
+    type Payment = typeof recentPayments[number];
+    type WeekGroup = { key: string; label: string; payments: Payment[]; total: number };
+    type MonthGroup = { key: string; label: string; weeks: WeekGroup[]; total: number };
+
+    const monthMap = new Map<string, MonthGroup>();
+    const ordered: MonthGroup[] = [];
+
+    for (const p of recentPayments) {
+      const d = new Date(p.created_at);
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!monthMap.has(monthKey)) {
+        const monthGroup: MonthGroup = {
+          key: monthKey,
+          label: d.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' }),
+          weeks: [],
+          total: 0,
+        };
+        monthMap.set(monthKey, monthGroup);
+        ordered.push(monthGroup);
+      }
+
+      const monthGroup = monthMap.get(monthKey)!;
+      const weekStart = getWeekStart(d);
+      const weekEnd = getWeekEnd(weekStart);
+      const weekKey = `${monthKey}-w${weekStart.toISOString().split('T')[0]}`;
+      const weekLabel = `${weekStart.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} – ${weekEnd.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`;
+
+      let weekGroup = monthGroup.weeks.find(w => w.key === weekKey);
+      if (!weekGroup) {
+        weekGroup = { key: weekKey, label: weekLabel, payments: [], total: 0 };
+        monthGroup.weeks.push(weekGroup);
+      }
+
+      weekGroup.payments.push(p);
+      weekGroup.total += p.amount;
+      monthGroup.total += p.amount;
+    }
+
+    return ordered;
+  }, [recentPayments]);
+
+  const togglePaymentMonth = (key: string) => {
+    setCollapsedPaymentMonths(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
+  const togglePaymentWeek = (key: string) => {
+    setCollapsedPaymentWeeks(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
   // CSV export
   const handleExportCSV = () => {
     const payouts = accountDetails?.payouts || [];
@@ -157,6 +432,156 @@ export default function Payouts() {
     a.download = `payouts-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const [pdfLoadingId, setPdfLoadingId] = useState<string | null>(null);
+
+  const handleDownloadInvoice = async (p: typeof recentPayments[number]) => {
+    if (pdfLoadingId) return;
+    setPdfLoadingId(p.id);
+
+    const invoiceNum = `INV-${p.id.slice(0, 8).toUpperCase()}`;
+    const jobTitle = p.jobs?.title || p.jobs?.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job';
+    const amountDollars = (p.amount / 100).toFixed(2);
+    const date = new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+    const isInvoice = p.id.startsWith('inv_');
+    const isReleased = isInvoice || !!(p.metadata?.transfer_id);
+    const statusText = isInvoice ? 'Completed' : isReleased ? 'Paid' : 'In Escrow';
+    const statusColor = isReleased ? '#16a34a' : '#d97706';
+
+    const html = `
+      <div style="font-family: Arial, Helvetica, sans-serif; width: 650px; margin: 0 auto; padding: 40px 0; color: #1a1a2e;">
+        <!-- Header -->
+        <table style="width: 100%; margin-bottom: 30px;">
+          <tr>
+            <td style="vertical-align: top; width: 50%;">
+              <div style="background: #004d40; color: white; padding: 8px 16px; border-radius: 6px; display: inline-block; font-size: 18px; font-weight: 700; letter-spacing: 0.5px;">
+                Connec<span style="color: #06D6A0;">Tradie</span>
+              </div>
+              <p style="font-size: 11px; color: #888; margin: 8px 0 0;">ABN: XX XXX XXX XXX</p>
+              <p style="font-size: 11px; color: #888; margin: 2px 0 0;">Australian Tradie Marketplace</p>
+            </td>
+            <td style="vertical-align: top; text-align: right; width: 50%;">
+              <p style="font-size: 24px; font-weight: 700; color: #004d40; margin: 0; letter-spacing: -0.5px;">RECEIPT</p>
+              <p style="font-size: 14px; font-weight: 600; margin: 6px 0 0; color: #333;">${invoiceNum}</p>
+              <p style="font-size: 12px; color: #888; margin: 4px 0 0;">Issued: ${date}</p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Divider -->
+        <div style="height: 3px; background: linear-gradient(to right, #004d40, #06D6A0); border-radius: 2px; margin-bottom: 28px;"></div>
+
+        <!-- Bill To / Job Info -->
+        <table style="width: 100%; margin-bottom: 28px;">
+          <tr>
+            <td style="vertical-align: top; width: 50%; padding-right: 20px;">
+              <p style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 6px; font-weight: 600;">Client</p>
+              <p style="font-size: 14px; font-weight: 600; margin: 0; color: #1a1a2e;">${p.client_name}</p>
+            </td>
+            <td style="vertical-align: top; width: 50%;">
+              <p style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 6px; font-weight: 600;">Job Reference</p>
+              <p style="font-size: 14px; font-weight: 600; margin: 0; color: #1a1a2e;">${jobTitle}</p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Line Items -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
+          <thead>
+            <tr>
+              <th style="text-align: left; padding: 12px 16px; font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; background: #f8f9fa; border-radius: 6px 0 0 0;">Description</th>
+              <th style="text-align: center; padding: 12px 16px; font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; background: #f8f9fa;">Qty</th>
+              <th style="text-align: right; padding: 12px 16px; font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; background: #f8f9fa; border-radius: 0 6px 0 0;">Amount (AUD)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 14px 16px; font-size: 13px; border-bottom: 1px solid #eee; color: #333;">${jobTitle}</td>
+              <td style="padding: 14px 16px; font-size: 13px; border-bottom: 1px solid #eee; text-align: center; color: #666;">1</td>
+              <td style="padding: 14px 16px; font-size: 13px; border-bottom: 1px solid #eee; text-align: right; font-weight: 600;">$${amountDollars}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Totals -->
+        <table style="width: 280px; margin-left: auto; margin-bottom: 32px; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 16px; font-size: 12px; color: #666;">Subtotal</td>
+            <td style="padding: 8px 16px; font-size: 12px; text-align: right; font-weight: 500;">$${amountDollars}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 16px; font-size: 12px; color: #666;">GST</td>
+            <td style="padding: 8px 16px; font-size: 12px; text-align: right; font-weight: 500;">$0.00</td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding: 0;"><div style="height: 2px; background: #004d40; margin: 4px 16px;"></div></td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 16px; font-size: 15px; font-weight: 700; color: #004d40;">Total</td>
+            <td style="padding: 10px 16px; font-size: 15px; font-weight: 700; text-align: right; color: #004d40;">$${amountDollars}</td>
+          </tr>
+        </table>
+
+        <!-- Status & Reference -->
+        <table style="width: 100%; margin-bottom: 32px; background: #f8f9fa; border-radius: 8px; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 14px 20px; width: 33%;">
+              <p style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 4px; font-weight: 600;">Status</p>
+              <p style="font-size: 13px; font-weight: 700; margin: 0; color: ${statusColor};">${statusText}</p>
+            </td>
+            <td style="padding: 14px 20px; width: 33%;">
+              <p style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 4px; font-weight: 600;">Payment Method</p>
+              <p style="font-size: 13px; font-weight: 500; margin: 0;">Stripe Connect</p>
+            </td>
+            <td style="padding: 14px 20px; width: 34%;">
+              <p style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 4px; font-weight: 600;">Currency</p>
+              <p style="font-size: 13px; font-weight: 500; margin: 0;">AUD</p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Footer -->
+        <div style="border-top: 1px solid #e0e0e0; padding-top: 20px; text-align: center;">
+          <p style="font-size: 11px; color: #999; margin: 0 0 4px;">Payment receipt issued by ConnecTradie Pty Ltd</p>
+          <p style="font-size: 10px; color: #bbb; margin: 0;">All prices in AUD. Retain for your records.</p>
+        </div>
+      </div>
+    `;
+
+    // If custom template uploaded, use it as background with data overlay
+    const finalHtml = customInvoiceTemplate
+      ? `<div style="position: relative; width: 210mm; min-height: 297mm;">
+          <img src="${customInvoiceTemplate}" style="width: 100%; position: absolute; top: 0; left: 0; z-index: 0; opacity: 0.15;" />
+          <div style="position: relative; z-index: 1;">${html}</div>
+        </div>`
+      : html;
+
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.width = '210mm';
+    container.style.background = 'white';
+    container.innerHTML = finalHtml;
+    document.body.appendChild(container);
+
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      await html2pdf()
+        .set({
+          margin: customInvoiceTemplate ? [0, 0, 0, 0] : [15, 15, 15, 15],
+          filename: `ConnecTradie-Receipt-${invoiceNum}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        })
+        .from(container)
+        .save();
+    } finally {
+      document.body.removeChild(container);
+      setPdfLoadingId(null);
+    }
   };
 
   const totalPayoutCount = accountDetails?.payouts?.length ?? 0;
@@ -329,7 +754,7 @@ export default function Payouts() {
                 {onItsWay > 0 && (
                   <div className="rounded-xl bg-secondary-50 border border-secondary-200 p-4">
                     <div className="flex items-center gap-2 mb-1">
-                      <DollarSign className="w-3.5 h-3.5 text-secondary-500" />
+                      <Clock className="w-3.5 h-3.5 text-secondary-500" />
                       <span className="text-xs font-medium text-secondary-700">On Its Way</span>
                     </div>
                     <p className="text-xl font-bold text-secondary-900">{formatCurrency(onItsWay)}</p>
@@ -393,6 +818,217 @@ export default function Payouts() {
                     Manage Bank Details & Payout Schedule
                   </a>
                 )}
+              </div>
+            )}
+
+            {/* Recent Job Payments */}
+            {recentPayments.length > 0 && (
+              <div className="bg-white rounded-2xl border border-surface-200 overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-surface-200">
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-navy-300" />
+                    <h2 className="text-sm font-semibold text-navy-800">Recent Payments</h2>
+                    <span className="text-xs text-navy-300 font-medium">(Last 5 days)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={templateInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleTemplateUpload}
+                      className="hidden"
+                    />
+                    {customInvoiceTemplate ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-emerald-600 font-medium bg-emerald-50 px-2 py-0.5 rounded-full">Custom template active</span>
+                        <button
+                          onClick={handleRemoveTemplate}
+                          className="text-xs text-red-500 hover:text-red-700 font-medium"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => templateInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-navy-500 border border-surface-200 rounded-lg hover:bg-surface-50 transition-colors"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        Upload Invoice Template
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {paymentMonthGroups.map((monthGroup) => {
+                  const isMonthCollapsed = collapsedPaymentMonths.has(monthGroup.key);
+                  return (
+                    <div key={monthGroup.key}>
+                      {/* Month header */}
+                      <button
+                        onClick={() => togglePaymentMonth(monthGroup.key)}
+                        className="w-full flex items-center justify-between px-5 py-3 bg-surface-50 border-b border-surface-200 hover:bg-surface-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          {isMonthCollapsed ? (
+                            <ChevronRight className="w-4 h-4 text-navy-400" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-navy-400" />
+                          )}
+                          <span className="text-sm font-semibold text-navy-800">{monthGroup.label}</span>
+                          <span className="text-xs text-navy-300">
+                            ({monthGroup.weeks.reduce((s, w) => s + w.payments.length, 0)} payments)
+                          </span>
+                        </div>
+                        <span className="text-sm font-semibold text-navy-900 tabular-nums">
+                          {formatCurrency(monthGroup.total)}
+                        </span>
+                      </button>
+
+                      {!isMonthCollapsed && monthGroup.weeks.map((weekGroup) => {
+                        const isWeekCollapsed = collapsedPaymentWeeks.has(weekGroup.key);
+                        return (
+                          <div key={weekGroup.key}>
+                            {/* Week header */}
+                            <button
+                              onClick={() => togglePaymentWeek(weekGroup.key)}
+                              className="w-full flex items-center justify-between px-5 py-2.5 pl-9 bg-white border-b border-surface-100 hover:bg-surface-50 transition-colors"
+                            >
+                              <div className="flex items-center gap-2">
+                                {isWeekCollapsed ? (
+                                  <ChevronRight className="w-3.5 h-3.5 text-navy-300" />
+                                ) : (
+                                  <ChevronDown className="w-3.5 h-3.5 text-navy-300" />
+                                )}
+                                <span className="text-xs font-medium text-navy-500">{weekGroup.label}</span>
+                                <span className="text-xs text-navy-300">({weekGroup.payments.length})</span>
+                              </div>
+                              <span className="text-xs font-semibold text-navy-700 tabular-nums">
+                                {formatCurrency(weekGroup.total)}
+                              </span>
+                            </button>
+
+                            {!isWeekCollapsed && (
+                              <>
+                                {/* Desktop rows */}
+                                <div className="hidden md:block">
+                                  <table className="w-full">
+                                    <tbody className="divide-y divide-surface-100">
+                                      {weekGroup.payments.map((p) => {
+                                        const jobTitle = p.jobs?.title || p.jobs?.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job';
+                                        const isInvoice = p.id.startsWith('inv_');
+                                        const isReleased = isInvoice || !!(p.metadata?.transfer_id);
+                                        const statusLabel = isInvoice ? 'Completed' : isReleased ? 'Paid to Bank' : p.status === 'completed' ? 'In Escrow' : p.status;
+                                        const statusClass = isInvoice ? 'bg-emerald-100 text-emerald-700' : isReleased ? 'bg-green-100 text-green-700' : p.status === 'completed' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600';
+                                        const isCancelled = p.jobStatus === 'cancelled' || p.jobStatus === 'declined';
+                                        return (
+                                          <tr key={p.id} onClick={() => !isInvoice && setSelectedJobId(p.job_id)} className={`hover:bg-surface-50 transition-colors ${isInvoice ? '' : 'cursor-pointer'} ${isCancelled ? 'opacity-60' : ''}`}>
+                                            <td className="px-5 py-3 text-sm text-navy-400 w-24">
+                                              {new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                                            </td>
+                                            <td className="px-5 py-3">
+                                              <div className="flex items-center gap-2">
+                                                <p className="text-sm font-medium text-navy-900 truncate max-w-[180px]">{jobTitle}</p>
+                                                {p.isRecurring && (
+                                                  <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
+                                                    isCancelled ? 'bg-red-100 text-red-600' : 'bg-secondary-100 text-secondary-700'
+                                                  }`}>
+                                                    {isCancelled ? 'Cancelled' : 'Ongoing'}
+                                                  </span>
+                                                )}
+                                                {!p.isRecurring && isCancelled && (
+                                                  <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 bg-red-100 text-red-600">
+                                                    Cancelled
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </td>
+                                            <td className="px-5 py-3 text-sm text-navy-500">{p.client_name}</td>
+                                            <td className="px-5 py-3 text-right">
+                                              <span className="text-sm font-semibold text-navy-900 tabular-nums">{formatCurrency(p.amount)}</span>
+                                            </td>
+                                            <td className="px-5 py-3 text-center">
+                                              <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full ${statusClass}`}>
+                                                {statusLabel}
+                                              </span>
+                                            </td>
+                                            <td className="px-5 py-3 text-center w-20">
+                                              <button
+                                                onClick={(e) => { e.stopPropagation(); handleDownloadInvoice(p); }}
+                                                disabled={pdfLoadingId === p.id}
+                                                className="p-1.5 text-navy-300 hover:text-secondary-600 hover:bg-secondary-50 rounded-lg transition-colors disabled:opacity-50"
+                                                title="Download Invoice"
+                                              >
+                                                {pdfLoadingId === p.id ? (
+                                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                  <FileText className="w-4 h-4" />
+                                                )}
+                                              </button>
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+
+                                {/* Mobile rows */}
+                                <div className="md:hidden divide-y divide-surface-100">
+                                  {weekGroup.payments.map((p) => {
+                                    const jobTitle = p.jobs?.title || p.jobs?.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job';
+                                    const isInvoice = p.id.startsWith('inv_');
+                                    const isReleased = isInvoice || !!(p.metadata?.transfer_id);
+                                    const statusLabel = isInvoice ? 'Completed' : isReleased ? 'Paid to Bank' : p.status === 'completed' ? 'In Escrow' : p.status;
+                                    const statusClass = isInvoice ? 'bg-emerald-100 text-emerald-700' : isReleased ? 'bg-green-100 text-green-700' : p.status === 'completed' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600';
+                                    const isCancelled = p.jobStatus === 'cancelled' || p.jobStatus === 'declined';
+                                    return (
+                                      <div key={p.id} onClick={() => !isInvoice && setSelectedJobId(p.job_id)} className={`flex items-center gap-3 px-5 py-3.5 ${isInvoice ? '' : 'cursor-pointer'} hover:bg-surface-50 transition-colors ${isCancelled ? 'opacity-60' : ''}`}>
+                                        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-warm-50">
+                                          <DollarSign className="w-4 h-4 text-warm-600" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-1.5">
+                                            <p className="text-sm font-medium text-navy-900 truncate">{jobTitle}</p>
+                                            {p.isRecurring && (
+                                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${isCancelled ? 'bg-red-100 text-red-600' : 'bg-secondary-100 text-secondary-700'}`}>
+                                                {isCancelled ? 'Cancelled' : 'Ongoing'}
+                                              </span>
+                                            )}
+                                            {!p.isRecurring && isCancelled && (
+                                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 bg-red-100 text-red-600">Cancelled</span>
+                                            )}
+                                          </div>
+                                          <p className="text-xs text-navy-300 mt-0.5">
+                                            {p.client_name} · {new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                                          </p>
+                                        </div>
+                                        <div className="text-right flex-shrink-0">
+                                          <p className="text-sm font-semibold text-navy-900 tabular-nums">{formatCurrency(p.amount)}</p>
+                                          <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${statusClass}`}>
+                                            {statusLabel}
+                                          </span>
+                                        </div>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); handleDownloadInvoice(p); }}
+                                          disabled={pdfLoadingId === p.id}
+                                          className="p-1.5 text-navy-300 hover:text-secondary-600 flex-shrink-0"
+                                          title="Download Invoice"
+                                        >
+                                          {pdfLoadingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -531,6 +1167,15 @@ export default function Payouts() {
           </>
         )}
       </div>
+
+      {selectedJobId && (
+        <JobManagementModal
+          isOpen={true}
+          onClose={() => setSelectedJobId(null)}
+          jobId={selectedJobId}
+          onJobUpdated={() => { fetchEarnings(); fetchDetails(); }}
+        />
+      )}
     </DashboardLayout>
   );
 }

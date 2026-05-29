@@ -5,6 +5,7 @@ import {
   calculateProcessingFeeCents,
   calculatePlatformFee,
   resolveTradieTier,
+  calculateGstCents,
 } from "../_shared/pricing.ts";
 
 const corsHeaders = {
@@ -166,6 +167,15 @@ Deno.serve(async (req: Request) => {
       job.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, " ") ||
       "a job";
 
+    // Tradie GST status drives whether we refund / charge GST on the delta.
+    // Amounts stored in `payments.amount` are always ex-GST — GST is a Stripe line item.
+    const { data: tradieProfile } = await supabase
+      .from("profiles")
+      .select("is_gst_registered")
+      .eq("id", quote.tradie_id)
+      .maybeSingle();
+    const tradieIsGstRegistered = tradieProfile?.is_gst_registered === true;
+
     // -----------------------------------------------------------------------
     // CASE C — No change
     // -----------------------------------------------------------------------
@@ -199,6 +209,12 @@ Deno.serve(async (req: Request) => {
         originalProcessingFee * refundRatio
       );
 
+      // GST refund — the client originally paid GST on originalAmountCents (if tradie is GST-registered).
+      // When the base drops, the GST the client paid on the delta must be refunded too.
+      const gstRefundCents = tradieIsGstRegistered
+        ? calculateGstCents(diffCents)
+        : 0;
+
       // Proportional platform fee reduction
       const originalPlatformFee =
         typeof existingMetadata.platform_fee === "number"
@@ -209,8 +225,8 @@ Deno.serve(async (req: Request) => {
       );
       const newPlatformFee = originalPlatformFee - platformFeeReduction;
 
-      // Total refund = base difference + proportional processing fee
-      const totalRefundCents = diffCents + processingFeeRefund;
+      // Total refund = base difference + GST refund + proportional processing fee
+      const totalRefundCents = diffCents + gstRefundCents + processingFeeRefund;
 
       // Issue partial Stripe refund
       const refund = await stripe.refunds.create({
@@ -253,6 +269,7 @@ Deno.serve(async (req: Request) => {
               original_amount: originalAmountCents,
               final_amount: finalPriceCents,
               refund_amount: totalRefundCents,
+              gst_refunded: gstRefundCents,
               processing_fee_refunded: processingFeeRefund,
               platform_fee_reduced_by: platformFeeReduction,
               adjusted_at: new Date().toISOString(),
@@ -335,6 +352,11 @@ Deno.serve(async (req: Request) => {
     // -----------------------------------------------------------------------
     const diffCents = finalPriceCents - originalAmountCents;
     const additionalProcessingFee = calculateProcessingFeeCents(diffCents);
+    // GST on the increase — client must pay GST on the delta base if the tradie is GST-registered.
+    // Pay-price-increase Stripe session consumes this from pending_increase.additional_gst.
+    const additionalGstCents = tradieIsGstRegistered
+      ? calculateGstCents(diffCents)
+      : 0;
 
     // Calculate additional platform fee for the difference
     const { data: tradieSubRecord } = await supabase
@@ -371,6 +393,7 @@ Deno.serve(async (req: Request) => {
           ...existingMetadata,
           pending_increase: {
             diff_cents: diffCents,
+            additional_gst: additionalGstCents,
             additional_processing_fee: additionalProcessingFee,
             additional_platform_fee: additionalPlatformFeeCents,
             requested_at: new Date().toISOString(),
@@ -387,18 +410,21 @@ Deno.serve(async (req: Request) => {
       return errorJson("Failed to save price increase details. Please try again.", 500);
     }
 
-    // Notify client
+    // Notify client — include GST in the total if applicable so client isn't surprised at checkout
+    const additionalTopUpTotalCents = diffCents + additionalGstCents;
     try {
       await supabase.from("notifications").insert({
         user_id: job.client_id,
         type: "price_increase_requested",
         title: "Price Adjustment — Additional Payment Required",
-        message: `The final price for ${jobTitle} has been adjusted from $${originalPriceDollars.toFixed(2)} to $${finalPrice.toFixed(2)}. An additional payment of $${(diffCents / 100).toFixed(2)} is required.`,
+        message: `The final price for ${jobTitle} has been adjusted from $${originalPriceDollars.toFixed(2)} to $${finalPrice.toFixed(2)}. An additional payment of $${(additionalTopUpTotalCents / 100).toFixed(2)}${tradieIsGstRegistered ? " (incl. GST)" : ""} is required.`,
         job_id: quote.job_id,
         metadata: {
           original_price: originalPriceDollars,
           final_price: finalPrice,
           additional_amount: diffCents / 100,
+          additional_gst: additionalGstCents / 100,
+          additional_total: additionalTopUpTotalCents / 100,
         },
         read: false,
       });
@@ -425,6 +451,8 @@ Deno.serve(async (req: Request) => {
       action: "increase_pending",
       finalPrice,
       additionalAmount: diffCents / 100,
+      additionalGst: additionalGstCents / 100,
+      additionalTotal: additionalTopUpTotalCents / 100,
     });
   } catch (err) {
     console.error("Error in adjust-quote-price:", err);

@@ -526,25 +526,6 @@ export default function PublicTradieProfile() {
                       value={details?.hourly_rate ? `$${details.hourly_rate}/hr` : null}
                     />
 
-                    <div className="px-5 py-3.5 flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Truck className="w-4 h-4 text-primary-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-500">Call-out Fee</p>
-                        {tradie.call_out_fee && tradie.show_callout_fee ? (
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">${tradie.call_out_fee}</p>
-                            {tradie.callout_fee_waived_on_proceed && (
-                              <p className="text-xs text-green-600 font-medium mt-0.5">Waived if you proceed</p>
-                            )}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-gray-400 italic">Not listed</p>
-                        )}
-                      </div>
-                    </div>
-
                     <DetailRow
                       icon={<Briefcase className="w-4 h-4 text-secondary-600" />}
                       iconBg="bg-secondary-50"

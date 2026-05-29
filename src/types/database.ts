@@ -2,7 +2,15 @@ export type UserRole = 'client' | 'tradie' | 'admin';
 export type SubscriptionTier = 'free' | 'pro' | 'business';
 export type SlotStatus = 'available' | 'booked' | 'blocked';
 export type JobStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'declined' | 'funded';
-export type QuoteStatus = 'pending' | 'accepted' | 'declined' | 'withdrawn' | 'expired';
+export type QuoteStatus =
+  | 'pending'
+  | 'site_visit_scheduled'    // 3-stage flow: client booked the site visit
+  | 'site_visit_completed'    // 3-stage flow: tradie marked the visit done
+  | 'final_submitted'         // 3-stage flow: tradie's binding quote with final_price
+  | 'accepted'
+  | 'declined'
+  | 'withdrawn'
+  | 'expired';
 export type QuotingStatus = 'open' | 'closed' | 'awarded';
 export type ProjectStatus = 'active' | 'completed' | 'cancelled' | 'ongoing' | 'end_date';
 
@@ -21,6 +29,7 @@ export type Profile = {
   abn_number: string | null;
   abn_entity_name: string | null;
   abn_verified: boolean;
+  is_gst_registered: boolean;
   license_number: string | null;
   license_expiry: string | null;
   license_state: string | null;
@@ -48,6 +57,7 @@ export type Profile = {
   call_out_fee: number | null;
   show_callout_fee: boolean;
   callout_fee_waived_on_proceed: boolean;
+  auto_complete_sessions: boolean;
   bio: string | null;
   cover_photo_url: string | null;
   stripe_connect_account_id: string | null;
@@ -75,6 +85,7 @@ export type TradieDetails = {
   is_insured: boolean;
   is_licensed: boolean;
   subscription_tier: SubscriptionTier;
+  default_call_out_fee_cents: number | null;
   service_radius_km: number;
   bio: string | null;
   hourly_rate: number | null;
@@ -173,6 +184,7 @@ export type Job = {
   contact_name: string | null;
   contact_phone: string | null;
   location_address: string | null;
+  parking_available: boolean | null;
   budget_type: BudgetType | null;
   budget_amount: number | null;
   access_instructions: string | null;
@@ -182,6 +194,9 @@ export type Job = {
   flash_expiry: string | null;
   scheduled_date: string | null;
   preferred_time_slot: 'morning' | 'midday' | 'afternoon' | 'evening' | null;
+  start_time: string | null;
+  end_time: string | null;
+  time_confirmed: boolean;
   emergency_fee_applied: boolean;
   completion_notes: string | null;
   completion_photo_url: string | null;
@@ -194,6 +209,10 @@ export type Job = {
   deleted_by: string | null;
   contact_flagged: boolean;
   contact_flag_reason: string | null;
+  recurring_job_id: string | null;
+  // Quote flow: 1 = legacy single-step accept-and-pay. 2 = 3-stage estimate /
+  // site visit / final quote / pay. See docs/three-stage-quote-flow.md.
+  flow_version: number;
   updated_at: string;
   created_at: string;
 }
@@ -213,6 +232,17 @@ export type Quote = {
   status: QuoteStatus;
   accepted_at: string | null;
   proposed_start_date: string | null;
+  // 3-stage flow tracking (active when the parent job has flow_version=2).
+  // See docs/three-stage-quote-flow.md for the full state machine.
+  site_visit_scheduled_at: string | null;
+  site_visit_completed_at: string | null;
+  final_submitted_at: string | null;
+  final_valid_until: string | null;
+  // Tradie-set site-visit call-out fee (paid by client at booking, credited at accept).
+  call_out_fee_cents: number | null;
+  site_visit_fee_status: 'paid' | 'credited' | null;
+  site_visit_fee_paid_at: string | null;
+  site_visit_fee_payment_intent_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -224,6 +254,10 @@ export type QuoteWithTradie = Quote & {
     verification_status: VerificationStatus;
     verified_trades: string[];
     declared_trades: string[];
+    is_gst_registered?: boolean;
+    /** When the tradie joined the platform — used for the "Member since YYYY"
+     *  retention signal on quote cards. */
+    created_at?: string;
   } | null;
   tradie_details?: {
     business_name: string;
@@ -345,6 +379,7 @@ export type ServiceReminder = {
 export type Review = {
   id: string;
   job_id: string | null;
+  recurring_job_id: string | null;
   tradie_id: string;
   client_id: string;
   rating: number;
@@ -924,6 +959,25 @@ export type ServiceInvoice = {
   created_at: string;
   updated_at: string;
 }
+
+// ── Supplies tracking for recurring services ──
+export type SupplyItem = {
+  id: string;
+  name: string;
+  unit?: string;
+  provided_by: 'tradie' | 'client';
+  stock_level: number | null;
+  restock_threshold: number | null;
+  restock_notified_at: string | null;
+  notes?: string;
+};
+
+export type SupplyUsage = {
+  supply_id: string;
+  name: string;
+  quantity_used: number;
+  cost: number;
+};
 
 export type Database = {
   public: {

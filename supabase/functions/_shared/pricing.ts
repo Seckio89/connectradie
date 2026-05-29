@@ -45,12 +45,12 @@ export const PRICING_CONFIG = {
   processing: {
     stripePercentage: 0.0175,
     stripeFixed: 0.30,
-    platformProcessingMargin: 0.012,
+    platformProcessingMargin: 0.0175,
   },
   becsProcessing: {
     stripePercentage: 0.01,      // 1% (vs card 1.75%)
     stripeFixed: 0.30,            // $0.30 fixed
-    platformProcessingMargin: 0.012, // same platform margin
+    platformProcessingMargin: 0.0175, // matches card margin for consistency
   },
 } as const;
 
@@ -119,6 +119,19 @@ export function calculateProcessingFeeCents(amountCents: number): number {
     PRICING_CONFIG.processing.stripeFixed * 100 +
     amountCents * PRICING_CONFIG.processing.platformProcessingMargin
   );
+}
+
+// ---------------------------------------------------------------------------
+// GST calculation (10% on base amount, in cents)
+// ---------------------------------------------------------------------------
+export const GST_RATE = 0.10;
+
+export function calculateGstCents(amountCents: number): number {
+  return Math.round(amountCents * GST_RATE);
+}
+
+export function calculateGst(amountDollars: number): number {
+  return Math.round(amountDollars * GST_RATE * 100) / 100;
 }
 
 // ---------------------------------------------------------------------------

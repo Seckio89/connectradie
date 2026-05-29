@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Clock, Calendar, CheckCircle2, AlertCircle, XCircle, Loader2, User, Star, Check, X as XIcon, Package, ClipboardList, Zap, WifiOff, ShieldAlert, Settings, Users, MapPin, Repeat, ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -49,6 +49,7 @@ function FlashCountdown({ expiry }: { expiry: string }) {
 export default function Jobs({ embedded = false }: { embedded?: boolean }) {
   const { user, profile, tradieDetails } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast, showToast } = useToast();
   type JobStatus = 'pending' | 'active' | 'completed' | 'all';
   const [allJobs, setAllJobs] = useState<JobWithRelations[]>([]);
@@ -76,6 +77,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
   const [paidJobIds, setPaidJobIds] = useState<Set<string>>(new Set());
   const [myQuotes, setMyQuotes] = useState<Map<string, Quote>>(new Map());
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
+  const [tradieNames, setTradieNames] = useState<Map<string, string>>(new Map());
   const isTradie = profile?.role === 'tradie';
   const isVerified = profile?.verification_status === 'verified';
   const isLicenseExpired = checkLicenseExpired(profile?.verification_status, profile?.license_expiry);
@@ -116,6 +118,20 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isTradie]);
+
+  // Auto-open a specific job when arriving with ?job=<id> (e.g. from
+  // PaymentHistory "View job" link). Once opened, strip the param so refreshes
+  // don't re-pop the modal.
+  useEffect(() => {
+    const jobParam = searchParams.get('job');
+    if (!jobParam || allJobs.length === 0) return;
+    const match = allJobs.find(j => j.id === jobParam);
+    if (match) {
+      setSelectedJob(match);
+      searchParams.delete('job');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, allJobs, setSearchParams]);
 
   // Client-side filtering when filter or allJobs change
   useEffect(() => {
@@ -232,6 +248,30 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
           if (!aFlash && bFlash) return 1;
           return 0;
         });
+
+        // Exclude jobs linked to recurring services — managed via Ongoing Services tab.
+        // Cover both the original placeholder (recurring_jobs.original_job_id) and any
+        // quote-request jobs (jobs.recurring_job_id).
+        const { data: recurringLinked } = await supabase
+          .from('recurring_jobs')
+          .select('original_job_id')
+          .eq('tradie_id', user.id)
+          .not('original_job_id', 'is', null);
+        const recurringJobIds = new Set<string>();
+        for (const r of recurringLinked || []) {
+          if (r.original_job_id) recurringJobIds.add(r.original_job_id);
+        }
+        for (const j of filteredJobs as { id: string; recurring_job_id?: string | null }[]) {
+          if (j.recurring_job_id) recurringJobIds.add(j.id);
+        }
+        if (recurringJobIds.size > 0) {
+          const beforeCount = filteredJobs.length;
+          const remaining = filteredJobs.filter(j => !recurringJobIds.has(j.id));
+          if (remaining.length < beforeCount) {
+            filteredJobs.length = 0;
+            filteredJobs.push(...remaining);
+          }
+        }
       }
 
       setAllJobs(filteredJobs as JobWithRelations[]);
@@ -256,6 +296,28 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
           }
         } catch (err) {
           console.error('Error checking payment status:', err);
+        }
+      }
+
+      // Fetch tradie names for client's completed jobs
+      if (!isTradie) {
+        const tradieIds = [...new Set(filteredJobs.filter(j => j.tradie_id).map(j => j.tradie_id!))];
+        if (tradieIds.length > 0) {
+          try {
+            const { data: tradieProfiles } = await supabase
+              .from('profiles')
+              .select('id, full_name')
+              .in('id', tradieIds);
+            if (tradieProfiles) {
+              const names = new Map<string, string>();
+              for (const tp of tradieProfiles) {
+                names.set(tp.id, tp.full_name);
+              }
+              setTradieNames(names);
+            }
+          } catch (err) {
+            console.error('Error fetching tradie names:', err);
+          }
         }
       }
 
@@ -746,6 +808,58 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                                   }}
                                   className="w-full text-left rounded-xl transition-all cursor-pointer border border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
                                 >
+                                  {!isTradie ? (
+                                  /* ── Client completed card: clean summary ── */
+                                  <div className="px-5 py-4">
+                                    <div className="flex items-start justify-between gap-3 mb-2">
+                                      <h3 className="text-sm font-semibold text-gray-900 truncate flex-1 min-w-0">
+                                        {job.title || job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job'}
+                                      </h3>
+                                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
+                                        {paidJobIds.has(job.id) ? 'paid' : job.status.replace(/_/g, ' ')}
+                                      </span>
+                                    </div>
+                                    <div className="space-y-1.5 text-sm text-gray-600">
+                                      {job.location_address && (
+                                        <div className="flex items-center gap-2">
+                                          <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                                          <span className="truncate">{job.location_address.split(',').slice(0, 2).join(',')}</span>
+                                        </div>
+                                      )}
+                                      <div className="flex items-center gap-2">
+                                        <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                                        <span>Completed {formatDate(job.completed_at || job.updated_at || job.created_at)}</span>
+                                      </div>
+                                      {job.tradie_id && (
+                                        <div className="flex items-center gap-2">
+                                          <User className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                                          <span>{tradieNames.get(job.tradie_id) || 'Tradie'}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                    {job.tradie_id && !reviewedJobIds.includes(job.id) && (
+                                      <div className="mt-3 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); navigate(`/review/${job.id}`); }}
+                                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 text-sm font-medium transition-colors"
+                                        >
+                                          <Star className="w-3.5 h-3.5" />
+                                          Leave a Review
+                                        </button>
+                                      </div>
+                                    )}
+                                    {reviewedJobIds.includes(job.id) && (
+                                      <div className="mt-3 pt-3 border-t border-gray-100">
+                                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600">
+                                          <CheckCircle2 className="w-3.5 h-3.5" />
+                                          Review submitted
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  /* ── Tradie completed card: existing layout ── */
+                                  <>
                                   <div className="px-5 pt-4 pb-3">
                                     <div className="flex items-start justify-between gap-3 mb-2">
                                       <div className="flex-1 min-w-0">
@@ -792,7 +906,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                                     </div>
                                   </div>
 
-                                  {isTradie && job.status === 'completed' && !job.completion_notes && (
+                                  {job.status === 'completed' && !job.completion_notes && (
                                     <div className="px-5 pb-4 pt-1 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
                                       <button
                                         onClick={(e) => { e.stopPropagation(); handleCompleteJob(job); }}
@@ -803,7 +917,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                                     </div>
                                   )}
 
-                                  {isTradie && job.status === 'completed' && job.completion_notes && (
+                                  {job.status === 'completed' && job.completion_notes && (
                                     <div className="px-5 pb-3 pt-1 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
                                       <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${paidJobIds.has(job.id) ? 'text-emerald-600' : 'text-gray-500'}`}>
                                         <CheckCircle2 className="w-3.5 h-3.5" />
@@ -811,25 +925,9 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                                       </span>
                                     </div>
                                   )}
+                                  </>
+                                )}
 
-                                  {!isTradie && job.status === 'completed' && job.tradie_id && (
-                                    <div className="px-5 pb-4 pt-1 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-                                      {reviewedJobIds.includes(job.id) ? (
-                                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600">
-                                          <CheckCircle2 className="w-3.5 h-3.5" />
-                                          Review submitted
-                                        </span>
-                                      ) : (
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); navigate(`/review/${job.id}`); }}
-                                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 text-sm font-medium transition-colors"
-                                        >
-                                          <Star className="w-3.5 h-3.5" />
-                                          Leave a Review
-                                        </button>
-                                      )}
-                                    </div>
-                                  )}
                                 </div>
                               );
                             })}
@@ -1028,9 +1126,15 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                       ) : (
                       <div className="flex items-center gap-2">
                       <button
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
-                          if (job.status === 'funded') handleStartJob(job);
+                          if (job.status === 'funded') {
+                            await handleStartJob(job);
+                            // Re-read updated job so completion modal sees 'in_progress'
+                            const updatedJob = { ...job, status: 'in_progress' };
+                            handleCompleteJob(updatedJob as JobWithRelations);
+                            return;
+                          }
                           handleCompleteJob(job);
                         }}
                         disabled={actionLoading === job.id}

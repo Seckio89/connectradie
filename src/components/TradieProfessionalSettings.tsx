@@ -68,11 +68,13 @@ export default function TradieProfessionalSettings() {
   const [insurancePolicy, setInsurancePolicy] = useState(false);
   const [serviceRadius, setServiceRadius] = useState(20);
   const [isEmergencyAvailable, setIsEmergencyAvailable] = useState(false);
+  const [autoCompleteSessions, setAutoCompleteSessions] = useState(true);
   const [teamSize, setTeamSize] = useState<TeamSize | ''>('');
   const [callOutFee, setCallOutFee] = useState('');
   const [showCalloutFee, setShowCalloutFee] = useState(true);
   const [calloutFeeWaived, setCalloutFeeWaived] = useState(false);
   const [bio, setBio] = useState('');
+  const [isGstRegistered, setIsGstRegistered] = useState(false);
 
   const [selectedTrade, setSelectedTrade] = useState(profile?.declared_trades?.[0] || '');
   const [tradeSaving, setTradeSaving] = useState(false);
@@ -111,11 +113,13 @@ export default function TradieProfessionalSettings() {
       setInsurancePolicy(profile.insurance_policy || false);
       setServiceRadius(profile.service_radius_km || 20);
       setIsEmergencyAvailable(profile.is_emergency_available || false);
+      setAutoCompleteSessions(profile.auto_complete_sessions ?? true);
       setTeamSize((profile.team_size as TeamSize) || '');
       setCallOutFee(profile.call_out_fee ? String(profile.call_out_fee) : '');
       setShowCalloutFee(profile.show_callout_fee ?? true);
       setCalloutFeeWaived(profile.callout_fee_waived_on_proceed ?? false);
       setBio(profile.bio || '');
+      setIsGstRegistered(profile.is_gst_registered || false);
     }
   }, [profile]);
 
@@ -173,11 +177,13 @@ export default function TradieProfessionalSettings() {
       insurance_policy: insurancePolicy,
       service_radius_km: serviceRadius,
       is_emergency_available: isEmergencyAvailable,
+      auto_complete_sessions: autoCompleteSessions,
       team_size: teamSize || null,
       call_out_fee: callOutFee ? parseInt(callOutFee, 10) : null,
       show_callout_fee: showCalloutFee,
       callout_fee_waived_on_proceed: calloutFeeWaived,
       bio: bio || null,
+      is_gst_registered: isGstRegistered,
     };
 
     // Only include licensing columns if the migration has been applied
@@ -311,6 +317,22 @@ export default function TradieProfessionalSettings() {
               )}
             </div>
           </div>
+
+          {/* GST Registration */}
+          <label className="flex items-center gap-3 cursor-pointer border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors">
+            <input
+              type="checkbox"
+              checked={isGstRegistered}
+              onChange={(e) => setIsGstRegistered(e.target.checked)}
+              className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 flex-shrink-0"
+            />
+            <div className="flex-1">
+              <span className="text-sm font-medium text-gray-700">GST Registered</span>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Required if your annual turnover exceeds $75,000. When enabled, 10% GST will be added to your quoted prices at checkout.
+              </p>
+            </div>
+          </label>
 
           {/* Issuing State */}
           <div>
@@ -563,6 +585,35 @@ export default function TradieProfessionalSettings() {
               />
             </button>
           </div>
+
+          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-secondary-50 to-secondary-50 rounded-xl border border-secondary-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-secondary-100 rounded-lg flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-secondary-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Auto-complete recurring sessions</p>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  {autoCompleteSessions
+                    ? "On — sessions auto-complete after their scheduled end time."
+                    : "Off — you'll be asked to confirm each visit before it counts as completed."}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAutoCompleteSessions(!autoCompleteSessions)}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:ring-offset-2 ${
+                autoCompleteSessions ? 'bg-secondary-500' : 'bg-gray-300'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                  autoCompleteSessions ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -603,74 +654,6 @@ export default function TradieProfessionalSettings() {
               </div>
             </div>
           </div>
-
-          <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-              Standard Call-Out Fee
-              <InfoTooltip text="Shown to clients before they book" />
-            </label>
-            <div className="relative">
-              <Truck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-500" />
-              <input
-                type="number"
-                min={0}
-                value={callOutFee}
-                onChange={(e) => setCallOutFee(e.target.value)}
-                placeholder="e.g., 80"
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-            </div>
-          </div>
-
-          {callOutFee && (
-            <div className="space-y-3 pl-1">
-              <div className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl border border-gray-200">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Show callout fee to clients</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Displayed on your public profile card</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowCalloutFee(!showCalloutFee)}
-                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                    showCalloutFee ? 'bg-primary-500' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-                      showCalloutFee ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {showCalloutFee && (
-                <div className="flex items-center justify-between p-3.5 bg-green-50/60 rounded-xl border border-green-200">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Waived if client proceeds</p>
-                      <p className="text-xs text-gray-500 mt-0.5">Shows "Waived if you proceed" next to the fee</p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setCalloutFeeWaived(!calloutFeeWaived)}
-                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
-                      calloutFeeWaived ? 'bg-green-500' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-                        calloutFeeWaived ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
 
           <div>
             <div className="flex items-center justify-between mb-2">

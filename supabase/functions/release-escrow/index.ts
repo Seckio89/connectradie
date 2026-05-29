@@ -150,29 +150,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Block release if a price increase is pending and not yet paid
-    if (existingMetadata.pending_increase) {
-      const { data: childPayment } = await supabase
-        .from("payments")
-        .select("id, status")
-        .eq("parent_payment_id", paymentId)
-        .eq("payment_type", "price_adjustment")
-        .eq("status", "completed")
-        .maybeSingle();
-
-      if (!childPayment) {
-        return new Response(
-          JSON.stringify({
-            error: "A price increase is pending client approval. The additional amount must be paid before escrow can be released.",
-            error_code: "pending_increase_not_paid",
-          }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-    }
+    // Note: a pending_increase used to block release. We now let release proceed
+    // (releasing the original amount) so the client only ever waits one 48hr
+    // auto-release window — paying the increase remains optional from their side.
+    // The pending_increase flag is cleared below alongside the transfer write.
 
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
@@ -224,12 +205,14 @@ Deno.serve(async (req: Request) => {
       idempotencyKey ? { idempotencyKey } : undefined,
     );
 
-    // Update payment metadata with transfer info
+    // Update payment metadata with transfer info. Strip pending_increase so the
+    // dropped adjustment doesn't keep showing as a CTA after release.
+    const { pending_increase: _droppedIncrease, ...cleanMetadata } = existingMetadata as Record<string, unknown>;
     const { error: metaUpdateError } = await supabase
       .from("payments")
       .update({
         metadata: {
-          ...existingMetadata,
+          ...cleanMetadata,
           transfer_id: transfer.id,
           transfer_amount: transfer.amount,
           platform_fee_deducted: platformFeeCents,
@@ -263,6 +246,32 @@ Deno.serve(async (req: Request) => {
     );
   } catch (err) {
     console.error("Error releasing escrow:", err);
+    // Translate known Stripe / infrastructure errors into user-friendly messages.
+    // We never surface raw Stripe error text (it includes test card numbers,
+    // internal URLs, and developer-oriented language) to end users.
+    if (err instanceof Stripe.errors.StripeError) {
+      const code = err.code || err.type;
+      if (
+        code === "balance_insufficient" ||
+        /insufficient.*funds/i.test(err.message)
+      ) {
+        return errorJson(
+          "Payment couldn't be released right now due to a temporary platform balance issue. Please try again shortly — if it keeps failing, contact support and we'll release it manually.",
+          503,
+        );
+      }
+      if (code === "account_invalid" || code === "account_inactive") {
+        return errorJson(
+          "The tradie's payout account isn't fully set up. Ask them to complete Stripe onboarding before you release the payment.",
+          400,
+        );
+      }
+      // Any other Stripe error — log details server-side, show generic message.
+      return errorJson(
+        "We couldn't release the payment right now. Please try again — if it keeps failing, contact support.",
+        502,
+      );
+    }
     const message =
       err instanceof Error ? err.message : "Internal server error";
     return errorJson(message, 500);

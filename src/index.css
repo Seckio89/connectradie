@@ -361,6 +361,12 @@ body {
 .dark .hover\:text-emerald-700:hover {
   color: #06D6A0 !important;
 }
+.dark .text-emerald-900 {
+  color: #a7f3d5 !important;
+}
+.dark .text-emerald-600 {
+  color: #6ee7bc !important;
+}
 
 .dark .bg-red-50,
 .dark .bg-red-100 {
@@ -1075,6 +1081,14 @@ html:not(.dark) .theme-aware .bg-green-500 .text-white,
 html:not(.dark) .theme-aware .bg-green-500.text-white,
 html:not(.dark) .theme-aware .bg-green-600 .text-white,
 html:not(.dark) .theme-aware .bg-green-600.text-white,
+html:not(.dark) .theme-aware .bg-emerald-500 .text-white,
+html:not(.dark) .theme-aware .bg-emerald-500.text-white,
+html:not(.dark) .theme-aware .bg-emerald-600 .text-white,
+html:not(.dark) .theme-aware .bg-emerald-600.text-white,
+html:not(.dark) .theme-aware .bg-secondary-500 .text-white,
+html:not(.dark) .theme-aware .bg-secondary-500.text-white,
+html:not(.dark) .theme-aware .bg-secondary-600 .text-white,
+html:not(.dark) .theme-aware .bg-secondary-600.text-white,
 html:not(.dark) .theme-aware .bg-blue-500 .text-white,
 html:not(.dark) .theme-aware .bg-blue-600 .text-white,
 html:not(.dark) .theme-aware .bg-gray-800 .text-white,
@@ -1084,7 +1098,8 @@ html:not(.dark) .theme-aware .bg-gray-900.text-white,
 html:not(.dark) .theme-aware .bg-amber-600 .text-white,
 html:not(.dark) .theme-aware .bg-amber-600.text-white,
 html:not(.dark) .theme-aware .bg-black\/90 .text-white,
-html:not(.dark) .theme-aware [class*="bg-gradient-to"] .text-white {
+html:not(.dark) .theme-aware [class*="bg-gradient-to"] .text-white,
+html:not(.dark) .theme-aware [class*="bg-gradient-to"].text-white {
   color: #FFFFFF !important;
 }
 
@@ -1489,6 +1504,20 @@ html:not(.dark) .theme-aware .to-navy-800 {
 
 .animate-pulse-soft {
   animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Flash highlight — two pulses to draw attention */
+@keyframes flash-highlight {
+  0% { background-color: transparent; }
+  15% { background-color: rgb(209 250 229); }
+  30% { background-color: transparent; }
+  50% { background-color: rgb(209 250 229); }
+  70% { background-color: transparent; }
+  100% { background-color: transparent; }
+}
+
+.animate-flash-highlight {
+  animation: flash-highlight 1.8s ease-in-out;
 }
 
 @keyframes slideDown {

@@ -114,6 +114,7 @@ export default function MyProfile() {
   };
 
   const handleSaveDetails = async (values: {
+    businessName: string;
     hourlyRate: number | null;
     callOutFee: number | null;
     showCalloutFee: boolean;
@@ -134,6 +135,7 @@ export default function MyProfile() {
         is_emergency_available: values.isEmergencyAvailable,
       }),
       updateTradieDetails({
+        business_name: values.businessName,
         hourly_rate: values.hourlyRate,
         contractor_type: values.contractorType as 'Solo' | 'Company' | 'Labour Hire',
         qualifications: values.qualifications,
@@ -512,26 +514,6 @@ export default function MyProfile() {
                         label="Hourly Rate"
                         value={tradieDetails?.hourly_rate ? `$${tradieDetails.hourly_rate}/hr` : null}
                       />
-                      <div className="px-5 py-3.5 flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Truck className="w-4 h-4 text-primary-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-gray-500">Call-out Fee</p>
-                          {profile?.call_out_fee && profile?.show_callout_fee ? (
-                            <div>
-                              <p className="text-sm font-semibold text-gray-900">${profile.call_out_fee}</p>
-                              {profile.callout_fee_waived_on_proceed && (
-                                <p className="text-xs text-green-600 font-medium mt-0.5">Waived if you proceed</p>
-                              )}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-gray-400 italic">
-                              {profile?.call_out_fee ? 'Hidden' : 'Not set'}
-                            </p>
-                          )}
-                        </div>
-                      </div>
                       <DetailRow
                         icon={<Briefcase className="w-4 h-4 text-secondary-600" />}
                         label="Business Type"
@@ -653,6 +635,7 @@ export default function MyProfile() {
           isOpen={editDetails}
           onClose={() => setEditDetails(false)}
           currentValues={{
+            businessName: tradieDetails?.business_name || '',
             hourlyRate: tradieDetails?.hourly_rate || null,
             callOutFee: profile?.call_out_fee || null,
             showCalloutFee: profile?.show_callout_fee ?? true,

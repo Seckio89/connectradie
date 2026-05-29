@@ -5,6 +5,7 @@ interface EditDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentValues: {
+    businessName: string;
     hourlyRate: number | null;
     callOutFee: number | null;
     showCalloutFee: boolean;
@@ -16,6 +17,7 @@ interface EditDetailsModalProps {
     isEmergencyAvailable: boolean;
   };
   onSave: (values: {
+    businessName: string;
     hourlyRate: number | null;
     callOutFee: number | null;
     showCalloutFee: boolean;
@@ -32,6 +34,7 @@ const TEAM_SIZE_OPTIONS = ['Solo', 'Small Team (2-5)', 'Large Team (6+)'];
 const CONTRACTOR_TYPES = ['Solo', 'Company', 'Labour Hire'];
 
 export default function EditDetailsModal({ isOpen, onClose, currentValues, onSave }: EditDetailsModalProps) {
+  const [businessName, setBusinessName] = useState(currentValues.businessName || '');
   const [hourlyRate, setHourlyRate] = useState(currentValues.hourlyRate?.toString() || '');
   const [callOutFee, setCallOutFee] = useState(currentValues.callOutFee?.toString() || '');
   const [showCalloutFee, setShowCalloutFee] = useState(currentValues.showCalloutFee);
@@ -54,6 +57,7 @@ export default function EditDetailsModal({ isOpen, onClose, currentValues, onSav
         .filter(Boolean);
 
       await onSave({
+        businessName: businessName.trim(),
         hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
         callOutFee: callOutFee ? parseFloat(callOutFee) : null,
         showCalloutFee,
@@ -87,53 +91,29 @@ export default function EditDetailsModal({ isOpen, onClose, currentValues, onSav
         </div>
 
         <div className="p-6 space-y-5 overflow-y-auto flex-1">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Hourly Rate ($)</label>
-              <input
-                type="number"
-                value={hourlyRate}
-                onChange={(e) => setHourlyRate(e.target.value)}
-                min="0"
-                placeholder="e.g. 85"
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Call-out Fee ($)</label>
-              <input
-                type="number"
-                value={callOutFee}
-                onChange={(e) => setCallOutFee(e.target.value)}
-                min="0"
-                placeholder="e.g. 80"
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Business Name</label>
+            <input
+              type="text"
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+              placeholder="e.g. Happy Phoenix Cleaning Services"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            />
+            <p className="text-xs text-gray-400 mt-1">This is shown to clients on your profile and invoices</p>
           </div>
 
-          {callOutFee && (
-            <div className="space-y-3 pl-1">
-              <label className="flex items-center gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showCalloutFee}
-                  onChange={(e) => setShowCalloutFee(e.target.checked)}
-                  className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700">Show call-out fee on my profile</span>
-              </label>
-              <label className="flex items-center gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={calloutFeeWaived}
-                  onChange={(e) => setCalloutFeeWaived(e.target.checked)}
-                  className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700">Waived if client proceeds with work</span>
-              </label>
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Hourly Rate ($)</label>
+            <input
+              type="number"
+              value={hourlyRate}
+              onChange={(e) => setHourlyRate(e.target.value)}
+              min="0"
+              placeholder="e.g. 85"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            />
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Business Type</label>

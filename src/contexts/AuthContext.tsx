@@ -115,6 +115,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      // Token refresh just rotates the JWT — user identity and profile haven't changed.
+      // Updating user/profile here would invalidate every memoised dep across the app
+      // and cascade into refetch loops (and ultimately spurious logouts).
+      if (event === 'TOKEN_REFRESHED') {
+        setSession(session);
+        return;
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {

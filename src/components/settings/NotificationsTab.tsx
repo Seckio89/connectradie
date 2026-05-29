@@ -5,10 +5,12 @@ interface NotificationsTabProps {
   pushPermission: string;
   notifSaving: boolean;
   onTogglePush: (enabled: boolean) => void;
+  smsEnabled: boolean;
+  onToggleSms: (enabled: boolean) => void;
   role?: 'tradie' | 'client' | 'admin';
 }
 
-export default function NotificationsTab({ pushEnabled, pushPermission, notifSaving, onTogglePush, role }: NotificationsTabProps) {
+export default function NotificationsTab({ pushEnabled, pushPermission, notifSaving, onTogglePush, smsEnabled, onToggleSms, role }: NotificationsTabProps) {
   const isClient = role === 'client';
 
   return (
@@ -63,7 +65,7 @@ export default function NotificationsTab({ pushEnabled, pushPermission, notifSav
           </div>
         )}
 
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 opacity-60">
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-warm-100 rounded-lg flex items-center justify-center">
               <Smartphone className="w-5 h-5 text-warm-600" />
@@ -77,12 +79,18 @@ export default function NotificationsTab({ pushEnabled, pushPermission, notifSav
                   ? 'Get a text when tradies quote or your job status changes'
                   : 'Get a text when urgent leads are posted nearby'}
               </p>
-              <span className="inline-flex items-center gap-1 mt-1 text-xs font-medium text-secondary-700 bg-secondary-50 px-2 py-0.5 rounded-full border border-secondary-200">Coming Soon</span>
+              <span className="inline-block mt-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">Free</span>
             </div>
           </div>
-          <div className="relative inline-flex h-7 w-12 items-center rounded-full bg-gray-200 cursor-not-allowed">
-            <span className="inline-block h-5 w-5 transform rounded-full bg-white shadow-sm translate-x-1" />
-          </div>
+          <button
+            type="button"
+            onClick={() => onToggleSms(!smsEnabled)}
+            disabled={notifSaving}
+            aria-label={smsEnabled ? 'Disable SMS alerts' : 'Enable SMS alerts'}
+            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${smsEnabled ? 'bg-warm-500' : 'bg-gray-300'} ${notifSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          >
+            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${smsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
         </div>
       </div>
 

@@ -466,7 +466,7 @@ export default function Search() {
         .from('jobs')
         .select('id, title, description, location_address')
         .eq('client_id', user.id)
-        .in('status', ['pending', 'accepted'])
+        .eq('status', 'pending')
         .is('archived_at', null)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })

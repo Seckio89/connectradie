@@ -528,6 +528,8 @@ export interface RecurringJobData {
   day_of_week?: number;
   preferred_time?: string;
   billing_cycle?: 'fortnightly' | 'monthly';
+  supplies?: Record<string, unknown>[];
+  consumables_provider?: 'client' | 'tradie_billed';
 }
 
 export interface RecurringJob {
@@ -551,6 +553,12 @@ export interface RecurringJob {
   preferred_time?: string;
   billing_cycle?: 'fortnightly' | 'monthly';
   last_invoiced_at?: string;
+  cancelled_at?: string | null;
+  auto_accept?: boolean | null;
+  auto_invoice?: boolean;
+  end_date?: string | null;
+  supplies?: Record<string, unknown>[];
+  consumables_provider?: 'client' | 'tradie_billed';
   tradie?: {
     id: string;
     full_name: string;
@@ -558,7 +566,7 @@ export interface RecurringJob {
   } | null;
 }
 
-export type RecurringSessionStatus = 'pending_confirmation' | 'scheduled' | 'completed' | 'rescheduled' | 'skipped' | 'extra';
+export type RecurringSessionStatus = 'pending_confirmation' | 'scheduled' | 'awaiting_completion' | 'completed' | 'rescheduled' | 'skipped' | 'extra';
 
 export interface RecurringSession {
   id: string;
@@ -572,6 +580,13 @@ export interface RecurringSession {
   reschedule_by: 'client' | 'tradie' | null;
   notes: string | null;
   confirmation_deadline: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  proposed_start_time: string | null;
+  proposed_end_time: string | null;
+  time_proposal_by: 'client' | 'tradie' | null;
+  supply_cost?: number;
+  supplies_used?: Record<string, unknown>[];
   created_at: string;
   updated_at: string;
 }
@@ -715,7 +730,12 @@ export function calculateNextDueDate(
   } else if (frequencyMonths === FREQ_FORTNIGHTLY) {
     next.setDate(next.getDate() + 14);
   } else if (frequencyMonths > 0) {
+    // Clamp to last day of target month to prevent drift (e.g. Jan 31 + 1m = Feb 28)
+    const targetDay = next.getDate();
+    next.setDate(1);
     next.setMonth(next.getMonth() + frequencyMonths);
+    const lastDay = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
+    next.setDate(Math.min(targetDay, lastDay));
   }
   return next;
 }
@@ -765,6 +785,8 @@ export async function createRecurringJob(
   if (data.day_of_week != null) insertPayload.day_of_week = data.day_of_week;
   if (data.preferred_time) insertPayload.preferred_time = data.preferred_time;
   if (data.billing_cycle) insertPayload.billing_cycle = data.billing_cycle;
+  if (data.supplies && data.supplies.length > 0) insertPayload.supplies = data.supplies;
+  if (data.consumables_provider) insertPayload.consumables_provider = data.consumables_provider;
 
   const { data: created, error } = await supabase
     .from('recurring_jobs')
@@ -791,37 +813,65 @@ export async function createRecurringJob(
 
   const rj = created as unknown as RecurringJob;
 
-  // Auto-create first session for the start date
-  try {
-    const confirmationDeadline = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
-    await supabase.from('recurring_sessions').insert({
-      recurring_job_id: rj.id,
-      scheduled_date: data.next_due_date,
-      status: 'pending_confirmation',
-      confirmation_deadline: confirmationDeadline,
-    });
+  // Back-link the originating job to this recurring service. Without this, the
+  // job→recurring link is one-way and downstream flows that key off
+  // jobs.recurring_job_id (e.g. accept-and-pay syncing the assigned tradie + agreed
+  // rate onto the service) silently no-op, leaving the service as "no tradie assigned".
+  if (data.original_job_id) {
+    try {
+      await supabase
+        .from('jobs')
+        .update({ recurring_job_id: rj.id })
+        .eq('id', data.original_job_id);
+    } catch { /* Non-critical back-link */ }
+  }
 
-    // Notify tradie if assigned
-    if (data.tradie_id) {
+  // If a preferred tradie was assigned, update the original job record so the
+  // client-side status reflects "Tradie Assigned" instead of "Awaiting Quotes"
+  if (resolvedTradieId && data.original_job_id) {
+    try {
+      await supabase
+        .from('jobs')
+        .update({ tradie_id: resolvedTradieId, quoting_status: 'awarded', status: 'accepted' })
+        .eq('id', data.original_job_id);
+    } catch {
+      // Non-critical — display only
+    }
+  }
+
+  // Auto-create first session for the start date (only if a tradie is assigned)
+  if (resolvedTradieId) {
+    try {
+      const confirmationDeadline = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+      await supabase.from('recurring_sessions').insert({
+        recurring_job_id: rj.id,
+        scheduled_date: data.next_due_date,
+        status: 'pending_confirmation',
+        confirmation_deadline: confirmationDeadline,
+      });
+    } catch {
+      // Non-critical
+    }
+  }
+
+  // Notify tradie if assigned
+  if (resolvedTradieId) {
+    try {
       const tradeLabel = (data.service_subtype || data.trade_category)
         .replace(/_/g, ' ')
         .replace(/\b\w/g, (c) => c.toUpperCase());
       const dateLabel = new Date(data.next_due_date + 'T00:00:00').toLocaleDateString('en-AU', {
         weekday: 'short', day: 'numeric', month: 'short',
       });
-      try {
-        await insertNotification(
-          data.tradie_id,
-          'recurring_job_confirmation_required',
-          `New recurring ${tradeLabel} service starting ${dateLabel}. Please confirm within 48 hours.`,
-          { recurring_job_id: rj.id, next_date: data.next_due_date },
-        );
-      } catch {
-        // Non-critical
-      }
+      await insertNotification(
+        resolvedTradieId,
+        'recurring_job_confirmation_required',
+        `New recurring ${tradeLabel} service starting ${dateLabel}. Please confirm within 48 hours.`,
+        { recurring_job_id: rj.id, next_date: data.next_due_date },
+      );
+    } catch {
+      // Non-critical
     }
-  } catch {
-    // Non-critical — cron will pick it up
   }
 
   // Auto-create service agreement
@@ -853,6 +903,8 @@ export async function createRecurringJob(
 export interface KeywordSuggestion {
   keyword: string;
   frequency: number;
+  /** Detailed task line inserted when the chip is clicked (falls back to keyword). */
+  detail: string | null;
 }
 
 /**
@@ -865,7 +917,7 @@ export async function getKeywordSuggestions(
 ): Promise<KeywordSuggestion[]> {
   const { data, error } = await supabase
     .from('service_description_keywords')
-    .select('keyword, frequency')
+    .select('keyword, frequency, detail')
     .eq('service_type', serviceType)
     .order('frequency', { ascending: false })
     .limit(limit);
@@ -876,6 +928,24 @@ export async function getKeywordSuggestions(
   }
 
   return (data ?? []) as KeywordSuggestion[];
+}
+
+/**
+ * Fetch all recurring jobs where this user is the tradie.
+ */
+export async function getTradieRecurringJobs(tradieId: string): Promise<RecurringJob[]> {
+  const { data, error } = await supabase
+    .from('recurring_jobs')
+    .select(`
+      *,
+      client:profiles!recurring_jobs_client_id_fkey(id, full_name, email, phone)
+    `)
+    .eq('tradie_id', tradieId)
+    .is('cancelled_at', null)
+    .order('next_due_date', { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return (data as unknown as RecurringJob[]) ?? [];
 }
 
 /**
@@ -936,6 +1006,72 @@ export async function updateRecurringJob(
 }
 
 /**
+ * Request a quote for an existing ongoing service.
+ * Creates a new `jobs` row linked back to the recurring service and notifies the assigned tradie
+ * (or, if no tradie is assigned, notifies all saved tradies matching the trade).
+ *
+ * Returns the created job id so the caller can refetch.
+ */
+export async function requestQuoteForRecurringJob(
+  recurringJob: RecurringJob,
+  clientName: string,
+  savedMatchingTradies?: { id: string }[],
+): Promise<{ jobId: string }> {
+  const tradeName = recurringJob.trade_category.replace(/_/g, ' ');
+  const serviceLabel = recurringJob.service_subtype || tradeName;
+
+  const { data: insertedJob, error: insertError } = await supabase
+    .from('jobs')
+    .insert({
+      client_id: recurringJob.client_id,
+      title: `${serviceLabel} — Ongoing Service`,
+      description: `[${recurringJob.trade_category}] ${recurringJob.description}`,
+      status: 'pending',
+      location_address: recurringJob.location || null,
+      budget_type: recurringJob.agreed_price ? 'fixed_budget' : 'request_quote',
+      budget_amount: recurringJob.agreed_price || null,
+      is_emergency: false,
+      priority: 'normal',
+      is_delayed: false,
+      max_quotes: 5,
+      recurring_job_id: recurringJob.id,
+      tradie_id: recurringJob.tradie_id || null,
+    })
+    .select('id')
+    .single();
+
+  if (insertError || !insertedJob) {
+    throw new Error(insertError?.message || 'Failed to create quote request');
+  }
+
+  const jobId = insertedJob.id as string;
+
+  if (recurringJob.tradie_id) {
+    await supabase.from('notifications').insert({
+      user_id: recurringJob.tradie_id,
+      type: 'new_job',
+      title: 'New quote request',
+      message: `${clientName} sent you an ongoing ${tradeName} service — review and quote now`,
+      job_id: jobId,
+      metadata: { recurring_job_id: recurringJob.id },
+    });
+  } else if (savedMatchingTradies && savedMatchingTradies.length > 0) {
+    await supabase.from('notifications').insert(
+      savedMatchingTradies.map(t => ({
+        user_id: t.id,
+        type: 'new_job',
+        title: 'New quote request from a saved client',
+        message: `${clientName} is looking for a ${tradeName} — ongoing service`,
+        job_id: jobId,
+        metadata: { recurring_job_id: recurringJob.id },
+      })),
+    );
+  }
+
+  return { jobId };
+}
+
+/**
  * Pause a recurring job — hides it from active views but preserves sessions and agreements.
  * The service can be resumed later.
  */
@@ -954,6 +1090,15 @@ export async function pauseRecurringJob(id: string, pausedByRole?: 'client' | 't
     .eq('id', id);
 
   if (error) throw new Error(error.message);
+
+  // Cancel pending/scheduled sessions so auto-confirm doesn't complete them
+  try {
+    await supabase
+      .from('recurring_sessions')
+      .update({ status: 'skipped', reschedule_reason: 'Service paused', confirmation_deadline: null })
+      .eq('recurring_job_id', id)
+      .in('status', ['pending_confirmation', 'scheduled']);
+  } catch { /* Non-critical */ }
 
   // Notify the other party
   if (job) {
@@ -989,15 +1134,19 @@ export async function pauseRecurringJob(id: string, pausedByRole?: 'client' | 't
 export async function resumeRecurringJob(id: string, resumedByRole?: 'client' | 'tradie'): Promise<void> {
   const { data: job, error: fetchError } = await supabase
     .from('recurring_jobs')
-    .select('id, client_id, tradie_id, trade_category, service_subtype')
+    .select('id, client_id, tradie_id, trade_category, service_subtype, cancelled_at')
     .eq('id', id)
     .maybeSingle();
 
   if (fetchError) throw new Error(fetchError.message);
+  if (!job) throw new Error('Service not found');
+
+  // Only paused jobs can be resumed — cancelled jobs cannot
+  if (job.cancelled_at) throw new Error('This service has been cancelled and cannot be resumed');
 
   const { error } = await supabase
     .from('recurring_jobs')
-    .update({ is_active: true, cancelled_at: null })
+    .update({ is_active: true })
     .eq('id', id);
 
   if (error) throw new Error(error.message);
@@ -1052,53 +1201,108 @@ export async function cancelRecurringJob(id: string, cancelledByRole?: 'client' 
   // Fetch job details before cancelling (for notifications)
   const { data: job, error: fetchError } = await supabase
     .from('recurring_jobs')
-    .select('id, client_id, tradie_id, trade_category, service_subtype')
+    .select('id, client_id, tradie_id, trade_category, service_subtype, original_job_id')
     .eq('id', id)
     .maybeSingle();
 
   if (fetchError) throw new Error(fetchError.message);
 
-  // Deactivate and mark as cancelled
-  const { error } = await supabase
-    .from('recurring_jobs')
-    .update({ is_active: false, cancelled_at: new Date().toISOString() })
-    .eq('id', id);
+  const hadTradie = !!job?.tradie_id;
 
-  if (error) throw new Error(error.message);
+  if (!hadTradie) {
+    // ── No tradie assigned: delete all data completely ──
 
-  // Cancel any pending/scheduled sessions
-  try {
-    await supabase
-      .from('recurring_sessions')
-      .update({ status: 'skipped', reschedule_reason: 'Service cancelled', confirmation_deadline: null })
-      .eq('recurring_job_id', id)
-      .in('status', ['pending_confirmation', 'scheduled']);
-  } catch {
-    // Non-critical — sessions may not exist
-  }
-
-  // Cancel any non-completed jobs that were created from this recurring service
-  if (job?.client_id) {
+    // Delete all sessions for this recurring job
     try {
-      let query = supabase
-        .from('jobs')
-        .update({ status: 'cancelled' })
-        .eq('client_id', job.client_id)
-        .ilike('title', '%Recurring Service%')
-        .in('status', ['pending', 'open', 'accepted', 'funded', 'in_progress']);
+      await supabase
+        .from('recurring_sessions')
+        .delete()
+        .eq('recurring_job_id', id);
+    } catch { /* Non-critical */ }
 
-      if (job.tradie_id) {
-        query = query.eq('tradie_id', job.tradie_id);
-      }
+    // Delete service agreements for this client + trade (no tradie)
+    if (job?.client_id) {
+      try {
+        await supabase
+          .from('service_agreements')
+          .delete()
+          .eq('client_id', job.client_id)
+          .eq('trade_category', job.trade_category)
+          .is('tradie_id', null);
+      } catch { /* Non-critical */ }
 
-      await query;
-    } catch {
-      // Non-critical
+      // Also clean up agreements where tradie_id equals client_id (self-assigned fallback)
+      try {
+        await supabase
+          .from('service_agreements')
+          .delete()
+          .eq('client_id', job.client_id)
+          .eq('tradie_id', job.client_id)
+          .eq('trade_category', job.trade_category);
+      } catch { /* Non-critical */ }
     }
-  }
 
-  // Also end any linked service agreements
-  if (job?.client_id && job?.tradie_id) {
+    // Delete the original job record from the jobs table
+    if (job?.original_job_id) {
+      try {
+        await supabase
+          .from('jobs')
+          .delete()
+          .eq('id', job.original_job_id)
+          .in('status', ['pending', 'open']);
+      } catch { /* Non-critical */ }
+    }
+
+    // Delete any other pending jobs linked to this client + category
+    if (job?.client_id) {
+      try {
+        await supabase
+          .from('notifications')
+          .delete()
+          .eq('user_id', job.client_id)
+          .eq('job_id', job.original_job_id || '');
+      } catch { /* Non-critical */ }
+    }
+
+    // Delete the recurring job itself
+    const { error } = await supabase
+      .from('recurring_jobs')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw new Error(error.message);
+  } else {
+    // ── Tradie was assigned: keep records as history ──
+
+    // Deactivate and mark as cancelled
+    const { error } = await supabase
+      .from('recurring_jobs')
+      .update({ is_active: false, cancelled_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) throw new Error(error.message);
+
+    // Cancel any pending/scheduled sessions (keep completed ones)
+    try {
+      await supabase
+        .from('recurring_sessions')
+        .update({ status: 'skipped', reschedule_reason: 'Service cancelled', confirmation_deadline: null })
+        .eq('recurring_job_id', id)
+        .in('status', ['pending_confirmation', 'scheduled']);
+    } catch { /* Non-critical */ }
+
+    // Cancel only the specific job linked to this recurring service (not other one-off jobs)
+    if (job?.original_job_id) {
+      try {
+        await supabase
+          .from('jobs')
+          .update({ status: 'cancelled' })
+          .eq('id', job.original_job_id)
+          .in('status', ['pending', 'open', 'accepted', 'funded', 'in_progress']);
+      } catch { /* Non-critical */ }
+    }
+
+    // End linked service agreements
     try {
       await supabase
         .from('service_agreements')
@@ -1107,13 +1311,9 @@ export async function cancelRecurringJob(id: string, cancelledByRole?: 'client' 
         .eq('tradie_id', job.tradie_id)
         .eq('trade_category', job.trade_category)
         .eq('status', 'active');
-    } catch {
-      // Non-critical
-    }
-  }
+    } catch { /* Non-critical */ }
 
-  // Notify the other party
-  if (job) {
+    // Notify the other party
     const tradeLabel = (job.service_subtype || job.trade_category || 'service')
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (c: string) => c.toUpperCase());
@@ -1127,7 +1327,6 @@ export async function cancelRecurringJob(id: string, cancelledByRole?: 'client' 
           { recurring_job_id: id },
         );
       } else if (job.client_id) {
-        // Tradie cancelled or role unknown — notify client
         await insertNotification(
           job.client_id,
           'recurring_cancelled',
@@ -1135,9 +1334,7 @@ export async function cancelRecurringJob(id: string, cancelledByRole?: 'client' 
           { recurring_job_id: id },
         );
       }
-    } catch {
-      // Non-critical
-    }
+    } catch { /* Non-critical */ }
   }
 }
 
@@ -1517,6 +1714,9 @@ export async function getUpcomingSessions(
   recurringJobId: string,
 ): Promise<RecurringSession[]> {
   const now = new Date();
+  // Include recent past sessions (7 days) so completed visits are visible
+  const lookback = new Date(now);
+  lookback.setDate(lookback.getDate() - 7);
   const threeMonthsLater = new Date(now);
   threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
 
@@ -1524,7 +1724,7 @@ export async function getUpcomingSessions(
     .from('recurring_sessions')
     .select('*')
     .eq('recurring_job_id', recurringJobId)
-    .gte('scheduled_date', now.toISOString().split('T')[0])
+    .gte('scheduled_date', lookback.toISOString().split('T')[0])
     .lte('scheduled_date', threeMonthsLater.toISOString().split('T')[0])
     .order('scheduled_date', { ascending: true });
 
@@ -1561,6 +1761,14 @@ export async function rescheduleSession(
     .eq('id', sessionId);
 
   if (error) throw new Error(error.message);
+
+  // Unblock the original time slot so tradie is available again
+  try {
+    const { unblockTimeSlot } = await import('./availability');
+    await unblockTimeSlot(sessionId);
+  } catch {
+    // Non-critical
+  }
 
   // Notify the other party
   if (session?.recurring_job) {
@@ -1612,26 +1820,48 @@ export async function skipSession(
 
   if (error) throw new Error(error.message);
 
-  // Notify the other party
+  // Unblock the time slot so tradie is available again
+  try {
+    const { unblockTimeSlot } = await import('./availability');
+    await unblockTimeSlot(sessionId);
+  } catch {
+    // Non-critical
+  }
+
+  // Notify both parties
   if (session?.recurring_job) {
     const job = session.recurring_job as { client_id: string; tradie_id: string | null; trade_category: string };
-    const recipientId = by === 'client' ? job.tradie_id : job.client_id;
-    if (recipientId) {
-      const tradeLabel = job.trade_category.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-      const dateLabel = session.scheduled_date
-        ? new Date(session.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })
-        : 'upcoming';
-      const byLabel = by === 'client' ? 'homeowner' : 'tradie';
-      try {
+    const tradeLabel = job.trade_category.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    const dateLabel = session.scheduled_date
+      ? new Date(session.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })
+      : 'upcoming';
+    const metadata = { session_id: sessionId, recurring_job_id: session.recurring_job_id, scheduled_date: session.scheduled_date };
+
+    try {
+      // Notify the other party
+      const recipientId = by === 'client' ? job.tradie_id : job.client_id;
+      if (recipientId) {
+        const byLabel = by === 'client' ? 'homeowner' : 'tradie';
         await insertNotification(
           recipientId,
           'session_skipped',
           `Your ${tradeLabel} session on ${dateLabel} has been skipped by the ${byLabel}. Reason: ${reason}`,
-          { session_id: sessionId, recurring_job_id: session.recurring_job_id, scheduled_date: session.scheduled_date },
+          metadata,
         );
-      } catch {
-        // Non-critical
       }
+
+      // Confirm to the skipping party
+      const selfId = by === 'client' ? job.client_id : job.tradie_id;
+      if (selfId) {
+        await insertNotification(
+          selfId,
+          'session_skipped_confirmed',
+          `You skipped the ${tradeLabel} session on ${dateLabel}. Reason: ${reason}`,
+          metadata,
+        );
+      }
+    } catch {
+      // Non-critical
     }
   }
 }
@@ -1728,22 +1958,14 @@ export async function completeSession(sessionId: string): Promise<void> {
   // 1. Fetch session + parent recurring job details
   const { data: session, error: fetchError } = await supabase
     .from('recurring_sessions')
-    .select('id, recurring_job_id, scheduled_date, recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(id, client_id, tradie_id, trade_category, service_subtype, frequency_months, next_due_date, is_active, cancelled_at, times_completed, preferred_time, agreed_price, auto_accept)')
+    .select('id, recurring_job_id, scheduled_date, recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(id, client_id, tradie_id, trade_category, service_subtype, frequency_months, next_due_date, is_active, cancelled_at, times_completed, preferred_time, agreed_price, auto_accept, end_date)')
     .eq('id', sessionId)
     .maybeSingle();
 
   if (fetchError) throw new Error(fetchError.message);
   if (!session) throw new Error('Session not found');
 
-  // 2. Mark session as completed
-  const { error } = await supabase
-    .from('recurring_sessions')
-    .update({ status: 'completed' })
-    .eq('id', sessionId);
-
-  if (error) throw new Error(error.message);
-
-  // 3. Update parent recurring_job
+  // 2. Check parent job is active before completing
   const job = session.recurring_job as {
     id: string;
     client_id: string;
@@ -1758,9 +1980,19 @@ export async function completeSession(sessionId: string): Promise<void> {
     preferred_time: string | null;
     agreed_price: number | null;
     auto_accept: boolean;
+    end_date: string | null;
   } | null;
 
-  if (!job || !job.is_active || job.cancelled_at) return;
+  if (!job) throw new Error('Recurring job not found');
+  if (!job.is_active || job.cancelled_at) throw new Error('This service is paused or cancelled');
+
+  // 3. Mark session as completed
+  const { error } = await supabase
+    .from('recurring_sessions')
+    .update({ status: 'completed' })
+    .eq('id', sessionId);
+
+  if (error) throw new Error(error.message);
 
   const now = new Date().toISOString();
 
@@ -1777,9 +2009,15 @@ export async function completeSession(sessionId: string): Promise<void> {
   }
 
   // 4. Generate the next session immediately (dedup: skip if already exists)
+  // Skip if the job has an end_date and the next session would be past it
   const completedDate = session.scheduled_date;
   const nextDueDate = calculateNextDueDate(completedDate, job.frequency_months);
   const nextDateStr = nextDueDate.toISOString().split('T')[0];
+
+  if (job.end_date && nextDateStr > job.end_date) {
+    // Job has naturally ended — no more sessions to generate
+    return;
+  }
 
   try {
     const { data: existingSession } = await supabase
@@ -1901,22 +2139,26 @@ export async function confirmSession(sessionId: string): Promise<void> {
   // Fetch session + job for notifications
   const { data: session, error: fetchError } = await supabase
     .from('recurring_sessions')
-    .select('id, recurring_job_id, scheduled_date, recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(client_id, tradie_id, trade_category, service_subtype, preferred_time, agreed_price)')
+    .select('id, recurring_job_id, scheduled_date, recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(client_id, tradie_id, trade_category, service_subtype, preferred_time, agreed_price, original_job_id)')
     .eq('id', sessionId)
     .maybeSingle();
 
   if (fetchError) throw new Error(fetchError.message);
   if (!session) throw new Error('Session not found');
 
-  const { error } = await supabase
+  // Only confirm if still pending — prevents race condition with double confirmation
+  const { data: updated, error } = await supabase
     .from('recurring_sessions')
     .update({ status: 'scheduled', confirmation_deadline: null })
-    .eq('id', sessionId);
+    .eq('id', sessionId)
+    .eq('status', 'pending_confirmation')
+    .select('id');
 
   if (error) throw new Error(error.message);
+  if (!updated || updated.length === 0) throw new Error('Session has already been confirmed or is no longer pending');
 
   // Block tradie availability now that session is confirmed
-  const job = session.recurring_job as { client_id: string; tradie_id: string | null; trade_category: string; service_subtype: string | null; preferred_time: string | null; agreed_price: number | null } | null;
+  const job = session.recurring_job as { client_id: string; tradie_id: string | null; trade_category: string; service_subtype: string | null; preferred_time: string | null; agreed_price: number | null; original_job_id: string | null } | null;
 
   // If the recurring job has no tradie assigned yet, assign the confirming tradie
   if (job && !job.tradie_id) {
@@ -1927,7 +2169,28 @@ export async function confirmSession(sessionId: string): Promise<void> {
         .update({ tradie_id: user.id })
         .eq('id', session.recurring_job_id);
       job.tradie_id = user.id;
+
+      // Also update the linked job record so client sees "Tradie Assigned"
+      if (job.original_job_id) {
+        try {
+          await supabase
+            .from('jobs')
+            .update({ tradie_id: user.id, quoting_status: 'awarded', status: 'accepted' })
+            .eq('id', job.original_job_id);
+        } catch { /* Non-critical */ }
+      }
     }
+  }
+
+  // Update linked job status to accepted when tradie confirms the session
+  if (job?.original_job_id && job.tradie_id) {
+    try {
+      await supabase
+        .from('jobs')
+        .update({ status: 'accepted' })
+        .eq('id', job.original_job_id)
+        .eq('status', 'pending');
+    } catch { /* Non-critical */ }
   }
 
   if (job?.tradie_id) {
@@ -2050,8 +2313,11 @@ export async function acceptReschedule(sessionId: string): Promise<void> {
 export async function getTradieUpcomingSessions(
   tradieId: string,
   limit = 5,
-): Promise<(RecurringSession & { recurring_job?: { trade_category: string; service_subtype: string | null; description: string; client_id: string; preferred_time: string | null; agreed_price: number | null; auto_accept: boolean | null; location: string | null; frequency_months: number; billing_cycle: string | null; last_invoiced_at: string | null; client: { full_name: string } | null } })[]> {
-  const today = new Date().toISOString().split('T')[0];
+): Promise<(RecurringSession & { recurring_job?: { trade_category: string; service_subtype: string | null; description: string; client_id: string; preferred_time: string | null; agreed_price: number | null; auto_accept: boolean | null; location: string | null; frequency_months: number; billing_cycle: string | null; last_invoiced_at: string | null; client: { full_name: string; phone?: string | null; email?: string | null } | null } })[]> {
+  // Include recent past sessions (7 days) so overdue visits are visible
+  const lookback = new Date();
+  lookback.setDate(lookback.getDate() - 7);
+  const lookbackDate = lookback.toISOString().split('T')[0];
 
   const { data, error } = await supabase
     .from('recurring_sessions')
@@ -2069,14 +2335,15 @@ export async function getTradieUpcomingSessions(
         frequency_months,
         billing_cycle,
         last_invoiced_at,
+        supplies,
         is_active,
         cancelled_at,
         tradie_id,
-        client:profiles!recurring_jobs_client_id_fkey(full_name)
+        client:profiles!recurring_jobs_client_id_fkey(full_name, phone, email)
       )
     `)
-    .in('status', ['pending_confirmation', 'scheduled'])
-    .gte('scheduled_date', today)
+    .in('status', ['pending_confirmation', 'scheduled', 'awaiting_completion'])
+    .gte('scheduled_date', lookbackDate)
     .order('scheduled_date', { ascending: true })
     .limit(limit * 3); // fetch extra, filter client-side
 
@@ -2088,7 +2355,7 @@ export async function getTradieUpcomingSessions(
     return job?.tradie_id === tradieId;
   });
 
-  return filtered.slice(0, limit) as (RecurringSession & { recurring_job?: { trade_category: string; service_subtype: string | null; description: string; client_id: string; preferred_time: string | null; agreed_price: number | null; auto_accept: boolean | null; location: string | null; frequency_months: number; billing_cycle: string | null; last_invoiced_at: string | null; client: { full_name: string } | null } })[];
+  return filtered.slice(0, limit) as (RecurringSession & { recurring_job?: { trade_category: string; service_subtype: string | null; description: string; client_id: string; preferred_time: string | null; agreed_price: number | null; auto_accept: boolean | null; location: string | null; frequency_months: number; billing_cycle: string | null; last_invoiced_at: string | null; client: { full_name: string; phone?: string | null; email?: string | null } | null } })[];
 }
 
 // ---------------------------------------------------------------------------
@@ -2106,7 +2373,7 @@ export async function generateFutureSessions(
 ): Promise<number> {
   const { data: job, error: jobErr } = await supabase
     .from('recurring_jobs')
-    .select('id, frequency_months, next_due_date, is_active, cancelled_at, tradie_id, preferred_time')
+    .select('id, frequency_months, next_due_date, is_active, cancelled_at, tradie_id, preferred_time, end_date')
     .eq('id', recurringJobId)
     .maybeSingle();
 
@@ -2138,6 +2405,9 @@ export async function generateFutureSessions(
   for (let i = 0; i < count; i++) {
     const nextDate = calculateNextDueDate(cursor, job.frequency_months);
     const nextDateStr = nextDate.toISOString().split('T')[0];
+
+    // Stop generating if past the job's end date
+    if (job.end_date && nextDateStr > job.end_date) break;
 
     if (!existingDates.has(nextDateStr)) {
       inserts.push({
@@ -2174,18 +2444,37 @@ export async function insertNotification(
   type: string,
   message: string,
   metadata?: Record<string, unknown>,
+  title?: string,
 ): Promise<void> {
   const { error } = await supabase
     .from('notifications')
     .insert({
       user_id: userId,
       type,
+      title: title || getDefaultTitle(type),
       message,
       metadata: metadata ?? {},
       read: false,
     });
 
   if (error) throw new Error(error.message);
+}
+
+function getDefaultTitle(type: string): string {
+  switch (type) {
+    case 'recurring_job_auto_confirmed': return 'Next Visit Confirmed';
+    case 'recurring_job_confirmation_required': return 'Confirm Your Next Visit';
+    case 'session_completed': return 'Visit Completed';
+    case 'session_overdue': return 'Visit Overdue';
+    case 'session_rescheduled': return 'Visit Rescheduled';
+    case 'session_skipped': return 'Visit Skipped';
+    case 'extra_session_added': return 'Extra Visit Added';
+    case 'recurring_paused': return 'Service Paused';
+    case 'recurring_cancelled': return 'Service Cancelled';
+    case 'recurring_resumed': return 'Service Resumed';
+    case 'supply_restock_needed': return 'Supply Restock Needed';
+    default: return 'Service Update';
+  }
 }
 
 // ---------------------------------------------------------------------------

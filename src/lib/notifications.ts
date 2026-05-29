@@ -68,6 +68,37 @@ function extractCategory(description: string): string {
   return match ? match[1] : 'General';
 }
 
+const CATEGORY_TO_PROFESSION: Record<string, string> = {
+  cleaning: 'Cleaner', cleaner: 'Cleaner',
+  plumbing: 'Plumber', plumber: 'Plumber',
+  electrician: 'Electrician', electrical: 'Electrician',
+  builder: 'Builder', building: 'Builder',
+  painter: 'Painter', painting: 'Painter',
+  landscaper: 'Landscaper', landscaping: 'Landscaper', gardener: 'Landscaper', gardening: 'Landscaper',
+  carpenter: 'Carpenter', carpentry: 'Carpenter',
+  roofer: 'Roofer', roofing: 'Roofer',
+  concreter: 'Concreter', concreting: 'Concreter',
+  bricklayer: 'Bricklayer', bricklaying: 'Bricklayer',
+  fencer: 'Fencer', fencing: 'Fencer',
+  tiler: 'Tiler', tiling: 'Tiler',
+  locksmith: 'Locksmith',
+  hvac: 'HVAC', 'air conditioning': 'HVAC',
+  'pest control': 'Pest Control', pest: 'Pest Control',
+  handyman: 'Handyman',
+  glazier: 'Glazier', glazing: 'Glazier',
+  plasterer: 'Plasterer', plastering: 'Plasterer',
+  renderer: 'Renderer', rendering: 'Renderer',
+};
+
+function categoryToProfession(category: string): string {
+  const lower = category.toLowerCase().replace(/_/g, ' ');
+  if (CATEGORY_TO_PROFESSION[lower]) return CATEGORY_TO_PROFESSION[lower];
+  for (const [key, value] of Object.entries(CATEGORY_TO_PROFESSION)) {
+    if (lower.includes(key)) return value;
+  }
+  return category.replace(/\b\w/g, c => c.toUpperCase());
+}
+
 function extractSuburb(address: string | null): string {
   if (!address) return 'your area';
   const parts = address.split(',').map((p) => p.trim());
@@ -122,14 +153,16 @@ export function simulateSmsAlert(job: Job, tradieNames: string[]) {
  */
 export async function notifyTradiesForNewLead(job: Job) {
   try {
-    const category = extractCategory(job.description);
+    const rawCategory = extractCategory(job.description);
+    const profession = categoryToProfession(rawCategory);
+    const displayCategory = profession;
     const suburb = extractSuburb(job.location_address);
 
-    // Find tradies whose trade_category matches this job
+    // Find tradies whose trade_category matches (try profession name and raw category)
     const { data: tradies, error } = await supabase
       .from('tradie_details')
       .select('profile_id, trade_category')
-      .ilike('trade_category', category);
+      .or(`trade_category.ilike.${profession},trade_category.ilike.${rawCategory},trade_category.ilike.%${rawCategory}%`);
 
     if (error || !tradies || tradies.length === 0) {
       // Fallback: notify all tradies if no category match or query fails
@@ -140,19 +173,27 @@ export async function notifyTradiesForNewLead(job: Job) {
 
       if (!allTradies || allTradies.length === 0) return { notified: 0 };
 
-      const promises = allTradies.map((t) =>
+      const fallbackIds = allTradies.map((t) => t.id).filter((id) => id !== job.client_id);
+      await supabase
+        .from('lead_impressions')
+        .upsert(
+          fallbackIds.map((tradieId) => ({ job_id: job.id, tradie_id: tradieId })),
+          { onConflict: 'job_id,tradie_id', ignoreDuplicates: true },
+        );
+
+      const promises = fallbackIds.map((tradieId) =>
         sendNotification({
           type: NOTIFICATION_TYPES.NEW_LEAD,
-          userId: t.id,
-          title: `New ${category} Lead`,
-          message: `A new ${category} job has been posted in ${suburb}. Submit your quote now!`,
+          userId: tradieId,
+          title: `New ${displayCategory} Lead`,
+          message: `A new ${displayCategory} job has been posted in ${suburb}. Submit your quote now!`,
           link: '/work',
           jobId: job.id,
-          metadata: { category, suburb, job_id: job.id },
+          metadata: { category: rawCategory, suburb, job_id: job.id },
         }).catch(() => null)
       );
       await Promise.allSettled(promises);
-      return { notified: allTradies.length };
+      return { notified: fallbackIds.length };
     }
 
     // Filter out the client who posted the job
@@ -162,15 +203,24 @@ export async function notifyTradiesForNewLead(job: Job) {
 
     if (tradieIds.length === 0) return { notified: 0 };
 
+    // Record impressions so the nudge cron can age them. ON CONFLICT DO NOTHING
+    // because re-broadcasting must not reset the original shown_at clock.
+    await supabase
+      .from('lead_impressions')
+      .upsert(
+        tradieIds.map((tradieId) => ({ job_id: job.id, tradie_id: tradieId })),
+        { onConflict: 'job_id,tradie_id', ignoreDuplicates: true },
+      );
+
     const promises = tradieIds.map((tradieId) =>
       sendNotification({
         type: NOTIFICATION_TYPES.NEW_LEAD,
         userId: tradieId,
-        title: `New ${category} Lead`,
-        message: `A new ${category} job has been posted in ${suburb}. Submit your quote now!`,
+        title: `New ${displayCategory} Lead`,
+        message: `A new ${displayCategory} job has been posted in ${suburb}. Submit your quote now!`,
         link: '/work',
         jobId: job.id,
-        metadata: { category, suburb, job_id: job.id },
+        metadata: { category: rawCategory, suburb, job_id: job.id },
       }).catch(() => null)
     );
     await Promise.allSettled(promises);
@@ -188,6 +238,17 @@ export async function notifyTradiesForUrgentJob(job: Job) {
     .eq('role', 'tradie');
 
   if (!tradies || tradies.length === 0) return { push: 0, sms: 0 };
+
+  // Record impressions so the nudge cron can age the lead and escalate if no quote.
+  const recipientIds = tradies.map((t: { id: string }) => t.id).filter((id) => id !== job.client_id);
+  if (recipientIds.length > 0) {
+    await supabase
+      .from('lead_impressions')
+      .upsert(
+        recipientIds.map((tradieId) => ({ job_id: job.id, tradie_id: tradieId })),
+        { onConflict: 'job_id,tradie_id', ignoreDuplicates: true },
+      );
+  }
 
   let pushCount = 0;
   let smsCount = 0;

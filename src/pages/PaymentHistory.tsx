@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   DollarSign,
@@ -22,13 +22,14 @@ import {
   FileText,
   Wallet,
   Star,
+  Gift,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/useToast';
 import { friendlyError } from '../lib/utils';
 import { ListSkeleton } from '../components/SkeletonLoader';
-import { releaseEscrow, processRefund, createJobPaymentCheckout, verifyPayment } from '../lib/stripePayments';
+import { releaseEscrow, processRefund, createJobPaymentCheckout, verifyPayment, payPriceIncrease, requestPriceReduction } from '../lib/stripePayments';
 import { callEdgeFunction } from '../lib/edgeFn';
 import DashboardLayout from '../components/DashboardLayout';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
@@ -96,6 +97,7 @@ export default function PaymentHistory() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasLoadedOnceRef = useRef(false);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -108,16 +110,31 @@ export default function PaymentHistory() {
   const isTradie = profile?.role === 'tradie';
   const [releasingId, setReleasingId] = useState<string | null>(null);
 
-  const handleInlineRelease = async (e: React.MouseEvent, paymentId: string) => {
+  const friendlyReleaseError = (err: unknown): string => {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('insufficient') || msg.includes('Insufficient')) {
+      return 'Payment is being processed. Please try again in a few minutes.';
+    }
+    if (msg.includes('pending') && msg.includes('increase')) {
+      return 'A price adjustment needs to be paid before this payment can be released.';
+    }
+    return 'Unable to release payment. Please try again later.';
+  };
+
+  const handleInlineRelease = async (e: React.MouseEvent, paymentId: string, tradieName?: string, jobId?: string) => {
     e.stopPropagation();
     setReleasingId(paymentId);
     try {
       await releaseEscrow(paymentId);
-      showToast('Payment released to tradie!');
+      showToast(`Payment released to ${tradieName || 'your tradie'}!`);
       fetchPayments();
       fetchSummary();
+      // Navigate to review page so client can leave a review
+      if (jobId) {
+        navigate(`/review/${jobId}`);
+      }
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to release payment', true);
+      showToast(friendlyReleaseError(err), true);
     } finally {
       setReleasingId(null);
     }
@@ -134,7 +151,7 @@ export default function PaymentHistory() {
       // Outstanding first
       const { data: outstanding } = await supabase
         .from('recurring_invoices')
-        .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, agreed_price)')
+        .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, service_subtype, agreed_price, description, location), tradie:profiles!recurring_invoices_tradie_id_fkey(full_name, business_name)')
         .eq('homeowner_id', user.id)
         .in('status', ['sent', 'overdue', 'draft'])
         .order('created_at', { ascending: false });
@@ -142,7 +159,7 @@ export default function PaymentHistory() {
       // Then paid/cancelled
       const { data: completed } = await supabase
         .from('recurring_invoices')
-        .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, agreed_price)')
+        .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, service_subtype, agreed_price, description, location), tradie:profiles!recurring_invoices_tradie_id_fkey(full_name, business_name)')
         .eq('homeowner_id', user.id)
         .in('status', ['paid', 'cancelled'])
         .order('paid_at', { ascending: false });
@@ -199,10 +216,17 @@ export default function PaymentHistory() {
     }
   }, []);
 
-  // Auto-verify any pending payments that have a Stripe checkout session
-  // This catches cases where the webhook failed and the user navigated away before verification
+  // Auto-verify any pending payments that have a Stripe checkout session.
+  // Only triggers if the user is returning from a Stripe checkout (URL has ?payment=success
+  // or ?invoice_paid=true) — otherwise we'd needlessly hammer verify-payment on every mount,
+  // each call refreshes the auth token and cascades into UI re-renders.
   useEffect(() => {
     if (!user || isTradie) return;
+    const isReturnFromStripe =
+      searchParams.get('payment') === 'success' ||
+      searchParams.get('invoice_paid') === 'true';
+    if (!isReturnFromStripe) return;
+
     (async () => {
       try {
         const { data: pendingPayments } = await supabase
@@ -210,7 +234,8 @@ export default function PaymentHistory() {
           .select('id, status, stripe_checkout_session_id')
           .eq('profile_id', user.id)
           .eq('status', 'pending')
-          .not('stripe_checkout_session_id', 'is', null);
+          .not('stripe_checkout_session_id', 'is', null)
+          .limit(5); // cap to avoid token-refresh storms when many pending rows exist
 
         if (pendingPayments && pendingPayments.length > 0) {
           let anyUpdated = false;
@@ -238,7 +263,9 @@ export default function PaymentHistory() {
 
   const fetchPayments = useCallback(async () => {
     if (!user) return;
-    setLoading(true);
+    // Only show the skeleton on the first load — subsequent refetches keep the existing
+    // table visible to avoid flickering when auth refreshes or auto-verify triggers a refetch.
+    if (!hasLoadedOnceRef.current) setLoading(true);
 
     try {
       let query = supabase
@@ -257,12 +284,71 @@ export default function PaymentHistory() {
       if (typeFilter !== '') query = query.eq('payment_type', typeFilter);
 
       const { data, count } = await query;
-      setPayments((data as unknown as PaymentRow[]) || []);
-      setTotalCount(count || 0);
+      const jobPayments = (data as unknown as PaymentRow[]) || [];
+
+      // Merge recurring invoice payments into the timeline (client only)
+      let merged = jobPayments;
+      let extraCount = 0;
+      if (!isTradie && user) {
+        try {
+          let invQuery = supabase
+            .from('recurring_invoices')
+            .select('id, total, status, created_at, paid_at, billing_period_start, billing_period_end, regular_sessions_count, extras_total, supplies_total, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, service_subtype, agreed_price)')
+            .eq('homeowner_id', user.id)
+            .in('status', ['paid', 'sent', 'overdue']);
+
+          if (statusFilter !== 'all') {
+            const mapped = statusFilter === 'completed' ? 'paid' : statusFilter;
+            invQuery = invQuery.eq('status', mapped);
+          }
+          if (dateFrom) invQuery = invQuery.gte('created_at', new Date(dateFrom).toISOString());
+          if (dateTo) invQuery = invQuery.lte('created_at', new Date(dateTo + 'T23:59:59').toISOString());
+
+          // Skip if filtering by a job-only type
+          const skipInvoices = typeFilter !== '' && typeFilter !== 'service_invoice';
+
+          if (!skipInvoices) {
+            const { data: invData } = await invQuery;
+            const invoiceRows: PaymentRow[] = (invData || []).map((inv: Record<string, unknown>) => {
+              const job = inv.recurring_job as { trade_category?: string; service_subtype?: string | null } | null;
+              const label = (job?.service_subtype || job?.trade_category || 'Service')
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, (c: string) => c.toUpperCase());
+              const sessions = inv.regular_sessions_count as number || 0;
+              const period = `${new Date((inv.billing_period_start as string) + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} – ${new Date((inv.billing_period_end as string) + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`;
+
+              return {
+                id: `inv_${inv.id}`,
+                profile_id: user.id,
+                job_id: null,
+                payment_type: 'service_invoice',
+                amount: Math.round(Number(inv.total) * 100),
+                processing_fee: null,
+                currency: 'aud',
+                status: inv.status === 'paid' ? 'completed' : 'pending',
+                stripe_payment_intent_id: null,
+                stripe_checkout_session_id: null,
+                metadata: null,
+                created_at: (inv.paid_at || inv.created_at) as string,
+                completed_at: (inv.paid_at as string) || null,
+                jobs: { description: `[${label}] Service Invoice — ${sessions} session${sessions !== 1 ? 's' : ''} (${period})` },
+              };
+            });
+            extraCount = invoiceRows.length;
+            merged = [...jobPayments, ...invoiceRows].sort((a, b) =>
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
+          }
+        } catch { /* ignore */ }
+      }
+
+      setPayments(merged);
+      setTotalCount((count || 0) + extraCount);
     } catch (err) {
       console.error('fetchPayments error:', err);
     }
     setLoading(false);
+    hasLoadedOnceRef.current = true;
   }, [user, isTradie, page, statusFilter, dateFrom, dateTo, typeFilter]);
 
   useEffect(() => {
@@ -288,10 +374,33 @@ export default function PaymentHistory() {
 
       const { data } = await query;
       const rows = data || [];
+
+      let recurringPaidTotal = 0;
+      let recurringPaidCount = 0;
+      let recurringPendingTotal = 0;
+      // Include recurring invoice totals in summary
+      if (!isTradie && user) {
+        try {
+          const { data: paidInv } = await supabase
+            .from('recurring_invoices')
+            .select('total, status')
+            .eq('homeowner_id', user.id);
+          for (const inv of (paidInv || [])) {
+            const amount = Number(inv.total) * 100; // convert to cents
+            if (inv.status === 'paid') {
+              recurringPaidTotal += amount;
+              recurringPaidCount++;
+            } else if (inv.status === 'sent' || inv.status === 'overdue') {
+              recurringPendingTotal += amount;
+            }
+          }
+        } catch { /* ignore */ }
+      }
+
       setSummaryStats({
-        totalAmount: rows.filter(p => p.status === 'completed').reduce((s, p) => s + p.amount, 0),
-        pendingAmount: rows.filter(p => p.status === 'pending').reduce((s, p) => s + p.amount, 0),
-        completedCount: rows.filter(p => p.status === 'completed').length,
+        totalAmount: rows.filter(p => p.status === 'completed').reduce((s, p) => s + p.amount, 0) + recurringPaidTotal,
+        pendingAmount: rows.filter(p => p.status === 'pending').reduce((s, p) => s + p.amount, 0) + recurringPendingTotal,
+        completedCount: rows.filter(p => p.status === 'completed').length + recurringPaidCount,
         refundedAmount: rows.filter(p => p.status === 'refunded').reduce((s, p) => s + p.amount, 0),
       });
     } catch (err) {
@@ -351,8 +460,9 @@ export default function PaymentHistory() {
 
   const handleExportReceiptPDF = (payment: PaymentRow) => {
     const invoiceNum = `INV-${payment.id.slice(0, 8).toUpperCase()}`;
-    const gstAmount = Math.round(payment.amount / 11);
-    const exGst = payment.amount - gstAmount;
+    const exGst = payment.amount;
+    const pdfStoredGst = (payment.metadata as Record<string, unknown>)?.gst;
+    const gstAmount = pdfStoredGst != null ? Number(pdfStoredGst) : Math.round(exGst * 0.1);
     const fee = payment.processing_fee || 0;
     const jobDesc = payment.jobs?.description ? cleanDescription(payment.jobs.description) : 'Service payment';
     const jobCategory = payment.jobs?.description ? getCategory(payment.jobs.description) : '';
@@ -406,10 +516,10 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 <table>
   <thead><tr><th>Description</th><th>Amount</th></tr></thead>
   <tbody>
-    <tr><td>Subtotal (ex. GST)</td><td>${formatCurrency(exGst)}</td></tr>
-    <tr><td>GST (10%)</td><td>${formatCurrency(gstAmount)}</td></tr>
+    <tr><td>${gstAmount > 0 ? 'Subtotal (ex. GST)' : 'Job Amount'}</td><td>${formatCurrency(exGst)}</td></tr>
+    ${gstAmount > 0 ? `<tr><td>GST (10%)</td><td>${formatCurrency(gstAmount)}</td></tr>` : ''}
     ${fee > 0 ? `<tr><td>Processing Fee</td><td>${formatCurrency(fee)}</td></tr>` : ''}
-    <tr class="total-row"><td>Total (inc. GST)</td><td>${formatCurrency(payment.amount)}</td></tr>
+    <tr class="total-row"><td>${gstAmount > 0 ? 'Total (inc. GST)' : 'Total'}</td><td>${formatCurrency(exGst + gstAmount + fee)}</td></tr>
   </tbody>
 </table>
 <div class="details-grid">
@@ -431,12 +541,64 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const hasActiveFilters = statusFilter !== 'all' || dateFrom || dateTo || typeFilter;
 
-  // Group payments by month
+  // Identify client-side payments that still need action — either escrow waiting
+  // to be released, or a pending price increase to pay before release. These
+  // get pulled out of the month sections and pinned to the top.
+  const needsActionFn = useMemo(() => {
+    return (p: PaymentRow) => {
+      if (isTradie) return false;
+      if (p.payment_type === 'bonus') return false;
+      if (p.status !== 'completed') return false;
+      if (!p.stripe_payment_intent_id) return false;
+      const meta = p.metadata as Record<string, unknown> | null;
+      if (meta?.transfer_id) return false; // already released
+      return true; // either Awaiting Release or has pending_increase
+    };
+  }, [isTradie]);
+
+  // Group payments into three tiers, in order:
+  //   1. "Action needed — release these"  → completed escrow waiting for client release
+  //   2. "Pending"                        → status='pending' (BECS in flight, checkout open, etc.)
+  //   3. Month groups                     → everything settled, newest month first
+  // Within tier 1 we sort oldest-first (closest to the 48h auto-release deadline);
+  // within Pending we sort newest-first; month groups stay date-ordered.
   const monthGroups = useMemo(() => {
     const groups: { key: string; label: string; payments: PaymentRow[]; total: number }[] = [];
-    const map = new Map<string, PaymentRow[]>();
 
+    const actionPayments = payments
+      .filter(needsActionFn)
+      .slice()
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    if (actionPayments.length > 0) {
+      const total = actionPayments.reduce((s, p) => s + p.amount, 0);
+      groups.push({
+        key: '__action_needed__',
+        label: 'Action needed — release these',
+        payments: actionPayments,
+        total,
+      });
+    }
+
+    const pendingPayments = payments
+      .filter(p => !needsActionFn(p) && p.status === 'pending')
+      .slice()
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    if (pendingPayments.length > 0) {
+      const total = pendingPayments.reduce((s, p) => s + p.amount, 0);
+      groups.push({
+        key: '__pending__',
+        label: 'Pending — in progress',
+        payments: pendingPayments,
+        total,
+      });
+    }
+
+    const map = new Map<string, PaymentRow[]>();
     for (const p of payments) {
+      if (needsActionFn(p)) continue; // already in Action needed
+      if (p.status === 'pending') continue; // already in Pending
       const d = new Date(p.created_at);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       if (!map.has(key)) map.set(key, []);
@@ -451,7 +613,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     }
 
     return groups;
-  }, [payments]);
+  }, [payments, needsActionFn]);
 
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
 
@@ -653,6 +815,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     className="px-3 py-2 border border-surface-300 rounded-lg text-sm text-navy-700 bg-white focus:ring-2 focus:ring-primary-400 focus:border-primary-400">
                     <option value="">All Types</option>
                     <option value="job_payment">Job Payment</option>
+                    {!isTradie && <option value="service_invoice">Service Invoice</option>}
+                    <option value="bonus">Extra Payment</option>
                     <option value="subscription">Subscription</option>
                     <option value="lead_unlock">Lead Unlock</option>
                     <option value="job_access">Job Access</option>
@@ -683,23 +847,65 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             </div>
           ) : (
             <>
-              {/* Grouped by month */}
+              {/* Column headings — desktop only. Widths match the data rows below.
+                  pl-11 on Job pushes the label past the row icon (w-8 + gap-3) so it
+                  sits over the description text rather than the icon column. */}
+              <div className="hidden md:flex items-center w-full px-5 py-2.5 bg-surface-100 border-b border-surface-200 text-xs font-semibold text-navy-400 uppercase tracking-wider">
+                <div className="w-32">Date</div>
+                <div className="flex-1 pl-11">Job</div>
+                <div className="text-right w-28">Payment</div>
+                <div className="text-center w-72">Update</div>
+                <div className="w-24" aria-hidden="true" />
+              </div>
+
+              {/* Grouped: Action needed → Pending → month history */}
               {monthGroups.map((group) => {
                 const isCollapsed = collapsedMonths.has(group.key);
+                const isActionNeeded = group.key === '__action_needed__';
+                const isPending = group.key === '__pending__';
+                const headerBg = isActionNeeded
+                  ? 'bg-amber-50 border-amber-200 hover:bg-amber-100'
+                  : isPending
+                    ? 'bg-secondary-50 border-secondary-200 hover:bg-secondary-100'
+                    : 'bg-surface-50 border-surface-200 hover:bg-surface-100';
+                const headerText = isActionNeeded
+                  ? 'text-amber-800'
+                  : isPending
+                    ? 'text-secondary-800'
+                    : 'text-navy-800';
+                const subText = isActionNeeded
+                  ? 'text-amber-700 font-medium'
+                  : isPending
+                    ? 'text-secondary-700 font-medium'
+                    : 'text-navy-300';
+                const chevronText = isActionNeeded
+                  ? 'text-amber-700'
+                  : isPending
+                    ? 'text-secondary-700'
+                    : 'text-navy-400';
+                const totalText = isActionNeeded
+                  ? 'text-amber-800'
+                  : isPending
+                    ? 'text-secondary-800'
+                    : 'text-navy-700';
                 return (
                   <div key={group.key}>
-                    {/* Month header */}
+                    {/* Group header */}
                     <button
                       onClick={() => toggleMonth(group.key)}
-                      className="w-full flex items-center justify-between px-5 py-3 bg-surface-50 border-b border-surface-200 hover:bg-surface-100 transition-colors"
+                      className={`w-full flex items-center justify-between px-5 py-3 border-b transition-colors ${headerBg}`}
                     >
                       <div className="flex items-center gap-2">
-                        <ChevronDown className={`w-4 h-4 text-navy-400 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
-                        <h3 className="text-sm font-semibold text-navy-800">{group.label}</h3>
-                        <span className="text-xs text-navy-300">{group.payments.length} transaction{group.payments.length !== 1 ? 's' : ''}</span>
+                        <ChevronDown className={`w-4 h-4 transition-transform ${isCollapsed ? '-rotate-90' : ''} ${chevronText}`} />
+                        {isActionNeeded && <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />}
+                        {isPending && <span className="w-2 h-2 rounded-full bg-secondary-500 flex-shrink-0" />}
+                        <h3 className={`text-sm font-semibold ${headerText}`}>{group.label}</h3>
+                        <span className={`text-xs ${subText}`}>
+                          {group.payments.length} {group.payments.length === 1 ? 'payment' : 'payments'}
+                        </span>
                       </div>
                       {group.total > 0 && (
-                        <span className="text-sm font-semibold text-navy-700 tabular-nums">{formatCurrency(group.total)}</span>
+                        <span className={`text-sm font-semibold tabular-nums ${totalText}`}>{formatCurrency(group.total)}</span>
                       )}
                     </button>
 
@@ -711,7 +917,10 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                             <tbody className="divide-y divide-surface-100">
                               {group.payments.map(p => {
                                 const category = p.jobs?.description ? getCategory(p.jobs.description) : null;
-                                const desc = p.jobs?.description ? cleanDescription(p.jobs.description) : p.payment_type.replace(/_/g, ' ');
+                                const isBonus = p.payment_type === 'bonus';
+                                const desc = isBonus
+                                  ? (p.jobs?.description ? `Extra payment — ${cleanDescription(p.jobs.description)}` : 'Extra payment')
+                                  : (p.jobs?.description ? cleanDescription(p.jobs.description) : p.payment_type.replace(/_/g, ' '));
                                 return (
                                   <tr key={p.id} onClick={() => setSelectedPayment(p)}
                                     className="hover:bg-surface-50 cursor-pointer transition-colors group">
@@ -721,11 +930,19 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                     <td className="px-5 py-3.5">
                                       <div className="flex items-center gap-3">
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                          isBonus ? 'bg-warm-50' :
                                           p.status === 'completed' ? 'bg-warm-50' :
                                           p.status === 'pending' ? 'bg-accent-50' :
                                           p.status === 'refunded' ? 'bg-secondary-50' : 'bg-surface-100'
                                         }`}>
-                                          {p.payment_type === 'job_payment' ? (
+                                          {isBonus ? (
+                                            <Gift className="w-3.5 h-3.5 text-warm-600" />
+                                          ) : p.payment_type === 'service_invoice' ? (
+                                            <FileText className={`w-3.5 h-3.5 ${
+                                              p.status === 'completed' ? 'text-secondary-600' :
+                                              p.status === 'pending' ? 'text-accent-600' : 'text-navy-400'
+                                            }`} />
+                                          ) : p.payment_type === 'job_payment' ? (
                                             <Receipt className={`w-3.5 h-3.5 ${
                                               p.status === 'completed' ? 'text-warm-600' :
                                               p.status === 'pending' ? 'text-accent-600' : 'text-navy-400'
@@ -749,19 +966,27 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                         {p.status === 'refunded' ? '-' : ''}{formatCurrency(p.amount)}
                                       </span>
                                     </td>
-                                    <td className="px-5 py-3.5 text-center w-44">
-                                      <div className="flex items-center justify-center gap-2">
-                                        {getStatusBadge(p.status)}
-                                        {!isTradie && p.status === 'completed' && p.stripe_payment_intent_id && !(p.metadata as Record<string, unknown> | null)?.transfer_id && (
-                                          <button
-                                            onClick={(e) => handleInlineRelease(e, p.id)}
-                                            disabled={releasingId === p.id}
-                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200 transition-colors"
-                                          >
-                                            {releasingId === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                                            Release
-                                          </button>
+                                    <td className="px-5 py-3.5 text-center w-72">
+                                      <div className="flex flex-col items-center justify-center gap-1.5">
+                                        {/* Bonus payments are destination charges — no escrow, never "Awaiting Release" */}
+                                        {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !(p.metadata as Record<string, unknown> | null)?.transfer_id && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
+                                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                            Awaiting Release
+                                          </span>
+                                        ) : (
+                                          getStatusBadge(p.status)
                                         )}
+                                        {!isTradie && (p.metadata as Record<string, unknown> | null)?.pending_increase && !(p.metadata as Record<string, unknown> | null)?.transfer_id && (() => {
+                                          const inc = (p.metadata as Record<string, unknown>).pending_increase as Record<string, unknown> | undefined;
+                                          const diffCents = Number(inc?.diff_cents || 0);
+                                          const diffLabel = diffCents > 0 ? ` $${(diffCents / 100).toFixed(2)}` : '';
+                                          return (
+                                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 whitespace-nowrap">
+                                              Price adjusted — pay{diffLabel} to release
+                                            </span>
+                                          );
+                                        })()}
                                       </div>
                                     </td>
                                     <td className="px-5 py-3.5 text-right w-24">
@@ -779,19 +1004,29 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                         {/* Mobile rows */}
                         <div className="md:hidden divide-y divide-surface-100">
                           {group.payments.map(p => {
-                            const desc = p.jobs?.description ? cleanDescription(p.jobs.description) : p.payment_type.replace(/_/g, ' ');
+                            const isBonus = p.payment_type === 'bonus';
+                            const desc = isBonus
+                              ? (p.jobs?.description ? `Extra payment — ${cleanDescription(p.jobs.description)}` : 'Extra payment')
+                              : (p.jobs?.description ? cleanDescription(p.jobs.description) : p.payment_type.replace(/_/g, ' '));
                             const category = p.jobs?.description ? getCategory(p.jobs.description) : null;
                             return (
-                              <button key={p.id} onClick={() => setSelectedPayment(p)}
-                                className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-surface-50 transition-colors">
+                              <div key={p.id} onClick={() => setSelectedPayment(p)}
+                                role="button" tabIndex={0}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedPayment(p); } }}
+                                className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-surface-50 transition-colors cursor-pointer">
                                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                  isBonus ? 'bg-warm-50' :
                                   p.status === 'completed' ? 'bg-warm-50' :
                                   p.status === 'pending' ? 'bg-accent-50' : 'bg-surface-100'
                                 }`}>
-                                  <Receipt className={`w-4 h-4 ${
-                                    p.status === 'completed' ? 'text-warm-600' :
-                                    p.status === 'pending' ? 'text-accent-600' : 'text-navy-400'
-                                  }`} />
+                                  {isBonus ? (
+                                    <Gift className="w-4 h-4 text-warm-600" />
+                                  ) : (
+                                    <Receipt className={`w-4 h-4 ${
+                                      p.status === 'completed' ? 'text-warm-600' :
+                                      p.status === 'pending' ? 'text-accent-600' : 'text-navy-400'
+                                    }`} />
+                                  )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-navy-900 truncate">{desc}</p>
@@ -803,20 +1038,28 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                 <div className="text-right flex-shrink-0">
                                   <p className="text-sm font-semibold text-navy-900 tabular-nums">{formatCurrency(p.amount)}</p>
                                   <div className="mt-1 flex items-center gap-1.5 justify-end">
-                                    {getStatusBadge(p.status)}
-                                    {!isTradie && p.status === 'completed' && p.stripe_payment_intent_id && !(p.metadata as Record<string, unknown> | null)?.transfer_id && (
-                                      <button
-                                        onClick={(e) => handleInlineRelease(e, p.id)}
-                                        disabled={releasingId === p.id}
-                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200"
-                                      >
-                                        {releasingId === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                                        Release
-                                      </button>
+                                    {/* Bonus payments are destination charges — no escrow, never "Awaiting Release" */}
+                                    {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !(p.metadata as Record<string, unknown> | null)?.transfer_id && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
+                                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                        Awaiting Release
+                                      </span>
+                                    ) : (
+                                      getStatusBadge(p.status)
                                     )}
+                                    {!isTradie && (p.metadata as Record<string, unknown> | null)?.pending_increase && !(p.metadata as Record<string, unknown> | null)?.transfer_id && (() => {
+                                      const inc = (p.metadata as Record<string, unknown>).pending_increase as Record<string, unknown> | undefined;
+                                      const diffCents = Number(inc?.diff_cents || 0);
+                                      const diffLabel = diffCents > 0 ? ` $${(diffCents / 100).toFixed(2)}` : '';
+                                      return (
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 whitespace-nowrap">
+                                          Price adjusted — pay{diffLabel} to release
+                                        </span>
+                                      );
+                                    })()}
                                   </div>
                                 </div>
-                              </button>
+                              </div>
                             );
                           })}
                         </div>
@@ -914,9 +1157,10 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
     }
   }, [payment.job_id, user]);
 
-  const subtotal = payment.amount;
-  const gstAmount = Math.round(subtotal / 11);
-  const exGst = subtotal - gstAmount;
+  const exGst = payment.amount;
+  const storedGst = (payment.metadata as Record<string, unknown>)?.gst;
+  const gstAmount = storedGst != null ? Number(storedGst) : Math.round(exGst * 0.1);
+  const subtotal = exGst + gstAmount;
   const fee = payment.processing_fee || 0;
   const jobDesc = payment.jobs?.description ? cleanDescription(payment.jobs.description) : 'Service payment';
   const jobCategory = payment.jobs?.description ? getCategory(payment.jobs.description) : null;
@@ -956,14 +1200,21 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
     setActionLoading(true);
     try {
       await releaseEscrow(payment.id);
-      showToast('Payment released to tradie successfully');
+      showToast(`Payment released to ${tradieName || 'your tradie'} successfully`);
       onPaymentUpdate();
       // Navigate to review page if this payment is linked to a job
       if (payment.job_id) {
         navigate(`/review/${payment.job_id}`);
       }
     } catch (err) {
-      showToast(friendlyError(err, 'Unable to release payment. Please try again.'), true);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('insufficient') || msg.includes('Insufficient')) {
+        showToast('Payment is being processed. Please try again in a few minutes.', true);
+      } else if (msg.includes('pending') && msg.includes('increase')) {
+        showToast('A price adjustment needs to be paid before this payment can be released.', true);
+      } else {
+        showToast(friendlyError(err, 'Unable to release payment. Please try again.'), true);
+      }
       setActionLoading(false);
     }
   };
@@ -971,6 +1222,11 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
   const isPendingJobPayment = payment.status === 'pending' && payment.payment_type === 'job_payment';
   const isCompletedWithStripe = payment.status === 'completed' && !!payment.stripe_payment_intent_id;
   const transferDone = !!(payment.metadata as Record<string, unknown>)?.transfer_id;
+  const hasPendingIncrease = !!(payment.metadata as Record<string, unknown>)?.pending_increase;
+  const pendingReduction = (payment.metadata as Record<string, unknown>)?.pending_reduction as
+    | { proposed_amount_cents?: number; original_amount_cents?: number; diff_cents?: number; reason?: string | null }
+    | undefined;
+  const hasPendingReduction = !!pendingReduction;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-900/40" onClick={onClose}>
@@ -1012,9 +1268,16 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
             </div>
             <p className="text-sm font-medium text-navy-900">{jobDesc}</p>
             {payment.job_id && (
-              <Link to={isTradie ? '/jobs' : '/leads'} className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 mt-2 font-medium transition-colors">
-                View job <ExternalLink className="w-3 h-3" />
-              </Link>
+              <div className="flex items-center gap-3 mt-2">
+                <Link to={`${isTradie ? '/jobs' : '/leads'}?job=${payment.job_id}`} className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-medium transition-colors">
+                  View job <ExternalLink className="w-3 h-3" />
+                </Link>
+                {!payment.id.startsWith('inv_') && (
+                  <Link to={`/invoice/${payment.id}`} target="_blank" rel="noopener" className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-medium transition-colors">
+                    <Receipt className="w-3 h-3" /> Tax invoice
+                  </Link>
+                )}
+              </div>
             )}
           </div>
 
@@ -1035,13 +1298,15 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
             <div className="border border-surface-200 rounded-lg overflow-hidden">
               <div className="divide-y divide-surface-100">
                 <div className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm text-navy-500">Subtotal (ex. GST)</span>
+                  <span className="text-sm text-navy-500">{gstAmount > 0 ? 'Subtotal (ex. GST)' : 'Job Amount'}</span>
                   <span className="text-sm font-medium text-navy-900 tabular-nums">{formatCurrency(exGst)}</span>
                 </div>
-                <div className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm text-navy-500">GST (10%)</span>
-                  <span className="text-sm font-medium text-navy-900 tabular-nums">{formatCurrency(gstAmount)}</span>
-                </div>
+                {gstAmount > 0 && (
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <span className="text-sm text-navy-500">GST (10%)</span>
+                    <span className="text-sm font-medium text-navy-900 tabular-nums">{formatCurrency(gstAmount)}</span>
+                  </div>
+                )}
                 {fee > 0 && (
                   <div className="flex items-center justify-between px-4 py-3">
                     <span className="text-sm text-navy-400">Processing fee</span>
@@ -1050,8 +1315,8 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
                 )}
               </div>
               <div className="flex items-center justify-between px-4 py-3.5 bg-primary-700">
-                <span className="text-sm font-bold text-white">Total (inc. GST)</span>
-                <span className="text-lg font-bold text-white tabular-nums">{formatCurrency(subtotal)}</span>
+                <span className="text-sm font-bold text-white">{gstAmount > 0 ? 'Total (inc. GST)' : 'Total'}</span>
+                <span className="text-lg font-bold text-white tabular-nums">{formatCurrency(exGst + gstAmount + fee)}</span>
               </div>
             </div>
           </div>
@@ -1060,7 +1325,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
           <div className="grid grid-cols-2 gap-x-6 gap-y-3">
             <div><p className="text-xs text-navy-300 uppercase tracking-wider mb-0.5">Invoice #</p><p className="text-sm font-medium text-navy-900">{invoiceNum}</p></div>
             <div><p className="text-xs text-navy-300 uppercase tracking-wider mb-0.5">Date & Time</p><p className="text-sm font-medium text-navy-900">{formatDateTime(payment.created_at)}</p></div>
-            <div><p className="text-xs text-navy-300 uppercase tracking-wider mb-0.5">Payment Type</p><p className="text-sm font-medium text-navy-900 capitalize">{payment.payment_type.replace(/_/g, ' ')}</p></div>
+            <div><p className="text-xs text-navy-300 uppercase tracking-wider mb-0.5">Payment Type</p><p className="text-sm font-medium text-navy-900 capitalize">{payment.payment_type === 'bonus' ? 'Extra payment' : payment.payment_type.replace(/_/g, ' ')}</p></div>
             <div><p className="text-xs text-navy-300 uppercase tracking-wider mb-0.5">Currency</p><p className="text-sm font-medium text-navy-900">{(payment.currency || 'AUD').toUpperCase()}</p></div>
           </div>
 
@@ -1120,7 +1385,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
           )}
 
           {/* Escrow — auto-releases after 48h, client can release early */}
-          {!isTradie && isCompletedWithStripe && !transferDone && (
+          {!isTradie && isCompletedWithStripe && !transferDone && !hasPendingIncrease && !hasPendingReduction && (
             <div className="bg-warm-50 border border-warm-200 rounded-lg p-4">
               <div className="flex items-start gap-3 mb-3">
                 <ShieldCheck className="w-5 h-5 text-warm-600 flex-shrink-0 mt-0.5" />
@@ -1138,6 +1403,72 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
               </button>
             </div>
           )}
+
+          {/* Client-initiated price reduction (overpayment correction) */}
+          {!isTradie && isCompletedWithStripe && !transferDone && !hasPendingIncrease && !hasPendingReduction && (
+            <ReductionRequestSection
+              paymentId={payment.id}
+              currentAmount={exGst}
+              onSuccess={onPaymentUpdate}
+              onError={(msg) => showToast(msg, true)}
+            />
+          )}
+
+          {/* Pending reduction — waiting for tradie response */}
+          {!isTradie && hasPendingReduction && pendingReduction && (
+            <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <Clock className="w-5 h-5 text-secondary-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-secondary-800">Reduction Request Pending</p>
+                  <p className="text-xs text-secondary-700 mt-0.5">
+                    You've asked to reduce this payment from ${((pendingReduction.original_amount_cents ?? 0) / 100).toFixed(2)} to ${((pendingReduction.proposed_amount_cents ?? 0) / 100).toFixed(2)}.
+                    Waiting for the tradie to approve. You'll be refunded ${((pendingReduction.diff_cents ?? 0) / 100).toFixed(2)} once they do.
+                  </p>
+                  {pendingReduction.reason && (
+                    <p className="text-xs text-secondary-600 mt-1 italic">Your note: "{pendingReduction.reason}"</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Pending price increase — must pay difference before release */}
+          {!isTradie && isCompletedWithStripe && !transferDone && hasPendingIncrease && (() => {
+            const inc = (payment.metadata as Record<string, unknown>).pending_increase as Record<string, unknown> | undefined;
+            const diffCents = Number(inc?.diff_cents || 0);
+            const diffLabel = diffCents > 0 ? `$${(diffCents / 100).toFixed(2)}` : '';
+            return (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-amber-800">Price Increase Pending</p>
+                    <p className="text-xs text-amber-700 mt-0.5">
+                      Your tradie has requested a price adjustment{diffLabel ? ` of ${diffLabel}` : ''}. Please pay the additional amount before the payment can be released.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={async () => {
+                    try {
+                      setActionLoading(true);
+                      const { url } = await payPriceIncrease(payment.id, payment.job_id || '');
+                      window.location.href = url;
+                    } catch (err) {
+                      showToast(err instanceof Error ? err.message : 'Failed to start payment', true);
+                      setActionLoading(false);
+                    }
+                  }}
+                  disabled={actionLoading}
+                  className="w-full px-4 py-2.5 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                >
+                  {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                  Pay Increase{diffLabel ? ` — ${diffLabel}` : ''}
+                </button>
+              </div>
+            );
+          })()}
 
           {/* Transfer completed */}
           {!isTradie && isCompletedWithStripe && transferDone && (
@@ -1202,6 +1533,118 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
             Tax invoice issued by ConnecTradie Pty Ltd for GST purposes under Australian tax law.
             All prices in AUD include GST where applicable. Retain for your records.
           </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Reduction Request Section (client reduces overpayment) ─── */
+function ReductionRequestSection({
+  paymentId,
+  currentAmount,
+  onSuccess,
+  onError,
+}: {
+  paymentId: string;
+  currentAmount: number; // cents, ex-GST
+  onSuccess: () => void;
+  onError: (msg: string) => void;
+}) {
+  const [showForm, setShowForm] = useState(false);
+  const [newTotalInput, setNewTotalInput] = useState('');
+  const [reason, setReason] = useState('');
+  const [processing, setProcessing] = useState(false);
+
+  const currentDollars = currentAmount / 100;
+  const newTotal = parseFloat(newTotalInput);
+  const validNumber = !isNaN(newTotal) && newTotal >= 1;
+  const isLower = validNumber && newTotal < currentDollars;
+  const refundAmount = isLower ? currentDollars - newTotal : 0;
+
+  const handleSubmit = async () => {
+    if (!validNumber) {
+      onError('Please enter a valid amount of at least $1.');
+      return;
+    }
+    if (!isLower) {
+      onError('New total must be less than the current amount paid.');
+      return;
+    }
+    setProcessing(true);
+    try {
+      await requestPriceReduction(paymentId, newTotal, reason.trim() || undefined);
+      onSuccess();
+    } catch (err) {
+      onError(friendlyError(err, 'Unable to submit reduction request. Please try again.'));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  if (!showForm) {
+    return (
+      <button
+        onClick={() => setShowForm(true)}
+        className="w-full px-4 py-2.5 text-secondary-700 border border-secondary-200 rounded-lg text-sm font-medium hover:bg-secondary-50 transition-colors flex items-center justify-center gap-2"
+      >
+        <RotateCcw className="w-4 h-4" /> Adjust amount paid
+      </button>
+    );
+  }
+
+  return (
+    <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+      <div className="flex items-start gap-3 mb-3">
+        <AlertTriangle className="w-5 h-5 text-secondary-600 flex-shrink-0 mt-0.5" />
+        <div>
+          <p className="text-sm font-semibold text-secondary-800">Reduce the amount you paid</p>
+          <p className="text-xs text-secondary-700 mt-0.5">
+            Enter the total you meant to pay. The tradie will approve the change, and the difference is refunded to your card. Current amount: ${currentDollars.toFixed(2)}.
+          </p>
+        </div>
+      </div>
+      <div className="space-y-3">
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+          <input
+            type="number"
+            min="1"
+            step="0.01"
+            value={newTotalInput}
+            onChange={(e) => setNewTotalInput(e.target.value)}
+            placeholder="New total you meant to pay"
+            className="w-full pl-7 pr-3 py-2 border border-secondary-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary-400 bg-white"
+          />
+        </div>
+        {isLower && (
+          <p className="text-xs text-secondary-700">
+            Refund amount: <span className="font-semibold">${refundAmount.toFixed(2)}</span>
+          </p>
+        )}
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Optional: explain what happened (e.g. accidentally entered $310 instead of $190)"
+          rows={2}
+          maxLength={500}
+          className="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-400 bg-white resize-none"
+        />
+        <div className="flex gap-2">
+          <button
+            onClick={() => { setShowForm(false); setNewTotalInput(''); setReason(''); }}
+            className="flex-1 px-3 py-2 bg-white border border-surface-300 text-navy-700 rounded-lg text-sm font-medium hover:bg-surface-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={processing || !isLower}
+            className="flex-1 px-3 py-2 bg-secondary-600 text-white rounded-lg text-sm font-medium hover:bg-secondary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5"
+          >
+            {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+            Send to tradie
+          </button>
         </div>
       </div>
     </div>

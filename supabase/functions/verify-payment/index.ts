@@ -89,6 +89,14 @@ Deno.serve(async (req: Request) => {
       // Check Stripe checkout session
       const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
 
+      // Verify this checkout session actually belongs to this invoice
+      if (invoice.stripe_checkout_session_id && invoice.stripe_checkout_session_id !== checkoutSessionId) {
+        return new Response(
+          JSON.stringify({ paid: false, message: "Checkout session does not match this invoice" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       if (session.payment_status === 'paid') {
         const paymentIntentId = typeof session.payment_intent === 'string'
           ? session.payment_intent
@@ -101,7 +109,8 @@ Deno.serve(async (req: Request) => {
             paid_at: new Date().toISOString(),
             stripe_payment_intent_id: paymentIntentId,
           })
-          .eq("id", invoiceId);
+          .eq("id", invoiceId)
+          .in("status", ["sent", "processing", "overdue"]);
 
         console.info(`Recurring invoice ${invoiceId} verified as paid (fallback)`);
 

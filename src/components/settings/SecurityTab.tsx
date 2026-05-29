@@ -301,7 +301,8 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
           <button
             onClick={handleEnableMfa}
             disabled={mfaLoading}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-medium hover:bg-primary-700 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 transition-colors hover:opacity-90"
+            style={{ backgroundColor: '#06D6A0', color: 'white' }}
           >
             {mfaLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
             Enable Two-Factor Authentication
@@ -323,7 +324,8 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
         <button
           onClick={handleExportData}
           disabled={exportLoading}
-          className="flex items-center gap-2 px-4 py-2.5 bg-secondary-600 text-white rounded-xl text-sm font-medium hover:bg-secondary-700 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 transition-colors hover:opacity-90"
+          style={{ backgroundColor: '#2E86DE', color: 'white' }}
         >
           {exportLoading ? (
             <>

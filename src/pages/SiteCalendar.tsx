@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, MapPin, Users, Clock, Plus, X, User, Layers, AlertCircle, Filter, RefreshCw, CalendarClock, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, MapPin, Users, Clock, Plus, X, User, Layers, AlertCircle, Filter, RefreshCw, CalendarClock, Trash2, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../hooks/useToast';
 import { supabase } from '../lib/supabase';
 import type { AvailabilitySlot } from '../types/database';
 
@@ -20,6 +21,9 @@ interface Job {
   status: string;
   scheduled_date: string | null;
   preferred_time_slot: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  time_confirmed: boolean;
   location_address: string | null;
   contact_name: string | null;
   budget_amount: number | null;
@@ -27,6 +31,88 @@ interface Job {
   is_emergency: boolean;
   project_id: string | null;
   tradie_id: string | null;
+}
+
+function formatJobTime(timeStr: string | null): string | null {
+  if (!timeStr) return null;
+  const parts = timeStr.split(':');
+  const h = parseInt(parts[0], 10);
+  const mm = parts[1] ?? '00';
+  if (Number.isNaN(h)) return null;
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${mm} ${ampm}`;
+}
+
+function timeToMinutes(timeStr: string): number | null {
+  const parts = timeStr.split(':');
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1] ?? '0', 10);
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
+  return h * 60 + m;
+}
+
+const CONFLICT_WINDOW_MINUTES = 60;
+
+// Estimated-duration presets, mirrored from the booking form so a rescheduled job
+// can also be placed as a block (start + duration → end).
+const DURATION_OPTIONS: { label: string; minutes: number }[] = [
+  { label: '1 hour', minutes: 60 },
+  { label: '1.5 hours', minutes: 90 },
+  { label: '2 hours', minutes: 120 },
+  { label: '3 hours', minutes: 180 },
+  { label: '4 hours', minutes: 240 },
+  { label: 'Half day (5h)', minutes: 300 },
+  { label: 'Full day (8h)', minutes: 480 },
+];
+
+function addMinutesToTime(time: string, minutes: number): string {
+  const [h, m] = time.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return time;
+  const total = h * 60 + m + minutes;
+  const eh = Math.floor((total % (24 * 60)) / 60);
+  const em = total % 60;
+  return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+}
+
+function minutesBetween(start: string | null, end: string | null): number | null {
+  if (!start || !end) return null;
+  const s = timeToMinutes(start);
+  const e = timeToMinutes(end);
+  if (s === null || e === null) return null;
+  const diff = e - s;
+  return diff > 0 ? diff : null;
+}
+
+// Map an exact "HH:MM" time onto the coarse slot used for calendar grouping/colour,
+// so a job rescheduled to a specific time still lands in a sensible slot bucket.
+function deriveSlotFromTime(timeStr: string): string {
+  const mins = timeToMinutes(timeStr);
+  if (mins === null) return 'morning';
+  if (mins < 12 * 60) return 'morning';
+  if (mins < 13 * 60) return 'midday';
+  return 'afternoon';
+}
+
+// Short, human title for a job from its "[Tag] description" convention.
+function jobShortTitle(job: { description?: string | null }): string {
+  const desc = job.description ?? '';
+  const m = desc.match(/^\[([^\]]+)\]\s*(.*)$/);
+  const tag = m?.[1]?.trim();
+  const rest = (m?.[2] ?? desc).replace(/^\s*\d+[).\s-]+/, '').split('\n')[0].trim();
+  const text = rest.length > 0 ? rest : (tag ?? 'a job');
+  return text.length > 60 ? text.slice(0, 60) + '…' : text;
+}
+
+function jobsConflict(a: Job, b: Job): boolean {
+  if (a.start_time && b.start_time) {
+    const aMin = timeToMinutes(a.start_time);
+    const bMin = timeToMinutes(b.start_time);
+    if (aMin !== null && bMin !== null) {
+      return Math.abs(aMin - bMin) < CONFLICT_WINDOW_MINUTES;
+    }
+  }
+  return !!(a.preferred_time_slot && b.preferred_time_slot && a.preferred_time_slot === b.preferred_time_slot);
 }
 
 interface TeamMember {
@@ -52,6 +138,7 @@ interface CalendarEntry {
   job: Job;
   assignments: (JobAssignment & { member: TeamMember })[];
   conflictWarning?: boolean;
+  conflictsWith?: string[];
 }
 
 const TIME_SLOT_COLORS: Record<string, string> = {
@@ -62,10 +149,10 @@ const TIME_SLOT_COLORS: Record<string, string> = {
 };
 
 const TIME_SLOT_LABELS: Record<string, string> = {
-  morning: '🌅 Morning',
-  midday: '☀️ Midday',
-  afternoon: '🌤️ Afternoon',
-  evening: '🌙 Evening',
+  morning: 'Morning',
+  midday: 'Midday',
+  afternoon: 'Afternoon',
+  evening: 'Evening',
 };
 
 function parseJobDescription(description: string): { category: string; title: string } {
@@ -79,7 +166,7 @@ function parseJobDescription(description: string): { category: string; title: st
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
   accepted: 'bg-secondary-100 text-secondary-700 border-secondary-200',
-  in_progress: 'bg-warm-100 text-warm-700 border-primary-200',
+  in_progress: 'bg-amber-100 text-amber-700 border-amber-200',
   completed: 'bg-green-100 text-green-700 border-green-200',
   cancelled: 'bg-gray-100 text-gray-600 border-gray-200',
   declined: 'bg-red-100 text-red-700 border-red-200',
@@ -241,8 +328,9 @@ function AssignTeamModal({ job, teamMembers, existingAssignments, onClose, onSav
   );
 }
 
-export default function SiteCalendar({ embedded = false }: { embedded?: boolean }) {
+export default function SiteCalendar({ embedded = false, defaultCollapsed = false }: { embedded?: boolean; defaultCollapsed?: boolean }) {
   const { user, profile } = useAuth();
+  const { showToast } = useToast();
   const isTradie = profile?.role === 'tradie';
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'week' | 'month'>('week');
@@ -260,9 +348,17 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
   const [rescheduleJob, setRescheduleJob] = useState<Job | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [rescheduleSlot, setRescheduleSlot] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [rescheduleDuration, setRescheduleDuration] = useState(120);
   const [rescheduleSaving, setRescheduleSaving] = useState(false);
   const [removeConfirmJob, setRemoveConfirmJob] = useState<Job | null>(null);
   const [removeSaving, setRemoveSaving] = useState(false);
+  // Bump to force a refetch even when currentDate doesn't change (e.g. moving
+  // a job within the same week). Avoids the closure-stale fetch race.
+  const [refreshTick, setRefreshTick] = useState(0);
+  // Single-service clients (see Schedule.tsx) get the calendar collapsed to a
+  // compact "next visit" bar until they tap "View calendar".
+  const [calendarCollapsed, setCalendarCollapsed] = useState(defaultCollapsed);
 
   // Close conflict menu when clicking outside
   useEffect(() => {
@@ -276,7 +372,7 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
     if (user) {
       fetchData();
     }
-  }, [user, currentDate, view]);
+  }, [user, currentDate, view, refreshTick]);
 
   const getDateRange = () => {
     if (view === 'week') {
@@ -308,7 +404,7 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
     // Role-aware: tradies see jobs they're assigned to; clients see jobs they posted
     const jobsQuery = supabase
       .from('jobs')
-      .select('id, description, status, scheduled_date, preferred_time_slot, location_address, contact_name, budget_amount, budget_type, is_emergency, project_id, tradie_id')
+      .select('id, description, status, scheduled_date, preferred_time_slot, start_time, end_time, time_confirmed, location_address, contact_name, budget_amount, budget_type, is_emergency, project_id, tradie_id')
       .not('status', 'in', '(cancelled,declined)')
       .or(`scheduled_date.gte.${startStr},scheduled_date.lte.${endStr}`)
       .order('scheduled_date', { ascending: true });
@@ -352,7 +448,7 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
     // Fetch recurring sessions and convert to pseudo-jobs for the calendar
     const { data: recurringSessions } = await supabase
       .from('recurring_sessions')
-      .select('id, scheduled_date, status, recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(tradie_id, client_id, trade_category, service_subtype, description, location, preferred_time)')
+      .select('id, scheduled_date, start_time, status, recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(tradie_id, client_id, trade_category, service_subtype, description, location, preferred_time)')
       .in('status', ['pending_confirmation', 'scheduled', 'completed'])
       .gte('scheduled_date', startStr)
       .lte('scheduled_date', endStr);
@@ -364,7 +460,10 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
     });
     const recurringPseudoJobs: Job[] = myRecurringSessions.map((s) => {
       const rj = s.recurring_job as { tradie_id: string | null; trade_category: string; service_subtype: string | null; description: string | null; location: string | null; preferred_time: string | null } | null;
-      const timeStr = rj?.preferred_time;
+      // Per-session start_time wins (it's the override the user sets via the time
+      // chips); fall back to the parent recurring_job's preferred_time.
+      const sessionStart = (s as { start_time: string | null }).start_time;
+      const timeStr = sessionStart ?? rj?.preferred_time;
       const slot = timeStr ? (
         parseInt(timeStr.split(':')[0]) < 12 ? 'morning' :
         parseInt(timeStr.split(':')[0]) < 14 ? 'midday' :
@@ -376,6 +475,9 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
         status: s.status === 'completed' ? 'completed' : s.status === 'pending_confirmation' ? 'pending' : 'accepted',
         scheduled_date: s.scheduled_date,
         preferred_time_slot: slot,
+        start_time: timeStr || null,
+        end_time: (s as { end_time?: string | null }).end_time ?? null,
+        time_confirmed: true,
         location_address: rj?.location || null,
         contact_name: null,
         budget_amount: null,
@@ -386,10 +488,68 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
       };
     });
 
-    setJobs([...(jobsRes.data || []), ...recurringPseudoJobs]);
+    const oneOffJobs: Job[] = (jobsRes.data || []).map((j) => ({
+      ...j,
+      start_time: (j as { start_time?: string | null }).start_time ?? null,
+      end_time: (j as { end_time?: string | null }).end_time ?? null,
+      time_confirmed: (j as { time_confirmed?: boolean }).time_confirmed ?? false,
+    }));
+
+    // Call-out-fee site visits live on quotes; surface them as their own calendar
+    // blocks for both the client and the visiting tradie. site_visit_scheduled_at is
+    // a full timestamp — split it into a local date + HH:MM for the calendar.
+    const visitQuery = supabase
+      .from('quotes')
+      .select('id, tradie_id, status, site_visit_scheduled_at, site_visit_ends_at, site_visit_time_confirmed, job:jobs!inner(client_id, title, description, location_address)')
+      .eq('status', 'site_visit_scheduled')
+      .gte('site_visit_scheduled_at', start.toISOString())
+      .lte('site_visit_scheduled_at', end.toISOString());
+    if (isTradie) visitQuery.eq('tradie_id', user.id);
+    else visitQuery.eq('job.client_id', user.id);
+    const { data: visitRows } = await visitQuery;
+
+    const toHM = (dt: Date) => `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+    const siteVisitJobs: Job[] = (visitRows || [])
+      .filter((v) => (v as { site_visit_scheduled_at: string | null }).site_visit_scheduled_at)
+      .map((v) => {
+        const jb = v.job as { title: string | null; description: string | null; location_address: string | null } | null;
+        const d = new Date((v as { site_visit_scheduled_at: string }).site_visit_scheduled_at);
+        const endIso = (v as { site_visit_ends_at: string | null }).site_visit_ends_at;
+        const titleText = jb?.title || jobShortTitle({ description: jb?.description });
+        return {
+          id: `sitevisit-${v.id}`,
+          description: `[SITE VISIT] ${titleText}`,
+          status: 'accepted',
+          scheduled_date: toLocalDateStr(d),
+          preferred_time_slot: deriveSlotFromTime(toHM(d)),
+          start_time: toHM(d),
+          end_time: endIso ? toHM(new Date(endIso)) : null,
+          time_confirmed: !!(v as { site_visit_time_confirmed?: boolean }).site_visit_time_confirmed,
+          location_address: jb?.location_address || null,
+          contact_name: null,
+          budget_amount: null,
+          budget_type: null,
+          is_emergency: false,
+          project_id: null,
+          tradie_id: v.tradie_id,
+        };
+      });
+
+    setJobs([...oneOffJobs, ...recurringPseudoJobs, ...siteVisitJobs]);
     setTeamMembers(membersRes.data || []);
     setAssignments((assignmentsRes.data as JobAssignment[]) || []);
     setAvailabilitySlots((slotsRes.data || []) as AvailabilitySlot[]);
+
+    // Persisted "Ignore conflict" choices, so a dismissed conflict pair does not
+    // reappear on reload. Only the client side surfaces conflicts.
+    if (!isTradie) {
+      const { data: dismissals } = await supabase
+        .from('conflict_dismissals')
+        .select('pair_key')
+        .eq('user_id', user.id);
+      setDismissedConflicts(new Set((dismissals || []).map((d) => d.pair_key as string)));
+    }
+
     setLoading(false);
   };
 
@@ -413,36 +573,334 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
     setAssignments(prev => prev.filter(a => a.id !== assignmentId));
   };
 
+  // Persist a one-time "Ignore" of a conflict so it doesn't nag on reload. The
+  // client must actively dismiss; it never re-surfaces unless a *new* conflict pair
+  // forms (different job ids). Optimistic local update + best-effort persistence.
+  const dismissConflict = async (jobId: string, conflictsWith: string[] = []) => {
+    if (!user || conflictsWith.length === 0) return;
+    const pairKeys = conflictsWith.map((other) => [jobId, other].sort().join('|'));
+    setDismissedConflicts((prev) => {
+      const next = new Set(prev);
+      pairKeys.forEach((k) => next.add(k));
+      return next;
+    });
+    setConflictMenuJob(null);
+    try {
+      await supabase
+        .from('conflict_dismissals')
+        .upsert(pairKeys.map((pk) => ({ user_id: user.id, pair_key: pk })), { onConflict: 'user_id,pair_key' });
+    } catch (e) {
+      console.warn('Failed to persist conflict dismissal (non-fatal):', e);
+    }
+  };
+
+  const performReschedule = async (job: Job, newDate: string, newSlot?: string, newTime?: string, newDurationMinutes?: number) => {
+    // Site-visit blocks are backed by a quote, not the jobs table. A tradie acting
+    // here confirms the window; a client proposes a new one (tradie re-confirms).
+    if (job.id.startsWith('sitevisit-')) {
+      const quoteId = job.id.replace('sitevisit-', '');
+      const startIso = newTime
+        ? new Date(`${newDate}T${newTime}`).toISOString()
+        : new Date(`${newDate}T09:00`).toISOString();
+      const endIso = newTime
+        ? new Date(new Date(`${newDate}T${newTime}`).getTime() + (newDurationMinutes ?? 120) * 60000).toISOString()
+        : null;
+      const { error } = await supabase
+        .from('quotes')
+        .update({
+          site_visit_scheduled_at: startIso,
+          site_visit_ends_at: endIso,
+          site_visit_time_confirmed: isTradie,
+        })
+        .eq('id', quoteId);
+      if (error) throw error;
+      try {
+        const whenLabel = new Date(startIso).toLocaleString('en-AU', {
+          weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit',
+        });
+        if (isTradie) {
+          const { data: qr } = await supabase
+            .from('quotes')
+            .select('job:jobs!inner(client_id)')
+            .eq('id', quoteId)
+            .maybeSingle();
+          const clientId = (qr?.job as { client_id?: string } | null)?.client_id;
+          if (clientId) {
+            await supabase.from('notifications').insert({
+              user_id: clientId,
+              type: 'site_visit_time_confirmed',
+              title: 'Site visit confirmed',
+              message: `Your tradie confirmed the site visit for ${whenLabel}.`,
+              read: false,
+            });
+          }
+        } else if (job.tradie_id) {
+          await supabase.from('notifications').insert({
+            user_id: job.tradie_id,
+            type: 'site_visit_time_proposed',
+            title: 'Site visit time to confirm',
+            message: `The client proposed ${whenLabel} for the site visit. Please confirm or adjust.`,
+            read: false,
+          });
+        }
+      } catch (e) {
+        console.warn('Site-visit reschedule notify failed (non-fatal):', e);
+      }
+      return;
+    }
+
+    const isRecurring = job.id.startsWith('recurring-');
+    if (isRecurring) {
+      const sessionId = job.id.replace('recurring-', '');
+      const { error } = await supabase
+        .from('recurring_sessions')
+        .update({ scheduled_date: newDate })
+        .eq('id', sessionId);
+      if (error) throw error;
+      return;
+    }
+
+    const updateData: Record<string, string | null | boolean> = { scheduled_date: newDate };
+    if (newTime) {
+      // Exact clock time wins; keep the slot consistent for calendar grouping and
+      // recompute the end time as a block (start + duration).
+      updateData.start_time = newTime;
+      updateData.end_time = addMinutesToTime(newTime, newDurationMinutes ?? 120);
+      updateData.preferred_time_slot = newSlot || deriveSlotFromTime(newTime);
+    } else {
+      // No exact time — clear any previous block and fall back to the slot.
+      updateData.start_time = null;
+      updateData.end_time = null;
+      if (newSlot) updateData.preferred_time_slot = newSlot;
+    }
+    // A tradie acting here confirms the window; a client is proposing it (awaiting
+    // the tradie's confirmation).
+    updateData.time_confirmed = isTradie;
+
+    const { error } = await supabase
+      .from('jobs')
+      .update(updateData)
+      .eq('id', job.id);
+    if (error) throw error;
+
+    await notifyReschedule(
+      job,
+      newDate,
+      updateData.start_time as string | null,
+      updateData.end_time as string | null,
+      (updateData.preferred_time_slot as string | null) ?? job.preferred_time_slot,
+    );
+  };
+
+  // Notifications follow the proposal→confirmation model:
+  //  • Client proposes/moves a time → the assigned tradie is asked to confirm it,
+  //    and the client is alerted if the move clashes with another of their jobs.
+  //  • Tradie confirms/adjusts the window → the client is told it's confirmed.
+  // Unaffected tradies are never notified.
+  const notifyReschedule = async (
+    job: Job,
+    newDate: string,
+    newStart: string | null,
+    newEnd: string | null,
+    newSlot: string | null,
+  ) => {
+    try {
+      if (!user) return;
+      const dateLabel = new Date(newDate + 'T00:00:00').toLocaleDateString('en-AU', {
+        weekday: 'long', day: 'numeric', month: 'long',
+      });
+      const rangeLabel = newStart
+        ? (newEnd ? `${formatJobTime(newStart)} – ${formatJobTime(newEnd)}` : formatJobTime(newStart))
+        : (newSlot ? (TIME_SLOT_LABELS[newSlot] ?? newSlot) : null);
+      const whenLabel = rangeLabel ? `${dateLabel}, ${rangeLabel}` : dateLabel;
+      const movedTitle = jobShortTitle(job);
+
+      // Tradie confirmed the window → tell the client it's locked in.
+      if (isTradie) {
+        const { data: jobRow } = await supabase
+          .from('jobs')
+          .select('client_id')
+          .eq('id', job.id)
+          .maybeSingle();
+        const clientId = (jobRow as { client_id?: string } | null)?.client_id;
+        if (clientId) {
+          await supabase.from('notifications').insert({
+            user_id: clientId,
+            type: 'job_time_confirmed',
+            title: 'Visit time confirmed',
+            message: `Your tradie confirmed "${movedTitle}" for ${whenLabel}.`,
+            job_id: job.id,
+            read: false,
+          });
+        }
+        return;
+      }
+
+      // Client proposed a time → ask the assigned tradie to confirm (if assigned).
+      if (job.tradie_id) {
+        await supabase.from('notifications').insert({
+          user_id: job.tradie_id,
+          type: 'job_time_proposed',
+          title: 'New time to confirm',
+          message: `The client proposed ${whenLabel} for "${movedTitle}". Please confirm or adjust the time.`,
+          job_id: job.id,
+          read: false,
+        });
+      }
+
+      // Detect a clash with the client's other active jobs on the new date.
+      const { data: sameDay } = await supabase
+        .from('jobs')
+        .select('id, description, scheduled_date, preferred_time_slot, start_time, status, tradie_id')
+        .eq('client_id', user.id)
+        .eq('scheduled_date', newDate)
+        .neq('id', job.id)
+        .not('status', 'in', '(completed,cancelled,declined)');
+
+      const movedRep = { ...job, scheduled_date: newDate, start_time: newStart, preferred_time_slot: newSlot } as Job;
+      const clashes = (sameDay || []).filter((j) => jobsConflict(movedRep, j as Job));
+      if (clashes.length === 0) return;
+
+      // Resolve tradie names so the client alert can name who's involved.
+      const tradieIds = [job.tradie_id, ...clashes.map((c) => c.tradie_id)].filter(Boolean) as string[];
+      const nameById = new Map<string, string>();
+      if (tradieIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', tradieIds);
+        (profiles || []).forEach((p) => nameById.set(p.id, p.full_name));
+      }
+      const withTradie = (title: string, tradieId: string | null) =>
+        tradieId && nameById.get(tradieId) ? `${title} (${nameById.get(tradieId)})` : title;
+
+      const other = clashes[0];
+      await supabase.from('notifications').insert({
+        user_id: user.id,
+        type: 'schedule_conflict',
+        title: 'Scheduling conflict',
+        message:
+          `Heads up — ${withTradie(movedTitle, job.tradie_id)} and ` +
+          `${withTradie(jobShortTitle(other), other.tradie_id)} are now both booked for ${whenLabel}. ` +
+          `You can reschedule one of them to a different time from your calendar.`,
+        job_id: job.id,
+        read: false,
+      });
+    } catch (e) {
+      console.warn('Reschedule notifications failed (non-fatal):', e);
+    }
+  };
+
   const handleReschedule = async () => {
     if (!rescheduleJob || !rescheduleDate) return;
     setRescheduleSaving(true);
     try {
-      const isRecurring = rescheduleJob.id.startsWith('recurring-');
-      if (isRecurring) {
-        const sessionId = rescheduleJob.id.replace('recurring-', '');
-        const { error } = await supabase
-          .from('recurring_sessions')
-          .update({ scheduled_date: rescheduleDate })
-          .eq('id', sessionId);
-        if (error) throw error;
-      } else {
-        const updateData: Record<string, string | null> = { scheduled_date: rescheduleDate };
-        if (rescheduleSlot) updateData.preferred_time_slot = rescheduleSlot;
-        const { error } = await supabase
-          .from('jobs')
-          .update(updateData)
-          .eq('id', rescheduleJob.id);
-        if (error) throw error;
-      }
+      await performReschedule(rescheduleJob, rescheduleDate, rescheduleSlot, rescheduleTime, rescheduleDuration);
+      const newDate = rescheduleDate;
       setRescheduleJob(null);
       setRescheduleDate('');
       setRescheduleSlot('');
+      setRescheduleTime('');
+      setRescheduleDuration(120);
       setConflictMenuJob(null);
-      await fetchData();
+      // Move viewport + bump refreshTick so useEffect runs the fetch with the
+      // updated currentDate (avoids the closure-stale race we hit before).
+      setCurrentDate(new Date(newDate + 'T00:00:00'));
+      setRefreshTick(t => t + 1);
+      const dateLabel = new Date(newDate + 'T00:00:00').toLocaleDateString('en-AU', {
+        weekday: 'short', day: 'numeric', month: 'short',
+      });
+      showToast(`Rescheduled to ${dateLabel}`);
     } catch (err) {
       console.error('Failed to reschedule:', err);
+      showToast('Failed to reschedule. Please try again.', true);
     } finally {
       setRescheduleSaving(false);
+    }
+  };
+
+  // One-click slot change from inside the detail popover. Works for both one-off
+  // jobs (writes preferred_time_slot) and recurring sessions (writes start_time
+  // to a canonical time within the chosen slot — the slot label is derived from
+  // start_time elsewhere, so the chip will reflect the change after refresh).
+  const SLOT_CANONICAL_TIME: Record<string, string> = {
+    morning: '09:00:00',
+    midday: '12:00:00',
+    afternoon: '14:00:00',
+    evening: '18:00:00',
+  };
+  const [slotSaving, setSlotSaving] = useState<string | null>(null);
+  // Pending slot preview — clicking a chip stages the change but doesn't save
+  // until the user clicks Confirm. Prevents accidental slot changes.
+  const [pendingSlot, setPendingSlot] = useState<string | null>(null);
+  // Reset the staged slot whenever the popover opens for a different job (or closes).
+  useEffect(() => {
+    setPendingSlot(null);
+  }, [selectedJob?.id]);
+  const quickChangeSlot = async (job: Job, newSlot: string) => {
+    setSlotSaving(newSlot);
+    try {
+      if (job.id.startsWith('recurring-')) {
+        const sessionId = job.id.replace('recurring-', '');
+        const startTime = SLOT_CANONICAL_TIME[newSlot];
+        if (!startTime) throw new Error(`Unknown slot: ${newSlot}`);
+        const { error } = await supabase
+          .from('recurring_sessions')
+          .update({ start_time: startTime })
+          .eq('id', sessionId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('jobs')
+          .update({ preferred_time_slot: newSlot })
+          .eq('id', job.id);
+        if (error) throw error;
+      }
+      setSelectedJob(prev => prev && prev.id === job.id ? { ...prev, preferred_time_slot: newSlot } : prev);
+      await fetchData();
+      // Build a context-aware toast so the user can see exactly which session
+      // moved (helpful when multiple jobs are scheduled on the same day).
+      const slotLabel = TIME_SLOT_LABELS[newSlot] ?? newSlot;
+      const bracketMatch = job.description.match(/^\[([^\]]+)\]/);
+      const tag = bracketMatch?.[1]?.trim();
+      const suburb = job.location_address?.split(',')[0]?.trim();
+      const dateLabel = job.scheduled_date
+        ? new Date(job.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+        : null;
+      const ctx = [tag, suburb].filter(Boolean).join(' · ');
+      const datePart = dateLabel ? ` on ${dateLabel}` : '';
+      showToast(ctx ? `${ctx} → ${slotLabel}${datePart}` : `Time slot changed to ${slotLabel}`);
+    } catch (err) {
+      console.error('Slot change failed:', err);
+      showToast('Failed to change time slot. Please try again.', true);
+    } finally {
+      setSlotSaving(null);
+    }
+  };
+
+  // One-click reschedule from inside the detail popover. Used by the quick-pick
+  // chips so the client doesn't have to open a second modal for the common case.
+  // After save we (a) toast confirmation, (b) jump the calendar to the week/month
+  // containing the new date so the moved job is visible immediately.
+  const [quickRescheduling, setQuickRescheduling] = useState<string | null>(null);
+  const quickReschedule = async (job: Job, newDate: string) => {
+    setQuickRescheduling(newDate);
+    try {
+      await performReschedule(job, newDate);
+      setSelectedJob(null);
+      // Move viewport + bump refreshTick so useEffect runs the fetch with the
+      // updated currentDate (avoids the closure-stale race).
+      setCurrentDate(new Date(newDate + 'T00:00:00'));
+      setRefreshTick(t => t + 1);
+      const dateLabel = new Date(newDate + 'T00:00:00').toLocaleDateString('en-AU', {
+        weekday: 'short', day: 'numeric', month: 'short',
+      });
+      showToast(`Rescheduled to ${dateLabel}`);
+    } catch (err) {
+      console.error('Quick reschedule failed:', err);
+      showToast('Failed to reschedule. Please try again.', true);
+    } finally {
+      setQuickRescheduling(null);
     }
   };
 
@@ -511,12 +969,12 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
         }))
         .filter(a => a.member);
 
-      // Only flag conflicts for non-completed active jobs with overlapping time slots
+      // Only flag conflicts for non-completed active jobs with overlapping times.
+      // Prefers exact start_time overlap (within ±60min); falls back to slot equality
+      // when one or both jobs only have a slot label (e.g. one-off jobs).
       const isCompleted = job.status === 'completed';
       const timeSlotOverlaps = isCompleted ? [] : dayJobs.filter(
-        j => j.id !== job.id && j.status !== 'completed' &&
-          job.preferred_time_slot && j.preferred_time_slot &&
-          job.preferred_time_slot === j.preferred_time_slot
+        j => j.id !== job.id && j.status !== 'completed' && jobsConflict(job, j)
       );
 
       // Check if this conflict pair has been dismissed
@@ -529,6 +987,7 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
         job,
         assignments: jobAssignments,
         conflictWarning: timeSlotOverlaps.length > 0 && !isDismissed,
+        conflictsWith: timeSlotOverlaps.map(j => j.id),
       };
     });
 
@@ -580,10 +1039,7 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
   const activeJobs = jobs.filter(j => j.status !== 'completed');
   const conflictCount = activeJobs.filter(j => {
     const sameDateJobs = activeJobs.filter(j2 => j2.id !== j.id && j2.scheduled_date === j.scheduled_date);
-    const overlapping = sameDateJobs.filter(j2 =>
-      j.preferred_time_slot && j2.preferred_time_slot &&
-      j.preferred_time_slot === j2.preferred_time_slot
-    );
+    const overlapping = sameDateJobs.filter(j2 => jobsConflict(j, j2));
     // Exclude dismissed conflicts
     return overlapping.some(j2 => {
       const pairKey = [j.id, j2.id].sort().join('|');
@@ -702,7 +1158,7 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
                           <p className="text-xs text-gray-300 py-4">{hasAvailable ? 'Available' : 'No jobs'}</p>
                         </div>
                       ) : (
-                        entries.map(({ job, assignments: jobAssignments, conflictWarning }) => {
+                        entries.map(({ job, assignments: jobAssignments, conflictWarning, conflictsWith }) => {
                           const { category, title } = parseJobDescription(job.description);
                           return (
                             <div
@@ -712,7 +1168,7 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
                                 job.is_emergency
                                   ? 'bg-red-50 border-red-200'
                                   : conflictWarning
-                                  ? 'bg-warm-50 border-warm-200'
+                                  ? 'bg-red-50 border-red-200'
                                   : 'bg-white border-gray-200 hover:border-primary-300'
                               }`}
                             >
@@ -739,9 +1195,9 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
                                         setConflictMenuJob(conflictMenuJob === job.id ? null : job.id);
                                       }}
                                       title="Resolve conflict"
-                                      className="p-0.5 rounded hover:bg-warm-200 transition-colors"
+                                      className="p-0.5 rounded hover:bg-red-100 transition-colors"
                                     >
-                                      <AlertCircle className="w-3.5 h-3.5 text-warm-600" />
+                                      <AlertCircle className="w-3.5 h-3.5 text-red-600" />
                                     </button>
                                     {conflictMenuJob === job.id && (
                                       <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 w-40">
@@ -751,6 +1207,8 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
                                             setRescheduleJob(job);
                                             setRescheduleDate(job.scheduled_date || '');
                                             setRescheduleSlot(job.preferred_time_slot || '');
+                                            setRescheduleTime(job.start_time || '');
+                                            setRescheduleDuration(minutesBetween(job.start_time, job.end_time) ?? 120);
                                             setConflictMenuJob(null);
                                           }}
                                           className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
@@ -769,30 +1227,56 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
                                           <Trash2 className="w-3.5 h-3.5" />
                                           Remove Job
                                         </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            dismissConflict(job.id, conflictsWith);
+                                          }}
+                                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100"
+                                        >
+                                          <Check className="w-3.5 h-3.5 text-gray-400" />
+                                          Ignore conflict
+                                        </button>
                                       </div>
                                     )}
                                   </div>
                                 )}
                               </div>
 
-                              {/* Title */}
-                              <p className="font-semibold text-gray-900 line-clamp-2 leading-snug">{title}</p>
+                              {/* Identity fallback — only when there's no category
+                                  badge to name the card (badge is the title otherwise). */}
+                              {!category && (
+                                <p className="font-semibold text-gray-900 line-clamp-1 leading-snug">{title}</p>
+                              )}
 
-                              {/* Details: time + location */}
-                              <div className="mt-1.5 space-y-1">
-                                {job.preferred_time_slot && (
-                                  <p className="flex items-center gap-1 text-gray-500">
-                                    <Clock className="w-2.5 h-2.5 flex-shrink-0 text-gray-400" />
-                                    <span>{TIME_SLOT_LABELS[job.preferred_time_slot] || job.preferred_time_slot}</span>
-                                  </p>
-                                )}
-                                {job.location_address && (
-                                  <p className="flex items-center gap-1 text-gray-500">
-                                    <MapPin className="w-2.5 h-2.5 flex-shrink-0 text-gray-400" />
-                                    <span className="truncate">{job.location_address.split(',')[0]}</span>
-                                  </p>
-                                )}
-                              </div>
+                              {/* Details: time · location on one row. The full task
+                                  list / address opens in the click-through popup. */}
+                              {(job.start_time || job.preferred_time_slot || job.location_address) && (
+                                <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-gray-500">
+                                  {(job.start_time || job.preferred_time_slot) && (
+                                    <span className="inline-flex items-center gap-1">
+                                      <Clock className="w-2.5 h-2.5 flex-shrink-0 text-gray-400" />
+                                      {job.start_time
+                                        ? (job.end_time
+                                            ? `${formatJobTime(job.start_time)} – ${formatJobTime(job.end_time)}`
+                                            : formatJobTime(job.start_time))
+                                        : (job.preferred_time_slot ? (TIME_SLOT_LABELS[job.preferred_time_slot] || job.preferred_time_slot) : '')}
+                                    </span>
+                                  )}
+                                  {job.start_time && !job.time_confirmed && !job.id.startsWith('recurring-') && (
+                                    <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-medium leading-none">proposed</span>
+                                  )}
+                                  {(job.start_time || job.preferred_time_slot) && job.location_address && (
+                                    <span className="text-gray-300">·</span>
+                                  )}
+                                  {job.location_address && (
+                                    <span className="inline-flex items-center gap-1 min-w-0">
+                                      <MapPin className="w-2.5 h-2.5 flex-shrink-0 text-gray-400" />
+                                      <span className="truncate">{job.location_address.split(',')[0]}</span>
+                                    </span>
+                                  )}
+                                </div>
+                              )}
 
                               {/* Team avatars */}
                               {jobAssignments.length > 0 && (
@@ -863,7 +1347,7 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
                               job.is_emergency
                                 ? 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200'
                                 : conflictWarning
-                                ? 'bg-warm-100 text-warm-700 border-warm-200 hover:bg-warm-200'
+                                ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
                                 : STATUS_COLORS[job.status] || 'bg-gray-100 text-gray-600 border-gray-200'
                             }`}
                           >
@@ -958,48 +1442,177 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
         )}
       </div>
 
-      {selectedJob && (
+      {selectedJob && (() => {
+        // Pull the bracketed service tag out and clean up the description so the
+        // header reads as "OFFICE CLEAN" + "Wipe down all desks…" instead of
+        // "[OFFICE CLEAN] 1. Wipe down all desks…".
+        const bracketMatch = selectedJob.description.match(/^\[([^\]]+)\]\s*(.*)/s);
+        const serviceTag = bracketMatch?.[1]?.trim() || null;
+        const restDescription = (bracketMatch?.[2] || selectedJob.description).trim();
+        // Strip any leading "1. " / "(1) " numbering, then if more numbered items
+        // follow inline, take only up to the next one.
+        const stripped = restDescription.replace(/^\s*\d+[).\s-]+/, '').trim();
+        const nextItem = stripped.match(/^(.+?)\s+\d+[).\s-]+/);
+        const firstLine = (nextItem ? nextItem[1] : stripped.split('\n')[0]).trim();
+        const headerTitle = firstLine.length > 0
+          ? (firstLine.length > 90 ? firstLine.slice(0, 90) + '…' : firstLine)
+          : (serviceTag ?? 'Job');
+        return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 ">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between p-6 border-b border-gray-100">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
+                <div className="flex items-center gap-2 flex-wrap mb-2">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_COLORS[selectedJob.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
                     {selectedJob.status.replace('_', ' ')}
                   </span>
+                  {serviceTag && (
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide bg-secondary-50 text-secondary-700 border border-secondary-200">
+                      {serviceTag}
+                    </span>
+                  )}
                   {selectedJob.is_emergency && (
                     <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">Emergency</span>
                   )}
                 </div>
-                <h2 className="text-lg font-bold text-gray-900 line-clamp-2">{selectedJob.description}</h2>
+                <h2 className="text-base font-semibold text-gray-900 leading-snug line-clamp-2">{headerTitle}</h2>
               </div>
-              <button onClick={() => setSelectedJob(null)} className="ml-4 p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+              <button onClick={() => setSelectedJob(null)} className="ml-4 p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 flex-shrink-0">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                {selectedJob.scheduled_date && (
-                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    <div>
-                      <p className="text-xs text-gray-500">Date</p>
-                      <p className="text-sm font-medium text-gray-900">
-                        {new Date(selectedJob.scheduled_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+            <div className="p-6 space-y-3">
+              {selectedJob.scheduled_date && (
+                <div className="flex items-center gap-2 px-1">
+                  <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <span className="text-sm font-medium text-gray-900">
+                    {new Date(selectedJob.scheduled_date).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+              )}
+              <div className="grid grid-cols-1 gap-3">
+                {/* Quick reschedule chips */}
+                {selectedJob.status !== 'completed' && (() => {
+                  const anchorStr = selectedJob.scheduled_date ?? toLocalDateStr(new Date());
+                  const anchor = new Date(anchorStr + 'T00:00:00');
+                  const addDays = (n: number) => {
+                    const d = new Date(anchor);
+                    d.setDate(d.getDate() + n);
+                    return toLocalDateStr(d);
+                  };
+                  const tomorrowDate = (() => {
+                    const d = new Date();
+                    d.setDate(d.getDate() + 1);
+                    return toLocalDateStr(d);
+                  })();
+                  const chips: { label: string; value: string }[] = [
+                    { label: '+1 week', value: addDays(7) },
+                    { label: '+2 weeks', value: addDays(14) },
+                    { label: 'Tomorrow', value: tomorrowDate },
+                  ];
+                  return (
+                    <div className="rounded-xl border border-gray-200 p-3">
+                      <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2">{isTradie ? 'Confirm or adjust time' : 'Quick reschedule'}</p>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {chips.map(c => {
+                          const saving = quickRescheduling === c.value;
+                          return (
+                            <button
+                              key={c.label}
+                              type="button"
+                              disabled={saving}
+                              onClick={() => quickReschedule(selectedJob, c.value)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 disabled:opacity-50 transition-colors"
+                            >
+                              {saving && <span className="w-3 h-3 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin" />}
+                              {c.label}
+                            </button>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRescheduleJob(selectedJob);
+                            setRescheduleDate(selectedJob.scheduled_date || '');
+                            setRescheduleSlot(selectedJob.preferred_time_slot || '');
+                            setRescheduleTime(selectedJob.start_time || '');
+                            setRescheduleDuration(minutesBetween(selectedJob.start_time, selectedJob.end_time) ?? 120);
+                            setSelectedJob(null);
+                          }}
+                          className="inline-flex items-center px-2.5 py-1 rounded-full border border-dashed border-gray-300 bg-white text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                        >
+                          {isTradie ? 'Set exact time…' : 'Pick date…'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+                {/* Time slot chips — clicking stages a change; user must Confirm to save. */}
+                <div className="rounded-xl border border-gray-200 p-3">
+                  <div className="flex items-baseline justify-between mb-2 gap-2">
+                    <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Time</p>
+                    {selectedJob.id.startsWith('recurring-') && (
+                      <p className="text-[10px] text-gray-400">Changes only this session</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {(['morning', 'midday', 'afternoon', 'evening'] as const).map(slot => {
+                      const isCurrent = selectedJob.preferred_time_slot === slot;
+                      const isPending = pendingSlot === slot;
+                      const isStaged = isPending && !isCurrent;
+                      const saving = slotSaving === slot;
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          disabled={saving}
+                          onClick={() => setPendingSlot(isPending ? null : slot)}
+                          className={`flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-full text-xs font-medium border transition-colors disabled:cursor-not-allowed ${
+                            isStaged
+                              ? 'bg-emerald-500 text-white border-emerald-500'
+                              : isCurrent
+                                ? `${TIME_SLOT_COLORS[slot] ?? 'bg-emerald-50 border-emerald-200 text-emerald-700'}`
+                                : 'bg-white border-gray-200 text-gray-700 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700'
+                          }`}
+                        >
+                          {saving && <span className="w-3 h-3 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin" />}
+                          {TIME_SLOT_LABELS[slot] ?? slot}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* Confirm bar — only shown when a different slot has been staged. */}
+                  {pendingSlot && pendingSlot !== selectedJob.preferred_time_slot && (
+                    <div className="mt-3 flex items-center justify-between gap-2 pt-3 border-t border-gray-100">
+                      <p className="text-xs text-gray-600">
+                        Change to <span className="font-semibold text-gray-900">{TIME_SLOT_LABELS[pendingSlot] ?? pendingSlot}</span>?
                       </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPendingSlot(null)}
+                          disabled={slotSaving !== null}
+                          className="px-2.5 py-1 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await quickChangeSlot(selectedJob, pendingSlot);
+                            setPendingSlot(null);
+                          }}
+                          disabled={slotSaving !== null}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500 text-white text-xs font-semibold hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                        >
+                          {slotSaving ? <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Check className="w-3 h-3" />}
+                          Confirm
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-                {selectedJob.preferred_time_slot && (
-                  <div className={`flex items-center gap-2 p-3 rounded-xl border ${TIME_SLOT_COLORS[selectedJob.preferred_time_slot] || 'bg-gray-50 border-gray-200'}`}>
-                    <Clock className="w-4 h-4" />
-                    <div>
-                      <p className="text-xs opacity-70">Time</p>
-                      <p className="text-sm font-medium">{selectedJob.preferred_time_slot.charAt(0).toUpperCase() + selectedJob.preferred_time_slot.slice(1)}</p>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
               {selectedJob.location_address && (
@@ -1055,18 +1668,17 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
               {selectedJob.status !== 'completed' && selectedJob.scheduled_date && (() => {
                 const sameDateJobs = jobs.filter(
                   j => j.id !== selectedJob.id && j.scheduled_date === selectedJob.scheduled_date &&
-                  j.status !== 'completed' && selectedJob.preferred_time_slot && j.preferred_time_slot &&
-                  selectedJob.preferred_time_slot === j.preferred_time_slot
+                  j.status !== 'completed' && jobsConflict(selectedJob, j)
                 );
                 if (sameDateJobs.length === 0) return null;
                 return (
-                  <div className="bg-warm-50 border border-warm-200 rounded-xl p-4">
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <AlertCircle className="w-4 h-4 text-warm-600" />
-                      <p className="text-sm font-medium text-warm-800">Time Conflict</p>
+                      <AlertCircle className="w-4 h-4 text-red-600" />
+                      <p className="text-sm font-medium text-red-800">Time Conflict</p>
                     </div>
-                    <p className="text-xs text-warm-700 mb-3">
-                      This job overlaps with {sameDateJobs.length} other {sameDateJobs.length === 1 ? 'job' : 'jobs'} in the same time slot.
+                    <p className="text-xs text-red-700 mb-3">
+                      This job overlaps with {sameDateJobs.length} other {sameDateJobs.length === 1 ? 'job' : 'jobs'} within an hour.
                     </p>
                     <div className="flex items-center gap-2">
                       <button
@@ -1074,9 +1686,11 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
                           setRescheduleJob(selectedJob);
                           setRescheduleDate(selectedJob.scheduled_date || '');
                           setRescheduleSlot(selectedJob.preferred_time_slot || '');
+                          setRescheduleTime(selectedJob.start_time || '');
+                          setRescheduleDuration(minutesBetween(selectedJob.start_time, selectedJob.end_time) ?? 120);
                           setSelectedJob(null);
                         }}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-warm-300 text-warm-800 rounded-lg text-xs font-medium hover:bg-warm-100 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-red-300 text-red-800 rounded-lg text-xs font-medium hover:bg-red-100 transition-colors"
                       >
                         <CalendarClock className="w-3.5 h-3.5" />
                         Reschedule
@@ -1104,32 +1718,143 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
                   <Plus className="w-4 h-4" />
                   Assign Team Members
                 </button>
-              ) : (
+              ) : profile?.role === 'tradie' ? (
                 <p className="text-xs text-gray-400 text-center">
                   Add team members in the <Link to="/work?tab=recruitment" className="text-primary-600 hover:underline">Hiring</Link> tab to assign them to jobs.
                 </p>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Reschedule Modal */}
-      {rescheduleJob && (
+      {rescheduleJob && (() => {
+        // Pull out the bracketed service tag (e.g. "[OFFICE CLEAN]") for the title
+        // and use the rest of the description as the body.
+        const bracketMatch = rescheduleJob.description.match(/^\[([^\]]+)\]\s*(.*)/s);
+        const serviceTag = bracketMatch?.[1]?.trim() || null;
+        const restDescription = (bracketMatch?.[2] || rescheduleJob.description).trim();
+        // Strip leading "1. " numbering, then if more numbered items follow inline,
+        // take only up to the next one.
+        const stripped = restDescription.replace(/^\s*\d+[).\s-]+/, '').trim();
+        const nextItem = stripped.match(/^(.+?)\s+\d+[).\s-]+/);
+        const firstLine = (nextItem ? nextItem[1] : stripped.split('\n')[0]).trim();
+        const titleText = firstLine.length > 0
+          ? (firstLine.length > 70 ? firstLine.slice(0, 70) + '…' : firstLine)
+          : (serviceTag ?? 'Job');
+
+        const currentDateLabel = rescheduleJob.scheduled_date
+          ? new Date(rescheduleJob.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+          : null;
+        const currentSlotLabel = rescheduleJob.preferred_time_slot
+          ? (TIME_SLOT_LABELS[rescheduleJob.preferred_time_slot] ?? rescheduleJob.preferred_time_slot)
+          : null;
+        const priceLabel = rescheduleJob.budget_amount != null
+          ? `$${Number(rescheduleJob.budget_amount).toFixed(2)}${rescheduleJob.budget_type === 'hourly' ? '/hr' : ''}`
+          : null;
+
+        return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
             <div className="flex items-start justify-between p-5 border-b border-gray-100">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Reschedule Job</h3>
-                <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{rescheduleJob.description}</p>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-bold text-gray-900">{isTradie ? 'Confirm visit time' : 'Reschedule job'}</h3>
+                {serviceTag && (
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-secondary-50 text-secondary-700 border border-secondary-200 text-[11px] font-semibold uppercase tracking-wide">
+                    {serviceTag}
+                  </span>
+                )}
+                <p className="text-sm font-medium text-gray-700 mt-1.5 line-clamp-2">{titleText}</p>
               </div>
-              <button onClick={() => { setRescheduleJob(null); setRescheduleDate(''); setRescheduleSlot(''); }} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 ml-3">
+              <button onClick={() => { setRescheduleJob(null); setRescheduleDate(''); setRescheduleSlot(''); setRescheduleTime(''); setRescheduleDuration(120); }} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 ml-3 flex-shrink-0">
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            {/* Current details — so user knows what they're moving */}
+            {(currentDateLabel || currentSlotLabel || rescheduleJob.location_address || rescheduleJob.contact_name || priceLabel) && (
+              <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 space-y-1.5">
+                <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Currently scheduled</p>
+                {currentDateLabel && (
+                  <div className="flex items-center gap-2 text-xs text-gray-700">
+                    <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                    <span>{currentDateLabel}{currentSlotLabel ? ` · ${currentSlotLabel}` : ''}</span>
+                  </div>
+                )}
+                {!currentDateLabel && currentSlotLabel && (
+                  <div className="flex items-center gap-2 text-xs text-gray-700">
+                    <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                    <span>{currentSlotLabel}</span>
+                  </div>
+                )}
+                {rescheduleJob.contact_name && (
+                  <div className="flex items-center gap-2 text-xs text-gray-700">
+                    <User className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                    <span className="truncate">{rescheduleJob.contact_name}</span>
+                  </div>
+                )}
+                {rescheduleJob.location_address && (
+                  <div className="flex items-center gap-2 text-xs text-gray-700">
+                    <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                    <span className="truncate">{rescheduleJob.location_address}</span>
+                  </div>
+                )}
+                {priceLabel && (
+                  <div className="flex items-center gap-2 text-xs text-gray-700">
+                    <span className="w-3.5 h-3.5 flex items-center justify-center text-gray-400 flex-shrink-0 text-xs font-bold">$</span>
+                    <span>{priceLabel}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="p-5 space-y-4">
               <div>
                 <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">New Date</label>
+                {/* Quick-pick chips — anchor to the current scheduled date when present,
+                    otherwise to today, so "+1 week" still means "same day next week". */}
+                {(() => {
+                  const anchorStr = rescheduleJob.scheduled_date ?? toLocalDateStr(new Date());
+                  const anchor = new Date(anchorStr + 'T00:00:00');
+                  const addDays = (n: number) => {
+                    const d = new Date(anchor);
+                    d.setDate(d.getDate() + n);
+                    return toLocalDateStr(d);
+                  };
+                  const tomorrowDate = (() => {
+                    const d = new Date();
+                    d.setDate(d.getDate() + 1);
+                    return toLocalDateStr(d);
+                  })();
+                  const chips: { label: string; value: string }[] = [
+                    { label: '+1 week', value: addDays(7) },
+                    { label: '+2 weeks', value: addDays(14) },
+                    { label: 'Tomorrow', value: tomorrowDate },
+                  ];
+                  return (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {chips.map(c => {
+                        const active = rescheduleDate === c.value;
+                        return (
+                          <button
+                            key={c.label}
+                            type="button"
+                            onClick={() => setRescheduleDate(c.value)}
+                            className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${
+                              active
+                                ? 'bg-emerald-500 text-white border-emerald-500'
+                                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                            }`}
+                          >
+                            {c.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
                 <input
                   type="date"
                   value={rescheduleDate}
@@ -1141,22 +1866,75 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
               {!rescheduleJob.id.startsWith('recurring-') && (
                 <div>
                   <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Time Slot</label>
-                  <select
-                    value={rescheduleSlot}
-                    onChange={e => setRescheduleSlot(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white"
-                  >
-                    <option value="">No preference</option>
-                    <option value="morning">Morning</option>
-                    <option value="midday">Midday</option>
-                    <option value="afternoon">Afternoon</option>
-                    <option value="evening">Evening</option>
-                  </select>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRescheduleSlot('')}
+                      className={`inline-flex items-center px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${
+                        rescheduleSlot === ''
+                          ? 'bg-emerald-500 text-white border-emerald-500'
+                          : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      No preference
+                    </button>
+                    {(['morning', 'midday', 'afternoon', 'evening'] as const).map(slot => {
+                      const active = rescheduleSlot === slot;
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => setRescheduleSlot(slot)}
+                          className={`inline-flex items-center px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${
+                            active
+                              ? 'bg-emerald-500 text-white border-emerald-500'
+                              : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                          }`}
+                        >
+                          {TIME_SLOT_LABELS[slot] ?? slot}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {!rescheduleJob.id.startsWith('recurring-') && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">{isTradie ? 'Confirm start time & duration' : 'Preferred start time (optional)'}</label>
+                  <div className="flex flex-col sm:flex-row gap-2.5">
+                    <input
+                      type="time"
+                      value={rescheduleTime}
+                      onChange={e => setRescheduleTime(e.target.value)}
+                      className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                    />
+                    <select
+                      value={rescheduleDuration}
+                      onChange={e => setRescheduleDuration(Number(e.target.value))}
+                      disabled={!rescheduleTime}
+                      className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none disabled:opacity-50 disabled:bg-gray-50"
+                    >
+                      {DURATION_OPTIONS.map(d => (
+                        <option key={d.minutes} value={d.minutes}>{d.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {rescheduleTime ? (
+                    <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-secondary-700">
+                      <Clock className="w-3 h-3 flex-shrink-0" />
+                      {isTradie ? 'Booked' : 'Roughly'} <span className="font-semibold">{formatJobTime(rescheduleTime)} – {formatJobTime(addMinutesToTime(rescheduleTime, rescheduleDuration))}</span>
+                      {!isTradie && <span className="text-gray-400">· the tradie confirms the final time</span>}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-[11px] text-gray-400">
+                      {isTradie ? 'Set the start time and how long it takes.' : 'Set a preferred start time, or leave blank to use the time slot above.'}
+                    </p>
+                  )}
                 </div>
               )}
               <div className="flex items-center gap-3 pt-2">
                 <button
-                  onClick={() => { setRescheduleJob(null); setRescheduleDate(''); setRescheduleSlot(''); }}
+                  onClick={() => { setRescheduleJob(null); setRescheduleDate(''); setRescheduleSlot(''); setRescheduleTime(''); setRescheduleDuration(120); }}
                   className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
                 >
                   Cancel
@@ -1171,13 +1949,14 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
                   ) : (
                     <CalendarClock className="w-4 h-4" />
                   )}
-                  Reschedule
+                  {isTradie ? 'Confirm time' : 'Reschedule'}
                 </button>
               </div>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Remove Confirmation Modal */}
       {removeConfirmJob && (
@@ -1235,6 +2014,52 @@ export default function SiteCalendar({ embedded = false }: { embedded?: boolean 
     </>
   );
 
+  // Collapsed mode: a compact "next visit" bar instead of the full grid.
+  const nextEntry = (() => {
+    const todayStr = toLocalDateStr(new Date());
+    return jobs
+      .filter((j) => j.scheduled_date && j.scheduled_date >= todayStr && j.status !== 'completed' && j.status !== 'cancelled')
+      .sort((a, b) => {
+        const byDate = (a.scheduled_date || '').localeCompare(b.scheduled_date || '');
+        return byDate !== 0 ? byDate : (a.start_time || '99:99').localeCompare(b.start_time || '99:99');
+      })[0] || null;
+  })();
+
+  const collapsedView = (
+    <div className="max-w-[1600px] mx-auto">
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-warm-50 flex items-center justify-center flex-shrink-0">
+            <Calendar className="w-5 h-5 text-warm-600" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Calendar</p>
+            {loading ? (
+              <p className="text-sm font-semibold text-gray-400">Loading…</p>
+            ) : nextEntry ? (
+              <p className="text-sm font-semibold text-gray-900 truncate">
+                Next visit: {new Date(nextEntry.scheduled_date! + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
+                {formatJobTime(nextEntry.start_time) ? ` · ${formatJobTime(nextEntry.start_time)}` : ''}
+              </p>
+            ) : (
+              <p className="text-sm font-semibold text-gray-900">No upcoming visits scheduled</p>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={() => setCalendarCollapsed(false)}
+          className="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex-shrink-0"
+        >
+          <Calendar className="w-4 h-4" />
+          View calendar
+        </button>
+      </div>
+    </div>
+  );
+
+  if (defaultCollapsed && calendarCollapsed) {
+    return embedded ? collapsedView : <DashboardLayout>{collapsedView}</DashboardLayout>;
+  }
   if (embedded) return content;
   return <DashboardLayout>{content}</DashboardLayout>;
 }
