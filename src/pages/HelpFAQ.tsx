@@ -13,13 +13,6 @@ interface FAQSection {
   items: FAQItem[];
 }
 
-const videoTutorials = [
-  { title: 'Getting Started as a Client', description: 'Learn how to search, save, and book tradies', duration: '2:30', embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-  { title: 'Setting Up Your Tradie Profile', description: 'Create a profile that attracts clients', duration: '3:15', embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-  { title: 'Managing Jobs & Quotes', description: 'Accept jobs, submit quotes, and track progress', duration: '4:00', embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-  { title: 'Payments & Payouts', description: 'How payments, escrow, and payouts work', duration: '2:45', embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-];
-
 const faqSections: FAQSection[] = [
   {
     title: 'Getting Started',
@@ -189,9 +182,7 @@ function FAQAccordion({ item, highlight }: { item: FAQItem; highlight?: string }
 
 export default function HelpFAQ() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [showChat, setShowChat] = useState(false);
-  const [chatMessage, setChatMessage] = useState('');
-  const [chatSent, setChatSent] = useState(false);
+  const [showHelpPanel, setShowHelpPanel] = useState(false);
 
   const filteredSections = searchQuery.trim()
     ? faqSections
@@ -311,62 +302,46 @@ export default function HelpFAQ() {
         </div>
       </main>
 
-      {/* Live Chat Widget */}
-      {showChat ? (
+      {/* Floating help panel — opens real contact options. No fake chat. */}
+      {showHelpPanel ? (
         <div className="fixed bottom-6 right-6 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
           <div className="bg-warm-500 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MessageCircle className="w-5 h-5 text-white" />
-              <span className="text-white font-semibold text-sm">Live Support</span>
+              <span className="text-white font-semibold text-sm">Need help?</span>
             </div>
-            <button onClick={() => setShowChat(false)} className="text-white/80 hover:text-white">
+            <button
+              onClick={() => setShowHelpPanel(false)}
+              className="text-white/80 hover:text-white"
+              aria-label="Close help panel"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="p-4 h-48 flex flex-col justify-end">
-            {chatSent ? (
-              <div className="text-center">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <MessageCircle className="w-5 h-5 text-green-600" />
-                </div>
-                <p className="text-sm font-medium text-gray-900">Message sent!</p>
-                <p className="text-xs text-gray-500 mt-1">We'll reply within 24 hours via email.</p>
-              </div>
-            ) : (
-              <>
-                <div className="bg-gray-100 rounded-lg px-3 py-2 mb-3 text-sm text-gray-700 self-start max-w-[85%]">
-                  Hi! How can we help you today?
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={chatMessage}
-                    onChange={(e) => setChatMessage(e.target.value)}
-                    placeholder="Type your question..."
-                    className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-warm-500"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && chatMessage.trim()) {
-                        setChatSent(true);
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={() => { if (chatMessage.trim()) setChatSent(true); }}
-                    disabled={!chatMessage.trim()}
-                    className="px-3 py-2 bg-warm-500 text-white rounded-lg hover:bg-warm-600 disabled:opacity-50 transition-colors"
-                  >
-                    Send
-                  </button>
-                </div>
-              </>
-            )}
+          <div className="p-4 space-y-3">
+            <p className="text-sm text-gray-600">
+              We usually reply within one business day. Choose the option that suits you.
+            </p>
+            <a
+              href="mailto:admin@connectradie.com"
+              className="block px-4 py-3 bg-warm-500 text-white text-sm font-semibold rounded-lg hover:bg-warm-600 transition-colors text-center"
+            >
+              Email support
+            </a>
+            <Link
+              to="/contact"
+              onClick={() => setShowHelpPanel(false)}
+              className="block px-4 py-3 border border-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors text-center"
+            >
+              Open contact form
+            </Link>
           </div>
         </div>
       ) : (
         <button
-          onClick={() => setShowChat(true)}
+          onClick={() => setShowHelpPanel(true)}
           className="fixed bottom-6 right-6 w-14 h-14 bg-warm-500 text-white rounded-full shadow-lg hover:bg-warm-600 transition-all flex items-center justify-center z-50 hover:scale-105"
-          aria-label="Open live chat"
+          aria-label="Open help options"
         >
           <MessageCircle className="w-6 h-6" />
         </button>
