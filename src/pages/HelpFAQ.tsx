@@ -44,6 +44,11 @@ const faqSections: FAQSection[] = [
         answer:
           'ConnecTradie operates across all Australian states and territories. You can search for tradies by suburb, postcode, or region to find professionals servicing your area.',
       },
+      {
+        question: 'How is ConnecTradie different from other platforms?',
+        answer:
+          'Two big differences. First, we don\'t run a lead-fee model — tradies don\'t pay just to read your job, so that cost never gets priced back into your quote. Second, we don\'t run an auction — tradies submit one fair quote rather than racing each other to the cheapest number, which tends to attract unverified bidders. Every tradie is ABN and licence verified before they can quote, your payment sits in Stripe-held escrow until you approve the work, and either side can message the other directly with no per-message charge.',
+      },
     ],
   },
   {

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Shield, Lock, DollarSign, MessageSquare, ArrowRight, CheckCircle2, X } from 'lucide-react';
+import { Shield, Lock, DollarSign, MessageSquare, Gavel, ArrowRight, CheckCircle2, X } from 'lucide-react';
 
 const comparisons = [
   {
@@ -16,9 +16,15 @@ const comparisons = [
   },
   {
     feature: 'Pricing Model',
-    us: '$0 to post, $0 to quote — free for both sides',
-    others: 'Tradies pay $30–$80 per lead (passed on to you)',
+    us: '$0 to post. $0 for tradies to quote.',
+    others: 'Tradies pay just to read your job — and price it into your quote',
     icon: DollarSign,
+  },
+  {
+    feature: 'How tradies quote',
+    us: 'One fair quote per tradie — no bidding wars, no race to the bottom',
+    others: 'Auction-style: cheapest bid wins, even from unverified accounts',
+    icon: Gavel,
   },
   {
     feature: 'Communication',

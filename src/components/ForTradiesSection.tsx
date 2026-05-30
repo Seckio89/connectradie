@@ -120,9 +120,9 @@ export default function ForTradiesSection() {
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-white">Half the Fees. Keep 95% of Every Job.</p>
+                  <p className="font-semibold text-white">Keep more of every job.</p>
                   <p className="text-gray-400 text-sm mt-1">
-                    Pro members pay just 5% platform fee vs 10% on free. No per-lead fees, no hidden cuts. Unlimited jobs for everyone.
+                    No per-lead fees. No bidding wars. No chasing the client for payment. Unlimited jobs on every plan — Pro keeps the most of each one.
                   </p>
                 </div>
               </div>
