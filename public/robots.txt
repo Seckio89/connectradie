@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
+
+# Auth-gated and account-only pages — never index
 Disallow: /dashboard
 Disallow: /onboarding
 Disallow: /settings
@@ -9,6 +11,12 @@ Disallow: /projects
 Disallow: /post-lead
 Disallow: /leads
 Disallow: /messages
+Disallow: /notifications
+Disallow: /payments
+Disallow: /payouts
+Disallow: /invoice
+Disallow: /review
+Disallow: /analytics
 Disallow: /admin/
 Disallow: /my-profile
 Disallow: /schedule
@@ -18,5 +26,16 @@ Disallow: /team
 Disallow: /trade-careers
 Disallow: /site-calendar
 Disallow: /verification
+Disallow: /payment-success
 
-Sitemap: https://connectradie.com.au/sitemap.xml
+# Explicitly allow SEO landing-page hierarchy
+Allow: /find/
+Allow: /find-in/
+Allow: /costs/
+Allow: /tradie/
+Allow: /search
+Allow: /explore
+Allow: /pricing
+Allow: /help
+
+Sitemap: https://connectradie.com.au/sitemap-index.xml

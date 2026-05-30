@@ -61,6 +61,13 @@ const Invoice = lazy(() => import('./pages/Invoice'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const LeaveReview = lazy(() => import('./pages/LeaveReview'));
 
+// SEO landing pages — programmatic /find and /costs hierarchy. These are
+// public, no auth, indexable. See src/lib/seoContent/ for the data source.
+const FindTradies = lazy(() => import('./pages/FindTradies'));
+const FindByTrade = lazy(() => import('./pages/FindByTrade'));
+const FindByLocation = lazy(() => import('./pages/FindByLocation'));
+const CostGuide = lazy(() => import('./pages/CostGuide'));
+
 function PageSpinner() {
   return (
     <div className="min-h-screen flex items-center justify-center">
@@ -218,6 +225,12 @@ function AppRoutes() {
       <Route path="/search" element={<Search />} />
       <Route path="/tradie/:id" element={<PublicTradieProfile />} />
       <Route path="/explore" element={<Explore />} />
+
+      {/* SEO landing pages — order matters; most specific first */}
+      <Route path="/find/:trade/:locationSlug" element={<FindTradies />} />
+      <Route path="/find/:trade" element={<FindByTrade />} />
+      <Route path="/find-in/:locationSlug" element={<FindByLocation />} />
+      <Route path="/costs/:trade" element={<CostGuide />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/contact" element={<Contact />} />
