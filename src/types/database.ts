@@ -235,6 +235,8 @@ export type Quote = {
   // 3-stage flow tracking (active when the parent job has flow_version=2).
   // See docs/three-stage-quote-flow.md for the full state machine.
   site_visit_scheduled_at: string | null;
+  site_visit_ends_at: string | null;
+  site_visit_time_confirmed: boolean | null;
   site_visit_completed_at: string | null;
   final_submitted_at: string | null;
   final_valid_until: string | null;

@@ -763,6 +763,39 @@ export default function QuoteComparisonView({
                       </div>
                     )}
 
+                    {/* Booked site-visit date/time — clients need to know exactly
+                        when the tradie is coming. Shown for both scheduled and
+                        completed states (so the date stays visible until accept). */}
+                    {quote.site_visit_scheduled_at
+                      && (quote.status === 'site_visit_scheduled' || quote.status === 'site_visit_completed') && (() => {
+                      const start = new Date(quote.site_visit_scheduled_at);
+                      const end = quote.site_visit_ends_at ? new Date(quote.site_visit_ends_at) : null;
+                      const day = start.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
+                      const t = (d: Date) => d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
+                      const timeRange = end ? `${t(start)} – ${t(end)}` : t(start);
+                      const confirmed = quote.site_visit_time_confirmed === true;
+                      return (
+                        <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-secondary-50 border border-secondary-200 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <Eye className="w-4 h-4 text-secondary-600 flex-shrink-0 mt-0.5" />
+                            <div className="text-xs text-secondary-800 leading-relaxed">
+                              <p className="font-semibold">
+                                Site visit {quote.status === 'site_visit_completed' ? 'was held' : 'booked'}:{' '}
+                                <span className="font-bold">{day}</span> · {timeRange}
+                              </p>
+                              {quote.status === 'site_visit_scheduled' && (
+                                <p className="mt-0.5 text-[11px] text-secondary-700">
+                                  {confirmed
+                                    ? 'Confirmed by the tradie.'
+                                    : `Awaiting confirmation from the tradie. They may propose a different time.`}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     <div className="flex items-center gap-2.5 px-5 py-3 border-t border-gray-100 bg-gray-50/50 ml-[4.75rem]">
                       {actions.includes('book_site_visit') && (
                         <button
@@ -852,7 +885,16 @@ export default function QuoteComparisonView({
           let payload: { visitStart?: string; visitEnd?: string; timeConfirmed?: boolean } | undefined;
           if (selectedSlotId) {
             const slot = visitSlots.find((s) => s.id === selectedSlotId);
-            if (slot) payload = { visitStart: slot.start_time, visitEnd: slot.end_time, timeConfirmed: true };
+            if (slot) {
+              // A published availability slot is a *window* (e.g. 9am–7pm), not the
+              // visit itself. The visit is the client-picked duration starting at
+              // the window's start, clamped so it never overruns the window.
+              const start = new Date(slot.start_time);
+              const slotEnd = new Date(slot.end_time);
+              const desiredEnd = new Date(start.getTime() + proposeDuration * 60000);
+              const end = desiredEnd > slotEnd ? slotEnd : desiredEnd;
+              payload = { visitStart: start.toISOString(), visitEnd: end.toISOString(), timeConfirmed: true };
+            }
           } else if (proposeDate && proposeTime) {
             const start = new Date(`${proposeDate}T${proposeTime}`);
             const end = new Date(start.getTime() + proposeDuration * 60000);
@@ -891,7 +933,7 @@ export default function QuoteComparisonView({
                         );
                       })}
                     </div>
-                    <p className="mt-2 text-[11px] text-gray-400">Picking one of these confirms the visit immediately.</p>
+                    <p className="mt-2 text-[11px] text-gray-400">Pick a window — the visit starts at the beginning of that window for the duration set below (default 1 hour).</p>
                   </>
                 ) : (
                   <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg text-xs text-amber-800">
@@ -901,7 +943,7 @@ export default function QuoteComparisonView({
 
                 <div className={visitSlots.length > 0 ? 'mt-3 pt-3 border-t border-gray-100' : 'mt-3'}>
                   {visitSlots.length > 0 && (
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Or suggest another time</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Visit duration · or suggest another time</p>
                   )}
                   <div className="flex flex-col sm:flex-row gap-2">
                     <input type="date" value={proposeDate} min={new Date().toISOString().slice(0, 10)}
@@ -910,7 +952,7 @@ export default function QuoteComparisonView({
                     <input type="time" value={proposeTime}
                       onChange={(e) => { setProposeTime(e.target.value); setSelectedSlotId(null); }}
                       className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-secondary-500 outline-none" />
-                    <select value={proposeDuration} disabled={!proposeTime}
+                    <select value={proposeDuration} disabled={!proposeTime && !selectedSlotId}
                       onChange={(e) => setProposeDuration(Number(e.target.value))}
                       className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-secondary-500 outline-none disabled:opacity-50">
                       <option value={30}>30 min</option>

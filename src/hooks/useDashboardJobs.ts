@@ -30,21 +30,49 @@ export function useDashboardJobs({ userId, onSuccess, onError }: UseDashboardJob
   const fetchJobs = useCallback(async () => {
     if (!userId) return;
     try {
-      const { data, error } = await supabase
+      // Jobs where this tradie is the awarded contractor (quote accepted onward).
+      // For v2 quotes pre-acceptance (site_visit_scheduled, site_visit_completed,
+      // final_submitted), jobs.tradie_id is still null — the awarded tradie is
+      // only stamped on the job at accept-and-pay. Without the second query
+      // below, those in-flight jobs are invisible to the tradie's dashboard.
+      const { data: awardedJobs, error: awardedErr } = await supabase
         .from('jobs')
         .select('*, profiles!jobs_client_id_fkey(full_name, email)')
         .eq('tradie_id', userId)
         .is('archived_at', null)
         .order('created_at', { ascending: false });
+      if (awardedErr) throw awardedErr;
 
-      if (error) throw error;
+      // Jobs where this tradie has an in-flight v2 quote (site visit booked,
+      // visit completed, or final submitted — but not yet accepted). These
+      // belong in the dashboard pipeline so the tradie can act on them.
+      const { data: pipelineQuotes } = await supabase
+        .from('quotes')
+        .select('job_id')
+        .eq('tradie_id', userId)
+        .in('status', ['site_visit_scheduled', 'site_visit_completed', 'final_submitted']);
+      const pipelineJobIds = Array.from(new Set((pipelineQuotes || []).map((q) => q.job_id)));
+      const newPipelineIds = pipelineJobIds.filter(
+        (id) => !(awardedJobs || []).some((j) => j.id === id),
+      );
+
+      let pipelineJobs: typeof awardedJobs = [];
+      if (newPipelineIds.length > 0) {
+        const { data: extra } = await supabase
+          .from('jobs')
+          .select('*, profiles!jobs_client_id_fkey(full_name, email)')
+          .in('id', newPipelineIds)
+          .is('archived_at', null);
+        pipelineJobs = extra || [];
+      }
+
+      const combined = [...(awardedJobs || []), ...(pipelineJobs || [])];
 
       // Exclude jobs linked to recurring services — those are managed via Services tab.
       // Cover both the original placeholder (recurring_jobs.original_job_id) and any
       // quote-request jobs created later (jobs.recurring_job_id).
       const recurringJobIds = new Set<string>();
-      const fetched = (data || []) as { id: string; recurring_job_id?: string | null }[];
-      for (const j of fetched) {
+      for (const j of combined as { id: string; recurring_job_id?: string | null }[]) {
         if (j.recurring_job_id) recurringJobIds.add(j.id);
       }
       const { data: recurringLinked } = await supabase
@@ -55,19 +83,19 @@ export function useDashboardJobs({ userId, onSuccess, onError }: UseDashboardJob
       for (const r of recurringLinked || []) {
         if (r.original_job_id) recurringJobIds.add(r.original_job_id);
       }
-      const filtered = (data || []).filter(j => !recurringJobIds.has(j.id));
+      const filtered = combined.filter((j) => !recurringJobIds.has(j.id));
 
       setJobs(filtered);
 
       // Fetch jobs this tradie has already quoted on (for pending counter)
-      const pendingIds = (data || []).filter(j => j.status === 'pending').map(j => j.id);
+      const pendingIds = combined.filter((j) => j.status === 'pending').map((j) => j.id);
       if (pendingIds.length > 0) {
         const { data: quotes } = await supabase
           .from('quotes')
           .select('job_id')
           .eq('tradie_id', userId)
           .in('job_id', pendingIds);
-        setQuotedJobIds(new Set((quotes || []).map(q => q.job_id)));
+        setQuotedJobIds(new Set((quotes || []).map((q) => q.job_id)));
       } else {
         setQuotedJobIds(new Set());
       }
