@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { friendlyError } from '../lib/utils';
 import SEO from '../components/SEO';
+import BetaModal from '../components/BetaModal';
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24">
@@ -99,6 +100,7 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30 flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8">
       <SEO title="Create Account" description="Create a free ConnecTradie account." noindex />
+      <BetaModal />
 
       <div className="w-full max-w-[480px]">
         {/* Header */}

@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { friendlyError } from '../lib/utils';
 import SEO from '../components/SEO';
+import BetaModal from '../components/BetaModal';
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24">
@@ -101,6 +102,7 @@ export default function Login() {
     return (
       <div className="min-h-screen bg-white flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
         <SEO title="Reset Password" description="Reset your ConnecTradie account password." noindex />
+        <BetaModal />
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <Link to="/" className="flex items-center justify-center">
             <span className="text-2xl font-extrabold tracking-tight text-black">
@@ -203,6 +205,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-white flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <SEO title="Sign In" description="Sign in to your ConnecTradie account." noindex />
+      <BetaModal />
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link to="/" className="flex items-center justify-center">
           <span className="text-2xl font-extrabold tracking-tight text-black">
