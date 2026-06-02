@@ -183,10 +183,10 @@ export default function FindTradies() {
 
   // ── Schema markup ──
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://connectradie.com.au/' },
-    { name: suburb.city, url: `https://connectradie.com.au${suburbHubUrl(suburb.slug)}` },
-    { name: suburb.name, url: `https://connectradie.com.au${suburbHubUrl(suburb.slug)}` },
-    { name: tradeLabelPlural, url: `https://connectradie.com.au${findUrl(trade, suburb.slug)}` },
+    { name: 'Home', url: 'https://connectradie.com/' },
+    { name: suburb.city, url: `https://connectradie.com${suburbHubUrl(suburb.slug)}` },
+    { name: suburb.name, url: `https://connectradie.com${suburbHubUrl(suburb.slug)}` },
+    { name: tradeLabelPlural, url: `https://connectradie.com${findUrl(trade, suburb.slug)}` },
   ]);
   const faqSchema = generateFAQSchema(content.faqs.map((f) => ({ question: f.q, answer: f.a })));
   const tradieSchemas = tradies.slice(0, 10).map((t) =>

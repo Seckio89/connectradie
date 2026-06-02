@@ -38,4 +38,4 @@ Allow: /explore
 Allow: /pricing
 Allow: /help
 
-Sitemap: https://connectradie.com.au/sitemap-index.xml
+Sitemap: https://connectradie.com/sitemap-index.xml

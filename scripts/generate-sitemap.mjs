@@ -28,7 +28,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, '..');
 const PUBLIC_DIR = join(PROJECT_ROOT, 'public');
-const SITE_URL = 'https://connectradie.com.au';
+const SITE_URL = 'https://connectradie.com';
 
 // ── Trade slugs (mirror of TRADE_CATEGORIES.value, excluding 'other') ──
 const TRADES = [

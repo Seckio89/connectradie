@@ -34,9 +34,9 @@ export default function FindByLocation() {
     .filter((s): s is NonNullable<ReturnType<typeof getSuburb>> => !!s);
 
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://connectradie.com.au/' },
-    { name: suburb.city, url: `https://connectradie.com.au${suburbHubUrl(suburb.slug)}` },
-    { name: suburb.name, url: `https://connectradie.com.au${suburbHubUrl(suburb.slug)}` },
+    { name: 'Home', url: 'https://connectradie.com/' },
+    { name: suburb.city, url: `https://connectradie.com${suburbHubUrl(suburb.slug)}` },
+    { name: suburb.name, url: `https://connectradie.com${suburbHubUrl(suburb.slug)}` },
   ]);
   const jsonLd: JsonLdSchema[] = [breadcrumbSchema];
 

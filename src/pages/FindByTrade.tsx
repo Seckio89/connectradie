@@ -51,8 +51,8 @@ export default function FindByTrade() {
   }));
 
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://connectradie.com.au/' },
-    { name: `${plural} in Australia`, url: `https://connectradie.com.au/find/${trade}` },
+    { name: 'Home', url: 'https://connectradie.com/' },
+    { name: `${plural} in Australia`, url: `https://connectradie.com/find/${trade}` },
   ]);
   const jsonLd: JsonLdSchema[] = [breadcrumbSchema];
 

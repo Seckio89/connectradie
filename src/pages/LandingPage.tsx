@@ -20,8 +20,8 @@ export default function LandingPage() {
             "@context": "https://schema.org",
             "@type": "Organization",
             "name": "ConnecTradie",
-            "url": "https://connectradie.com.au",
-            "logo": "https://connectradie.com.au/icons/icon-192x192.svg",
+            "url": "https://connectradie.com",
+            "logo": "https://connectradie.com/icons/icon-192x192.svg",
             "description": "Australia's trusted marketplace connecting homeowners with verified trade professionals.",
             "contactPoint": {
               "@type": "ContactPoint",
@@ -33,12 +33,12 @@ export default function LandingPage() {
             "@context": "https://schema.org",
             "@type": "WebSite",
             "name": "ConnecTradie",
-            "url": "https://connectradie.com.au",
+            "url": "https://connectradie.com",
             "potentialAction": {
               "@type": "SearchAction",
               "target": {
                 "@type": "EntryPoint",
-                "urlTemplate": "https://connectradie.com.au/search?trade={search_term_string}"
+                "urlTemplate": "https://connectradie.com/search?trade={search_term_string}"
               },
               "query-input": "required name=search_term_string"
             }

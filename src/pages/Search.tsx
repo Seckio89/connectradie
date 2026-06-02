@@ -1166,12 +1166,12 @@ export default function Search() {
           "@type": "ItemList",
           "name": seoTitle,
           "description": seoDescription,
-          "url": "https://connectradie.com.au/search",
+          "url": "https://connectradie.com/search",
           "numberOfItems": filteredTradies.length,
           "itemListElement": filteredTradies.slice(0, 10).map((tradie, index) => ({
             "@type": "ListItem",
             "position": index + 1,
-            "url": `https://connectradie.com.au/tradie/${tradie.id}`
+            "url": `https://connectradie.com/tradie/${tradie.id}`
           }))
         }}
       />

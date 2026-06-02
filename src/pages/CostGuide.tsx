@@ -43,8 +43,8 @@ export default function CostGuide() {
   const featuredSuburbs = SUBURBS.slice(0, 16);
 
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://connectradie.com.au/' },
-    { name: `${label} Costs`, url: `https://connectradie.com.au${costGuideUrl(trade)}` },
+    { name: 'Home', url: 'https://connectradie.com/' },
+    { name: `${label} Costs`, url: `https://connectradie.com${costGuideUrl(trade)}` },
   ]);
   const faqSchema = generateFAQSchema(content.faqs.map((f) => ({ question: f.q, answer: f.a })));
   const jsonLd: JsonLdSchema[] = [breadcrumbSchema, faqSchema];

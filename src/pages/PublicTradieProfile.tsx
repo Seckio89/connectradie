@@ -131,7 +131,7 @@ export default function PublicTradieProfile() {
     "@type": "LocalBusiness",
     "name": displayName,
     "description": details?.bio || `${tradeCategoryLabel} professional on ConnecTradie`,
-    "url": `https://connectradie.com.au/tradie/${id}`,
+    "url": `https://connectradie.com/tradie/${id}`,
     ...(tradie.avatar_url ? { "image": tradie.avatar_url } : {}),
     "address": {
       "@type": "PostalAddress",
