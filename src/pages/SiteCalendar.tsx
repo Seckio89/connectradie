@@ -84,6 +84,20 @@ function minutesBetween(start: string | null, end: string | null): number | null
   return diff > 0 ? diff : null;
 }
 
+// Pick a sensible default duration for the reschedule modal. Site visits
+// always default to 60 min — they\'re short inspection appointments. For
+// other jobs, infer from start/end but clamp out absurd values (legacy bad
+// data, or jobs that span a whole availability window rather than a real
+// duration). Anything outside the dropdown\'s 60–480 range snaps to 120.
+function inferRescheduleDuration(job: { id: string; start_time: string | null; end_time: string | null }): number {
+  const isSiteVisit = job.id.startsWith('sitevisit-');
+  if (isSiteVisit) return 60;
+  const inferred = minutesBetween(job.start_time, job.end_time);
+  if (inferred === null) return 120;
+  if (inferred < 60 || inferred > 480) return 120;
+  return inferred;
+}
+
 // Map an exact "HH:MM" time onto the coarse slot used for calendar grouping/colour,
 // so a job rescheduled to a specific time still lands in a sensible slot bucket.
 function deriveSlotFromTime(timeStr: string): string {
@@ -1240,7 +1254,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                             setRescheduleDate(job.scheduled_date || '');
                                             setRescheduleSlot(job.preferred_time_slot || '');
                                             setRescheduleTime(job.start_time || '');
-                                            setRescheduleDuration(minutesBetween(job.start_time, job.end_time) ?? 120);
+                                            setRescheduleDuration(inferRescheduleDuration(job));
                                             setConflictMenuJob(null);
                                           }}
                                           className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
@@ -1569,7 +1583,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                             setRescheduleDate(selectedJob.scheduled_date || '');
                             setRescheduleSlot(selectedJob.preferred_time_slot || '');
                             setRescheduleTime(selectedJob.start_time || '');
-                            setRescheduleDuration(minutesBetween(selectedJob.start_time, selectedJob.end_time) ?? 120);
+                            setRescheduleDuration(inferRescheduleDuration(selectedJob));
                             setSelectedJob(null);
                           }}
                           className="inline-flex items-center px-2.5 py-1 rounded-full border border-dashed border-gray-300 bg-white text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
@@ -1719,7 +1733,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                           setRescheduleDate(selectedJob.scheduled_date || '');
                           setRescheduleSlot(selectedJob.preferred_time_slot || '');
                           setRescheduleTime(selectedJob.start_time || '');
-                          setRescheduleDuration(minutesBetween(selectedJob.start_time, selectedJob.end_time) ?? 120);
+                          setRescheduleDuration(inferRescheduleDuration(selectedJob));
                           setSelectedJob(null);
                         }}
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-red-300 text-red-800 rounded-lg text-xs font-medium hover:bg-red-100 transition-colors"

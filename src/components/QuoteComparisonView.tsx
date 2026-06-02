@@ -170,12 +170,17 @@ export default function QuoteComparisonView({
   const [collapsedId, setCollapsedId] = useState<string | null>(null);
 
   // Site-visit scheduling (chosen before paying the call-out fee).
+  // Duration is fixed at 60 min — site inspections always book as a 1-hour
+  // appointment from the client's side. The tradie adjusts the actual time
+  // when they confirm in the Site Calendar. This is intentional UX: clients
+  // can't reasonably estimate inspection length, and asking them adds
+  // friction without improving accuracy.
+  const SITE_VISIT_DEFAULT_MINUTES = 60;
   const [visitSlots, setVisitSlots] = useState<{ id: string; start_time: string; end_time: string }[]>([]);
   const [visitSlotsLoading, setVisitSlotsLoading] = useState(false);
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [proposeDate, setProposeDate] = useState('');
   const [proposeTime, setProposeTime] = useState('');
-  const [proposeDuration, setProposeDuration] = useState(60);
 
   const isV2 = job.flow_version === 2;
 
@@ -188,7 +193,6 @@ export default function QuoteComparisonView({
     setSelectedSlotId(null);
     setProposeDate('');
     setProposeTime('');
-    setProposeDuration(60);
     setVisitSlots([]);
     if (!tradieId) return;
     setVisitSlotsLoading(true);
@@ -886,18 +890,18 @@ export default function QuoteComparisonView({
           if (selectedSlotId) {
             const slot = visitSlots.find((s) => s.id === selectedSlotId);
             if (slot) {
-              // A published availability slot is a *window* (e.g. 9am–7pm), not the
-              // visit itself. The visit is the client-picked duration starting at
-              // the window's start, clamped so it never overruns the window.
+              // A published availability slot is a *window* (e.g. 9am–7pm). The
+              // visit itself is a 60-min appointment starting at the window's
+              // start. Tradie fine-tunes the actual time when they confirm.
               const start = new Date(slot.start_time);
               const slotEnd = new Date(slot.end_time);
-              const desiredEnd = new Date(start.getTime() + proposeDuration * 60000);
+              const desiredEnd = new Date(start.getTime() + SITE_VISIT_DEFAULT_MINUTES * 60000);
               const end = desiredEnd > slotEnd ? slotEnd : desiredEnd;
               payload = { visitStart: start.toISOString(), visitEnd: end.toISOString(), timeConfirmed: true };
             }
           } else if (proposeDate && proposeTime) {
             const start = new Date(`${proposeDate}T${proposeTime}`);
-            const end = new Date(start.getTime() + proposeDuration * 60000);
+            const end = new Date(start.getTime() + SITE_VISIT_DEFAULT_MINUTES * 60000);
             payload = { visitStart: start.toISOString(), visitEnd: end.toISOString(), timeConfirmed: false };
           }
           const quoteIdToBook = confirmingBookVisitId;
@@ -909,8 +913,7 @@ export default function QuoteComparisonView({
             <div className="p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-1">Book a site visit</h2>
               <p className="text-sm text-gray-600 mb-4">
-                Choose when {tradieName} should visit. They inspect the site and submit a
-                binding final quote afterwards — your call-out fee is credited to it if you proceed.
+                Pick when {tradieName} should drop by. Visits are short — usually 30–60 minutes — and they'll confirm the exact time on the day. Afterwards they submit a binding final quote and your call-out fee is credited to it.
               </p>
 
               <div className="mb-4">
@@ -933,7 +936,7 @@ export default function QuoteComparisonView({
                         );
                       })}
                     </div>
-                    <p className="mt-2 text-[11px] text-gray-400">Pick a window — the visit starts at the beginning of that window for the duration set below (default 1 hour).</p>
+                    <p className="mt-2 text-[11px] text-gray-400">Tap a window to lock it in.</p>
                   </>
                 ) : (
                   <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg text-xs text-amber-800">
@@ -943,7 +946,7 @@ export default function QuoteComparisonView({
 
                 <div className={visitSlots.length > 0 ? 'mt-3 pt-3 border-t border-gray-100' : 'mt-3'}>
                   {visitSlots.length > 0 && (
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Visit duration · or suggest another time</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Or suggest another time</p>
                   )}
                   <div className="flex flex-col sm:flex-row gap-2">
                     <input type="date" value={proposeDate} min={new Date().toISOString().slice(0, 10)}
@@ -952,14 +955,6 @@ export default function QuoteComparisonView({
                     <input type="time" value={proposeTime}
                       onChange={(e) => { setProposeTime(e.target.value); setSelectedSlotId(null); }}
                       className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-secondary-500 outline-none" />
-                    <select value={proposeDuration} disabled={!proposeTime && !selectedSlotId}
-                      onChange={(e) => setProposeDuration(Number(e.target.value))}
-                      className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-secondary-500 outline-none disabled:opacity-50">
-                      <option value={30}>30 min</option>
-                      <option value={60}>1 hour</option>
-                      <option value={90}>1.5 hours</option>
-                      <option value={120}>2 hours</option>
-                    </select>
                   </div>
                   {proposeDate && proposeTime && !selectedSlotId && (
                     <p className="mt-1.5 text-[11px] text-gray-400">{tradieName} will confirm this proposed time.</p>
