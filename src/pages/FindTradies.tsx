@@ -117,7 +117,7 @@ export default function FindTradies() {
         .eq('onboarding_completed', true)
         .eq('tradie_details.trade_category', resolved.tradeSlug)
         .in('tradie_details.postcode', postcodes)
-        .order('tradie_details(average_rating)', { ascending: false, nullsFirst: false })
+        .order('average_rating', { ascending: false, nullsFirst: false, referencedTable: 'tradie_details' })
         .limit(20);
 
       if (cancelled) return;
