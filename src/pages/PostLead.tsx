@@ -24,6 +24,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import DashboardLayout from '../components/DashboardLayout';
 import AddressAutocomplete from '../components/AddressAutocomplete';
+import JobPostGuide from '../components/JobPostGuide';
 import SearchableSelect from '../components/SearchableSelect';
 import { notifyTradiesForUrgentJob, notifyTradiesForNewLead } from '../lib/notifications';
 import { redactContactInfo, detectContactInfo, getContactWarningMessage } from '../lib/redaction';
@@ -724,6 +725,7 @@ export default function PostLead() {
 
   return (
     <DashboardLayout>
+      <JobPostGuide />
       <div className="max-w-2xl mx-auto">
         {!skipSelection && (
           <button
@@ -753,7 +755,7 @@ export default function PostLead() {
             <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-5">Job Details</h2>
             <div className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+                <div data-tour="postlead-category">
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Category</label>
                   <SearchableSelect
                     options={TRADE_CATEGORIES.map((cat) => ({ value: cat, label: cat }))}
@@ -797,7 +799,7 @@ export default function PostLead() {
                 </div>
               </div>
 
-              <div>
+              <div data-tour="postlead-description">
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
                 <textarea
                   value={description}
@@ -862,7 +864,7 @@ export default function PostLead() {
                     <span className="text-sm text-gray-700">Parking available on site</span>
                   </label>
                 </div>
-                <div>
+                <div data-tour="postlead-photos">
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Photos of the job <span className="text-gray-400 font-normal">(optional — helps tradies quote accurately)</span>
                   </label>
@@ -911,7 +913,7 @@ export default function PostLead() {
           </div>
 
           {/* ── Section 2: Scheduling ── */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
+          <div data-tour="postlead-schedule" className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
             <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">When do you need this done?</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <button
