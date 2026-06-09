@@ -190,12 +190,27 @@ Deno.serve(async (req: Request) => {
         continue;
       }
 
-      // Create Stripe transfer to tradie's Connect account
+      // Create Stripe transfer to tradie's Connect account.
+      //
+      // Source from the original PaymentIntent via `source_transaction` when
+      // the transfer fits within the main charge. That debits the held
+      // escrow funds rather than the platform's general available balance,
+      // which is the bug we hit in test mode — pending Stripe settlement
+      // left platform balance at $0 and every auto-release run failed with
+      // "insufficient available funds" even though the held PI had plenty.
+      //
+      // Falls back to a platform-balance transfer when price-adjustment
+      // top-ups push the total above the original charge. That edge needs
+      // a per-PI multi-transfer refactor before real money flows — leaving
+      // a metadata flag so we can audit how often it's hit.
       try {
         const transfer = await stripe.transfers.create({
           amount: totalTransferAmount,
           currency: "aud",
           destination: tradieProfile.stripe_connect_account_id,
+          ...(totalTransferAmount <= payment.amount
+            ? { source_transaction: payment.stripe_payment_intent_id }
+            : {}),
           transfer_group: `job_${job.id}`,
           metadata: {
             payment_id: payment.id,
@@ -203,6 +218,7 @@ Deno.serve(async (req: Request) => {
             client_id: job.client_id,
             tradie_id: job.tradie_id,
             auto_released: "true",
+            sourced_from_pi: String(totalTransferAmount <= payment.amount),
           },
         }, {
           idempotencyKey: `auto_release_${payment.id}`,

@@ -186,13 +186,29 @@ Deno.serve(async (req: Request) => {
       return errorJson("Transfer amount must be positive after platform fee deduction", 400);
     }
 
-    // Create a transfer to the tradie's Connect account
-    // Transfer the base payment amount minus platform fee
+    // Create a transfer to the tradie's Connect account.
+    //
+    // We source the transfer directly from the original PaymentIntent via
+    // `source_transaction` whenever the transfer amount fits within the main
+    // charge. This debits the held escrow funds rather than the platform's
+    // general available balance — which is the right shape for "escrow,
+    // released later" and avoids the failure mode where pending Stripe
+    // settlement (or routine payouts in production) leave the platform
+    // balance below the transfer amount at release time.
+    //
+    // When price-adjustment top-ups have pushed the total above the original
+    // charge, we fall back to a platform-balance transfer (the prior
+    // behavior). A future change should split that into one transfer per
+    // source PaymentIntent so even adjusted jobs source directly from held
+    // funds — leaving a note so we don't forget when going live.
     const transfer = await stripe.transfers.create(
       {
         amount: transferAmount,
         currency: "aud",
         destination: tradieProfile.stripe_connect_account_id,
+        ...(transferAmount <= payment.amount
+          ? { source_transaction: payment.stripe_payment_intent_id }
+          : {}),
         transfer_group: `job_${payment.job_id}`,
         metadata: {
           payment_id: paymentId,
@@ -200,6 +216,7 @@ Deno.serve(async (req: Request) => {
           client_id: user.id,
           tradie_id: job.tradie_id,
           platform_fee: String(platformFeeCents),
+          sourced_from_pi: String(transferAmount <= payment.amount),
         },
       },
       idempotencyKey ? { idempotencyKey } : undefined,
