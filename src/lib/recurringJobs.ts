@@ -886,7 +886,7 @@ export async function createRecurringJob(
       address: data.location || '',
       rate_per_visit: data.agreed_price || 0,
       typical_frequency: freqMap[data.frequency_months] || 'weekly',
-      preferred_time: data.preferred_time || null,
+      typical_time: data.preferred_time || null,
       status: 'active',
     });
   } catch {
