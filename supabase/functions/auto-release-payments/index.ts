@@ -192,25 +192,43 @@ Deno.serve(async (req: Request) => {
 
       // Create Stripe transfer to tradie's Connect account.
       //
-      // Source from the original PaymentIntent via `source_transaction` when
-      // the transfer fits within the main charge. That debits the held
-      // escrow funds rather than the platform's general available balance,
-      // which is the bug we hit in test mode — pending Stripe settlement
-      // left platform balance at $0 and every auto-release run failed with
-      // "insufficient available funds" even though the held PI had plenty.
+      // Source from the original charge via `source_transaction` when the
+      // transfer fits within the main charge. That debits the held escrow
+      // funds rather than the platform's general available balance, which
+      // is the bug we hit in test mode — pending Stripe settlement left
+      // platform balance at $0 and every auto-release run failed with
+      // "insufficient available funds" even though the held charge had it.
+      //
+      // IMPORTANT: source_transaction expects a Charge ID (ch_xxx), NOT a
+      // PaymentIntent ID. We retrieve the PI here to get its latest_charge.
       //
       // Falls back to a platform-balance transfer when price-adjustment
-      // top-ups push the total above the original charge. That edge needs
-      // a per-PI multi-transfer refactor before real money flows — leaving
-      // a metadata flag so we can audit how often it's hit.
+      // top-ups push the total above the original charge OR PI lookup
+      // fails. metadata.sourced_from_pi flags whether the fallback was
+      // hit, so we can audit before flipping to live keys.
+      let sourceChargeId: string | null = null;
+      if (totalTransferAmount <= payment.amount) {
+        try {
+          const intent = await stripe.paymentIntents.retrieve(
+            payment.stripe_payment_intent_id,
+          );
+          const lc = intent.latest_charge;
+          sourceChargeId = typeof lc === "string" ? lc : (lc?.id ?? null);
+        } catch (lookupErr) {
+          console.error(
+            `Job ${job.id}: failed to resolve PI to charge:`,
+            lookupErr,
+          );
+          sourceChargeId = null;
+        }
+      }
+
       try {
         const transfer = await stripe.transfers.create({
           amount: totalTransferAmount,
           currency: "aud",
           destination: tradieProfile.stripe_connect_account_id,
-          ...(totalTransferAmount <= payment.amount
-            ? { source_transaction: payment.stripe_payment_intent_id }
-            : {}),
+          ...(sourceChargeId ? { source_transaction: sourceChargeId } : {}),
           transfer_group: `job_${job.id}`,
           metadata: {
             payment_id: payment.id,
@@ -218,7 +236,8 @@ Deno.serve(async (req: Request) => {
             client_id: job.client_id,
             tradie_id: job.tradie_id,
             auto_released: "true",
-            sourced_from_pi: String(totalTransferAmount <= payment.amount),
+            sourced_from_pi: String(!!sourceChargeId),
+            source_charge: sourceChargeId ?? "",
           },
         }, {
           idempotencyKey: `auto_release_${payment.id}`,

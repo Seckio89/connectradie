@@ -188,27 +188,47 @@ Deno.serve(async (req: Request) => {
 
     // Create a transfer to the tradie's Connect account.
     //
-    // We source the transfer directly from the original PaymentIntent via
-    // `source_transaction` whenever the transfer amount fits within the main
-    // charge. This debits the held escrow funds rather than the platform's
-    // general available balance — which is the right shape for "escrow,
-    // released later" and avoids the failure mode where pending Stripe
-    // settlement (or routine payouts in production) leave the platform
-    // balance below the transfer amount at release time.
+    // We source the transfer directly from the original charge via
+    // `source_transaction` whenever the transfer amount fits within it.
+    // This debits the held escrow funds rather than the platform's general
+    // available balance — which is the right shape for "escrow, released
+    // later" and avoids the failure mode where pending Stripe settlement
+    // (or routine payouts in production) leave the platform balance below
+    // the transfer amount at release time.
+    //
+    // IMPORTANT: source_transaction accepts a Charge ID (ch_xxx), NOT a
+    // PaymentIntent ID. Stripe used to auto-resolve PI → latest_charge in
+    // some flows but the transfers endpoint rejects PIs outright. We do the
+    // resolution explicitly here.
     //
     // When price-adjustment top-ups have pushed the total above the original
-    // charge, we fall back to a platform-balance transfer (the prior
-    // behavior). A future change should split that into one transfer per
-    // source PaymentIntent so even adjusted jobs source directly from held
-    // funds — leaving a note so we don't forget when going live.
+    // charge — or the PI lookup fails — we fall back to a platform-balance
+    // transfer (the prior behavior). A future change should split adjusted
+    // jobs into one transfer per source so they still source from held
+    // funds; flag with metadata.sourced_from_pi so we can audit how often.
+    let sourceChargeId: string | null = null;
+    if (transferAmount <= payment.amount) {
+      try {
+        const intent = await stripe.paymentIntents.retrieve(
+          payment.stripe_payment_intent_id,
+        );
+        const lc = intent.latest_charge;
+        sourceChargeId = typeof lc === "string" ? lc : (lc?.id ?? null);
+      } catch (lookupErr) {
+        console.error(
+          "Failed to resolve PI to charge for source_transaction:",
+          lookupErr,
+        );
+        sourceChargeId = null;
+      }
+    }
+
     const transfer = await stripe.transfers.create(
       {
         amount: transferAmount,
         currency: "aud",
         destination: tradieProfile.stripe_connect_account_id,
-        ...(transferAmount <= payment.amount
-          ? { source_transaction: payment.stripe_payment_intent_id }
-          : {}),
+        ...(sourceChargeId ? { source_transaction: sourceChargeId } : {}),
         transfer_group: `job_${payment.job_id}`,
         metadata: {
           payment_id: paymentId,
@@ -216,7 +236,8 @@ Deno.serve(async (req: Request) => {
           client_id: user.id,
           tradie_id: job.tradie_id,
           platform_fee: String(platformFeeCents),
-          sourced_from_pi: String(transferAmount <= payment.amount),
+          sourced_from_pi: String(!!sourceChargeId),
+          source_charge: sourceChargeId ?? "",
         },
       },
       idempotencyKey ? { idempotencyKey } : undefined,
@@ -283,10 +304,27 @@ Deno.serve(async (req: Request) => {
           400,
         );
       }
-      // Any other Stripe error — log details server-side, show generic message.
-      return errorJson(
-        "We couldn't release the payment right now. Please try again — if it keeps failing, contact support.",
-        502,
+      // Any other Stripe error — log full details server-side, return a
+      // generic user-facing message, AND include a debug envelope so the
+      // browser's DevTools network panel surfaces the underlying Stripe
+      // code/message. The debug field is intended to be temporary while we
+      // stabilise the Connect transfer flow — remove once it's solid.
+      console.error(
+        "Unhandled Stripe error in release-escrow:",
+        err.code,
+        err.type,
+        err.message,
+      );
+      return new Response(
+        JSON.stringify({
+          error:
+            "We couldn't release the payment right now. Please try again — if it keeps failing, contact support.",
+          debug: { code: err.code, type: err.type, message: err.message },
+        }),
+        {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
     const message =
