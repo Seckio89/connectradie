@@ -1179,7 +1179,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
           <button
             onClick={handleSubmit}
             disabled={saving || !description.trim() || (hasSubcategories ? !serviceSubtype : !customSubtype.trim())}
-            className="w-full py-3.5 font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-lg bg-secondary-300 text-white hover:bg-secondary-400 shadow-sm"
+            className="w-full py-3.5 font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-lg bg-secondary-500 text-white hover:bg-secondary-600 shadow-sm"
           >
             {saving ? (
               <>
