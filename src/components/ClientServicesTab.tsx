@@ -16,7 +16,8 @@ import {
   RECURRING_SERVICE_SUBCATEGORIES,
   RECURRING_SERVICE_DESCRIPTIONS,
 } from '../lib/recurringJobs';
-import type { RecurringJob, RecurringSession, KeywordSuggestion } from '../lib/recurringJobs';
+import type { RecurringJob, RecurringSession, KeywordSuggestion, CancellationCategory } from '../lib/recurringJobs';
+import CancelServiceModal from './CancelServiceModal';
 import { getActiveAgreements } from '../lib/ongoingServices';
 import type { ServiceAgreement, SupplyItem } from '../types/database';
 import RecurringSessionCard from './RecurringSessionCard';
@@ -1470,9 +1471,12 @@ export default function ClientServicesTab() {
     }
   };
 
-  const handleCancel = async (jobId: string) => {
+  const handleCancel = async (
+    jobId: string,
+    payload?: { category?: CancellationCategory; reason?: string },
+  ) => {
     try {
-      await cancelRecurringJob(jobId, 'client');
+      await cancelRecurringJob(jobId, 'client', payload);
       showToast('Service ended');
       setCancelTarget(null);
       fetchJobs();
@@ -2201,34 +2205,7 @@ export default function ClientServicesTab() {
                   </div>
                 )}
 
-                {/* Cancel confirmation panel */}
-                {cancelTarget === job.id && (
-                  <div className="px-4 py-3 bg-red-50 border-t border-red-100">
-                    <div className="flex items-start gap-2.5">
-                      <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-xs font-semibold text-red-800">Are you sure you want to end this service?</p>
-                        <p className="text-xs text-red-600 mt-0.5">
-                          This will cancel all upcoming sessions. This action cannot be undone.
-                        </p>
-                        <div className="flex items-center gap-2 mt-2.5">
-                          <button
-                            onClick={() => handleCancel(job.id)}
-                            className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors"
-                          >
-                            Yes, End Service
-                          </button>
-                          <button
-                            onClick={() => setCancelTarget(null)}
-                            className="px-4 py-1.5 border border-gray-200 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
-                          >
-                            Keep Service
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* Cancel confirmation now lives in CancelServiceModal — rendered once at component level. */}
                   </>
                 )}
               </div>
@@ -2445,6 +2422,22 @@ export default function ClientServicesTab() {
       )}
 
       {/* Outstanding invoices are now shown inline on each service card above */}
+
+      {cancelTarget && (() => {
+        const target = recurringJobs.find((j) => j.id === cancelTarget);
+        const label = target
+          ? (target.service_subtype || target.trade_category.replace(/_/g, ' '))
+          : 'this service';
+        return (
+          <CancelServiceModal
+            isOpen
+            serviceLabel={label}
+            otherPartyRole="tradie"
+            onCancel={() => setCancelTarget(null)}
+            onConfirm={(payload) => handleCancel(cancelTarget, payload)}
+          />
+        );
+      })()}
     </div>
   );
 }

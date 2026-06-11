@@ -6,7 +6,8 @@ import { supabase } from '../lib/supabase';
 import { callEdgeFunction } from '../lib/edgeFn';
 import { getTradieUpcomingSessions, getTradieRecurringJobs, cancelRecurringJob, pauseRecurringJob, resumeRecurringJob, generateFutureSessions } from '../lib/recurringJobs';
 import { getSupplySuggestions, SUPPLY_DEFAULT_UNITS } from '../lib/tradeCategories';
-import type { RecurringSession, RecurringJob } from '../lib/recurringJobs';
+import type { RecurringSession, RecurringJob, CancellationCategory } from '../lib/recurringJobs';
+import CancelServiceModal from './CancelServiceModal';
 import { getActiveAgreements } from '../lib/ongoingServices';
 import type { ServiceAgreement, SupplyItem } from '../types/database';
 import RecurringSessionCard from './RecurringSessionCard';
@@ -37,7 +38,7 @@ type RecurringSessionWithJob = RecurringSession & {
 };
 
 // Pause / Resume / Stop controls for an ongoing service
-function ServiceControls({ jobId, isActive, isCancelled, onChanged }: { jobId: string; isActive: boolean; isCancelled: boolean; onChanged: () => void }) {
+function ServiceControls({ jobId, jobLabel, isActive, isCancelled, onChanged }: { jobId: string; jobLabel: string; isActive: boolean; isCancelled: boolean; onChanged: () => void }) {
   const [confirming, setConfirming] = useState<'pause' | 'stop' | null>(null);
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
@@ -69,10 +70,10 @@ function ServiceControls({ jobId, isActive, isCancelled, onChanged }: { jobId: s
     }
   };
 
-  const handleStop = async () => {
+  const handleStop = async (payload?: { category?: CancellationCategory; reason?: string }) => {
     setLoading(true);
     try {
-      await cancelRecurringJob(jobId, 'tradie');
+      await cancelRecurringJob(jobId, 'tradie', payload);
       onChanged();
       showToast('Ongoing service cancelled');
     } catch {
@@ -89,23 +90,39 @@ function ServiceControls({ jobId, isActive, isCancelled, onChanged }: { jobId: s
     );
   }
 
+  // The cancel modal is rendered alongside every interactive branch so the
+  // "Cancel permanently" link on paused services and the "End Service" link
+  // on active services both open the same flow.
+  const cancelModal = (
+    <CancelServiceModal
+      isOpen={confirming === 'stop'}
+      serviceLabel={jobLabel}
+      otherPartyRole="client"
+      onCancel={() => setConfirming(null)}
+      onConfirm={(payload) => handleStop(payload)}
+    />
+  );
+
   if (!isActive) {
     return (
-      <div className="flex items-center gap-2">
-        <button
-          onClick={handleResume}
-          disabled={loading}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-colors"
-        >
-          {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Resume Service'}
-        </button>
-        <button
-          onClick={() => setConfirming('stop')}
-          className="text-xs text-red-500 hover:text-red-600 font-medium transition-colors"
-        >
-          Cancel permanently
-        </button>
-      </div>
+      <>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleResume}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+          >
+            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Resume Service'}
+          </button>
+          <button
+            onClick={() => setConfirming('stop')}
+            className="text-xs text-red-500 hover:text-red-600 font-medium transition-colors"
+          >
+            Cancel permanently
+          </button>
+        </div>
+        {cancelModal}
+      </>
     );
   }
 
@@ -130,43 +147,25 @@ function ServiceControls({ jobId, isActive, isCancelled, onChanged }: { jobId: s
     );
   }
 
-  if (confirming === 'stop') {
-    return (
+  return (
+    <>
       <div className="flex items-center gap-3">
-        <span className="text-xs text-gray-600">End this service? All sessions will be cancelled.</span>
         <button
-          onClick={handleStop}
-          disabled={loading}
-          className="px-3 py-1.5 bg-red-500 text-white text-xs font-medium rounded-lg hover:bg-red-600 disabled:opacity-50 transition-colors"
+          onClick={() => setConfirming('pause')}
+          className="text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
         >
-          {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Confirm'}
+          Put on Hold
         </button>
+        <span className="text-gray-300">|</span>
         <button
-          onClick={() => setConfirming(null)}
-          className="text-xs text-gray-500 hover:text-gray-700 font-medium transition-colors"
+          onClick={() => setConfirming('stop')}
+          className="text-xs text-red-500 hover:text-red-600 font-medium transition-colors"
         >
-          Back
+          End Service
         </button>
       </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-3">
-      <button
-        onClick={() => setConfirming('pause')}
-        className="text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
-      >
-        Put on Hold
-      </button>
-      <span className="text-gray-300">|</span>
-      <button
-        onClick={() => setConfirming('stop')}
-        className="text-xs text-red-500 hover:text-red-600 font-medium transition-colors"
-      >
-        End Service
-      </button>
-    </div>
+      {cancelModal}
+    </>
   );
 }
 
@@ -1444,7 +1443,7 @@ function JobCard({
               </button>
             )}
             <div className="ml-auto flex items-center gap-2">
-              <ServiceControls jobId={jobId} isActive={isActive} isCancelled={isCancelled} onChanged={onUpdate} />
+              <ServiceControls jobId={jobId} jobLabel={jobLabel} isActive={isActive} isCancelled={isCancelled} onChanged={onUpdate} />
             </div>
           </div>
         </div>

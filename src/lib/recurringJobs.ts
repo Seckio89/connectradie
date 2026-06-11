@@ -1198,10 +1198,36 @@ export async function resumeRecurringJob(id: string, resumedByRole?: 'client' | 
   }
 }
 
+export type CancellationCategory =
+  | 'price'
+  | 'not_needed'
+  | 'quality'
+  | 'changed_tradie'
+  | 'frequency'
+  | 'other';
+
+export interface CancelRecurringJobOptions {
+  category?: CancellationCategory;
+  reason?: string;
+}
+
+const CANCELLATION_CATEGORY_LABELS: Record<CancellationCategory, string> = {
+  price: 'Too expensive',
+  not_needed: "Don't need it anymore",
+  quality: 'Quality issue',
+  changed_tradie: 'Changed tradies',
+  frequency: 'Wrong frequency',
+  other: 'Other',
+};
+
 /**
  * Cancel (deactivate) a recurring job permanently — cancels sessions and ends agreements.
  */
-export async function cancelRecurringJob(id: string, cancelledByRole?: 'client' | 'tradie'): Promise<void> {
+export async function cancelRecurringJob(
+  id: string,
+  cancelledByRole?: 'client' | 'tradie',
+  options?: CancelRecurringJobOptions,
+): Promise<void> {
   // Fetch job details before cancelling (for notifications)
   const { data: job, error: fetchError } = await supabase
     .from('recurring_jobs')
@@ -1278,10 +1304,20 @@ export async function cancelRecurringJob(id: string, cancelledByRole?: 'client' 
   } else {
     // ── Tradie was assigned: keep records as history ──
 
-    // Deactivate and mark as cancelled
+    // Deactivate and mark as cancelled. Reason fields are optional — we never
+    // gate a cancellation on them, but persist whatever was supplied so the
+    // other party gets context and we can analyse churn later.
+    const trimmedReason = options?.reason?.trim() || null;
+    const cancelUpdate: Record<string, unknown> = {
+      is_active: false,
+      cancelled_at: new Date().toISOString(),
+    };
+    if (options?.category) cancelUpdate.cancellation_reason_category = options.category;
+    if (trimmedReason) cancelUpdate.cancellation_reason = trimmedReason;
+
     const { error } = await supabase
       .from('recurring_jobs')
-      .update({ is_active: false, cancelled_at: new Date().toISOString() })
+      .update(cancelUpdate)
       .eq('id', id);
 
     if (error) throw new Error(error.message);
@@ -1322,19 +1358,28 @@ export async function cancelRecurringJob(id: string, cancelledByRole?: 'client' 
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (c: string) => c.toUpperCase());
 
+    // Build a short suffix describing why — category label + (optional)
+    // reason text. Keep it under ~120 chars so it fits comfortably in the
+    // notification bell preview.
+    const categoryLabel = options?.category ? CANCELLATION_CATEGORY_LABELS[options.category] : null;
+    const reasonParts = [categoryLabel, trimmedReason].filter(Boolean) as string[];
+    const reasonSuffix = reasonParts.length
+      ? ` Reason: ${reasonParts.join(' — ').slice(0, 120)}`
+      : '';
+
     try {
       if (cancelledByRole === 'client' && job.tradie_id) {
         await insertNotification(
           job.tradie_id,
           'recurring_cancelled',
-          `Your client has cancelled the recurring ${tradeLabel} service.`,
+          `Your client has cancelled the recurring ${tradeLabel} service.${reasonSuffix}`,
           { recurring_job_id: id },
         );
       } else if (job.client_id) {
         await insertNotification(
           job.client_id,
           'recurring_cancelled',
-          `Your tradie has cancelled the recurring ${tradeLabel} service.`,
+          `Your tradie has cancelled the recurring ${tradeLabel} service.${reasonSuffix}`,
           { recurring_job_id: id },
         );
       }
