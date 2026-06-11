@@ -121,6 +121,19 @@ export default function JobPostGuide() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Lock background scroll while the guide is open. Mirrors BetaModal's
+  // approach — without this, mobile users (especially iOS) can scroll the
+  // underlying form while the spotlight stays pinned, making the highlighted
+  // anchor drift visually away from the cut-out.
+  useEffect(() => {
+    if (!visible) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [visible]);
+
   // Only include steps whose target is currently in the DOM (the form has
   // multiple branches — e.g. job-type selection screen vs. the actual form).
   const [resolvedSteps, setResolvedSteps] = useState<TourStep[]>([]);

@@ -9,7 +9,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 */
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
 
     const totalFormatted = Number(invoice.total).toLocaleString("en-AU", { style: "currency", currency: "AUD" });
     const periodLabel = `${invoice.billing_period_start} to ${invoice.billing_period_end}`;
-    const siteUrl = Deno.env.get("SITE_URL") || "https://connectradie.com.au";
+    const siteUrl = Deno.env.get("SITE_URL") || "https://connectradie.com";
     const approvalLink = `${siteUrl}/payments?invoice=${invoice.id}`;
 
     // 1. Insert a fresh in-app notification (the original may have been read or

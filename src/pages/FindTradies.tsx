@@ -94,64 +94,82 @@ export default function FindTradies() {
         String(Number(resolved.suburb.postcode) - 1).padStart(4, '0'),
       ];
 
+      // profiles holds the location/verification columns (suburb, postcode,
+      // license_verified, abn_verified, is_premium, is_identity_verified,
+      // avatar_url). tradie_details holds the trade_category filter only.
+      // tradie_ratings is a separate view keyed by tradie_id — fetched in a
+      // follow-up query because PostgREST doesn't auto-detect view FKs.
       const { data, error } = await supabase
         .from('profiles')
         .select(`
           id,
           full_name,
           bio,
-          profile_image_url,
+          avatar_url,
+          suburb,
+          postcode,
+          is_premium,
+          license_verified,
+          abn_verified,
+          is_identity_verified,
           tradie_details!inner (
-            trade_category,
-            postcode,
-            suburb,
-            average_rating,
-            total_reviews,
-            is_pro,
-            license_verified,
-            abn_verified,
-            stripe_identity_verified
+            trade_category
           )
         `)
         .eq('role', 'tradie')
         .eq('onboarding_completed', true)
         .eq('tradie_details.trade_category', resolved.tradeSlug)
-        .in('tradie_details.postcode', postcodes)
-        .order('average_rating', { ascending: false, nullsFirst: false, referencedTable: 'tradie_details' })
+        .in('postcode', postcodes)
         .limit(20);
 
       if (cancelled) return;
 
-      if (error || !data) {
+      if (error || !data || data.length === 0) {
+        if (error) console.error('FindTradies inventory query failed:', error);
         setTradies([]);
         setLoading(false);
         return;
       }
 
+      // Fan-out ratings lookup. Best-effort — if it fails, render without ratings.
+      const tradieIds = data.map((r) => r.id);
+      const { data: ratings } = await supabase
+        .from('tradie_ratings')
+        .select('tradie_id, average_rating, total_reviews')
+        .in('tradie_id', tradieIds);
+      if (cancelled) return;
+
+      const ratingsByTradie = new Map<string, { average_rating: number | null; total_reviews: number | null }>(
+        (ratings ?? []).map((r) => [r.tradie_id, { average_rating: r.average_rating, total_reviews: r.total_reviews }]),
+      );
+
       const mapped: PublicTradieSummary[] = data
         .map((row) => {
-          // tradie_details may be returned as array or single object depending on schema.
-          const td: Record<string, unknown> = Array.isArray(row.tradie_details)
-            ? row.tradie_details[0]
-            : row.tradie_details;
+          // tradie_details may come back as array or single object — only used
+          // to confirm the inner join matched the trade.
+          const td = Array.isArray(row.tradie_details) ? row.tradie_details[0] : row.tradie_details;
           if (!td) return null;
+          const rating = ratingsByTradie.get(row.id);
           return {
             id: row.id,
             full_name: row.full_name ?? 'Tradie',
             trade_category: (td.trade_category as string) ?? null,
-            postcode: (td.postcode as string) ?? null,
-            suburb: (td.suburb as string) ?? null,
-            average_rating: (td.average_rating as number) ?? null,
-            total_reviews: (td.total_reviews as number) ?? null,
-            profile_image_url: row.profile_image_url ?? null,
+            postcode: row.postcode ?? null,
+            suburb: row.suburb ?? null,
+            average_rating: rating?.average_rating ?? null,
+            total_reviews: rating?.total_reviews ?? null,
+            profile_image_url: row.avatar_url ?? null,
             bio: row.bio ?? null,
-            is_pro: !!td.is_pro,
-            license_verified: !!td.license_verified,
-            abn_verified: !!td.abn_verified,
-            stripe_identity_verified: !!td.stripe_identity_verified,
+            is_pro: !!row.is_premium,
+            license_verified: !!row.license_verified,
+            abn_verified: !!row.abn_verified,
+            stripe_identity_verified: !!row.is_identity_verified,
           };
         })
-        .filter((t): t is PublicTradieSummary => t !== null);
+        .filter((t): t is PublicTradieSummary => t !== null)
+        // Client-side sort by rating — server-side ordering on a separately-
+        // fetched view isn't possible without restructuring the query.
+        .sort((a, b) => (b.average_rating ?? 0) - (a.average_rating ?? 0));
 
       setTradies(mapped);
       setLoading(false);

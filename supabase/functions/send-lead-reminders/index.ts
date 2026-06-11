@@ -18,7 +18,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 */
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
@@ -182,7 +182,7 @@ Deno.serve(async (req: Request) => {
             body: {
               userId: imp.tradie_id,
               subject: "Still interested in this lead?",
-              html: `<p>Hi,</p><p>You haven't responded to <strong>${titleLine}</strong> in ${suburb}. The lead auto-expires in 24 hours.</p><p><a href="${Deno.env.get("SITE_URL") || "https://connectradie.com.au"}/work?lead=${imp.job_id}">Open the quote modal</a> or pass to clear it.</p>`,
+              html: `<p>Hi,</p><p>You haven't responded to <strong>${titleLine}</strong> in ${suburb}. The lead auto-expires in 24 hours.</p><p><a href="${Deno.env.get("SITE_URL") || "https://connectradie.com"}/work?lead=${imp.job_id}">Open the quote modal</a> or pass to clear it.</p>`,
             },
           }).catch((e) => console.warn("[lead-reminders] 48h email failed:", e));
 

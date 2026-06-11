@@ -9,7 +9,7 @@ function requireEnv(key: string): string {
 }
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
@@ -206,6 +206,10 @@ Deno.serve(async (req: Request) => {
       // top-ups push the total above the original charge OR PI lookup
       // fails. metadata.sourced_from_pi flags whether the fallback was
       // hit, so we can audit before flipping to live keys.
+      // If we can't get the charge ID when one is expected, skip this job
+      // for THIS run rather than silently transferring from platform balance.
+      // The cron will retry on the next 6-hourly tick — much safer than
+      // creating an untraceable accounting drift on a sleepy lookup blip.
       let sourceChargeId: string | null = null;
       if (totalTransferAmount <= payment.amount) {
         try {
@@ -215,11 +219,14 @@ Deno.serve(async (req: Request) => {
           const lc = intent.latest_charge;
           sourceChargeId = typeof lc === "string" ? lc : (lc?.id ?? null);
         } catch (lookupErr) {
-          console.error(
-            `Job ${job.id}: failed to resolve PI to charge:`,
-            lookupErr,
-          );
-          sourceChargeId = null;
+          const msg = lookupErr instanceof Error ? lookupErr.message : "unknown";
+          errors.push(`Job ${job.id}: PI lookup failed (${msg}) — will retry next tick`);
+          console.error(`Job ${job.id}: failed to resolve PI to charge:`, lookupErr);
+          continue;
+        }
+        if (!sourceChargeId) {
+          errors.push(`Job ${job.id}: PaymentIntent has no latest_charge yet — will retry next tick`);
+          continue;
         }
       }
 

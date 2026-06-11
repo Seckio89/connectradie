@@ -21,7 +21,7 @@ import { calculateProcessingFeeCents } from "../_shared/pricing.ts";
 */
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
@@ -201,7 +201,7 @@ Deno.serve(async (req: Request) => {
     // Prefer the caller's actual origin (works for localhost dev on any port and
     // for production) over the SITE_URL env, which is easy to misconfigure.
     const origin = req.headers.get("Origin");
-    const siteUrl = origin || Deno.env.get("SITE_URL") || "https://connectradie.com.au";
+    const siteUrl = origin || Deno.env.get("SITE_URL") || "https://connectradie.com";
 
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
       {

@@ -5,7 +5,7 @@ import { calculateBecsProcessingFeeCents, calculateProcessingFeeCents, calculate
 
 const corsHeaders = {
   "Access-Control-Allow-Origin":
-    Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
+    Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey, authorization",
@@ -94,7 +94,7 @@ Deno.serve(async (req: Request) => {
     const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") || "";
     const siteUrl = allowedOrigin && allowedOrigin !== "*"
       ? allowedOrigin
-      : req.headers.get("origin") || "https://connectradie.com.au";
+      : req.headers.get("origin") || "https://connectradie.com";
     const now = new Date().toISOString();
 
     // ─── DECLINE ───

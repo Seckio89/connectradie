@@ -13,7 +13,7 @@ const supabase = createClient(
 );
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') || 'https://connectradie.com.au',
+  'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') || 'https://connectradie.com',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
 };
@@ -430,7 +430,7 @@ async function handleEvent(event: Stripe.Event) {
             .maybeSingle();
 
           if (invoice) {
-            const siteUrl = Deno.env.get('SITE_URL') || 'https://connectradie.com.au';
+            const siteUrl = Deno.env.get('SITE_URL') || 'https://connectradie.com';
             const totalCents = Math.round(Number(invoice.total) * 100);
 
             // Calculate fees for the card fallback

@@ -57,7 +57,16 @@ export default class ErrorBoundary extends Component<Props, State> {
         const alreadyTried = sessionStorage.getItem(CHUNK_RELOAD_KEY);
         if (!alreadyTried) {
           sessionStorage.setItem(CHUNK_RELOAD_KEY, '1');
-          window.location.reload();
+          // Flush Sentry before reloading. captureException is fire-and-
+          // forget; reload() races past the in-flight POST and the error
+          // never lands in monitoring. flush(2000) drains the queue with
+          // a 2s deadline, then we reload regardless. .finally so a Sentry
+          // outage can't block recovery.
+          Sentry.flush(2000)
+            .catch(() => undefined)
+            .finally(() => {
+              window.location.reload();
+            });
         }
       } catch {
         // sessionStorage may be unavailable (strict private browsing). Fall

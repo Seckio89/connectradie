@@ -44,6 +44,26 @@ interface QuoteComparisonViewProps {
   onBookSiteVisit?: (quoteId: string, jobId: string) => Promise<void | { checkoutUrl?: string }>;
 }
 
+/**
+ * Format a DATE column (YYYY-MM-DD, no time/zone) for display in en-AU.
+ *
+ * `new Date('2026-06-15T00:00:00')` is parsed as local-midnight and shifts
+ * by a day under any UTC-aware downstream consumer (analytics, ICS export).
+ * Construct with explicit Y/M/D at noon local time instead — noon is far
+ * from any DST boundary, so the displayed date matches the calendar date
+ * in every timezone.
+ */
+function formatProposedStartDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map((part) => Number(part));
+  if (!y || !m || !d) return iso;
+  return new Date(y, m - 1, d, 12, 0, 0).toLocaleDateString('en-AU', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 /** Format tradie display name based on subscription tier */
 function formatTradieDisplayName(quote: QuoteWithTradie): string {
   const isPro = quote.tradie_details?.subscription_tier === 'pro';
@@ -603,7 +623,7 @@ export default function QuoteComparisonView({
                     {quote.proposed_start_date && (
                       <span className="inline-flex items-center gap-1.5 text-emerald-600">
                         <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-                        Available from {new Date(quote.proposed_start_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
+                        Available from {formatProposedStartDate(quote.proposed_start_date)}
                       </span>
                     )}
                     {quote.message && (
@@ -890,13 +910,25 @@ export default function QuoteComparisonView({
           if (selectedSlotId) {
             const slot = visitSlots.find((s) => s.id === selectedSlotId);
             if (slot) {
-              // A published availability slot is a *window* (e.g. 9am–7pm). The
-              // visit itself is a 60-min appointment starting at the window's
-              // start. Tradie fine-tunes the actual time when they confirm.
+              // A published availability slot is a *window* (e.g. 9am–7pm).
+              // The visit itself is a fixed 60-min appointment. Refuse to
+              // book if the slot is shorter than that — silently truncating
+              // to a 5-min booking (the previous behaviour when the window
+              // was tiny) violated the contract we show the client and
+              // broke downstream calendar logic.
               const start = new Date(slot.start_time);
               const slotEnd = new Date(slot.end_time);
-              const desiredEnd = new Date(start.getTime() + SITE_VISIT_DEFAULT_MINUTES * 60000);
-              const end = desiredEnd > slotEnd ? slotEnd : desiredEnd;
+              const slotMinutes = (slotEnd.getTime() - start.getTime()) / 60000;
+              if (slotMinutes < SITE_VISIT_DEFAULT_MINUTES) {
+                console.error('Site-visit slot too short — refusing booking', {
+                  slotId: selectedSlotId,
+                  slotMinutes,
+                  required: SITE_VISIT_DEFAULT_MINUTES,
+                });
+                setConfirmingBookVisitId(null);
+                return;
+              }
+              const end = new Date(start.getTime() + SITE_VISIT_DEFAULT_MINUTES * 60000);
               payload = { visitStart: start.toISOString(), visitEnd: end.toISOString(), timeConfirmed: true };
             }
           } else if (proposeDate && proposeTime) {

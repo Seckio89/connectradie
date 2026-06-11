@@ -4,7 +4,7 @@ import Stripe from "npm:stripe@14.21.0";
 import { calculatePlatformFee, calculateProcessingFeeCents, resolveTradieTier } from "../_shared/pricing.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
@@ -351,7 +351,7 @@ Deno.serve(async (req: Request) => {
           });
         }
 
-        const siteUrl = Deno.env.get("SITE_URL") || "https://connectradie.com.au";
+        const siteUrl = Deno.env.get("SITE_URL") || "https://connectradie.com";
 
         // Can this invoice be auto-debited after a notice window? Requires an active
         // BECS mandate on the job AND a fully-onboarded tradie to receive the funds.

@@ -17,7 +17,11 @@ interface UseDashboardJobsOptions {
 
 export function useDashboardJobs({ userId, onSuccess, onError }: UseDashboardJobsOptions) {
   const [jobs, setJobs] = useState<DashboardJob[]>([]);
+  // Stored as an array (stable identity for consumers that destructure it)
+  // but membership checks should go through isJobUnlocked, which uses the
+  // memoised Set below.
   const [unlockedJobIds, setUnlockedJobIds] = useState<string[]>([]);
+  const unlockedJobIdSet = useMemo(() => new Set(unlockedJobIds), [unlockedJobIds]);
   const [quotedJobIds, setQuotedJobIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
 
@@ -46,23 +50,32 @@ export function useDashboardJobs({ userId, onSuccess, onError }: UseDashboardJob
       // Jobs where this tradie has an in-flight v2 quote (site visit booked,
       // visit completed, or final submitted — but not yet accepted). These
       // belong in the dashboard pipeline so the tradie can act on them.
-      const { data: pipelineQuotes } = await supabase
+      const { data: pipelineQuotes, error: pipelineQuotesErr } = await supabase
         .from('quotes')
         .select('job_id')
         .eq('tradie_id', userId)
         .in('status', ['site_visit_scheduled', 'site_visit_completed', 'final_submitted']);
+      if (pipelineQuotesErr) {
+        // Don't fail the whole dashboard — but surface the issue so users
+        // aren't quietly missing in-flight quotes from the pipeline.
+        console.error('useDashboardJobs: pipeline quotes query failed', pipelineQuotesErr);
+      }
       const pipelineJobIds = Array.from(new Set((pipelineQuotes || []).map((q) => q.job_id)));
-      const newPipelineIds = pipelineJobIds.filter(
-        (id) => !(awardedJobs || []).some((j) => j.id === id),
-      );
+      // Use a Set for O(1) lookups instead of Array.some — this runs over
+      // every awarded job for every pipeline id, was quadratic before.
+      const awardedJobIdSet = new Set((awardedJobs || []).map((j) => j.id));
+      const newPipelineIds = pipelineJobIds.filter((id) => !awardedJobIdSet.has(id));
 
       let pipelineJobs: typeof awardedJobs = [];
       if (newPipelineIds.length > 0) {
-        const { data: extra } = await supabase
+        const { data: extra, error: extraErr } = await supabase
           .from('jobs')
           .select('*, profiles!jobs_client_id_fkey(full_name, email)')
           .in('id', newPipelineIds)
           .is('archived_at', null);
+        if (extraErr) {
+          console.error('useDashboardJobs: pipeline jobs query failed', extraErr);
+        }
         pipelineJobs = extra || [];
       }
 
@@ -75,11 +88,14 @@ export function useDashboardJobs({ userId, onSuccess, onError }: UseDashboardJob
       for (const j of combined as { id: string; recurring_job_id?: string | null }[]) {
         if (j.recurring_job_id) recurringJobIds.add(j.id);
       }
-      const { data: recurringLinked } = await supabase
+      const { data: recurringLinked, error: recurringErr } = await supabase
         .from('recurring_jobs')
         .select('original_job_id')
         .eq('tradie_id', userId)
         .not('original_job_id', 'is', null);
+      if (recurringErr) {
+        console.error('useDashboardJobs: recurring-linked query failed', recurringErr);
+      }
       for (const r of recurringLinked || []) {
         if (r.original_job_id) recurringJobIds.add(r.original_job_id);
       }
@@ -150,8 +166,8 @@ export function useDashboardJobs({ userId, onSuccess, onError }: UseDashboardJob
   }, []);
 
   const isJobUnlocked = useCallback(
-    (jobId: string) => unlockedJobIds.includes(jobId),
-    [unlockedJobIds]
+    (jobId: string) => unlockedJobIdSet.has(jobId),
+    [unlockedJobIdSet]
   );
 
   const activeJobCount = useMemo(

@@ -4,7 +4,7 @@ import Stripe from "npm:stripe@14.21.0";
 import { calculatePlatformFee, calculateProcessingFeeCents, calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
@@ -78,7 +78,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Validate redirect URLs to prevent open redirects
-    const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au";
+    const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com";
     const isValidRedirectUrl = (url: string) => {
       // Allow all origins in dev mode
       if (allowedOrigin === "*") return true;

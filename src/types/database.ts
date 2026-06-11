@@ -811,6 +811,13 @@ export type RecurringJob = {
   times_completed: number;
   is_active: boolean;
   cancelled_at: string | null;
+  // Optional preferred visit time (HH:MM) used by SiteCalendar and the
+  // recurring-job helpers to anchor sessions. Multiple call sites already
+  // read this field via inline casts — declared here so the casts can drop.
+  preferred_time: string | null;
+  service_subtype: string | null;
+  agreed_price: number | null;
+  location: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com.au",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
@@ -215,11 +215,31 @@ Deno.serve(async (req: Request) => {
         const lc = intent.latest_charge;
         sourceChargeId = typeof lc === "string" ? lc : (lc?.id ?? null);
       } catch (lookupErr) {
+        // Refuse to fall back to a platform-balance transfer — we expected
+        // to debit the held charge and we can't verify it exists. Better
+        // to return a retryable error than silently debit the wrong source
+        // and leave accounting drift no-one notices until reconcile.
         console.error(
-          "Failed to resolve PI to charge for source_transaction:",
+          "Failed to resolve PI to charge for source_transaction — refusing platform-balance fallback:",
           lookupErr,
         );
-        sourceChargeId = null;
+        return errorJson(
+          "We couldn't verify the payment source. Please try again in a moment — if it keeps failing, contact support.",
+          503,
+        );
+      }
+      if (!sourceChargeId) {
+        // PI exists but has no latest_charge yet (most often: charge still
+        // in transit on Stripe's side). Same reasoning — do not paper over
+        // with platform balance.
+        console.error(
+          "PaymentIntent has no latest_charge yet, refusing platform-balance fallback:",
+          payment.stripe_payment_intent_id,
+        );
+        return errorJson(
+          "The payment hasn't fully settled with Stripe yet. Please try again in a few minutes.",
+          503,
+        );
       }
     }
 

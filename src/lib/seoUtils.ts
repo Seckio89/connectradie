@@ -215,7 +215,7 @@ export function generateJobPostingSchema(job: JobForSchema): JsonLdSchema {
     hiringOrganization: {
       '@type': 'Organization',
       name: 'ConnecTradie',
-      sameAs: 'https://connectradie.com.au',
+      sameAs: 'https://connectradie.com',
     },
     employmentType: 'CONTRACTOR',
     industry: job.trade_category,
