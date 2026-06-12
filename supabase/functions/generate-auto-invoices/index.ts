@@ -108,131 +108,227 @@ Deno.serve(async (req: Request) => {
     let errors = 0;
     const results: { jobId: string; status: string; detail?: string }[] = [];
 
+    // ─── FIRST PASS: filter eligible jobs by hour/day checks and compute billing periods ───
+    type EligibleJob = typeof jobs[number] & {
+      billingPeriodStart: string;
+      billingPeriodEnd: string;
+      billingCycle: string;
+    };
+    const eligibleJobs: EligibleJob[] = [];
+
     for (const job of jobs) {
-      try {
-        // Parse send time hour (e.g. "10:00:00" -> 10)
-        const sendTimeStr = (job.invoice_send_time as string) || "09:00:00";
-        const sendHour = parseInt(sendTimeStr.split(":")[0], 10);
-        const sendDay = (job.invoice_send_day as number) || 1;
-        const billingCycle = (job.billing_cycle as string) || "monthly";
+      // Parse send time hour (e.g. "10:00:00" -> 10)
+      const sendTimeStr = (job.invoice_send_time as string) || "09:00:00";
+      const sendHour = parseInt(sendTimeStr.split(":")[0], 10);
+      const sendDay = (job.invoice_send_day as number) || 1;
+      const billingCycle = (job.billing_cycle as string) || "monthly";
 
-        // Check if this is the right hour (run within the same hour window)
-        if (currentHour !== sendHour) {
+      // Check if this is the right hour (run within the same hour window)
+      if (currentHour !== sendHour) {
+        skipped++;
+        results.push({ jobId: job.id, status: "skipped", detail: `Hour ${currentHour} AEST !== send hour ${sendHour}` });
+        continue;
+      }
+
+      // Check if this is the right day based on billing cycle
+      let skipJob = false;
+      if (billingCycle === "weekly") {
+        // Weekly: invoice_send_day is day of week (1=Mon, 7=Sun)
+        if (currentDayOfWeek !== sendDay) {
           skipped++;
-          results.push({ jobId: job.id, status: "skipped", detail: `Hour ${currentHour} AEST !== send hour ${sendHour}` });
-          continue;
+          results.push({ jobId: job.id, status: "skipped", detail: `Weekly: dayOfWeek ${currentDayOfWeek} !== send day ${sendDay}` });
+          skipJob = true;
         }
-
-        // Check if this is the right day based on billing cycle
-        if (billingCycle === "weekly") {
-          // Weekly: invoice_send_day is day of week (1=Mon, 7=Sun)
-          if (currentDayOfWeek !== sendDay) {
+        // Check we haven't invoiced in the last 5 days (prevent duplicates)
+        if (!skipJob && job.last_invoiced_at) {
+          const lastInvoiced = new Date(job.last_invoiced_at);
+          const daysSince = Math.floor((nowAest.getTime() - lastInvoiced.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysSince < 5) {
             skipped++;
-            results.push({ jobId: job.id, status: "skipped", detail: `Weekly: dayOfWeek ${currentDayOfWeek} !== send day ${sendDay}` });
-            continue;
+            results.push({ jobId: job.id, status: "skipped", detail: `Invoiced ${daysSince} days ago (weekly)` });
+            skipJob = true;
           }
-          // Check we haven't invoiced in the last 5 days (prevent duplicates)
-          if (job.last_invoiced_at) {
-            const lastInvoiced = new Date(job.last_invoiced_at);
-            const daysSince = Math.floor((nowAest.getTime() - lastInvoiced.getTime()) / (1000 * 60 * 60 * 24));
-            if (daysSince < 5) {
-              skipped++;
-              results.push({ jobId: job.id, status: "skipped", detail: `Invoiced ${daysSince} days ago (weekly)` });
-              continue;
-            }
-          }
-        } else if (billingCycle === "fortnightly") {
-          // For fortnightly: invoice_send_day is day of week (1=Mon, 7=Sun)
-          if (currentDayOfWeek !== sendDay) {
+        }
+      } else if (billingCycle === "fortnightly") {
+        // For fortnightly: invoice_send_day is day of week (1=Mon, 7=Sun)
+        if (currentDayOfWeek !== sendDay) {
+          skipped++;
+          results.push({ jobId: job.id, status: "skipped", detail: `Fortnightly: dayOfWeek ${currentDayOfWeek} !== send day ${sendDay}` });
+          skipJob = true;
+        }
+        // For fortnightly, also check we haven't invoiced in the last 12 days
+        if (!skipJob && job.last_invoiced_at) {
+          const lastInvoiced = new Date(job.last_invoiced_at);
+          const daysSince = Math.floor((nowAest.getTime() - lastInvoiced.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysSince < 12) {
             skipped++;
-            results.push({ jobId: job.id, status: "skipped", detail: `Fortnightly: dayOfWeek ${currentDayOfWeek} !== send day ${sendDay}` });
-            continue;
-          }
-          // For fortnightly, also check we haven't invoiced in the last 12 days
-          if (job.last_invoiced_at) {
-            const lastInvoiced = new Date(job.last_invoiced_at);
-            const daysSince = Math.floor((nowAest.getTime() - lastInvoiced.getTime()) / (1000 * 60 * 60 * 24));
-            if (daysSince < 12) {
-              skipped++;
-              results.push({ jobId: job.id, status: "skipped", detail: `Invoiced ${daysSince} days ago (fortnightly)` });
-              continue;
-            }
-          }
-        } else {
-          // Monthly: invoice_send_day is day of month (1-28)
-          if (currentDayOfMonth !== sendDay) {
-            skipped++;
-            results.push({ jobId: job.id, status: "skipped", detail: `Monthly: dayOfMonth ${currentDayOfMonth} !== send day ${sendDay}` });
-            continue;
+            results.push({ jobId: job.id, status: "skipped", detail: `Invoiced ${daysSince} days ago (fortnightly)` });
+            skipJob = true;
           }
         }
-
-        // Determine billing period — operate on UTC-component dates so we don't
-        // get bitten by runtime TZ again. `nowAest` is the AEST-shifted epoch;
-        // reading/writing via setUTCDate keeps the calendar consistent.
-        const periodEnd = new Date(nowAest);
-        periodEnd.setUTCDate(periodEnd.getUTCDate() - 1); // Yesterday (AEST) is the last day of the period
-
-        let periodStart: Date;
-        if (job.last_invoiced_at) {
-          // Start from the day after the last invoiced date
-          periodStart = new Date(job.last_invoiced_at);
-          periodStart.setUTCDate(periodStart.getUTCDate() + 1);
-        } else if (billingCycle === "weekly") {
-          periodStart = new Date(periodEnd);
-          periodStart.setUTCDate(periodStart.getUTCDate() - 6); // 7-day period
-        } else if (billingCycle === "fortnightly") {
-          periodStart = new Date(periodEnd);
-          periodStart.setUTCDate(periodStart.getUTCDate() - 13); // 14-day period
-        } else {
-          // Monthly: start of current AEST month
-          periodStart = new Date(Date.UTC(nowAest.getUTCFullYear(), nowAest.getUTCMonth(), 1));
+      } else {
+        // Monthly: invoice_send_day is day of month (1-28)
+        if (currentDayOfMonth !== sendDay) {
+          skipped++;
+          results.push({ jobId: job.id, status: "skipped", detail: `Monthly: dayOfMonth ${currentDayOfMonth} !== send day ${sendDay}` });
+          skipJob = true;
         }
+      }
 
-        const billingPeriodStart = fmt(periodStart);
-        const billingPeriodEnd = fmt(periodEnd);
+      if (skipJob) continue;
 
-        // Check for completed sessions in this period
-        const { data: sessions, error: sessionsError } = await supabase
-          .from("recurring_sessions")
-          .select("id, status, extra_cost, supply_cost, scheduled_date")
-          .eq("recurring_job_id", job.id)
-          .gte("scheduled_date", billingPeriodStart)
-          .lte("scheduled_date", billingPeriodEnd)
-          .in("status", ["completed", "extra"])
-          .order("scheduled_date", { ascending: true });
+      // Determine billing period — operate on UTC-component dates so we don't
+      // get bitten by runtime TZ again. `nowAest` is the AEST-shifted epoch;
+      // reading/writing via setUTCDate keeps the calendar consistent.
+      const periodEnd = new Date(nowAest);
+      periodEnd.setUTCDate(periodEnd.getUTCDate() - 1); // Yesterday (AEST) is the last day of the period
 
-        if (sessionsError) {
-          console.error(`[auto-invoices] Sessions query error for job ${job.id}:`, sessionsError);
-          errors++;
-          results.push({ jobId: job.id, status: "error", detail: sessionsError.message });
-          continue;
-        }
+      let periodStart: Date;
+      if (job.last_invoiced_at) {
+        // Start from the day after the last invoiced date
+        periodStart = new Date(job.last_invoiced_at);
+        periodStart.setUTCDate(periodStart.getUTCDate() + 1);
+      } else if (billingCycle === "weekly") {
+        periodStart = new Date(periodEnd);
+        periodStart.setUTCDate(periodStart.getUTCDate() - 6); // 7-day period
+      } else if (billingCycle === "fortnightly") {
+        periodStart = new Date(periodEnd);
+        periodStart.setUTCDate(periodStart.getUTCDate() - 13); // 14-day period
+      } else {
+        // Monthly: start of current AEST month
+        periodStart = new Date(Date.UTC(nowAest.getUTCFullYear(), nowAest.getUTCMonth(), 1));
+      }
 
-        const allSessions = sessions ?? [];
-        if (allSessions.length === 0) {
+      eligibleJobs.push({
+        ...job,
+        billingPeriodStart: fmt(periodStart),
+        billingPeriodEnd: fmt(periodEnd),
+        billingCycle,
+      });
+    }
+
+    // ─── BULK PRE-FETCHES for eligible jobs (avoid N+1 queries) ───
+    if (eligibleJobs.length > 0) {
+      const eligibleJobIds = eligibleJobs.map(j => j.id);
+      const eligibleTradieIds = Array.from(new Set(eligibleJobs.map(j => j.tradie_id as string)));
+      const eligibleClientIds = Array.from(new Set(eligibleJobs.map(j => j.client_id as string)));
+
+      // Find the widest date range across all eligible jobs for session/invoice queries
+      const allPeriodStarts = eligibleJobs.map(j => j.billingPeriodStart);
+      const allPeriodEnds = eligibleJobs.map(j => j.billingPeriodEnd);
+      const earliestStart = allPeriodStarts.sort()[0];
+      const latestEnd = allPeriodEnds.sort().reverse()[0];
+
+      // Pre-fetched to avoid N+1 queries — bulk-fetch all completed/extra sessions for eligible jobs
+      const { data: allSessions, error: sessionsError } = await supabase
+        .from("recurring_sessions")
+        .select("id, recurring_job_id, status, extra_cost, supply_cost, scheduled_date")
+        .in("recurring_job_id", eligibleJobIds)
+        .gte("scheduled_date", earliestStart)
+        .lte("scheduled_date", latestEnd)
+        .in("status", ["completed", "extra"])
+        .order("scheduled_date", { ascending: true });
+
+      if (sessionsError) {
+        console.error("[auto-invoices] Bulk sessions query error:", sessionsError);
+      }
+
+      // Build a map: jobId -> sessions (filtered to the job's specific billing period in the loop)
+      const sessionsMap = new Map<string, typeof allSessions>();
+      for (const s of allSessions ?? []) {
+        const jobId = s.recurring_job_id as string;
+        if (!sessionsMap.has(jobId)) sessionsMap.set(jobId, []);
+        sessionsMap.get(jobId)!.push(s);
+      }
+
+      // Pre-fetched to avoid N+1 queries — bulk-fetch all non-cancelled invoices for eligible jobs
+      const { data: allExistingInvoices } = await supabase
+        .from("recurring_invoices")
+        .select("id, status, recurring_job_id, billing_period_start")
+        .in("recurring_job_id", eligibleJobIds)
+        .not("status", "eq", "cancelled");
+
+      // Build a map: "jobId:billingPeriodStart" -> invoice
+      const existingInvoiceMap = new Map<string, { id: string; status: string }>(
+        (allExistingInvoices ?? []).map((inv: { id: string; status: string; recurring_job_id: string; billing_period_start: string }) =>
+          [`${inv.recurring_job_id}:${inv.billing_period_start}`, { id: inv.id, status: inv.status }]
+        )
+      );
+
+      // Pre-fetched to avoid N+1 queries — bulk-fetch tradie subscription tiers
+      const { data: allTradieDetails } = await supabase
+        .from("tradie_details")
+        .select("profile_id, subscription_tier")
+        .in("profile_id", eligibleTradieIds);
+
+      const tradieDetailMap = new Map<string, string | null>(
+        (allTradieDetails ?? []).map((t: { profile_id: string; subscription_tier: string | null }) =>
+          [t.profile_id, t.subscription_tier]
+        )
+      );
+
+      // Pre-fetched to avoid N+1 queries — bulk-fetch homeowner profiles
+      const { data: allHomeowners } = await supabase
+        .from("profiles")
+        .select("id, email, full_name, stripe_connect_onboarding_complete")
+        .in("id", [...new Set([...eligibleClientIds, ...eligibleTradieIds])]);
+
+      const profileMap = new Map<string, { id: string; email: string; full_name: string; stripe_connect_onboarding_complete: boolean }>(
+        (allHomeowners ?? []).map((p: { id: string; email: string; full_name: string; stripe_connect_onboarding_complete: boolean }) =>
+          [p.id, p]
+        )
+      );
+
+      // Pre-fetched to avoid N+1 queries — bulk-fetch Stripe customer IDs
+      const { data: allStripeSubs } = await supabase
+        .from("stripe_subscriptions")
+        .select("profile_id, stripe_customer_id")
+        .in("profile_id", eligibleClientIds);
+
+      const stripeCustomerMap = new Map<string, string>(
+        (allStripeSubs ?? []).filter((s: { stripe_customer_id: string | null }) => s.stripe_customer_id)
+          .map((s: { profile_id: string; stripe_customer_id: string }) => [s.profile_id, s.stripe_customer_id])
+      );
+
+      // Pre-fetched to avoid N+1 queries — bulk-fetch active BECS mandates for eligible jobs
+      const { data: allBecsMethods } = await supabase
+        .from("saved_payment_methods")
+        .select("id, recurring_job_id")
+        .in("recurring_job_id", eligibleJobIds)
+        .eq("mandate_status", "active");
+
+      const becsMethodSet = new Set<string>(
+        (allBecsMethods ?? []).map((m: { recurring_job_id: string }) => m.recurring_job_id)
+      );
+
+    // ─── SECOND PASS: process eligible jobs using pre-fetched data ───
+    for (const job of eligibleJobs) {
+      try {
+        const billingPeriodStart = job.billingPeriodStart;
+        const billingPeriodEnd = job.billingPeriodEnd;
+
+        // Filter pre-fetched sessions to this job's specific billing period
+        const jobSessions = (sessionsMap.get(job.id) ?? []).filter(
+          (s: { scheduled_date: string }) =>
+            s.scheduled_date >= billingPeriodStart && s.scheduled_date <= billingPeriodEnd
+        );
+
+        if (jobSessions.length === 0) {
           skipped++;
           results.push({ jobId: job.id, status: "skipped", detail: "No completed sessions in period" });
           continue;
         }
 
-        // Prevent duplicate invoices for the same billing period
-        const { data: existingInvoice } = await supabase
-          .from("recurring_invoices")
-          .select("id, status")
-          .eq("recurring_job_id", job.id)
-          .eq("billing_period_start", billingPeriodStart)
-          .not("status", "eq", "cancelled")
-          .maybeSingle();
-
+        // Prevent duplicate invoices for the same billing period (O(1) lookup)
+        const existingInvoice = existingInvoiceMap.get(`${job.id}:${billingPeriodStart}`);
         if (existingInvoice) {
           skipped++;
           results.push({ jobId: job.id, status: "skipped", detail: `Invoice already exists for ${billingPeriodStart} (${existingInvoice.status})` });
           continue;
         }
 
-        const completedSessions = allSessions.filter((s: { status: string }) => s.status === "completed");
-        const extraSessions = allSessions.filter((s: { status: string }) => s.status === "extra");
+        const completedSessions = jobSessions.filter((s: { status: string }) => s.status === "completed");
+        const extraSessions = jobSessions.filter((s: { status: string }) => s.status === "extra");
 
         const agreedPrice = (job.agreed_price as number) ?? 0;
         const subtotal = agreedPrice * completedSessions.length;
@@ -240,7 +336,7 @@ Deno.serve(async (req: Request) => {
           (sum: number, s: { extra_cost?: number }) => sum + ((s.extra_cost as number) ?? 0),
           0,
         );
-        const suppliesTotal = allSessions.reduce(
+        const suppliesTotal = jobSessions.reduce(
           (sum: number, s: { supply_cost?: number }) => sum + ((s.supply_cost as number) ?? 0),
           0,
         );
@@ -258,38 +354,19 @@ Deno.serve(async (req: Request) => {
         dueDate.setUTCDate(dueDate.getUTCDate() + 7);
         const dueDateStr = fmt(dueDate);
 
-        // Look up tradie subscription tier
-        const { data: tradieSubRecord } = await supabase
-          .from("tradie_details")
-          .select("subscription_tier")
-          .eq("profile_id", job.tradie_id)
-          .maybeSingle();
-
-        const tradieSubscriptionTier = resolveTradieTier(tradieSubRecord?.subscription_tier);
+        // Look up tradie subscription tier (O(1) lookup)
+        const tradieSubscriptionTier = resolveTradieTier(tradieDetailMap.get(job.tradie_id as string) ?? undefined);
 
         const platformFeeDollars = calculatePlatformFee(total, tradieSubscriptionTier);
         const platformFeeCents = Math.round(platformFeeDollars * 100);
         const totalCents = Math.round(total * 100);
         const processingFee = calculateProcessingFeeCents(totalCents);
 
-        // Get homeowner info for Stripe
-        const { data: homeowner } = await supabase
-          .from("profiles")
-          .select("email, full_name")
-          .eq("id", job.client_id)
-          .maybeSingle();
+        // Get homeowner info for Stripe (O(1) lookup)
+        const homeowner = profileMap.get(job.client_id as string);
 
-        // Check for existing Stripe customer
-        let customerId: string | undefined;
-        const { data: existingSub } = await supabase
-          .from("stripe_subscriptions")
-          .select("stripe_customer_id")
-          .eq("profile_id", job.client_id)
-          .maybeSingle();
-
-        if (existingSub?.stripe_customer_id) {
-          customerId = existingSub.stripe_customer_id;
-        }
+        // Check for existing Stripe customer (O(1) lookup)
+        const customerId: string | undefined = stripeCustomerMap.get(job.client_id as string);
 
         // Build month label
         const periodStartDate = new Date(billingPeriodStart + "T00:00:00");
@@ -357,18 +434,9 @@ Deno.serve(async (req: Request) => {
         // BECS mandate on the job AND a fully-onboarded tradie to receive the funds.
         // If so, we schedule the debit a few days out and let the client dispute first
         // instead of forcing them to click "Approve & Pay".
-        const { data: becsMethod } = await supabase
-          .from("saved_payment_methods")
-          .select("id")
-          .eq("recurring_job_id", job.id)
-          .eq("mandate_status", "active")
-          .maybeSingle();
-        const { data: tradieConnectProfile } = await supabase
-          .from("profiles")
-          .select("stripe_connect_onboarding_complete")
-          .eq("id", job.tradie_id)
-          .maybeSingle();
-        const canAutoDebit = !!becsMethod && !!tradieConnectProfile?.stripe_connect_onboarding_complete;
+        const hasBecsMandate = becsMethodSet.has(job.id);
+        const tradieConnectProfile = profileMap.get(job.tradie_id as string);
+        const canAutoDebit = hasBecsMandate && !!tradieConnectProfile?.stripe_connect_onboarding_complete;
 
         const AUTO_CHARGE_DELAY_DAYS = 3;
         const scheduledChargeAt = canAutoDebit
@@ -414,7 +482,7 @@ Deno.serve(async (req: Request) => {
           currency: "AUD",
         });
 
-        const cycleLabel = billingCycle === 'weekly' ? 'weekly' : billingCycle === 'fortnightly' ? 'fortnightly' : 'monthly';
+        const cycleLabel = job.billingCycle === 'weekly' ? 'weekly' : job.billingCycle === 'fortnightly' ? 'fortnightly' : 'monthly';
         const sessionsSummary = `${completedSessions.length} session${completedSessions.length !== 1 ? 's' : ''}${extraSessions.length > 0 ? ` + ${extraSessions.length} extra` : ''}`;
 
         if (scheduledChargeAt) {
@@ -480,6 +548,7 @@ Deno.serve(async (req: Request) => {
         results.push({ jobId: job.id, status: "error", detail: err instanceof Error ? err.message : "Unknown error" });
       }
     }
+    } // end if (eligibleJobs.length > 0)
 
     // ─── AUTO-CHARGE PASS: debit BECS invoices whose notice window has elapsed ───
     // Disputed invoices move to status 'disputed' and are excluded automatically.

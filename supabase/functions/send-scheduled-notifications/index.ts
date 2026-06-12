@@ -221,17 +221,19 @@ Deno.serve(async (req: Request) => {
       results.errors.push(`auto_start fetch: ${fsErr.message}`);
     }
 
-    for (const job of fundedJobs ?? []) {
+    // Pre-fetched to avoid N+1 queries — bulk-update all funded jobs to in_progress
+    const fundedJobIds = (fundedJobs ?? []).map(j => j.id);
+    if (fundedJobIds.length > 0) {
       try {
         await supabase
           .from("jobs")
           .update({ status: "in_progress" })
-          .eq("id", job.id);
+          .in("id", fundedJobIds);
 
-        results.auto_started++;
+        results.auto_started = fundedJobIds.length;
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        results.errors.push(`auto_start job ${job.id}: ${msg}`);
+        results.errors.push(`auto_start bulk: ${msg}`);
       }
     }
 
@@ -250,55 +252,72 @@ Deno.serve(async (req: Request) => {
     }
 
     let quoteReminders = 0;
-    for (const invite of staleInvites ?? []) {
-      try {
-        const meta = invite.metadata as Record<string, unknown> | null;
-        if (!meta?.invited || meta?.reminder_sent) continue;
 
-        const jobId = meta.job_id as string;
-        if (!jobId) continue;
+    // Filter invites to only those with valid metadata before pre-fetching
+    const actionableInvites = (staleInvites ?? []).filter((invite) => {
+      const meta = invite.metadata as Record<string, unknown> | null;
+      return meta?.invited && !meta?.reminder_sent && meta?.job_id;
+    });
 
-        // Check job is still pending with no quotes from this tradie
-        const { data: job } = await supabase
-          .from("jobs")
-          .select("id, title, status")
-          .eq("id", jobId)
-          .eq("status", "pending")
-          .maybeSingle();
+    if (actionableInvites.length > 0) {
+      // Pre-fetched to avoid N+1 queries — bulk-fetch all referenced jobs
+      const inviteJobIds = Array.from(new Set(
+        actionableInvites.map((inv) => (inv.metadata as Record<string, unknown>).job_id as string)
+      ));
+      const { data: pendingJobs } = await supabase
+        .from("jobs")
+        .select("id, title, status")
+        .in("id", inviteJobIds)
+        .eq("status", "pending");
+      const pendingJobMap = new Map(
+        (pendingJobs ?? []).map((j: { id: string; title: string; status: string }) => [j.id, j])
+      );
 
-        if (!job) continue;
+      // Pre-fetched to avoid N+1 queries — bulk-fetch all existing quotes for these jobs
+      const inviteTradieIds = Array.from(new Set(actionableInvites.map((inv) => inv.user_id)));
+      const { data: existingQuotes } = await supabase
+        .from("quotes")
+        .select("job_id, tradie_id")
+        .in("job_id", inviteJobIds)
+        .in("tradie_id", inviteTradieIds);
+      const quotedSet = new Set(
+        (existingQuotes ?? []).map((q: { job_id: string; tradie_id: string }) => `${q.job_id}:${q.tradie_id}`)
+      );
 
-        // Check tradie hasn't already quoted
-        const { data: existingQuote } = await supabase
-          .from("quotes")
-          .select("id")
-          .eq("job_id", jobId)
-          .eq("tradie_id", invite.user_id)
-          .maybeSingle();
+      for (const invite of actionableInvites) {
+        try {
+          const meta = invite.metadata as Record<string, unknown>;
+          const jobId = meta.job_id as string;
 
-        if (existingQuote) continue;
+          // Check job is still pending (O(1) lookup)
+          const job = pendingJobMap.get(jobId);
+          if (!job) continue;
 
-        // Send reminder
-        const jobTitle = job.title || "a job";
-        await supabase.from("notifications").insert({
-          user_id: invite.user_id,
-          type: "quote_reminder",
-          title: "Quote Reminder",
-          message: `You were invited to quote on ${jobTitle}. The client is still waiting for your response.`,
-          metadata: { job_id: jobId },
-          read: false,
-        });
+          // Check tradie hasn't already quoted (O(1) lookup)
+          if (quotedSet.has(`${jobId}:${invite.user_id}`)) continue;
 
-        // Mark original invite so we don't remind again
-        await supabase
-          .from("notifications")
-          .update({ metadata: { ...meta, reminder_sent: true } })
-          .eq("id", invite.id);
+          // Send reminder
+          const jobTitle = job.title || "a job";
+          await supabase.from("notifications").insert({
+            user_id: invite.user_id,
+            type: "quote_reminder",
+            title: "Quote Reminder",
+            message: `You were invited to quote on ${jobTitle}. The client is still waiting for your response.`,
+            metadata: { job_id: jobId },
+            read: false,
+          });
 
-        quoteReminders++;
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        results.errors.push(`quote_reminder: ${msg}`);
+          // Mark original invite so we don't remind again
+          await supabase
+            .from("notifications")
+            .update({ metadata: { ...meta, reminder_sent: true } })
+            .eq("id", invite.id);
+
+          quoteReminders++;
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          results.errors.push(`quote_reminder: ${msg}`);
+        }
       }
     }
 
@@ -329,16 +348,23 @@ Deno.serve(async (req: Request) => {
         results.errors.push(`auto_dismiss stale fetch: ${staleErr.message}`);
       }
 
+      // Pre-fetched to avoid N+1 queries — collect IDs to dismiss, then bulk-update
+      const takenJobIdSet = new Set(takenJobIds);
+      const dismissIds: string[] = [];
       for (const notif of staleNotifs ?? []) {
         const meta = notif.metadata as Record<string, unknown> | null;
         const notifJobId = meta?.job_id as string;
-        if (notifJobId && takenJobIds.includes(notifJobId)) {
-          await supabase
-            .from("notifications")
-            .update({ read_at: nowIso })
-            .eq("id", notif.id);
-          dismissed++;
+        if (notifJobId && takenJobIdSet.has(notifJobId)) {
+          dismissIds.push(notif.id);
         }
+      }
+
+      if (dismissIds.length > 0) {
+        await supabase
+          .from("notifications")
+          .update({ read_at: nowIso })
+          .in("id", dismissIds);
+        dismissed = dismissIds.length;
       }
     }
 
