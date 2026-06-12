@@ -874,7 +874,7 @@ export default function ClientDashboard() {
               {/* Job tabs */}
               <div className="flex items-center gap-1 mb-4">
                 {([
-                  { key: 'active' as const, label: 'Active', count: recentJobs.filter(j => !j.archived_at && j.status === 'pending' && !recurringJobIds.has(j.id)).length },
+                  { key: 'active' as const, label: 'Active', count: recentJobs.filter(j => !j.archived_at && j.status === 'pending').length },
                   { key: 'accepted' as const, label: 'Accepted', count: recentJobs.filter(j => !j.archived_at && !recurringJobIds.has(j.id) && (['accepted', 'funded', 'in_progress'].includes(j.status) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))).length },
                   { key: 'completed' as const, label: 'Completed', count: recentJobs.filter(j => !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)).length },
                 ]).map(tab => {
@@ -915,7 +915,7 @@ export default function ClientDashboard() {
               {recentJobs.filter(j => showArchived
                 ? j.archived_at
                 : jobTab === 'active'
-                  ? !j.archived_at && j.status === 'pending' && !recurringJobIds.has(j.id)
+                  ? !j.archived_at && j.status === 'pending'
                   : jobTab === 'accepted'
                     ? !j.archived_at && !recurringJobIds.has(j.id) && (['accepted', 'funded', 'in_progress'].includes(j.status) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))
                     : !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)
@@ -973,7 +973,7 @@ export default function ClientDashboard() {
                     .filter(j => showArchived
                       ? j.archived_at
                       : jobTab === 'active'
-                        ? !j.archived_at && j.status === 'pending' && !recurringJobIds.has(j.id)
+                        ? !j.archived_at && j.status === 'pending'
                         : jobTab === 'accepted'
                           ? !j.archived_at && !recurringJobIds.has(j.id) && (['accepted', 'funded', 'in_progress'].includes(j.status) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))
                           : !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)
