@@ -431,10 +431,34 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
     }
 
     if (jobParam && !loading && leads.length > 0) {
-      const targetJob = leads.find((l) => l.id === jobParam);
+      let targetJob = leads.find((l) => l.id === jobParam);
       searchParams.delete('job');
       searchParams.delete('job_id');
       setSearchParams(searchParams, { replace: true });
+
+      // If the job isn't in the current leads (e.g. recurring-linked job filtered
+      // from Active tab), check if it's the original_job_id of a recurring service
+      // and auto-switch to the Ongoing Services tab.
+      if (!targetJob && !isTradie) {
+        (async () => {
+          try {
+            const { data: rj } = await supabase
+              .from('recurring_jobs')
+              .select('id')
+              .eq('original_job_id', jobParam)
+              .eq('homeowner_id', user?.id ?? '')
+              .limit(1)
+              .maybeSingle();
+            if (rj) {
+              setFilter('services');
+            } else {
+              // Job exists but isn't recurring — switch to 'all' so it's visible
+              setFilter('all');
+              setExpandedJobId(jobParam);
+            }
+          } catch { /* ignore */ }
+        })();
+      }
 
       // Auto-switch to active tab if the deep-linked job is funded/in_progress
       if (targetJob && ['funded', 'in_progress'].includes(targetJob.status) && filter !== 'active' && filter !== 'all') {
