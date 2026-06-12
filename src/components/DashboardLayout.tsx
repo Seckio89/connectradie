@@ -154,6 +154,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [expandedNav, setExpandedNav] = useState<string | null>(null);
+  const [pendingReleaseCount, setPendingReleaseCount] = useState(0);
   const [toastNotification, setToastNotification] = useState<Notification | null>(null);
   const lastNotificationIdRef = useRef<string | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -193,6 +194,28 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       }
     };
     initNotifications();
+
+    // Count payments awaiting release (completed job_funding, no transfer_id or released_at)
+    if (profile?.role === 'client') {
+      (async () => {
+        try {
+          const { data: pendingPayments } = await supabase
+            .from('payments')
+            .select('id, metadata')
+            .eq('profile_id', user.id)
+            .eq('status', 'completed')
+            .eq('payment_type', 'job_funding');
+
+          const unreleased = (pendingPayments || []).filter(p => {
+            const meta = p.metadata as Record<string, unknown> | null;
+            return !meta?.transfer_id && !meta?.released_at;
+          });
+          setPendingReleaseCount(unreleased.length);
+        } catch (err) {
+          console.error('fetchPendingReleaseCount error:', err);
+        }
+      })();
+    }
 
     // Subscribe to notification changes in real-time
     const channel = supabase
@@ -558,6 +581,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 >
                   <Icon className="w-5 h-5" />
                   {item.name}
+                  {item.name === 'Dashboard' && pendingReleaseCount > 0 && (
+                    <span className="ml-auto min-w-[20px] h-5 px-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-100 rounded-full flex items-center justify-center">
+                      {pendingReleaseCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}

@@ -734,18 +734,24 @@ export default function ClientDashboard() {
             const category = first.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
             const label = (first.title || category || 'a job').toString();
             return (
-              <div className="mb-8 p-4 bg-gradient-to-r from-warm-50 to-emerald-50 border border-warm-300 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="w-10 h-10 bg-warm-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-warm-600" />
+              <div className="mb-8 p-4 bg-gradient-to-r from-warm-50 to-emerald-50 border border-emerald-300 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-warm-900">Ready to release payment</p>
+                  <p className="font-semibold text-warm-900 flex items-center gap-2">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </span>
+                    Ready to release payment
+                  </p>
                   <p className="text-sm text-warm-800 mt-0.5 truncate">Your tradie has completed {label}. Release payment & leave a review.</p>
                 </div>
                 <button
                   onClick={() => handleReleasePayment(first.id)}
                   disabled={releasingJobId === first.id}
-                  className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 bg-warm-600 text-white text-sm font-semibold rounded-lg hover:bg-warm-700 disabled:opacity-60 transition-colors"
+                  className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors"
                 >
                   {releasingJobId === first.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   Release & Review
@@ -757,13 +763,17 @@ export default function ClientDashboard() {
           // Multiple — list every job with its own Release & Review button so
           // none of them get buried under the Accepted tab.
           return (
-            <div className="mb-8 bg-gradient-to-r from-warm-50 to-emerald-50 border border-warm-300 rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="mb-8 bg-gradient-to-r from-warm-50 to-emerald-50 border border-emerald-300 rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="p-4 flex items-center gap-3 border-b border-warm-200">
-                <div className="w-10 h-10 bg-warm-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-warm-600" />
+                <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-warm-900">
+                  <p className="font-semibold text-warm-900 flex items-center gap-2">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </span>
                     {awaitingRelease.length} jobs waiting for payment release
                   </p>
                   <p className="text-sm text-warm-800 mt-0.5">Review each one below — payment stays secured with Stripe until you release.</p>
@@ -788,7 +798,7 @@ export default function ClientDashboard() {
                       <button
                         onClick={() => handleReleasePayment(job.id)}
                         disabled={releasingJobId === job.id}
-                        className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-600 text-white text-xs font-semibold rounded-lg hover:bg-warm-700 disabled:opacity-60 transition-colors"
+                        className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-semibold rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors"
                       >
                         {releasingJobId === job.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                         Release & Review
