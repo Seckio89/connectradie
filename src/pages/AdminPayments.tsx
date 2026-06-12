@@ -160,7 +160,7 @@ export default function AdminPayments() {
       trialing: 'bg-blue-100 text-blue-700',
     };
     return (
-      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${map[status] || 'bg-gray-100 text-gray-600'}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[status] || 'bg-gray-100 text-gray-600'}`}>
         {status.replace('_', ' ')}
       </span>
     );
@@ -182,7 +182,7 @@ export default function AdminPayments() {
       subscription: 'Subscription',
     };
     return (
-      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${map[type] || 'bg-gray-100 text-gray-600'}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[type] || 'bg-gray-100 text-gray-600'}`}>
         {labels[type] || type.replace('_', ' ')}
       </span>
     );
@@ -657,7 +657,7 @@ export default function AdminPayments() {
                         </p>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
                           Pro
                         </span>
                       </div>

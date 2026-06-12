@@ -439,7 +439,7 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
                       <span className="font-semibold text-gray-900">{m.title || 'Untitled'}</span>
                     </div>
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${statusCfg.bg} ${statusCfg.color}`}
+                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${statusCfg.bg} ${statusCfg.color}`}
                     >
                       <StatusIcon className="w-3 h-3" />
                       {statusCfg.label}
@@ -506,7 +506,7 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
                           />
                         </div>
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border whitespace-nowrap ${statusCfg.bg} ${statusCfg.color}`}
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border whitespace-nowrap ${statusCfg.bg} ${statusCfg.color}`}
                         >
                           <StatusIcon className="w-3 h-3" />
                           {statusCfg.label}

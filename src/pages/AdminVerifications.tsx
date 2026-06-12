@@ -184,13 +184,13 @@ export default function AdminVerifications() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <span className="px-2.5 py-0.5 bg-warm-100 text-warm-700 rounded-full text-xs font-medium">Pending</span>;
+        return <span className="px-3 py-1 bg-warm-100 text-warm-700 rounded-full text-xs font-medium">Pending</span>;
       case 'verified':
-        return <span className="px-2.5 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">Verified</span>;
+        return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Verified</span>;
       case 'rejected':
-        return <span className="px-2.5 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">Rejected</span>;
+        return <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">Rejected</span>;
       default:
-        return <span className="px-2.5 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">Unverified</span>;
+        return <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">Unverified</span>;
     }
   };
 

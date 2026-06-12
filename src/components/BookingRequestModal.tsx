@@ -408,7 +408,7 @@ export default function BookingRequestModal({
                               }`}
                             >
                               <span className="text-sm font-medium text-gray-900">{timeRange}</span>
-                              <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                                 isRequestedSlot
                                   ? 'bg-warm-500 text-white'
                                   : 'bg-green-100 text-green-700'

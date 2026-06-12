@@ -499,7 +499,7 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
           {showSettings ? 'Hide Settings' : 'Invoice Settings'}
         </button>
         {autoInvoice && !showSettings && !showInvoicePreview && (
-          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+          <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
             Auto — {cycleLabel} · {dayLabel} at {sendTime}
           </span>
         )}
@@ -562,7 +562,7 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
                           <span className="text-gray-700">
                             {new Date(s.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
                           </span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.cls}`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${badge.cls}`}>
                             {badge.label}
                           </span>
                         </div>
@@ -1371,7 +1371,7 @@ function JobCard({
             <div className="flex items-center gap-2.5">
               <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isCollapsed ? '-rotate-90' : ''}`} />
               <h4 className="text-sm font-bold text-gray-900 capitalize">{jobLabel}</h4>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${statusBadge.bg} ${statusBadge.text}`}>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusBadge.bg} ${statusBadge.text}`}>
                 {statusBadge.label}
               </span>
             </div>
@@ -1850,7 +1850,7 @@ export default function ServicesTab() {
               <div className="flex items-center gap-2">
                 <RefreshCw className="w-4 h-4 text-emerald-500" />
                 <h3 className="text-sm font-semibold text-gray-900">Ongoing Services</h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500">{jobRows.length}</span>
+                <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">{jobRows.length}</span>
               </div>
             </div>
 
@@ -1914,7 +1914,7 @@ export default function ServicesTab() {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="text-sm font-semibold text-gray-900 truncate">{row.clientName}</p>
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${statusPill.cls}`}>{statusPill.label}</span>
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusPill.cls}`}>{statusPill.label}</span>
                             </div>
                             <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
                               <span className="capitalize">{row.jobLabel}</span>

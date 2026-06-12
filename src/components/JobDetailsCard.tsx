@@ -691,7 +691,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
                 <p className="font-semibold text-warm-900">Additional Cost Requested</p>
               </div>
               {variation.reason_category && (
-                <span className="px-2 py-0.5 bg-warm-100 text-warm-700 text-xs font-medium rounded-full capitalize">
+                <span className="px-3 py-1 bg-warm-100 text-warm-700 text-xs font-medium rounded-full capitalize">
                   {variation.reason_category.replace('_', ' ')}
                 </span>
               )}
@@ -986,7 +986,7 @@ function PaymentTimelineItem({
                   <Building2 className="w-3 h-3" />Sub
                 </span>
               )}
-              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusStyle}`}>{statusLabel}</span>
+              <span className={`px-3 py-1 text-xs font-medium rounded-full ${statusStyle}`}>{statusLabel}</span>
             </div>
             <p className="text-lg font-bold text-gray-800">${Number(milestone.amount).toFixed(2)}</p>
             {milestone.due_date && (
@@ -1401,11 +1401,11 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
                   <div className={`flex-1 ${isLast ? 'pb-0' : 'pb-4'}`}>
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
                       {variation.reason_category && (
-                        <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full capitalize">
+                        <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full capitalize">
                           {variation.reason_category.replace('_', ' ')}
                         </span>
                       )}
-                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                      <span className={`px-3 py-1 text-xs font-medium rounded-full ${
                         isApproved ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
                       }`}>
                         {isApproved ? 'Approved' : 'Declined'}

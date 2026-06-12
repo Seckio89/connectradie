@@ -415,7 +415,7 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
                       </span>
                     </div>
                     <div className="mt-1 text-right">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full border border-green-200">
                         100% Payout
                       </span>
                     </div>

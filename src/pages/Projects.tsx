@@ -346,7 +346,7 @@ export default function Projects() {
                             </div>
                           )}
                           <div className="flex items-center gap-2 mt-0.5">
-                            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+                            <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
                               {getStatusIcon(project.status)}
                               {getStatusLabel(project.status)}
                             </span>
@@ -424,7 +424,7 @@ export default function Projects() {
                           </div>
                         ))}
                         {additionalCount > 0 && (
-                          <span className="px-2 py-0.5 bg-secondary-100 text-secondary-700 text-xs font-medium rounded-full whitespace-nowrap">
+                          <span className="px-3 py-1 bg-secondary-100 text-secondary-700 text-xs font-medium rounded-full whitespace-nowrap">
                             +{additionalCount} other {additionalCount === 1 ? 'job' : 'jobs'}
                           </span>
                         )}
@@ -495,7 +495,7 @@ function ProjectTimeline({ projects, onSelect, formatDate, getStatusColor, getSt
                 <div>
                   <h3 className="font-semibold text-gray-900">{project.title}</h3>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+                    <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
                       {getStatusLabel(project.status)}
                     </span>
                     <span className="text-xs text-gray-500">
@@ -526,9 +526,9 @@ function ProjectTimeline({ projects, onSelect, formatDate, getStatusColor, getSt
                         <div className="flex-1 min-w-0 pb-1">
                           <div className="flex items-center gap-2">
                             {category && (
-                              <span className="text-xs font-medium text-primary-700 bg-primary-50 px-2 py-0.5 rounded-full">{category}</span>
+                              <span className="text-xs font-medium text-primary-700 bg-primary-50 px-3 py-1 rounded-full">{category}</span>
                             )}
-                            <span className={`text-xs font-medium capitalize px-2 py-0.5 rounded-full ${
+                            <span className={`text-xs font-medium capitalize px-3 py-1 rounded-full ${
                               job.status === 'completed' ? 'bg-green-50 text-green-700' :
                               job.status === 'in_progress' ? 'bg-secondary-50 text-secondary-700' :
                               job.status === 'accepted' ? 'bg-warm-50 text-warm-700' :

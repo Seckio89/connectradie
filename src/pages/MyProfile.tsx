@@ -230,7 +230,7 @@ export default function MyProfile() {
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <h2 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">{displayName}</h2>
                       {isPro && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-warm-500/20 text-warm-300 text-xs font-semibold rounded-full border border-warm-500/30">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-warm-500/20 text-warm-300 text-xs font-medium rounded-full border border-warm-500/30">
                           <Crown className="w-3.5 h-3.5" />
                           PRO
                         </span>
@@ -247,25 +247,25 @@ export default function MyProfile() {
 
                     <div className="flex flex-wrap items-center gap-2 mt-3">
                       {isIdentityVerified && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-500/20 text-green-300 text-xs font-semibold rounded-full border border-green-500/30">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-500/20 text-green-300 text-xs font-medium rounded-full border border-green-500/30">
                           <ShieldCheck className="w-3.5 h-3.5" />
                           ID Verified
                         </span>
                       )}
                       {tradieDetails?.is_insured && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary-500/20 text-secondary-300 text-xs font-semibold rounded-full border border-secondary-500/30">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary-500/20 text-secondary-300 text-xs font-medium rounded-full border border-secondary-500/30">
                           <Shield className="w-3.5 h-3.5" />
                           Insured
                         </span>
                       )}
                       {tradieDetails?.is_licensed && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-warm-500/20 text-warm-300 text-xs font-semibold rounded-full border border-warm-500/30">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-warm-500/20 text-warm-300 text-xs font-medium rounded-full border border-warm-500/30">
                           <FileCheck className="w-3.5 h-3.5" />
                           Licensed
                         </span>
                       )}
                       {profile?.is_emergency_available && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-500/20 text-red-300 text-xs font-semibold rounded-full border border-red-500/30">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-500/20 text-red-300 text-xs font-medium rounded-full border border-red-500/30">
                           <Zap className="w-3.5 h-3.5" />
                           Emergency
                         </span>

@@ -1647,7 +1647,7 @@ export default function ClientServicesTab() {
                           Awaiting quote
                         </span>
                       )}
-                      <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+                      <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
                         Active
                       </span>
                     </div>
@@ -2019,7 +2019,7 @@ export default function ClientServicesTab() {
                               <p className="text-sm font-medium text-gray-400">Pay by Card</p>
                               <p className="text-xs text-gray-400">Switch from Direct Debit to use card payments</p>
                             </div>
-                            <span className="px-2 py-0.5 bg-gray-100 text-gray-400 text-[10px] font-semibold rounded-full flex-shrink-0">Inactive</span>
+                            <span className="px-3 py-1 bg-gray-100 text-gray-400 text-xs font-medium rounded-full flex-shrink-0">Inactive</span>
                           </div>
                         </div>
                       ) : (
@@ -2033,7 +2033,7 @@ export default function ClientServicesTab() {
                               <p className="text-sm font-medium text-gray-900">Manual Payments</p>
                               <p className="text-xs text-gray-500">Invoices will be sent with a secure Stripe payment link</p>
                             </div>
-                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-semibold rounded-full flex-shrink-0">Active</span>
+                            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full flex-shrink-0">Active</span>
                           </div>
                           {/* BECS upgrade option */}
                           <button
@@ -2251,7 +2251,7 @@ export default function ClientServicesTab() {
                         )}
                       </div>
                     </div>
-                    <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full flex-shrink-0 ${statusClasses}`}>
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full flex-shrink-0 ${statusClasses}`}>
                       {statusLabel}
                     </span>
                   </div>
@@ -2295,7 +2295,7 @@ export default function ClientServicesTab() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <p className="text-sm font-semibold text-gray-900 capitalize">{label}</p>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
                               isPaused ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-gray-100 text-gray-500 border-gray-200'
                             }`}>
                               {isPaused ? 'Paused' : 'Ended'}
@@ -2410,7 +2410,7 @@ export default function ClientServicesTab() {
                         <p className="text-xs text-gray-400 mt-1 line-clamp-2">{ag.description}</p>
                       )}
                     </div>
-                    <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full flex-shrink-0 capitalize">
+                    <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full flex-shrink-0 capitalize">
                       {ag.status}
                     </span>
                   </div>

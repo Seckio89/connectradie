@@ -64,19 +64,19 @@ export default function PublicTradieRow({ tradie }: PublicTradieRowProps) {
               </Link>
             </h3>
             {tradie.is_pro && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-warm-50 border border-warm-200 text-warm-700 text-xs font-medium rounded-full">
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-warm-50 border border-warm-200 text-warm-700 text-xs font-medium rounded-full">
                 <BadgeCheck className="w-3 h-3" />
                 Pro
               </span>
             )}
             {tradie.license_verified && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary-50 border border-secondary-200 text-secondary-700 text-xs font-medium rounded-full">
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-secondary-50 border border-secondary-200 text-secondary-700 text-xs font-medium rounded-full">
                 <Shield className="w-3 h-3" />
                 Licence verified
               </span>
             )}
             {tradie.abn_verified && !tradie.license_verified && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium rounded-full">
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium rounded-full">
                 <BadgeCheck className="w-3 h-3" />
                 ABN verified
               </span>

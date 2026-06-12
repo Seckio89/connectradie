@@ -29,7 +29,7 @@ export default function CollapsibleSection({
         {icon && <span className="flex-shrink-0">{icon}</span>}
         <span className="font-semibold text-gray-900 text-base">{title}</span>
         {badge !== undefined && (
-          <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${badgeColor}`}>
+          <span className={`ml-2 px-3 py-1 rounded-full text-xs font-medium ${badgeColor}`}>
             {badge}
           </span>
         )}

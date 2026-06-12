@@ -660,7 +660,7 @@ export default function VerificationCenter() {
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium text-green-800">{licenseResult.licenseType}</p>
                     {licenseResult.apiVerified && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary-100 text-secondary-700 text-xs font-medium rounded-full">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-secondary-100 text-secondary-700 text-xs font-medium rounded-full">
                         <BadgeCheck className="w-3 h-3" />
                         Authority Verified
                       </span>

@@ -55,7 +55,7 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
             <p className="text-xs text-gray-500 truncate">{otherPartyName}</p>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
               Active
             </span>
             {userRole === 'tradie' && (

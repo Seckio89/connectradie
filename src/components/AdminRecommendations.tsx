@@ -196,7 +196,7 @@ export default function AdminRecommendations() {
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-gray-900">Insights & Recommendations</h2>
             {highCount > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-700 text-xs font-semibold rounded-full border border-red-100">
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-50 text-red-700 text-xs font-medium rounded-full border border-red-100">
                 <AlertCircle className="w-3 h-3" />
                 {highCount} urgent
               </span>

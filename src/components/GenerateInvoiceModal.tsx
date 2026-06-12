@@ -157,7 +157,7 @@ export default function GenerateInvoiceModal({ isOpen, agreement, onClose, onSuc
                     <p className="text-xs text-gray-500">Invoice</p>
                     <p className="text-lg font-semibold text-gray-900">{generatedInvoice.invoice_number}</p>
                   </div>
-                  <span className="px-2.5 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                  <span className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
                     Draft
                   </span>
                 </div>

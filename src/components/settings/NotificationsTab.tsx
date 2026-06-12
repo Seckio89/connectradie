@@ -37,7 +37,7 @@ export default function NotificationsTab({ pushEnabled, pushPermission, notifSav
                   ? 'Receive browser notifications for quotes and job updates'
                   : 'Receive browser notifications for urgent leads'}
               </p>
-              <span className="inline-block mt-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">Free</span>
+              <span className="inline-block mt-1 text-xs font-medium text-green-700 bg-green-50 px-3 py-1 rounded-full border border-green-200">Free</span>
             </div>
           </div>
           <button
@@ -79,7 +79,7 @@ export default function NotificationsTab({ pushEnabled, pushPermission, notifSav
                   ? 'Get a text when tradies quote or your job status changes'
                   : 'Get a text when urgent leads are posted nearby'}
               </p>
-              <span className="inline-block mt-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">Free</span>
+              <span className="inline-block mt-1 text-xs font-medium text-green-700 bg-green-50 px-3 py-1 rounded-full border border-green-200">Free</span>
             </div>
           </div>
           <button

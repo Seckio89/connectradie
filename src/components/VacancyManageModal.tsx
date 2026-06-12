@@ -138,7 +138,7 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-gray-900">{applicant?.full_name || 'Unknown'}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
                           {statusConfig.label}
                         </span>
                       </div>
