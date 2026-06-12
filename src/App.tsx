@@ -7,6 +7,7 @@ import { replayOnReconnect } from './lib/serviceWorker';
 import { trackPageView } from './lib/analytics';
 import { Loader2 } from 'lucide-react';
 import OfflineBanner from './components/OfflineBanner';
+import ErrorBoundary from './components/ErrorBoundary';
 
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({
@@ -426,7 +427,7 @@ function AppRoutes() {
 export default function App() {
   useDarkMode();
   return (
-    <Sentry.ErrorBoundary fallback={<p className="p-8 text-center text-red-600">Something went wrong. Please refresh the page.</p>}>
+    <ErrorBoundary>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <OfflineBanner />
         <a href="#main-content" className="skip-to-content">Skip to content</a>
@@ -436,6 +437,6 @@ export default function App() {
           <AppRoutes />
         </AuthProvider>
       </Router>
-    </Sentry.ErrorBoundary>
+    </ErrorBoundary>
   );
 }
