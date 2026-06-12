@@ -173,6 +173,34 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [location.pathname]);
 
+  // Re-usable function to count unreleased payments for the sidebar badge
+  const refreshPendingReleaseCount = async () => {
+    if (!user || profile?.role !== 'client') return;
+    try {
+      const { data: pendingPayments } = await supabase
+        .from('payments')
+        .select('id, metadata')
+        .eq('profile_id', user.id)
+        .eq('status', 'completed')
+        .eq('payment_type', 'job_funding');
+
+      const unreleased = (pendingPayments || []).filter(p => {
+        const meta = p.metadata as Record<string, unknown> | null;
+        return !meta?.transfer_id && !meta?.released_at;
+      });
+      setPendingReleaseCount(unreleased.length);
+    } catch (err) {
+      console.error('fetchPendingReleaseCount error:', err);
+    }
+  };
+
+  // Re-fetch pending release count on every route change so the badge
+  // clears after the client releases a payment and navigates back.
+  useEffect(() => {
+    refreshPendingReleaseCount();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
   useEffect(() => {
     if (!user) return;
 
@@ -195,26 +223,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     };
     initNotifications();
 
-    // Count payments awaiting release (completed job_funding, no transfer_id or released_at)
+    // Count payments awaiting release — runs on mount only.
+    // A separate effect re-fetches on route change (below).
     if (profile?.role === 'client') {
-      (async () => {
-        try {
-          const { data: pendingPayments } = await supabase
-            .from('payments')
-            .select('id, metadata')
-            .eq('profile_id', user.id)
-            .eq('status', 'completed')
-            .eq('payment_type', 'job_funding');
-
-          const unreleased = (pendingPayments || []).filter(p => {
-            const meta = p.metadata as Record<string, unknown> | null;
-            return !meta?.transfer_id && !meta?.released_at;
-          });
-          setPendingReleaseCount(unreleased.length);
-        } catch (err) {
-          console.error('fetchPendingReleaseCount error:', err);
-        }
-      })();
+      refreshPendingReleaseCount();
     }
 
     // Subscribe to notification changes in real-time
