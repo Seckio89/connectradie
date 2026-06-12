@@ -129,11 +129,14 @@ Deno.serve(async (req: Request) => {
         continue;
       }
 
-      // Already transferred
+      // Already released (transfer for legacy, payout for destination charges)
       const existingMetadata = (payment.metadata || {}) as Record<string, unknown>;
-      if (existingMetadata.transfer_id) {
+      if (existingMetadata.transfer_id || existingMetadata.payout_id) {
         continue;
       }
+
+      // Determine payment flow: destination charges (new) vs custodial escrow (legacy)
+      const isDestinationCharge = payment.metadata?.flow === "destination";
 
       if (!payment.stripe_payment_intent_id) {
         errors.push(`Job ${job.id}: payment has no Stripe payment intent`);
@@ -189,6 +192,191 @@ Deno.serve(async (req: Request) => {
         );
         continue;
       }
+
+      // ── DESTINATION CHARGE FLOW (new) ────────────────────────────────
+      // Funds were routed to the tradie's Connect account at payment time.
+      // The transfer already happened automatically — trigger a payout so
+      // funds move from the tradie's Stripe balance to their bank account.
+      if (isDestinationCharge) {
+        try {
+          const payout = await stripe.payouts.create(
+            {
+              amount: totalTransferAmount,
+              currency: "aud",
+              metadata: {
+                payment_id: payment.id,
+                job_id: job.id,
+                client_id: job.client_id,
+                tradie_id: job.tradie_id,
+                auto_released: "true",
+                flow: "destination",
+              },
+            },
+            {
+              stripeAccount: tradieProfile.stripe_connect_account_id,
+              idempotencyKey: `auto_release_${payment.id}`,
+            },
+          );
+
+          // Update main payment metadata with payout info. Drop pending_increase.
+          const releasedAt = new Date().toISOString();
+          const { pending_increase: _droppedIncrease, ...cleanMetadata } = existingMetadata as Record<string, unknown>;
+          await supabase
+            .from("payments")
+            .update({
+              metadata: {
+                ...cleanMetadata,
+                payout_id: payout.id,
+                payout_amount: payout.amount,
+                platform_fee_deducted: totalPlatformFee,
+                released_at: releasedAt,
+                auto_released: true,
+                flow: "destination",
+              },
+            })
+            .eq("id", payment.id);
+
+          // Mark child destination-charge payments as released too
+          for (const child of (childPayments || [])) {
+            const childMeta = (child.metadata || {}) as Record<string, unknown>;
+            await supabase
+              .from("payments")
+              .update({
+                metadata: {
+                  ...childMeta,
+                  payout_id: payout.id,
+                  released_at: releasedAt,
+                  auto_released: true,
+                  flow: "destination",
+                },
+              })
+              .eq("id", child.id);
+          }
+
+          const amountDollars = `$${(totalTransferAmount / 100).toFixed(2)}`;
+          const jobTitle = job.title || "your job";
+          const invoiceNumber = `INV-${payment.id.slice(0, 8).toUpperCase()}`;
+
+          // Notify homeowner
+          try {
+            await supabase.from("notifications").insert({
+              user_id: job.client_id,
+              title: "Payment Auto-Released",
+              message: `Payment of ${amountDollars} for ${jobTitle} (${invoiceNumber}) was automatically released to your tradie after 48 hours.`,
+              type: "payment_auto_released",
+              read: false,
+              metadata: {
+                job_id: job.id,
+                payment_id: payment.id,
+                invoice_number: invoiceNumber,
+                amount: amountDollars,
+                payout_id: payout.id,
+              },
+            });
+          } catch (notifErr) {
+            console.error(
+              `Failed to notify homeowner for job ${job.id}:`,
+              notifErr,
+            );
+          }
+
+          // Notify homeowner via email
+          try {
+            const { data: homeowner } = await supabase
+              .from("profiles")
+              .select("email, full_name")
+              .eq("id", job.client_id)
+              .maybeSingle();
+
+            if (homeowner?.email) {
+              await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${supabaseServiceKey}`,
+                },
+                body: JSON.stringify({
+                  to: homeowner.email,
+                  subject: `Payment of ${amountDollars} Released to Your Tradie (${invoiceNumber})`,
+                  body: `Hi ${homeowner.full_name || "there"},\n\nYour payment of ${amountDollars} for "${jobTitle}" (Invoice: ${invoiceNumber}) has been automatically released to your tradie after the 48-hour review window.\n\nIf you have any concerns, please contact our support team.\n\nThank you for using ConnecTradie.`,
+                  notificationType: "PAYMENT_AUTO_RELEASED",
+                  metadata: { amount: amountDollars, job_id: job.id },
+                }),
+              }).catch((e: Error) =>
+                console.error("Failed to send homeowner auto-release email:", e)
+              );
+            }
+          } catch {
+            // Non-critical
+          }
+
+          // Notify tradie
+          try {
+            await supabase.from("notifications").insert({
+              user_id: job.tradie_id,
+              title: "Payment Received",
+              message: `Payment of ${amountDollars} for ${jobTitle} (${invoiceNumber}) has been released to your account.`,
+              type: "payment_received",
+              read: false,
+              metadata: {
+                job_id: job.id,
+                payment_id: payment.id,
+                invoice_number: invoiceNumber,
+                amount: amountDollars,
+                payout_id: payout.id,
+              },
+            });
+          } catch (notifErr) {
+            console.error(
+              `Failed to notify tradie for job ${job.id}:`,
+              notifErr,
+            );
+          }
+
+          // Notify tradie via email
+          try {
+            if (tradieProfile.email) {
+              await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${supabaseServiceKey}`,
+                },
+                body: JSON.stringify({
+                  to: tradieProfile.email,
+                  subject: `Payment of ${amountDollars} Released — Funds on the Way (${invoiceNumber})`,
+                  body: `Hi ${tradieProfile.full_name || "there"},\n\nGreat news! Payment of ${amountDollars} for "${jobTitle}" (Invoice: ${invoiceNumber}) has been released to your account.\n\nFunds will appear in your bank account within 2-3 business days.\n\nKeep up the great work!`,
+                  notificationType: "PAYMENT_RECEIVED",
+                  metadata: { amount: amountDollars, job_id: job.id },
+                }),
+              }).catch((e: Error) =>
+                console.error("Failed to send tradie auto-release email:", e)
+              );
+            }
+          } catch {
+            // Non-critical
+          }
+
+          released++;
+          totalAmount += totalTransferAmount;
+          console.info(
+            `Auto-released (destination) ${amountDollars} for job ${job.id} to tradie ${job.tradie_id} (payout ${payout.id})`,
+          );
+        } catch (stripeErr) {
+          const msg = stripeErr instanceof Error
+            ? stripeErr.message
+            : "Stripe payout failed";
+          errors.push(`Job ${job.id}: ${msg}`);
+          console.error(`Stripe payout failed for job ${job.id}:`, stripeErr);
+        }
+
+        // Skip the legacy transfer path below
+        continue;
+      }
+
+      // ── LEGACY CUSTODIAL FLOW (existing) ─────────────────────────────
+      // Platform collected funds into its own Stripe balance; transfer them
+      // to the tradie's Connect account via stripe.transfers.create().
 
       // Create Stripe transfer to tradie's Connect account.
       //

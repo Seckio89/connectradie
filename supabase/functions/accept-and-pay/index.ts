@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { calculatePlatformFee, calculateProcessingFeeCents, calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -53,6 +54,14 @@ Deno.serve(async (req: Request) => {
     } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return errorJson(authError?.message || "Unauthorized", 401);
+    }
+
+    const { allowed } = checkRateLimit(`${user.id}-accept-and-pay`, 5, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     let body: Record<string, unknown>;
@@ -215,12 +224,20 @@ Deno.serve(async (req: Request) => {
 
     const tradieSubscriptionTier = resolveTradieTier(tradieSubRecord?.subscription_tier);
 
-    // Also check profiles.is_premium, GST status, and get tradie name
+    // Also check profiles.is_premium, GST status, connect account, and get tradie name
     const { data: tradieProfile } = await supabase
       .from("profiles")
-      .select("is_premium, is_gst_registered, full_name")
+      .select("is_premium, is_gst_registered, full_name, stripe_connect_account_id, stripe_connect_onboarding_complete")
       .eq("id", quote.tradie_id)
       .maybeSingle();
+
+    // Destination charges require the tradie to have a connected Stripe account
+    if (!tradieProfile?.stripe_connect_account_id || !tradieProfile?.stripe_connect_onboarding_complete) {
+      return errorJson(
+        "This tradie hasn't finished setting up their payout account yet. They need to complete Stripe onboarding before you can pay.",
+        400,
+      );
+    }
 
     // --- Free tier limit: MAX_JOBS_PER_MONTH (5) for the tradie ---
     if (!alreadyAccepted) {
@@ -297,6 +314,9 @@ Deno.serve(async (req: Request) => {
     // Calculate platform fee based on tradie's subscription tier
     const platformFeeDollars = calculatePlatformFee(chargeDollars, tradieSubscriptionTier);
     const platformFeeCents = Math.round(platformFeeDollars * 100);
+
+    // application_fee_amount is what the platform retains from the destination charge.
+    const applicationFeeAmount = platformFeeCents + processingFee;
 
     // Capture pre-mutation state so the payment-record failure path can revert
     // both the chosen quote and any cascaded siblings cleanly. (Previously the
@@ -465,9 +485,11 @@ Deno.serve(async (req: Request) => {
         status: "pending",
         metadata: {
           deposit_type: "escrow",
+          flow: "destination",
           quote_id: quoteId,
           tradie_id: quote.tradie_id,
           tradie_name: tradieProfile?.full_name || null,
+          tradie_stripe_account: tradieProfile.stripe_connect_account_id,
           job_description: job.description,
           gst: String(gst),
           platform_fee: platformFeeCents,
@@ -517,7 +539,7 @@ Deno.serve(async (req: Request) => {
           currency: "aud",
           product_data: {
             name: `Job Deposit — ${(job.description || "").slice(0, 60)}`,
-            description: "Held in escrow. Released to tradie on job completion.",
+            description: "Secured with Stripe. Released to tradie when you approve the work.",
           },
           unit_amount: baseAmountCents,
         },
@@ -556,9 +578,16 @@ Deno.serve(async (req: Request) => {
         mode: "payment",
         payment_intent_data: {
           capture_method: "automatic",
+          transfer_data: {
+            destination: tradieProfile.stripe_connect_account_id,
+          },
+          application_fee_amount: applicationFeeAmount,
           metadata: {
             payment_record_id: paymentRecord.id,
-            escrow: "true",
+            flow: "destination",
+            payment_type: "job_funding",
+            job_id: quote.job_id,
+            tradie_id: quote.tradie_id,
           },
         },
         success_url: successUrl,

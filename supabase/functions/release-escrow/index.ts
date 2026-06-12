@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -52,6 +53,14 @@ Deno.serve(async (req: Request) => {
     } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return errorJson(authError?.message || "Unauthorized", 401);
+    }
+
+    const { allowed } = checkRateLimit(`${user.id}-release-escrow`, 5, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     let body: Record<string, unknown>;
@@ -141,14 +150,17 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Check if transfer has already been made
+    // Check if funds have already been released (transfer for legacy, payout for destination charges)
     const existingMetadata = payment.metadata || {};
-    if (existingMetadata.transfer_id) {
+    if (existingMetadata.transfer_id || existingMetadata.payout_id) {
       return errorJson(
         "Escrow funds have already been released for this payment",
         409
       );
     }
+
+    // Determine payment flow: destination charges (new) vs custodial escrow (legacy)
+    const isDestinationCharge = payment.metadata?.flow === "destination";
 
     // Note: a pending_increase used to block release. We now let release proceed
     // (releasing the original amount) so the client only ever waits one 48hr
@@ -178,13 +190,89 @@ Deno.serve(async (req: Request) => {
       totalPlatformFee += addlPlatformFee;
     }
 
-    // Calculate transfer amount: total base minus total platform fees
+    // Calculate transfer/payout amount: total base minus total platform fees
     const platformFeeCents = totalPlatformFee;
     const transferAmount = totalBase - platformFeeCents;
 
     if (transferAmount <= 0) {
       return errorJson("Transfer amount must be positive after platform fee deduction", 400);
     }
+
+    // ── DESTINATION CHARGE FLOW (new) ──────────────────────────────────
+    // Funds were routed to the tradie's Connect account at payment time via
+    // Stripe destination charges. The transfer already happened automatically
+    // — we just need to trigger a payout so funds move from the tradie's
+    // Stripe balance to their bank account.
+    if (isDestinationCharge) {
+      // For destination charges, child price_adjustment payments with
+      // flow: "destination" also transferred automatically at payment time.
+      // Their amounts are already included in totalBase above — we just
+      // need to include the full net amount in the payout.
+
+      const payout = await stripe.payouts.create(
+        {
+          amount: transferAmount,
+          currency: "aud",
+          metadata: {
+            payment_id: paymentId,
+            job_id: payment.job_id,
+            client_id: user.id,
+            tradie_id: job.tradie_id,
+            platform_fee: String(platformFeeCents),
+            flow: "destination",
+          },
+        },
+        {
+          stripeAccount: tradieProfile.stripe_connect_account_id,
+          ...(idempotencyKey ? { idempotencyKey } : {}),
+        },
+      );
+
+      // Update payment metadata with payout info. Strip pending_increase so the
+      // dropped adjustment doesn't keep showing as a CTA after release.
+      const { pending_increase: _droppedIncrease, ...cleanMetadata } = existingMetadata as Record<string, unknown>;
+      const { error: metaUpdateError } = await supabase
+        .from("payments")
+        .update({
+          metadata: {
+            ...cleanMetadata,
+            payout_id: payout.id,
+            payout_amount: payout.amount,
+            platform_fee_deducted: platformFeeCents,
+            released_at: new Date().toISOString(),
+            released_by: user.id,
+            flow: "destination",
+          },
+        })
+        .eq("id", paymentId);
+
+      if (metaUpdateError) {
+        // CRITICAL: Payout succeeded but metadata not saved — risk of duplicate payout on retry
+        console.error(
+          "CRITICAL: Stripe payout created but metadata update failed. Payout ID:",
+          payout.id,
+          "Payment ID:",
+          paymentId,
+          metaUpdateError
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          payoutId: payout.id,
+          ...(metaUpdateError ? { warning: "Payout completed but record update failed. Contact support if this payment appears twice." } : {}),
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // ── LEGACY CUSTODIAL FLOW (existing) ───────────────────────────────
+    // Platform collected funds into its own Stripe balance; we now transfer
+    // them to the tradie's Connect account via stripe.transfers.create().
 
     // Create a transfer to the tradie's Connect account.
     //
@@ -322,6 +410,17 @@ Deno.serve(async (req: Request) => {
         return errorJson(
           "The tradie's payout account isn't fully set up. Ask them to complete Stripe onboarding before you release the payment.",
           400,
+        );
+      }
+      // Destination-charge payout errors — the connected account may not
+      // have enough available balance yet (settlement timing).
+      if (
+        code === "amount_too_large" ||
+        /insufficient.*balance/i.test(err.message)
+      ) {
+        return errorJson(
+          "The tradie's account balance hasn't settled yet. Please try again in a few hours.",
+          503,
         );
       }
       // Any other Stripe error — log full details server-side, return a

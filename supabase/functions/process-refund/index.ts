@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -52,6 +53,14 @@ Deno.serve(async (req: Request) => {
     } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return errorJson(authError?.message || "Unauthorized", 401);
+    }
+
+    const { allowed } = checkRateLimit(`${user.id}-process-refund`, 5, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     let body: Record<string, unknown>;
@@ -133,19 +142,35 @@ Deno.serve(async (req: Request) => {
 
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
+    // Determine payment flow: destination charges (new) vs custodial escrow (legacy)
+    const isDestinationCharge = payment.metadata?.flow === "destination";
+
     // Create refund for the full amount (base + processing fee)
     const refundAmount = payment.amount + (payment.processing_fee || 0);
 
+    // ── DESTINATION CHARGE REFUND ──────────────────────────────────────
+    // For destination charges, the funds were split at payment time between
+    // the connected account (tradie) and the platform (application fee).
+    // We add reverse_transfer and refund_application_fee so Stripe
+    // automatically reverses both sides of the split.
+    //
+    // ── LEGACY CUSTODIAL REFUND ────────────────────────────────────────
+    // For legacy payments, funds sit in the platform's Stripe balance.
+    // A simple refund from the PaymentIntent is sufficient.
     const refund = await stripe.refunds.create(
       {
         payment_intent: payment.stripe_payment_intent_id,
         amount: refundAmount,
         reason: "requested_by_customer",
+        ...(isDestinationCharge
+          ? { reverse_transfer: true, refund_application_fee: true }
+          : {}),
         metadata: {
           payment_id: paymentId,
           job_id: payment.job_id,
           refunded_by: user.id,
           custom_reason: reason || "No reason provided",
+          flow: isDestinationCharge ? "destination" : "custodial",
         },
       },
       idempotencyKey ? { idempotencyKey } : undefined,
@@ -164,6 +189,9 @@ Deno.serve(async (req: Request) => {
           refund_reason: reason || null,
           refunded_at: new Date().toISOString(),
           refunded_by: user.id,
+          ...(isDestinationCharge
+            ? { reverse_transfer: true, refund_application_fee: true, flow: "destination" }
+            : {}),
         },
       })
       .eq("id", paymentId);

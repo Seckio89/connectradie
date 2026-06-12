@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { calculateProcessingFeeCents, calculateGstCents } from "../_shared/pricing.ts";
+import { calculateProcessingFeeCents, calculatePlatformFee, calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -53,6 +54,14 @@ Deno.serve(async (req: Request) => {
     } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return errorJson(authError?.message || "Unauthorized", 401);
+    }
+
+    const { allowed } = checkRateLimit(`${user.id}-create-job-deposit`, 5, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     let body: Record<string, unknown>;
@@ -143,21 +152,46 @@ Deno.serve(async (req: Request) => {
       customerId = existingSub.stripe_customer_id;
     }
 
-    // Check if tradie is GST registered
-    let tradieIsGstRegistered = false;
-    if (job.tradie_id) {
-      const { data: tradieProfile } = await supabase
-        .from("profiles")
-        .select("is_gst_registered")
-        .eq("id", job.tradie_id)
-        .maybeSingle();
-      tradieIsGstRegistered = tradieProfile?.is_gst_registered === true;
+    // Check tradie profile: GST status and Stripe Connect account
+    if (!job.tradie_id) {
+      return errorJson("No tradie assigned to this job yet", 400);
     }
+
+    const { data: tradieProfile } = await supabase
+      .from("profiles")
+      .select("is_gst_registered, stripe_connect_account_id, stripe_connect_onboarding_complete, full_name")
+      .eq("id", job.tradie_id)
+      .maybeSingle();
+
+    if (!tradieProfile?.stripe_connect_account_id || !tradieProfile?.stripe_connect_onboarding_complete) {
+      return errorJson(
+        "This tradie hasn't finished setting up their payout account yet. They need to complete Stripe onboarding before you can pay.",
+        400,
+      );
+    }
+
+    const tradieIsGstRegistered = tradieProfile?.is_gst_registered === true;
+
+    // Look up tradie subscription tier for platform fee
+    const { data: tradieSubRecord } = await supabase
+      .from("tradie_details")
+      .select("subscription_tier")
+      .eq("profile_id", job.tradie_id)
+      .maybeSingle();
+
+    const tradieSubscriptionTier = resolveTradieTier(tradieSubRecord?.subscription_tier);
 
     // Amount is in cents
     const baseAmount = Math.round(amount);
     const gst = tradieIsGstRegistered ? calculateGstCents(baseAmount) : 0;
     const processingFee = calculateProcessingFeeCents(baseAmount);
+
+    // Calculate platform fee based on tradie's subscription tier
+    const platformFeeDollars = calculatePlatformFee(baseAmount / 100, tradieSubscriptionTier);
+    const platformFeeCents = Math.round(platformFeeDollars * 100);
+
+    // application_fee_amount is what the platform retains from the destination charge.
+    const applicationFeeAmount = platformFeeCents + processingFee;
 
     // Create payment record
     const { data: paymentRecord, error: insertError } = await supabase
@@ -172,8 +206,13 @@ Deno.serve(async (req: Request) => {
         status: "pending",
         metadata: {
           deposit_type: "escrow",
+          flow: "destination",
+          tradie_id: job.tradie_id,
+          tradie_stripe_account: tradieProfile.stripe_connect_account_id,
           job_description: job.description,
           gst: String(gst),
+          platform_fee: platformFeeCents,
+          tradie_tier: tradieSubscriptionTier,
         },
       })
       .select("id")
@@ -189,7 +228,7 @@ Deno.serve(async (req: Request) => {
       {
         price_data: {
           currency: "aud",
-          product_data: { name: "Job Deposit (Escrow)" },
+          product_data: { name: "Job Deposit (Stripe Secured)" },
           unit_amount: baseAmount,
         },
         quantity: 1,
@@ -227,9 +266,16 @@ Deno.serve(async (req: Request) => {
         mode: "payment",
         payment_intent_data: {
           capture_method: "automatic",
+          transfer_data: {
+            destination: tradieProfile.stripe_connect_account_id,
+          },
+          application_fee_amount: applicationFeeAmount,
           metadata: {
             payment_record_id: paymentRecord.id,
-            escrow: "true",
+            flow: "destination",
+            payment_type: "job_funding",
+            job_id: jobId,
+            tradie_id: job.tradie_id,
           },
         },
         success_url: successUrl,
@@ -239,9 +285,12 @@ Deno.serve(async (req: Request) => {
           payment_type: "job_funding",
           job_id: jobId,
           payment_record_id: paymentRecord.id,
+          tradie_id: job.tradie_id,
           base_amount: String(baseAmount),
           gst: String(gst),
           processing_fee: String(processingFee),
+          platform_fee: String(platformFeeCents),
+          tradie_tier: tradieSubscriptionTier,
         },
       },
       idempotencyKey ? { idempotencyKey } : undefined,

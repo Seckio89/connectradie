@@ -1,6 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
+import { calculateProcessingFeeCents, calculatePlatformFee, calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin":
@@ -52,6 +54,14 @@ Deno.serve(async (req: Request) => {
     } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return errorJson(authError?.message || "Unauthorized", 401);
+    }
+
+    const { allowed } = checkRateLimit(`${user.id}-pay-price-increase`, 5, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     let body: Record<string, unknown>;
@@ -124,7 +134,7 @@ Deno.serve(async (req: Request) => {
     // -----------------------------------------------------------------------
     const { data: job, error: jobError } = await supabase
       .from("jobs")
-      .select("id, client_id, description")
+      .select("id, client_id, tradie_id, description")
       .eq("id", payment.job_id)
       .maybeSingle();
 
@@ -136,6 +146,28 @@ Deno.serve(async (req: Request) => {
       return errorJson(
         "Only the client on this job can pay the price increase",
         403
+      );
+    }
+
+    if (!job.tradie_id) {
+      return errorJson("No tradie assigned to this job", 400);
+    }
+
+    // Fetch tradie profile for Stripe Connect account
+    const { data: tradieProfile, error: tradieError } = await supabase
+      .from("profiles")
+      .select("stripe_connect_account_id, stripe_connect_onboarding_complete")
+      .eq("id", job.tradie_id)
+      .maybeSingle();
+
+    if (tradieError || !tradieProfile) {
+      return errorJson("Tradie profile not found", 404);
+    }
+
+    if (!tradieProfile.stripe_connect_account_id || !tradieProfile.stripe_connect_onboarding_complete) {
+      return errorJson(
+        "This tradie hasn't finished setting up their payout account yet. They need to complete Stripe onboarding before you can pay.",
+        400
       );
     }
 
@@ -172,6 +204,10 @@ Deno.serve(async (req: Request) => {
       ? pendingIncrease.additional_gst
       : 0;
 
+    // application_fee_amount is what the platform retains from the destination charge.
+    const applicationFeeAmount = (typeof platformFee === "number" ? platformFee : 0) +
+      (typeof processingFee === "number" ? processingFee : 0);
+
     if (
       typeof diffCents !== "number" || diffCents <= 0 ||
       typeof processingFee !== "number" || processingFee < 0 ||
@@ -197,7 +233,10 @@ Deno.serve(async (req: Request) => {
         parent_payment_id: paymentId,
         metadata: {
           type: "price_increase",
+          flow: "destination",
           parent_payment_id: paymentId,
+          tradie_id: job.tradie_id,
+          tradie_stripe_account: tradieProfile.stripe_connect_account_id,
           platform_fee: platformFee,
           gst: additionalGst,
           tradie_tier: payment.metadata?.tradie_tier || "free",
@@ -243,7 +282,7 @@ Deno.serve(async (req: Request) => {
           product_data: {
             name: `Price Adjustment — ${jobDesc}`,
             description:
-              "Additional amount after site inspection. Held in escrow.",
+              "Additional amount after site inspection. Secured with Stripe.",
           },
           unit_amount: diffCents,
         },
@@ -283,9 +322,17 @@ Deno.serve(async (req: Request) => {
           mode: "payment",
           payment_intent_data: {
             capture_method: "automatic",
+            transfer_data: {
+              destination: tradieProfile.stripe_connect_account_id,
+            },
+            application_fee_amount: applicationFeeAmount,
             metadata: {
               payment_record_id: additionalPayment.id,
-              escrow: "true",
+              flow: "destination",
+              payment_type: "price_adjustment",
+              job_id: payment.job_id,
+              parent_payment_id: paymentId,
+              tradie_id: job.tradie_id,
             },
           },
           success_url: successUrl,

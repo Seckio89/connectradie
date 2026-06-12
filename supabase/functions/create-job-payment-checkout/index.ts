@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { calculateProcessingFeeCents, calculateGstCents } from "../_shared/pricing.ts";
+import { calculateProcessingFeeCents, calculatePlatformFee, calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -53,6 +54,14 @@ Deno.serve(async (req: Request) => {
     } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return errorJson(authError?.message || "Unauthorized", 401);
+    }
+
+    const { allowed } = checkRateLimit(`${user.id}-create-job-payment-checkout`, 5, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     let body: Record<string, unknown>;
@@ -136,9 +145,13 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Get job details for the line item description and tradie GST status
+    // Get job details for the line item description and tradie info
     let jobDescription = "Service Payment";
     let tradieIsGstRegistered = false;
+    let tradieConnectAccountId: string | null = null;
+    let tradieId: string | null = null;
+    let platformFeeCents = 0;
+
     if (payment.job_id) {
       const { data: job } = await supabase
         .from("jobs")
@@ -149,13 +162,37 @@ Deno.serve(async (req: Request) => {
         jobDescription = job.description.replace(/^\[[^\]]+\]\s*/, "");
       }
       if (job?.tradie_id) {
+        tradieId = job.tradie_id;
         const { data: tradieProfile } = await supabase
           .from("profiles")
-          .select("is_gst_registered")
+          .select("is_gst_registered, stripe_connect_account_id, stripe_connect_onboarding_complete")
           .eq("id", job.tradie_id)
           .maybeSingle();
         tradieIsGstRegistered = tradieProfile?.is_gst_registered === true;
+        tradieConnectAccountId = tradieProfile?.stripe_connect_account_id || null;
+
+        if (!tradieProfile?.stripe_connect_account_id || !tradieProfile?.stripe_connect_onboarding_complete) {
+          return errorJson(
+            "This tradie hasn't finished setting up their payout account yet. They need to complete Stripe onboarding before you can pay.",
+            400,
+          );
+        }
+
+        // Look up tradie subscription tier for platform fee
+        const { data: tradieSubRecord } = await supabase
+          .from("tradie_details")
+          .select("subscription_tier")
+          .eq("profile_id", job.tradie_id)
+          .maybeSingle();
+
+        const tradieSubscriptionTier = resolveTradieTier(tradieSubRecord?.subscription_tier);
+        const platformFeeDollars = calculatePlatformFee(payment.amount / 100, tradieSubscriptionTier);
+        platformFeeCents = Math.round(platformFeeDollars * 100);
       }
+    }
+
+    if (!tradieConnectAccountId) {
+      return errorJson("No tradie with a connected Stripe account found for this payment", 400);
     }
 
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
@@ -186,6 +223,9 @@ Deno.serve(async (req: Request) => {
     const baseAmount = payment.amount;
     const gst = tradieIsGstRegistered ? calculateGstCents(baseAmount) : 0;
     const processingFee = calculateProcessingFeeCents(baseAmount);
+
+    // application_fee_amount is what the platform retains from the destination charge.
+    const applicationFeeAmount = platformFeeCents + processingFee;
 
     // Build line items
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
@@ -230,10 +270,16 @@ Deno.serve(async (req: Request) => {
         mode: "payment",
         payment_intent_data: {
           capture_method: "automatic",
+          transfer_data: {
+            destination: tradieConnectAccountId,
+          },
+          application_fee_amount: applicationFeeAmount,
           metadata: {
             payment_record_id: paymentId,
             job_id: payment.job_id || "",
-            escrow: "true",
+            flow: "destination",
+            payment_type: payment.payment_type,
+            tradie_id: tradieId || "",
           },
         },
         success_url: successUrl,

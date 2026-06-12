@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { calculatePlatformFee, calculateProcessingFeeCents, calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -53,6 +54,14 @@ Deno.serve(async (req: Request) => {
     } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return errorJson(authError?.message || "Unauthorized", 401);
+    }
+
+    const { allowed } = checkRateLimit(`${user.id}-pay-milestone`, 5, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     let body: Record<string, unknown>;
@@ -144,10 +153,18 @@ Deno.serve(async (req: Request) => {
 
     const { data: tradieProfile } = await supabase
       .from("profiles")
-      .select("is_gst_registered")
+      .select("is_gst_registered, stripe_connect_account_id, stripe_connect_onboarding_complete")
       .eq("id", job.tradie_id)
       .maybeSingle();
     const tradieIsGstRegistered = tradieProfile?.is_gst_registered === true;
+
+    // Destination charges require the tradie to have a connected Stripe account
+    if (!tradieProfile?.stripe_connect_account_id || !tradieProfile?.stripe_connect_onboarding_complete) {
+      return errorJson(
+        "This tradie hasn't finished setting up their payout account yet. They need to complete Stripe onboarding before you can pay.",
+        400,
+      );
+    }
 
     // Milestone amount is stored as numeric (dollars), convert to cents
     const milestoneDollars = Number(milestone.amount);
@@ -158,6 +175,9 @@ Deno.serve(async (req: Request) => {
     // Calculate platform fee based on tradie's subscription tier
     const platformFeeDollars = calculatePlatformFee(milestoneDollars, tradieSubscriptionTier);
     const platformFeeCents = Math.round(platformFeeDollars * 100);
+
+    // application_fee_amount is what the platform retains from the destination charge.
+    const applicationFeeAmount = platformFeeCents + processingFee;
 
     if (baseAmount <= 0) {
       return errorJson("Milestone amount must be positive", 400);
@@ -177,7 +197,9 @@ Deno.serve(async (req: Request) => {
         metadata: {
           milestone_id: milestoneId,
           milestone_title: milestone.title,
+          flow: "destination",
           tradie_id: job.tradie_id,
+          tradie_stripe_account: tradieProfile.stripe_connect_account_id,
           gst: String(gst),
           platform_fee: platformFeeCents,
           tradie_tier: tradieSubscriptionTier,
@@ -234,6 +256,21 @@ Deno.serve(async (req: Request) => {
         customer_email: customerId ? undefined : profile?.email,
         line_items: lineItems,
         mode: "payment",
+        payment_intent_data: {
+          capture_method: "automatic",
+          transfer_data: {
+            destination: tradieProfile.stripe_connect_account_id,
+          },
+          application_fee_amount: applicationFeeAmount,
+          metadata: {
+            payment_record_id: paymentRecord.id,
+            flow: "destination",
+            payment_type: "job_funding",
+            job_id: milestone.job_id,
+            milestone_id: milestoneId,
+            tradie_id: job.tradie_id,
+          },
+        },
         success_url: successUrl,
         cancel_url: cancelUrl,
         metadata: {
