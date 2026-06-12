@@ -22,7 +22,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import BonusModal from '../components/BonusModal';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import { getRecurringJobs, createRecurringJob, cancelRecurringJob, pauseRecurringJob, resumeRecurringJob, updateRecurringJob, suggestRecurringJob, getUpcomingSessions, getKeywordSuggestions, RECURRING_SERVICE_SUBCATEGORIES, RECURRING_SERVICE_DESCRIPTIONS, type RecurringJob, type RecurringSession, type KeywordSuggestion } from '../lib/recurringJobs';
-import { releaseEscrow, payPriceIncrease, humanizePaymentError } from '../lib/stripePayments';
+import { releaseEscrow, payPriceIncrease, humanizePaymentError, createJobPaymentCheckout } from '../lib/stripePayments';
 import { callEdgeFunction } from '../lib/edgeFn';
 import RecurringSessionCard from '../components/RecurringSessionCard';
 import RecurringInvoiceCard from '../components/RecurringInvoiceCard';
@@ -77,6 +77,8 @@ export default function ClientDashboard() {
   const [payingIncreaseJobId, setPayingIncreaseJobId] = useState<string | null>(null);
   const [cancelRecurringTarget, setCancelRecurringTarget] = useState<RecurringJob | null>(null);
   const [invoices, setInvoices] = useState<RecurringInvoice[]>([]);
+  const [pendingPayments, setPendingPayments] = useState<{ id: string; amount: number; job_id: string; jobTitle: string; created_at: string }[]>([]);
+  const [payingPendingId, setPayingPendingId] = useState<string | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
   const [quoteRequestTradie, setQuoteRequestTradie] = useState<TradieWithDetails | null>(null);
   const [clientPendingJobs, setClientPendingJobs] = useState<{ id: string; title: string; description: string; location_address: string }[]>([]);
@@ -134,6 +136,47 @@ export default function ClientDashboard() {
 
       setInvoices((outstanding ?? []) as unknown as RecurringInvoice[]);
     } catch { /* ignore */ }
+  }, [user]);
+
+  const fetchPendingPayments = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data: pending } = await supabase
+        .from('payments')
+        .select('id, amount, job_id, created_at, metadata')
+        .eq('profile_id', user.id)
+        .eq('status', 'pending')
+        .eq('payment_type', 'job_funding')
+        .order('created_at', { ascending: false });
+
+      if (!pending || pending.length === 0) {
+        setPendingPayments([]);
+        return;
+      }
+
+      // Fetch job titles for context
+      const jobIds = [...new Set(pending.map(p => p.job_id).filter(Boolean))];
+      const { data: jobs } = await supabase
+        .from('jobs')
+        .select('id, title, description')
+        .in('id', jobIds);
+
+      const jobMap = new Map((jobs || []).map(j => [j.id, j]));
+
+      setPendingPayments(pending.map(p => {
+        const job = jobMap.get(p.job_id);
+        const category = job?.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
+        return {
+          id: p.id,
+          amount: p.amount,
+          job_id: p.job_id,
+          jobTitle: job?.title || category || 'Job payment',
+          created_at: p.created_at,
+        };
+      }));
+    } catch (err) {
+      console.error('Failed to fetch pending payments:', err);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -466,6 +509,7 @@ export default function ClientDashboard() {
       fetchTrainingMode();
       fetchRecurring();
       fetchInvoices();
+      fetchPendingPayments();
       fetchSpendingSummary();
       fetchRecentJobs();
     }
@@ -1250,6 +1294,44 @@ export default function ClientDashboard() {
                   <DollarSign className="w-4 h-4 text-secondary-600" />
                   Invoices
                 </Link>
+                {/* Pending job payments — abandoned or stale checkouts */}
+                {pendingPayments.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-medium text-amber-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      Awaiting payment
+                    </p>
+                    <div className="space-y-2">
+                      {pendingPayments.map(pp => (
+                        <div key={pp.id} className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{pp.jobTitle}</p>
+                            <p className="text-xs text-gray-500">${(pp.amount / 100).toFixed(2)}</p>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              setPayingPendingId(pp.id);
+                              try {
+                                const { url } = await createJobPaymentCheckout(pp.id);
+                                if (url) window.location.href = url;
+                              } catch (err) {
+                                showToast(err instanceof Error ? err.message : 'Failed to start payment', true);
+                              } finally {
+                                setPayingPendingId(null);
+                              }
+                            }}
+                            disabled={payingPendingId === pp.id}
+                            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors"
+                          >
+                            {payingPendingId === pp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+                            Pay Now
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {invoices.length > 0 ? (
                   <div className="space-y-3">
                     {invoices.map((inv) => (
@@ -1304,13 +1386,13 @@ export default function ClientDashboard() {
                       />
                     ))}
                   </div>
-                ) : (
+                ) : pendingPayments.length === 0 ? (
                   <div className="text-center py-4">
                     <DollarSign className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                     <p className="text-sm text-gray-500">No invoices yet</p>
                     <p className="text-xs text-gray-400 mt-1">Generated at the end of each billing cycle</p>
                   </div>
-                )}
+                ) : null}
               </div>
 
               {/* This Week — personal upcoming-events feed (replaced the old
