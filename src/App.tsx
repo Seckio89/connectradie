@@ -246,14 +246,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/jobs"
-        element={
-          <ProtectedRoute requireTradie>
-            <Jobs />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/jobs" element={<Navigate to="/work" replace />} />
       <Route
         path="/projects"
         element={
