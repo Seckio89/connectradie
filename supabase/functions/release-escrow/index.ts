@@ -200,44 +200,60 @@ Deno.serve(async (req: Request) => {
 
     // ── DESTINATION CHARGE FLOW (new) ──────────────────────────────────
     // Funds were routed to the tradie's Connect account at payment time via
-    // Stripe destination charges. The transfer already happened automatically
-    // — we just need to trigger a payout so funds move from the tradie's
-    // Stripe balance to their bank account.
+    // Stripe destination charges. The transfer already happened automatically.
+    // The "release" action here marks the payment as released and OPTIONALLY
+    // triggers a payout (moving funds from tradie's Stripe balance to bank).
+    // If the payout fails (e.g. account not on manual payouts yet, balance
+    // not settled), we still mark the payment as released — the tradie will
+    // receive their funds via their normal payout schedule.
     if (isDestinationCharge) {
-      // For destination charges, child price_adjustment payments with
-      // flow: "destination" also transferred automatically at payment time.
-      // Their amounts are already included in totalBase above — we just
-      // need to include the full net amount in the payout.
+      let payoutId: string | null = null;
+      let payoutAmount: number | null = null;
 
-      const payout = await stripe.payouts.create(
-        {
-          amount: transferAmount,
-          currency: "aud",
-          metadata: {
-            payment_id: paymentId,
-            job_id: payment.job_id,
-            client_id: user.id,
-            tradie_id: job.tradie_id,
-            platform_fee: String(platformFeeCents),
-            flow: "destination",
+      // Attempt to trigger an immediate payout to the tradie's bank.
+      // This is best-effort — if it fails, the connected account's
+      // automatic payout schedule will handle it.
+      try {
+        const payout = await stripe.payouts.create(
+          {
+            amount: transferAmount,
+            currency: "aud",
+            metadata: {
+              payment_id: paymentId,
+              job_id: payment.job_id,
+              client_id: user.id,
+              tradie_id: job.tradie_id,
+              platform_fee: String(platformFeeCents),
+              flow: "destination",
+            },
           },
-        },
-        {
-          stripeAccount: tradieProfile.stripe_connect_account_id,
-          ...(idempotencyKey ? { idempotencyKey } : {}),
-        },
-      );
+          {
+            stripeAccount: tradieProfile.stripe_connect_account_id,
+            ...(idempotencyKey ? { idempotencyKey } : {}),
+          },
+        );
+        payoutId = payout.id;
+        payoutAmount = payout.amount;
+      } catch (payoutErr) {
+        // Payout failed — not critical for destination charges since the
+        // transfer already happened. The tradie will get paid via their
+        // connected account's normal payout schedule.
+        console.warn(
+          "Destination charge payout failed (non-critical). Funds already in tradie's Stripe account. Payment:",
+          paymentId,
+          "Error:",
+          payoutErr instanceof Error ? payoutErr.message : payoutErr,
+        );
+      }
 
-      // Update payment metadata with payout info. Strip pending_increase so the
-      // dropped adjustment doesn't keep showing as a CTA after release.
+      // Always mark the payment as released — the money is already with the tradie.
       const { pending_increase: _droppedIncrease, ...cleanMetadata } = existingMetadata as Record<string, unknown>;
       const { error: metaUpdateError } = await supabase
         .from("payments")
         .update({
           metadata: {
             ...cleanMetadata,
-            payout_id: payout.id,
-            payout_amount: payout.amount,
+            ...(payoutId ? { payout_id: payoutId, payout_amount: payoutAmount } : {}),
             platform_fee_deducted: platformFeeCents,
             released_at: new Date().toISOString(),
             released_by: user.id,
@@ -247,11 +263,8 @@ Deno.serve(async (req: Request) => {
         .eq("id", paymentId);
 
       if (metaUpdateError) {
-        // CRITICAL: Payout succeeded but metadata not saved — risk of duplicate payout on retry
         console.error(
-          "CRITICAL: Stripe payout created but metadata update failed. Payout ID:",
-          payout.id,
-          "Payment ID:",
+          "Failed to update payment metadata after release. Payment ID:",
           paymentId,
           metaUpdateError
         );
@@ -260,8 +273,8 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({
           success: true,
-          payoutId: payout.id,
-          ...(metaUpdateError ? { warning: "Payout completed but record update failed. Contact support if this payment appears twice." } : {}),
+          ...(payoutId ? { payoutId } : { note: "Payment released. Payout will process via the tradie's normal schedule." }),
+          ...(metaUpdateError ? { warning: "Release completed but record update failed." } : {}),
         }),
         {
           status: 200,
