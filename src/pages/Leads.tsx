@@ -220,7 +220,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
   useEffect(() => {
     const tab = searchParams.get('tab');
     const urlFilter = searchParams.get('filter');
-    if (tab === 'services') {
+    if (tab === 'services' || tab === 'ongoing') {
       setFilter('services');
     } else if (urlFilter && urlFilter !== filter) {
       const validFilters: LeadFilter[] = ['all', 'active', 'open', 'quoting', 'accepted', 'in_progress', 'completed', 'archived', 'pending', 'boosted', 'urgent', 'scheduled', 'quoted', 'history', 'deleted', 'services'];

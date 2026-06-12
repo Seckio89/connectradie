@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { RefreshCw, User, Clock, MapPin, Loader2, Pause, AlertTriangle, X, Briefcase, MoreVertical, Plus, CheckCircle2, CheckCheck, FileText as FileTextIcon, Handshake, ChevronDown, RotateCcw, MessageCircle, Building2, Send, Package, Trash2, CreditCard, Camera } from 'lucide-react';
+import { RefreshCw, User, Clock, MapPin, Loader2, Pause, AlertTriangle, X, Briefcase, MoreVertical, Plus, CheckCircle2, CheckCheck, FileText as FileTextIcon, Handshake, ChevronDown, RotateCcw, MessageCircle, Building2, Send, Package, Trash2, CreditCard, Camera, Eye } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { TRADE_OPTIONS, getSupplySuggestions, SUPPLY_DEFAULT_UNITS } from '../lib/tradeCategories';
 import { useAuth } from '../contexts/AuthContext';
@@ -1256,6 +1256,7 @@ export default function ClientServicesTab() {
   const [savingAllTime, setSavingAllTime] = useState(false);
   const [pendingQuoteJobIds, setPendingQuoteJobIds] = useState<Set<string>>(new Set());
   const [requestingQuoteId, setRequestingQuoteId] = useState<string | null>(null);
+  const [originalJobQuotes, setOriginalJobQuotes] = useState<Map<string, { count: number; topPrice: number; topTradie: string; originalJobId: string }>>(new Map());
 
   const fetchJobs = useCallback(async () => {
     if (!user) return;
@@ -1293,6 +1294,42 @@ export default function ClientServicesTab() {
         } catch { /* ignore */ }
       } else {
         setPendingQuoteJobIds(new Set());
+      }
+
+      // Fetch pending quotes on original jobs linked to recurring services.
+      // This lets clients see quotes submitted on the one-time job that spawned
+      // a recurring service (e.g. tradie quoted on the original job).
+      const origIds = Array.from(originalJobIds);
+      if (origIds.length > 0) {
+        try {
+          const { data: origQuotes } = await supabase
+            .from('quotes')
+            .select('id, job_id, price_min, price_max, firm_price, status, tradie:profiles!quotes_tradie_id_fkey(full_name)')
+            .in('job_id', origIds)
+            .in('status', ['pending', 'site_visit_scheduled', 'site_visit_completed', 'final_submitted']);
+          const quoteMap = new Map<string, { count: number; topPrice: number; topTradie: string; originalJobId: string }>();
+          for (const q of origQuotes || []) {
+            const price = q.firm_price ?? q.price_max ?? q.price_min ?? 0;
+            const tradieName = (q.tradie as { full_name: string } | null)?.full_name || 'A tradie';
+            // Find which recurring job has this original_job_id
+            const rj = jobs.find(j => j.original_job_id === q.job_id);
+            if (!rj) continue;
+            const existing = quoteMap.get(rj.id);
+            if (!existing || price > existing.topPrice) {
+              quoteMap.set(rj.id, {
+                count: (existing?.count || 0) + 1,
+                topPrice: price,
+                topTradie: tradieName,
+                originalJobId: q.job_id,
+              });
+            } else {
+              quoteMap.set(rj.id, { ...existing, count: existing.count + 1 });
+            }
+          }
+          setOriginalJobQuotes(quoteMap);
+        } catch { /* ignore */ }
+      } else {
+        setOriginalJobQuotes(new Map());
       }
     } catch { /* ignore */ }
   }, [user]);
@@ -1694,6 +1731,31 @@ export default function ClientServicesTab() {
                       )}
                     </div>
                   )}
+                  {/* Quotes received on the original job — shows when tradies quote on the one-time job that spawned this service */}
+                  {originalJobQuotes.has(job.id) && (() => {
+                    const qInfo = originalJobQuotes.get(job.id)!;
+                    return (
+                      <div className="px-4 py-3 border-t border-gray-100 bg-secondary-50/60">
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileTextIcon className="w-4 h-4 text-secondary-600 flex-shrink-0" />
+                            <p className="text-xs font-semibold text-secondary-800">
+                              {qInfo.count === 1
+                                ? `1 Quote received — $${qInfo.topPrice.toFixed(0)} from ${qInfo.topTradie}`
+                                : `${qInfo.count} Quotes received — from $${qInfo.topPrice.toFixed(0)}`}
+                            </p>
+                          </div>
+                          <Link
+                            to={`/leads?job=${qInfo.originalJobId}`}
+                            className="inline-flex items-center gap-1.5 bg-secondary-500 hover:bg-secondary-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            View {qInfo.count === 1 ? 'Quote' : 'Quotes'}
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {/* Menu actions */}
                   <div className="px-4 py-1.5 border-t border-gray-100 flex justify-end">
                     <div className="relative">

@@ -1021,7 +1021,7 @@ export default function ClientDashboard() {
                     return (
                       <Link
                         key={job.id}
-                        to={`/leads?job=${job.id}`}
+                        to={recurringJobIds.has(job.id) ? `/leads?tab=ongoing&job=${job.id}` : `/leads?job=${job.id}`}
                         className={`group block rounded-2xl overflow-hidden border bg-white shadow-sm hover:shadow-lg hover:border-gray-300 transition-all ${isArchived ? 'opacity-75' : ''}`}
                       >
                         <div className="flex">
