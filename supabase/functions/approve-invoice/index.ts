@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@14.21.0";
 import { calculateBecsProcessingFeeCents, calculateProcessingFeeCents, calculatePlatformFee, resolveTradieTier } from "../_shared/pricing.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin":
@@ -57,6 +58,14 @@ Deno.serve(async (req: Request) => {
 
     if (authErr || !user) {
       return errorJson(`Auth failed: ${authErr?.message || "no user"}`, 401);
+    }
+
+    const { allowed } = checkRateLimit(`${user.id}-approve-invoice`, 10, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const body = await req.json();

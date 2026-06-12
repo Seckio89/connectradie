@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 /*
   submit-final-quote — stage 3 of the 3-stage quote flow.
@@ -74,6 +75,14 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) return errorJson(authError?.message || "Unauthorized", 401);
+
+    const { allowed } = checkRateLimit(`${user.id}-submit-final-quote`, 10, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     let body: Record<string, unknown>;
     try {

@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin":
@@ -58,6 +59,14 @@ Deno.serve(async (req: Request) => {
 
     if (authError || !user) {
       return errorJson("Unauthorized", 401);
+    }
+
+    const { allowed } = checkRateLimit(`${user.id}-respond-to-dispute`, 10, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const { invoiceId, action, response } = await req.json();

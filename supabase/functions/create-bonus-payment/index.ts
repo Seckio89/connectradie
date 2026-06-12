@@ -7,6 +7,7 @@ import {
   resolveTradieTier,
   calculateGstCents,
 } from "../_shared/pricing.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin":
@@ -58,6 +59,14 @@ Deno.serve(async (req: Request) => {
     } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return errorJson(authError?.message || "Unauthorized", 401);
+    }
+
+    const { allowed } = checkRateLimit(`${user.id}-create-bonus-payment`, 5, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     let body: Record<string, unknown>;

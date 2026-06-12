@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 function requireEnv(key: string): string {
   const val = Deno.env.get(key);
@@ -302,6 +303,14 @@ Deno.serve(async (req: Request) => {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
+      );
+    }
+
+    const { allowed } = checkRateLimit(`${user.id}-verify-license`, 15, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

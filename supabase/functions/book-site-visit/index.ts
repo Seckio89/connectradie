@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { calculateProcessingFeeCents } from "../_shared/pricing.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 /*
   book-site-visit — stage 2 of the 3-stage quote flow.
@@ -76,6 +77,14 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) return errorJson(authError?.message || "Unauthorized", 401);
+
+    const { allowed } = checkRateLimit(`${user.id}-book-site-visit`, 10, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     let body: Record<string, unknown>;
     try {

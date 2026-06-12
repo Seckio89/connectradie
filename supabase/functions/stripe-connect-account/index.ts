@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import Stripe from "npm:stripe@14.21.0";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 function requireEnv(key: string): string {
   const val = Deno.env.get(key);
@@ -58,6 +59,14 @@ Deno.serve(async (req: Request) => {
     if (authError || !user) {
       console.error("Auth failed:", authError?.message, "| token prefix:", token.slice(0, 20), "| supabaseUrl:", supabaseUrl);
       return errorResponse(authError?.message || "Unauthorized", 401);
+    }
+
+    const { allowed } = checkRateLimit(`${user.id}-stripe-connect-account`, 15, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const { data: profile } = await authClient

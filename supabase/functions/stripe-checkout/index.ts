@@ -1,6 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@14.21.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
@@ -11,7 +12,7 @@ function corsResponse(body: string | object | null, status = 200) {
   const headers = {
     'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') || 'https://connectradie.com',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
   };
 
   // For 204 No Content, don't include Content-Type or body
@@ -85,6 +86,11 @@ Deno.serve(async (req) => {
 
     if (!user) {
       return corsResponse({ error: 'User not found' }, 404);
+    }
+
+    const { allowed } = checkRateLimit(`${user.id}-stripe-checkout`, 15, 60000);
+    if (!allowed) {
+      return corsResponse({ error: "Rate limit exceeded. Please try again later." }, 429);
     }
 
     const { data: customer, error: getCustomerError } = await supabase
@@ -197,19 +203,22 @@ Deno.serve(async (req) => {
     }
 
     // create Checkout Session
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: price_id,
-          quantity: 1,
-        },
-      ],
-      mode,
-      success_url,
-      cancel_url,
-    });
+    const session = await stripe.checkout.sessions.create(
+      {
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: price_id,
+            quantity: 1,
+          },
+        ],
+        mode,
+        success_url,
+        cancel_url,
+      },
+      { idempotencyKey: `checkout_${user.id}_${Date.now()}` },
+    );
 
     console.log(`Created checkout session ${session.id} for customer ${customerId}`);
 
