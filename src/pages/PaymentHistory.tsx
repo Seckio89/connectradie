@@ -432,7 +432,7 @@ export default function PaymentHistory() {
     };
     const cfg = map[status] || { bg: 'bg-navy-50 text-navy-600 border border-navy-200', dot: 'bg-navy-400', label: status };
     return (
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.bg}`}>
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${cfg.bg}`}>
         <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
         {cfg.label}
       </span>
@@ -970,7 +970,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                       <div className="flex flex-col items-center justify-center gap-1.5">
                                         {/* Bonus payments are destination charges — no escrow, never "Awaiting Release" */}
                                         {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !(p.metadata as Record<string, unknown> | null)?.transfer_id && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
-                                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+                                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
                                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                                             Awaiting Release
                                           </span>
@@ -982,7 +982,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                           const diffCents = Number(inc?.diff_cents || 0);
                                           const diffLabel = diffCents > 0 ? ` $${(diffCents / 100).toFixed(2)}` : '';
                                           return (
-                                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 whitespace-nowrap">
+                                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200 whitespace-nowrap">
                                               Price adjusted — pay{diffLabel} to release
                                             </span>
                                           );
@@ -1040,7 +1040,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                   <div className="mt-1 flex items-center gap-1.5 justify-end">
                                     {/* Bonus payments are destination charges — no escrow, never "Awaiting Release" */}
                                     {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !(p.metadata as Record<string, unknown> | null)?.transfer_id && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
-                                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
                                         <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                                         Awaiting Release
                                       </span>
@@ -1052,7 +1052,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                       const diffCents = Number(inc?.diff_cents || 0);
                                       const diffLabel = diffCents > 0 ? ` $${(diffCents / 100).toFixed(2)}` : '';
                                       return (
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 whitespace-nowrap">
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200 whitespace-nowrap">
                                           Price adjusted — pay{diffLabel} to release
                                         </span>
                                       );
@@ -1390,7 +1390,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
               <div className="flex items-start gap-3 mb-3">
                 <ShieldCheck className="w-5 h-5 text-warm-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-warm-800">Payment Held in Escrow</p>
+                  <p className="text-sm font-semibold text-warm-800">Payment Secured with Stripe</p>
                   <p className="text-xs text-warm-700 mt-0.5">
                     Funds will be automatically released to your tradie within 48 hours. You can release early if you're happy with the work.
                   </p>

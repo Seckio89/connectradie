@@ -24,7 +24,7 @@ interface TrustSignalsProps {
 const CLIENT_SIGNALS = [
   {
     icon: Lock,
-    title: 'Escrow',
+    title: 'Secure Payments',
     body: 'Your payment is held by Stripe until you approve release.',
   },
   {

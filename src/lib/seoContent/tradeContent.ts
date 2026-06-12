@@ -46,7 +46,7 @@ export interface TradeContent {
 
 const PLUMBER: TradeContent = {
   intro:
-    "Plumbers in {{suburb}} handle everything from a dripping kitchen tap to a full bathroom rough-in. In {{state}}, anything that connects to mains water, gas, or drainage legally has to be done by a licensed plumber — DIY work on those systems voids home insurance and can be removed by a future buyer's inspector. The tradies listed below are ABN-verified, licence-checked, and their fee sits in Stripe-held escrow until you sign off the work.",
+    "Plumbers in {{suburb}} handle everything from a dripping kitchen tap to a full bathroom rough-in. In {{state}}, anything that connects to mains water, gas, or drainage legally has to be done by a licensed plumber — DIY work on those systems voids home insurance and can be removed by a future buyer's inspector. The tradies listed below are ABN-verified, licence-checked, and their fee is secured with Stripe until you sign off the work.",
   whatTheyDo: [
     'Blocked drains, toilets, and stormwater',
     'Hot water systems — install, service, replace',
@@ -91,7 +91,7 @@ const PLUMBER: TradeContent = {
     },
     {
       q: 'How is the payment protected?',
-      a: 'When you accept a quote, the full amount is held by Stripe in escrow — ConnecTradie never holds your money. The plumber only gets paid after you mark the job complete and approve the release. If you don\'t respond, funds auto-release 48 hours after they mark the job done, which protects them from being ghosted while still giving you a window to dispute.',
+      a: 'When you accept a quote, the full amount is secured by Stripe — ConnecTradie never holds your money. The plumber only gets paid after you mark the job complete and approve the release. If you don\'t respond, funds auto-release 48 hours after they mark the job done, which protects them from being ghosted while still giving you a window to dispute.',
     },
   ],
   howToChoose: [
@@ -150,7 +150,7 @@ const ELECTRICIAN: TradeContent = {
       a: 'Many can — solar requires a separate Clean Energy Council accreditation on top of the electrical licence. Filter by service category to find solar-accredited electricians in {{suburb}}. EV charger install is within scope of a standard electrical licence.',
     },
     {
-      q: 'How does payment and escrow work?',
+      q: 'How does payment security work?',
       a: 'Your payment is held by Stripe — not by ConnecTradie — until you mark the job complete. The electrician sees the funds are committed before they start, so you never pay upfront. After completion, you release the funds with one click, or they auto-release 48 hours later.',
     },
   ],
@@ -205,7 +205,7 @@ const CARPENTER: TradeContent = {
     },
     {
       q: 'How is the work guaranteed?',
-      a: 'Your payment sits in Stripe escrow until you approve the work. If the deck isn\'t to spec, you don\'t release the funds. Reputable carpenters also offer a workmanship warranty of 6–12 months beyond the escrow release — ask before booking.',
+      a: 'Your payment is secured with Stripe until you approve the work. If the deck isn\'t to spec, you don\'t release the funds. Reputable carpenters also offer a workmanship warranty of 6–12 months beyond the escrow release — ask before booking.',
     },
   ],
   howToChoose: [
@@ -255,11 +255,11 @@ const BUILDER: TradeContent = {
     },
     {
       q: 'Should I pay a deposit?',
-      a: 'In most states, deposits on residential building work are capped — typically 10% for jobs under $20,000 and 5% above. Anything more is illegal in {{state}}. With ConnecTradie, you don\'t pay a deposit directly to the builder — the full milestone amount sits in Stripe escrow and releases as you sign off each stage.',
+      a: 'In most states, deposits on residential building work are capped — typically 10% for jobs under $20,000 and 5% above. Anything more is illegal in {{state}}. With ConnecTradie, you don\'t pay a deposit directly to the builder — the full milestone amount is secured with Stripe and releases as you sign off each stage.',
     },
     {
       q: 'How are payments structured for a long build?',
-      a: 'Big builds run on milestone payments — typically frame, lock-up, fixing, completion. Each milestone is held in escrow and only released when you sign off that stage. If a milestone is in dispute, the funds stay locked and ConnecTradie\'s mediation kicks in. This is genuinely different from paying invoices off-platform.',
+      a: 'Big builds run on milestone payments — typically frame, lock-up, fixing, completion. Each milestone is secured with Stripe and only released when you sign off that stage. If a milestone is in dispute, the funds stay locked and ConnecTradie\'s mediation kicks in. This is genuinely different from paying invoices off-platform.',
     },
   ],
   howToChoose: [
@@ -695,7 +695,7 @@ const BATHROOM_RENOVATOR: TradeContent = {
     },
     {
       q: 'How are payments structured for a bathroom reno?',
-      a: 'Bathroom renos run on milestone payments through ConnecTradie — typically demo + rough-in (30%), waterproofing + tiling (40%), completion (30%). Each milestone sits in Stripe escrow and only releases when you sign off that stage. If a milestone is in dispute the funds stay locked. No upfront deposit required.',
+      a: 'Bathroom renos run on milestone payments through ConnecTradie — typically demo + rough-in (30%), waterproofing + tiling (40%), completion (30%). Each milestone is secured with Stripe and only releases when you sign off that stage. If a milestone is in dispute the funds stay locked. No upfront deposit required.',
     },
     {
       q: 'Should I supply my own fittings?',
@@ -713,7 +713,7 @@ const BATHROOM_RENOVATOR: TradeContent = {
 
 const FALLBACK_CONTENT: TradeContent = {
   intro:
-    "Skilled {{tradeLabelPlural}} in {{suburb}}, all ABN-verified and paid through Stripe-held escrow — funds release only when you approve the work. Every tradie\'s licence and insurance is checked before they can submit a quote.",
+    "Skilled {{tradeLabelPlural}} in {{suburb}}, all ABN-verified and paid through Stripe-secured payment — funds release only when you approve the work. Every tradie\'s licence and insurance is checked before they can submit a quote.",
   whatTheyDo: [
     'Quote on jobs in {{suburb}} and surrounding suburbs',
     'Work to a written, fixed-price scope where possible',
@@ -734,11 +734,11 @@ const FALLBACK_CONTENT: TradeContent = {
     },
     {
       q: 'How does payment work?',
-      a: 'When you accept a quote, the full amount sits in Stripe-held escrow — ConnecTradie never holds your funds. The tradie sees the payment is committed before starting work, so you never pay upfront. After completion, you release the funds with one click. If you don\'t respond, they auto-release 48 hours after the tradie marks the job complete.',
+      a: 'When you accept a quote, the full amount is secured with Stripe — ConnecTradie never holds your funds. The tradie sees the payment is committed before starting work, so you never pay upfront. After completion, you release the funds with one click. If you don\'t respond, they auto-release 48 hours after the tradie marks the job complete.',
     },
     {
       q: 'What if the work isn\'t up to standard?',
-      a: 'Don\'t release the funds. They sit in escrow until both parties agree the work meets the quoted scope. If there\'s a disagreement, ConnecTradie mediates between you and the tradie. The money never leaves escrow without your sign-off (or, if you go silent, the 48-hour auto-release).',
+      a: 'Don\'t release the funds. They stay secured with Stripe until both parties agree the work meets the quoted scope. If there\'s a disagreement, ConnecTradie mediates between you and the tradie. The money is never released without your sign-off (or, if you go silent, the 48-hour auto-release).',
     },
     {
       q: 'How are tradies vetted?',

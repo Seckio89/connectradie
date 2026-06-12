@@ -45,7 +45,7 @@ interface JobDetailModalProps {
 const STEPS = [
   { key: 'pending', label: 'Quoted', description: 'Quote sent to client' },
   { key: 'accepted', label: 'Accepted', description: 'Client accepted your quote' },
-  { key: 'funded', label: 'Funded', description: 'Client payment secured in escrow' },
+  { key: 'funded', label: 'Funded', description: 'Client payment secured via Stripe' },
   { key: 'in_progress', label: 'In Progress', description: 'Work has started' },
   { key: 'completed', label: 'Completed', description: 'Job finished' },
 ] as const;
@@ -63,7 +63,7 @@ function getNextAction(status: string, isTradie: boolean): { label: string; hint
     case 'accepted':
       return { label: 'Awaiting payment', hint: 'The client has accepted your quote and is completing payment. You\'ll be notified when funds are secured.' };
     case 'funded':
-      return { label: 'Payment secured', hint: 'Payment is secured in escrow.' };
+      return { label: 'Payment secured', hint: 'Payment is secured via Stripe.' };
     case 'in_progress':
       return { label: 'Mark as complete', hint: 'Once you\'ve finished the work, mark this job as complete to request payment.' };
     case 'completed':
@@ -409,16 +409,16 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
               {category && (
-                <span className="px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-semibold border border-secondary-200 flex-shrink-0">
+                <span className="px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200 flex-shrink-0">
                   {category}
                 </span>
               )}
               {isRecurring && frequencyLabel && (
-                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium flex-shrink-0">
+                <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium flex-shrink-0">
                   <Repeat className="w-3 h-3 inline mr-1" />{frequencyLabel}
                 </span>
               )}
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${
+              <span className={`px-3 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${
                 isDeclined ? 'bg-red-50 text-red-700 border-red-200'
                 : localStatus === 'completed' ? 'bg-green-50 text-green-700 border-green-200'
                 : localStatus === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200'

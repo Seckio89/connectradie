@@ -220,138 +220,149 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
     if (!user) return;
     setLoading(true);
 
-    const query = supabase
-      .from('jobs')
-      .select('*, profiles!jobs_client_id_fkey(full_name, email, phone), projects(id, title)')
-      .eq(isTradie ? 'tradie_id' : 'client_id', user.id)
-      .order('created_at', { ascending: false });
+    try {
+      const query = supabase
+        .from('jobs')
+        .select('*, profiles!jobs_client_id_fkey(full_name, email, phone), projects(id, title)')
+        .eq(isTradie ? 'tradie_id' : 'client_id', user.id)
+        .order('created_at', { ascending: false });
 
-    const { data, error } = await query;
+      const { data, error } = await query;
 
-    if (!error && data) {
-      const twoDaysAgo = new Date();
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      if (error) throw error;
 
-      const filteredJobs = (data as JobWithRelations[]).filter((job: JobWithRelations) => {
-        if (job.status === 'declined' && job.declined_at) {
-          const declinedDate = new Date(job.declined_at);
-          return declinedDate > twoDaysAgo;
-        }
-        return true;
-      });
+      if (data) {
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
-      if (isTradie) {
-        filteredJobs.sort((a, b) => {
-          const aFlash = a.is_flash_boost && a.flash_expiry && new Date(a.flash_expiry) > new Date();
-          const bFlash = b.is_flash_boost && b.flash_expiry && new Date(b.flash_expiry) > new Date();
-          if (aFlash && !bFlash) return -1;
-          if (!aFlash && bFlash) return 1;
-          return 0;
+        const filteredJobs = (data as JobWithRelations[]).filter((job: JobWithRelations) => {
+          if (job.status === 'declined' && job.declined_at) {
+            const declinedDate = new Date(job.declined_at);
+            return declinedDate > twoDaysAgo;
+          }
+          return true;
         });
 
-        // Exclude jobs linked to recurring services — managed via Ongoing Services tab.
-        // Cover both the original placeholder (recurring_jobs.original_job_id) and any
-        // quote-request jobs (jobs.recurring_job_id).
-        const { data: recurringLinked } = await supabase
-          .from('recurring_jobs')
-          .select('original_job_id')
-          .eq('tradie_id', user.id)
-          .not('original_job_id', 'is', null);
-        const recurringJobIds = new Set<string>();
-        for (const r of recurringLinked || []) {
-          if (r.original_job_id) recurringJobIds.add(r.original_job_id);
-        }
-        for (const j of filteredJobs as { id: string; recurring_job_id?: string | null }[]) {
-          if (j.recurring_job_id) recurringJobIds.add(j.id);
-        }
-        if (recurringJobIds.size > 0) {
-          const beforeCount = filteredJobs.length;
-          const remaining = filteredJobs.filter(j => !recurringJobIds.has(j.id));
-          if (remaining.length < beforeCount) {
-            filteredJobs.length = 0;
-            filteredJobs.push(...remaining);
+        if (isTradie) {
+          filteredJobs.sort((a, b) => {
+            const aFlash = a.is_flash_boost && a.flash_expiry && new Date(a.flash_expiry) > new Date();
+            const bFlash = b.is_flash_boost && b.flash_expiry && new Date(b.flash_expiry) > new Date();
+            if (aFlash && !bFlash) return -1;
+            if (!aFlash && bFlash) return 1;
+            return 0;
+          });
+
+          // Exclude jobs linked to recurring services — managed via Ongoing Services tab.
+          // Cover both the original placeholder (recurring_jobs.original_job_id) and any
+          // quote-request jobs (jobs.recurring_job_id).
+          const { data: recurringLinked } = await supabase
+            .from('recurring_jobs')
+            .select('original_job_id')
+            .eq('tradie_id', user.id)
+            .not('original_job_id', 'is', null);
+          const recurringJobIds = new Set<string>();
+          for (const r of recurringLinked || []) {
+            if (r.original_job_id) recurringJobIds.add(r.original_job_id);
           }
-        }
-      }
-
-      setAllJobs(filteredJobs as JobWithRelations[]);
-
-      // Check which completed jobs have been paid (escrow released)
-      const completedJobIds = filteredJobs.filter(j => j.status === 'completed').map(j => j.id);
-      if (completedJobIds.length > 0) {
-        try {
-          const { data: payments } = await supabase
-            .from('payments')
-            .select('job_id, metadata')
-            .in('job_id', completedJobIds);
-          if (payments) {
-            const paid = new Set<string>();
-            for (const p of payments) {
-              const meta = p.metadata as Record<string, unknown> | null;
-              if (meta?.transfer_id) {
-                paid.add(p.job_id);
-              }
+          for (const j of filteredJobs as { id: string; recurring_job_id?: string | null }[]) {
+            if (j.recurring_job_id) recurringJobIds.add(j.id);
+          }
+          if (recurringJobIds.size > 0) {
+            const beforeCount = filteredJobs.length;
+            const remaining = filteredJobs.filter(j => !recurringJobIds.has(j.id));
+            if (remaining.length < beforeCount) {
+              filteredJobs.length = 0;
+              filteredJobs.push(...remaining);
             }
-            if (paid.size > 0) setPaidJobIds(paid);
           }
-        } catch (err) {
-          console.error('Error checking payment status:', err);
         }
-      }
 
-      // Fetch tradie names for client's completed jobs
-      if (!isTradie) {
-        const tradieIds = [...new Set(filteredJobs.filter(j => j.tradie_id).map(j => j.tradie_id!))];
-        if (tradieIds.length > 0) {
+        setAllJobs(filteredJobs as JobWithRelations[]);
+
+        // Check which completed jobs have been paid (escrow released)
+        const completedJobIds = filteredJobs.filter(j => j.status === 'completed').map(j => j.id);
+        if (completedJobIds.length > 0) {
           try {
-            const { data: tradieProfiles } = await supabase
-              .from('profiles')
-              .select('id, full_name')
-              .in('id', tradieIds);
-            if (tradieProfiles) {
-              const names = new Map<string, string>();
-              for (const tp of tradieProfiles) {
-                names.set(tp.id, tp.full_name);
+            const { data: payments } = await supabase
+              .from('payments')
+              .select('job_id, metadata')
+              .in('job_id', completedJobIds);
+            if (payments) {
+              const paid = new Set<string>();
+              for (const p of payments) {
+                const meta = p.metadata as Record<string, unknown> | null;
+                if (meta?.transfer_id) {
+                  paid.add(p.job_id);
+                }
               }
-              setTradieNames(names);
+              if (paid.size > 0) setPaidJobIds(paid);
             }
           } catch (err) {
-            console.error('Error fetching tradie names:', err);
+            console.error('Error checking payment status:', err);
           }
         }
-      }
 
-      // Fetch tradie's own quotes for these jobs
-      if (isTradie) {
-        const pendingJobIds = filteredJobs.filter(j => ['pending', 'funded', 'in_progress'].includes(j.status)).map(j => j.id);
-        if (pendingJobIds.length > 0) {
-          const { data: quotes } = await supabase
-            .from('quotes')
-            .select('*')
-            .eq('tradie_id', user.id)
-            .in('job_id', pendingJobIds);
-          if (quotes) {
-            const map = new Map<string, Quote>();
-            for (const q of quotes as Quote[]) {
-              map.set(q.job_id, q);
+        // Fetch tradie names for client's completed jobs
+        if (!isTradie) {
+          const tradieIds = [...new Set(filteredJobs.filter(j => j.tradie_id).map(j => j.tradie_id!))];
+          if (tradieIds.length > 0) {
+            try {
+              const { data: tradieProfiles } = await supabase
+                .from('profiles')
+                .select('id, full_name')
+                .in('id', tradieIds);
+              if (tradieProfiles) {
+                const names = new Map<string, string>();
+                for (const tp of tradieProfiles) {
+                  names.set(tp.id, tp.full_name);
+                }
+                setTradieNames(names);
+              }
+            } catch (err) {
+              console.error('Error fetching tradie names:', err);
             }
-            setMyQuotes(map);
           }
         }
-      }
 
-      // Compute counts from fetched data
-      const counts: Record<string, number> = {};
-      for (const j of filteredJobs) {
-        // Merge accepted + funded + in_progress into 'active'
-        if (['accepted', 'funded', 'in_progress'].includes(j.status)) {
-          counts.active = (counts.active || 0) + 1;
-        } else {
-          counts[j.status] = (counts[j.status] || 0) + 1;
+        // Fetch tradie's own quotes for these jobs
+        if (isTradie) {
+          const pendingJobIds = filteredJobs.filter(j => ['pending', 'funded', 'in_progress'].includes(j.status)).map(j => j.id);
+          if (pendingJobIds.length > 0) {
+            try {
+              const { data: quotes, error: quotesError } = await supabase
+                .from('quotes')
+                .select('*')
+                .eq('tradie_id', user.id)
+                .in('job_id', pendingJobIds);
+              if (quotesError) throw quotesError;
+              if (quotes) {
+                const map = new Map<string, Quote>();
+                for (const q of quotes as Quote[]) {
+                  map.set(q.job_id, q);
+                }
+                setMyQuotes(map);
+              }
+            } catch (err) {
+              console.error('Error fetching quotes:', err);
+            }
+          }
         }
+
+        // Compute counts from fetched data
+        const counts: Record<string, number> = {};
+        for (const j of filteredJobs) {
+          // Merge accepted + funded + in_progress into 'active'
+          if (['accepted', 'funded', 'in_progress'].includes(j.status)) {
+            counts.active = (counts.active || 0) + 1;
+          } else {
+            counts[j.status] = (counts[j.status] || 0) + 1;
+          }
+        }
+        counts.all = filteredJobs.length;
+        setJobCounts(counts);
       }
-      counts.all = filteredJobs.length;
-      setJobCounts(counts);
+    } catch (err) {
+      console.error('Failed to fetch jobs:', err);
     }
     setLoading(false);
   };
@@ -426,7 +437,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
           await supabase.rpc('create_notification', {
             p_user_id: normalizedJob.client_id,
             p_title: 'Job Accepted',
-            p_message: `${tradieName} has accepted ${jobTitle}. Next step: fund the escrow to secure the booking.`,
+            p_message: `${tradieName} has accepted ${jobTitle}. Next step: fund the payment to secure the booking.`,
             p_type: 'JOB_ACCEPTED',
             p_channel: 'in_app',
             p_read: false,
@@ -784,7 +795,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                         >
                           <div className="flex items-center gap-2">
                             <h3 className="text-sm font-semibold text-gray-900">{monthLabel}</h3>
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-600">
+                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-600">
                               {monthJobs.length}
                             </span>
                           </div>
@@ -817,7 +828,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                                       <h3 className="text-sm font-semibold text-gray-900 truncate flex-1 min-w-0">
                                         {job.title || job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job'}
                                       </h3>
-                                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
+                                      <span className={`px-3 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
                                         {paidJobIds.has(job.id) ? 'paid' : job.status.replace(/_/g, ' ')}
                                       </span>
                                     </div>
@@ -872,7 +883,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                                           {job.profiles?.full_name || 'Client'}
                                         </p>
                                       </div>
-                                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
+                                      <span className={`px-3 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
                                         {job.status.replace(/_/g, ' ')}
                                       </span>
                                     </div>
@@ -988,7 +999,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                           {job.profiles?.full_name || 'Client'}
                         </p>
                       </div>
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${
                         job.status === 'funded' && myQuotes.get(job.id)?.requires_site_inspection && myQuotes.get(job.id)?.final_price == null
                           ? 'bg-amber-100 text-amber-700 border-amber-200'
                           : getStatusColor(job.status)

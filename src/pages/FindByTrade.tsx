@@ -59,7 +59,7 @@ export default function FindByTrade() {
   return (
     <div className="min-h-screen bg-gray-50">
       <SEO
-        title={`${plural} in Australia — Verified, Licensed, Escrow-Paid`}
+        title={`${plural} in Australia — Verified, Licensed, Stripe-Secured`}
         description={`Find verified ${label.toLowerCase()}s across Australia. ABN-checked, licence-verified, paid through Stripe-held escrow. Browse ${plural.toLowerCase()} by suburb across every major Australian city.`}
         canonical={`/find/${trade}`}
         jsonLd={jsonLd}
@@ -98,7 +98,7 @@ export default function FindByTrade() {
         <section className="mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold mb-4 border border-emerald-100">
             <Lock className="w-3.5 h-3.5" />
-            Escrow-paid · Licence verified · Australia-wide
+            Stripe-secured · Licence verified · Australia-wide
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 max-w-3xl">
@@ -135,7 +135,7 @@ export default function FindByTrade() {
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <Wallet className="w-6 h-6 text-emerald-600 mb-3" />
-            <h3 className="text-sm font-semibold text-gray-900 mb-1">Escrow-paid</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Stripe-secured</h3>
             <p className="text-xs text-gray-600">Your money sits in Stripe-held escrow until the work is approved. We never hold your funds.</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-5">

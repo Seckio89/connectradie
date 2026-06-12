@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { calculateGstCents } from "../_shared/pricing.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin":
@@ -62,6 +63,14 @@ Deno.serve(async (req: Request) => {
       return errorJson(authError?.message || "Unauthorized", 401);
     }
 
+    const { allowed } = checkRateLimit(`${user.id}-approve-price-reduction`, 10, 60000);
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     let body: Record<string, unknown>;
     try {
       body = await req.json();
@@ -112,7 +121,7 @@ Deno.serve(async (req: Request) => {
 
     if (existingMetadata.released_at) {
       return errorJson(
-        "Funds have already been released — reduction is no longer possible through escrow",
+        "Funds have already been released — reduction is no longer possible",
         400
       );
     }

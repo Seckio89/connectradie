@@ -766,7 +766,7 @@ export default function ClientDashboard() {
                   <p className="font-semibold text-warm-900">
                     {awaitingRelease.length} jobs waiting for payment release
                   </p>
-                  <p className="text-sm text-warm-800 mt-0.5">Review each one below — money stays in escrow until you release.</p>
+                  <p className="text-sm text-warm-800 mt-0.5">Review each one below — payment stays secured with Stripe until you release.</p>
                 </div>
               </div>
               <div className="divide-y divide-warm-200">
@@ -981,7 +981,7 @@ export default function ClientDashboard() {
                                   {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
                                 </h3>
                                 <div className="flex items-center gap-2 flex-shrink-0">
-                                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${statusColor}`}>
+                                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColor}`}>
                                     {statusLabel}
                                   </span>
                                   {!isArchived && job.status === 'pending' && !job.tradie_id && (
@@ -1797,7 +1797,7 @@ export default function ClientDashboard() {
                                                         Pay Now
                                                       </Link>
                                                     ) : (
-                                                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                                                         invoice.status === 'paid' ? 'bg-green-100 text-green-700' :
                                                         'bg-gray-100 text-gray-600'
                                                       }`}>

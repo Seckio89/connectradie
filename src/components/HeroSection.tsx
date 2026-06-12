@@ -61,7 +61,7 @@ export default function HeroSection() {
           <div className="text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-warm-500/10 text-warm-400 rounded-full text-sm font-semibold mb-6 border border-warm-500/20">
               <Lock className="w-4 h-4" />
-              Escrow-held funds · 48-hour auto-release · AU-licensed tradies
+              Stripe-secured payments · 48-hour auto-release · AU-licensed tradies
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-[-0.02em]">
@@ -174,7 +174,7 @@ export default function HeroSection() {
             <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-3 text-sm text-gray-400">
               <div className="flex items-center gap-2">
                 <Lock className="w-4 h-4 text-amber-400" />
-                <span>Escrow Protected</span>
+                <span>Payment Protected</span>
               </div>
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-sky-400" />
@@ -205,7 +205,7 @@ export default function HeroSection() {
                     <Lock className="w-5 h-5 text-amber-400" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-white">Escrow Payment Flow</p>
+                    <p className="text-sm font-semibold text-white">Secure Payment Flow</p>
                     <p className="text-xs text-gray-500">How your money stays safe</p>
                   </div>
                 </div>
@@ -230,7 +230,7 @@ export default function HeroSection() {
                       <div className="w-0.5 h-8 bg-white/10" />
                     </div>
                     <div className="pt-1 pb-4">
-                      <p className="text-sm font-semibold text-white">Payment held in escrow</p>
+                      <p className="text-sm font-semibold text-white">Payment secured with Stripe</p>
                       <p className="text-xs text-gray-500">Secured by Stripe — not held by us</p>
                     </div>
                   </div>

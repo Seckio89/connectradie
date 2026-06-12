@@ -3,7 +3,7 @@ import { Shield, Lock, MessageSquare, Eye, Star, FileText } from 'lucide-react';
 const features = [
   {
     icon: Lock,
-    title: 'Escrow on Every Job',
+    title: 'Payment Protection on Every Job',
     description: 'Your payment is held securely by Stripe until you approve the completed work. No risk to you.',
     color: 'text-warm-400',
     bg: 'bg-warm-500/10 border-warm-500/20',
@@ -57,7 +57,7 @@ export default function FeaturesSection() {
             Everything You Need to Hire <span className="text-warm-500">Without the Risk.</span>
           </h2>
           <p className="mt-4 text-lg text-gray-400">
-            Escrow payments, verified tradies, direct communication, and full transparency — all in one platform.
+            Secure payments, verified tradies, direct communication, and full transparency — all in one platform.
           </p>
         </div>
 

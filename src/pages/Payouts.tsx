@@ -840,7 +840,7 @@ export default function Payouts() {
                     />
                     {customInvoiceTemplate ? (
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-emerald-600 font-medium bg-emerald-50 px-2 py-0.5 rounded-full">Custom template active</span>
+                        <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-3 py-1 rounded-full">Custom template active</span>
                         <button
                           onClick={handleRemoveTemplate}
                           className="text-xs text-red-500 hover:text-red-700 font-medium"
@@ -948,7 +948,7 @@ export default function Payouts() {
                                               <span className="text-sm font-semibold text-navy-900 tabular-nums">{formatCurrency(p.amount)}</span>
                                             </td>
                                             <td className="px-5 py-3 text-center">
-                                              <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full ${statusClass}`}>
+                                              <span className={`inline-flex items-center text-xs font-medium px-3 py-1 rounded-full ${statusClass}`}>
                                                 {statusLabel}
                                               </span>
                                             </td>
@@ -1005,7 +1005,7 @@ export default function Payouts() {
                                         </div>
                                         <div className="text-right flex-shrink-0">
                                           <p className="text-sm font-semibold text-navy-900 tabular-nums">{formatCurrency(p.amount)}</p>
-                                          <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${statusClass}`}>
+                                          <span className={`inline-flex items-center text-xs font-medium px-3 py-1 rounded-full mt-1 ${statusClass}`}>
                                             {statusLabel}
                                           </span>
                                         </div>
@@ -1207,7 +1207,7 @@ function PayoutStatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full ${
+      className={`inline-flex items-center text-xs font-medium px-3 py-1 rounded-full ${
         styles[status] || 'bg-gray-100 text-gray-300'
       }`}
       title={tooltips[status] || ''}

@@ -777,7 +777,7 @@ async function handleEvent(event: Stripe.Event) {
               await supabase.from('notifications').insert({
                 user_id: homeownerId,
                 title: 'Payment Confirmed',
-                message: `Your payment of $${amountDollars} has been confirmed. Funds are held securely in escrow.`,
+                message: `Your payment of $${amountDollars} has been confirmed. Funds are secured with Stripe until you approve the work.`,
                 type: 'payment_received',
                 read: false,
                 metadata: { job_id: jobId, amount: amountDollars },
@@ -795,7 +795,7 @@ async function handleEvent(event: Stripe.Event) {
                   body: JSON.stringify({
                     to: homeowner.email,
                     subject: `Payment of $${amountDollars} Confirmed`,
-                    body: `Hi ${homeowner.full_name || 'there'},\n\nYour payment of $${amountDollars} has been confirmed. Funds are held securely in escrow until you approve the completed work.\n\nView your job in the ConnecTradie dashboard.`,
+                    body: `Hi ${homeowner.full_name || 'there'},\n\nYour payment of $${amountDollars} has been confirmed. Funds are secured with Stripe until you approve the completed work.\n\nView your job in the ConnecTradie dashboard.`,
                     notificationType: 'PAYMENT_RECEIVED',
                     metadata: { amount: `$${amountDollars}`, job_id: jobId },
                   }),

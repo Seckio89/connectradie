@@ -1421,24 +1421,24 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {!isTradie && (
-                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${getClientStatusColor(lead)}`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getClientStatusColor(lead)}`}>
                         {getClientStatusLabel(lead)}
                       </span>
                     )}
                     {isFlashActive && isTradie && lead.status === 'pending' && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-warm-500 text-white rounded-full text-[11px] font-bold shadow-sm animate-pulse">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-warm-500 text-white rounded-full text-xs font-medium shadow-sm animate-pulse">
                         <Zap className="w-3 h-3" />
                         Flash
                       </span>
                     )}
                     {!isFlashActive && isUrgent && isTradie && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-50 text-red-700 rounded-full text-[11px] font-semibold border border-red-200">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-50 text-red-700 rounded-full text-xs font-medium border border-red-200">
                         <Zap className="w-3 h-3" />
                         Urgent
                       </span>
                     )}
                     {isTradie && !!(lead.title && /ongoing|recurring/i.test(lead.title)) && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-purple-50 text-purple-700 rounded-full text-[11px] font-semibold border border-purple-200">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-medium border border-purple-200">
                         <RefreshCw className="w-3 h-3" />
                         Ongoing
                       </span>
@@ -1983,7 +1983,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 <Zap className="w-4 h-4 text-white" />
               </div>
               <h3 className="font-bold text-gray-900">Urgent / Now</h3>
-              <span className="ml-auto px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+              <span className="ml-auto px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
                 {urgentLeads.length}
               </span>
             </div>
@@ -2000,7 +2000,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 <CalendarDays className="w-4 h-4 text-white" />
               </div>
               <h3 className="font-bold text-gray-900">Ongoing Leads</h3>
-              <span className="ml-auto px-2 py-0.5 bg-secondary-100 text-secondary-700 rounded-full text-xs font-semibold">
+              <span className="ml-auto px-3 py-1 bg-secondary-100 text-secondary-700 rounded-full text-xs font-medium">
                 {scheduledGroups.reduce((acc, g) => acc + g.leads.length, 0)}
               </span>
             </div>
@@ -2028,7 +2028,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 <Briefcase className="w-4 h-4 text-gray-600" />
               </div>
               <h3 className="font-bold text-gray-900">Other Leads</h3>
-              <span className="ml-auto px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold">
+              <span className="ml-auto px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
                 {otherLeads.length}
               </span>
             </div>
@@ -2077,7 +2077,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
               <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
               <p className="text-sm font-bold text-green-800">Payment successful!</p>
             </div>
-            <p className="text-xs text-green-700 ml-8">Your tradie has been hired and payment is held securely in escrow. The tradie will be notified and can start work.</p>
+            <p className="text-xs text-green-700 ml-8">Your tradie has been hired and payment is secured with Stripe. The tradie will be notified and can start work.</p>
           </div>
         )}
         {quoteAcceptedBanner === 'recurring_success' && (
@@ -2095,7 +2095,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
               <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
               <p className="text-sm font-bold text-green-800">Additional payment successful!</p>
             </div>
-            <p className="text-xs text-green-700 ml-8">The adjusted amount is now held securely in escrow. You can release payment once the work is complete.</p>
+            <p className="text-xs text-green-700 ml-8">The adjusted amount is now secured with Stripe. You can release payment once the work is complete.</p>
           </div>
         )}
         {quoteAcceptedBanner === 'cancelled' && (
@@ -2441,8 +2441,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       </div>
                       <p className="text-sm text-gray-500 mb-3 line-clamp-2">{desc}</p>
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
-                        {category && <span className="px-2 py-0.5 bg-gray-100 rounded-full">{category}</span>}
-                        <span className={`px-2 py-0.5 rounded-full ${
+                        {category && <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium">{category}</span>}
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                           lead.status === 'completed' ? 'bg-green-100 text-green-700' :
                           lead.status === 'cancelled' ? 'bg-gray-100 text-gray-600' :
                           lead.status === 'declined' ? 'bg-red-100 text-red-600' :
@@ -2504,18 +2504,18 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       </h2>
                       <div className="flex items-center gap-2 mt-1">
                         {vlCategory && (
-                          <span className="px-2.5 py-0.5 bg-white text-gray-600 rounded-full text-xs font-medium border border-gray-200">
+                          <span className="px-3 py-1 bg-white text-gray-600 rounded-full text-xs font-medium border border-gray-200">
                             {vlCategory}
                           </span>
                         )}
                         {vlIsFlash && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-warm-500 text-white rounded-full text-xs font-bold animate-pulse">
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-warm-500 text-white rounded-full text-xs font-medium animate-pulse">
                             <Zap className="w-3 h-3" />
                             Flash Deal
                           </span>
                         )}
                         {vlIsUrgent && !vlIsFlash && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold border border-red-200">
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium border border-red-200">
                             <Zap className="w-3 h-3" />
                             Urgent
                           </span>
@@ -2797,11 +2797,11 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">{ej.title || ejCategory || 'Job Details'}</h2>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getClientStatusColor(ej)}`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getClientStatusColor(ej)}`}>
                         {getClientStatusLabel(ej)}
                       </span>
                       {ejIsFlash && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-warm-100 text-warm-700 rounded-full text-xs font-semibold border border-warm-200">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-warm-100 text-warm-700 rounded-full text-xs font-medium border border-warm-200">
                           <Zap className="w-3 h-3" />
                           Boosted
                         </span>
@@ -3201,7 +3201,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 <div class="details-grid">
   <div class="detail-item"><div class="dl">Invoice #</div><div class="dv">${invoiceNum}</div></div>
   <div class="detail-item"><div class="dl">Date Completed</div><div class="dv">${completedDate}</div></div>
-  <div class="detail-item"><div class="dl">Payment Type</div><div class="dv">Job Funding (Escrow)</div></div>
+  <div class="detail-item"><div class="dl">Payment Type</div><div class="dv">Job Funding (Stripe Secured)</div></div>
   <div class="detail-item"><div class="dl">Currency</div><div class="dv">AUD</div></div>
 </div>
 <div class="footer">
@@ -3233,11 +3233,11 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                         {(cj.title || cjCategory || 'Untitled Job').replace(/_/g, ' ')}
                       </h2>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="px-2.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-semibold border border-green-300">
+                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium border border-green-300">
                           Completed
                         </span>
                         {cjCategory && (
-                          <span className="px-2.5 py-0.5 bg-white text-gray-600 rounded-full text-xs font-medium border border-gray-200">
+                          <span className="px-3 py-1 bg-white text-gray-600 rounded-full text-xs font-medium border border-gray-200">
                             {cjCategory}
                           </span>
                         )}

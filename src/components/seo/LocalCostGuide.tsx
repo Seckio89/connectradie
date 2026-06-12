@@ -80,7 +80,7 @@ export default function LocalCostGuide({ rows, tradeLabel, suburbName }: LocalCo
       <div className="mt-5 flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-lg">
         <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
         <p className="text-xs text-amber-800">
-          Ranges reflect typical {suburbName}-area pricing for residential work. Complex jobs, after-hours visits, and premium materials sit at or above the top of each range. The numbers are for orientation only — every quote on ConnecTradie is fixed before you accept it, and the money sits in escrow until you sign off.
+          Ranges reflect typical {suburbName}-area pricing for residential work. Complex jobs, after-hours visits, and premium materials sit at or above the top of each range. The numbers are for orientation only — every quote on ConnecTradie is fixed before you accept it, and the money is secured with Stripe until you sign off.
         </p>
       </div>
     </section>

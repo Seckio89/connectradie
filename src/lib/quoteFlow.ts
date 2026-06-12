@@ -94,7 +94,7 @@ export function getQuoteStatusDescription(status: QuoteStatus, role: Role = 'cli
         ? 'Your final quote is with the client, valid until the date shown.'
         : 'The tradie has submitted their binding final quote. Compare it with others, then accept and pay to engage them.';
     case 'accepted':
-      return 'This quote was accepted and the deposit is in escrow.';
+      return 'This quote was accepted and the deposit is secured with Stripe.';
     case 'declined':
       return role === 'tradie'
         ? 'The client went with a different tradie this time.'

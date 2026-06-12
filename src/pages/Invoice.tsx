@@ -218,7 +218,7 @@ export default function Invoice() {
               ? `GST amount shown separately as required by the ATO. ABN ${data.tradie.abn_number || 'N/A'}.`
               : 'Supplier is not registered for GST.'}
           </p>
-          <p className="mt-1">Paid via ConnecTradie escrow. Funds held securely with Stripe.</p>
+          <p className="mt-1">Paid via ConnecTradie. Funds secured with Stripe.</p>
         </div>
       </div>
     </div>

@@ -624,19 +624,19 @@ export default function JobManagementModal({
                   <div>
                     <h2 className="text-xl font-bold text-gray-900 capitalize">{parsed.displayTitle}</h2>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusConfig.color}`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusConfig.color}`}>
                         {statusConfig.label}
                       </span>
                       {job.priority === 'high' && (
-                        <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full border border-orange-200">HIGH PRIORITY</span>
+                        <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full border border-orange-200">HIGH PRIORITY</span>
                       )}
                       {job.is_emergency && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-600 rounded-full text-xs font-semibold border border-red-200">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-50 text-red-600 rounded-full text-xs font-medium border border-red-200">
                           <Zap className="w-3 h-3" /> Emergency
                         </span>
                       )}
                       {isRecurring && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary-50 text-secondary-700 rounded-full text-xs font-semibold border border-secondary-200">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200">
                           <Repeat className="w-3 h-3" /> Ongoing
                         </span>
                       )}
@@ -712,7 +712,7 @@ export default function JobManagementModal({
                       <Clock className="w-4 h-4 flex-shrink-0" />
                       <div>
                         <p className="text-sm font-semibold">Awaiting Payment</p>
-                        <p className="text-xs opacity-80">Client accepted — waiting for escrow payment</p>
+                        <p className="text-xs opacity-80">Client accepted — waiting for Stripe payment</p>
                       </div>
                     </div>
                   )}
@@ -742,7 +742,7 @@ export default function JobManagementModal({
                 {parsed.cleanDescription && parsed.cleanDescription !== parsed.displayTitle && (
                   <div className="bg-gray-50 rounded-xl p-4">
                     {parsed.category && (
-                      <span className="inline-block px-2.5 py-0.5 bg-secondary-50 text-secondary-700 rounded-full text-xs font-semibold border border-secondary-200 mb-2">
+                      <span className="inline-block px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200 mb-2">
                         {parsed.category}
                       </span>
                     )}
@@ -796,12 +796,12 @@ export default function JobManagementModal({
                       <div className="flex items-center gap-2 mb-3">
                         <DollarSign className="w-4 h-4 text-emerald-600" />
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Payment Status</p>
-                        <span className={`ml-auto px-2 py-0.5 rounded-full text-xs font-medium ${
+                        <span className={`ml-auto px-3 py-1 rounded-full text-xs font-medium ${
                           payment.status === 'completed' ? 'bg-green-100 text-green-700' :
                           payment.status === 'released' ? 'bg-emerald-100 text-emerald-700' :
                           'bg-amber-100 text-amber-700'
                         }`}>
-                          {payment.status === 'completed' ? 'In Escrow' : payment.status === 'released' ? 'Released' : payment.status}
+                          {payment.status === 'completed' ? 'Secured' : payment.status === 'released' ? 'Released' : payment.status}
                         </span>
                       </div>
                       <div className="space-y-1.5 text-sm">
@@ -816,7 +816,7 @@ export default function JobManagementModal({
                           </div>
                         )}
                         <div className={`${isGstRegistered ? 'border-t border-gray-200 pt-1.5' : ''} flex justify-between`}>
-                          <span className="font-semibold text-gray-700">In escrow now</span>
+                          <span className="font-semibold text-gray-700">Secured with Stripe</span>
                           <span className="font-bold text-emerald-700">${totalPaid.toFixed(2)}</span>
                         </div>
                         {pendingInc && pendingTopUp > 0 && (
@@ -834,7 +834,7 @@ export default function JobManagementModal({
                       </div>
                       <div className="mt-3 flex items-center gap-1.5 text-xs text-secondary-500">
                         <Shield className="w-3 h-3" />
-                        <span>{pendingInc ? 'Escrow updates once the client pays the difference' : 'Funds held securely via Stripe escrow'}</span>
+                        <span>{pendingInc ? 'Payment updates once the client pays the difference' : 'Funds secured with Stripe until job completion'}</span>
                       </div>
                     </div>
                   );

@@ -4,7 +4,7 @@ import { Shield, Lock, DollarSign, MessageSquare, Gavel, ArrowRight, CheckCircle
 const comparisons = [
   {
     feature: 'Payment Protection',
-    us: 'Escrow — tradie gets paid only when you approve',
+    us: 'Stripe-secured — tradie gets paid only when you approve',
     others: 'Pay upfront and hope for the best',
     icon: Lock,
   },
@@ -90,7 +90,7 @@ export default function HowItWorksClientsSection() {
             Post a Job Free
             <ArrowRight className="w-5 h-5" />
           </Link>
-          <p className="mt-3 text-sm text-gray-500">No cost to post. Escrow protection included on every job.</p>
+          <p className="mt-3 text-sm text-gray-500">No cost to post. Payment protection included on every job.</p>
         </div>
       </div>
     </section>

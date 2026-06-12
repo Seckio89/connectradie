@@ -136,7 +136,7 @@ export default function CostGuide() {
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <BadgeCheck className="w-6 h-6 text-emerald-600 mb-3" />
-            <h3 className="text-sm font-semibold text-gray-900 mb-1">Held in escrow</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Stripe-secured</h3>
             <p className="text-xs text-gray-600">Your payment sits with Stripe until you approve the work. No upfront deposits, no chasing.</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -184,7 +184,7 @@ export default function CostGuide() {
             Get fixed-price quotes from verified {plural.toLowerCase()}
           </h2>
           <p className="mt-3 text-base text-gray-300 max-w-xl mx-auto">
-            Post your job in 60 seconds. Free, no lead fees, escrow-protected.
+            Post your job in 60 seconds. Free, no lead fees, payment-protected.
           </p>
           <div className="mt-6">
             <Link

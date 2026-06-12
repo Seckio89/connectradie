@@ -165,7 +165,7 @@ function QuoteTag({ label, color }: { label: string; color: 'teal' | 'amber' | '
   };
 
   return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${colorClasses[color]}`}>
+    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${colorClasses[color]}`}>
       {label}
     </span>
   );
@@ -656,7 +656,7 @@ export default function QuoteComparisonView({
                 return (
                   <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 leading-relaxed">
                     <span className="font-semibold">How this works:</span>{' '}
-                    You deposit ${deposit.toLocaleString()} {usingBudget ? '(your budget)' : "(the tradie's minimum quote)"} into escrow — the tradie gets your address and visits the site. After the visit, they confirm the final price. If it's higher, you approve the top-up before work starts; if lower, the difference is refunded.
+                    You deposit ${deposit.toLocaleString()} {usingBudget ? '(your budget)' : "(the tradie's minimum quote)"} securely via Stripe — the tradie gets your address and visits the site. After the visit, they confirm the final price. If it's higher, you approve the top-up before work starts; if lower, the difference is refunded.
                   </div>
                 );
               })()}

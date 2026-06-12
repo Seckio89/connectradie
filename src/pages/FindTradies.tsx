@@ -288,7 +288,7 @@ export default function FindTradies() {
         <section className="mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold mb-4 border border-emerald-100">
             <Lock className="w-3.5 h-3.5" />
-            Escrow-paid · Licence verified · {suburb.state}-based
+            Stripe-secured · Licence verified · {suburb.state}-based
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900">

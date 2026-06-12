@@ -458,7 +458,7 @@ export default function SubmitQuoteModal({
                   <p className="text-sm font-semibold text-gray-800 mb-2">What happens next?</p>
                   <ul className="text-xs text-gray-600 space-y-2">
                     <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>1</span>The client reviews your quote</li>
-                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>2</span>If accepted, they'll pay into escrow</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>2</span>If accepted, they'll pay securely via Stripe</li>
                     <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>3</span>You'll be notified to start the job</li>
                   </ul>
                 </div>
@@ -539,11 +539,11 @@ export default function SubmitQuoteModal({
 
               <div className="bg-gray-50 rounded-xl p-4 space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 bg-secondary-50 text-secondary-700 rounded-full text-xs font-semibold border border-secondary-200">
+                  <span className="px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200">
                     {category}
                   </span>
                   {slotsRemaining <= 2 && (
-                    <span className="px-2.5 py-0.5 bg-warm-50 text-warm-700 rounded-full text-xs font-semibold border border-warm-200">
+                    <span className="px-3 py-1 bg-warm-50 text-warm-700 rounded-full text-xs font-medium border border-warm-200">
                       {slotsRemaining} spot{slotsRemaining !== 1 ? 's' : ''} left
                     </span>
                   )}

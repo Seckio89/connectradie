@@ -165,9 +165,9 @@ export default function Privacy() {
                   </div>
 
                   <div>
-                    <h3 className="text-[15px] font-semibold text-gray-800 mb-2">2.4 Financial Data & Secure Escrow</h3>
+                    <h3 className="text-[15px] font-semibold text-gray-800 mb-2">2.4 Financial Data & Secure Payments</h3>
                     <p className="text-[15px] text-gray-600 leading-relaxed">
-                      ConnecTradie facilitates payments through a secure escrow model using Stripe. ConnecTradie does not store full credit card numbers or bank account routing details. Financial data is transmitted directly to Stripe via encrypted tokenisation. We retain transaction records (amount, date, job reference) for legal and tax purposes.
+                      ConnecTradie facilitates payments through Stripe, our secure third-party payment processor. ConnecTradie does not store full credit card numbers or bank account routing details. Financial data is transmitted directly to Stripe via encrypted tokenisation. We retain transaction records (amount, date, job reference) for legal and tax purposes.
                     </p>
                     <div className="mt-3 flex items-start gap-3 bg-blue-50/70 border border-blue-100 rounded-xl p-4">
                       <Shield className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -265,7 +265,7 @@ export default function Privacy() {
                         <tbody className="text-gray-600">
                           <tr className="border-t border-gray-100">
                             <td className="px-4 py-2.5 font-medium text-gray-800">Stripe</td>
-                            <td className="px-4 py-2.5">Payment processing & escrow</td>
+                            <td className="px-4 py-2.5">Payment processing & security</td>
                             <td className="px-4 py-2.5">United States, Ireland</td>
                           </tr>
                           <tr className="border-t border-gray-100 bg-gray-50">

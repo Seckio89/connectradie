@@ -146,14 +146,14 @@ export default function Terms() {
               {/* Section 3 */}
               <section>
                 <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-baseline gap-2">
-                  <span className="text-primary-600">3.</span> Payments, Fees, Platform Integrity & Escrow
+                  <span className="text-primary-600">3.</span> Payments, Fees, Platform Integrity & Payment Security
                 </h2>
 
                 <div className="space-y-5">
                   <div>
-                    <h3 className="text-[15px] font-semibold text-gray-800 mb-1.5">3.1 Escrow Payment Model</h3>
+                    <h3 className="text-[15px] font-semibold text-gray-800 mb-1.5">3.1 Secure Payment Model</h3>
                     <p className="text-[15px] text-gray-600 leading-relaxed">
-                      Upon a Client accepting a quote, the agreed amount is held in escrow via our third-party payment processor. Funds are released to the Tradie upon Client confirmation of satisfactory completion, or automatically after 7 business days if no dispute is raised.
+                      Upon a Client accepting a quote, the agreed amount is secured via Stripe, our third-party payment processor. ConnecTradie does not hold client funds at any time. Funds are released to the Tradie upon Client confirmation of satisfactory completion, or automatically after 7 business days if no dispute is raised.
                     </p>
                   </div>
 

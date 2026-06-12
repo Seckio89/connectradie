@@ -43,7 +43,7 @@ export default function FindByLocation() {
   return (
     <div className="min-h-screen bg-gray-50">
       <SEO
-        title={`Tradies in ${suburb.name} ${suburb.state} ${suburb.postcode} — Verified, Insured, Escrow-Paid`}
+        title={`Tradies in ${suburb.name} ${suburb.state} ${suburb.postcode} — Verified, Insured, Stripe-Secured`}
         description={`Find verified, licensed tradies in ${suburb.name} ${suburb.state}. Plumbers, electricians, builders, painters, cleaners and more — every tradie ABN-checked and escrow-paid through Stripe.`}
         canonical={suburbHubUrl(suburb.slug)}
         jsonLd={jsonLd}
@@ -84,7 +84,7 @@ export default function FindByLocation() {
         <section className="mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold mb-4 border border-emerald-100">
             <Lock className="w-3.5 h-3.5" />
-            Escrow-paid · Licence verified · {suburb.state}-based
+            Stripe-secured · Licence verified · {suburb.state}-based
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 max-w-3xl">
@@ -122,7 +122,7 @@ export default function FindByLocation() {
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <Wallet className="w-6 h-6 text-emerald-600 mb-3" />
-            <h3 className="text-sm font-semibold text-gray-900 mb-1">Escrow-paid</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Stripe-secured</h3>
             <p className="text-xs text-gray-600">Stripe holds the money until you approve the work. ConnecTradie never touches your funds.</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-5">
