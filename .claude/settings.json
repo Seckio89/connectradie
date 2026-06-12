@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"C:\\\\Users\\\\User\\\\Desktop\\\\project\" log --oneline HEAD~20..HEAD -- src/components/BetaModal.tsx)",
+      "Bash(cd \"C:\\\\Users\\\\User\\\\Desktop\\\\project\" && git diff HEAD~15..HEAD > /tmp/full_diff.txt && wc -l /tmp/full_diff.txt)",
+      "Bash(git reset *)",
+      "Bash(supabase --version)",
+      "Bash(rm -f .git/index.lock)",
+      "Bash(bash commit-audit-fixes.sh)"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
+    ]
+  }
+}

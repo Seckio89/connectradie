@@ -83,7 +83,18 @@
       "Bash(python -c \"p=r'C:\\\\Users\\\\User\\\\.claude\\\\projects\\\\c--Users-User-Desktop-project\\\\0d814284-f20c-483b-ab99-7ca1d6aabb70\\\\tool-results\\\\mcp-claude_ai_Supabase-get_advisors-1779993541751.txt'; print\\(open\\(p\\).read\\(\\)[0:80000]\\)\")",
       "Bash(python -c \"p=r'C:\\\\Users\\\\User\\\\.claude\\\\projects\\\\c--Users-User-Desktop-project\\\\0d814284-f20c-483b-ab99-7ca1d6aabb70\\\\tool-results\\\\mcp-claude_ai_Supabase-get_advisors-1779993541751.txt'; d=open\\(p\\).read\\(\\); print\\('LEN', len\\(d\\)\\); print\\(d[53902:67937]\\)\")",
       "Bash(python -c ' *)",
-      "PowerShell(npx tsc --noEmit --skipLibCheck 2>&1)"
+      "PowerShell(npx tsc --noEmit --skipLibCheck 2>&1)",
+      "Bash(git mv *)",
+      "Bash(git diff *)",
+      "Read(//tmp/**)",
+      "Bash(cd \"/c/Users/User/Desktop/project\" && find . -name \"*.sql\" -type f | xargs grep -l \"recurring_jobs\" | head -5)",
+      "Read(//c/c/Users/User/Desktop/**)",
+      "mcp__claude_ai_Context7__query-docs",
+      "PowerShell($uuid = [guid]::NewGuid\\(\\); Write-Host $uuid.ToString\\(\\))",
+      "Bash(npm list *)",
+      "Bash(npm info *)",
+      "Bash(ls -la /mnt/c/Users/User/Desktop/project/ 2>/dev/null || ls -la \"C:/Users/User/Desktop/project/\" 2>/dev/null || pwd)",
+      "Read(//mnt/c/Users/User/Desktop/**)"
     ]
   }
 }

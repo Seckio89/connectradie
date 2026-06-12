@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.8",
+    "@rollup/rollup-linux-x64-gnu": "^4.61.1",
     "@sentry/react": "^10.40.0",
     "@stripe/react-stripe-js": "^6.1.0",
     "@stripe/stripe-js": "^8.7.0",
