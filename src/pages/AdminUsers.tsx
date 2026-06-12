@@ -296,30 +296,38 @@ export default function AdminUsers() {
   const handleRemoveUser = async (userId: string, reason: string, additionalMessage: string) => {
     setActionLoading(userId);
 
-    const user = users.find(u => u.id === userId);
+    try {
+      const user = users.find(u => u.id === userId);
 
-    // Store removal audit trail in account_removals table (no FK to profiles, survives cascade)
-    await supabase.from('account_removals').insert({
-      user_id: userId,
-      email: user?.email || '',
-      full_name: user?.full_name || '',
-      reason,
-      additional_message: additionalMessage || '',
-      removed_at: new Date().toISOString(),
-    });
+      // Store removal audit trail in account_removals table (no FK to profiles, survives cascade)
+      const { error: removalError } = await supabase.from('account_removals').insert({
+        user_id: userId,
+        email: user?.email || '',
+        full_name: user?.full_name || '',
+        reason,
+        additional_message: additionalMessage || '',
+        removed_at: new Date().toISOString(),
+      });
+      if (removalError) console.error('Failed to record account removal:', removalError);
 
-    // Delete related tradie_details first (uses profile_id column), then the profile
-    // ON DELETE CASCADE handles most related records automatically
-    await supabase.from('tradie_details').delete().eq('profile_id', userId);
-    const { error } = await supabase.from('profiles').delete().eq('id', userId);
+      // Delete related tradie_details first (uses profile_id column), then the profile
+      // ON DELETE CASCADE handles most related records automatically
+      const { error: tradieError } = await supabase.from('tradie_details').delete().eq('profile_id', userId);
+      if (tradieError) console.error('Failed to delete tradie details:', tradieError);
 
-    if (error) {
-      showToast(friendlyError(error, 'Unable to remove this user. They may have linked data that needs to be handled first.'), true);
-    } else {
-      setUsers(prev => prev.filter(u => u.id !== userId));
-      await logAdminAction('delete_user', 'user', userId, { reason, email: user?.email });
-      showToast(`User removed. Notification sent to ${user?.email || 'user'}.`);
-      setExpandedId(null);
+      const { error } = await supabase.from('profiles').delete().eq('id', userId);
+
+      if (error) {
+        showToast(friendlyError(error, 'Unable to remove this user. They may have linked data that needs to be handled first.'), true);
+      } else {
+        setUsers(prev => prev.filter(u => u.id !== userId));
+        await logAdminAction('delete_user', 'user', userId, { reason, email: user?.email });
+        showToast(`User removed. Notification sent to ${user?.email || 'user'}.`);
+        setExpandedId(null);
+      }
+    } catch (err) {
+      console.error('Failed to remove user:', err);
+      showToast('Failed to remove user. Please try again.', true);
     }
     setActionLoading(null);
     setRemoveModal(null);
@@ -327,43 +335,54 @@ export default function AdminUsers() {
 
   const fetchRemovedUsers = async () => {
     setRemovedLoading(true);
-    const { data } = await supabase
-      .from('account_removals')
-      .select('*')
-      .is('reinstated_at', null)
-      .order('removed_at', { ascending: false });
-    setRemovedUsers((data as unknown as AccountRemoval[]) || []);
+    try {
+      const { data, error } = await supabase
+        .from('account_removals')
+        .select('*')
+        .is('reinstated_at', null)
+        .order('removed_at', { ascending: false });
+      if (error) throw error;
+      setRemovedUsers((data as unknown as AccountRemoval[]) || []);
+    } catch (err) {
+      console.error('Failed to fetch removed users:', err);
+    }
     setRemovedLoading(false);
   };
 
   const handleReinstateUser = async (removal: AccountRemoval) => {
     setActionLoading(removal.id);
 
-    // Recreate the user's profile
-    const { error: insertError } = await supabase.from('profiles').insert({
-      id: removal.user_id,
-      email: removal.email,
-      full_name: removal.full_name || removal.email.split('@')[0],
-      role: 'client',
-      onboarding_completed: false,
-      verification_status: 'unverified',
-      is_premium: false,
-    });
+    try {
+      // Recreate the user's profile
+      const { error: insertError } = await supabase.from('profiles').insert({
+        id: removal.user_id,
+        email: removal.email,
+        full_name: removal.full_name || removal.email.split('@')[0],
+        role: 'client',
+        onboarding_completed: false,
+        verification_status: 'unverified',
+        is_premium: false,
+      });
 
-    if (insertError) {
-      showToast('Failed to reinstate user: ' + insertError.message, true);
-      setActionLoading(null);
-      return;
+      if (insertError) {
+        showToast('Failed to reinstate user: ' + insertError.message, true);
+        setActionLoading(null);
+        return;
+      }
+
+      // Mark the removal record as reinstated
+      const { error: updateError } = await supabase
+        .from('account_removals')
+        .update({ reinstated_at: new Date().toISOString() })
+        .eq('id', removal.id);
+      if (updateError) console.error('Failed to mark removal as reinstated:', updateError);
+
+      setRemovedUsers(prev => prev.filter(r => r.id !== removal.id));
+      showToast(`${removal.full_name || removal.email} has been reinstated. They can now log in again.`);
+    } catch (err) {
+      console.error('Failed to reinstate user:', err);
+      showToast('Failed to reinstate user. Please try again.', true);
     }
-
-    // Mark the removal record as reinstated
-    await supabase
-      .from('account_removals')
-      .update({ reinstated_at: new Date().toISOString() })
-      .eq('id', removal.id);
-
-    setRemovedUsers(prev => prev.filter(r => r.id !== removal.id));
-    showToast(`${removal.full_name || removal.email} has been reinstated. They can now log in again.`);
     setActionLoading(null);
   };
 
@@ -376,7 +395,7 @@ export default function AdminUsers() {
       expired: 'bg-warm-100 text-warm-700',
     };
     return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${map[status] || 'bg-gray-100 text-gray-600'}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[status] || 'bg-gray-100 text-gray-600'}`}>
         {status}
       </span>
     );
@@ -389,16 +408,16 @@ export default function AdminUsers() {
       admin: 'bg-warm-100 text-warm-700',
     };
     return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${map[role || ''] || 'bg-gray-100 text-gray-600'}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[role || ''] || 'bg-gray-100 text-gray-600'}`}>
         {role || 'unknown'}
       </span>
     );
   };
 
   const getSubscriptionBadge = (tier: string) => {
-    if (tier === 'pro') return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-warm-100 text-warm-700">Pro</span>;
-    if (tier === 'business') return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-warm-100 text-warm-700">Business</span>;
-    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Free</span>;
+    if (tier === 'pro') return <span className="px-3 py-1 rounded-full text-xs font-medium bg-warm-100 text-warm-700">Pro</span>;
+    if (tier === 'business') return <span className="px-3 py-1 rounded-full text-xs font-medium bg-warm-100 text-warm-700">Business</span>;
+    return <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Free</span>;
   };
 
   return (

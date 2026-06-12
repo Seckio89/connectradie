@@ -198,39 +198,52 @@ export default function Settings() {
   }, [isAdmin]);
 
   const loadTrainingMode = async () => {
-    const { data } = await supabase
-      .from('app_settings')
-      .select('value')
-      .eq('key', 'training_mode_enabled')
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'training_mode_enabled')
+        .maybeSingle();
 
-    setTrainingModeEnabled(data?.value === true);
+      if (error) throw error;
+      setTrainingModeEnabled(data?.value === true);
+    } catch (err) {
+      console.error('Failed to load training mode:', err);
+    }
   };
 
   const loadSubscribedUsers = async () => {
-    const { count } = await supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_premium', true);
+    try {
+      const { count, error } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_premium', true);
 
-    setSubscribedUsersCount(count || 0);
+      if (error) throw error;
+      setSubscribedUsersCount(count || 0);
+    } catch (err) {
+      console.error('Failed to load subscribed users count:', err);
+    }
   };
 
   const handleToggleTrainingMode = async () => {
     setTrainingModeLoading(true);
     const newValue = !trainingModeEnabled;
 
-    const { error } = await supabase
-      .from('app_settings')
-      .update({ value: newValue, updated_by: user?.id, updated_at: new Date().toISOString() })
-      .eq('key', 'training_mode_enabled');
+    try {
+      const { error } = await supabase
+        .from('app_settings')
+        .update({ value: newValue, updated_by: user?.id, updated_at: new Date().toISOString() })
+        .eq('key', 'training_mode_enabled');
 
-    if (!error) {
+      if (error) throw error;
+
       setTrainingModeEnabled(newValue);
       setToastMessage(newValue ? 'Training mode enabled. All users can now subscribe in test mode.' : 'Training mode disabled.');
       setToastType('success');
       setShowToast(true);
-    } else {
+    } catch (err) {
+      console.error('Failed to toggle training mode:', err);
       setToastMessage('Failed to update training mode.');
       setToastType('error');
       setShowToast(true);
@@ -242,37 +255,45 @@ export default function Settings() {
   const handleResetAllSubscriptions = async () => {
     setTrainingModeLoading(true);
 
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ is_premium: false })
-      .eq('is_premium', true);
+    try {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ is_premium: false })
+        .eq('is_premium', true);
 
-    if (profileError) {
+      if (profileError) {
+        setToastMessage('Failed to reset subscriptions.');
+        setToastType('error');
+        setShowToast(true);
+        setTrainingModeLoading(false);
+        return;
+      }
+
+      const { error: tradieError } = await supabase
+        .from('tradie_details')
+        .update({ subscription_tier: 'free' })
+        .eq('subscription_tier', 'pro');
+
+      if (tradieError) {
+        setToastMessage('Profiles reset but tradie details failed.');
+        setToastType('error');
+        setShowToast(true);
+        setTrainingModeLoading(false);
+        return;
+      }
+
+      await refreshProfile();
+      await loadSubscribedUsers();
+      setToastMessage('All test subscriptions have been reset to free.');
+      setToastType('success');
+      setShowToast(true);
+    } catch (err) {
+      console.error('Failed to reset subscriptions:', err);
       setToastMessage('Failed to reset subscriptions.');
       setToastType('error');
       setShowToast(true);
-      setTrainingModeLoading(false);
-      return;
     }
 
-    const { error: tradieError } = await supabase
-      .from('tradie_details')
-      .update({ subscription_tier: 'free' })
-      .eq('subscription_tier', 'pro');
-
-    if (tradieError) {
-      setToastMessage('Profiles reset but tradie details failed.');
-      setToastType('error');
-      setShowToast(true);
-      setTrainingModeLoading(false);
-      return;
-    }
-
-    await refreshProfile();
-    await loadSubscribedUsers();
-    setToastMessage('All test subscriptions have been reset to free.');
-    setToastType('success');
-    setShowToast(true);
     setTrainingModeLoading(false);
   };
 
@@ -303,24 +324,30 @@ export default function Settings() {
       postcode,
     };
 
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('id', user.id);
+    try {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
 
-    if (updateError) {
-      setError('Failed to update profile. Please try again.');
-    } else {
-      // Save business name to tradie_details if tradie
-      if (isTradie && businessName !== (tradieDetails?.business_name || '')) {
-        await supabase
-          .from('tradie_details')
-          .update({ business_name: businessName.trim() })
-          .eq('profile_id', user.id);
+      if (updateError) {
+        setError('Failed to update profile. Please try again.');
+      } else {
+        // Save business name to tradie_details if tradie
+        if (isTradie && businessName !== (tradieDetails?.business_name || '')) {
+          const { error: bizError } = await supabase
+            .from('tradie_details')
+            .update({ business_name: businessName.trim() })
+            .eq('profile_id', user.id);
+          if (bizError) console.error('Failed to update business name:', bizError);
+        }
+        await refreshProfile();
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
       }
-      await refreshProfile();
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      setError('Failed to update profile. Please try again.');
     }
 
     setLoading(false);
@@ -329,25 +356,27 @@ export default function Settings() {
   const handleDeleteAccount = async () => {
     if (!user) return;
 
-    // Record the self-deletion (so login check shows correct message)
-    await supabase.from('account_removals').insert({
-      user_id: user.id,
-      email: profile?.email || user.email || '',
-      full_name: profile?.full_name || '',
-      reason: 'self_deleted',
-      additional_message: 'Account deleted by user',
-      removed_at: new Date().toISOString(),
-    });
+    try {
+      // Record the self-deletion (so login check shows correct message)
+      const { error: removalError } = await supabase.from('account_removals').insert({
+        user_id: user.id,
+        email: profile?.email || user.email || '',
+        full_name: profile?.full_name || '',
+        reason: 'self_deleted',
+        additional_message: 'Account deleted by user',
+        removed_at: new Date().toISOString(),
+      });
+      if (removalError) console.error('Failed to record account removal:', removalError);
 
-    // Use server-side function to delete all linked data + profile in one transaction
-    const { error } = await supabase.rpc('delete_user_account');
+      // Use server-side function to delete all linked data + profile in one transaction
+      const { error } = await supabase.rpc('delete_user_account');
 
-    if (error) {
-      setToastMessage(friendlyError(error, 'Unable to delete your account right now. Please contact support for assistance.'));
-      setToastType('error');
-      setShowToast(true);
-      return;
-    }
+      if (error) {
+        setToastMessage(friendlyError(error, 'Unable to delete your account right now. Please contact support for assistance.'));
+        setToastType('error');
+        setShowToast(true);
+        return;
+      }
 
     // Delete the auth user via edge function (so they can re-register with the same email)
     try {
@@ -364,6 +393,12 @@ export default function Settings() {
     // Sign out and redirect to home
     await signOut();
     window.location.href = '/';
+    } catch (err) {
+      console.error('Failed to delete account:', err);
+      setToastMessage('Unable to delete your account right now. Please contact support for assistance.');
+      setToastType('error');
+      setShowToast(true);
+    }
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

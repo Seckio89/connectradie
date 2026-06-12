@@ -383,49 +383,63 @@ export default function TradieDashboard() {
 
   const fetchCalendarIntegration = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from('calendar_integrations')
-      .select('*')
-      .eq('tradie_id', user.id)
-      .eq('provider', 'google')
-      .maybeSingle();
-    setCalendarIntegration(data as CalendarIntegration | null);
+    try {
+      const { data, error } = await supabase
+        .from('calendar_integrations')
+        .select('*')
+        .eq('tradie_id', user.id)
+        .eq('provider', 'google')
+        .maybeSingle();
+      if (error) throw error;
+      setCalendarIntegration(data as CalendarIntegration | null);
+    } catch (err) {
+      console.error('Failed to fetch calendar integration:', err);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const fetchEarnings = useCallback(async () => {
     if (!user) return;
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    try {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-    // Get tradie's jobs, then find payments for those jobs
-    const { data: tradieJobs } = await supabase
-      .from('jobs')
-      .select('id, status, budget_amount')
-      .eq('tradie_id', user.id);
+      // Get tradie's jobs, then find payments for those jobs
+      const { data: tradieJobs, error: jobsError } = await supabase
+        .from('jobs')
+        .select('id, status, budget_amount')
+        .eq('tradie_id', user.id);
 
-    const jobIds = (tradieJobs || []).map(j => j.id);
-    const activeCount = (tradieJobs || []).filter(j => ['accepted', 'in_progress', 'funded'].includes(j.status)).length;
+      if (jobsError) throw jobsError;
 
-    if (jobIds.length === 0) {
-      setEarnings({ total: 0, thisMonth: 0, pendingJobs: activeCount });
-      return;
+      const jobIds = (tradieJobs || []).map(j => j.id);
+      const activeCount = (tradieJobs || []).filter(j => ['accepted', 'in_progress', 'funded'].includes(j.status)).length;
+
+      if (jobIds.length === 0) {
+        setEarnings({ total: 0, thisMonth: 0, pendingJobs: activeCount });
+        return;
+      }
+
+      const [totalResult, monthResult] = await Promise.all([
+        supabase.from('payments').select('amount').in('job_id', jobIds).eq('payment_type', 'job_funding').in('status', ['completed', 'released']),
+        supabase.from('payments').select('amount').in('job_id', jobIds).eq('payment_type', 'job_funding').in('status', ['completed', 'released']).gte('created_at', monthStart),
+      ]);
+
+      if (totalResult.error) throw totalResult.error;
+      if (monthResult.error) throw monthResult.error;
+
+      // Convert cents to dollars
+      const totalCents = (totalResult.data || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+      const monthCents = (monthResult.data || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+
+      setEarnings({
+        total: Math.round(totalCents) / 100,
+        thisMonth: Math.round(monthCents) / 100,
+        pendingJobs: activeCount,
+      });
+    } catch (err) {
+      console.error('Failed to fetch earnings:', err);
     }
-
-    const [totalResult, monthResult] = await Promise.all([
-      supabase.from('payments').select('amount').in('job_id', jobIds).eq('payment_type', 'job_funding').in('status', ['completed', 'released']),
-      supabase.from('payments').select('amount').in('job_id', jobIds).eq('payment_type', 'job_funding').in('status', ['completed', 'released']).gte('created_at', monthStart),
-    ]);
-
-    // Convert cents to dollars
-    const totalCents = (totalResult.data || []).reduce((sum, p) => sum + (p.amount || 0), 0);
-    const monthCents = (monthResult.data || []).reduce((sum, p) => sum + (p.amount || 0), 0);
-
-    setEarnings({
-      total: Math.round(totalCents) / 100,
-      thisMonth: Math.round(monthCents) / 100,
-      pendingJobs: activeCount,
-    });
   }, [user]);
 
   // ─── Effects ──────────────────────────────────────────────
@@ -446,20 +460,25 @@ export default function TradieDashboard() {
   useEffect(() => {
     if (!user) return;
     const fetchReviews = async () => {
-      const { data } = await supabase
-        .from('reviews')
-        .select('id, rating, comment, created_at, client:profiles!reviews_client_id_fkey(full_name)')
-        .eq('tradie_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(3);
-      if (data) {
-        setRecentReviews(data.map((r: Record<string, unknown>) => ({
-          id: r.id as string,
-          rating: r.rating as number,
-          comment: r.comment as string | null,
-          created_at: r.created_at as string,
-          client_name: (r.client as { full_name: string } | null)?.full_name || 'Client',
-        })));
+      try {
+        const { data, error } = await supabase
+          .from('reviews')
+          .select('id, rating, comment, created_at, client:profiles!reviews_client_id_fkey(full_name)')
+          .eq('tradie_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(3);
+        if (error) throw error;
+        if (data) {
+          setRecentReviews(data.map((r: Record<string, unknown>) => ({
+            id: r.id as string,
+            rating: r.rating as number,
+            comment: r.comment as string | null,
+            created_at: r.created_at as string,
+            client_name: (r.client as { full_name: string } | null)?.full_name || 'Client',
+          })));
+        }
+      } catch (err) {
+        console.error('Failed to fetch recent reviews:', err);
       }
     };
     fetchReviews();
@@ -475,55 +494,62 @@ export default function TradieDashboard() {
     if (!user) return;
     let cancelled = false;
     (async () => {
-      const { data: manualJobs } = await supabase
-        .from('recurring_jobs')
-        .select('id, agreed_price')
-        .eq('tradie_id', user.id)
-        .eq('auto_invoice', false)
-        .eq('is_active', true)
-        .is('cancelled_at', null);
-      if (!manualJobs || manualJobs.length === 0) {
-        if (!cancelled) { setPendingInvoiceCount(0); setPendingInvoiceTotal(0); }
-        return;
-      }
-      const jobIds = manualJobs.map(j => j.id);
-      const priceByJob = new Map(manualJobs.map(j => [j.id, Number(j.agreed_price) || 0]));
+      try {
+        const { data: manualJobs, error: jobsError } = await supabase
+          .from('recurring_jobs')
+          .select('id, agreed_price')
+          .eq('tradie_id', user.id)
+          .eq('auto_invoice', false)
+          .eq('is_active', true)
+          .is('cancelled_at', null);
+        if (jobsError) throw jobsError;
+        if (!manualJobs || manualJobs.length === 0) {
+          if (!cancelled) { setPendingInvoiceCount(0); setPendingInvoiceTotal(0); }
+          return;
+        }
+        const jobIds = manualJobs.map(j => j.id);
+        const priceByJob = new Map(manualJobs.map(j => [j.id, Number(j.agreed_price) || 0]));
 
-      const { data: sessions } = await supabase
-        .from('recurring_sessions')
-        .select('id, recurring_job_id, scheduled_date, extra_cost, supply_cost')
-        .in('recurring_job_id', jobIds)
-        .in('status', ['completed', 'extra']);
-      if (!sessions || sessions.length === 0) {
-        if (!cancelled) { setPendingInvoiceCount(0); setPendingInvoiceTotal(0); }
-        return;
-      }
+        const { data: sessions, error: sessionsError } = await supabase
+          .from('recurring_sessions')
+          .select('id, recurring_job_id, scheduled_date, extra_cost, supply_cost')
+          .in('recurring_job_id', jobIds)
+          .in('status', ['completed', 'extra']);
+        if (sessionsError) throw sessionsError;
+        if (!sessions || sessions.length === 0) {
+          if (!cancelled) { setPendingInvoiceCount(0); setPendingInvoiceTotal(0); }
+          return;
+        }
 
-      const { data: invoices } = await supabase
-        .from('recurring_invoices')
-        .select('recurring_job_id, billing_period_start, billing_period_end')
-        .in('recurring_job_id', jobIds)
-        .in('status', ['sent', 'overdue', 'paid']);
-      const invoicesByJob = new Map<string, { start: string; end: string }[]>();
-      (invoices ?? []).forEach(inv => {
-        const arr = invoicesByJob.get(inv.recurring_job_id) ?? [];
-        arr.push({ start: inv.billing_period_start, end: inv.billing_period_end });
-        invoicesByJob.set(inv.recurring_job_id, arr);
-      });
+        const { data: invoices, error: invoicesError } = await supabase
+          .from('recurring_invoices')
+          .select('recurring_job_id, billing_period_start, billing_period_end')
+          .in('recurring_job_id', jobIds)
+          .in('status', ['sent', 'overdue', 'paid']);
+        if (invoicesError) throw invoicesError;
+        const invoicesByJob = new Map<string, { start: string; end: string }[]>();
+        (invoices ?? []).forEach(inv => {
+          const arr = invoicesByJob.get(inv.recurring_job_id) ?? [];
+          arr.push({ start: inv.billing_period_start, end: inv.billing_period_end });
+          invoicesByJob.set(inv.recurring_job_id, arr);
+        });
 
-      let count = 0;
-      let total = 0;
-      sessions.forEach(s => {
-        const periods = invoicesByJob.get(s.recurring_job_id) ?? [];
-        const covered = periods.some(p => s.scheduled_date >= p.start && s.scheduled_date <= p.end);
-        if (covered) return;
-        count += 1;
-        total += (priceByJob.get(s.recurring_job_id) ?? 0) + (Number(s.extra_cost) || 0) + (Number(s.supply_cost) || 0);
-      });
+        let count = 0;
+        let total = 0;
+        sessions.forEach(s => {
+          const periods = invoicesByJob.get(s.recurring_job_id) ?? [];
+          const covered = periods.some(p => s.scheduled_date >= p.start && s.scheduled_date <= p.end);
+          if (covered) return;
+          count += 1;
+          total += (priceByJob.get(s.recurring_job_id) ?? 0) + (Number(s.extra_cost) || 0) + (Number(s.supply_cost) || 0);
+        });
 
-      if (!cancelled) {
-        setPendingInvoiceCount(count);
-        setPendingInvoiceTotal(total);
+        if (!cancelled) {
+          setPendingInvoiceCount(count);
+          setPendingInvoiceTotal(total);
+        }
+      } catch (err) {
+        console.error('Failed to fetch pending invoice data:', err);
       }
     })();
     return () => { cancelled = true; };
@@ -871,7 +897,7 @@ export default function TradieDashboard() {
               <div className="flex items-center gap-2 mb-3">
                 <AlertCircle className="w-5 h-5 text-amber-500" />
                 <h3 className="text-sm font-bold text-gray-900">New Service Request{pendingConfirmations.length !== 1 ? 's' : ''} Awaiting Your Response</h3>
-                <span className="ml-auto px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full">
+                <span className="ml-auto px-3 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
                   {pendingConfirmations.length}
                 </span>
               </div>
@@ -963,7 +989,7 @@ export default function TradieDashboard() {
                   <AlertCircle className="w-4 h-4 text-amber-500" />
                   Your Next Steps
                 </p>
-                <span className="bg-amber-100 text-amber-700 text-xs font-medium px-2 py-0.5 rounded-full">
+                <span className="bg-amber-100 text-amber-700 text-xs font-medium px-3 py-1 rounded-full">
                   {pendingJobs.length + inProgressJobs.length + unreadConvos.length + pendingConfirmations.length}
                 </span>
               </div>
@@ -1155,18 +1181,18 @@ export default function TradieDashboard() {
                               <h3 className="text-base font-bold text-gray-900 leading-snug capitalize">{title}</h3>
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 {isInvited && (
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-secondary-50 text-secondary-700 rounded-full text-[11px] font-semibold border border-secondary-200">
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200">
                                     Invited
                                   </span>
                                 )}
                                 {isFlashActive && (
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-warm-500 text-white rounded-full text-[11px] font-bold shadow-sm animate-pulse">
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-warm-500 text-white rounded-full text-xs font-medium shadow-sm animate-pulse">
                                     <Zap className="w-3 h-3" />
                                     Flash
                                   </span>
                                 )}
                                 {!isFlashActive && isUrgent && (
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-50 text-red-700 rounded-full text-[11px] font-semibold border border-red-200">
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-50 text-red-700 rounded-full text-xs font-medium border border-red-200">
                                     <Zap className="w-3 h-3" />
                                     Urgent
                                   </span>
@@ -1346,7 +1372,7 @@ export default function TradieDashboard() {
                         <div className="flex items-center gap-2">
                           <RefreshCw className="w-4 h-4 text-emerald-600" />
                           <h2 className="text-lg font-bold text-gray-900">Ongoing Services</h2>
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
                             {items.length}
                           </span>
                         </div>
@@ -1384,7 +1410,7 @@ export default function TradieDashboard() {
                                 </div>
                               </div>
                             </div>
-                            <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-[11px] font-medium rounded-full flex-shrink-0">
+                            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full flex-shrink-0">
                               Active
                             </span>
                           </Link>
@@ -1458,16 +1484,16 @@ export default function TradieDashboard() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                   <h3 className="font-semibold text-gray-900 truncate capitalize">{displayTitle}</h3>
-                                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
+                                  <span className={`px-3 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
                                     {job.status.replace(/_/g, ' ')}
                                   </span>
                                   {job.priority === 'high' && (
-                                    <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full border border-orange-200 flex-shrink-0">
+                                    <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full border border-orange-200 flex-shrink-0">
                                       HIGH PRIORITY
                                     </span>
                                   )}
                                   {job.is_delayed && (
-                                    <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full border border-yellow-200 flex-shrink-0">
+                                    <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full border border-yellow-200 flex-shrink-0">
                                       Delayed
                                     </span>
                                   )}
@@ -1487,7 +1513,7 @@ export default function TradieDashboard() {
 
                           <div className="px-4 pb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
                             {category && (
-                              <span className="px-2 py-0.5 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200 capitalize">
+                              <span className="px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200 capitalize">
                                 {category}
                               </span>
                             )}
@@ -2005,7 +2031,7 @@ export default function TradieDashboard() {
                         </div>
                       )}
                     </div>
-                    <span className={`mt-2 inline-block text-xs px-2 py-0.5 rounded-full ${slot.status === 'available' ? 'bg-green-100 text-green-700' : slot.status === 'booked' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
+                    <span className={`mt-2 inline-block text-xs px-3 py-1 rounded-full font-medium ${slot.status === 'available' ? 'bg-green-100 text-green-700' : slot.status === 'booked' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
                       {slot.status}
                     </span>
                   </div>

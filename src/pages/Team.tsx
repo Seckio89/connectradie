@@ -303,30 +303,38 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
   const handleAddTimeEntry = async () => {
     if (!user || !entryForm.member_id || !entryForm.hours) return;
     setSavingEntry(true);
-    const { error } = await supabase.from('time_entries').insert({
-      team_member_id: entryForm.member_id,
-      business_owner_id: user.id,
-      job_id: entryForm.job_id || null,
-      date: entryForm.date,
-      hours: parseFloat(entryForm.hours),
-      description: entryForm.description,
-    });
-    setSavingEntry(false);
-    if (!error) {
+    try {
+      const { error } = await supabase.from('time_entries').insert({
+        team_member_id: entryForm.member_id,
+        business_owner_id: user.id,
+        job_id: entryForm.job_id || null,
+        date: entryForm.date,
+        hours: parseFloat(entryForm.hours),
+        description: entryForm.description,
+      });
+      if (error) throw error;
       setShowAddEntry(false);
       setEntryForm({ member_id: '', date: new Date().toISOString().slice(0, 10), hours: '', description: '', job_id: '' });
       fetchTimeEntries();
+    } catch (err) {
+      console.error('Failed to add time entry:', err);
     }
+    setSavingEntry(false);
   };
 
   const handleUpdateEntryStatus = async (entryId: string, status: 'approved' | 'rejected') => {
     if (!user) return;
-    await supabase.from('time_entries').update({
-      status,
-      approved_by: user.id,
-      approved_at: new Date().toISOString(),
-    }).eq('id', entryId);
-    fetchTimeEntries();
+    try {
+      const { error } = await supabase.from('time_entries').update({
+        status,
+        approved_by: user.id,
+        approved_at: new Date().toISOString(),
+      }).eq('id', entryId);
+      if (error) throw error;
+      fetchTimeEntries();
+    } catch (err) {
+      console.error('Failed to update time entry status:', err);
+    }
   };
 
   useEffect(() => {
@@ -481,8 +489,13 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
   };
 
   const handleDeleteManual = async (id: string) => {
-    await supabase.from('business_team_members').delete().eq('id', id);
-    setManualMembers(prev => prev.filter(m => m.id !== id));
+    try {
+      const { error } = await supabase.from('business_team_members').delete().eq('id', id);
+      if (error) throw error;
+      setManualMembers(prev => prev.filter(m => m.id !== id));
+    } catch (err) {
+      console.error('Failed to delete team member:', err);
+    }
   };
 
   const activeTeam = linkedEmployees.filter(e => e.employer_status === 'active');
@@ -597,7 +610,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                 <h2 className="font-bold text-warm-900">Pending Requests</h2>
                 <p className="text-xs text-warm-700 mt-0.5">These users want to join your team. Review and approve or decline.</p>
               </div>
-              <span className="px-2.5 py-1 bg-warm-200 text-warm-800 rounded-full text-xs font-bold">
+              <span className="px-3 py-1 bg-warm-200 text-warm-800 rounded-full text-xs font-medium">
                 {pendingRequests.length} pending
               </span>
             </div>
@@ -613,7 +626,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-gray-900">{emp.full_name}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[emp.employment_type]}`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[emp.employment_type]}`}>
                         {ROLE_LABELS[emp.employment_type]}
                       </span>
                     </div>
@@ -732,10 +745,10 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-gray-900">{emp.full_name}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[emp.employment_type]}`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[emp.employment_type]}`}>
                           {ROLE_LABELS[emp.employment_type]}
                         </span>
-                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
                           Active
                         </span>
                       </div>
@@ -780,7 +793,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
               {Object.entries(ROLE_PERMISSIONS).map(([key, { label, permissions }]) => (
                 <div key={key} className="border border-gray-100 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[key]}`}>{label}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[key]}`}>{label}</span>
                     <span className="text-xs text-gray-400">
                       {allMembers.filter(m => m.role === key).length} member{allMembers.filter(m => m.role === key).length !== 1 ? 's' : ''}
                     </span>
@@ -1003,7 +1016,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-gray-900 text-sm">{entry.member_name}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                             entry.status === 'approved' ? 'bg-green-100 text-green-700'
                             : entry.status === 'rejected' ? 'bg-red-100 text-red-700'
                             : 'bg-yellow-100 text-yellow-700'
@@ -1071,10 +1084,10 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-gray-900">{member.invite_name}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[member.role]}`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[member.role]}`}>
                           {ROLE_LABELS[member.role]}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[member.status]}`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[member.status]}`}>
                           {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
                         </span>
                       </div>

@@ -197,7 +197,7 @@ export default function AdminModeration() {
       funded: 'bg-warm-100 text-warm-700',
     };
     return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${map[status] || 'bg-gray-100 text-gray-600'}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[status] || 'bg-gray-100 text-gray-600'}`}>
         {status.replace('_', ' ')}
       </span>
     );
@@ -213,7 +213,7 @@ export default function AdminModeration() {
     const c = cfg[status] || cfg.pending;
     const Icon = c.icon;
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${c.bg}`}>
+      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${c.bg}`}>
         <Icon className="w-3 h-3" />
         {c.label}
       </span>
@@ -230,7 +230,7 @@ export default function AdminModeration() {
       other: 'Other',
     };
     return (
-      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+      <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
         {labels[type] || type.replace(/_/g, ' ')}
       </span>
     );
@@ -482,8 +482,8 @@ export default function AdminModeration() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <h4 className="text-sm font-semibold text-gray-900">{job.title || category || 'Untitled'}</h4>
-                              {category && <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">{category}</span>}
-                              <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-medium border border-amber-200">Flagged</span>
+                              {category && <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">{category}</span>}
+                              <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium border border-amber-200">Flagged</span>
                             </div>
                             <p className="text-sm text-gray-700 mb-2">{desc}</p>
                             <div className="flex items-center gap-3 text-xs text-gray-500">
@@ -502,9 +502,15 @@ export default function AdminModeration() {
                             </div>
                             <button
                               onClick={async () => {
-                                await supabase.from('jobs').update({ contact_flagged: false, contact_flag_reason: null }).eq('id', job.id);
-                                setFlaggedJobs(prev => prev.filter(j => j.id !== job.id));
-                                showToast('Flag dismissed');
+                                try {
+                                  const { error } = await supabase.from('jobs').update({ contact_flagged: false, contact_flag_reason: null }).eq('id', job.id);
+                                  if (error) throw error;
+                                  setFlaggedJobs(prev => prev.filter(j => j.id !== job.id));
+                                  showToast('Flag dismissed');
+                                } catch (err) {
+                                  console.error('Failed to dismiss flag:', err);
+                                  showToast('Failed to dismiss flag', true);
+                                }
                               }}
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 bg-white border border-gray-200 hover:border-gray-300 rounded-lg transition-colors"
                             >

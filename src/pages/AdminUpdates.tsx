@@ -186,9 +186,15 @@ export default function AdminUpdates() {
 
   const deleteUpdate = async (id: string) => {
     if (!confirm('Delete this update permanently?')) return;
-    await supabase.from('user_update_reads').delete().eq('update_id', id);
-    await supabase.from('platform_updates').delete().eq('id', id);
-    fetchUpdates();
+    try {
+      const { error: readsError } = await supabase.from('user_update_reads').delete().eq('update_id', id);
+      if (readsError) throw readsError;
+      const { error: updateError } = await supabase.from('platform_updates').delete().eq('id', id);
+      if (updateError) throw updateError;
+      fetchUpdates();
+    } catch (err) {
+      console.error('Failed to delete update:', err);
+    }
   };
 
   return (
@@ -255,19 +261,19 @@ export default function AdminUpdates() {
                   <div className="flex items-start gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${typeColors[update.type] || 'bg-gray-100 text-gray-600'}`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase ${typeColors[update.type] || 'bg-gray-100 text-gray-600'}`}>
                           {typeOptions.find(t => t.value === update.type)?.label || update.type}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${pConfig?.color || ''}`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${pConfig?.color || ''}`}>
                           {update.priority}
                         </span>
                         {update.requires_acknowledgment && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-600 border border-red-200">
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200">
                             Requires Acknowledgment
                           </span>
                         )}
                         {!update.is_active && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-500">
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
                             Inactive
                           </span>
                         )}

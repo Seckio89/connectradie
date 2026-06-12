@@ -82,42 +82,48 @@ export default function AdminDisputes() {
   const fetchDisputes = async () => {
     setLoading(true);
 
-    const { data: disputesData, error } = await supabase
-      .from('disputes')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data: disputesData, error } = await supabase
+        .from('disputes')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error || !disputesData) {
-      setLoading(false);
-      return;
+      if (error) throw error;
+
+      if (!disputesData) {
+        setLoading(false);
+        return;
+      }
+
+      // Fetch related profiles and jobs
+      const openerIds = [...new Set(disputesData.map((d) => d.opened_by))];
+      const againstIds = [...new Set(disputesData.map((d) => d.against_user))];
+      const allUserIds = [...new Set([...openerIds, ...againstIds])];
+      const jobIds = [...new Set(disputesData.map((d) => d.job_id))];
+
+      const [profilesRes, jobsRes] = await Promise.all([
+        supabase.from('profiles').select('id, full_name').in('id', allUserIds),
+        supabase.from('jobs').select('id, description').in('id', jobIds),
+      ]);
+
+      const profileMap = new Map(
+        (profilesRes.data || []).map((p) => [p.id, p.full_name])
+      );
+      const jobMap = new Map(
+        (jobsRes.data || []).map((j) => [j.id, j.description])
+      );
+
+      const enriched: Dispute[] = disputesData.map((d) => ({
+        ...d,
+        opener_name: profileMap.get(d.opened_by) || 'Unknown User',
+        against_name: profileMap.get(d.against_user) || 'Unknown User',
+        job_description: jobMap.get(d.job_id) || 'Unknown Job',
+      }));
+
+      setDisputes(enriched);
+    } catch (err) {
+      console.error('Failed to fetch disputes:', err);
     }
-
-    // Fetch related profiles and jobs
-    const openerIds = [...new Set(disputesData.map((d) => d.opened_by))];
-    const againstIds = [...new Set(disputesData.map((d) => d.against_user))];
-    const allUserIds = [...new Set([...openerIds, ...againstIds])];
-    const jobIds = [...new Set(disputesData.map((d) => d.job_id))];
-
-    const [profilesRes, jobsRes] = await Promise.all([
-      supabase.from('profiles').select('id, full_name').in('id', allUserIds),
-      supabase.from('jobs').select('id, description').in('id', jobIds),
-    ]);
-
-    const profileMap = new Map(
-      (profilesRes.data || []).map((p) => [p.id, p.full_name])
-    );
-    const jobMap = new Map(
-      (jobsRes.data || []).map((j) => [j.id, j.description])
-    );
-
-    const enriched: Dispute[] = disputesData.map((d) => ({
-      ...d,
-      opener_name: profileMap.get(d.opened_by) || 'Unknown User',
-      against_name: profileMap.get(d.against_user) || 'Unknown User',
-      job_description: jobMap.get(d.job_id) || 'Unknown Job',
-    }));
-
-    setDisputes(enriched);
     setLoading(false);
   };
 
@@ -293,7 +299,7 @@ export default function AdminDisputes() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-2">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
                             STATUS_COLORS[dispute.status]
                           }`}
                         >

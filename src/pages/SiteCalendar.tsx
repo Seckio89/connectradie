@@ -569,22 +569,31 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
 
   const handleAssign = async (jobId: string, memberId: string, data: Partial<JobAssignment>) => {
     if (!user) return;
-    const { error } = await supabase.from('job_team_assignments').insert({
-      job_id: jobId,
-      team_member_id: memberId,
-      scheduled_date: data.scheduled_date || null,
-      start_time: data.start_time || null,
-      end_time: data.end_time || null,
-      role_on_job: data.role_on_job || '',
-      status: 'scheduled' as const,
-    });
-    if (error) throw new Error(error.message);
-    await fetchData();
+    try {
+      const { error } = await supabase.from('job_team_assignments').insert({
+        job_id: jobId,
+        team_member_id: memberId,
+        scheduled_date: data.scheduled_date || null,
+        start_time: data.start_time || null,
+        end_time: data.end_time || null,
+        role_on_job: data.role_on_job || '',
+        status: 'scheduled' as const,
+      });
+      if (error) throw error;
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to assign team member to job:', err);
+    }
   };
 
   const handleRemoveAssignment = async (assignmentId: string) => {
-    await supabase.from('job_team_assignments').delete().eq('id', assignmentId);
-    setAssignments(prev => prev.filter(a => a.id !== assignmentId));
+    try {
+      const { error } = await supabase.from('job_team_assignments').delete().eq('id', assignmentId);
+      if (error) throw error;
+      setAssignments(prev => prev.filter(a => a.id !== assignmentId));
+    } catch (err) {
+      console.error('Failed to remove assignment:', err);
+    }
   };
 
   // Persist a one-time "Ignore" of a conflict so it doesn't nag on reload. The
@@ -1509,16 +1518,16 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
             <div className="flex items-start justify-between p-6 border-b border-gray-100">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-2">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_COLORS[selectedJob.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${STATUS_COLORS[selectedJob.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
                     {selectedJob.status.replace('_', ' ')}
                   </span>
                   {serviceTag && (
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide bg-secondary-50 text-secondary-700 border border-secondary-200">
+                    <span className="px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide bg-secondary-50 text-secondary-700 border border-secondary-200">
                       {serviceTag}
                     </span>
                   )}
                   {selectedJob.is_emergency && (
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">Emergency</span>
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">Emergency</span>
                   )}
                 </div>
                 <h2 className="text-base font-semibold text-gray-900 leading-snug line-clamp-2">{headerTitle}</h2>
@@ -1808,7 +1817,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
               <div className="min-w-0 flex-1">
                 <h3 className="text-lg font-bold text-gray-900">{isTradie ? 'Confirm visit time' : 'Reschedule job'}</h3>
                 {serviceTag && (
-                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-secondary-50 text-secondary-700 border border-secondary-200 text-[11px] font-semibold uppercase tracking-wide">
+                  <span className="inline-block mt-1 px-3 py-1 rounded-full bg-secondary-50 text-secondary-700 border border-secondary-200 text-xs font-medium uppercase tracking-wide">
                     {serviceTag}
                   </span>
                 )}

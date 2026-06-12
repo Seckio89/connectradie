@@ -70,59 +70,63 @@ export default function AdminOverview() {
   const fetchData = async () => {
     setLoading(true);
 
-    const [
-      profilesRes,
-      jobsRes,
-      paymentsRes,
-      subscriptionsRes,
-      pendingVerifRes,
-      recentSignupsRes,
-      recentJobsRes,
-      recentPaymentsRes,
-    ] = await Promise.all([
-      supabase.from('profiles').select('role'),
-      supabase.from('jobs').select('status'),
-      supabase.from('payments').select('amount, status').eq('status', 'completed'),
-      supabase.from('stripe_subscriptions').select('id').eq('status', 'active'),
-      supabase.from('profiles').select('id').eq('verification_status', 'pending'),
-      supabase
-        .from('profiles')
-        .select('id, full_name, role, created_at')
-        .order('created_at', { ascending: false })
-        .limit(5),
-      supabase
-        .from('jobs')
-        .select('id, description, status, created_at, profiles:profiles!jobs_client_id_fkey(full_name)')
-        .order('created_at', { ascending: false })
-        .limit(5),
-      supabase
-        .from('payments')
-        .select('id, amount, payment_type, status, created_at, profiles:profiles!payments_profile_id_fkey(full_name)')
-        .order('created_at', { ascending: false })
-        .limit(5),
-    ]);
+    try {
+      const [
+        profilesRes,
+        jobsRes,
+        paymentsRes,
+        subscriptionsRes,
+        pendingVerifRes,
+        recentSignupsRes,
+        recentJobsRes,
+        recentPaymentsRes,
+      ] = await Promise.all([
+        supabase.from('profiles').select('role'),
+        supabase.from('jobs').select('status'),
+        supabase.from('payments').select('amount, status').eq('status', 'completed'),
+        supabase.from('stripe_subscriptions').select('id').eq('status', 'active'),
+        supabase.from('profiles').select('id').eq('verification_status', 'pending'),
+        supabase
+          .from('profiles')
+          .select('id, full_name, role, created_at')
+          .order('created_at', { ascending: false })
+          .limit(5),
+        supabase
+          .from('jobs')
+          .select('id, description, status, created_at, profiles:profiles!jobs_client_id_fkey(full_name)')
+          .order('created_at', { ascending: false })
+          .limit(5),
+        supabase
+          .from('payments')
+          .select('id, amount, payment_type, status, created_at, profiles:profiles!payments_profile_id_fkey(full_name)')
+          .order('created_at', { ascending: false })
+          .limit(5),
+      ]);
 
-    const profiles = profilesRes.data || [];
-    const jobs = jobsRes.data || [];
-    const completedPayments = paymentsRes.data || [];
+      const profiles = profilesRes.data || [];
+      const jobs = jobsRes.data || [];
+      const completedPayments = paymentsRes.data || [];
 
-    setStats({
-      totalUsers: profiles.length,
-      clientCount: profiles.filter(p => p.role === 'client').length,
-      tradieCount: profiles.filter(p => p.role === 'tradie').length,
-      adminCount: profiles.filter(p => p.role === 'admin').length,
-      totalJobs: jobs.length,
-      pendingJobs: jobs.filter(j => j.status === 'pending').length,
-      activeJobs: jobs.filter(j => ['accepted', 'in_progress', 'funded'].includes(j.status)).length,
-      completedJobs: jobs.filter(j => j.status === 'completed').length,
-      totalRevenue: completedPayments.reduce((sum, p) => sum + (p.amount || 0), 0),
-      activeSubscriptions: subscriptionsRes.data?.length || 0,
-      pendingVerifications: pendingVerifRes.data?.length || 0,
-    });
+      setStats({
+        totalUsers: profiles.length,
+        clientCount: profiles.filter(p => p.role === 'client').length,
+        tradieCount: profiles.filter(p => p.role === 'tradie').length,
+        adminCount: profiles.filter(p => p.role === 'admin').length,
+        totalJobs: jobs.length,
+        pendingJobs: jobs.filter(j => j.status === 'pending').length,
+        activeJobs: jobs.filter(j => ['accepted', 'in_progress', 'funded'].includes(j.status)).length,
+        completedJobs: jobs.filter(j => j.status === 'completed').length,
+        totalRevenue: completedPayments.reduce((sum, p) => sum + (p.amount || 0), 0),
+        activeSubscriptions: subscriptionsRes.data?.length || 0,
+        pendingVerifications: pendingVerifRes.data?.length || 0,
+      });
 
-    setRecentSignups((recentSignupsRes.data as RecentSignup[]) || []);
-    setRecentJobs((recentJobsRes.data as unknown as RecentJob[]) || []);
-    setRecentPayments((recentPaymentsRes.data as unknown as RecentPayment[]) || []);
+      setRecentSignups((recentSignupsRes.data as RecentSignup[]) || []);
+      setRecentJobs((recentJobsRes.data as unknown as RecentJob[]) || []);
+      setRecentPayments((recentPaymentsRes.data as unknown as RecentPayment[]) || []);
+    } catch (err) {
+      console.error('Failed to fetch admin overview data:', err);
+    }
 
     setLoading(false);
   };
@@ -149,7 +153,7 @@ export default function AdminOverview() {
       failed: 'bg-red-100 text-red-700',
     };
     return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${map[status] || 'bg-gray-100 text-gray-600'}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[status] || 'bg-gray-100 text-gray-600'}`}>
         {status.replace('_', ' ')}
       </span>
     );
@@ -266,7 +270,7 @@ export default function AdminOverview() {
                       <p className="text-sm font-medium text-gray-900 truncate">{user.full_name || 'Unknown'}</p>
                       <p className="text-xs text-gray-500">{formatDate(user.created_at)}</p>
                     </div>
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 capitalize">
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 capitalize">
                       {user.role}
                     </span>
                   </div>
