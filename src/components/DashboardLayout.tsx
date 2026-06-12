@@ -594,8 +594,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Icon className="w-5 h-5" />
                   {item.name}
                   {item.name === 'Dashboard' && pendingReleaseCount > 0 && (
-                    <span className="ml-auto min-w-[20px] h-5 px-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-100 rounded-full flex items-center justify-center">
-                      {pendingReleaseCount}
+                    <span className="ml-auto flex items-center gap-1.5 text-[11px] font-medium text-warm-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-warm-400" />
+                      {pendingReleaseCount} pending
                     </span>
                   )}
                 </Link>
