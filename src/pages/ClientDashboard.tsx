@@ -194,7 +194,7 @@ export default function ClientDashboard() {
               const meta = p.metadata as Record<string, unknown> | null;
               // `status === 'completed'` means the client paid into escrow, NOT that funds were released to the tradie.
               // Only a transfer_id (or explicit 'released' status) means the money has actually moved.
-              if (meta?.transfer_id || p.status === 'released') {
+              if (meta?.transfer_id || meta?.released_at || p.status === 'released') {
                 released.add(p.job_id);
               }
             }
@@ -257,7 +257,7 @@ export default function ClientDashboard() {
             .eq('status', 'completed');
           for (const p of activePayments ?? []) {
             const meta = p.metadata as Record<string, unknown> | null;
-            if (meta?.transfer_id) continue;
+            if (meta?.transfer_id || meta?.released_at) continue;
             const inc = meta?.pending_increase as Record<string, unknown> | undefined;
             if (!inc) continue;
             const diffCents = typeof inc.diff_cents === 'number' ? inc.diff_cents : 0;
@@ -315,7 +315,7 @@ export default function ClientDashboard() {
         setReleasedJobIds(prev => new Set(prev).add(jobId));
       } else {
         const meta = payment.metadata as Record<string, unknown> | null;
-        if (meta?.transfer_id) {
+        if (meta?.transfer_id || meta?.released_at) {
           setReleasedJobIds(prev => new Set(prev).add(jobId));
         } else if (meta?.pending_increase) {
           showToast('A price adjustment needs to be paid first. Opening that now…', true);

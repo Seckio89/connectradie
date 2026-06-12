@@ -291,7 +291,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
               const paid = new Set<string>();
               for (const p of payments) {
                 const meta = p.metadata as Record<string, unknown> | null;
-                if (meta?.transfer_id) {
+                if (meta?.transfer_id || meta?.released_at) {
                   paid.add(p.job_id);
                 }
               }

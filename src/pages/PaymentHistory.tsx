@@ -551,7 +551,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
       if (p.status !== 'completed') return false;
       if (!p.stripe_payment_intent_id) return false;
       const meta = p.metadata as Record<string, unknown> | null;
-      if (meta?.transfer_id) return false; // already released
+      if (meta?.transfer_id || meta?.released_at) return false; // already released
       return true; // either Awaiting Release or has pending_increase
     };
   }, [isTradie]);

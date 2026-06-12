@@ -115,7 +115,7 @@ export default function LeaveReview() {
           .maybeSingle();
         if (payment) {
           const meta = payment.metadata as Record<string, unknown> | null;
-          if (meta?.transfer_id) {
+          if (meta?.transfer_id || meta?.released_at) {
             setAlreadyReleased(true);
           }
         }
@@ -174,7 +174,7 @@ export default function LeaveReview() {
           .maybeSingle();
         if (payment) {
           const meta = payment.metadata as Record<string, unknown> | null;
-          if (!meta?.transfer_id) {
+          if (!meta?.transfer_id && !meta?.released_at) {
             await releaseEscrow(payment.id);
             setPaymentReleased(true);
           }

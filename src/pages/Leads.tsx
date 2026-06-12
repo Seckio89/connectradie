@@ -602,7 +602,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
               paymentDataMap.set(p.job_id, { id: p.id, amount: p.amount, metadata: p.metadata as Record<string, unknown> | null, created_at: p.created_at });
             }
             const meta = p.metadata as Record<string, unknown> | null;
-            if (meta?.transfer_id || p.status === 'released') {
+            if (meta?.transfer_id || meta?.released_at || p.status === 'released') {
               releasedSet.add(p.job_id);
             }
           }
@@ -1034,7 +1034,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         setReleasedJobIds(prev => new Set(prev).add(jobId));
       } else {
         const meta = payment.metadata as Record<string, unknown> | null;
-        if (meta?.transfer_id) {
+        if (meta?.transfer_id || meta?.released_at) {
           // Already released — skip calling release-escrow again
           setReleasedJobIds(prev => new Set(prev).add(jobId));
         } else if (meta?.pending_increase && !paidIncreaseJobIds.has(jobId)) {
