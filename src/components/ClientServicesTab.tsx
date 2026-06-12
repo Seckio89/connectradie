@@ -28,6 +28,7 @@ import BecsSetupForm from './BecsSetupForm';
 import SavedPaymentMethod from './SavedPaymentMethod';
 import { useToast } from '../hooks/useToast';
 import { callEdgeFunction } from '../lib/edgeFn';
+import { acceptAndPay } from '../lib/stripePayments';
 import { notifyTradiesForNewLead } from '../lib/notifications';
 import type { Job } from '../types/database';
 
@@ -1256,7 +1257,8 @@ export default function ClientServicesTab() {
   const [savingAllTime, setSavingAllTime] = useState(false);
   const [pendingQuoteJobIds, setPendingQuoteJobIds] = useState<Set<string>>(new Set());
   const [requestingQuoteId, setRequestingQuoteId] = useState<string | null>(null);
-  const [originalJobQuotes, setOriginalJobQuotes] = useState<Map<string, { count: number; topPrice: number; topTradie: string; originalJobId: string }>>(new Map());
+  const [originalJobQuotes, setOriginalJobQuotes] = useState<Map<string, { count: number; topPrice: number; topTradie: string; originalJobId: string; quoteId: string }>>(new Map());
+  const [acceptingQuoteId, setAcceptingQuoteId] = useState<string | null>(null);
 
   const fetchJobs = useCallback(async () => {
     if (!user) return;
@@ -1307,11 +1309,10 @@ export default function ClientServicesTab() {
             .select('id, job_id, price_min, price_max, firm_price, status, tradie:profiles!quotes_tradie_id_fkey(full_name)')
             .in('job_id', origIds)
             .in('status', ['pending', 'site_visit_scheduled', 'site_visit_completed', 'final_submitted']);
-          const quoteMap = new Map<string, { count: number; topPrice: number; topTradie: string; originalJobId: string }>();
+          const quoteMap = new Map<string, { count: number; topPrice: number; topTradie: string; originalJobId: string; quoteId: string }>();
           for (const q of origQuotes || []) {
             const price = q.firm_price ?? q.price_max ?? q.price_min ?? 0;
             const tradieName = (q.tradie as { full_name: string } | null)?.full_name || 'A tradie';
-            // Find which recurring job has this original_job_id
             const rj = jobs.find(j => j.original_job_id === q.job_id);
             if (!rj) continue;
             const existing = quoteMap.get(rj.id);
@@ -1321,6 +1322,7 @@ export default function ClientServicesTab() {
                 topPrice: price,
                 topTradie: tradieName,
                 originalJobId: q.job_id,
+                quoteId: q.id,
               });
             } else {
               quoteMap.set(rj.id, { ...existing, count: existing.count + 1 });
@@ -1734,24 +1736,39 @@ export default function ClientServicesTab() {
                   {/* Quotes received on the original job — shows when tradies quote on the one-time job that spawned this service */}
                   {originalJobQuotes.has(job.id) && (() => {
                     const qInfo = originalJobQuotes.get(job.id)!;
+                    const isAccepting = acceptingQuoteId === qInfo.quoteId;
                     return (
-                      <div className="px-4 py-3 border-t border-gray-100 bg-secondary-50/60">
+                      <div className="px-4 py-3 border-t border-gray-100 bg-emerald-50/60">
                         <div className="flex items-center justify-between gap-3 flex-wrap">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <FileTextIcon className="w-4 h-4 text-secondary-600 flex-shrink-0" />
-                            <p className="text-xs font-semibold text-secondary-800">
-                              {qInfo.count === 1
-                                ? `1 Quote received — $${qInfo.topPrice.toFixed(0)} from ${qInfo.topTradie}`
-                                : `${qInfo.count} Quotes received — from $${qInfo.topPrice.toFixed(0)}`}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <FileTextIcon className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                              <p className="text-sm font-semibold text-emerald-800">
+                                ${qInfo.topPrice.toFixed(0)} from {qInfo.topTradie}
+                              </p>
+                            </div>
+                            <p className="text-xs text-emerald-700/70 mt-0.5 ml-6">
+                              {qInfo.count === 1 ? 'Quote ready — accept to lock in this price per visit' : `${qInfo.count} quotes received`}
                             </p>
                           </div>
-                          <Link
-                            to={`/leads?job=${qInfo.originalJobId}`}
-                            className="inline-flex items-center gap-1.5 bg-secondary-500 hover:bg-secondary-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                          <button
+                            onClick={async () => {
+                              setAcceptingQuoteId(qInfo.quoteId);
+                              try {
+                                const { url } = await acceptAndPay(qInfo.quoteId, qInfo.originalJobId, qInfo.topPrice);
+                                window.location.href = url;
+                              } catch (err) {
+                                console.error('Accept & Pay failed:', err);
+                                showToast(err instanceof Error ? err.message : 'Failed to accept quote', true);
+                                setAcceptingQuoteId(null);
+                              }
+                            }}
+                            disabled={isAccepting}
+                            className="flex-shrink-0 inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-colors disabled:opacity-60"
                           >
-                            <Eye className="w-3.5 h-3.5" />
-                            View {qInfo.count === 1 ? 'Quote' : 'Quotes'}
-                          </Link>
+                            {isAccepting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                            Accept & Pay
+                          </button>
                         </div>
                       </div>
                     );
