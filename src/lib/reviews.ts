@@ -12,6 +12,10 @@ export interface Review {
   client?: {
     full_name: string;
   };
+  job?: {
+    title: string | null;
+    description: string | null;
+  };
 }
 
 export interface TradieRating {
@@ -50,7 +54,8 @@ export async function getTradieReviews(tradieId: string): Promise<Review[]> {
     .from('reviews')
     .select(`
       *,
-      client:profiles!reviews_client_id_fkey(full_name)
+      client:profiles!reviews_client_id_fkey(full_name),
+      job:jobs!reviews_job_id_fkey(title, description)
     `)
     .eq('tradie_id', tradieId)
     .order('created_at', { ascending: false });
