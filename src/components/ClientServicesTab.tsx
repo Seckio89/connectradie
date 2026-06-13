@@ -1259,6 +1259,7 @@ export default function ClientServicesTab() {
   const [requestingQuoteId, setRequestingQuoteId] = useState<string | null>(null);
   const [originalJobQuotes, setOriginalJobQuotes] = useState<Map<string, { count: number; topPrice: number; topTradie: string; originalJobId: string; quoteId: string }>>(new Map());
   const [acceptingQuoteId, setAcceptingQuoteId] = useState<string | null>(null);
+  const [expandedQuoteServiceId, setExpandedQuoteServiceId] = useState<string | null>(null);
 
   const fetchJobs = useCallback(async () => {
     if (!user) return;
@@ -1733,43 +1734,73 @@ export default function ClientServicesTab() {
                       )}
                     </div>
                   )}
-                  {/* Quotes received on the original job — shows when tradies quote on the one-time job that spawned this service */}
+                  {/* Quotes received on the original job */}
                   {originalJobQuotes.has(job.id) && (() => {
                     const qInfo = originalJobQuotes.get(job.id)!;
+                    const isExpanded = expandedQuoteServiceId === job.id;
                     const isAccepting = acceptingQuoteId === qInfo.quoteId;
                     return (
-                      <div className="px-4 py-3 border-t border-gray-100 bg-emerald-50/60">
-                        <div className="flex items-center justify-between gap-3 flex-wrap">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <FileTextIcon className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                              <p className="text-sm font-semibold text-emerald-800">
-                                ${qInfo.topPrice.toFixed(0)} from {qInfo.topTradie}
-                              </p>
-                            </div>
-                            <p className="text-xs text-emerald-700/70 mt-0.5 ml-6">
-                              {qInfo.count === 1 ? 'Quote ready — accept to lock in this price per visit' : `${qInfo.count} quotes received`}
+                      <div className="border-t border-gray-100">
+                        {/* Collapsed: show summary + View Quote button */}
+                        <div className="px-4 py-3 bg-secondary-50/60 flex items-center justify-between gap-3 flex-wrap">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileTextIcon className="w-4 h-4 text-secondary-600 flex-shrink-0" />
+                            <p className="text-xs font-semibold text-secondary-800">
+                              {qInfo.count === 1
+                                ? `1 Quote received — $${qInfo.topPrice.toFixed(0)} from ${qInfo.topTradie}`
+                                : `${qInfo.count} Quotes received — from $${qInfo.topPrice.toFixed(0)}`}
                             </p>
                           </div>
                           <button
-                            onClick={async () => {
-                              setAcceptingQuoteId(qInfo.quoteId);
-                              try {
-                                const { url } = await acceptAndPay(qInfo.quoteId, qInfo.originalJobId, qInfo.topPrice);
-                                window.location.href = url;
-                              } catch (err) {
-                                console.error('Accept & Pay failed:', err);
-                                showToast(err instanceof Error ? err.message : 'Failed to accept quote', true);
-                                setAcceptingQuoteId(null);
-                              }
-                            }}
-                            disabled={isAccepting}
-                            className="flex-shrink-0 inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-colors disabled:opacity-60"
+                            onClick={() => setExpandedQuoteServiceId(isExpanded ? null : job.id)}
+                            className="inline-flex items-center gap-1.5 bg-secondary-500 hover:bg-secondary-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                           >
-                            {isAccepting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                            Accept & Pay
+                            <Eye className="w-3.5 h-3.5" />
+                            {isExpanded ? 'Hide' : 'View'} {qInfo.count === 1 ? 'Quote' : 'Quotes'}
                           </button>
                         </div>
+
+                        {/* Expanded: show quote details + Accept & Pay */}
+                        {isExpanded && (
+                          <div className="px-4 py-4 bg-emerald-50/40 border-t border-emerald-100">
+                            <div className="flex items-start gap-3">
+                              <div className="w-9 h-9 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <User className="w-4 h-4 text-emerald-700" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-900">{qInfo.topTradie}</p>
+                                <p className="text-lg font-bold text-emerald-700 mt-0.5">${qInfo.topPrice.toFixed(2)} <span className="text-xs font-normal text-gray-500">per visit</span></p>
+                                <p className="text-xs text-gray-500 mt-1">Accepting this quote locks in the price and assigns {qInfo.topTradie} to your ongoing service. Payment is secured with Stripe.</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 mt-3 ml-12">
+                              <button
+                                onClick={async () => {
+                                  setAcceptingQuoteId(qInfo.quoteId);
+                                  try {
+                                    const { url } = await acceptAndPay(qInfo.quoteId, qInfo.originalJobId, qInfo.topPrice);
+                                    window.location.href = url;
+                                  } catch (err) {
+                                    console.error('Accept & Pay failed:', err);
+                                    showToast(err instanceof Error ? err.message : 'Failed to accept quote', true);
+                                    setAcceptingQuoteId(null);
+                                  }
+                                }}
+                                disabled={isAccepting}
+                                className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60"
+                              >
+                                {isAccepting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                                Accept & Pay
+                              </button>
+                              <button
+                                onClick={() => setExpandedQuoteServiceId(null)}
+                                className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
