@@ -251,6 +251,7 @@ Deno.serve(async (req: Request) => {
       const { error: metaUpdateError } = await supabase
         .from("payments")
         .update({
+          status: "released",
           metadata: {
             ...cleanMetadata,
             ...(payoutId ? { payout_id: payoutId, payout_amount: payoutAmount } : {}),
@@ -370,6 +371,7 @@ Deno.serve(async (req: Request) => {
     const { error: metaUpdateError } = await supabase
       .from("payments")
       .update({
+        status: "released",
         metadata: {
           ...cleanMetadata,
           transfer_id: transfer.id,

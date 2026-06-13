@@ -224,6 +224,7 @@ Deno.serve(async (req: Request) => {
           await supabase
             .from("payments")
             .update({
+              status: "released",
               metadata: {
                 ...cleanMetadata,
                 payout_id: payout.id,
@@ -242,6 +243,7 @@ Deno.serve(async (req: Request) => {
             await supabase
               .from("payments")
               .update({
+                status: "released",
                 metadata: {
                   ...childMeta,
                   payout_id: payout.id,
@@ -447,6 +449,7 @@ Deno.serve(async (req: Request) => {
         await supabase
           .from("payments")
           .update({
+            status: "released",
             metadata: {
               ...cleanMetadata,
               transfer_id: transfer.id,
@@ -464,6 +467,7 @@ Deno.serve(async (req: Request) => {
           await supabase
             .from("payments")
             .update({
+              status: "released",
               metadata: {
                 ...childMeta,
                 transfer_id: transfer.id,
