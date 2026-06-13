@@ -772,13 +772,18 @@ export default function ClientDashboard() {
           const awaitingRelease = recentJobs.filter(j => !j.archived_at && j.status === 'completed' && !releasedJobIds.has(j.id));
           if (awaitingRelease.length === 0) return null;
 
+          // Auto-scroll the release banner into view when the dashboard loads
+          const releaseBannerRef = (el: HTMLDivElement | null) => {
+            if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 300);
+          };
+
           // Single job — keep the original compact banner
           if (awaitingRelease.length === 1) {
             const first = awaitingRelease[0];
             const category = first.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
             const label = (first.title || category || 'a job').toString();
             return (
-              <div className="mb-8 p-4 bg-gradient-to-r from-warm-50 to-emerald-50 border border-emerald-300 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div ref={releaseBannerRef} className="mb-8 p-4 bg-gradient-to-r from-warm-50 to-emerald-50 border-2 border-amber-300 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300 shadow-[0_0_0_3px_rgba(251,191,36,0.15)]">
                 <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                 </div>
@@ -807,7 +812,7 @@ export default function ClientDashboard() {
           // Multiple — list every job with its own Release & Review button so
           // none of them get buried under the Accepted tab.
           return (
-            <div className="mb-8 bg-gradient-to-r from-warm-50 to-emerald-50 border border-emerald-300 rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+            <div ref={releaseBannerRef} className="mb-8 bg-gradient-to-r from-warm-50 to-emerald-50 border-2 border-amber-300 rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 shadow-[0_0_0_3px_rgba(251,191,36,0.15)]">
               <div className="p-4 flex items-center gap-3 border-b border-warm-200">
                 <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600" />
