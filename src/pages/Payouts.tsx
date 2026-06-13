@@ -49,6 +49,7 @@ export default function Payouts() {
     status: string;
     created_at: string;
     metadata: Record<string, unknown> | null;
+    invoice_number: number | null;
     jobs: { title: string; description: string; status: string; client_id: string } | null;
     client_name: string;
     jobStatus: string;
@@ -78,7 +79,7 @@ export default function Payouts() {
       fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
       const { data: jobPayments } = await supabase
         .from('payments')
-        .select('id, job_id, amount, status, created_at, metadata, jobs!inner(title, description, status, client_id)')
+        .select('id, job_id, amount, status, created_at, metadata, invoice_number, jobs!inner(title, description, status, client_id)')
         .eq('jobs.tradie_id', user.id)
         .eq('payment_type', 'job_funding')
         .gte('created_at', fiveDaysAgo.toISOString())
@@ -132,6 +133,7 @@ export default function Payouts() {
             status: p.status,
             created_at: p.created_at,
             metadata: meta,
+            invoice_number: (p as unknown as { invoice_number: number | null }).invoice_number ?? null,
             jobs: job,
             client_name: clientMap.get(job.client_id) || 'Client',
             jobStatus: isCancelledRecurring ? 'cancelled' : job.status,
@@ -172,6 +174,7 @@ export default function Payouts() {
                 status: 'completed',
                 created_at: inv.paid_at || inv.created_at,
                 metadata: null,
+                invoice_number: null,
                 jobs: { title: `${label} Invoice`, description: `Service Invoice — ${sessions} session${sessions !== 1 ? 's' : ''} (${period})`, status: 'completed', client_id: inv.homeowner_id },
                 client_name: invClientMap.get(inv.homeowner_id) || 'Client',
                 jobStatus: 'completed',
@@ -219,6 +222,7 @@ export default function Payouts() {
                 status: 'completed',
                 created_at: inv.paid_at || inv.created_at,
                 metadata: null,
+                invoice_number: null,
                 jobs: { title: `${label} Invoice`, description: `Service Invoice — ${sessions} session${sessions !== 1 ? 's' : ''} (${period})`, status: 'completed', client_id: inv.homeowner_id },
                 client_name: invClientMap.get(inv.homeowner_id) || 'Client',
                 jobStatus: 'completed',
@@ -440,7 +444,9 @@ export default function Payouts() {
     if (pdfLoadingId) return;
     setPdfLoadingId(p.id);
 
-    const invoiceNum = `INV-${p.id.slice(0, 8).toUpperCase()}`;
+    const invoiceNum = p.invoice_number != null
+      ? `INV-${String(p.invoice_number).padStart(4, '0')}`
+      : `INV-${p.id.slice(0, 8).toUpperCase()}`;
     const jobTitle = p.jobs?.title || p.jobs?.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job';
     const amountDollars = (p.amount / 100).toFixed(2);
     const date = new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
