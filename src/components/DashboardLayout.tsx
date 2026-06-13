@@ -615,7 +615,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Icon className="w-5 h-5" />
                   {item.name}
                   {item.name === 'Dashboard' && pendingReleaseCount > 0 && (
-                    <span className={`ml-auto w-2 h-2 rounded-full transition-colors ${isActive ? 'bg-amber-400 animate-pulse' : 'bg-amber-400/70'}`} />
+                    <span
+                      className={`ml-auto w-2 h-2 rounded-full transition-colors ${isActive ? 'bg-amber-400 animate-pulse' : 'bg-amber-400/70'}`}
+                      onClick={(e) => {
+                        if (isActive) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          document.getElementById('attention-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }}
+                    />
                   )}
                 </Link>
               );
