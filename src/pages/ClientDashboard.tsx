@@ -982,7 +982,7 @@ export default function ClientDashboard() {
               </div>
 
               {/* Job tabs */}
-              <div className="flex items-center gap-1 mb-4">
+              <div className="flex items-center gap-1 mb-4 overflow-x-auto -mx-1 px-1 flex-nowrap" style={{ WebkitOverflowScrolling: 'touch' }}>
                 {([
                   { key: 'active' as const, label: 'Active', count: recentJobs.filter(j => !j.archived_at && j.status === 'pending').length },
                   { key: 'accepted' as const, label: 'Accepted', count: recentJobs.filter(j => !j.archived_at && !recurringJobIds.has(j.id) && (['accepted', 'funded', 'in_progress'].includes(j.status) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))).length },
@@ -997,7 +997,7 @@ export default function ClientDashboard() {
                     <button
                       key={tab.key}
                       onClick={() => { setJobTab(tab.key); setShowArchived(false); }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                         isActive
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'

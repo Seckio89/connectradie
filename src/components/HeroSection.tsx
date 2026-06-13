@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronDown, Shield, ShieldCheck, Lock, Star, ArrowRight, CheckCircle2, Wallet } from 'lucide-react';
+import { Search, ChevronDown, Shield, ShieldCheck, Lock, Star, ArrowRight, CheckCircle2, Wallet, Clock } from 'lucide-react';
 import { getPlatformStats, type PlatformStats } from '../lib/reviews';
 import { TRADE_OPTIONS } from '../lib/tradeCategories';
 
@@ -192,6 +192,12 @@ export default function HeroSection() {
                 <CheckCircle2 className="w-4 h-4 text-warm-500" />
                 <span>$0 to Post. $0 to Quote.</span>
               </div>
+            </div>
+
+            {/* Mobile escrow trust banner — simplified version of the desktop card */}
+            <div className="mt-4 flex items-center justify-center gap-4 text-sm text-gray-500 lg:hidden">
+              <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-emerald-500" /> Payment Protected</span>
+              <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-emerald-500" /> 48hr Auto-Release</span>
             </div>
           </div>
 

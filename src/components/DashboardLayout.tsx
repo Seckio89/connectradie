@@ -31,6 +31,7 @@ import {
   XCircle,
   Star,
   FileText,
+  Plus,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -956,10 +957,111 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
-        <main id="main-content" className="p-4 sm:p-6 lg:p-8 flex-1">
+        <main id="main-content" className="p-4 sm:p-6 lg:p-8 flex-1 pb-20 lg:pb-8">
           <PlatformUpdateBanner />
           {children}
         </main>
+
+        {/* Mobile bottom navigation bar */}
+        {!isAdmin && (
+          <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-navy-900 border-t border-navy-800 pb-[env(safe-area-inset-bottom)]">
+            <div className="grid grid-cols-5 h-16">
+              {isTradie ? (
+                <>
+                  <Link
+                    to="/dashboard"
+                    className={`flex flex-col items-center justify-center gap-1 ${
+                      location.pathname === '/dashboard' ? 'text-warm-500' : 'text-gray-400'
+                    }`}
+                  >
+                    <Home className="w-5 h-5" />
+                    <span className="text-[10px]">Dashboard</span>
+                  </Link>
+                  <Link
+                    to="/work"
+                    className={`flex flex-col items-center justify-center gap-1 ${
+                      location.pathname === '/work' ? 'text-warm-500' : 'text-gray-400'
+                    }`}
+                  >
+                    <Briefcase className="w-5 h-5" />
+                    <span className="text-[10px]">Work Hub</span>
+                  </Link>
+                  <Link
+                    to="/schedule"
+                    className={`flex flex-col items-center justify-center gap-1 ${
+                      location.pathname === '/schedule' ? 'text-warm-500' : 'text-gray-400'
+                    }`}
+                  >
+                    <CalendarDays className="w-5 h-5" />
+                    <span className="text-[10px]">Schedule</span>
+                  </Link>
+                  <Link
+                    to="/messages"
+                    className={`flex flex-col items-center justify-center gap-1 ${
+                      location.pathname === '/messages' ? 'text-warm-500' : 'text-gray-400'
+                    }`}
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    <span className="text-[10px]">Messages</span>
+                  </Link>
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="flex flex-col items-center justify-center gap-1 text-gray-400"
+                  >
+                    <Menu className="w-5 h-5" />
+                    <span className="text-[10px]">More</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/dashboard"
+                    className={`flex flex-col items-center justify-center gap-1 ${
+                      location.pathname === '/dashboard' ? 'text-warm-500' : 'text-gray-400'
+                    }`}
+                  >
+                    <Home className="w-5 h-5" />
+                    <span className="text-[10px]">Dashboard</span>
+                  </Link>
+                  <Link
+                    to="/leads"
+                    className={`flex flex-col items-center justify-center gap-1 ${
+                      location.pathname === '/leads' ? 'text-warm-500' : 'text-gray-400'
+                    }`}
+                  >
+                    <Briefcase className="w-5 h-5" />
+                    <span className="text-[10px]">My Jobs</span>
+                  </Link>
+                  <Link
+                    to="/post-lead"
+                    className="flex flex-col items-center justify-center gap-1"
+                  >
+                    <div className="bg-emerald-500 text-white rounded-full w-12 h-12 flex items-center justify-center -mt-4 shadow-lg">
+                      <Plus className="w-6 h-6" />
+                    </div>
+                    <span className="text-[10px] text-emerald-500 -mt-0.5">Post Job</span>
+                  </Link>
+                  <Link
+                    to="/messages"
+                    className={`flex flex-col items-center justify-center gap-1 ${
+                      location.pathname === '/messages' ? 'text-warm-500' : 'text-gray-400'
+                    }`}
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    <span className="text-[10px]">Messages</span>
+                  </Link>
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="flex flex-col items-center justify-center gap-1 text-gray-400"
+                  >
+                    <Menu className="w-5 h-5" />
+                    <span className="text-[10px]">More</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </nav>
+        )}
       </div>
 
       {/* Toast notification banner — positioned below header, right side */}

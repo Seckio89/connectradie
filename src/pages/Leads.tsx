@@ -2235,20 +2235,22 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             </div>
           )
         ) : (
-          <div className="flex items-center gap-6 border-b border-gray-200 mb-6 overflow-x-auto">
-            {filters.map((f) => (
-              <button
-                key={f.key}
-                onClick={() => setFilter(f.key)}
-                className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                  filter === f.key
-                    ? 'border-warm-500 text-warm-600'
-                    : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
+          <div className="overflow-x-auto -mx-1 px-1 border-b border-gray-200 mb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="flex items-center gap-6 flex-nowrap">
+              {filters.map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setFilter(f.key)}
+                  className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                    filter === f.key
+                      ? 'border-warm-500 text-warm-600'
+                      : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

@@ -34,17 +34,18 @@ export default function Modal({ isOpen, onClose, children, maxWidth = '2xl', clo
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
       onMouseDown={(e) => {
         if (closeOnBackdrop && e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className={`bg-white rounded-2xl ${maxWidthClass} w-full max-h-[90vh] overflow-y-auto shadow-xl`}
+        className={`bg-white rounded-t-2xl sm:rounded-2xl ${maxWidthClass} w-full max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-xl`}
         style={{
           transform: 'translateZ(0)',
           willChange: 'transform',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         {children}
