@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ConnecTradie</string>
+    <string name="title_activity_main">ConnecTradie</string>
+    <string name="package_name">com.connectradie.app</string>
+    <string name="custom_url_scheme">com.connectradie.app</string>
+</resources>
