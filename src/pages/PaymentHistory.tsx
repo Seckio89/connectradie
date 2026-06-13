@@ -426,7 +426,8 @@ export default function PaymentHistory() {
   const getStatusBadge = (status: string) => {
     const map: Record<string, { bg: string; dot: string; label: string }> = {
       pending:   { bg: 'bg-accent-50 text-accent-700 border border-accent-200', dot: 'bg-accent-400', label: 'Pending' },
-      completed: { bg: 'bg-warm-50 text-warm-700 border border-warm-200', dot: 'bg-warm-500', label: 'Completed' },
+      completed: { bg: 'bg-amber-50 text-amber-700 border border-amber-200', dot: 'bg-amber-500', label: 'Completed' },
+      released:  { bg: 'bg-emerald-50 text-emerald-700 border border-emerald-200', dot: 'bg-emerald-500', label: 'Released' },
       refunded:  { bg: 'bg-secondary-50 text-secondary-700 border border-secondary-200', dot: 'bg-secondary-500', label: 'Refunded' },
       failed:    { bg: 'bg-red-50 text-red-700 border border-red-200', dot: 'bg-red-400', label: 'Failed' },
     };
