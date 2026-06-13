@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Bell, Plus, Loader2, MapPin, ArrowRight, Crown, RefreshCw, Repeat, Trash2, CalendarClock, DollarSign, Briefcase, Clock, Zap, Eye, CheckCircle2, Archive, ArchiveRestore, Pencil, X, Check, Send, Play, ExternalLink, Pause, FileText, Star, ChevronDown, Gift, AlertCircle, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -1079,17 +1079,43 @@ export default function ClientDashboard() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {recentJobs
-                    .filter(j => showArchived
-                      ? j.archived_at
-                      : jobTab === 'active'
-                        ? !j.archived_at && j.status === 'pending'
-                        : jobTab === 'accepted'
-                          ? !j.archived_at && !recurringJobIds.has(j.id) && (['accepted', 'funded', 'in_progress'].includes(j.status) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))
-                          : !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)
-                    )
-                    .slice(0, 20)
-                    .map((job) => {
+                  {(() => {
+                    const filtered = recentJobs
+                      .filter(j => showArchived
+                        ? j.archived_at
+                        : jobTab === 'active'
+                          ? !j.archived_at && j.status === 'pending'
+                          : jobTab === 'accepted'
+                            ? !j.archived_at && !recurringJobIds.has(j.id) && (['accepted', 'funded', 'in_progress'].includes(j.status) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))
+                            : !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)
+                      )
+                      .slice(0, jobTab === 'completed' ? 200 : 20);
+
+                    // Track which months we've already rendered headers for
+                    const renderedMonths = new Set<string>();
+
+                    return filtered.map((job) => {
+                      // For completed tab, inject month header when month changes
+                      let monthHeader: React.ReactNode = null;
+                      if (jobTab === 'completed') {
+                        const d = new Date(job.created_at);
+                        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        if (!renderedMonths.has(monthKey)) {
+                          renderedMonths.add(monthKey);
+                          const monthLabel = d.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+                          const monthCount = filtered.filter(fj => {
+                            const fd = new Date(fj.created_at);
+                            return `${fd.getFullYear()}-${String(fd.getMonth() + 1).padStart(2, '0')}` === monthKey;
+                          }).length;
+                          monthHeader = (
+                            <div key={`month-${monthKey}`} className="flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-xl">
+                              <span className="text-sm font-semibold text-gray-800">{monthLabel}</span>
+                              <span className="text-xs text-gray-400">{monthCount} job{monthCount !== 1 ? 's' : ''}</span>
+                            </div>
+                          );
+                        }
+                      }
+
                     const categoryMatch = job.description.match(/^\[([^\]]+)\]/);
                     const categoryRaw = categoryMatch ? categoryMatch[1] : null;
                     const category = categoryRaw ? categoryRaw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : null;
@@ -1129,11 +1155,12 @@ export default function ClientDashboard() {
                     const SLOT_LABELS: Record<string, string> = { morning: '7-9 AM', midday: '10 AM-12 PM', afternoon: '1-5 PM' };
 
                     return (
-                      <Link
-                        key={job.id}
-                        to={recurringJobIds.has(job.id) ? `/leads?tab=ongoing&job=${job.id}` : `/leads?job=${job.id}`}
-                        className={`group block rounded-2xl overflow-hidden border bg-white shadow-sm hover:shadow-lg hover:border-gray-300 transition-all ${isArchived ? 'opacity-75' : ''}`}
-                      >
+                      <React.Fragment key={job.id}>
+                        {monthHeader}
+                        <Link
+                          to={recurringJobIds.has(job.id) ? `/leads?tab=ongoing&job=${job.id}` : `/leads?job=${job.id}`}
+                          className={`group block rounded-2xl overflow-hidden border bg-white shadow-sm hover:shadow-lg hover:border-gray-300 transition-all ${isArchived ? 'opacity-75' : ''}`}
+                        >
                         <div className="flex">
                           {/* Left accent bar */}
                           <div className={`w-1.5 flex-shrink-0 ${accentColor}`} />
@@ -1349,9 +1376,11 @@ export default function ClientDashboard() {
                             )}
                           </div>
                         </div>
-                      </Link>
+                        </Link>
+                      </React.Fragment>
                     );
-                  })}
+                  });
+                  })()}
 
                   <Link
                     to="/post-lead"
