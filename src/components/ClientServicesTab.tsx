@@ -1257,7 +1257,7 @@ export default function ClientServicesTab() {
   const [savingAllTime, setSavingAllTime] = useState(false);
   const [pendingQuoteJobIds, setPendingQuoteJobIds] = useState<Set<string>>(new Set());
   const [requestingQuoteId, setRequestingQuoteId] = useState<string | null>(null);
-  const [originalJobQuotes, setOriginalJobQuotes] = useState<Map<string, { count: number; topPrice: number; topTradie: string; originalJobId: string; quoteId: string }>>(new Map());
+  const [originalJobQuotes, setOriginalJobQuotes] = useState<Map<string, { count: number; topPrice: number; topTradie: string; originalJobId: string; quoteId: string; message: string | null; estimatedDuration: string | null; includesMaterials: boolean; businessName: string | null; avgRating: number | null; reviewCount: number; isPro: boolean }>>(new Map());
   const [acceptingQuoteId, setAcceptingQuoteId] = useState<string | null>(null);
   const [expandedQuoteServiceId, setExpandedQuoteServiceId] = useState<string | null>(null);
 
@@ -1307,13 +1307,37 @@ export default function ClientServicesTab() {
         try {
           const { data: origQuotes } = await supabase
             .from('quotes')
-            .select('id, job_id, price_min, price_max, firm_price, status, tradie:profiles!quotes_tradie_id_fkey(full_name)')
+            .select('id, job_id, price_min, price_max, firm_price, message, estimated_duration, includes_materials, status, tradie_id, tradie:profiles!quotes_tradie_id_fkey(full_name, is_premium)')
             .in('job_id', origIds)
             .in('status', ['pending', 'site_visit_scheduled', 'site_visit_completed', 'final_submitted']);
-          const quoteMap = new Map<string, { count: number; topPrice: number; topTradie: string; originalJobId: string; quoteId: string }>();
+
+          // Fetch tradie details + ratings for quote authors
+          const tradieIds = [...new Set((origQuotes || []).map(q => q.tradie_id).filter(Boolean))];
+          let tradieDetailsMap = new Map<string, { business_name: string | null; subscription_tier: string | null }>();
+          let tradieRatingsMap = new Map<string, { avg: number | null; count: number }>();
+          if (tradieIds.length > 0) {
+            const [detailsRes, ratingsRes] = await Promise.all([
+              supabase.from('tradie_details').select('profile_id, business_name, subscription_tier').in('profile_id', tradieIds),
+              supabase.from('reviews').select('tradie_id, rating').in('tradie_id', tradieIds),
+            ]);
+            for (const d of detailsRes.data || []) tradieDetailsMap.set(d.profile_id, d);
+            const ratingAcc = new Map<string, number[]>();
+            for (const r of ratingsRes.data || []) {
+              if (!ratingAcc.has(r.tradie_id)) ratingAcc.set(r.tradie_id, []);
+              ratingAcc.get(r.tradie_id)!.push(r.rating);
+            }
+            for (const [tid, ratings] of ratingAcc) {
+              tradieRatingsMap.set(tid, { avg: ratings.reduce((a, b) => a + b, 0) / ratings.length, count: ratings.length });
+            }
+          }
+
+          const quoteMap = new Map<string, { count: number; topPrice: number; topTradie: string; originalJobId: string; quoteId: string; message: string | null; estimatedDuration: string | null; includesMaterials: boolean; businessName: string | null; avgRating: number | null; reviewCount: number; isPro: boolean }>();
           for (const q of origQuotes || []) {
             const price = q.firm_price ?? q.price_max ?? q.price_min ?? 0;
-            const tradieName = (q.tradie as { full_name: string } | null)?.full_name || 'A tradie';
+            const tradieProfile = q.tradie as { full_name: string; is_premium?: boolean } | null;
+            const tradieName = tradieProfile?.full_name || 'A tradie';
+            const td = tradieDetailsMap.get(q.tradie_id) || null;
+            const tr = tradieRatingsMap.get(q.tradie_id) || null;
             const rj = jobs.find(j => j.original_job_id === q.job_id);
             if (!rj) continue;
             const existing = quoteMap.get(rj.id);
@@ -1324,6 +1348,13 @@ export default function ClientServicesTab() {
                 topTradie: tradieName,
                 originalJobId: q.job_id,
                 quoteId: q.id,
+                message: q.message,
+                estimatedDuration: q.estimated_duration,
+                includesMaterials: q.includes_materials ?? false,
+                businessName: td?.business_name || null,
+                avgRating: tr?.avg ? Math.round(tr.avg * 10) / 10 : null,
+                reviewCount: tr?.count || 0,
+                isPro: td?.subscription_tier === 'pro' || !!tradieProfile?.is_premium,
               });
             } else {
               quoteMap.set(rj.id, { ...existing, count: existing.count + 1 });
@@ -1760,20 +1791,59 @@ export default function ClientServicesTab() {
                           </button>
                         </div>
 
-                        {/* Expanded: show quote details + Accept & Pay */}
+                        {/* Expanded: show full quote details + Accept & Pay */}
                         {isExpanded && (
-                          <div className="px-4 py-4 bg-emerald-50/40 border-t border-emerald-100">
+                          <div className="px-4 py-4 bg-white border-t border-gray-100">
+                            {/* Tradie header */}
                             <div className="flex items-start gap-3">
-                              <div className="w-9 h-9 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                <User className="w-4 h-4 text-emerald-700" />
+                              <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <User className="w-5 h-5 text-emerald-700" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-900">{qInfo.topTradie}</p>
-                                <p className="text-lg font-bold text-emerald-700 mt-0.5">${qInfo.topPrice.toFixed(2)} <span className="text-xs font-normal text-gray-500">per visit</span></p>
-                                <p className="text-xs text-gray-500 mt-1">Accepting this quote locks in the price and assigns {qInfo.topTradie} to your ongoing service. Payment is secured with Stripe.</p>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="text-sm font-semibold text-gray-900">{qInfo.topTradie}</p>
+                                  {qInfo.isPro && (
+                                    <span className="px-2 py-0.5 bg-warm-100 text-warm-700 text-[10px] font-semibold rounded-full">PRO</span>
+                                  )}
+                                </div>
+                                {qInfo.businessName && (
+                                  <p className="text-xs text-gray-500">{qInfo.businessName}</p>
+                                )}
+                                {qInfo.avgRating !== null && (
+                                  <div className="flex items-center gap-1 mt-0.5">
+                                    <span className="text-xs text-amber-500">{'★'.repeat(Math.round(qInfo.avgRating))}</span>
+                                    <span className="text-xs text-gray-500">{qInfo.avgRating} ({qInfo.reviewCount} review{qInfo.reviewCount !== 1 ? 's' : ''})</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-right flex-shrink-0">
+                                <p className="text-lg font-bold text-emerald-700">${qInfo.topPrice.toFixed(0)}</p>
+                                <p className="text-[10px] text-gray-400">per visit</p>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2 mt-3 ml-12">
+
+                            {/* Quote details */}
+                            {qInfo.message && (
+                              <div className="mt-3 ml-13 p-3 bg-gray-50 rounded-lg">
+                                <p className="text-sm text-gray-700 leading-relaxed">{qInfo.message}</p>
+                              </div>
+                            )}
+
+                            <div className="mt-3 ml-13 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                              {qInfo.estimatedDuration && (
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" /> {qInfo.estimatedDuration}
+                                </span>
+                              )}
+                              {qInfo.includesMaterials && (
+                                <span className="flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Materials included
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-2 mt-4 ml-13">
                               <button
                                 onClick={async () => {
                                   setAcceptingQuoteId(qInfo.quoteId);
@@ -1799,6 +1869,8 @@ export default function ClientServicesTab() {
                                 Cancel
                               </button>
                             </div>
+
+                            <p className="text-[11px] text-gray-400 mt-2 ml-13">Accepting locks in this price and assigns {qInfo.topTradie} to your service. Payment secured with Stripe.</p>
                           </div>
                         )}
                       </div>
