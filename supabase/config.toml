@@ -381,6 +381,14 @@ backend = "postgres"
 [functions.stripe-webhook]
 verify_jwt = false
 
+# Google redirects the user's browser back to /functions/v1/google-calendar-oauth
+# with ?code=... in the query string and no Supabase JWT — so JWT verification
+# must stay off or the OAuth callback is rejected with 401 before the handler
+# can swap the code for tokens. Internal state validation in the function
+# protects against CSRF on the callback path.
+[functions.google-calendar-oauth]
+verify_jwt = false
+
 # Experimental features may be deprecated any time
 [experimental]
 # Configures Postgres storage engine to use OrioleDB (S3)
