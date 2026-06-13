@@ -157,6 +157,28 @@ Deno.serve(async (req: Request) => {
         .eq("id", integration.id);
     }
 
+    // Handle event deletion requests (from frontend when slots are removed)
+    let body: Record<string, unknown> = {};
+    try { body = await req.json(); } catch { /* no body — normal sync */ }
+    const deleteEventIds = Array.isArray(body.deleteEventIds) ? body.deleteEventIds as string[] : [];
+
+    if (deleteEventIds.length > 0) {
+      let deleted = 0;
+      for (const eventId of deleteEventIds) {
+        try {
+          const delRes = await fetch(
+            `https://www.googleapis.com/calendar/v3/calendars/${integration.calendar_id}/events/${eventId}`,
+            { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } }
+          );
+          if (delRes.ok || delRes.status === 404) deleted++;
+        } catch { /* skip */ }
+      }
+      return new Response(
+        JSON.stringify({ success: true, message: `Deleted ${deleted} calendar event(s)`, deleted }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Fetch events from Google Calendar (next 30 days)
     const timeMin = new Date().toISOString();
     const timeMax = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();

@@ -120,13 +120,35 @@ export function useAvailabilitySlots({ userId, currentDate, onSuccess, onError }
 
   const deleteSlot = useCallback(async (slotId: string) => {
     try {
+      // Check if this slot has a Google Calendar event to clean up
+      const { data: slot } = await supabase
+        .from('availability_slots')
+        .select('calendar_event_id')
+        .eq('id', slotId)
+        .maybeSingle();
+
+      // Delete the slot from ConnecTradie
       const { error } = await supabase.from('availability_slots').delete().eq('id', slotId);
       if (error) throw error;
+
+      // If it had a Google Calendar event, trigger a sync to clean it up
+      if (slot?.calendar_event_id && userId) {
+        const session = await supabase.auth.getSession();
+        const token = session.data.session?.access_token;
+        if (token) {
+          fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-google-calendar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ deleteEventIds: [slot.calendar_event_id] }),
+          }).catch(() => { /* non-critical */ });
+        }
+      }
+
       await fetchSlots();
     } catch {
       onErrorRef.current?.('Failed to delete slot. Please try again.');
     }
-  }, [fetchSlots]);
+  }, [fetchSlots, userId]);
 
   const clearAllUpcoming = useCallback(async () => {
     if (!userId) return;
