@@ -50,14 +50,13 @@ interface PaymentRow {
   created_at: string;
   completed_at: string | null;
   invoice_number: number | null;
+  invoice_ref: string | null;
   jobs: { description: string } | null;
 }
 
-/** Format a sequential invoice_number as INV-0001, falling back to UUID-based format */
-function fmtInvoiceNum(invoiceNumber: number | null | undefined, paymentId?: string): string {
-  if (invoiceNumber != null) return `INV-${String(invoiceNumber).padStart(4, '0')}`;
-  if (paymentId) return `INV-${paymentId.slice(0, 8).toUpperCase()}`;
-  return '';
+/** Use pre-formatted invoice_ref from payments table, falling back to UUID-based format */
+function fmtInvoiceRef(ref: string | null | undefined, paymentId?: string): string {
+  return ref || (paymentId ? 'INV-' + paymentId.slice(0, 8).toUpperCase() : '');
 }
 
 type StatusFilter = 'all' | 'pending' | 'completed' | 'refunded' | 'failed';
@@ -339,6 +338,8 @@ export default function PaymentHistory() {
                 metadata: null,
                 created_at: (inv.paid_at || inv.created_at) as string,
                 completed_at: (inv.paid_at as string) || null,
+                invoice_number: null,
+                invoice_ref: null,
                 jobs: { description: `[${label}] Service Invoice — ${sessions} session${sessions !== 1 ? 's' : ''} (${period})` },
               };
             });
@@ -468,7 +469,7 @@ export default function PaymentHistory() {
   };
 
   const handleExportReceiptPDF = (payment: PaymentRow) => {
-    const invoiceNum = fmtInvoiceNum(payment.invoice_number, payment.id);
+    const invoiceNum = fmtInvoiceRef(payment.invoice_ref, payment.id);
     const exGst = payment.amount;
     const pdfStoredGst = (payment.metadata as Record<string, unknown>)?.gst;
     const gstAmount = pdfStoredGst != null ? Number(pdfStoredGst) : Math.round(exGst * 0.1);
@@ -1173,7 +1174,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
   const fee = payment.processing_fee || 0;
   const jobDesc = payment.jobs?.description ? cleanDescription(payment.jobs.description) : 'Service payment';
   const jobCategory = payment.jobs?.description ? getCategory(payment.jobs.description) : null;
-  const invoiceNum = fmtInvoiceNum(payment.invoice_number, payment.id);
+  const invoiceNum = fmtInvoiceRef(payment.invoice_ref, payment.id);
   const tradieName = (payment.metadata as Record<string, unknown>)?.tradie_name as string || null;
   const tradieAbn = (payment.metadata as Record<string, unknown>)?.tradie_abn as string || null;
 

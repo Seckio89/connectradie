@@ -11,6 +11,7 @@ type InvoiceData = {
   status: string;
   metadata: Record<string, unknown> | null;
   invoice_number: number | null;
+  invoice_ref: string | null;
   job: {
     id: string;
     title: string | null;
@@ -47,7 +48,7 @@ export default function Invoice() {
       try {
         const { data: payment, error: payErr } = await supabase
           .from('payments')
-          .select('id, amount, processing_fee, created_at, status, metadata, job_id, profile_id, tradie_id, invoice_number')
+          .select('id, amount, processing_fee, created_at, status, metadata, job_id, profile_id, tradie_id, invoice_number, invoice_ref')
           .eq('id', paymentId)
           .maybeSingle();
         if (payErr) throw payErr;
@@ -72,6 +73,7 @@ export default function Invoice() {
           status: payment.status,
           metadata: payment.metadata,
           invoice_number: (payment as Record<string, unknown>).invoice_number as number | null,
+          invoice_ref: (payment as Record<string, unknown>).invoice_ref as string | null,
           job: jobRes.data,
           client: clientRes.data,
           tradie: tradieRes.data,
@@ -111,9 +113,10 @@ export default function Invoice() {
   const processingDollars = data.processing_fee / 100;
   const totalDollars = baseDollars + gstDollars + processingDollars;
 
-  const invoiceNumber = data.invoice_number != null
-    ? `INV-${String(data.invoice_number).padStart(4, '0')}`
-    : `INV-${data.id.slice(0, 8).toUpperCase()}`;
+  const invoiceNumber = data.invoice_ref
+    || (data.invoice_number != null
+      ? `INV-${String(data.invoice_number).padStart(4, '0')}`
+      : `INV-${data.id.slice(0, 8).toUpperCase()}`);
   const issueDate = new Date(data.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const category = data.job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;

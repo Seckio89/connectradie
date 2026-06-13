@@ -193,11 +193,9 @@ type LeadFilter = 'all' | 'active' | 'pending' | 'accepted' | 'boosted' | 'urgen
 
 type LeadWithClient = Job & { client_name?: string; my_quote?: Quote | null };
 
-/** Format a sequential invoice_number as INV-0001, falling back to UUID-based format */
-function fmtInvoiceNum(invoiceNumber: number | null | undefined, paymentId?: string): string {
-  if (invoiceNumber != null) return `INV-${String(invoiceNumber).padStart(4, '0')}`;
-  if (paymentId) return `INV-${paymentId.slice(0, 8).toUpperCase()}`;
-  return '';
+/** Use pre-formatted invoice_ref from payments table, falling back to UUID-based format */
+function fmtInvoiceRef(ref: string | null | undefined, paymentId?: string): string {
+  return ref || (paymentId ? 'INV-' + paymentId.slice(0, 8).toUpperCase() : '');
 }
 
 export default function Leads({ embedded = false, initialFilter }: { embedded?: boolean; initialFilter?: LeadFilter }) {
@@ -275,7 +273,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
   const [releasedJobIds, setReleasedJobIds] = useState<Set<string>>(new Set());
   const [reviewedJobIds, setReviewedJobIds] = useState<Set<string>>(new Set());
   const [jobPaymentIds, setJobPaymentIds] = useState<Map<string, string>>(new Map());
-  const [jobPaymentInvoiceNumbers, setJobPaymentInvoiceNumbers] = useState<Map<string, number | null>>(new Map());
+  const [jobPaymentInvoiceNumbers, setJobPaymentInvoiceNumbers] = useState<Map<string, string | null>>(new Map());
   const [jobPaymentData, setJobPaymentData] = useState<Map<string, { id: string; amount: number; metadata: Record<string, unknown> | null; created_at?: string }>>(new Map());
   const [pendingIncreases, setPendingIncreases] = useState<Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number }>>({});
   const [paidIncreaseJobIds, setPaidIncreaseJobIds] = useState<Set<string>>(new Set());
@@ -616,7 +614,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
         const [paymentsResult, reviewsResult] = await Promise.all([
           supabase
             .from('payments')
-            .select('id, job_id, status, metadata, amount, processing_fee, created_at, payment_type, invoice_number')
+            .select('id, job_id, status, metadata, amount, processing_fee, created_at, payment_type, invoice_number, invoice_ref')
             .in('job_id', completedJobIds),
           supabase
             .from('reviews')
@@ -627,12 +625,12 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
 
         if (paymentsResult.data && paymentsResult.data.length > 0) {
           const paymentMap = new Map<string, string>();
-          const invoiceNumMap = new Map<string, number | null>();
+          const invoiceNumMap = new Map<string, string | null>();
           const paymentDataMap = new Map<string, { id: string; amount: number; metadata: Record<string, unknown> | null; created_at?: string }>();
           for (const p of paymentsResult.data) {
             if (p.job_id) {
               paymentMap.set(p.job_id, p.id);
-              invoiceNumMap.set(p.job_id, (p as Record<string, unknown>).invoice_number as number | null);
+              invoiceNumMap.set(p.job_id, (p as Record<string, unknown>).invoice_ref as string | null);
               paymentDataMap.set(p.job_id, { id: p.id, amount: p.amount, metadata: p.metadata as Record<string, unknown> | null, created_at: p.created_at });
             }
             const meta = p.metadata as Record<string, unknown> | null;
@@ -822,7 +820,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
         : new Date(lead.created_at).toLocaleDateString('en-AU');
       const payData = jobPaymentData.get(lead.id);
       const payId = jobPaymentIds.get(lead.id);
-      const invNum = fmtInvoiceNum(jobPaymentInvoiceNumbers.get(lead.id), payId);
+      const invNum = fmtInvoiceRef(jobPaymentInvoiceNumbers.get(lead.id), payId);
       const exGst = payData ? payData.amount : ((lead.budget_amount || 0) * 100);
       const storedGst = payData?.metadata?.gst;
       const gst = storedGst != null ? Number(storedGst) : Math.round(exGst * 0.1);
@@ -1449,7 +1447,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       </h3>
                       {lead.status === 'completed' && jobPaymentIds.get(lead.id) && (
                         <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-medium flex-shrink-0">
-                          {fmtInvoiceNum(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id))}
+                          {fmtInvoiceRef(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id))}
                         </span>
                       )}
                     </div>
@@ -1722,7 +1720,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             return (
               <>
                 {!isReleased && completedAt && (
-                  <AutoReleaseCountdown completedAt={completedAt} jobTitle={lead.title || lead.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ')} invoiceNumber={jobPaymentIds.get(lead.id) ? fmtInvoiceNum(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id)) : undefined} />
+                  <AutoReleaseCountdown completedAt={completedAt} jobTitle={lead.title || lead.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ')} invoiceNumber={jobPaymentIds.get(lead.id) ? fmtInvoiceRef(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id)) : undefined} />
                 )}
                 <div className="flex items-center justify-between px-5 py-2.5 bg-gray-50 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-2">
@@ -2335,7 +2333,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                         <ul className="mt-1 space-y-0.5 text-xs text-red-600">
                           {expiredJobs.map(j => {
                             const payId = jobPaymentIds.get(j.id);
-                            const invNum = fmtInvoiceNum(jobPaymentInvoiceNumbers.get(j.id), payId) || null;
+                            const invNum = fmtInvoiceRef(jobPaymentInvoiceNumbers.get(j.id), payId) || null;
                             return (
                               <li key={j.id}>
                                 &bull; {j.title || j.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job'}{invNum ? ` (${invNum})` : ''}
@@ -2371,7 +2369,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   return (
                     <div key={lead.id}>
                       {!isReleased && completedAt2 && (
-                        <AutoReleaseCountdown completedAt={completedAt2} jobTitle={lead.title || lead.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ')} invoiceNumber={jobPaymentIds.get(lead.id) ? fmtInvoiceNum(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id)) : undefined} />
+                        <AutoReleaseCountdown completedAt={completedAt2} jobTitle={lead.title || lead.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ')} invoiceNumber={jobPaymentIds.get(lead.id) ? fmtInvoiceRef(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id)) : undefined} />
                       )}
                       <div className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors group">
                       <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
@@ -2382,7 +2380,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                           </h4>
                           {jobPaymentIds.get(lead.id) && (
                             <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-medium flex-shrink-0">
-                              {fmtInvoiceNum(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id))}
+                              {fmtInvoiceRef(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id))}
                             </span>
                           )}
                           {category && (
@@ -3168,7 +3166,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         const handleExportSingleInvoice = () => {
           const payData = jobPaymentData.get(cj.id);
           const payId = jobPaymentIds.get(cj.id);
-          const invoiceNum = fmtInvoiceNum(jobPaymentInvoiceNumbers.get(cj.id), payId) || `INV-${cj.id.slice(0, 8).toUpperCase()}`;
+          const invoiceNum = fmtInvoiceRef(jobPaymentInvoiceNumbers.get(cj.id), payId) || `INV-${cj.id.slice(0, 8).toUpperCase()}`;
           const exGst = payData ? payData.amount : (cj.budget_amount || 0);
           const storedGst = payData?.metadata?.gst;
           const gstAmount = storedGst != null ? Number(storedGst) : Math.round(exGst * 0.1);

@@ -112,7 +112,7 @@ Deno.serve(async (req: Request) => {
       const { data: payment, error: paymentError } = await supabase
         .from("payments")
         .select(
-          "id, amount, stripe_payment_intent_id, metadata, invoice_number",
+          "id, amount, stripe_payment_intent_id, metadata, invoice_number, invoice_ref",
         )
         .eq("job_id", job.id)
         .eq("payment_type", "job_funding")
@@ -257,10 +257,12 @@ Deno.serve(async (req: Request) => {
 
           const amountDollars = `$${(totalTransferAmount / 100).toFixed(2)}`;
           const jobTitle = job.title || "your job";
+          const invRef = (payment as Record<string, unknown>).invoice_ref as string | null;
           const invNum = (payment as Record<string, unknown>).invoice_number as number | null;
-          const invoiceNumber = invNum != null
-            ? `INV-${String(invNum).padStart(4, "0")}`
-            : `INV-${payment.id.slice(0, 8).toUpperCase()}`;
+          const invoiceNumber = invRef
+            || (invNum != null
+              ? `INV-${String(invNum).padStart(4, "0")}`
+              : `INV-${payment.id.slice(0, 8).toUpperCase()}`);
 
           // Notify homeowner
           try {
@@ -483,10 +485,12 @@ Deno.serve(async (req: Request) => {
 
         const amountDollars = `$${(totalTransferAmount / 100).toFixed(2)}`;
         const jobTitle = job.title || "your job";
+        const invRef2 = (payment as Record<string, unknown>).invoice_ref as string | null;
         const invNum2 = (payment as Record<string, unknown>).invoice_number as number | null;
-        const invoiceNumber = invNum2 != null
-          ? `INV-${String(invNum2).padStart(4, "0")}`
-          : `INV-${payment.id.slice(0, 8).toUpperCase()}`;
+        const invoiceNumber = invRef2
+          || (invNum2 != null
+            ? `INV-${String(invNum2).padStart(4, "0")}`
+            : `INV-${payment.id.slice(0, 8).toUpperCase()}`);
 
         // Notify homeowner
         try {
