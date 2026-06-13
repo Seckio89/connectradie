@@ -44,6 +44,7 @@ const AdminPayments = lazy(() => import('./pages/AdminPayments'));
 const AdminModeration = lazy(() => import('./pages/AdminModeration'));
 const AdminDisputes = lazy(() => import('./pages/AdminDisputes'));
 const AdminUpdates = lazy(() => import('./pages/AdminUpdates'));
+const AdminFinancials = lazy(() => import('./pages/AdminFinancials'));
 const Schedule = lazy(() => import('./pages/Schedule'));
 const WorkHub = lazy(() => import('./pages/WorkHub'));
 const PerformanceInsights = lazy(() => import('./pages/PerformanceInsights'));
@@ -161,6 +162,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/payments': 'Payments | ConnecTradie Admin',
   '/admin/moderation': 'Moderation | ConnecTradie Admin',
   '/admin/disputes': 'Disputes | ConnecTradie Admin',
+  '/admin/financials': 'Financials | ConnecTradie Admin',
 };
 
 function RouteTracker() {
@@ -317,6 +319,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute requireAdmin>
             <AdminPayments />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/financials"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminFinancials />
           </ProtectedRoute>
         }
       />

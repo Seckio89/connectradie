@@ -510,6 +510,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'User Management', href: '/admin/users', icon: Users },
     { name: 'Verifications', href: '/admin/verifications', icon: ShieldCheck },
     { name: 'Payments', href: '/admin/payments', icon: DollarSign },
+    { name: 'Financials', href: '/admin/financials', icon: TrendingUp },
     { name: 'Moderation', href: '/admin/moderation', icon: Flag },
     { name: 'Disputes', href: '/admin/disputes', icon: AlertTriangle },
     { name: 'Updates', href: '/admin/updates', icon: Zap },
