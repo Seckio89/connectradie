@@ -2409,7 +2409,7 @@ export default function ClientServicesTab() {
               const tradieName = job.tradie?.full_name || 'Tradie';
               const statusLabel = job.status === 'funded' ? 'Funded' : 'In Progress';
               const statusClasses = job.status === 'funded'
-                ? 'bg-blue-100 text-blue-700'
+                ? 'bg-secondary-100 text-secondary-700'
                 : 'bg-emerald-100 text-emerald-700';
 
               return (

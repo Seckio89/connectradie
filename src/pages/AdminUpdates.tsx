@@ -34,13 +34,13 @@ const typeOptions = [
 
 const priorityOptions = [
   { value: 'low', label: 'Low', color: 'bg-gray-200 text-gray-700' },
-  { value: 'normal', label: 'Normal', color: 'bg-blue-100 text-blue-700' },
+  { value: 'normal', label: 'Normal', color: 'bg-secondary-100 text-secondary-700' },
   { value: 'high', label: 'High', color: 'bg-amber-100 text-amber-700' },
   { value: 'critical', label: 'Critical', color: 'bg-red-100 text-red-700' },
 ];
 
 const typeColors: Record<string, string> = {
-  tos: 'bg-blue-100 text-blue-700',
+  tos: 'bg-secondary-100 text-secondary-700',
   policy: 'bg-purple-100 text-purple-700',
   feature: 'bg-warm-100 text-warm-700',
   recommendation: 'bg-amber-100 text-amber-700',

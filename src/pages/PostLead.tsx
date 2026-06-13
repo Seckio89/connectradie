@@ -925,7 +925,7 @@ export default function PostLead() {
                 }}
                 className={`relative group rounded-2xl border-2 p-5 text-left transition-all duration-200 ${
                   scheduleMode === 'urgent'
-                    ? 'border-warm-400 bg-gradient-to-br from-warm-50 to-warm-50 shadow-lg shadow-warm-100/50'
+                    ? 'border-warm-400 bg-gradient-to-br from-warm-50 to-warm-50 shadow-sm'
                     : 'border-gray-200 bg-white hover:border-warm-300 hover:shadow-md'
                 }`}
               >
@@ -968,7 +968,7 @@ export default function PostLead() {
                 }}
                 className={`relative group rounded-2xl border-2 p-5 text-left transition-all duration-200 ${
                   scheduleMode === 'scheduled'
-                    ? 'border-secondary-400 bg-gradient-to-br from-secondary-50 to-secondary-50 shadow-lg shadow-secondary-100/50'
+                    ? 'border-secondary-400 bg-gradient-to-br from-secondary-50 to-secondary-50 shadow-sm'
                     : 'border-gray-200 bg-white hover:border-secondary-300 hover:shadow-md'
                 }`}
               >
@@ -1050,9 +1050,9 @@ export default function PostLead() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {SIMPLE_TRADES.includes(category) ? 'When do you need this done?' : 'When should the tradie visit?'}
                   </label>
-                  <div className="flex items-start gap-2.5 px-3.5 py-2.5 bg-blue-50 border border-blue-200 rounded-xl mb-3">
-                    <CalendarDays className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-blue-800 leading-relaxed">
+                  <div className="flex items-start gap-2.5 px-3.5 py-2.5 bg-secondary-50 border border-secondary-200 rounded-xl mb-3">
+                    <CalendarDays className="w-4 h-4 text-secondary-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-secondary-800 leading-relaxed">
                       {SIMPLE_TRADES.includes(category)
                         ? <>Pick a date that works for the <strong>tradie to complete the job</strong>. You'll need to provide access.</>
                         : <>The tradie will come to your property to <strong>inspect the job and give you a firm quote</strong>. You'll need to be home.</>
@@ -1074,9 +1074,9 @@ export default function PostLead() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {SIMPLE_TRADES.includes(category) ? 'What time works best?' : 'What time works best for the visit?'}
                   </label>
-                  <div className="flex items-start gap-2.5 px-3.5 py-2.5 bg-blue-50 border border-blue-200 rounded-xl mb-3">
-                    <Clock className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-blue-800 leading-relaxed">
+                  <div className="flex items-start gap-2.5 px-3.5 py-2.5 bg-secondary-50 border border-secondary-200 rounded-xl mb-3">
+                    <Clock className="w-4 h-4 text-secondary-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-secondary-800 leading-relaxed">
                       {SIMPLE_TRADES.includes(category)
                         ? <>Pick a time that suits you — the tradie will <strong>confirm availability</strong>.</>
                         : <>Pick when you're available to <strong>let the tradie in</strong> and walk them through the job.</>
@@ -1284,9 +1284,9 @@ export default function PostLead() {
               disabled={submitting || !scheduleMode}
               className={`w-full py-3.5 font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-lg ${
                 scheduleMode === 'urgent'
-                  ? 'bg-gradient-to-r from-warm-500 to-warm-500 text-white hover:from-warm-600 hover:to-warm-600 shadow-lg shadow-warm-200'
+                  ? 'bg-gradient-to-r from-warm-500 to-warm-500 text-white hover:from-warm-600 hover:to-warm-600 shadow-sm'
                   : scheduleMode === 'scheduled'
-                  ? 'bg-gradient-to-r from-secondary-400 to-secondary-400 text-white hover:from-secondary-500 hover:to-secondary-500 shadow-lg shadow-secondary-100'
+                  ? 'bg-gradient-to-r from-secondary-400 to-secondary-400 text-white hover:from-secondary-500 hover:to-secondary-500 shadow-sm'
                   : 'bg-gray-200 text-gray-500'
               }`}
             >

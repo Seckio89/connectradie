@@ -1111,7 +1111,7 @@ export default function ClientDashboard() {
                     const statusColor = isArchived ? 'bg-gray-100 text-gray-600 border-gray-200'
                       : job.status === 'completed' && isReleased ? 'bg-green-100 text-green-700 border-green-200'
                       : job.status === 'completed' ? 'bg-amber-100 text-amber-700 border-amber-200'
-                      : job.status === 'in_progress' ? 'bg-blue-100 text-blue-700 border-blue-200'
+                      : job.status === 'in_progress' ? 'bg-secondary-100 text-secondary-700 border-secondary-200'
                       : job.status === 'funded' ? 'bg-green-100 text-green-700 border-green-200'
                       : job.quoting_status === 'awarded' ? 'bg-green-100 text-green-700 border-green-200'
                       : job.quote_count > 0 ? 'bg-secondary-100 text-secondary-700 border-secondary-200'
@@ -1120,7 +1120,7 @@ export default function ClientDashboard() {
                     const accentColor = isArchived ? 'bg-gray-300'
                       : job.status === 'completed' && isReleased ? 'bg-green-400'
                       : job.status === 'completed' ? 'bg-amber-400'
-                      : job.status === 'in_progress' ? 'bg-blue-400'
+                      : job.status === 'in_progress' ? 'bg-secondary-400'
                       : job.status === 'funded' ? 'bg-green-400'
                       : job.quoting_status === 'awarded' ? 'bg-green-400'
                       : job.quote_count > 0 ? 'bg-secondary-400'
@@ -1341,7 +1341,7 @@ export default function ClientDashboard() {
                             {job.status === 'in_progress' && !pendingIncreases[job.id] && (
                               <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
                                 <span className="text-xs text-gray-400">Click to check progress</span>
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 !text-white text-xs font-semibold rounded-lg">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-600 !text-white text-xs font-semibold rounded-lg">
                                   <Eye className="w-3.5 h-3.5 text-white" />
                                   In Progress
                                 </span>
@@ -2016,7 +2016,7 @@ export default function ClientDashboard() {
                                                     const sDate = new Date((s.actual_date || s.scheduled_date) + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
                                                     const statusMap: Record<string, { text: string; label: string }> = {
                                                       completed: { text: 'text-green-700', label: 'Completed' },
-                                                      scheduled: { text: 'text-blue-700', label: 'Scheduled' },
+                                                      scheduled: { text: 'text-secondary-700', label: 'Scheduled' },
                                                       skipped: { text: 'text-gray-500', label: 'Skipped' },
                                                       extra: { text: 'text-amber-700', label: 'Extra' },
                                                       rescheduled: { text: 'text-yellow-700', label: 'Rescheduled' },

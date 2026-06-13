@@ -17,7 +17,7 @@ import { getBlockedDates, checkClash } from '../lib/availability';
 
 const STATUS_STYLES: Record<RecurringSessionStatus, { bg: string; text: string; label: string }> = {
   pending_confirmation: { bg: 'bg-amber-50 border-amber-300', text: 'text-amber-700', label: 'Awaiting Confirmation' },
-  scheduled: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700', label: 'Scheduled' },
+  scheduled: { bg: 'bg-secondary-50 border-secondary-200', text: 'text-secondary-700', label: 'Scheduled' },
   awaiting_completion: { bg: 'bg-orange-50 border-orange-300', text: 'text-orange-700', label: 'Confirm Completion' },
   completed: { bg: 'bg-green-50 border-green-200', text: 'text-green-700', label: 'Completed' },
   rescheduled: { bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-700', label: 'Rescheduled' },

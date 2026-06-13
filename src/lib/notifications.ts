@@ -40,27 +40,36 @@ export async function savePushPreferences(
   pushEnabled: boolean,
   subscription: PushSubscription | null
 ) {
+  try {
+    // Ensure push_subscription is a plain object (not a class instance)
+    const pushSubObj = subscription ? JSON.parse(JSON.stringify(subscription.toJSON())) : null;
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        push_enabled: pushEnabled,
+        push_subscription: pushSubObj,
+      })
+      .eq('id', userId);
 
-  // Ensure push_subscription is a plain object (not a class instance)
-  const pushSubObj = subscription ? JSON.parse(JSON.stringify(subscription.toJSON())) : null;
-  const { error } = await supabase
-    .from('profiles')
-    .update({
-      push_enabled: pushEnabled,
-      push_subscription: pushSubObj,
-    })
-    .eq('id', userId);
-
-  return !error;
+    return !error;
+  } catch (err) {
+    console.error('Failed to save push preferences:', err);
+    return false;
+  }
 }
 
 export async function saveSmsPreference(userId: string, enabled: boolean) {
-  const { error } = await supabase
-    .from('profiles')
-    .update({ sms_alerts_enabled: enabled })
-    .eq('id', userId);
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ sms_alerts_enabled: enabled })
+      .eq('id', userId);
 
-  return !error;
+    return !error;
+  } catch (err) {
+    console.error('Failed to save SMS preference:', err);
+    return false;
+  }
 }
 
 function extractCategory(description: string): string {
@@ -232,41 +241,46 @@ export async function notifyTradiesForNewLead(job: Job) {
 }
 
 export async function notifyTradiesForUrgentJob(job: Job) {
-  const { data: tradies } = await supabase
-    .from('profiles')
-    .select('id, full_name, push_enabled, sms_alerts_enabled, push_subscription')
-    .eq('role', 'tradie');
+  try {
+    const { data: tradies } = await supabase
+      .from('profiles')
+      .select('id, full_name, push_enabled, sms_alerts_enabled, push_subscription')
+      .eq('role', 'tradie');
 
-  if (!tradies || tradies.length === 0) return { push: 0, sms: 0 };
+    if (!tradies || tradies.length === 0) return { push: 0, sms: 0 };
 
-  // Record impressions so the nudge cron can age the lead and escalate if no quote.
-  const recipientIds = tradies.map((t: { id: string }) => t.id).filter((id) => id !== job.client_id);
-  if (recipientIds.length > 0) {
-    await supabase
-      .from('lead_impressions')
-      .upsert(
-        recipientIds.map((tradieId) => ({ job_id: job.id, tradie_id: tradieId })),
-        { onConflict: 'job_id,tradie_id', ignoreDuplicates: true },
+    // Record impressions so the nudge cron can age the lead and escalate if no quote.
+    const recipientIds = tradies.map((t: { id: string }) => t.id).filter((id) => id !== job.client_id);
+    if (recipientIds.length > 0) {
+      await supabase
+        .from('lead_impressions')
+        .upsert(
+          recipientIds.map((tradieId) => ({ job_id: job.id, tradie_id: tradieId })),
+          { onConflict: 'job_id,tradie_id', ignoreDuplicates: true },
+        );
+    }
+
+    let pushCount = 0;
+    let smsCount = 0;
+
+    type TradieNotifRow = { id: string; full_name: string | null; push_enabled: boolean; sms_alerts_enabled: boolean; push_subscription: unknown };
+    const pushEligible = tradies.filter((t: TradieNotifRow) => t.push_enabled && t.push_subscription);
+    if (pushEligible.length > 0) {
+      pushCount = pushEligible.length;
+    }
+
+    const smsEligible = tradies.filter((t: TradieNotifRow) => t.sms_alerts_enabled);
+    if (smsEligible.length > 0) {
+      const smsResult = simulateSmsAlert(
+        job,
+        smsEligible.map((t: TradieNotifRow) => t.full_name || 'Unknown Tradie')
       );
+      smsCount = smsResult.recipientCount;
+    }
+
+    return { push: pushCount, sms: smsCount };
+  } catch (err) {
+    console.error('Failed to notify tradies for urgent job:', err);
+    return { push: 0, sms: 0 };
   }
-
-  let pushCount = 0;
-  let smsCount = 0;
-
-  type TradieNotifRow = { id: string; full_name: string | null; push_enabled: boolean; sms_alerts_enabled: boolean; push_subscription: unknown };
-  const pushEligible = tradies.filter((t: TradieNotifRow) => t.push_enabled && t.push_subscription);
-  if (pushEligible.length > 0) {
-    pushCount = pushEligible.length;
-  }
-
-  const smsEligible = tradies.filter((t: TradieNotifRow) => t.sms_alerts_enabled);
-  if (smsEligible.length > 0) {
-    const smsResult = simulateSmsAlert(
-      job,
-      smsEligible.map((t: TradieNotifRow) => t.full_name || 'Unknown Tradie')
-    );
-    smsCount = smsResult.recipientCount;
-  }
-
-  return { push: pushCount, sms: smsCount };
 }

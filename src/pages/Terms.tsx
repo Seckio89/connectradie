@@ -66,9 +66,9 @@ export default function Terms() {
                 Please read these Terms of Service (&ldquo;Terms&rdquo;) carefully before using the ConnecTradie platform (&ldquo;Platform&rdquo;). These Terms constitute a binding legal agreement between you and ConnecTradie Pty Ltd. By creating an account or using the Platform, you confirm that you have read, understood, and agree to be bound by these Terms and our{' '}
                 <Link to="/privacy" className="text-primary-600 hover:text-primary-700 font-medium underline decoration-primary-300 underline-offset-2">Privacy Policy</Link>, which is incorporated by reference. If you do not agree, you must not use the Platform.
               </p>
-              <div className="mt-5 flex items-start gap-3 bg-blue-50/70 border border-blue-100 rounded-xl p-4">
-                <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-blue-800 leading-relaxed">
+              <div className="mt-5 flex items-start gap-3 bg-secondary-50/70 border border-secondary-100 rounded-xl p-4">
+                <Shield className="w-5 h-5 text-secondary-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-secondary-800 leading-relaxed">
                   <strong className="font-semibold">Legal Notice:</strong> These Terms are subject to the Australian Consumer Law (ACL) and the Competition and Consumer Act 2010 (Cth). Nothing in these Terms excludes rights that cannot be excluded by law.
                 </p>
               </div>

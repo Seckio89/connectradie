@@ -19,8 +19,8 @@ const features = [
     icon: MessageSquare,
     title: 'Direct Chat. No Middleman.',
     description: 'Message your tradie, share photos, and get updates in one thread. Everything stays on record.',
-    color: 'text-blue-400',
-    bg: 'bg-blue-500/10 border-blue-500/20',
+    color: 'text-secondary-400',
+    bg: 'bg-secondary-500/10 border-secondary-500/20',
   },
   {
     icon: Eye,

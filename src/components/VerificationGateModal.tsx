@@ -45,17 +45,17 @@ export default function VerificationGateModal({ isOpen, onClose, reason = 'unver
           </p>
 
           <div className={`border rounded-xl p-4 mb-6 ${
-            isExpired ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'
+            isExpired ? 'bg-red-50 border-red-200' : 'bg-secondary-50 border-secondary-200'
           }`}>
             <div className="flex items-start gap-3 text-left">
               <Shield className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
-                isExpired ? 'text-red-600' : 'text-blue-600'
+                isExpired ? 'text-red-600' : 'text-secondary-600'
               }`} />
               <div>
-                <p className={`text-sm font-medium ${isExpired ? 'text-red-900' : 'text-blue-900'}`}>
+                <p className={`text-sm font-medium ${isExpired ? 'text-red-900' : 'text-secondary-900'}`}>
                   {isExpired ? 'What to do' : 'How to get verified'}
                 </p>
-                <p className={`text-sm mt-1 ${isExpired ? 'text-red-700' : 'text-blue-800'}`}>
+                <p className={`text-sm mt-1 ${isExpired ? 'text-red-700' : 'text-secondary-800'}`}>
                   {isExpired
                     ? 'Go to Settings \u2192 Verification tab and upload your renewed trade license. Once verified, you can resume accepting jobs.'
                     : 'Go to Settings \u2192 Verification tab. Add your ABN and license number, then submit for review. Once approved you\'ll earn a trust badge, appear higher in search, and get access to urgent leads.'}

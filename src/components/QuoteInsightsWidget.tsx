@@ -126,16 +126,16 @@ export default function QuoteInsightsWidget() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-5">
-        <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
+        <div className="p-3 bg-secondary-50 rounded-xl border border-secondary-100">
           <div className="flex items-center gap-2 mb-1">
-            <Target className="w-4 h-4 text-blue-600" />
-            <span className="text-xs text-blue-600 font-medium">Win Rate</span>
+            <Target className="w-4 h-4 text-secondary-600" />
+            <span className="text-xs text-secondary-600 font-medium">Win Rate</span>
           </div>
-          <p className="text-2xl font-bold text-blue-800">{stats.winRate}%</p>
+          <p className="text-2xl font-bold text-secondary-800">{stats.winRate}%</p>
         </div>
         <div className="p-3 bg-white rounded-xl border border-gray-200">
           <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="w-4 h-4 text-blue-600" />
+            <DollarSign className="w-4 h-4 text-secondary-600" />
             <span className="text-xs text-gray-500 font-medium">Quoted Earnings</span>
           </div>
           <p className="text-2xl font-bold text-gray-800">${stats.totalEarned.toLocaleString()}</p>

@@ -287,7 +287,7 @@ export default function UpcomingTimeline() {
                   const accentClass = item.warning
                     ? 'bg-amber-100 text-amber-700'
                     : item.icon === 'session'
-                      ? 'bg-blue-100 text-blue-600'
+                      ? 'bg-secondary-100 text-secondary-600'
                       : item.icon === 'invoice'
                         ? 'bg-secondary-100 text-secondary-700'
                         : 'bg-emerald-100 text-emerald-700';

@@ -6,10 +6,16 @@
       "Bash(git reset *)",
       "Bash(supabase --version)",
       "Bash(rm -f .git/index.lock)",
-      "Bash(bash commit-audit-fixes.sh)"
+      "Bash(bash commit-audit-fixes.sh)",
+      "PowerShell(supabase --version)",
+      "PowerShell(npx supabase --version)",
+      "PowerShell(npx supabase functions deploy --project-ref uoqygmizupdpanplpvor 2>&1)",
+      "Bash(rm -f .git/index.lock && git add supabase/functions/release-escrow/index.ts && git commit -m \"fix: handle payout failure gracefully for destination charges\" && git push origin master)",
+      "PowerShell(npx supabase functions deploy release-escrow --project-ref uoqygmizupdpanplpvor 2>&1)"
     ],
     "additionalDirectories": [
-      "\\tmp"
+      "\\tmp",
+      "C:\\Users\\User\\Desktop\\project\\.git"
     ]
   }
 }

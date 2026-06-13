@@ -94,7 +94,32 @@
       "Bash(npm list *)",
       "Bash(npm info *)",
       "Bash(ls -la /mnt/c/Users/User/Desktop/project/ 2>/dev/null || ls -la \"C:/Users/User/Desktop/project/\" 2>/dev/null || pwd)",
-      "Read(//mnt/c/Users/User/Desktop/**)"
+      "Read(//mnt/c/Users/User/Desktop/**)",
+      "Bash(bash -c \"supabase functions deploy release-escrow\")",
+      "Bash(bash -c \"npx supabase functions deploy release-escrow --project-ref uoqygmizupdpanplpvor\")",
+      "Bash(rm -f .git/index.lock && git add src/pages/ClientDashboard.tsx src/pages/Leads.tsx src/pages/Jobs.tsx src/pages/LeaveReview.tsx src/pages/PaymentHistory.tsx && git commit -m \"fix: detect released destination-charge payments via released_at metadata\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/pages/ClientDashboard.tsx src/pages/Leads.tsx src/pages/Jobs.tsx src/pages/LeaveReview.tsx src/pages/PaymentHistory.tsx src/components/DashboardLayout.tsx && git commit -m \"fix: improve release payment UX — prominent banner, sidebar badge, released_at detection\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/pages/ClientDashboard.tsx src/pages/Leads.tsx src/pages/Jobs.tsx src/pages/LeaveReview.tsx src/pages/PaymentHistory.tsx src/components/DashboardLayout.tsx && git commit -m \"feat: show pending payments in dashboard invoice widget, improve release UX\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/pages/ClientDashboard.tsx src/pages/Leads.tsx src/pages/Jobs.tsx src/pages/LeaveReview.tsx src/pages/PaymentHistory.tsx src/components/DashboardLayout.tsx && git commit -m \"fix: refresh sidebar release badge on navigation, add pending payments to invoice widget\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/components/DashboardLayout.tsx && git commit -m \"style: refine sidebar release badge to subtle dot + text\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/App.tsx && git commit -m \"fix: use custom ErrorBoundary at app root for auto-reload on stale chunks\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/pages/ClientDashboard.tsx src/App.tsx && git commit -m \"fix: show pending quotes for recurring-linked jobs, use custom ErrorBoundary at app root\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/pages/ClientDashboard.tsx src/pages/Leads.tsx src/components/ClientServicesTab.tsx && git commit -m \"fix: smart job navigation from dashboard, show quotes on ongoing services\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/pages/Leads.tsx && git commit -m \"fix: auto-switch to correct tab when deep-linking to recurring-linked jobs\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/components/ClientServicesTab.tsx src/pages/Leads.tsx && git commit -m \"fix: inline Accept & Pay button for quotes on ongoing services\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/components/ClientServicesTab.tsx && git commit -m \"fix: two-step quote flow — View Quote expands details before Accept & Pay\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/components/ClientServicesTab.tsx && git commit -m \"feat: show full quote details — tradie profile, message, duration, rating — before Accept & Pay\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/components/DashboardLayout.tsx && git commit -m \"style: simplify sidebar badge to minimal dot indicator\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/components/DashboardLayout.tsx src/pages/ClientDashboard.tsx && git commit -m \"style: amber sidebar dot with pulse, auto-scroll and highlight ring on release banner\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/components/DashboardLayout.tsx && git commit -m \"fix: align sidebar dot with dashboard banner — only show for completed jobs awaiting release\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/components/DashboardLayout.tsx && git commit -m \"fix: align sidebar dot with dashboard banner\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/pages/ClientDashboard.tsx src/components/DashboardLayout.tsx && git commit -m \"feat: consolidated Needs Attention card at top of dashboard with sidebar dot\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/pages/ClientDashboard.tsx && git commit -m \"style: tone down ongoing service card — neutral colors, subtle accents\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add -A && git commit -m \"fix: repair 8 failing tests, wrap 11 more Supabase calls, replace 124 off-palette blues, reduce heavy shadows\" && git push origin master)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\User\\Desktop\\project\\.git",
+      "C:\\Users\\User\\Desktop\\project\\.git"
     ]
   }
 }

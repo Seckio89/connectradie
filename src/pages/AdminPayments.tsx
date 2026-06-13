@@ -157,7 +157,7 @@ export default function AdminPayments() {
       active: 'bg-green-100 text-green-700',
       canceled: 'bg-red-100 text-red-700',
       past_due: 'bg-amber-100 text-amber-700',
-      trialing: 'bg-blue-100 text-blue-700',
+      trialing: 'bg-secondary-100 text-secondary-700',
     };
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[status] || 'bg-gray-100 text-gray-600'}`}>
@@ -168,7 +168,7 @@ export default function AdminPayments() {
 
   const getTypeBadge = (type: string) => {
     const map: Record<string, string> = {
-      lead_unlock: 'bg-blue-50 text-blue-700',
+      lead_unlock: 'bg-secondary-50 text-secondary-700',
       job_access: 'bg-purple-50 text-purple-700',
       job_funding: 'bg-green-50 text-green-700',
       job_payment: 'bg-green-50 text-green-700',
@@ -209,8 +209,8 @@ export default function AdminPayments() {
           {/* Client Payments */}
           <div className="bg-white rounded-2xl border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-blue-50 rounded-xl">
-                <ArrowDownRight className="w-5 h-5 text-blue-600" />
+              <div className="p-2.5 bg-secondary-50 rounded-xl">
+                <ArrowDownRight className="w-5 h-5 text-secondary-600" />
               </div>
               <span className="text-sm font-medium text-gray-500">Client Payments</span>
             </div>
@@ -440,9 +440,9 @@ export default function AdminPayments() {
             <>
               {/* Tradie Payouts */}
               <div className="p-4 border-b border-gray-100">
-                <div className="flex items-start gap-2 px-3 py-2.5 bg-blue-50 border border-blue-200 rounded-lg">
-                  <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-blue-800 leading-relaxed">
+                <div className="flex items-start gap-2 px-3 py-2.5 bg-secondary-50 border border-secondary-200 rounded-lg">
+                  <Info className="w-4 h-4 text-secondary-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-secondary-800 leading-relaxed">
                     Estimated payouts after <strong>platform fee (varies by tier)</strong>, <strong>processing margin ({PLATFORM_MARGIN_LABEL})</strong>, and <strong>Stripe fee ({STRIPE_FEE_LABEL})</strong> are deducted.
                   </p>
                 </div>
@@ -549,8 +549,8 @@ export default function AdminPayments() {
                         <p className="text-xl font-bold text-gray-900">{formatCurrency(totalPlatformFees)}</p>
                         <p className="text-xs text-gray-500 mt-1">{formatCurrency(monthPlatformFees)} this month</p>
                       </div>
-                      <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                        <p className="text-xs font-medium text-blue-700 mb-1">Processing Margin ({PLATFORM_MARGIN_LABEL})</p>
+                      <div className="bg-secondary-50 rounded-xl p-4 border border-secondary-200">
+                        <p className="text-xs font-medium text-secondary-700 mb-1">Processing Margin ({PLATFORM_MARGIN_LABEL})</p>
                         <p className="text-xl font-bold text-gray-900">{formatCurrency(totalPlatformMargin)}</p>
                         <p className="text-xs text-gray-500 mt-1">{formatCurrency(monthPlatformMargin)} this month</p>
                       </div>
@@ -591,7 +591,7 @@ export default function AdminPayments() {
                               <td className="px-5 py-4 text-sm font-semibold text-warm-700 text-right">
                                 {formatCurrency(platformFee)}
                               </td>
-                              <td className="px-5 py-4 text-sm font-semibold text-blue-700 text-right">
+                              <td className="px-5 py-4 text-sm font-semibold text-secondary-700 text-right">
                                 {formatCurrency(processingFee)}
                               </td>
                               <td className="px-5 py-4 text-sm text-gray-400 text-right">
@@ -620,7 +620,7 @@ export default function AdminPayments() {
                           </div>
                           <div className="flex items-center gap-3 text-xs">
                             <span className="text-warm-700 font-semibold">Platform: {formatCurrency(platformFee)}</span>
-                            <span className="text-blue-700 font-semibold">Margin: {formatCurrency(processingFee)}</span>
+                            <span className="text-secondary-700 font-semibold">Margin: {formatCurrency(processingFee)}</span>
                           </div>
                           <p className="text-xs text-gray-400">{formatDate(payment.created_at)}</p>
                         </div>

@@ -14,7 +14,7 @@ interface PlatformUpdate {
 }
 
 const typeConfig = {
-  tos: { icon: Shield, label: 'Terms of Service', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', badge: 'bg-blue-100 text-blue-700' },
+  tos: { icon: Shield, label: 'Terms of Service', color: 'text-secondary-600', bg: 'bg-secondary-50', border: 'border-secondary-200', badge: 'bg-secondary-100 text-secondary-700' },
   policy: { icon: Shield, label: 'Policy Update', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200', badge: 'bg-purple-100 text-purple-700' },
   feature: { icon: Sparkles, label: 'New Feature', color: 'text-warm-600', bg: 'bg-warm-50', border: 'border-warm-200', badge: 'bg-warm-100 text-warm-700' },
   recommendation: { icon: Lightbulb, label: 'Recommendation', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', badge: 'bg-amber-100 text-amber-700' },
@@ -23,7 +23,7 @@ const typeConfig = {
 
 const priorityConfig = {
   low: { bar: 'bg-gray-300' },
-  normal: { bar: 'bg-blue-500' },
+  normal: { bar: 'bg-secondary-500' },
   high: { bar: 'bg-amber-500' },
   critical: { bar: 'bg-red-500' },
 };

@@ -670,9 +670,9 @@ export default function Payouts() {
             <p className="text-gray-600 mb-2 max-w-md mx-auto">
               Connect your bank account to receive payments directly from completed jobs.
             </p>
-            <div className="flex items-start gap-2 px-3 py-2.5 bg-blue-50 border border-blue-200 rounded-lg mb-6 max-w-md mx-auto text-left">
-              <Shield className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-blue-800 leading-relaxed">
+            <div className="flex items-start gap-2 px-3 py-2.5 bg-secondary-50 border border-secondary-200 rounded-lg mb-6 max-w-md mx-auto text-left">
+              <Shield className="w-4 h-4 text-secondary-600 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-secondary-800 leading-relaxed">
                 You'll need your <strong>BSB, account number, and ABN</strong>. Setup takes about 2 minutes. Payments processed securely by Stripe.
               </p>
             </div>

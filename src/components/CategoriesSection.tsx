@@ -56,7 +56,7 @@ const colorClasses = {
   sky: {
     bg: 'bg-navy-800',
     bgHover: 'group-hover:bg-navy-700',
-    icon: 'text-blue-600',
+    icon: 'text-secondary-600',
     border: 'border-navy-700',
   },
   amber: {

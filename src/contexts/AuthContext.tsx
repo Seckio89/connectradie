@@ -39,37 +39,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signingInRef = useRef(false);
 
   const fetchProfile = async (userId: string, retries = 3) => {
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
+    try {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
 
-    if (profileData) {
-      setProfile(profileData as Profile);
+      if (profileData) {
+        setProfile(profileData as Profile);
 
-      if ((profileData as Profile).role === 'tradie') {
-        const { data: tradieData } = await supabase
-          .from('tradie_details')
-          .select('*')
-          .eq('profile_id', userId)
-          .maybeSingle();
-        setTradieDetails(tradieData as TradieDetails | null);
+        if ((profileData as Profile).role === 'tradie') {
+          const { data: tradieData } = await supabase
+            .from('tradie_details')
+            .select('*')
+            .eq('profile_id', userId)
+            .maybeSingle();
+          setTradieDetails(tradieData as TradieDetails | null);
+        }
+      } else if (retries > 0) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return fetchProfile(userId, retries - 1);
       }
-    } else if (retries > 0) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return fetchProfile(userId, retries - 1);
+    } catch (err) {
+      console.error('Failed to fetch profile:', err);
     }
   };
 
   // Check if a user's profile exists; if not, they were removed
   const checkProfileExists = async (userId: string): Promise<boolean> => {
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', userId)
-      .maybeSingle();
-    return !!profileData;
+    try {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+      return !!profileData;
+    } catch (err) {
+      console.error('Failed to check profile existence:', err);
+      // Default to true so we don't incorrectly block login on transient errors
+      return true;
+    }
   };
 
   useEffect(() => {
@@ -151,10 +161,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Store phone on the profile if signup succeeded and phone was provided
     if (!error && data.user && phone) {
-      await supabase
-        .from('profiles')
-        .update({ phone })
-        .eq('id', data.user.id);
+      try {
+        await supabase
+          .from('profiles')
+          .update({ phone })
+          .eq('id', data.user.id);
+      } catch (err) {
+        console.error('Failed to update phone on profile:', err);
+      }
     }
 
     if (!error) trackEvent(GA_EVENTS.SIGN_UP, { method: 'email' });
@@ -178,13 +192,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!profileExists) {
         // Profile was deleted — check if self-deleted or admin-removed
-        const { data: removal } = await supabase
-          .from('account_removals')
-          .select('reason, additional_message')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        let removal: { reason: string; additional_message: string } | null = null;
+        try {
+          const { data: removalData } = await supabase
+            .from('account_removals')
+            .select('reason, additional_message')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          removal = removalData;
+        } catch (err) {
+          console.error('Failed to fetch account removal details:', err);
+        }
 
         const isSelfDeleted = removal?.reason === 'self_deleted';
 

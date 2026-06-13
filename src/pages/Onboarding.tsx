@@ -230,7 +230,7 @@ export default function Onboarding() {
           </div>
         )}
 
-        <div className="bg-white py-8 px-4 shadow-xl shadow-gray-200/50 rounded-2xl sm:px-10 border border-gray-100">
+        <div className="bg-white py-8 px-4 shadow-sm rounded-2xl sm:px-10 border border-gray-100">
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
               <X className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />

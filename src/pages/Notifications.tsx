@@ -51,7 +51,7 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
     case 'new_job':
     case 'new_lead':
     case 'booking_request':
-      return { icon: Briefcase, bgClass: 'bg-blue-100', iconClass: 'text-blue-600' };
+      return { icon: Briefcase, bgClass: 'bg-secondary-100', iconClass: 'text-secondary-600' };
     case 'quote_reminder':
       return { icon: Clock, bgClass: 'bg-amber-100', iconClass: 'text-amber-600' };
     case 'payment':
@@ -88,7 +88,7 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
       return { icon: AlertTriangle, bgClass: 'bg-red-100', iconClass: 'text-red-600' };
     case 'vacancy_application':
     case 'team':
-      return { icon: Users, bgClass: 'bg-blue-100', iconClass: 'text-blue-600' };
+      return { icon: Users, bgClass: 'bg-secondary-100', iconClass: 'text-secondary-600' };
     case 'JOB_DECLINED':
       return { icon: XCircle, bgClass: 'bg-red-100', iconClass: 'text-red-600' };
     case 'JOB_COMPLETED':
@@ -96,9 +96,9 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
     case 'REVIEW_RECEIVED':
       return { icon: Star, bgClass: 'bg-amber-100', iconClass: 'text-amber-600' };
     case 'project_update':
-      return { icon: FileText, bgClass: 'bg-blue-100', iconClass: 'text-blue-600' };
+      return { icon: FileText, bgClass: 'bg-secondary-100', iconClass: 'text-secondary-600' };
     case 'job_reminder_day_before':
-      return { icon: CalendarDays, bgClass: 'bg-blue-100', iconClass: 'text-blue-600' };
+      return { icon: CalendarDays, bgClass: 'bg-secondary-100', iconClass: 'text-secondary-600' };
     case 'job_reminder_two_hours':
     case 'tradie_en_route':
       return { icon: Clock, bgClass: 'bg-amber-100', iconClass: 'text-amber-600' };
@@ -114,7 +114,7 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
       return { icon: AlertTriangle, bgClass: 'bg-amber-100', iconClass: 'text-amber-600' };
     case 'message':
     case 'new_message':
-      return { icon: MessageCircle, bgClass: 'bg-blue-100', iconClass: 'text-blue-600' };
+      return { icon: MessageCircle, bgClass: 'bg-secondary-100', iconClass: 'text-secondary-600' };
     default:
       return { icon: Bell, bgClass: 'bg-gray-100', iconClass: 'text-gray-500' };
   }

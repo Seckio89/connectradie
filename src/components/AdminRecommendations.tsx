@@ -31,7 +31,7 @@ const CATEGORY_CONFIG: Record<
   { icon: typeof TrendingUp; label: string; color: string; bg: string; border: string }
 > = {
   growth: { icon: TrendingUp, label: 'Growth', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-  pricing: { icon: DollarSign, label: 'Pricing', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
+  pricing: { icon: DollarSign, label: 'Pricing', color: 'text-secondary-600', bg: 'bg-secondary-50', border: 'border-secondary-200' },
   promotions: { icon: Megaphone, label: 'Promotions', color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-200' },
   trends: { icon: BarChart3, label: 'Trends', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' },
   operations: { icon: Settings, label: 'Operations', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200' },
@@ -40,7 +40,7 @@ const CATEGORY_CONFIG: Record<
 const PRIORITY_CONFIG: Record<RecommendationPriority, { label: string; dot: string; text: string }> = {
   high: { label: 'High', dot: 'bg-red-500', text: 'text-red-700' },
   medium: { label: 'Medium', dot: 'bg-amber-500', text: 'text-amber-700' },
-  low: { label: 'Low', dot: 'bg-blue-400', text: 'text-blue-600' },
+  low: { label: 'Low', dot: 'bg-secondary-400', text: 'text-secondary-600' },
 };
 
 type FilterCategory = RecommendationCategory | 'all';
@@ -307,7 +307,7 @@ export default function AdminRecommendations() {
                 >
                   {/* Priority indicator bar */}
                   <div className={`w-1 self-stretch rounded-full flex-shrink-0 ${
-                    rec.priority === 'high' ? 'bg-red-400' : rec.priority === 'medium' ? 'bg-amber-400' : 'bg-blue-300'
+                    rec.priority === 'high' ? 'bg-red-400' : rec.priority === 'medium' ? 'bg-amber-400' : 'bg-secondary-300'
                   }`} />
 
                   <div className={`p-1.5 rounded-md flex-shrink-0 mt-0.5 ${catConfig.bg}`}>

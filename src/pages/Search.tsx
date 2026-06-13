@@ -1098,11 +1098,11 @@ export default function Search() {
         {isClient && !isEngaged && (
           <div className="max-w-[1600px] mx-auto mb-4">
             {remainingViews === DAILY_VIEW_LIMIT_VALUE ? (
-              <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl">
-                <Eye className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                <p className="text-sm text-blue-800">
+              <div className="flex items-center gap-3 px-4 py-3 bg-secondary-50 border border-secondary-200 rounded-xl">
+                <Eye className="w-5 h-5 text-secondary-600 flex-shrink-0" />
+                <p className="text-sm text-secondary-800">
                   Free accounts can view <span className="font-semibold">{DAILY_VIEW_LIMIT_VALUE}</span> tradie profiles per day.{' '}
-                  <Link to="/post-lead" className="font-semibold underline hover:text-blue-900">Post a job</Link> to unlock unlimited access.
+                  <Link to="/post-lead" className="font-semibold underline hover:text-secondary-900">Post a job</Link> to unlock unlimited access.
                 </p>
               </div>
             ) : remainingViews > 0 && remainingViews <= 3 ? (
@@ -1122,7 +1122,7 @@ export default function Search() {
                 </p>
                 <div className="flex items-center justify-center gap-4">
                   <span className="text-2xl font-bold text-warm-600">$45/mo</span>
-                  <button onClick={() => setShowSubscriptionModal(true)} className="px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors shadow-lg shadow-warm-200">
+                  <button onClick={() => setShowSubscriptionModal(true)} className="px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors shadow-sm">
                     Upgrade to Pro
                   </button>
                 </div>

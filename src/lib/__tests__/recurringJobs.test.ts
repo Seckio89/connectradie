@@ -160,7 +160,7 @@ describe('recurringJobs', () => {
       expect(suggestion.tradeCategory).toBe('plumbing');
       expect(suggestion.frequencyMonths).toBe(12);
       expect(suggestion.label).toBe('Annual plumbing inspection');
-      expect(suggestion.description).toContain('plumbing inspection');
+      expect(suggestion.description).toContain('Plumbing inspection');
     });
 
     it('normalises trade category with spaces and mixed case', () => {

@@ -1345,7 +1345,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
       // Ready to Release — make it stand out as an action-required badge
       return 'bg-emerald-100 text-emerald-800 border-emerald-300';
     }
-    if (lead.status === 'in_progress') return 'bg-blue-100 text-blue-700 border-blue-200';
+    if (lead.status === 'in_progress') return 'bg-secondary-100 text-secondary-700 border-secondary-200';
     if (lead.status === 'funded') return 'bg-green-100 text-green-700 border-green-200';
     if (lead.status === 'accepted') return 'bg-secondary-100 text-secondary-700 border-secondary-200';
     if (lead.quoting_status === 'awarded') return 'bg-green-100 text-green-700 border-green-200';
@@ -1518,7 +1518,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       Budget ${lead.budget_amount.toLocaleString()}
                     </span>
                   ) : lead.budget_type === 'request_quote' ? (
-                    <span className="inline-flex items-center gap-1 text-blue-600 font-medium">
+                    <span className="inline-flex items-center gap-1 text-secondary-600 font-medium">
                       <FileText className="w-3 h-3" />
                       Quote Requested
                     </span>
@@ -1804,7 +1804,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
           {!isTradie && lead.status === 'in_progress' && lead.tradie_id && !pendingIncreases[lead.id] && (
             <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-gray-100">
-              <div className="flex items-center gap-2 text-sm text-blue-600">
+              <div className="flex items-center gap-2 text-sm text-secondary-600">
                 <Loader2 className="w-4 h-4" />
                 Work in progress
               </div>
@@ -2648,11 +2648,11 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     </div>
                   )}
                   {vl.allows_site_inspection && !['Cleaner', 'Handyman', 'Pest Control', 'Locksmith', 'Appliance Repair', 'Private Chef', 'Event Catering', 'Security Systems', 'Garage Doors'].includes(vlCategory) && (
-                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-blue-50 rounded-xl">
-                      <Eye className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-secondary-50 rounded-xl">
+                      <Eye className="w-4 h-4 text-secondary-500 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Site Inspection</p>
-                        <p className="text-sm text-blue-700 mt-0.5">Client allows inspections</p>
+                        <p className="text-sm text-secondary-700 mt-0.5">Client allows inspections</p>
                       </div>
                     </div>
                   )}
@@ -2851,7 +2851,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   </div>
                 )}
                 {ej.scheduled_date && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-lg text-xs text-blue-700">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-50 rounded-lg text-xs text-secondary-700">
                     <Clock className="w-3.5 h-3.5" />
                     {new Date(ej.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </div>

@@ -172,7 +172,7 @@ interface MilestoneEditorProps {
 
 const STATUS_CONFIG: Record<MilestoneStatus, { label: string; color: string; bg: string; icon: typeof Clock }> = {
   pending: { label: 'Pending', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200', icon: Clock },
-  approved: { label: 'Approved', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200', icon: CheckCircle2 },
+  approved: { label: 'Approved', color: 'text-secondary-700', bg: 'bg-secondary-50 border-secondary-200', icon: CheckCircle2 },
   paid: { label: 'Paid', color: 'text-green-700', bg: 'bg-green-50 border-green-200', icon: DollarSign },
 };
 

@@ -40,7 +40,7 @@ export default function ForTradiesSection() {
               </div>
               <div className="p-5 space-y-3">
                 {[
-                  { day: 'Mon 12', job: 'Bathroom reno — Parramatta', team: ['J', 'K'], time: 'Morning', color: 'bg-blue-50 border-blue-200 text-blue-800', conflict: false },
+                  { day: 'Mon 12', job: 'Bathroom reno — Parramatta', team: ['J', 'K'], time: 'Morning', color: 'bg-secondary-50 border-secondary-200 text-secondary-800', conflict: false },
                   { day: 'Tue 13', job: 'Electrical switchboard — Penrith', team: ['M'], time: 'Afternoon', color: 'bg-amber-50 border-amber-200 text-amber-800', conflict: false },
                   { day: 'Wed 14', job: 'Roof inspection — Blacktown', team: ['J', 'K', 'L'], time: 'Morning', color: 'bg-violet-50 border-violet-200 text-violet-800', conflict: false },
                   { day: 'Thu 15', job: 'Kitchen fit-out — Campbelltown', team: ['M', 'K'], time: 'Full Day', color: 'bg-emerald-50 border-emerald-200 text-emerald-800', conflict: false },

@@ -896,7 +896,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                                         return cat ? <span className="capitalize">{cat.replace(/_/g, ' ')}</span> : null;
                                       })()}
                                       {job.title && /ongoing|recurring/i.test(job.title) && (
-                                        <span className="inline-flex items-center gap-1 text-blue-500">
+                                        <span className="inline-flex items-center gap-1 text-secondary-500">
                                           <Repeat className="w-3 h-3" />
                                           Ongoing
                                         </span>
@@ -1021,7 +1021,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                         return cat ? <span className="capitalize">{cat.replace(/_/g, ' ')}</span> : null;
                       })()}
                       {job.title && /ongoing|recurring/i.test(job.title) && (
-                        <span className="inline-flex items-center gap-1 text-blue-500">
+                        <span className="inline-flex items-center gap-1 text-secondary-500">
                           <Repeat className="w-3 h-3" />
                           Ongoing
                         </span>

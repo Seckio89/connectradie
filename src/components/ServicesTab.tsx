@@ -1561,7 +1561,7 @@ function JobCard({
                     const d = new Date((s.actual_date || s.scheduled_date) + 'T00:00:00');
                     return (
                       <div key={s.id} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
-                        <Calendar className="w-3 h-3 text-blue-400 flex-shrink-0" />
+                        <Calendar className="w-3 h-3 text-secondary-400 flex-shrink-0" />
                         <span className="text-xs text-gray-700 font-medium">
                           {d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
                         </span>

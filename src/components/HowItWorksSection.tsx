@@ -34,7 +34,7 @@ const tradieSteps = [
 
 const colorClasses = {
   primary: { bg: 'bg-gray-800', text: 'text-indigo-600', light: 'bg-navy-700' },
-  blue: { bg: 'bg-gray-800', text: 'text-blue-600', light: 'bg-navy-700' },
+  blue: { bg: 'bg-gray-800', text: 'text-secondary-600', light: 'bg-navy-700' },
   green: { bg: 'bg-gray-800', text: 'text-emerald-600', light: 'bg-navy-700' },
   amber: { bg: 'bg-gray-800', text: 'text-amber-500', light: 'bg-navy-700' },
 };

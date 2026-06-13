@@ -20,16 +20,16 @@ describe('Fee Calculator', () => {
     expect(result.platformFee).toBe(1000);
   });
 
-  it('calculates platformFee at 0% for pro tier', () => {
+  it('calculates platformFee at 5% for pro tier', () => {
     const result = calculateFees(10000, true);
     expect(result.platformFee).toBe(Math.round(10000 * PLATFORM_FEE_RATE_PRO));
-    expect(result.platformFee).toBe(0);
+    expect(result.platformFee).toBe(500);
   });
 
-  it('calculates processing fee at 2%', () => {
+  it('calculates processing fee at 3.5%', () => {
     const result = calculateFees(10000, false);
     expect(result.processingFee).toBe(Math.round(10000 * PROCESSING_FEE_RATE));
-    expect(result.processingFee).toBe(200);
+    expect(result.processingFee).toBe(350);
   });
 
   it('calculates stripe fee as 1.75% + 30c', () => {

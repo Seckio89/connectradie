@@ -75,7 +75,7 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
     case 'new_job':
     case 'new_lead':
     case 'booking_request':
-      return { icon: Briefcase, bgClass: 'bg-blue-500/15', iconClass: 'text-blue-400' };
+      return { icon: Briefcase, bgClass: 'bg-secondary-500/15', iconClass: 'text-secondary-400' };
     case 'quote_reminder':
       return { icon: Clock, bgClass: 'bg-amber-500/15', iconClass: 'text-amber-400' };
     case 'payment':
@@ -100,7 +100,7 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
       return { icon: CalendarDays, bgClass: 'bg-purple-500/15', iconClass: 'text-purple-400' };
     case 'vacancy_application':
     case 'team':
-      return { icon: Users, bgClass: 'bg-blue-500/15', iconClass: 'text-blue-400' };
+      return { icon: Users, bgClass: 'bg-secondary-500/15', iconClass: 'text-secondary-400' };
     case 'price_increase_requested':
       return { icon: DollarSign, bgClass: 'bg-amber-500/15', iconClass: 'text-amber-400' };
     case 'price_adjusted':
@@ -112,9 +112,9 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
     case 'REVIEW_RECEIVED':
       return { icon: Star, bgClass: 'bg-amber-500/15', iconClass: 'text-amber-400' };
     case 'project_update':
-      return { icon: FileText, bgClass: 'bg-blue-500/15', iconClass: 'text-blue-400' };
+      return { icon: FileText, bgClass: 'bg-secondary-500/15', iconClass: 'text-secondary-400' };
     case 'job_reminder_day_before':
-      return { icon: CalendarDays, bgClass: 'bg-blue-500/15', iconClass: 'text-blue-400' };
+      return { icon: CalendarDays, bgClass: 'bg-secondary-500/15', iconClass: 'text-secondary-400' };
     case 'job_reminder_two_hours':
     case 'tradie_en_route':
       return { icon: Clock, bgClass: 'bg-amber-500/15', iconClass: 'text-amber-400' };

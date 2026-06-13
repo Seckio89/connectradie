@@ -803,9 +803,9 @@ export default function VerificationCenter() {
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-blue-800">
+              <div className="flex items-start gap-3 p-4 bg-secondary-50 border border-secondary-200 rounded-lg">
+                <Shield className="w-5 h-5 text-secondary-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-secondary-800">
                   Your documents are processed securely and are <strong>never stored</strong> on ConnecTradie servers. Handled in accordance with Australian Privacy Principles.
                 </p>
               </div>

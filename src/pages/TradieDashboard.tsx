@@ -1022,7 +1022,7 @@ export default function TradieDashboard() {
                     }
                   }} className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex items-center gap-3">
-                      <Briefcase className="w-4 h-4 text-blue-500" />
+                      <Briefcase className="w-4 h-4 text-secondary-500" />
                       <span className="text-sm text-gray-700">{pendingJobs.length} pending job{pendingJobs.length !== 1 ? 's' : ''} to review</span>
                     </div>
                     <span className="text-sm font-medium text-emerald-600">
@@ -1044,7 +1044,7 @@ export default function TradieDashboard() {
                     }
                   }} className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex items-center gap-3">
-                      <Clock className="w-4 h-4 text-blue-500" />
+                      <Clock className="w-4 h-4 text-secondary-500" />
                       <span className="text-sm text-gray-700">{inProgressJobs.length} job{inProgressJobs.length !== 1 ? 's' : ''} in progress</span>
                     </div>
                     <span className="text-sm font-medium text-emerald-600">
@@ -1228,7 +1228,7 @@ export default function TradieDashboard() {
                                   Budget ${lead.budget_amount.toLocaleString()}
                                 </span>
                               ) : lead.budget_type === 'request_quote' ? (
-                                <span className="inline-flex items-center gap-1 text-blue-600 font-medium">
+                                <span className="inline-flex items-center gap-1 text-secondary-600 font-medium">
                                   <FileText className="w-3 h-3" />
                                   Quote Requested
                                 </span>
@@ -2083,8 +2083,8 @@ export default function TradieDashboard() {
 
             <div className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md transition-shadow">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 bg-secondary-100 rounded-xl flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-secondary-600" />
                 </div>
                 <div>
                   <p className="text-sm text-navy-500 font-medium">Booked Slots</p>
@@ -2095,8 +2095,8 @@ export default function TradieDashboard() {
 
             <Link to="/work?tab=active" className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md hover:border-primary-300 transition-all cursor-pointer">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                  <Users className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 bg-secondary-50 rounded-xl flex items-center justify-center">
+                  <Users className="w-6 h-6 text-secondary-600" />
                 </div>
                 <div>
                   <p className="text-sm text-navy-500 font-medium">Active Jobs</p>
@@ -2110,8 +2110,8 @@ export default function TradieDashboard() {
               className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md transition-all cursor-pointer text-left"
             >
               <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isProUser ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                  <Crown className={`w-6 h-6 ${isProUser ? 'text-blue-600' : 'text-gray-500'}`} />
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isProUser ? 'bg-secondary-100' : 'bg-gray-100'}`}>
+                  <Crown className={`w-6 h-6 ${isProUser ? 'text-secondary-600' : 'text-gray-500'}`} />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-navy-500 font-medium">Your Plan</p>
@@ -2130,23 +2130,23 @@ export default function TradieDashboard() {
         {(earnings.total > 0 || earnings.thisMonth > 0 || earnings.pendingJobs > 0) && (
         <div className="mt-6 bg-white rounded-2xl border border-gray-200 p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
+            <div className="p-2 bg-secondary-50 rounded-lg">
+              <TrendingUp className="w-5 h-5 text-secondary-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">Earnings Summary</h3>
           </div>
           <div className="grid grid-cols-3 gap-4">
-            <div className="bg-blue-50 rounded-xl p-4 text-center">
-              <Calendar className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+            <div className="bg-secondary-50 rounded-xl p-4 text-center">
+              <Calendar className="w-5 h-5 text-secondary-600 mx-auto mb-1" />
               {earnings.thisMonth > 0 ? (
-                <p className="text-xl font-bold text-blue-700">${earnings.thisMonth.toLocaleString()}</p>
+                <p className="text-xl font-bold text-secondary-700">${earnings.thisMonth.toLocaleString()}</p>
               ) : (
-                <p className="text-sm text-blue-600 font-medium mt-1">Quote on leads to start earning</p>
+                <p className="text-sm text-secondary-600 font-medium mt-1">Quote on leads to start earning</p>
               )}
-              <p className="text-xs text-blue-600 mt-1">This Month</p>
+              <p className="text-xs text-secondary-600 mt-1">This Month</p>
             </div>
             <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
-              <TrendingUp className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+              <TrendingUp className="w-5 h-5 text-secondary-600 mx-auto mb-1" />
               {earnings.total > 0 ? (
                 <p className="text-xl font-bold text-gray-800">${earnings.total.toLocaleString()}</p>
               ) : (
@@ -2155,7 +2155,7 @@ export default function TradieDashboard() {
               <p className="text-xs text-gray-500 mt-1">All Time</p>
             </div>
             <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
-              <Briefcase className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+              <Briefcase className="w-5 h-5 text-secondary-600 mx-auto mb-1" />
               <p className="text-xl font-bold text-gray-800">{earnings.pendingJobs}</p>
               <p className="text-xs text-gray-500 mt-1">Active Jobs</p>
             </div>

@@ -459,7 +459,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
               <div className={`border-2 rounded-2xl p-6 relative flex flex-col ${
                 currentTier === 'pro'
                   ? 'border-warm-400 bg-warm-50/30'
-                  : 'border-warm-300 bg-gradient-to-b from-warm-50/40 to-white shadow-lg shadow-warm-100/60'
+                  : 'border-warm-300 bg-gradient-to-b from-warm-50/40 to-white shadow-sm'
               }`}>
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-warm-500 to-warm-600 text-white text-xs font-bold rounded-full uppercase tracking-wide">
                   {currentTier === 'pro' ? 'Current Plan' : 'Most Popular'}

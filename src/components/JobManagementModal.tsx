@@ -108,7 +108,7 @@ function getStatusConfig(status: string) {
     case 'pending': return { label: 'Pending', color: 'bg-amber-100 text-amber-800 border-amber-200', dot: 'bg-amber-500' };
     case 'accepted': return { label: 'Accepted', color: 'bg-teal-100 text-teal-800 border-teal-200', dot: 'bg-teal-500' };
     case 'funded': return { label: 'Funded', color: 'bg-green-100 text-green-800 border-green-200', dot: 'bg-green-500' };
-    case 'in_progress': return { label: 'In Progress', color: 'bg-blue-100 text-blue-800 border-blue-200', dot: 'bg-blue-500' };
+    case 'in_progress': return { label: 'In Progress', color: 'bg-secondary-100 text-secondary-800 border-secondary-200', dot: 'bg-secondary-500' };
     case 'completed': return { label: 'Completed', color: 'bg-green-100 text-green-800 border-green-200', dot: 'bg-green-500' };
     case 'cancelled': return { label: 'Cancelled', color: 'bg-red-100 text-red-700 border-red-200', dot: 'bg-red-500' };
     case 'declined': return { label: 'Declined', color: 'bg-red-100 text-red-700 border-red-200', dot: 'bg-red-500' };
@@ -692,7 +692,7 @@ export default function JobManagementModal({
                   {job.status === 'pending' && !quote && (
                     <button
                       onClick={() => setShowQuoteModal(true)}
-                      className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 bg-secondary-500 text-white rounded-xl text-sm font-semibold hover:bg-secondary-600 transition-colors shadow-lg shadow-secondary-200"
+                      className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 bg-secondary-500 text-white rounded-xl text-sm font-semibold hover:bg-secondary-600 transition-colors shadow-sm"
                     >
                       <Send className="w-4 h-4" />
                       Quote Now
@@ -1315,7 +1315,7 @@ export default function JobManagementModal({
                             onClick={() => setPriority(p)}
                             className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border capitalize ${
                               priority === p
-                                ? p === 'low' ? 'bg-blue-500 text-white border-blue-500'
+                                ? p === 'low' ? 'bg-secondary-500 text-white border-secondary-500'
                                   : p === 'high' ? 'bg-orange-500 text-white border-orange-500'
                                   : 'bg-gray-600 text-white border-gray-600'
                                 : 'bg-white text-gray-500 border-gray-200'

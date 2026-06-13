@@ -2472,14 +2472,26 @@ export async function generateFutureSessions(
   }
 
   if (inserts.length > 0) {
-    await supabase.from('recurring_sessions').insert(inserts);
+    try {
+      const { error: insertErr } = await supabase.from('recurring_sessions').insert(inserts);
+      if (insertErr) {
+        console.error('Failed to insert future recurring sessions:', insertErr.message);
+        return 0;
+      }
 
-    // Advance next_due_date to beyond the last generated session
-    const lastDate = inserts[inserts.length - 1].scheduled_date;
-    const followingDate = calculateNextDueDate(lastDate, job.frequency_months);
-    await supabase.from('recurring_jobs').update({
-      next_due_date: followingDate.toISOString().split('T')[0],
-    }).eq('id', recurringJobId);
+      // Advance next_due_date to beyond the last generated session
+      const lastDate = inserts[inserts.length - 1].scheduled_date;
+      const followingDate = calculateNextDueDate(lastDate, job.frequency_months);
+      const { error: updateErr } = await supabase.from('recurring_jobs').update({
+        next_due_date: followingDate.toISOString().split('T')[0],
+      }).eq('id', recurringJobId);
+      if (updateErr) {
+        console.error('Failed to advance next_due_date after generating sessions:', updateErr.message);
+      }
+    } catch (err) {
+      console.error('Failed to generate future sessions:', err);
+      return 0;
+    }
   }
 
   return created;

@@ -62,9 +62,9 @@ export default function Privacy() {
 
             {/* Preamble */}
             <div className="mb-10 pb-10 border-b border-gray-100">
-              <div className="flex items-start gap-3 bg-blue-50/70 border border-blue-100 rounded-xl p-4 mb-5">
-                <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-blue-800 leading-relaxed">
+              <div className="flex items-start gap-3 bg-secondary-50/70 border border-secondary-100 rounded-xl p-4 mb-5">
+                <Shield className="w-5 h-5 text-secondary-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-secondary-800 leading-relaxed">
                   <strong className="font-semibold">Legal Note:</strong> This Policy operates in accordance with the Privacy Act 1988 (Cth), the Australian Privacy Principles (APPs), and the Notifiable Data Breaches (NDB) scheme under Part IIIC of the Privacy Act.
                 </p>
               </div>
@@ -169,9 +169,9 @@ export default function Privacy() {
                     <p className="text-[15px] text-gray-600 leading-relaxed">
                       ConnecTradie facilitates payments through Stripe, our secure third-party payment processor. ConnecTradie does not store full credit card numbers or bank account routing details. Financial data is transmitted directly to Stripe via encrypted tokenisation. We retain transaction records (amount, date, job reference) for legal and tax purposes.
                     </p>
-                    <div className="mt-3 flex items-start gap-3 bg-blue-50/70 border border-blue-100 rounded-xl p-4">
-                      <Shield className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-blue-800 leading-relaxed">
+                    <div className="mt-3 flex items-start gap-3 bg-secondary-50/70 border border-secondary-100 rounded-xl p-4">
+                      <Shield className="w-4 h-4 text-secondary-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-secondary-800 leading-relaxed">
                         You are subject to Stripe&rsquo;s Privacy Policy regarding how your financial data is handled. <span className="font-medium">stripe.com/privacy</span>
                       </p>
                     </div>

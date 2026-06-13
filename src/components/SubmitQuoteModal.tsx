@@ -468,9 +468,9 @@ export default function SubmitQuoteModal({
                 <p className="text-gray-600 mb-4 max-w-sm">
                   The client will review your quote alongside up to {job.max_quotes - 1} others. You'll be notified if they accept.
                 </p>
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 max-w-sm text-left">
-                  <p className="text-sm font-semibold text-blue-900 mb-2">What happens next?</p>
-                  <ul className="text-xs text-blue-800 space-y-2">
+                <div className="bg-secondary-50 border border-secondary-200 rounded-xl p-4 mb-6 max-w-sm text-left">
+                  <p className="text-sm font-semibold text-secondary-900 mb-2">What happens next?</p>
+                  <ul className="text-xs text-secondary-800 space-y-2">
                     <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>1</span>The client reviews all incoming quotes</li>
                     <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>2</span>You'll get a notification when they respond</li>
                     <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>3</span>Track your quote status in the "My Quotes" tab</li>
@@ -549,7 +549,7 @@ export default function SubmitQuoteModal({
                   )}
                 </div>
                 {isRecurring && (
-                  <p className="text-xs text-blue-600 flex items-center gap-1.5">
+                  <p className="text-xs text-secondary-600 flex items-center gap-1.5">
                     <Repeat className="w-3 h-3 flex-shrink-0" />
                     Ongoing service — if accepted, you'll be the regular tradie for this service
                   </p>
@@ -979,7 +979,7 @@ export default function SubmitQuoteModal({
               <button
                 onClick={handleSubmit}
                 disabled={!canSubmit}
-                className={`w-full py-3.5 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 text-lg ${
+                className={`w-full py-3.5 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 transition-colors shadow-sm flex items-center justify-center gap-2 text-lg ${
                   !canSubmit ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >

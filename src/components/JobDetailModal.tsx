@@ -421,7 +421,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
               <span className={`px-3 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${
                 isDeclined ? 'bg-red-50 text-red-700 border-red-200'
                 : localStatus === 'completed' ? 'bg-green-50 text-green-700 border-green-200'
-                : localStatus === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200'
+                : localStatus === 'in_progress' ? 'bg-secondary-50 text-secondary-700 border-secondary-200'
                 : localStatus === 'accepted' ? 'bg-secondary-50 text-secondary-700 border-secondary-200'
                 : 'bg-amber-50 text-amber-700 border-amber-200'
               }`}>
@@ -586,25 +586,25 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
           <div className={`rounded-xl p-4 border ${
             localStatus === 'completed'
               ? 'bg-green-50 border-green-200'
-              : 'bg-blue-50 border-blue-200'
+              : 'bg-secondary-50 border-secondary-200'
           }`}>
             <div className="flex items-start gap-3">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                localStatus === 'completed' ? 'bg-green-100' : 'bg-blue-100'
+                localStatus === 'completed' ? 'bg-green-100' : 'bg-secondary-100'
               }`}>
-                {localStatus === 'pending' && <Clock className="w-4 h-4 text-blue-600" />}
-                {localStatus === 'accepted' && <Play className="w-4 h-4 text-blue-600" />}
-                {localStatus === 'in_progress' && <Flag className="w-4 h-4 text-blue-600" />}
+                {localStatus === 'pending' && <Clock className="w-4 h-4 text-secondary-600" />}
+                {localStatus === 'accepted' && <Play className="w-4 h-4 text-secondary-600" />}
+                {localStatus === 'in_progress' && <Flag className="w-4 h-4 text-secondary-600" />}
                 {localStatus === 'completed' && <CheckCircle2 className="w-4 h-4 text-green-600" />}
               </div>
               <div className="flex-1">
                 <p className={`text-sm font-semibold ${
-                  localStatus === 'completed' ? 'text-green-800' : 'text-blue-900'
+                  localStatus === 'completed' ? 'text-green-800' : 'text-secondary-900'
                 }`}>
                   {nextAction.label}
                 </p>
                 <p className={`text-xs mt-0.5 ${
-                  localStatus === 'completed' ? 'text-green-700' : 'text-blue-700'
+                  localStatus === 'completed' ? 'text-green-700' : 'text-secondary-700'
                 }`}>
                   {nextAction.hint}
                 </p>
