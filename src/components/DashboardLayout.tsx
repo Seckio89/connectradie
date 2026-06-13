@@ -173,21 +173,42 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [location.pathname]);
 
-  // Re-usable function to count unreleased payments for the sidebar badge
+  // Count jobs that have completed work AND an unreleased payment.
+  // This matches exactly what the dashboard release banner shows,
+  // so the dot and the banner are always in sync.
   const refreshPendingReleaseCount = async () => {
     if (!user || profile?.role !== 'client') return;
     try {
-      const { data: pendingPayments } = await supabase
+      // Get completed jobs (tradie finished work)
+      const { data: completedJobs } = await supabase
+        .from('jobs')
+        .select('id')
+        .eq('client_id', user.id)
+        .eq('status', 'completed')
+        .is('archived_at', null);
+
+      if (!completedJobs || completedJobs.length === 0) {
+        setPendingReleaseCount(0);
+        return;
+      }
+
+      // Check which of those have unreleased payments
+      const { data: payments } = await supabase
         .from('payments')
-        .select('id, metadata')
-        .eq('profile_id', user.id)
+        .select('id, job_id, metadata')
+        .in('job_id', completedJobs.map(j => j.id))
         .eq('status', 'completed')
         .eq('payment_type', 'job_funding');
 
-      const unreleased = (pendingPayments || []).filter(p => {
+      const releasedJobIds = new Set<string>();
+      for (const p of payments || []) {
         const meta = p.metadata as Record<string, unknown> | null;
-        return !meta?.transfer_id && !meta?.released_at;
-      });
+        if (meta?.transfer_id || meta?.released_at) {
+          releasedJobIds.add(p.job_id);
+        }
+      }
+
+      const unreleased = completedJobs.filter(j => !releasedJobIds.has(j.id));
       setPendingReleaseCount(unreleased.length);
     } catch (err) {
       console.error('fetchPendingReleaseCount error:', err);
