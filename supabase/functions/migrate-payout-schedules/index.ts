@@ -50,16 +50,31 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
     const stripeSecretKey = requireEnv("STRIPE_SECRET_KEY");
 
-    // Auth: accept service-role key or verify user is admin
+    // Auth: accept the service-role key OR an admin user JWT.
+    //
+    // The token presented by `auth.getUser()` only resolves user JWTs, so a
+    // service-role key (used by cron and admin tooling) was being rejected as
+    // "no user found". We decode the JWT payload first — if the role claim is
+    // `service_role`, that's the platform calling itself and we let it through.
+    // For anything else, fall back to user auth + profile-role check.
     const authHeader = req.headers.get("Authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.slice(7);
+    if (!authHeader?.startsWith("Bearer ")) {
+      return jsonResponse({ error: "Missing Authorization header" }, 401);
+    }
+    const token = authHeader.slice(7);
+
+    let role: string | null = null;
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1] ?? ""));
+      role = typeof payload?.role === "string" ? payload.role : null;
+    } catch { /* malformed token — fall through to user auth */ }
+
+    if (role !== "service_role") {
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       const { data: { user }, error: authError } = await supabase.auth.getUser(token);
       if (authError || !user) {
         return jsonResponse({ error: "Unauthorized" }, 401);
       }
-      // Check admin role
       const { data: profile } = await supabase
         .from("profiles")
         .select("role")
