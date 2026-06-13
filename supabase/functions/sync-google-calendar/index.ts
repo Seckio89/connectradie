@@ -195,40 +195,23 @@ Deno.serve(async (req: Request) => {
       .lte("start_time", timeMax)
       .eq("status", "available");
 
-    let slotsToDelete: string[] = [];
+    // Count conflicts (informational only — no longer deletes slots automatically)
     let conflictCount = 0;
-
-    // Check for conflicts between calendar events and availability slots
     if (existingSlots) {
       for (const slot of existingSlots) {
         const slotStart = new Date(slot.start_time);
         const slotEnd = new Date(slot.end_time);
-
         for (const event of events) {
-          // Skip all-day events
           if (!event.start.dateTime || !event.end.dateTime) continue;
-          // Skip events created by ConnecTradie (avoid circular conflict)
           if (event.summary?.includes("ConnecTradie") || event.summary?.startsWith("✅ Available") || event.summary?.startsWith("🔧")) continue;
-
           const eventStart = new Date(event.start.dateTime);
           const eventEnd = new Date(event.end.dateTime);
-
-          // Check if event overlaps with slot
           if (eventStart < slotEnd && eventEnd > slotStart) {
-            slotsToDelete.push(slot.id);
             conflictCount++;
             break;
           }
         }
       }
-    }
-
-    // Delete conflicting slots
-    if (slotsToDelete.length > 0) {
-      await supabaseClient
-        .from("availability_slots")
-        .delete()
-        .in("id", slotsToDelete);
     }
 
     // ── EXPORT: Push ConnecTradie jobs to Google Calendar ──────────────
@@ -356,7 +339,7 @@ Deno.serve(async (req: Request) => {
         success: true,
         message: "Calendar synced successfully",
         eventsFound: events.length,
-        slotsRemoved: slotsToDelete.length,
+        slotsRemoved: 0,
         conflictCount,
         jobsExported,
       }),
