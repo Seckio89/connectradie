@@ -1091,30 +1091,78 @@ export default function ClientDashboard() {
                       )
                       .slice(0, jobTab === 'completed' ? 200 : 20);
 
-                    // Track which months we've already rendered headers for
-                    const renderedMonths = new Set<string>();
+                    // For completed tab: group by month with collapsible sections
+                    if (jobTab === 'completed' && filtered.length > 0) {
+                      const monthGroups = new Map<string, typeof filtered>();
+                      for (const j of filtered) {
+                        const d = new Date(j.created_at);
+                        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        if (!monthGroups.has(key)) monthGroups.set(key, []);
+                        monthGroups.get(key)!.push(j);
+                      }
+                      const sortedMonths = [...monthGroups.keys()].sort((a, b) => b.localeCompare(a));
+                      return (<>{sortedMonths.map((monthKey, idx) => {
+                        const monthJobs = monthGroups.get(monthKey)!;
+                        const [yr, mo] = monthKey.split('-');
+                        const monthLabel = new Date(Number(yr), Number(mo) - 1).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+                        return (
+                          <details key={monthKey} open={idx === 0} className="group/month">
+                            <summary className="flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors select-none list-none mb-2">
+                              <div className="flex items-center gap-2">
+                                <ChevronDown className="w-4 h-4 text-gray-400 transition-transform group-open/month:rotate-0 -rotate-90" />
+                                <span className="text-sm font-semibold text-gray-800">{monthLabel}</span>
+                              </div>
+                              <span className="text-xs text-gray-400">{monthJobs.length} job{monthJobs.length !== 1 ? 's' : ''}</span>
+                            </summary>
+                            <div className="space-y-3 mb-4">
+                              {monthJobs.map((job) => {
+                                const categoryMatch = job.description.match(/^\[([^\]]+)\]/);
+                                const categoryRaw = categoryMatch ? categoryMatch[1] : null;
+                                const category = categoryRaw ? categoryRaw.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) : null;
+                                const desc = job.description.replace(/^\[[^\]]+\]\s*/, '');
+                                const isArchived = !!job.archived_at;
+                                const isReleased = releasedJobIds.has(job.id);
+                                const isReviewed = reviewedJobIds.has(job.id);
+                                const statusLabel = 'Paid';
+                                const statusColor = 'bg-green-100 text-green-700 border-green-200';
+                                const accentColor = 'bg-green-400';
+                                return (
+                                  <Link key={job.id} to={recurringJobIds.has(job.id) ? `/leads?tab=ongoing&job=${job.id}` : `/leads?job=${job.id}`} className="group block rounded-2xl overflow-hidden border bg-white shadow-sm hover:shadow-lg hover:border-gray-300 transition-all">
+                                    <div className="flex">
+                                      <div className={`w-1.5 flex-shrink-0 ${accentColor}`} />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="px-5 py-4">
+                                          <div className="flex items-start justify-between gap-3 mb-2">
+                                            <h3 className="text-base font-bold text-gray-900 leading-snug capitalize truncate">{(job.title || category || 'Untitled Job').replace(/_/g, ' ')}</h3>
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColor}`}>{statusLabel}</span>
+                                          </div>
+                                          <p className="text-sm text-gray-500 line-clamp-2">{desc}</p>
+                                        </div>
+                                        {isReleased && isReviewed && (
+                                          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
+                                            <span className="text-xs text-gray-400">Payment released to tradie</span>
+                                            <div className="flex items-center gap-2">
+                                              {!recurringJobIds.has(job.id) && (
+                                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setBonusTarget({ jobId: job.id, jobLabel: (job.title || category || 'the job').toString() }); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-warm-200 text-warm-700 text-xs font-semibold rounded-lg hover:bg-warm-50 transition-colors">
+                                                  <Gift className="w-3.5 h-3.5" /> Give extra
+                                                </button>
+                                              )}
+                                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg"><CheckCircle2 className="w-3.5 h-3.5" /> Paid</span>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          </details>
+                        );
+                      })}</>);
+                    }
 
                     return filtered.map((job) => {
-                      // For completed tab, inject month header when month changes
-                      let monthHeader: React.ReactNode = null;
-                      if (jobTab === 'completed') {
-                        const d = new Date(job.created_at);
-                        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                        if (!renderedMonths.has(monthKey)) {
-                          renderedMonths.add(monthKey);
-                          const monthLabel = d.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
-                          const monthCount = filtered.filter(fj => {
-                            const fd = new Date(fj.created_at);
-                            return `${fd.getFullYear()}-${String(fd.getMonth() + 1).padStart(2, '0')}` === monthKey;
-                          }).length;
-                          monthHeader = (
-                            <div key={`month-${monthKey}`} className="flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-xl">
-                              <span className="text-sm font-semibold text-gray-800">{monthLabel}</span>
-                              <span className="text-xs text-gray-400">{monthCount} job{monthCount !== 1 ? 's' : ''}</span>
-                            </div>
-                          );
-                        }
-                      }
 
                     const categoryMatch = job.description.match(/^\[([^\]]+)\]/);
                     const categoryRaw = categoryMatch ? categoryMatch[1] : null;
@@ -1156,7 +1204,6 @@ export default function ClientDashboard() {
 
                     return (
                       <React.Fragment key={job.id}>
-                        {monthHeader}
                         <Link
                           to={recurringJobIds.has(job.id) ? `/leads?tab=ongoing&job=${job.id}` : `/leads?job=${job.id}`}
                           className={`group block rounded-2xl overflow-hidden border bg-white shadow-sm hover:shadow-lg hover:border-gray-300 transition-all ${isArchived ? 'opacity-75' : ''}`}
