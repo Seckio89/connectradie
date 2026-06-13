@@ -741,6 +741,111 @@ export default function ClientDashboard() {
           </Link>
         </div>
 
+        {/* ── Needs Your Attention — consolidated action items ── */}
+        {(() => {
+          const awaitingRelease = recentJobs.filter(j => !j.archived_at && j.status === 'completed' && !releasedJobIds.has(j.id));
+          const jobsWithQuotes = recentJobs.filter(j => !j.archived_at && j.status === 'pending' && j.quote_count > 0);
+          const hasPendingPayments = pendingPayments.length > 0;
+          const hasInvoices = invoices.length > 0;
+          const totalItems = awaitingRelease.length + jobsWithQuotes.length + (hasPendingPayments ? pendingPayments.length : 0) + (hasInvoices ? invoices.length : 0);
+
+          if (totalItems === 0) return null;
+
+          return (
+            <div id="attention-section" className="mb-8 bg-white border-2 border-amber-200 rounded-2xl overflow-hidden shadow-sm">
+              <div className="px-5 py-3 bg-amber-50 border-b border-amber-200 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+                <h2 className="text-sm font-semibold text-amber-900">
+                  {totalItems === 1 ? '1 item needs your attention' : `${totalItems} items need your attention`}
+                </h2>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {awaitingRelease.map(job => {
+                  const category = job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
+                  const label = (job.title || category || 'Job').toString();
+                  return (
+                    <div key={`release-${job.id}`} className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors">
+                      <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate capitalize">{label}</p>
+                        <p className="text-xs text-gray-500">Tradie finished — release payment & leave a review</p>
+                      </div>
+                      <button
+                        onClick={() => handleReleasePayment(job.id)}
+                        disabled={releasingJobId === job.id}
+                        className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors"
+                      >
+                        {releasingJobId === job.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <DollarSign className="w-3.5 h-3.5" />}
+                        Release & Review
+                      </button>
+                    </div>
+                  );
+                })}
+                {jobsWithQuotes.map(job => {
+                  const category = job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
+                  const label = (job.title || category || 'Job').toString();
+                  const isRecurring = recurringJobIds.has(job.id);
+                  return (
+                    <Link key={`quote-${job.id}`} to={isRecurring ? `/leads?tab=ongoing&job=${job.id}` : `/leads?job=${job.id}`} className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors">
+                      <div className="w-8 h-8 bg-secondary-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <FileText className="w-4 h-4 text-secondary-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate capitalize">{label}</p>
+                        <p className="text-xs text-gray-500">{job.quote_count} quote{job.quote_count !== 1 ? 's' : ''} received — review & accept</p>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    </Link>
+                  );
+                })}
+                {pendingPayments.map(pp => (
+                  <div key={`pay-${pp.id}`} className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors">
+                    <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <CreditCard className="w-4 h-4 text-amber-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{pp.jobTitle}</p>
+                      <p className="text-xs text-gray-500">${(pp.amount / 100).toFixed(2)} — payment incomplete</p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        setPayingPendingId(pp.id);
+                        try {
+                          const { url } = await createJobPaymentCheckout(pp.id);
+                          if (url) window.location.href = url;
+                        } catch (err) {
+                          showToast(err instanceof Error ? err.message : 'Failed to start payment', true);
+                        } finally {
+                          setPayingPendingId(null);
+                        }
+                      }}
+                      disabled={payingPendingId === pp.id}
+                      className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 disabled:opacity-60 transition-colors"
+                    >
+                      {payingPendingId === pp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+                      Pay Now
+                    </button>
+                  </div>
+                ))}
+                {invoices.map(inv => (
+                  <Link key={`inv-${inv.id}`} to="/payments" className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors">
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">Invoice — {(inv as unknown as Record<string, unknown>).status === 'overdue' ? 'Overdue' : 'Needs approval'}</p>
+                      <p className="text-xs text-gray-500">Review and approve or dispute</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {availableThisWeek > 0 && showSlotsBanner && (
           <div className="mb-8 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-300 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">

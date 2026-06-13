@@ -173,13 +173,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [location.pathname]);
 
-  // Count jobs that have completed work AND an unreleased payment.
-  // This matches exactly what the dashboard release banner shows,
-  // so the dot and the banner are always in sync.
+  // Count ALL items needing the client's attention — releases, pending
+  // quotes, incomplete payments, invoices. This drives the sidebar dot
+  // and matches the "Needs your attention" card on the dashboard.
   const refreshPendingReleaseCount = async () => {
     if (!user || profile?.role !== 'client') return;
     try {
-      // Get completed jobs (tradie finished work)
+      let total = 0;
+
+      // 1. Completed jobs awaiting release
       const { data: completedJobs } = await supabase
         .from('jobs')
         .select('id')
@@ -187,29 +189,50 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         .eq('status', 'completed')
         .is('archived_at', null);
 
-      if (!completedJobs || completedJobs.length === 0) {
-        setPendingReleaseCount(0);
-        return;
-      }
+      if (completedJobs && completedJobs.length > 0) {
+        const { data: payments } = await supabase
+          .from('payments')
+          .select('id, job_id, metadata')
+          .in('job_id', completedJobs.map(j => j.id))
+          .eq('status', 'completed')
+          .eq('payment_type', 'job_funding');
 
-      // Check which of those have unreleased payments
-      const { data: payments } = await supabase
-        .from('payments')
-        .select('id, job_id, metadata')
-        .in('job_id', completedJobs.map(j => j.id))
-        .eq('status', 'completed')
-        .eq('payment_type', 'job_funding');
-
-      const releasedJobIds = new Set<string>();
-      for (const p of payments || []) {
-        const meta = p.metadata as Record<string, unknown> | null;
-        if (meta?.transfer_id || meta?.released_at) {
-          releasedJobIds.add(p.job_id);
+        const releasedIds = new Set<string>();
+        for (const p of payments || []) {
+          const meta = p.metadata as Record<string, unknown> | null;
+          if (meta?.transfer_id || meta?.released_at) releasedIds.add(p.job_id);
         }
+        total += completedJobs.filter(j => !releasedIds.has(j.id)).length;
       }
 
-      const unreleased = completedJobs.filter(j => !releasedJobIds.has(j.id));
-      setPendingReleaseCount(unreleased.length);
+      // 2. Pending jobs with quotes to review
+      const { data: quotedJobs } = await supabase
+        .from('jobs')
+        .select('id, quote_count')
+        .eq('client_id', user.id)
+        .eq('status', 'pending')
+        .is('archived_at', null)
+        .gt('quote_count', 0);
+      total += (quotedJobs || []).length;
+
+      // 3. Incomplete payments (abandoned checkouts)
+      const { data: pendingPay } = await supabase
+        .from('payments')
+        .select('id')
+        .eq('profile_id', user.id)
+        .eq('status', 'pending')
+        .eq('payment_type', 'job_funding');
+      total += (pendingPay || []).length;
+
+      // 4. Invoices needing approval
+      const { data: pendingInv } = await supabase
+        .from('recurring_invoices')
+        .select('id')
+        .eq('homeowner_id', user.id)
+        .in('status', ['pending_approval', 'sent', 'overdue']);
+      total += (pendingInv || []).length;
+
+      setPendingReleaseCount(total);
     } catch (err) {
       console.error('fetchPendingReleaseCount error:', err);
     }
