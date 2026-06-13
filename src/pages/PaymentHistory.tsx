@@ -969,7 +969,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                     <td className="px-5 py-3.5 text-center w-72">
                                       <div className="flex flex-col items-center justify-center gap-1.5">
                                         {/* Bonus payments are destination charges — no escrow, never "Awaiting Release" */}
-                                        {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !(p.metadata as Record<string, unknown> | null)?.transfer_id && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
+                                        {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !(p.metadata as Record<string, unknown> | null)?.transfer_id && !(p.metadata as Record<string, unknown> | null)?.released_at && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
                                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
                                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                                             Awaiting Release
@@ -977,7 +977,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                         ) : (
                                           getStatusBadge(p.status)
                                         )}
-                                        {!isTradie && (p.metadata as Record<string, unknown> | null)?.pending_increase && !(p.metadata as Record<string, unknown> | null)?.transfer_id && (() => {
+                                        {!isTradie && (p.metadata as Record<string, unknown> | null)?.pending_increase && !(p.metadata as Record<string, unknown> | null)?.transfer_id && !(p.metadata as Record<string, unknown> | null)?.released_at && (() => {
                                           const inc = (p.metadata as Record<string, unknown>).pending_increase as Record<string, unknown> | undefined;
                                           const diffCents = Number(inc?.diff_cents || 0);
                                           const diffLabel = diffCents > 0 ? ` $${(diffCents / 100).toFixed(2)}` : '';
@@ -1039,7 +1039,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                   <p className="text-sm font-semibold text-navy-900 tabular-nums">{formatCurrency(p.amount)}</p>
                                   <div className="mt-1 flex items-center gap-1.5 justify-end">
                                     {/* Bonus payments are destination charges — no escrow, never "Awaiting Release" */}
-                                    {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !(p.metadata as Record<string, unknown> | null)?.transfer_id && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
+                                    {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !(p.metadata as Record<string, unknown> | null)?.transfer_id && !(p.metadata as Record<string, unknown> | null)?.released_at && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
                                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
                                         <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                                         Awaiting Release
