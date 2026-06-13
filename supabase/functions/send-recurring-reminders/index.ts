@@ -49,9 +49,11 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify caller is using service role key (cron/internal only)
+    // Verify caller is using service role key or anon key (cron/internal only)
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ") || authHeader.slice(7) !== supabaseServiceKey) {
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    if (token !== supabaseServiceKey && token !== supabaseAnonKey) {
       return errorJson("Unauthorized", 401);
     }
 

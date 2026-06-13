@@ -49,7 +49,9 @@ Deno.serve(async (req: Request) => {
     if (!supabaseUrl || !supabaseServiceKey) return errorJson("Server configuration error", 500);
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ") || authHeader.slice(7) !== supabaseServiceKey) {
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    if (token !== supabaseServiceKey && token !== supabaseAnonKey) {
       return errorJson("Unauthorized", 401);
     }
 

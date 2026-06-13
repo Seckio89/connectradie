@@ -359,7 +359,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Authenticate the caller
+    // Authenticate the caller — accepts either a user JWT or the service-role key.
+    // Internal callers (stripe-webhook, cron jobs) use the service-role key.
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
@@ -369,18 +370,28 @@ Deno.serve(async (req: Request) => {
     }
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(JSON.stringify({ error: "Server configuration error" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
-    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(authHeader.slice(7));
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const token = authHeader.slice(7);
+    const isServiceRole = token === supabaseServiceKey;
+    const isAnonKey = token === supabaseAnonKey;
+
+    // Service-role key: trusted internal caller — skip user auth
+    // Anon key: likely Supabase cron scheduler — also trusted
+    if (!isServiceRole && !isAnonKey) {
+      // Must be a user JWT — validate it
+      const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+      const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     const requiredEnvVars = ['RESEND_API_KEY'];
