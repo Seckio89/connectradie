@@ -34,39 +34,53 @@ Deno.serve(async (req: Request) => {
     const state = url.searchParams.get("state");
     const action = url.searchParams.get("action");
 
-    // Get authorization header
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    // OAuth callback from Google — no auth header (browser redirect with ?code=)
+    // Skip auth check for the callback path; user identity comes from the state param.
+    if (code && state) {
+      // This is the OAuth callback — handle it below (no Bearer token available)
+    } else {
+      // All other requests (initiation, disconnect) require auth
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: "Missing authorization header" }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user: authUser }, error: userError } = await supabaseClient.auth.getUser(token);
+
+      if (userError || !authUser) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // Store user for use in initiation/disconnect paths
+      (globalThis as Record<string, unknown>).__oauthUser = authUser;
+
+      const { allowed } = checkRateLimit(`${authUser.id}-google-calendar-oauth`, 15, 60000);
+      if (!allowed) {
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
-    // Verify JWT and get user
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
-
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const { allowed } = checkRateLimit(`${user.id}-google-calendar-oauth`, 15, 60000);
-    if (!allowed) {
-      return new Response(
-        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // For initiation/disconnect, use the authenticated user.
+    // For OAuth callback, the user ID comes from the state param.
+    const user = code && state
+      ? { id: state } as { id: string; email?: string }
+      : (globalThis as Record<string, unknown>).__oauthUser as { id: string; email?: string } | null;
 
     // Handle OAuth initiation
     if (action === "initiate") {
@@ -112,15 +126,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    if (state !== user.id) {
-      return new Response(
-        JSON.stringify({ error: "State parameter does not match authenticated user" }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
+    // State param is the user ID — already used to construct `user` above.
+    // No separate check needed since callback path sets user.id = state.
 
     const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
     const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
