@@ -229,6 +229,118 @@ Deno.serve(async (req: Request) => {
         .in("id", slotsToDelete);
     }
 
+    // ── EXPORT: Push ConnecTradie jobs to Google Calendar ──────────────
+    // Fetch upcoming scheduled jobs for this tradie and create Google
+    // Calendar events for any that don't already have a calendar_event_id.
+    let jobsExported = 0;
+    try {
+      const { data: upcomingJobs } = await supabaseClient
+        .from("jobs")
+        .select("id, title, description, scheduled_date, start_time, location, status")
+        .eq("tradie_id", user.id)
+        .in("status", ["accepted", "funded", "in_progress"])
+        .not("scheduled_date", "is", null)
+        .gte("scheduled_date", new Date().toISOString().split("T")[0])
+        .is("calendar_event_id", null);
+
+      for (const job of upcomingJobs || []) {
+        try {
+          const category = job.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, " ") || "";
+          const summary = job.title || category || "ConnecTradie Job";
+          const jobDate = job.scheduled_date;
+          const startHour = job.start_time ? job.start_time.split(":")[0] : "09";
+          const startMin = job.start_time ? job.start_time.split(":")[1] : "00";
+
+          const startDateTime = `${jobDate}T${startHour.padStart(2, "0")}:${startMin.padStart(2, "0")}:00+10:00`;
+          const endHour = String(Number(startHour) + 2).padStart(2, "0");
+          const endDateTime = `${jobDate}T${endHour}:${startMin.padStart(2, "0")}:00+10:00`;
+
+          const eventBody = {
+            summary: `🔧 ${summary}`,
+            description: `ConnecTradie job\n${job.description?.replace(/^\[[^\]]+\]\s*/, "") || ""}\n\nStatus: ${job.status}`,
+            start: { dateTime: startDateTime, timeZone: "Australia/Sydney" },
+            end: { dateTime: endDateTime, timeZone: "Australia/Sydney" },
+            location: job.location || undefined,
+            colorId: "10",
+          };
+
+          const createRes = await fetch(
+            `https://www.googleapis.com/calendar/v3/calendars/${integration.calendar_id}/events`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(eventBody),
+            }
+          );
+
+          if (createRes.ok) {
+            const created = await createRes.json();
+            await supabaseClient
+              .from("jobs")
+              .update({ calendar_event_id: created.id })
+              .eq("id", job.id);
+            jobsExported++;
+          }
+        } catch (e) {
+          console.error(`Failed to export job ${job.id} to Google Calendar:`, e);
+        }
+      }
+
+      // Also export availability slots as "Available" events
+      const { data: slotsToExport } = await supabaseClient
+        .from("availability_slots")
+        .select("id, start_time, end_time, calendar_event_id")
+        .eq("tradie_id", user.id)
+        .eq("status", "available")
+        .gte("start_time", timeMin)
+        .lte("start_time", timeMax)
+        .is("calendar_event_id", null);
+
+      let slotsExported = 0;
+      for (const slot of slotsToExport || []) {
+        try {
+          const slotBody = {
+            summary: "✅ Available — ConnecTradie",
+            description: "Open availability slot on ConnecTradie",
+            start: { dateTime: slot.start_time, timeZone: "Australia/Sydney" },
+            end: { dateTime: slot.end_time, timeZone: "Australia/Sydney" },
+            colorId: "2",
+            transparency: "transparent",
+          };
+
+          const createRes = await fetch(
+            `https://www.googleapis.com/calendar/v3/calendars/${integration.calendar_id}/events`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(slotBody),
+            }
+          );
+
+          if (createRes.ok) {
+            const created = await createRes.json();
+            await supabaseClient
+              .from("availability_slots")
+              .update({ calendar_event_id: created.id })
+              .eq("id", slot.id);
+            slotsExported++;
+          }
+        } catch (e) {
+          console.error(`Failed to export slot ${slot.id}:`, e);
+        }
+      }
+
+      jobsExported += slotsExported;
+    } catch (exportErr) {
+      console.error("Export to Google Calendar failed:", exportErr);
+    }
+
     // Update last synced timestamp
     await supabaseClient
       .from("calendar_integrations")
@@ -244,6 +356,7 @@ Deno.serve(async (req: Request) => {
         eventsFound: events.length,
         slotsRemoved: slotsToDelete.length,
         conflictCount,
+        jobsExported,
       }),
       {
         status: 200,
