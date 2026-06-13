@@ -1695,7 +1695,7 @@ export default function ClientDashboard() {
                     ).length;
 
                     return (
-                      <div key={job.id} className={`rounded-xl border transition-all ${isOverdue ? 'border-red-200 bg-red-50' : isDueSoon ? 'border-warm-200 bg-warm-50' : 'border-gray-100 bg-gray-50'}`}>
+                      <div key={job.id} className={`rounded-xl border transition-all ${isOverdue ? 'border-red-200 bg-red-50/50' : isDueSoon ? 'border-amber-100 bg-amber-50/30' : 'border-gray-200 bg-white'}`}>
                         <div className="p-3 cursor-pointer hover:bg-white/50 transition-colors rounded-t-xl" onClick={() => navigate('/leads?tab=services')} role="button" tabIndex={0}>
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0 flex-1">
@@ -1714,14 +1714,14 @@ export default function ClientDashboard() {
                                 </p>
                               )}
                               {job.tradie?.full_name ? (
-                                <p className="text-xs text-primary-600 mt-1 font-medium">
-                                  Assigned: {job.tradie.full_name}
+                                <p className="text-xs text-gray-600 mt-1">
+                                  Assigned: <span className="font-medium text-gray-800">{job.tradie.full_name}</span>
                                 </p>
                               ) : (
                                 <p className="text-xs text-gray-400 mt-1 italic">No tradie assigned</p>
                               )}
                               <div className="flex items-center gap-2 mt-1.5">
-                                <span className={`text-xs font-medium ${isOverdue ? 'text-red-600' : isDueSoon ? 'text-warm-600' : 'text-gray-500'}`}>
+                                <span className={`text-xs ${isOverdue ? 'font-medium text-red-600' : isDueSoon ? 'text-amber-600' : 'text-gray-400'}`}>
                                   {isOverdue ? `Overdue by ${Math.abs(daysUntil)} days` : isDueSoon ? `Due in ${daysUntil} days` : `Next: ${dueDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`}
                                 </span>
                               </div>
@@ -1729,7 +1729,7 @@ export default function ClientDashboard() {
                             <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
                               <button
                                 onClick={() => setEditingJobId(job.id)}
-                                className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                                className="p-1.5 text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                                 title="Edit ongoing service"
                               >
                                 <Pencil className="w-4 h-4" />
