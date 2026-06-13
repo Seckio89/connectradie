@@ -207,6 +207,8 @@ Deno.serve(async (req: Request) => {
         for (const event of events) {
           // Skip all-day events
           if (!event.start.dateTime || !event.end.dateTime) continue;
+          // Skip events created by ConnecTradie (avoid circular conflict)
+          if (event.summary?.includes("ConnecTradie") || event.summary?.startsWith("✅ Available") || event.summary?.startsWith("🔧")) continue;
 
           const eventStart = new Date(event.start.dateTime);
           const eventEnd = new Date(event.end.dateTime);
