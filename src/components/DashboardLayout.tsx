@@ -191,17 +191,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         .is('archived_at', null);
 
       if (completedJobs && completedJobs.length > 0) {
+        // Fetch all job_funding payments (completed or released) for these jobs
         const { data: payments } = await supabase
           .from('payments')
-          .select('id, job_id, metadata')
+          .select('id, job_id, status, metadata')
           .in('job_id', completedJobs.map(j => j.id))
-          .eq('status', 'completed')
+          .in('status', ['completed', 'released'])
           .eq('payment_type', 'job_funding');
 
         const releasedIds = new Set<string>();
         for (const p of payments || []) {
+          // status = 'released' means it's done. Also check metadata for legacy releases.
           const meta = p.metadata as Record<string, unknown> | null;
-          if (meta?.transfer_id || meta?.released_at) releasedIds.add(p.job_id);
+          if (p.status === 'released' || meta?.transfer_id || meta?.released_at) {
+            releasedIds.add(p.job_id);
+          }
         }
         total += completedJobs.filter(j => !releasedIds.has(j.id)).length;
       }
