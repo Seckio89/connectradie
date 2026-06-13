@@ -36,6 +36,7 @@ import {
   Search as SearchIcon,
   MessageSquare,
   Repeat,
+  ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -2358,8 +2359,31 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   Export Invoice
                 </button>
               </div>
-              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden divide-y divide-gray-100">
-                {leads.map((lead) => {
+              {(() => {
+                // Group completed jobs by month
+                const monthGroups = new Map<string, typeof leads>();
+                for (const lead of leads) {
+                  const d = new Date(lead.created_at);
+                  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                  if (!monthGroups.has(key)) monthGroups.set(key, []);
+                  monthGroups.get(key)!.push(lead);
+                }
+                const sortedMonths = [...monthGroups.keys()].sort((a, b) => b.localeCompare(a));
+                return sortedMonths.map((monthKey) => {
+                  const monthJobs = monthGroups.get(monthKey)!;
+                  const [yr, mo] = monthKey.split('-');
+                  const monthLabel = new Date(Number(yr), Number(mo) - 1).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+                  return (
+                    <details key={monthKey} open={sortedMonths.indexOf(monthKey) === 0} className="mb-4">
+                      <summary className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors select-none list-none">
+                        <div className="flex items-center gap-2">
+                          <ChevronDown className="w-4 h-4 text-gray-400 transition-transform [details[open]>&]:rotate-0 [details:not([open])>&]:-rotate-90" />
+                          <span className="text-sm font-semibold text-gray-900">{monthLabel}</span>
+                        </div>
+                        <span className="text-xs text-gray-500">{monthJobs.length} job{monthJobs.length !== 1 ? 's' : ''}</span>
+                      </summary>
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden divide-y divide-gray-100 mt-2">
+                {monthJobs.map((lead) => {
                   const category = extractCategory(lead.description);
                   const desc = cleanDescription(lead.description);
                   const isReleased = releasedJobIds.has(lead.id);
@@ -2447,6 +2471,10 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   );
                 })}
               </div>
+                    </details>
+                  );
+                });
+              })()}
             </div>
           ) : filter === 'archived' ? (
             <div>
