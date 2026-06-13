@@ -178,11 +178,11 @@ function parseJobDescription(description: string): { category: string; title: st
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  pending: 'bg-amber-50 text-amber-700 border-amber-200',
   accepted: 'bg-secondary-100 text-secondary-700 border-secondary-200',
-  in_progress: 'bg-amber-100 text-amber-700 border-amber-200',
-  completed: 'bg-green-100 text-green-700 border-green-200',
-  cancelled: 'bg-gray-100 text-gray-600 border-gray-200',
+  in_progress: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  completed: 'bg-gray-100 text-gray-500 border-gray-200',
+  cancelled: 'bg-gray-100 text-gray-400 border-gray-200',
   declined: 'bg-red-100 text-red-700 border-red-200',
 };
 
@@ -1189,7 +1189,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 const now = new Date();
                 const isPastDay = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 return (
-                  <div key={i} className={`flex flex-col ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-primary-50/30' : hasAvailable ? 'bg-green-50/40' : ''}`}>
+                  <div key={i} className={`flex flex-col ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-primary-50/30' : hasAvailable ? 'bg-green-50/20' : ''}`}>
                     <div className={`px-2 py-3 text-center border-b border-gray-100 ${today ? 'bg-primary-50' : ''}`}>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">{day.toLocaleDateString('en-AU', { weekday: 'short' })}</p>
                       <p className={`text-lg font-bold mt-0.5 ${today ? 'text-primary-600' : isPastDay ? 'text-gray-400' : 'text-gray-900'}`}>{day.getDate()}</p>
@@ -1224,6 +1224,8 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                   ? 'bg-red-50 border-red-200'
                                   : conflictWarning
                                   ? 'bg-red-50 border-red-200'
+                                  : job.status === 'completed'
+                                  ? 'bg-gray-50 border-gray-200 opacity-60'
                                   : 'bg-white border-gray-200 hover:border-primary-300'
                               }`}
                             >
@@ -1382,7 +1384,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                   const now = new Date();
                   const isPastDay = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                   return (
-                    <div key={i} className={`min-h-[100px] p-2 ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-primary-50/30' : hasAvailable ? 'bg-green-50/40 hover:bg-green-50/60' : 'hover:bg-gray-50/50'} transition-colors`}>
+                    <div key={i} className={`min-h-[100px] p-2 ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-primary-50/30' : hasAvailable ? 'bg-green-50/20 hover:bg-green-50/30' : 'hover:bg-gray-50/50'} transition-colors`}>
                       <div className="flex items-center gap-1 mb-1.5">
                         <p className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full ${
                           today ? 'bg-warm-500 text-white' : isPastDay ? 'text-gray-400' : 'text-gray-700'
@@ -1390,7 +1392,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                           {day.getDate()}
                         </p>
                         {hasAvailable && (
-                          <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" title="Available" />
+                          <span className="w-2 h-2 rounded-full bg-green-300 flex-shrink-0" title="Available" />
                         )}
                       </div>
                       <div className="space-y-1">
