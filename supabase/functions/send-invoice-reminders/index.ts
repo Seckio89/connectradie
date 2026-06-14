@@ -205,11 +205,4 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const tradies_emailed = results.filter((r) => r.status === "sent").length;
-    return jsonResponse({ tradies_emailed, considered: results.length, results });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("[send-invoice-reminders] fatal:", err);
-    return errorJson(message, 500);
-  }
-});
+    const tradies_emailed = results.filter((r) => r.status === "sent").

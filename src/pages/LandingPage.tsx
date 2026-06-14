@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import HeroSection from '../components/HeroSection';
 import HowItWorksClientsSection from '../components/HowItWorksClientsSection';
@@ -54,6 +56,16 @@ export default function LandingPage() {
         <ForTradiesSection />
         <HowItWorksSection />
       </main>
+      {/* Mobile-only CTA banner */}
+      <div className="md:hidden bg-[#1D9E75]/10 border-t border-[#1D9E75]/20 px-4 py-3">
+        <Link to="/register" className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-white">Start free — no card required</p>
+            <p className="text-xs text-gray-400">Post a job or sign up as a tradie</p>
+          </div>
+          <ArrowRight className="w-5 h-5 text-[#1D9E75]" />
+        </Link>
+      </div>
       <Footer />
     </div>
   );

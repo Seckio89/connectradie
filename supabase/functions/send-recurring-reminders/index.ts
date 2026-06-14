@@ -190,12 +190,4 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse({
       reminders_sent: remindersSent,
-      sessions_checked: sessions.length,
-      errors: errors.length > 0 ? errors : undefined,
-    });
-  } catch (err) {
-    console.error("send-recurring-reminders error:", err);
-    const message = err instanceof Error ? err.message : "Internal server error";
-    return errorJson(message, 500);
-  }
-});
+      sessions_check

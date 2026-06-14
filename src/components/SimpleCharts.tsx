@@ -240,15 +240,4 @@ export function DonutChart({ data, size = 160, centerLabel = 'Total' }: DonutCha
                 style={{ backgroundColor: d.color }}
                 aria-hidden="true"
               />
-              <span className={`${isHovered ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
-                {d.label}
-              </span>
-              <span className="font-medium text-gray-900 ml-auto">{d.value}</span>
-              <span className="text-xs text-gray-400">({pct}%)</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+              

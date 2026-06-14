@@ -53,7 +53,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="relative pt-24 pb-16 lg:pt-32 lg:pb-24 overflow-hidden">
+    <section className="relative pt-20 pb-10 lg:pt-32 lg:pb-24 overflow-hidden">
       <div className="absolute inset-0 bg-navy-900" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -65,15 +65,23 @@ export default function HeroSection() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-[-0.02em]">
-              <span className="text-white">The Platform That Puts</span><br />
-              <span className="text-white">You in </span><span className="text-warm-500">Control.</span>
+              {/* Mobile hero text */}
+              <span className="md:hidden">
+                <span className="text-white">Book licensed tradies.</span><br />
+                <span className="text-white">Pay when it's </span><span className="text-warm-500">done.</span>
+              </span>
+              {/* Desktop hero text */}
+              <span className="hidden md:inline">
+                <span className="text-white">The Platform That Puts</span><br />
+                <span className="text-white">You in </span><span className="text-warm-500">Control.</span>
+              </span>
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-gray-400 leading-relaxed max-w-xl mx-auto lg:mx-0">
               Australian-owned. Stripe holds the money — we don&apos;t. Funds auto-release to your tradie 48 hours after you mark the job done, so nobody has to chase a payment.
             </p>
 
-            <form onSubmit={handleSearch} className="mt-10">
+            <form onSubmit={handleSearch} className="mt-6 md:mt-10">
               <div className="flex flex-col sm:flex-row gap-3 p-3 bg-navy-800 rounded-2xl shadow-xl shadow-black/20 border border-navy-700">
                 <div className="relative sm:flex-[2] min-w-0" ref={dropdownRef}>
                   <div
@@ -171,7 +179,7 @@ export default function HeroSection() {
               </div>
             </form>
 
-            <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-3 text-sm text-gray-400">
+            <div className="mt-6 md:mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-x-3 md:gap-x-6 gap-y-2 md:gap-y-3 text-xs md:text-sm text-gray-400">
               <div className="flex items-center gap-2">
                 <Lock className="w-4 h-4 text-amber-400" />
                 <span>Payment Protected</span>
@@ -196,8 +204,8 @@ export default function HeroSection() {
 
             {/* Mobile escrow trust banner — simplified version of the desktop card */}
             <div className="mt-4 flex items-center justify-center gap-4 text-sm text-gray-500 lg:hidden">
-              <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-emerald-500" /> Payment Protected</span>
-              <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-emerald-500" /> 48hr Auto-Release</span>
+              <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-[#1D9E75]" /> Payment Protected</span>
+              <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-[#1D9E75]" /> 48hr Auto-Release</span>
             </div>
           </div>
 
