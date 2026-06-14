@@ -119,7 +119,9 @@
       "Bash(rm -f .git/index.lock && git add supabase/functions/sync-google-calendar/index.ts && git commit -m \"fix: skip ConnecTradie-created events when checking for calendar conflicts\" && git push origin master)",
       "Bash(rm -f .git/index.lock && git add supabase/functions/sync-google-calendar/index.ts && git commit -m \"fix: stop auto-deleting availability slots on calendar sync, export only\" && git push origin master)",
       "Bash(rm -f .git/index.lock && git add src/hooks/useAvailabilitySlots.ts supabase/functions/sync-google-calendar/index.ts && git commit -m \"feat: auto-delete Google Calendar events when slots are removed, stop auto-deleting slots on sync\" && git push origin master)",
-      "Bash(rm -f .git/index.lock && git add -A && git commit -m \"fix: cron auth JWT decode, calendar sync export, slot deletion cleanup\" && git push origin master)"
+      "Bash(rm -f .git/index.lock && git add -A && git commit -m \"fix: cron auth JWT decode, calendar sync export, slot deletion cleanup\" && git push origin master)",
+      "Bash(bash -c \"npx supabase functions deploy send-lead-reminders send-invoice-reminders send-recurring-reminders generate-recurring-sessions sync-google-calendar --project-ref uoqygmizupdpanplpvor\")",
+      "Bash(rm -f .git/index.lock && git add -A && git commit -m \"fix: cron auth JWT decode, calendar sync, slot cleanup\" && git push origin master)"
     ],
     "additionalDirectories": [
       "c:\\Users\\User\\Desktop\\project\\.git",
