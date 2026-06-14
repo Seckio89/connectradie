@@ -239,4 +239,13 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse({
       processed: dueJobs.length,
-      sessions_created: sess
+      sessions_created: sessionsCreated,
+      skipped_duplicates: skippedDuplicates,
+      errors,
+    });
+  } catch (err) {
+    console.error("generate-recurring-sessions error:", err);
+    const message = err instanceof Error ? err.message : "Internal server error";
+    return errorJson(message, 500);
+  }
+});
