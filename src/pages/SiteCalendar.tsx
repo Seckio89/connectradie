@@ -1111,11 +1111,11 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
 
   const content = (
     <>
-      <div className="space-y-5 max-w-[1600px] mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+      <div className="space-y-5 max-w-[1600px] mx-auto overflow-x-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4 px-4 md:px-0">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Site Calendar</h1>
-            <p className="text-sm text-gray-500 mt-1">Track jobs, team assignments, and your availability in one view</p>
+            <p className="text-sm text-gray-500 mt-1 hidden sm:block">Track jobs, team assignments, and your availability in one view</p>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
@@ -1160,8 +1160,8 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
           </div>
         </div>
 
-        <div className="bg-white border border-gray-100 md:rounded-2xl md:shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="bg-white border-y md:border border-gray-100 md:rounded-2xl md:shadow-sm overflow-hidden -mx-4 md:mx-0">
+          <div className="flex items-center justify-between px-4 md:px-5 py-3 md:py-4 border-b border-gray-100">
             <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -1688,7 +1688,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 bg-white border border-gray-100 md:rounded-xl md:shadow-sm px-4 md:px-5 py-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 bg-white border-y md:border border-gray-100 md:rounded-xl md:shadow-sm px-4 md:px-5 py-3 -mx-4 md:mx-0">
           <div className="flex items-center flex-wrap gap-3 sm:gap-5 text-xs text-gray-600">
             <span className="font-medium text-gray-700">Legend:</span>
             <span className="flex items-center gap-1.5">
@@ -1715,7 +1715,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
         </div>
 
         {jobs.length === 0 && !loading && (
-          <div className="bg-white border border-gray-100 md:rounded-2xl md:shadow-sm p-8 md:p-12 text-center">
+          <div className="bg-white border-y md:border border-gray-100 md:rounded-2xl md:shadow-sm p-8 md:p-12 text-center -mx-4 md:mx-0">
             <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Calendar className="w-8 h-8 text-primary-400" />
             </div>
@@ -1727,7 +1727,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
         )}
 
         {teamMembers.length > 0 && (
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
+          <div className="bg-white border-y md:border border-gray-100 md:rounded-2xl md:shadow-sm p-4 md:p-5 -mx-4 md:mx-0">
             <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Users className="w-5 h-5 text-primary-600" />
               Team Activity This Period
