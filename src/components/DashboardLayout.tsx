@@ -703,7 +703,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </aside>
 
-      <div className="lg:pl-64 theme-aware flex-1 flex flex-col">
+      <div className="lg:pl-64 theme-aware flex-1 flex flex-col overflow-x-hidden">
         <header className="sticky top-0 z-30 bg-navy-900/95 backdrop-blur-sm border-b border-navy-800">
           <div className="flex items-center justify-between px-4 py-3">
             <button
@@ -961,7 +961,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
-        <main id="main-content" className="p-4 sm:p-6 lg:p-8 flex-1 pb-20 lg:pb-8">
+        <main id="main-content" className="px-4 py-3 sm:p-6 lg:p-8 flex-1 pb-20 lg:pb-8 overflow-x-hidden">
           <PlatformUpdateBanner />
           {children}
         </main>
@@ -975,7 +975,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Link
                     to="/dashboard"
                     className={`flex flex-col items-center justify-center gap-1 ${
-                      location.pathname === '/dashboard' ? 'text-warm-500' : 'text-gray-400'
+                      location.pathname === '/dashboard' ? 'text-[#1D9E75]' : 'text-gray-400'
                     }`}
                   >
                     <Home className="w-5 h-5" />
@@ -984,7 +984,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Link
                     to="/work"
                     className={`flex flex-col items-center justify-center gap-1 ${
-                      location.pathname === '/work' ? 'text-warm-500' : 'text-gray-400'
+                      location.pathname === '/work' ? 'text-[#1D9E75]' : 'text-gray-400'
                     }`}
                   >
                     <Briefcase className="w-5 h-5" />
@@ -993,7 +993,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Link
                     to="/schedule"
                     className={`flex flex-col items-center justify-center gap-1 ${
-                      location.pathname === '/schedule' ? 'text-warm-500' : 'text-gray-400'
+                      location.pathname === '/schedule' ? 'text-[#1D9E75]' : 'text-gray-400'
                     }`}
                   >
                     <CalendarDays className="w-5 h-5" />
@@ -1002,7 +1002,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Link
                     to="/messages"
                     className={`flex flex-col items-center justify-center gap-1 ${
-                      location.pathname === '/messages' ? 'text-warm-500' : 'text-gray-400'
+                      location.pathname === '/messages' ? 'text-[#1D9E75]' : 'text-gray-400'
                     }`}
                   >
                     <MessageCircle className="w-5 h-5" />
@@ -1021,7 +1021,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Link
                     to="/dashboard"
                     className={`flex flex-col items-center justify-center gap-1 ${
-                      location.pathname === '/dashboard' ? 'text-warm-500' : 'text-gray-400'
+                      location.pathname === '/dashboard' ? 'text-[#1D9E75]' : 'text-gray-400'
                     }`}
                   >
                     <Home className="w-5 h-5" />
@@ -1030,7 +1030,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Link
                     to="/leads"
                     className={`flex flex-col items-center justify-center gap-1 ${
-                      location.pathname === '/leads' ? 'text-warm-500' : 'text-gray-400'
+                      location.pathname === '/leads' ? 'text-[#1D9E75]' : 'text-gray-400'
                     }`}
                   >
                     <Briefcase className="w-5 h-5" />
@@ -1040,15 +1040,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     to="/post-lead"
                     className="flex flex-col items-center justify-center gap-1"
                   >
-                    <div className="bg-emerald-500 text-white rounded-full w-12 h-12 flex items-center justify-center -mt-4 shadow-lg">
+                    <div className="bg-[#1D9E75] text-white rounded-full w-12 h-12 flex items-center justify-center -mt-4 shadow-lg">
                       <Plus className="w-6 h-6" />
                     </div>
-                    <span className="text-[10px] text-emerald-500 -mt-0.5">Post Job</span>
+                    <span className="text-[10px] text-[#1D9E75] -mt-0.5">Post Job</span>
                   </Link>
                   <Link
                     to="/messages"
                     className={`flex flex-col items-center justify-center gap-1 ${
-                      location.pathname === '/messages' ? 'text-warm-500' : 'text-gray-400'
+                      location.pathname === '/messages' ? 'text-[#1D9E75]' : 'text-gray-400'
                     }`}
                   >
                     <MessageCircle className="w-5 h-5" />

@@ -751,7 +751,7 @@ export default function TradieDashboard() {
           </div>
         </div>
       )}
-      <div className="max-w-[1600px] mx-auto px-0 md:px-0">
+      <div className="max-w-[1600px] mx-auto px-0 md:px-0 overflow-x-hidden">
         {/* Header */}
         <div className="mb-6 md:mb-8 bg-navy-900 md:rounded-lg p-4 sm:p-6 md:p-8 border-b md:border border-navy-800">
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-white mb-1">Your Business Hub</h1>
@@ -1733,54 +1733,56 @@ export default function TradieDashboard() {
         </div>
 
         {/* Calendar */}
-        <div className="mt-6 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 ring-1 ring-primary-100/50" data-tour="calendar">
-          <div className="grid lg:grid-cols-3 gap-8">
+        <div className="mt-6 bg-white rounded-2xl border border-gray-200 shadow-sm p-3 sm:p-6 ring-1 ring-primary-100/50 max-w-full overflow-hidden" data-tour="calendar">
+          <div className="grid lg:grid-cols-3 gap-8 max-w-full overflow-hidden">
             {/* Calendar */}
-            <div className="lg:col-span-2">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1)); setSelectedDay(null); }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <ChevronLeft className="w-5 h-5 text-gray-600" />
-                  </button>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-                  </h2>
-                  <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1)); setSelectedDay(null); }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <ChevronRight className="w-5 h-5 text-gray-600" />
-                  </button>
+            <div className="lg:col-span-2 min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+                <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+                  <div className="flex items-center gap-2 sm:gap-4">
+                    <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1)); setSelectedDay(null); }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
+                      <ChevronLeft className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <h2 className="text-base sm:text-lg font-semibold text-gray-900 whitespace-nowrap">
+                      {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                    </h2>
+                    <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1)); setSelectedDay(null); }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
+                      <ChevronRight className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </div>
                   <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
                     {(['day', 'week', 'month'] as const).map(v => (
                       <button key={v} onClick={() => setCalendarView(v)}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${calendarView === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                        className={`px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${calendarView === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                         {v.charAt(0).toUpperCase() + v.slice(1)}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {isProUser ? (
-                    <button onClick={() => setShowAddSlot(true)} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition-colors min-h-[44px]">
-                      <Plus className="w-4 h-4" />Bulk Add Slots
+                    <button onClick={() => setShowAddSlot(true)} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-emerald-600 text-white text-sm sm:text-base font-medium rounded-xl hover:bg-emerald-700 transition-colors min-h-[44px]">
+                      <Plus className="w-4 h-4" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots
                     </button>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex items-center gap-2 px-4 py-2 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 transition-all min-h-[44px]">
-                      <Crown className="w-4 h-4" />Bulk Add Slots<span className="text-xs font-bold bg-white/20 px-1.5 py-0.5 rounded">PRO</span>
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-warm-500 text-white text-sm sm:text-base font-medium rounded-xl hover:bg-warm-600 transition-all min-h-[44px]">
+                      <Crown className="w-4 h-4" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots<span className="text-xs font-bold bg-white/20 px-1.5 py-0.5 rounded">PRO</span>
                     </button>
                   )}
                   {isProUser ? (
-                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
+                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 border border-gray-200 text-gray-700 text-sm sm:text-base font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
                       {syncLoading ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" />{calendarIntegration ? 'Syncing...' : 'Connecting...'}</>
+                        <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">{calendarIntegration ? 'Syncing...' : 'Connecting...'}</span><span className="sm:hidden">Sync</span></>
                       ) : calendarIntegration ? (
-                        <><RefreshCw className="w-4 h-4" />Sync Google Calendar</>
+                        <><RefreshCw className="w-4 h-4" /><span className="hidden sm:inline">Sync Google Calendar</span><span className="sm:hidden">Sync</span></>
                       ) : (
-                        <><Calendar className="w-4 h-4" />Connect Google Calendar</>
+                        <><Calendar className="w-4 h-4" /><span className="hidden sm:inline">Connect Google Calendar</span><span className="sm:hidden">Connect</span></>
                       )}
                     </button>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex items-center gap-2 px-4 py-2 border border-warm-300 text-warm-700 font-medium rounded-xl hover:bg-warm-50 transition-colors min-h-[44px]">
-                      <Calendar className="w-4 h-4" />Google Calendar<span className="text-xs font-bold bg-warm-100 text-warm-600 px-1.5 py-0.5 rounded">PRO</span>
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 border border-warm-300 text-warm-700 text-sm sm:text-base font-medium rounded-xl hover:bg-warm-50 transition-colors min-h-[44px]">
+                      <Calendar className="w-4 h-4" /><span className="hidden sm:inline">Google Calendar</span><span className="sm:hidden">Calendar</span><span className="text-xs font-bold bg-warm-100 text-warm-600 px-1.5 py-0.5 rounded">PRO</span>
                     </button>
                   )}
                   <div className="relative">
@@ -1849,9 +1851,9 @@ export default function TradieDashboard() {
                           );
                         })}
                       </div>
-                      <div className="mt-4 flex items-center gap-5 text-sm text-gray-700">
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded" /><span className="font-medium">Available</span></div>
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-red-100 border-2 border-red-500 rounded" /><span className="font-medium">Booked</span></div>
+                      <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-gray-700">
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded flex-shrink-0" /><span className="font-medium">Available</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-red-100 border-2 border-red-500 rounded flex-shrink-0" /><span className="font-medium">Booked</span></div>
                       </div>
                     </div>
                   );
@@ -1916,9 +1918,9 @@ export default function TradieDashboard() {
                           </div>
                         </div>
                       </div>
-                      <div className="mt-4 flex items-center gap-5 text-sm text-gray-700">
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded" /><span className="font-medium">Available</span></div>
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-red-100 border-2 border-red-500 rounded" /><span className="font-medium">Booked</span></div>
+                      <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-gray-700">
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded flex-shrink-0" /><span className="font-medium">Available</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-red-100 border-2 border-red-500 rounded flex-shrink-0" /><span className="font-medium">Booked</span></div>
                       </div>
                     </div>
                   );
@@ -1956,7 +1958,7 @@ export default function TradieDashboard() {
                           onClick={() => setSelectedDay(day)}
                           aria-label={`${dateLabel}${slotSummary}`}
                           aria-pressed={isSelected}
-                          className={`aspect-square rounded-lg p-1 text-sm transition-all min-w-[40px] min-h-[40px] ${
+                          className={`aspect-square rounded-lg p-0.5 sm:p-1 text-sm transition-all sm:min-w-[40px] sm:min-h-[40px] ${
                             isSelected ? 'bg-warm-500 text-white ring-2 ring-primary-600 ring-offset-2'
                             : isPast ? 'opacity-50 hover:opacity-75'
                             : hasAvailable && hasBooked ? 'bg-gradient-to-br from-green-50 to-red-50 hover:from-green-100 hover:to-red-100'
@@ -1978,9 +1980,9 @@ export default function TradieDashboard() {
                     })}
                   </div>
 
-                  <div className="mt-4 flex items-center gap-5 text-sm text-gray-700">
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded" /><span className="font-medium">Available</span></div>
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-red-100 border-2 border-red-500 rounded" /><span className="font-medium">Booked</span></div>
+                  <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-gray-700">
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded flex-shrink-0" /><span className="font-medium">Available</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-red-100 border-2 border-red-500 rounded flex-shrink-0" /><span className="font-medium">Booked</span></div>
                   </div>
                 </>
               )}
