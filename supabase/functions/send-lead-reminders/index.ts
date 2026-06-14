@@ -48,10 +48,21 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!supabaseUrl || !supabaseServiceKey) return errorJson("Server configuration error", 500);
 
+    // Accept service-role key, anon key, or a JWT with service_role/anon role.
+    // Supabase cron scheduler sends a JWT (not the raw key), so we decode the
+    // payload to check the role claim.
     const authHeader = req.headers.get("Authorization");
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
-    if (token !== supabaseServiceKey && token !== supabaseAnonKey) {
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+
+    let authorized = token === supabaseServiceKey || token === supabaseAnonKey;
+    if (!authorized && token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1] ?? ""));
+        if (payload?.role === "service_role" || payload?.role === "anon") authorized = true;
+      } catch { /* not a valid JWT */ }
+    }
+    if (!authorized) {
       return errorJson("Unauthorized", 401);
     }
 

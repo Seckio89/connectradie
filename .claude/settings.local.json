@@ -115,7 +115,11 @@
       "Bash(rm -f .git/index.lock && git add src/components/DashboardLayout.tsx && git commit -m \"fix: align sidebar dot with dashboard banner\" && git push origin master)",
       "Bash(rm -f .git/index.lock && git add src/pages/ClientDashboard.tsx src/components/DashboardLayout.tsx && git commit -m \"feat: consolidated Needs Attention card at top of dashboard with sidebar dot\" && git push origin master)",
       "Bash(rm -f .git/index.lock && git add src/pages/ClientDashboard.tsx && git commit -m \"style: tone down ongoing service card — neutral colors, subtle accents\" && git push origin master)",
-      "Bash(rm -f .git/index.lock && git add -A && git commit -m \"fix: repair 8 failing tests, wrap 11 more Supabase calls, replace 124 off-palette blues, reduce heavy shadows\" && git push origin master)"
+      "Bash(rm -f .git/index.lock && git add -A && git commit -m \"fix: repair 8 failing tests, wrap 11 more Supabase calls, replace 124 off-palette blues, reduce heavy shadows\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add supabase/functions/sync-google-calendar/index.ts && git commit -m \"fix: skip ConnecTradie-created events when checking for calendar conflicts\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add supabase/functions/sync-google-calendar/index.ts && git commit -m \"fix: stop auto-deleting availability slots on calendar sync, export only\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/hooks/useAvailabilitySlots.ts supabase/functions/sync-google-calendar/index.ts && git commit -m \"feat: auto-delete Google Calendar events when slots are removed, stop auto-deleting slots on sync\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add -A && git commit -m \"fix: cron auth JWT decode, calendar sync export, slot deletion cleanup\" && git push origin master)"
     ],
     "additionalDirectories": [
       "c:\\Users\\User\\Desktop\\project\\.git",

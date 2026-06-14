@@ -11,11 +11,21 @@
       "PowerShell(npx supabase --version)",
       "PowerShell(npx supabase functions deploy --project-ref uoqygmizupdpanplpvor 2>&1)",
       "Bash(rm -f .git/index.lock && git add supabase/functions/release-escrow/index.ts && git commit -m \"fix: handle payout failure gracefully for destination charges\" && git push origin master)",
-      "PowerShell(npx supabase functions deploy release-escrow --project-ref uoqygmizupdpanplpvor 2>&1)"
+      "PowerShell(npx supabase functions deploy release-escrow --project-ref uoqygmizupdpanplpvor 2>&1)",
+      "Bash(rm -f .git/index.lock && git add src/pages/ClientDashboard.tsx && git commit -m \"feat: collapsible month groups on dashboard completed tab\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/components/ReviewsList.tsx src/lib/reviews.ts && git commit -m \"feat: group reviews by month with collapsible sections and job titles\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && git add src/pages/SiteCalendar.tsx && git commit -m \"style: calendar colour hierarchy — active pops, completed fades, available subtle\" && git push origin master)",
+      "PowerShell(npx supabase secrets set GOOGLE_CLIENT_ID=491568884460-up337ac6q68f0tvalpnb90taps4mlnpo.apps.googleusercontent.com GOOGLE_CLIENT_SECRET=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 --project-ref uoqygmizupdpanplpvor 2>&1)",
+      "Bash(rm -f .git/index.lock && git add supabase/functions/google-calendar-oauth/index.ts && git commit -m \"fix: skip auth header check on Google OAuth callback redirect\" && git push origin master)",
+      "Bash(bash -c \"npx supabase functions deploy google-calendar-oauth --no-verify-jwt --project-ref uoqygmizupdpanplpvor\")",
+      "Bash(rm -f .git/index.lock && git add supabase/config.toml && git commit -m \"fix\\(config\\): persist verify_jwt=false for google-calendar-oauth *)",
+      "Bash(rm -f .git/index.lock && git add supabase/functions/sync-google-calendar/index.ts && git commit -m \"feat: export ConnecTradie jobs and availability to Google Calendar\" && git push origin master)",
+      "Bash(bash -c \"npx supabase functions deploy sync-google-calendar --project-ref uoqygmizupdpanplpvor\")"
     ],
     "additionalDirectories": [
       "\\tmp",
-      "C:\\Users\\User\\Desktop\\project\\.git"
+      "C:\\Users\\User\\Desktop\\project\\.git",
+      "c:\\Users\\User\\Desktop\\project\\.git"
     ]
   }
 }

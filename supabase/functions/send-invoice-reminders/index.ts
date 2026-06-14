@@ -52,7 +52,14 @@ Deno.serve(async (req: Request) => {
     const authHeader = req.headers.get("Authorization");
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
-    if (token !== supabaseServiceKey && token !== supabaseAnonKey) {
+    let authorized = token === supabaseServiceKey || token === supabaseAnonKey;
+    if (!authorized && token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1] ?? ""));
+        if (payload?.role === "service_role" || payload?.role === "anon") authorized = true;
+      } catch { /* not a valid JWT */ }
+    }
+    if (!authorized) {
       return errorJson("Unauthorized", 401);
     }
 
