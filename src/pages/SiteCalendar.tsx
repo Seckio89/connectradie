@@ -1112,13 +1112,13 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
   const content = (
     <>
       <div className="space-y-5 max-w-[1600px] mx-auto">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Site Calendar</h1>
-            <p className="text-gray-500 mt-1">Track jobs, team assignments, and your availability in one view</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Site Calendar</h1>
+            <p className="text-sm text-gray-500 mt-1">Track jobs, team assignments, and your availability in one view</p>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {conflictCount > 0 && (
               <button
                 onClick={() => setShowOnlyConflicts(!showOnlyConflicts)}
@@ -1160,7 +1160,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
           </div>
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-gray-100 md:rounded-2xl md:shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
               <ChevronLeft className="w-5 h-5" />
@@ -1180,7 +1180,8 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
               <span className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
             </div>
           ) : view === 'week' ? (
-            <div className="grid grid-cols-7 divide-x divide-gray-100 min-h-[500px]">
+            <>
+            <div className="hidden md:grid md:grid-cols-7 md:divide-x divide-gray-100 min-h-[500px]">
               {days.map((day, i) => {
                 const entries = getJobsForDate(day);
                 const today = isToday(day);
@@ -1365,66 +1366,330 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 );
               })}
             </div>
+
+            {/* Mobile week list view */}
+            <div className="md:hidden divide-y divide-gray-100" style={{ borderColor: '#eee' }}>
+              {days.map((day, i) => {
+                const entries = getJobsForDate(day);
+                const today = isToday(day);
+                const daySlots = getAvailabilityForDate(day);
+                const hasAvailable = daySlots.some(s => s.status === 'available');
+                const isPastDay = day < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+
+                return (
+                  <div key={i} className={isPastDay ? 'opacity-60' : ''}>
+                    {/* Day header */}
+                    <div className={`px-4 py-2 flex items-center justify-between ${today ? 'bg-emerald-50' : 'bg-gray-50'}`}>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[11px] font-bold uppercase tracking-wider ${today ? 'text-emerald-700' : 'text-gray-500'}`}>
+                          {day.toLocaleDateString('en-AU', { weekday: 'short' })} {day.getDate()}
+                        </span>
+                        {today && <span className="text-[10px] font-medium text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">Today</span>}
+                      </div>
+                      {daySlots.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          {daySlots.map(slot => (
+                            <span
+                              key={slot.id}
+                              className={`w-1.5 h-1.5 rounded-full ${slot.status === 'available' ? 'bg-green-500' : 'bg-red-400'}`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Jobs list */}
+                    {entries.length === 0 ? (
+                      <div className="px-4 py-3 text-xs text-gray-400">
+                        {hasAvailable ? 'Available — no jobs booked' : 'No jobs'}
+                      </div>
+                    ) : (
+                      <div>
+                        {entries.map(({ job, assignments: jobAssignments, conflictWarning }) => {
+                          const { category, title } = parseJobDescription(job.description);
+                          const accentColor = job.is_emergency || conflictWarning
+                            ? 'border-l-red-500'
+                            : job.status === 'completed'
+                            ? 'border-l-gray-300'
+                            : job.status === 'in_progress'
+                            ? 'border-l-emerald-500'
+                            : job.status === 'accepted'
+                            ? 'border-l-blue-400'
+                            : 'border-l-amber-400';
+
+                          return (
+                            <div
+                              key={job.id}
+                              onClick={() => setSelectedJob(job)}
+                              className={`flex items-center gap-3 px-4 py-3 border-l-4 ${accentColor} cursor-pointer active:bg-gray-50 transition-colors`}
+                              style={{ borderBottom: '0.5px solid #eee' }}
+                            >
+                              {/* Job info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                  {category && (
+                                    <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">{category}</span>
+                                  )}
+                                  {!category && (
+                                    <span className="text-sm font-medium text-gray-900 truncate">{title}</span>
+                                  )}
+                                  {job.is_emergency && (
+                                    <span className="text-[10px] font-semibold text-red-600">URGENT</span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  {(job.start_time || job.preferred_time_slot) && (
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="w-3 h-3" />
+                                      {job.start_time
+                                        ? formatJobTime(job.start_time)
+                                        : (TIME_SLOT_LABELS[job.preferred_time_slot || ''] || job.preferred_time_slot)}
+                                    </span>
+                                  )}
+                                  {job.location_address && (
+                                    <span className="flex items-center gap-1 truncate">
+                                      <MapPin className="w-3 h-3" />
+                                      <span className="truncate">{job.location_address.split(',')[0]}</span>
+                                    </span>
+                                  )}
+                                </div>
+                                {conflictWarning && (
+                                  <div className="flex items-center gap-1 mt-1 text-[10px] text-red-600 font-medium">
+                                    <AlertCircle className="w-3 h-3" />
+                                    Time conflict
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Team initials on the right */}
+                              {jobAssignments.length > 0 && (
+                                <div className="flex -space-x-1 flex-shrink-0">
+                                  {jobAssignments.slice(0, 3).map(a => (
+                                    <div
+                                      key={a.id}
+                                      title={a.member?.invite_name}
+                                      className="w-7 h-7 rounded-full bg-emerald-100 border-2 border-white flex items-center justify-center"
+                                    >
+                                      <span className="text-[10px] font-bold text-emerald-700">
+                                        {a.member?.invite_name.charAt(0)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {jobAssignments.length > 3 && (
+                                    <div className="w-7 h-7 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center">
+                                      <span className="text-[10px] font-bold text-gray-600">+{jobAssignments.length - 3}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Status badge - small */}
+                              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
+                                job.status === 'completed' ? 'bg-gray-100 text-gray-500' :
+                                job.status === 'in_progress' ? 'bg-emerald-100 text-emerald-700' :
+                                job.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
+                                'bg-amber-100 text-amber-700'
+                              }`}>
+                                {job.status.replace('_', ' ')}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            </>
           ) : (
             <div>
-              <div className="grid grid-cols-7 border-b border-gray-100">
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
-                  <div key={d} className="py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">
-                    {d}
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 divide-x divide-y divide-gray-100">
-                {monthDays.map((day, i) => {
-                  if (!day) return <div key={i} className="min-h-[100px] bg-gray-50/50" />;
-                  const entries = getJobsForDate(day);
-                  const today = isToday(day);
-                  const daySlots = getAvailabilityForDate(day);
-                  const hasAvailable = daySlots.some(s => s.status === 'available');
-                  const now = new Date();
-                  const isPastDay = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                  return (
-                    <div key={i} className={`min-h-[100px] p-2 ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-primary-50/30' : hasAvailable ? 'bg-green-50/20 hover:bg-green-50/30' : 'hover:bg-gray-50/50'} transition-colors`}>
-                      <div className="flex items-center gap-1 mb-1.5">
-                        <p className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full ${
-                          today ? 'bg-warm-500 text-white' : isPastDay ? 'text-gray-400' : 'text-gray-700'
-                        }`}>
-                          {day.getDate()}
-                        </p>
-                        {hasAvailable && (
-                          <span className="w-2 h-2 rounded-full bg-green-300 flex-shrink-0" title="Available" />
-                        )}
-                      </div>
-                      <div className="space-y-1">
-                        {entries.slice(0, 3).map(({ job, conflictWarning }) => (
-                          <div
-                            key={job.id}
-                            onClick={() => setSelectedJob(job)}
-                            className={`px-2 py-1 rounded text-xs cursor-pointer truncate border font-medium transition-colors ${
-                              job.is_emergency
-                                ? 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200'
-                                : conflictWarning
-                                ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-                                : STATUS_COLORS[job.status] || 'bg-gray-100 text-gray-600 border-gray-200'
-                            }`}
-                          >
-                            {job.description}
-                          </div>
-                        ))}
-                        {entries.length > 3 && (
-                          <p className="text-xs text-gray-400 pl-1">+{entries.length - 3} more</p>
-                        )}
-                      </div>
+              {/* Desktop month grid */}
+              <div className="hidden md:block">
+                <div className="grid grid-cols-7 border-b border-gray-100">
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
+                    <div key={d} className="py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      {d}
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 divide-x divide-y divide-gray-100">
+                  {monthDays.map((day, i) => {
+                    if (!day) return <div key={i} className="min-h-[100px] bg-gray-50/50" />;
+                    const entries = getJobsForDate(day);
+                    const today = isToday(day);
+                    const daySlots = getAvailabilityForDate(day);
+                    const hasAvailable = daySlots.some(s => s.status === 'available');
+                    const now = new Date();
+                    const isPastDay = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    return (
+                      <div key={i} className={`min-h-[100px] p-2 ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-primary-50/30' : hasAvailable ? 'bg-green-50/20 hover:bg-green-50/30' : 'hover:bg-gray-50/50'} transition-colors`}>
+                        <div className="flex items-center gap-1 mb-1.5">
+                          <p className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full ${
+                            today ? 'bg-warm-500 text-white' : isPastDay ? 'text-gray-400' : 'text-gray-700'
+                          }`}>
+                            {day.getDate()}
+                          </p>
+                          {hasAvailable && (
+                            <span className="w-2 h-2 rounded-full bg-green-300 flex-shrink-0" title="Available" />
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          {entries.slice(0, 3).map(({ job, conflictWarning }) => (
+                            <div
+                              key={job.id}
+                              onClick={() => setSelectedJob(job)}
+                              className={`px-2 py-1 rounded text-xs cursor-pointer truncate border font-medium transition-colors ${
+                                job.is_emergency
+                                  ? 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200'
+                                  : conflictWarning
+                                  ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                                  : STATUS_COLORS[job.status] || 'bg-gray-100 text-gray-600 border-gray-200'
+                              }`}
+                            >
+                              {job.description}
+                            </div>
+                          ))}
+                          {entries.length > 3 && (
+                            <p className="text-xs text-gray-400 pl-1">+{entries.length - 3} more</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Mobile month: compact calendar with dots + list of days with jobs */}
+              <div className="md:hidden">
+                {/* Mini calendar grid */}
+                <div className="px-3 py-2">
+                  <div className="grid grid-cols-7 mb-1">
+                    {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+                      <div key={i} className="py-1.5 text-center text-[10px] font-medium text-gray-400 uppercase">
+                        {d}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7 gap-y-0.5">
+                    {monthDays.map((day, i) => {
+                      if (!day) return <div key={i} className="h-9" />;
+                      const entries = getJobsForDate(day);
+                      const today = isToday(day);
+                      const now = new Date();
+                      const isPastDay = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                      const hasJobs = entries.length > 0;
+                      return (
+                        <div key={i} className="flex flex-col items-center">
+                          <div className={`w-8 h-8 flex items-center justify-center rounded-full text-xs font-medium ${
+                            today ? 'bg-warm-500 text-white' : isPastDay ? 'text-gray-300' : hasJobs ? 'text-gray-900 font-semibold' : 'text-gray-500'
+                          }`}>
+                            {day.getDate()}
+                          </div>
+                          {hasJobs && (
+                            <div className="flex gap-0.5 mt-0.5">
+                              {entries.slice(0, 3).map((e, j) => (
+                                <span key={j} className={`w-1 h-1 rounded-full ${
+                                  e.job.is_emergency || e.conflictWarning ? 'bg-red-500' :
+                                  e.job.status === 'completed' ? 'bg-gray-400' :
+                                  e.job.status === 'in_progress' ? 'bg-emerald-500' :
+                                  e.job.status === 'accepted' ? 'bg-blue-500' :
+                                  'bg-amber-500'
+                                }`} />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* List of days with scheduled jobs */}
+                <div className="border-t border-gray-100 divide-y divide-gray-100">
+                  {monthDays.filter((day): day is Date => day !== null && getJobsForDate(day).length > 0).map((day, i) => {
+                    const entries = getJobsForDate(day);
+                    const today = isToday(day);
+                    const now = new Date();
+                    const isPastDay = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    return (
+                      <div key={i} className={isPastDay ? 'opacity-60' : ''}>
+                        <div className={`px-4 py-2 flex items-center gap-2 ${today ? 'bg-emerald-50' : 'bg-gray-50'}`}>
+                          <span className={`text-[11px] font-bold uppercase tracking-wider ${today ? 'text-emerald-700' : 'text-gray-500'}`}>
+                            {day.toLocaleDateString('en-AU', { weekday: 'short' })} {day.getDate()} {day.toLocaleDateString('en-AU', { month: 'short' })}
+                          </span>
+                          {today && <span className="text-[10px] font-medium text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">Today</span>}
+                          <span className="ml-auto text-[10px] text-gray-400">{entries.length} job{entries.length !== 1 ? 's' : ''}</span>
+                        </div>
+                        {entries.map(({ job, conflictWarning }) => {
+                          const { category, title } = parseJobDescription(job.description);
+                          const accentColor = job.is_emergency || conflictWarning
+                            ? 'border-l-red-500'
+                            : job.status === 'completed' ? 'border-l-gray-300'
+                            : job.status === 'in_progress' ? 'border-l-emerald-500'
+                            : job.status === 'accepted' ? 'border-l-blue-400'
+                            : 'border-l-amber-400';
+                          return (
+                            <div
+                              key={job.id}
+                              onClick={() => setSelectedJob(job)}
+                              className={`flex items-center gap-3 px-4 py-3 border-l-4 ${accentColor} cursor-pointer active:bg-gray-50 transition-colors`}
+                              style={{ borderBottom: '0.5px solid #eee' }}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                  {category && <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">{category}</span>}
+                                  {!category && <span className="text-sm font-medium text-gray-900 truncate">{title}</span>}
+                                  {job.is_emergency && <span className="text-[10px] font-semibold text-red-600">URGENT</span>}
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  {(job.start_time || job.preferred_time_slot) && (
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="w-3 h-3" />
+                                      {job.start_time
+                                        ? formatJobTime(job.start_time)
+                                        : (TIME_SLOT_LABELS[job.preferred_time_slot || ''] || job.preferred_time_slot)}
+                                    </span>
+                                  )}
+                                  {job.location_address && (
+                                    <span className="flex items-center gap-1 truncate">
+                                      <MapPin className="w-3 h-3" />
+                                      <span className="truncate">{job.location_address.split(',')[0]}</span>
+                                    </span>
+                                  )}
+                                </div>
+                                {conflictWarning && (
+                                  <div className="flex items-center gap-1 mt-1 text-[10px] text-red-600 font-medium">
+                                    <AlertCircle className="w-3 h-3" />
+                                    Time conflict
+                                  </div>
+                                )}
+                              </div>
+                              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
+                                job.status === 'completed' ? 'bg-gray-100 text-gray-500' :
+                                job.status === 'in_progress' ? 'bg-emerald-100 text-emerald-700' :
+                                job.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
+                                'bg-amber-100 text-amber-700'
+                              }`}>
+                                {job.status.replace('_', ' ')}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                  {monthDays.filter((day): day is Date => day !== null && getJobsForDate(day).length > 0).length === 0 && (
+                    <div className="px-4 py-6 text-center text-xs text-gray-400">No jobs scheduled this month</div>
+                  )}
+                </div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="flex items-center justify-between flex-wrap gap-3 bg-white border border-gray-100 rounded-xl shadow-sm px-5 py-3">
-          <div className="flex items-center gap-5 text-xs text-gray-600">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 bg-white border border-gray-100 md:rounded-xl md:shadow-sm px-4 md:px-5 py-3">
+          <div className="flex items-center flex-wrap gap-3 sm:gap-5 text-xs text-gray-600">
             <span className="font-medium text-gray-700">Legend:</span>
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded bg-green-100 border border-green-300" />
@@ -1450,7 +1715,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
         </div>
 
         {jobs.length === 0 && !loading && (
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-12 text-center">
+          <div className="bg-white border border-gray-100 md:rounded-2xl md:shadow-sm p-8 md:p-12 text-center">
             <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Calendar className="w-8 h-8 text-primary-400" />
             </div>

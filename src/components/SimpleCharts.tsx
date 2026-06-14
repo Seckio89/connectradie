@@ -13,21 +13,21 @@ export function BarChart({ data, height = 200, showValues = true }: BarChartProp
   const max = Math.max(...data.map(d => d.value), 1);
 
   return (
-    <div className="w-full" style={{ height }}>
-      <div className="flex items-end gap-2 h-full">
+    <div className="w-full overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0" style={{ minHeight: height }}>
+      <div className="flex items-end gap-1 sm:gap-2 h-full" style={{ height }}>
         {data.map((d, i) => {
           const barHeight = (d.value / max) * 100;
           const isHovered = hoveredIndex === i;
           return (
             <div
               key={i}
-              className="flex-1 flex flex-col items-center justify-end h-full gap-1"
+              className="flex-1 flex flex-col items-center justify-end h-full gap-1 min-w-[36px]"
               onMouseEnter={() => setHoveredIndex(i)}
               onMouseLeave={() => setHoveredIndex(null)}
             >
               {showValues && (
                 <span
-                  className={`text-xs font-medium transition-opacity duration-200 ${
+                  className={`text-[10px] sm:text-xs font-medium transition-opacity duration-200 ${
                     isHovered ? 'text-gray-900 opacity-100' : 'text-gray-600 opacity-70'
                   }`}
                 >
@@ -43,7 +43,7 @@ export function BarChart({ data, height = 200, showValues = true }: BarChartProp
                   transform: isHovered ? 'scaleX(1.1)' : 'scaleX(1)',
                 }}
               />
-              <span className="text-xs text-gray-500 truncate w-full text-center">{d.label}</span>
+              <span className="text-[9px] sm:text-xs text-gray-500 truncate w-full text-center leading-tight">{d.label}</span>
             </div>
           );
         })}
@@ -144,11 +144,11 @@ export function LineChart({ data, height = 200, color = '#06D6A0', formatValue }
           </g>
         ))}
       </svg>
-      <div className="flex justify-between px-2 mt-1">
+      <div className="flex justify-between px-1 sm:px-2 mt-1 overflow-hidden">
         {data.map((d, i) => (
           <span
             key={i}
-            className={`text-xs ${hoveredIndex === i ? 'text-gray-900 font-medium' : 'text-gray-400'}`}
+            className={`text-[9px] sm:text-xs truncate ${hoveredIndex === i ? 'text-gray-900 font-medium' : 'text-gray-400'}`}
           >
             {d.label}
           </span>
@@ -197,8 +197,8 @@ export function DonutChart({ data, size = 160, centerLabel = 'Total' }: DonutCha
   const midRadius = (radius + innerRadius) / 2;
 
   return (
-    <div className="flex items-center gap-6">
-      <svg width={size} height={size} className="flex-shrink-0" role="img" aria-label={`Donut chart showing ${data.map(d => `${d.label}: ${d.value}`).join(', ')}`}>
+    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+      <svg width={size} height={size} className="flex-shrink-0 max-w-[140px] sm:max-w-none w-auto h-auto sm:w-[160px] sm:h-[160px]" viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`Donut chart showing ${data.map(d => `${d.label}: ${d.value}`).join(', ')}`}>
         {segments.map((seg, i) => {
           const isHovered = hoveredIndex === i;
           return (
@@ -222,14 +222,14 @@ export function DonutChart({ data, size = 160, centerLabel = 'Total' }: DonutCha
           {centerLabel}
         </text>
       </svg>
-      <div className="space-y-2">
+      <div className="space-y-1.5 sm:space-y-2 w-full sm:w-auto">
         {data.map((d, i) => {
           const isHovered = hoveredIndex === i;
           const pct = Math.round((d.value / total) * 100);
           return (
             <div
               key={i}
-              className={`flex items-center gap-2 text-sm cursor-pointer transition-all duration-200 ${
+              className={`flex items-center gap-2 text-xs sm:text-sm cursor-pointer transition-all duration-200 ${
                 isHovered ? 'scale-105' : ''
               }`}
               onMouseEnter={() => setHoveredIndex(i)}

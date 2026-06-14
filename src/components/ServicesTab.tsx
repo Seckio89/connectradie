@@ -1364,18 +1364,18 @@ function JobCard({
       {/* ─── Header — click to collapse/expand ─── */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="w-full px-5 py-4 text-left hover:bg-gray-50/50 transition-colors"
+        className="w-full px-4 sm:px-5 py-3 sm:py-4 text-left hover:bg-gray-50/50 transition-colors"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
               <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isCollapsed ? '-rotate-90' : ''}`} />
               <h4 className="text-sm font-bold text-gray-900 capitalize">{jobLabel}</h4>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusBadge.bg} ${statusBadge.text}`}>
+              <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium border ${statusBadge.bg} ${statusBadge.text}`}>
                 {statusBadge.label}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5">
+            <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-1 mt-1.5 ml-6 sm:ml-0">
               <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
                 <User className="w-3 h-3 text-gray-400" />
                 {clientName}
@@ -1387,7 +1387,7 @@ function JobCard({
                 </a>
               )}
               {clientEmail && (
-                <a href={`mailto:${clientEmail}`} className="inline-flex items-center gap-1.5 text-xs text-secondary-600 hover:text-secondary-700 font-medium">
+                <a href={`mailto:${clientEmail}`} className="hidden sm:inline-flex items-center gap-1.5 text-xs text-secondary-600 hover:text-secondary-700 font-medium">
                   <Mail className="w-3 h-3" />
                   {clientEmail}
                 </a>
@@ -1399,9 +1399,9 @@ function JobCard({
                 </span>
               )}
               {location && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500 truncate max-w-[240px]">
+                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500 truncate max-w-[180px] sm:max-w-[240px]">
                   <MapPin className="w-3 h-3 flex-shrink-0 text-gray-400" />
-                  {location}
+                  {location.split(',')[0]}
                 </span>
               )}
               {agreedPrice != null && agreedPrice > 0 && (

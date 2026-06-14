@@ -277,7 +277,7 @@ export default function AnalyticsDashboard() {
             <h1 className="text-2xl font-bold text-gray-900">My Stats</h1>
             <p className="text-gray-500 mt-1">See how your business is tracking and where to improve</p>
           </div>
-          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
+          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-sm overflow-x-auto max-w-full">
             {([
               { key: '7d' as DateRange, label: '7 Days' },
               { key: '30d' as DateRange, label: '30 Days' },
@@ -288,7 +288,7 @@ export default function AnalyticsDashboard() {
               <button
                 key={key}
                 onClick={() => setDateRange(key)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                className={`px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap ${
                   dateRange === key
                     ? 'bg-warm-500 text-white shadow-sm'
                     : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
@@ -319,14 +319,14 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Interactive Revenue Trend (Line Chart) */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 mb-6 shadow-sm overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Revenue Trend</h2>
-                  <p className="text-sm text-gray-500 mt-0.5">Monthly revenue over the selected period</p>
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">Revenue Trend</h2>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Monthly revenue over the selected period</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalRevenue)}</p>
+                <div className="sm:text-right">
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{formatCurrency(totalRevenue)}</p>
                   <p className="text-xs text-gray-500">Total in period</p>
                 </div>
               </div>
@@ -339,10 +339,10 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Quotes Sent vs Won (Bar Chart) + Job Status (Donut) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-gray-900 mb-1">Quotes: Sent vs Won</h2>
-                <p className="text-sm text-gray-500 mb-4">Comparison across price ranges</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 shadow-sm overflow-hidden">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">Quotes: Sent vs Won</h2>
+                <p className="text-xs sm:text-sm text-gray-500 mb-4">Comparison across price ranges</p>
                 <SimpleBarChart
                   data={conversionByRange.flatMap(r => [
                     { label: `${r.label} Sent`, value: r.total, color: '#93c5fd' },
@@ -363,9 +363,9 @@ export default function AnalyticsDashboard() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-gray-900 mb-1">Job Status Breakdown</h2>
-                <p className="text-sm text-gray-500 mb-4">Distribution of jobs by current status</p>
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 shadow-sm overflow-hidden">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">Job Status Breakdown</h2>
+                <p className="text-xs sm:text-sm text-gray-500 mb-4">Distribution of jobs by current status</p>
                 <DonutChart
                   data={[
                     { label: 'Completed', value: jobs.filter(j => j.status === 'completed').length, color: '#06D6A0' },
@@ -380,11 +380,11 @@ export default function AnalyticsDashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
               {/* Quote Performance */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Quote Performance</h2>
-                <div className="flex items-center gap-6 mb-6">
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 shadow-sm overflow-hidden">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Quote Performance</h2>
+                <div className="flex items-center gap-4 sm:gap-6 mb-6">
                   {/* CSS Donut */}
                   <div className="relative w-24 h-24 flex-shrink-0">
                     <svg className="w-24 h-24 -rotate-90" viewBox="0 0 36 36">
@@ -432,9 +432,9 @@ export default function AnalyticsDashboard() {
               </div>
 
               {/* Response Time */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Response Time</h2>
-                <div className="flex gap-6 mb-6">
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 shadow-sm overflow-hidden">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Response Time</h2>
+                <div className="flex gap-3 sm:gap-6 mb-6">
                   <div className="bg-secondary-50 rounded-xl p-4 flex-1 text-center">
                     <Clock className="w-5 h-5 text-secondary-600 mx-auto mb-1" />
                     <p className="text-2xl font-bold text-gray-900">{Math.round(avgResponseTime)}h</p>
@@ -462,11 +462,11 @@ export default function AnalyticsDashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
               {/* Client Retention */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Client Retention</h2>
-                <div className="flex items-center gap-4 mb-6">
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 shadow-sm overflow-hidden">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Client Retention</h2>
+                <div className="flex items-center gap-3 sm:gap-4 mb-6">
                   <div className="bg-green-50 rounded-xl p-4 text-center flex-1">
                     <Users className="w-5 h-5 text-green-600 mx-auto mb-1" />
                     <p className="text-2xl font-bold text-gray-900">{clientStats.repeatPct}%</p>
@@ -501,9 +501,9 @@ export default function AnalyticsDashboard() {
               </div>
 
               {/* Seasonal Trends */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Seasonal Trends</h2>
-                <div className="grid grid-cols-6 gap-2 mb-4">
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 shadow-sm overflow-hidden">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Seasonal Trends</h2>
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-4">
                   {seasonalData.map((m, i) => (
                     <div key={i} className="flex flex-col items-center gap-1">
                       <div
@@ -533,7 +533,7 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Insights */}
-            <div className="bg-gradient-to-r from-secondary-50 to-primary-50 rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <div className="bg-gradient-to-r from-secondary-50 to-primary-50 rounded-2xl border border-gray-200 p-4 sm:p-6 shadow-sm overflow-hidden">
               <div className="flex items-center gap-2 mb-4">
                 <Lightbulb className="w-5 h-5 text-secondary-600" />
                 <h2 className="text-lg font-semibold text-gray-900">Insights & Tips</h2>
@@ -583,16 +583,16 @@ function KPICard({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+    <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5 shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <div className={`p-2.5 ${bgMap[color]} rounded-xl`}>
+        <div className={`p-2 sm:p-2.5 ${bgMap[color]} rounded-xl`}>
           <Icon className={`w-5 h-5 ${iconColorMap[color]}`} />
         </div>
         {trend === 'up' && <ArrowUpRight className="w-4 h-4 text-green-500" />}
         {trend === 'down' && <ArrowDownRight className="w-4 h-4 text-red-500" />}
       </div>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-      <p className="text-sm text-gray-500 mt-1">{label}</p>
+      <p className="text-xl sm:text-2xl font-bold text-gray-900">{value}</p>
+      <p className="text-xs sm:text-sm text-gray-500 mt-1">{label}</p>
     </div>
   );
 }

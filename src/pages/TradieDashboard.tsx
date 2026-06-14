@@ -751,9 +751,9 @@ export default function TradieDashboard() {
           </div>
         </div>
       )}
-      <div className="max-w-[1600px] mx-auto">
+      <div className="max-w-[1600px] mx-auto px-0 md:px-0">
         {/* Header */}
-        <div className="mb-8 bg-navy-900 rounded-lg p-6 sm:p-8 border border-navy-800">
+        <div className="mb-6 md:mb-8 bg-navy-900 md:rounded-lg p-4 sm:p-6 md:p-8 border-b md:border border-navy-800">
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-white mb-1">Your Business Hub</h1>
           <p className="text-navy-300">Manage your schedule, jobs, and conversations in one place</p>
           {profile && (
@@ -796,7 +796,7 @@ export default function TradieDashboard() {
 
         {/* Free Tier Usage */}
         {!isProUser && (
-          <div className="mb-6 max-w-sm bg-white rounded-xl shadow-sm p-4">
+          <div className="mb-4 md:mb-6 max-w-sm bg-white md:rounded-xl md:shadow-sm p-4 border-b md:border border-gray-100">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-semibold text-gray-900">Free Plan Usage</h3>
               <button onClick={() => setShowSubscriptionModal(true)} className="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors">
@@ -867,10 +867,11 @@ export default function TradieDashboard() {
                 <div className="w-8 h-8 bg-warm-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-sm font-bold text-warm-700">2</span>
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-semibold text-gray-900">Browse available leads</p>
                   <p className="text-xs text-gray-500">Quote on jobs near you</p>
                 </div>
+                <ChevronRight className="w-4 h-4 text-gray-400 md:hidden flex-shrink-0" />
               </Link>
               <Link
                 to="/my-profile"
@@ -973,25 +974,25 @@ export default function TradieDashboard() {
           const unreadConvos = conversations.filter(c => c.messages.some(m => m.receiver_id === user?.id && !m.read_at));
           const pendingConfirmations = recurringSessions.filter(s => s.status === 'pending_confirmation');
           if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0 && newLeads.length === 0) return (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mt-6 mb-2">
+            <div className="bg-emerald-50 border border-emerald-200 md:rounded-xl p-3 md:p-4 mt-4 md:mt-6 mb-2" style={{ borderBottom: '0.5px solid #d1fae5' }}>
               <div className="flex items-center gap-2 text-emerald-700">
-                <CheckCircle2 className="w-5 h-5" />
-                <span className="text-sm font-medium">You're all caught up!</span>
+                <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="text-sm font-medium">All caught up</span>
               </div>
-              <p className="text-xs text-emerald-600 mt-1">No pending actions. Check back later for new leads.</p>
             </div>
           );
           if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0) return null;
           return (
-            <div className="bg-white rounded-xl border border-gray-200 p-4 mt-6 mb-2">
+            <div className="bg-white md:rounded-xl border-b md:border border-gray-200 p-4 mt-4 md:mt-6 mb-2">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <p className="text-xs md:text-sm font-semibold text-gray-900 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-500" />
                   Your Next Steps
+                  <span className="bg-amber-100 text-amber-700 text-[10px] md:text-xs font-medium px-2 md:px-3 py-0.5 md:py-1 rounded-full">
+                    {pendingJobs.length + inProgressJobs.length + unreadConvos.length + pendingConfirmations.length}
+                  </span>
                 </p>
-                <span className="bg-amber-100 text-amber-700 text-xs font-medium px-3 py-1 rounded-full">
-                  {pendingJobs.length + inProgressJobs.length + unreadConvos.length + pendingConfirmations.length}
-                </span>
+                <Link to="/work" className="text-[11px] font-medium text-[#1D9E75] md:hidden">Manage</Link>
               </div>
               <div className="space-y-2">
                 {pendingConfirmations.length > 0 && (
@@ -1158,14 +1159,14 @@ export default function TradieDashboard() {
                       tabIndex={0}
                       onClick={() => navigate(`/work?job=${lead.id}`)}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/work?job=${lead.id}`); } }}
-                      className={`rounded-2xl overflow-hidden transition-all cursor-pointer ${
+                      className={`md:rounded-2xl overflow-hidden transition-all cursor-pointer ${
                         isFlashActive
-                          ? 'border border-warm-200 bg-white shadow-md hover:shadow-xl ring-1 ring-warm-100'
+                          ? 'border border-warm-200 bg-white md:shadow-md hover:shadow-xl ring-1 ring-warm-100'
                           : isUrgent
-                          ? 'border border-red-200 bg-white shadow-md hover:shadow-xl'
+                          ? 'border border-red-200 bg-white md:shadow-md hover:shadow-xl'
                           : isInvited
-                          ? 'border border-secondary-200 bg-white shadow-sm hover:shadow-md'
-                          : 'border border-gray-200 bg-white shadow-sm hover:shadow-lg hover:border-gray-300'
+                          ? 'border border-secondary-200 bg-white md:shadow-sm hover:shadow-md'
+                          : 'border border-gray-200 bg-white md:shadow-sm hover:shadow-lg hover:border-gray-300'
                       }`}
                     >
                       <div className="flex">
@@ -1393,24 +1394,24 @@ export default function TradieDashboard() {
                               </div>
                               <div className="min-w-0">
                                 <p className="text-sm text-gray-900 font-semibold truncate">{item.clientName}</p>
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
                                   <span className="capitalize">{item.label}</span>
                                   {item.rate && item.rate > 0 && (
                                     <>
-                                      <span className="text-gray-300">·</span>
+                                      <span className="text-gray-300 hidden sm:inline">·</span>
                                       <span className="text-emerald-600 font-medium">${item.rate.toFixed(0)}/visit</span>
                                     </>
                                   )}
                                   {item.nextDate && (
                                     <>
-                                      <span className="text-gray-300">·</span>
+                                      <span className="text-gray-300 hidden sm:inline">·</span>
                                       <span className="font-medium text-gray-700">Next: {item.nextDate}</span>
                                     </>
                                   )}
                                 </div>
                               </div>
                             </div>
-                            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full flex-shrink-0">
+                            <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-emerald-100 text-emerald-700 text-[10px] sm:text-xs font-medium rounded-full flex-shrink-0 ml-2">
                               Active
                             </span>
                           </Link>

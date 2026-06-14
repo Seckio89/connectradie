@@ -1671,13 +1671,17 @@ export default function ClientServicesTab() {
                   onClick={toggleExpanded}
                   className="w-full px-4 py-3 bg-gray-50 text-left hover:bg-gray-100 transition-colors"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
                         <p className="text-sm font-semibold text-gray-900 capitalize">{label}</p>
+                        {/* Mobile: show Active badge inline with title */}
+                        <span className="sm:hidden px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-medium rounded-full ml-auto">
+                          Active
+                        </span>
                       </div>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 ml-6">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 ml-6">
                         <span className="inline-flex items-center gap-1 text-xs text-gray-500">
                           <User className="w-3 h-3" />
                           {tradieName}
@@ -1688,8 +1692,13 @@ export default function ClientServicesTab() {
                             {freq}
                           </span>
                         )}
+                        {job.agreed_price != null && job.agreed_price > 0 && (
+                          <span className="sm:hidden inline-flex items-center text-xs font-semibold text-emerald-600">
+                            ${job.agreed_price.toFixed(2)}/visit
+                          </span>
+                        )}
                         {job.location && (
-                          <span className="inline-flex items-center gap-1 text-xs text-gray-500 truncate max-w-[220px]">
+                          <span className="inline-flex items-center gap-1 text-xs text-gray-500 truncate max-w-[200px] sm:max-w-[220px]">
                             <MapPin className="w-3 h-3 flex-shrink-0" />
                             {job.location.split(',')[0]}
                           </span>
@@ -1707,7 +1716,7 @@ export default function ClientServicesTab() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
                       {job.agreed_price != null && job.agreed_price > 0 ? (
                         <span className="text-sm font-semibold text-emerald-600">
                           ${job.agreed_price.toFixed(2)}
@@ -2473,11 +2482,11 @@ export default function ClientServicesTab() {
 
                   return (
                     <div key={job.id} className="bg-white rounded-xl border border-gray-200 px-4 py-3">
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3">
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-gray-900 capitalize">{label}</p>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                            <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium border ${
                               isPaused ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-gray-100 text-gray-500 border-gray-200'
                             }`}>
                               {isPaused ? 'Paused' : 'Ended'}
