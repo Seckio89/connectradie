@@ -2604,31 +2604,4 @@ export default function ClientServicesTab() {
                     <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full flex-shrink-0 capitalize">
                       {ag.status}
                     </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Outstanding invoices are now shown inline on each service card above */}
-
-      {cancelTarget && (() => {
-        const target = recurringJobs.find((j) => j.id === cancelTarget);
-        const label = target
-          ? (target.service_subtype || target.trade_category.replace(/_/g, ' '))
-          : 'this service';
-        return (
-          <CancelServiceModal
-            isOpen
-            serviceLabel={label}
-            otherPartyRole="tradie"
-            onCancel={() => setCancelTarget(null)}
-            onConfirm={(payload) => handleCancel(cancelTarget, payload)}
-          />
-        );
-      })()}
-    </div>
-  );
-}
+           

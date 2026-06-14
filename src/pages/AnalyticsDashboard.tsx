@@ -584,15 +584,4 @@ function KPICard({
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <div className={`p-2 sm:p-2.5 ${bgMap[color]} rounded-xl`}>
-          <Icon className={`w-5 h-5 ${iconColorMap[color]}`} />
-        </div>
-        {trend === 'up' && <ArrowUpRight className="w-4 h-4 text-green-500" />}
-        {trend === 'down' && <ArrowDownRight className="w-4 h-4 text-red-500" />}
-      </div>
-      <p className="text-xl sm:text-2xl font-bold text-gray-900">{value}</p>
-      <p className="text-xs sm:text-sm text-gray-500 mt-1">{label}</p>
-    </div>
-  );
-}
+      <div className="flex i
