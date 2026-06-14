@@ -1990,3 +1990,13 @@ export default function ServicesTab() {
                     } catch (err) {
                       showToast(err instanceof Error ? err.message : 'Failed to send response', true);
                     }
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}

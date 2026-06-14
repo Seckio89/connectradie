@@ -122,4 +122,32 @@
       "Bash(rm -f .git/index.lock && git add -A && git commit -m \"fix: cron auth JWT decode, calendar sync export, slot deletion cleanup\" && git push origin master)",
       "Bash(bash -c \"npx supabase functions deploy send-lead-reminders send-invoice-reminders send-recurring-reminders generate-recurring-sessions sync-google-calendar --project-ref uoqygmizupdpanplpvor\")",
       "Bash(rm -f .git/index.lock && git add -A && git commit -m \"fix: cron auth JWT decode, calendar sync, slot cleanup\" && git push origin master)",
-      "Bash(rm -f .git/index.lock && git add src/components/SimpleCharts.tsx src/pages/AnalyticsDashboard.tsx src/pages/SiteCalendar.tsx src/pages
+      "Bash(rm -f .git/index.lock && git add src/components/SimpleCharts.tsx src/pages/AnalyticsDashboard.tsx src/pages/SiteCalendar.tsx src/pages/WorkHub.tsx src/components/ClientServicesTab.tsx src/components/ServicesTab.tsx src/pages/TradieDashboard.tsx && git commit -m \"fix: mobile responsiveness for analytics, calendar month view, work hub tabs, service cards\" && git push origin master)",
+      "Bash(rm -f .git/index.lock && ls .git/index.lock 2>&1 || echo \"lockfile gone\")",
+      "Bash(rm -f .git/index.lock && git add src/components/DashboardLayout.tsx src/pages/TradieDashboard.tsx && git commit -m \"Fix: calendar page mobile overflow — stack header, shrink buttons, constrain grid\" && git push origin master)",
+      "Bash(rm -f .git/index.lock)",
+      "Bash(git stash *)",
+      "Bash(rm -f .git/HEAD.lock .git/index.lock; git stash list | head -3)",
+      "Bash(rm -f .git/HEAD.lock .git/index.lock)",
+      "Bash(git checkout *)",
+      "Bash(rm -f .git/HEAD.lock .git/index.lock && git stash push -m \"settings.local drift\" -- .claude/settings.local.json 2>&1 | tail -3 && git checkout master 2>&1 | tail -3)",
+      "Bash(git pull *)",
+      "Bash(rm -f .git/HEAD.lock .git/index.lock && git checkout -- .claude/settings.local.json 2>&1 && git pull 2>&1 | tail -8)",
+      "Bash(git revert *)",
+      "Bash(rm -f .git/HEAD.lock .git/index.lock && git checkout -- .claude/settings.local.json && git revert -m 1 --no-edit 0e43aa0 2>&1 | tail -10)",
+      "Bash(rm -f .git/HEAD.lock .git/index.lock && git checkout 3b8546d -- src/pages/WorkHub.tsx 2>&1 && git status --short src/pages/WorkHub.tsx)",
+      "Bash(rm -f .git/HEAD.lock .git/index.lock && git revert --continue --no-edit 2>&1 | tail -8)",
+      "Bash(rm -f .git/HEAD.lock .git/index.lock && git push origin master 2>&1 | tail -5)",
+      "Bash(rm -f .git/HEAD.lock .git/index.lock && git checkout mobile-redesign 2>&1 | tail -3 && git status --short | head -5)",
+      "Bash(rm -f .git/HEAD.lock .git/index.lock && git checkout -- .claude/settings.local.json && git checkout mobile-redesign 2>&1 | tail -3 && echo \"---\" && git status --short | head -10 && echo \"---branch:\" && git branch --show-current)",
+      "Bash(rm -f .git/HEAD.lock .git/index.lock && git stash pop stash@{1} 2>&1 | tail -15)",
+      "Bash(echo \"---exit: $?\")",
+      "Bash(rm -f .git/HEAD.lock .git/index.lock && git checkout -- .claude/settings.local.json && rm src/styles/mobile-redesign.css && git stash pop stash@{1} 2>&1 | tail -15)",
+      "Bash(rm -f .git/HEAD.lock .git/index.lock && git add -A && git commit -m \"fix: restore truncated files to fix build\" && git push origin mobile-redesign 2>&1 | tail -10)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\User\\Desktop\\project\\.git",
+      "C:\\Users\\User\\Desktop\\project\\.git"
+    ]
+  }
+}

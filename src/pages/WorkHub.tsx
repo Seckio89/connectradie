@@ -89,4 +89,12 @@ export default function WorkHub() {
 
         <SectionErrorBoundary>
           {activeTab === 'leads' && <Leads embedded />}
-          {activeTab === 'quotes' && <Leads emb
+          {activeTab === 'quotes' && <Leads embedded initialFilter="quoted" />}
+          {activeTab === 'jobs' && <Jobs embedded />}
+          {activeTab === 'services' && <ServicesTab />}
+          {activeTab === 'hiring' && <TradeCareers embedded />}
+        </SectionErrorBoundary>
+      </div>
+    </DashboardLayout>
+  );
+}

@@ -2222,4 +2222,166 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
               )}
               {!rescheduleJob.id.startsWith('recurring-') && (
                 <div>
-   
+                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">{isTradie ? 'Confirm start time & duration' : 'Preferred start time (optional)'}</label>
+                  <div className="flex flex-col sm:flex-row gap-2.5">
+                    <input
+                      type="time"
+                      value={rescheduleTime}
+                      onChange={e => setRescheduleTime(e.target.value)}
+                      className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                    />
+                    <select
+                      value={rescheduleDuration}
+                      onChange={e => setRescheduleDuration(Number(e.target.value))}
+                      disabled={!rescheduleTime}
+                      className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none disabled:opacity-50 disabled:bg-gray-50"
+                    >
+                      {DURATION_OPTIONS.map(d => (
+                        <option key={d.minutes} value={d.minutes}>{d.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {rescheduleTime ? (
+                    <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-secondary-700">
+                      <Clock className="w-3 h-3 flex-shrink-0" />
+                      {isTradie ? 'Booked' : 'Roughly'} <span className="font-semibold">{formatJobTime(rescheduleTime)} – {formatJobTime(addMinutesToTime(rescheduleTime, rescheduleDuration))}</span>
+                      {!isTradie && <span className="text-gray-400">· the tradie confirms the final time</span>}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-[11px] text-gray-400">
+                      {isTradie ? 'Set the start time and how long it takes.' : 'Set a preferred start time, or leave blank to use the time slot above.'}
+                    </p>
+                  )}
+                </div>
+              )}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={() => { setRescheduleJob(null); setRescheduleDate(''); setRescheduleSlot(''); setRescheduleTime(''); setRescheduleDuration(120); }}
+                  className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReschedule}
+                  disabled={!rescheduleDate || rescheduleSaving}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-medium hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                >
+                  {rescheduleSaving ? (
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <CalendarClock className="w-4 h-4" />
+                  )}
+                  {isTradie ? 'Confirm time' : 'Reschedule'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        );
+      })()}
+
+      {/* Remove Confirmation Modal */}
+      {removeConfirmJob && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="p-6 text-center">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Remove This Job?</h3>
+              <p className="text-sm text-gray-500 mb-1 line-clamp-2">{removeConfirmJob.description}</p>
+              {removeConfirmJob.scheduled_date && (
+                <p className="text-xs text-gray-400">
+                  Scheduled for {new Date(removeConfirmJob.scheduled_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+              )}
+              <p className="text-sm text-gray-600 mt-3">
+                This will permanently cancel this {removeConfirmJob.id.startsWith('recurring-') ? 'session' : 'job'}. This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 px-6 pb-6">
+              <button
+                onClick={() => setRemoveConfirmJob(null)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                Keep Job
+              </button>
+              <button
+                onClick={handleRemoveJob}
+                disabled={removeSaving}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                {removeSaving ? (
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedJob && showAssignModal && (
+        <AssignTeamModal
+          job={selectedJob}
+          teamMembers={teamMembers}
+          existingAssignments={selectedJobAssignments}
+          onClose={() => setShowAssignModal(false)}
+          onSave={handleAssign}
+          onRemove={handleRemoveAssignment}
+        />
+      )}
+    </>
+  );
+
+  // Collapsed mode: a compact "next visit" bar instead of the full grid.
+  const nextEntry = (() => {
+    const todayStr = toLocalDateStr(new Date());
+    return jobs
+      .filter((j) => j.scheduled_date && j.scheduled_date >= todayStr && j.status !== 'completed' && j.status !== 'cancelled')
+      .sort((a, b) => {
+        const byDate = (a.scheduled_date || '').localeCompare(b.scheduled_date || '');
+        return byDate !== 0 ? byDate : (a.start_time || '99:99').localeCompare(b.start_time || '99:99');
+      })[0] || null;
+  })();
+
+  const collapsedView = (
+    <div className="max-w-[1600px] mx-auto">
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-warm-50 flex items-center justify-center flex-shrink-0">
+            <Calendar className="w-5 h-5 text-warm-600" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Calendar</p>
+            {loading ? (
+              <p className="text-sm font-semibold text-gray-400">Loading…</p>
+            ) : nextEntry ? (
+              <p className="text-sm font-semibold text-gray-900 truncate">
+                Next visit: {new Date(nextEntry.scheduled_date! + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
+                {formatJobTime(nextEntry.start_time) ? ` · ${formatJobTime(nextEntry.start_time)}` : ''}
+              </p>
+            ) : (
+              <p className="text-sm font-semibold text-gray-900">No upcoming visits scheduled</p>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={() => setCalendarCollapsed(false)}
+          className="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex-shrink-0"
+        >
+          <Calendar className="w-4 h-4" />
+          View calendar
+        </button>
+      </div>
+    </div>
+  );
+
+  if (defaultCollapsed && calendarCollapsed) {
+    return embedded ? collapsedView : <DashboardLayout>{collapsedView}</DashboardLayout>;
+  }
+  if (embedded) return content;
+  return <DashboardLayout>{content}</DashboardLayout>;
+}
