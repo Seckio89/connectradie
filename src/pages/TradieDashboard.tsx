@@ -744,8 +744,8 @@ export default function TradieDashboard() {
     <DashboardLayout>
       <WelcomeGuide role="tradie" userName={profile?.full_name} />
       {showOnboardedBanner && (
-        <div className="max-w-[1600px] mx-auto mb-4">
-          <div className="bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-2xl p-5">
+        <div className="max-w-[1600px] mx-auto mb-4 -mx-4 sm:mx-auto">
+          <div className="bg-gradient-to-r from-primary-50 to-secondary-50 border-y sm:border border-x-0 sm:border-x border-primary-200 rounded-none sm:rounded-2xl p-5 px-4 sm:px-5">
             <h3 className="font-bold text-primary-900 mb-1">Welcome to ConnecTradie!</h3>
             <p className="text-sm text-primary-800">Your account is set up. Set your availability below so clients can find and book you for jobs.</p>
           </div>
@@ -753,7 +753,7 @@ export default function TradieDashboard() {
       )}
       <div className="max-w-[1600px] mx-auto px-0 md:px-0 overflow-x-hidden">
         {/* Header */}
-        <div className="mb-6 md:mb-8 bg-navy-900 md:rounded-lg p-4 sm:p-6 md:p-8 border-b md:border border-navy-800">
+        <div className="mb-6 md:mb-8 bg-navy-900 rounded-none sm:rounded-2xl p-4 sm:p-6 md:p-8 border-b sm:border border-x-0 sm:border-x border-navy-800 -mx-4 sm:mx-0 px-4 sm:px-6 md:px-8">
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-white mb-1">Your Business Hub</h1>
           <p className="text-navy-300">Manage your schedule, jobs, and conversations in one place</p>
           {profile && (
@@ -796,7 +796,7 @@ export default function TradieDashboard() {
 
         {/* Free Tier Usage */}
         {!isProUser && (
-          <div className="mb-4 md:mb-6 max-w-sm bg-white rounded-none md:rounded-xl md:shadow-sm p-4 border-y md:border border-x-0 md:border-x border-gray-100">
+          <div className="mb-4 sm:mb-6 bg-white rounded-none sm:rounded-2xl sm:shadow-sm p-4 border-y sm:border border-x-0 sm:border-x border-gray-100 -mx-4 sm:mx-0 px-4 sm:px-6 sm:max-w-sm">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-semibold text-gray-900">Free Plan Usage</h3>
               <button onClick={() => setShowSubscriptionModal(true)} className="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors">
@@ -974,7 +974,7 @@ export default function TradieDashboard() {
           const unreadConvos = conversations.filter(c => c.messages.some(m => m.receiver_id === user?.id && !m.read_at));
           const pendingConfirmations = recurringSessions.filter(s => s.status === 'pending_confirmation');
           if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0 && newLeads.length === 0) return (
-            <div className="bg-emerald-50 border-y md:border border-x-0 md:border-x rounded-none md:rounded-xl p-3 md:p-4 mt-4 md:mt-6 mb-2 -mx-4 sm:mx-0" style={{ borderBottom: '0.5px solid #d1fae5' }}>
+            <div className="bg-emerald-50 border-y sm:border border-x-0 sm:border-x rounded-none sm:rounded-2xl p-3 sm:p-4 mt-4 sm:mt-6 mb-2 -mx-4 sm:mx-0 px-4 sm:px-6" style={{ borderBottom: '0.5px solid #d1fae5' }}>
               <div className="flex items-center gap-2 text-emerald-700">
                 <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
                 <span className="text-sm font-medium">All caught up</span>
@@ -983,7 +983,7 @@ export default function TradieDashboard() {
           );
           if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0) return null;
           return (
-            <div className="bg-white md:rounded-xl border-b md:border border-gray-200 p-4 mt-4 md:mt-6 mb-2">
+            <div className="bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 p-4 mt-4 sm:mt-6 mb-2 -mx-4 sm:mx-0 px-4 sm:px-6">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs md:text-sm font-semibold text-gray-900 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-500" />
@@ -1386,7 +1386,7 @@ export default function TradieDashboard() {
                           <Link
                             key={item.key}
                             to="/work?tab=services"
-                            className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl hover:border-emerald-200 hover:bg-emerald-50/30 transition-colors group"
+                            className="flex items-center justify-between p-3 bg-white border-b sm:border border-gray-200 rounded-none sm:rounded-xl border-x-0 sm:border-x hover:border-emerald-200 hover:bg-emerald-50/30 transition-colors group -mx-3 sm:mx-0 px-3 sm:px-3"
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-xs flex items-center justify-center flex-shrink-0">
@@ -1452,8 +1452,8 @@ export default function TradieDashboard() {
                             actionLabel="Set Your Availability"
                             onAction={() => navigate('/schedule')}
                           />
-                          <div className="text-center mt-3 pb-2">
-                            <Link to="/work?tab=recruitment" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                          <div className="text-center mt-1 sm:mt-3 pb-1 sm:pb-2">
+                            <Link to="/work?tab=recruitment" className="text-xs sm:text-sm text-primary-600 hover:text-primary-700 font-medium">
                               Or post a vacancy to find staff &rarr;
                             </Link>
                           </div>
@@ -1477,7 +1477,7 @@ export default function TradieDashboard() {
                           tabIndex={0}
                           onClick={() => { if (!isLicenseExpired) { setSelectedJob(job.id); setShowJobManagement(true); } }}
                           onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !isLicenseExpired) { e.preventDefault(); setSelectedJob(job.id); setShowJobManagement(true); } }}
-                          className={`border rounded-xl overflow-hidden transition-all hover:shadow-sm cursor-pointer ${
+                          className={`border-b sm:border rounded-none sm:rounded-xl border-x-0 sm:border-x overflow-hidden transition-all hover:shadow-sm cursor-pointer -mx-3 sm:mx-0 ${
                             job.priority === 'high' ? 'border-orange-200 bg-gradient-to-r from-orange-50/40 to-white' : 'border-gray-200 hover:border-primary-200'
                           }`}
                         >
