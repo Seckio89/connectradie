@@ -315,3 +315,83 @@ body {
     padding-bottom: 0.75rem;
   }
 }
+
+/* =============================================================================
+   Mobile-flush cards & Android safe-area fixes
+   ============================================================================= */
+
+/* Utility: flush card edges to viewport on mobile */
+.mobile-flush {
+  border-radius: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  border-left: none !important;
+  border-right: none !important;
+}
+
+/* --- Sidebar safe-area for Android status bar --- */
+@media (max-width: 1023px) {
+  /* Force sidebar to respect Android status bar / notch */
+  aside[class*="fixed"][class*="z-50"] {
+    padding-top: max(env(safe-area-inset-top, 0px), 12px) !important;
+  }
+
+  /* Sidebar nav: ensure it scrolls and items are compact */
+  aside[class*="fixed"][class*="z-50"] nav {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+  }
+
+  /* Tighter nav items in sidebar */
+  aside[class*="fixed"][class*="z-50"] nav a,
+  aside[class*="fixed"][class*="z-50"] nav button {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    min-height: 40px !important;
+  }
+
+  /* Compact sidebar bottom section */
+  aside[class*="fixed"][class*="z-50"] > div > div:last-child {
+    flex-shrink: 0 !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+}
+
+/* --- Force flush cards on mobile (safety net for Tailwind) --- */
+@media (max-width: 639px) {
+  /* Cards inside the main dashboard/tab content area */
+  [data-tour="jobs-tab"] > div > div > div[class*="border-b"],
+  [data-tour="jobs-tab"] > div > div > div[class*="rounded-none"] {
+    border-radius: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-left-width: 0 !important;
+    border-right-width: 0 !important;
+  }
+
+  /* Ensure job cards and ongoing service cards are truly edge-to-edge */
+  main [class*="border-b"][class*="sm:border"][class*="border-x-0"] {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+
+  /* Reduce vertical gaps between sections on mobile */
+  main .mb-6 {
+    margin-bottom: 0.75rem !important;
+  }
+
+  main .mt-6 {
+    margin-top: 0.75rem !important;
+  }
+
+  /* Make the "all caught up" banner slim */
+  main [class*="bg-emerald-50"][class*="border-y"] {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+}
