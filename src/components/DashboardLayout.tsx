@@ -545,10 +545,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         className={`fixed top-0 left-0 z-50 h-full w-64 bg-navy-900 border-r border-navy-800 transform transition-transform lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)' }}
       >
-        <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-4 border-b border-navy-800">
+        <div className="flex flex-col h-full overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-navy-800 flex-shrink-0">
             <Link to="/" className="flex items-center">
               <span className="text-2xl font-extrabold tracking-tight">
                 <span className="text-white">Connec</span><span className="text-warm-500">Tradie</span>
@@ -563,12 +563,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </button>
           </div>
 
-          <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto" data-tour="sidebar-nav">
+          <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto min-h-0" data-tour="sidebar-nav">
             {!isTradie && !isAdmin && (
               <Link
                 to="/post-lead"
                 data-tour="get-quote"
-                className="flex items-center justify-center gap-2 px-4 py-3 mb-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 mb-2 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
                 onClick={() => setSidebarOpen(false)}
               >
                 <Zap className="w-5 h-5" />
@@ -593,7 +593,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <div key={item.name}>
                     <button
                       onClick={() => setExpandedNav(isExpanded ? null : item.name)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors min-h-[44px] ${
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors min-h-[40px] ${
                         childActive
                           ? 'bg-warm-500/15 text-warm-400 border-l-[3px] border-warm-500'
                           : 'text-navy-300 hover:bg-navy-800 hover:text-white'
@@ -612,7 +612,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                             <Link
                               key={child.name}
                               to={child.href}
-                              className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+                              className={`flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors min-h-[36px] ${
                                 isChildActive
                                   ? 'bg-warm-500/15 text-warm-400'
                                   : 'text-navy-400 hover:bg-navy-800 hover:text-white'
@@ -635,7 +635,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   key={item.name}
                   to={item.href}
                   state={item.state}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors min-h-[44px] ${
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors min-h-[40px] ${
                     isActive
                       ? 'bg-warm-500/15 text-warm-400 border-l-[3px] border-warm-500'
                       : 'text-navy-300 hover:bg-navy-800 hover:text-white'
@@ -661,45 +661,42 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             })}
           </nav>
 
-          <div className="p-4 border-t border-navy-800">
+          <div className="px-3 py-2 border-t border-navy-800 flex-shrink-0">
             {isTradie && !isPro(tradieDetails?.subscription_tier, profile?.is_premium) && (
               <button
                 onClick={() => setShowSubscriptionModal(true)}
-                className="w-full flex items-center gap-3 px-4 py-3 mb-3 bg-warm-500/10 border border-warm-500/20 text-warm-400 rounded-lg font-medium hover:bg-warm-500/20 transition-all min-h-[44px]"
+                className="w-full flex items-center gap-2 px-3 py-2 mb-2 bg-warm-500/10 border border-warm-500/20 text-warm-400 rounded-lg text-sm font-medium hover:bg-warm-500/20 transition-all min-h-[40px]"
               >
-                <Crown className="w-5 h-5 text-warm-400" />
+                <Crown className="w-4 h-4 text-warm-400" />
                 Upgrade to Pro
               </button>
             )}
 
             {isTradie && isPro(tradieDetails?.subscription_tier, profile?.is_premium) && (
-              <div className="flex items-center gap-2 px-4 py-2.5 mb-3 bg-warm-500/10 border border-warm-500/20 rounded-lg">
-                <BadgeCheck className="w-5 h-5 text-warm-400" />
-                <span className="text-sm font-medium text-warm-300">Pro Member</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 mb-2 bg-warm-500/10 border border-warm-500/20 rounded-lg">
+                <BadgeCheck className="w-4 h-4 text-warm-400" />
+                <span className="text-xs font-medium text-warm-300">Pro Member</span>
               </div>
             )}
 
-            <div className="flex items-center gap-3 mb-4 p-3 bg-navy-800 rounded-lg">
-              <div className="w-10 h-10 bg-navy-700 rounded-full flex items-center justify-center">
-                <span className="text-lg font-bold text-warm-400">
+            <div className="flex items-center gap-2.5 p-2 bg-navy-800 rounded-lg">
+              <div className="w-8 h-8 bg-navy-700 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-bold text-warm-400">
                   {profile?.full_name?.charAt(0) || 'U'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-white truncate">{profile?.full_name}</p>
-                <p className="text-xs text-navy-400 capitalize">
+                <p className="text-sm font-medium text-white truncate">{profile?.full_name}</p>
+                <p className="text-[11px] text-navy-400 capitalize truncate">
                   {profile?.role}{isTradie && tradieDetails?.trade_category ? ` \u00B7 ${tradieDetails.trade_category}` : ''}
                 </p>
               </div>
-            </div>
-
-            <div className="border-t border-navy-700 mt-2 pt-2">
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg font-medium transition-colors min-h-[44px]"
+                className="p-2 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors flex-shrink-0"
+                title="Sign Out"
               >
-                <LogOut className="w-5 h-5" />
-                Sign Out
+                <LogOut className="w-4 h-4" />
               </button>
             </div>
           </div>

@@ -753,7 +753,7 @@ export default function TradieDashboard() {
       )}
       <div className="max-w-[1600px] mx-auto px-0 md:px-0 overflow-x-hidden">
         {/* Header */}
-        <div className="mb-6 md:mb-8 bg-navy-900 rounded-none sm:rounded-2xl p-4 sm:p-6 md:p-8 border-b sm:border border-x-0 sm:border-x border-navy-800 -mx-4 sm:mx-0 px-4 sm:px-6 md:px-8">
+        <div className="mb-3 md:mb-6 bg-navy-900 rounded-none sm:rounded-2xl p-4 sm:p-6 md:p-8 border-b sm:border border-x-0 sm:border-x border-navy-800 -mx-4 sm:mx-0 px-4 sm:px-6 md:px-8">
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-white mb-1">Your Business Hub</h1>
           <p className="text-navy-300">Manage your schedule, jobs, and conversations in one place</p>
           {profile && (
@@ -796,7 +796,7 @@ export default function TradieDashboard() {
 
         {/* Free Tier Usage */}
         {!isProUser && (
-          <div className="mb-4 sm:mb-6 bg-white rounded-none sm:rounded-2xl sm:shadow-sm p-4 border-y sm:border border-x-0 sm:border-x border-gray-100 -mx-4 sm:mx-0 px-4 sm:px-6 sm:max-w-sm">
+          <div className="mb-2 sm:mb-6 bg-white rounded-none sm:rounded-2xl sm:shadow-sm p-3 sm:p-4 border-y sm:border border-x-0 sm:border-x border-gray-100 -mx-4 sm:mx-0 px-4 sm:px-6 sm:max-w-sm">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-semibold text-gray-900">Free Plan Usage</h3>
               <button onClick={() => setShowSubscriptionModal(true)} className="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors">
@@ -833,7 +833,7 @@ export default function TradieDashboard() {
         )}
 
         {/* Onboarding Checklist */}
-        <div className="mb-6" data-tour="onboarding-checklist">
+        <div className="mb-3 sm:mb-6" data-tour="onboarding-checklist">
           <SectionErrorBoundary fallbackTitle="Onboarding checklist failed to load">
             <OnboardingChecklist />
           </SectionErrorBoundary>
@@ -841,7 +841,7 @@ export default function TradieDashboard() {
 
         {/* First-Time Guidance — shown when tradie has no jobs and no availability */}
         {jobs.length === 0 && slots.length === 0 && !slotsLoading && (
-          <div className="mb-6 bg-gradient-to-r from-warm-50 to-secondary-50 border-y sm:border border-x-0 sm:border-x border-warm-200 rounded-none sm:rounded-2xl p-5 -mx-4 sm:mx-0">
+          <div className="mb-3 sm:mb-6 bg-gradient-to-r from-warm-50 to-secondary-50 border-y sm:border border-x-0 sm:border-x border-warm-200 rounded-none sm:rounded-2xl p-4 sm:p-5 -mx-4 sm:mx-0">
             <h3 className="font-bold text-gray-900 mb-1">What to do first</h3>
             <p className="text-sm text-gray-600 mb-4">Complete these three steps to start getting work — most tradies are set up in under 5 minutes.</p>
             <div className="grid sm:grid-cols-3 gap-3">
@@ -974,17 +974,17 @@ export default function TradieDashboard() {
           const unreadConvos = conversations.filter(c => c.messages.some(m => m.receiver_id === user?.id && !m.read_at));
           const pendingConfirmations = recurringSessions.filter(s => s.status === 'pending_confirmation');
           if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0 && newLeads.length === 0) return (
-            <div className="bg-emerald-50 border-y sm:border border-x-0 sm:border-x rounded-none sm:rounded-2xl p-3 sm:p-4 mt-4 sm:mt-6 mb-2 -mx-4 sm:mx-0 px-4 sm:px-6" style={{ borderBottom: '0.5px solid #d1fae5' }}>
+            <div className="bg-emerald-50 border-y sm:border border-x-0 sm:border-x rounded-none sm:rounded-2xl py-2 px-4 sm:p-3 mt-2 sm:mt-4 mb-1 -mx-4 sm:mx-0 sm:px-5" style={{ borderBottom: '0.5px solid #d1fae5' }}>
               <div className="flex items-center gap-2 text-emerald-700">
-                <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="text-sm font-medium">All caught up</span>
+                <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                <span className="text-xs sm:text-sm font-medium">All caught up</span>
               </div>
             </div>
           );
           if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0) return null;
           return (
-            <div className="bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 p-4 mt-4 sm:mt-6 mb-2 -mx-4 sm:mx-0 px-4 sm:px-6">
-              <div className="flex items-center justify-between mb-3">
+            <div className="bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 p-3 sm:p-4 mt-2 sm:mt-4 mb-1 -mx-4 sm:mx-0 px-4 sm:px-6">
+              <div className="flex items-center justify-between mb-2">
                 <p className="text-xs md:text-sm font-semibold text-gray-900 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-500" />
                   Your Next Steps
@@ -1278,7 +1278,7 @@ export default function TradieDashboard() {
         })()}
 
         {/* Tabbed Content */}
-        <div className="bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 mb-6 shadow-sm mt-6 sm:ring-1 ring-primary-100/50 overflow-hidden -mx-4 sm:mx-0" data-tour="jobs-tab">
+        <div className="bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 mb-3 sm:mb-6 shadow-sm mt-3 sm:mt-6 sm:ring-1 ring-primary-100/50 overflow-hidden -mx-4 sm:mx-0" data-tour="jobs-tab">
           <div className="border-b border-gray-200">
             <div className="flex gap-1 sm:gap-2 p-2 sm:p-4">
               {(['jobs', 'messages'] as TabType[]).map((tab) => {
@@ -1303,7 +1303,7 @@ export default function TradieDashboard() {
             </div>
           </div>
 
-          <div className="p-3 sm:p-6">
+          <div className="px-4 py-3 sm:p-6">
             {/* ─── JOBS TAB ─── */}
             {activeTab === 'jobs' && (() => {
               const activeJobs = jobs.filter((j: DashboardJob) => !['completed', 'cancelled', 'declined'].includes(j.status));
@@ -1386,7 +1386,7 @@ export default function TradieDashboard() {
                           <Link
                             key={item.key}
                             to="/work?tab=services"
-                            className="flex items-center justify-between p-3 bg-white border-b sm:border border-gray-200 rounded-none sm:rounded-xl border-x-0 sm:border-x hover:border-emerald-200 hover:bg-emerald-50/30 transition-colors group -mx-3 sm:mx-0 px-3 sm:px-3"
+                            className="flex items-center justify-between p-3 bg-white border-b sm:border border-gray-200 rounded-none sm:rounded-xl border-x-0 sm:border-x hover:border-emerald-200 hover:bg-emerald-50/30 transition-colors group -mx-4 sm:mx-0 px-4 sm:px-3"
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-xs flex items-center justify-center flex-shrink-0">
@@ -1436,9 +1436,9 @@ export default function TradieDashboard() {
                     : 'Set up your calendar so clients can find and book you for their next project.';
                   return (
                     <>
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-bold text-gray-900">{heading}</h2>
-                        <Link to="/work?tab=active" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                      <div className="flex items-center justify-between mb-2 sm:mb-4">
+                        <h2 className="text-base sm:text-lg font-bold text-gray-900">{heading}</h2>
+                        <Link to="/work?tab=active" className="text-xs sm:text-sm text-primary-600 hover:text-primary-700 font-medium">
                           View all in Work Hub &rarr;
                         </Link>
                       </div>
@@ -1452,8 +1452,8 @@ export default function TradieDashboard() {
                             actionLabel="Set Your Availability"
                             onAction={() => navigate('/schedule')}
                           />
-                          <div className="text-center mt-1 sm:mt-3 pb-1 sm:pb-2">
-                            <Link to="/work?tab=recruitment" className="text-xs sm:text-sm text-primary-600 hover:text-primary-700 font-medium">
+                          <div className="text-center -mt-1 sm:mt-1 pb-1">
+                            <Link to="/work?tab=recruitment" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
                               Or post a vacancy to find staff &rarr;
                             </Link>
                           </div>
@@ -1477,7 +1477,7 @@ export default function TradieDashboard() {
                           tabIndex={0}
                           onClick={() => { if (!isLicenseExpired) { setSelectedJob(job.id); setShowJobManagement(true); } }}
                           onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !isLicenseExpired) { e.preventDefault(); setSelectedJob(job.id); setShowJobManagement(true); } }}
-                          className={`border-b sm:border rounded-none sm:rounded-xl border-x-0 sm:border-x overflow-hidden transition-all hover:shadow-sm cursor-pointer -mx-3 sm:mx-0 ${
+                          className={`border-b sm:border rounded-none sm:rounded-xl border-x-0 sm:border-x overflow-hidden transition-all hover:shadow-sm cursor-pointer -mx-4 sm:mx-0 ${
                             job.priority === 'high' ? 'border-orange-200 bg-gradient-to-r from-orange-50/40 to-white' : 'border-gray-200 hover:border-primary-200'
                           }`}
                         >
@@ -1564,7 +1564,7 @@ export default function TradieDashboard() {
                   const jobsToShow = showAllCompleted ? completedJobs : visibleCompleted;
 
                   return (
-                    <div className="mt-8">
+                    <div className="mt-4 sm:mt-8">
                       <CollapsibleSection
                         title={`Completed Jobs (${completedJobs.length})`}
                         defaultOpen={false}
