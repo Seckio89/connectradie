@@ -533,7 +533,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-navy-900 flex flex-col">
+    <div className="min-h-screen bg-navy-900 flex flex-col overflow-x-hidden max-w-[100vw]">
       <div
         className={`fixed inset-0 bg-black/30 z-40 lg:hidden transition-opacity ${
           sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'

@@ -3,6 +3,32 @@
    Touch targets, form zoom fix, responsive tables, modal sheets, safe areas
    ============================================================================= */
 
+/* --- GLOBAL: Prevent horizontal overflow on mobile (nuclear fix) --- */
+@media (max-width: 768px) {
+  html,
+  body,
+  #root {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  /* Catch any full-height wrappers that might propagate overflow */
+  .min-h-screen {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  /* Calendar-specific: ensure the calendar card and grid cannot exceed viewport */
+  [data-tour="calendar"] {
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  [data-tour="calendar"] .grid {
+    max-width: 100% !important;
+  }
+}
+
 /* --- Touch target sizing (WCAG 2.5.5 — 44×44px minimum) --- */
 @media (pointer: coarse) {
   button,
