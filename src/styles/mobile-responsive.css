@@ -352,16 +352,66 @@ body {
     min-height: 40px !important;
   }
 
-  /* Compact sidebar bottom section */
+  /* Compact sidebar bottom section — ensure sign-out always visible */
   aside[class*="fixed"][class*="z-50"] > div > div:last-child {
     flex-shrink: 0 !important;
     padding: 0.5rem 0.75rem !important;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem) !important;
   }
 }
 
-/* --- Force flush cards on mobile (safety net for Tailwind) --- */
+/* =============================================================================
+   MOBILE FLUSH CARDS — Comprehensive nuclear overrides for native-app feel
+   Every card-like container in <main> becomes edge-to-edge on mobile.
+   Only targets base Tailwind classes (.rounded-2xl), NOT responsive variants
+   (sm:rounded-2xl) — so pages already using the flush pattern are unaffected.
+   ============================================================================= */
 @media (max-width: 639px) {
-  /* Cards inside the main dashboard/tab content area */
+
+  /* ── 1. Square corners on ALL card containers ────────────────────
+     Excludes interactive / inline elements that also use rounding. */
+  main .rounded-2xl:not(button):not(a):not(label):not(input):not(select):not(textarea):not(span),
+  main .rounded-xl:not(button):not(a):not(label):not(input):not(select):not(textarea):not(span) {
+    border-radius: 0 !important;
+  }
+
+  /* ── 2. Remove shadows from card containers ──────────────────── */
+  main .shadow-sm:not(button):not(a),
+  main .shadow:not(button):not(a),
+  main .shadow-md:not(button):not(a),
+  main .shadow-lg:not(button):not(a) {
+    box-shadow: none !important;
+  }
+
+  /* ── 3. Remove side borders from rounded containers ──────────── */
+  main div.rounded-2xl[class*="border"],
+  main div.rounded-xl[class*="border"],
+  main section.rounded-2xl[class*="border"],
+  main section.rounded-xl[class*="border"] {
+    border-left-width: 0 !important;
+    border-right-width: 0 !important;
+  }
+
+  /* ── 4. Stretch TOP-LEVEL cards to screen edges ──────────────────
+     Negative margins (-1rem) counteract main's px-4 padding.
+     :not(.rounded-2xl *) prevents cards nested INSIDE other cards
+     from double-stretching past the viewport. */
+  main .rounded-2xl:not(button):not(a):not(.rounded-2xl *) {
+    margin-left: -1rem !important;
+    margin-right: -1rem !important;
+  }
+
+  main .rounded-xl:not(button):not(a):not(label):not(span):not(.rounded-2xl *):not(.rounded-xl *) {
+    margin-left: -1rem !important;
+    margin-right: -1rem !important;
+  }
+
+  /* ── 5. Max-width wrappers → full width on mobile ──────────── */
+  main [class*="max-w-"][class*="mx-auto"] {
+    max-width: 100% !important;
+  }
+
+  /* ── 6. Targeted overrides for already-flush card patterns ──── */
   [data-tour="jobs-tab"] > div > div > div[class*="border-b"],
   [data-tour="jobs-tab"] > div > div > div[class*="rounded-none"] {
     border-radius: 0 !important;
@@ -371,27 +421,60 @@ body {
     border-right-width: 0 !important;
   }
 
-  /* Ensure job cards and ongoing service cards are truly edge-to-edge */
-  main [class*="border-b"][class*="sm:border"][class*="border-x-0"] {
+  main [class*="border-b"][class*="border-x-0"] {
     border-radius: 0 !important;
     border-left: none !important;
     border-right: none !important;
   }
 
-  /* Reduce vertical gaps between sections on mobile */
-  main .mb-6 {
-    margin-bottom: 0.75rem !important;
+  /* ── 7. Compact vertical spacing between sections ──────────── */
+  main .mb-6 { margin-bottom: 0.5rem !important; }
+  main .mt-6 { margin-top: 0.5rem !important; }
+  main .mb-8 { margin-bottom: 0.75rem !important; }
+  main .mt-8 { margin-top: 0.75rem !important; }
+
+  /* ── 8. Compact empty states ───────────────────────────────── */
+  main .py-12, main .py-16, main .py-20, main .py-24 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
   }
 
-  main .mt-6 {
-    margin-top: 0.75rem !important;
-  }
-
-  /* Make the "all caught up" banner slim */
+  /* ── 9. "All caught up" banner compact ─────────────────────── */
   main [class*="bg-emerald-50"][class*="border-y"] {
     padding-top: 0.5rem !important;
     padding-bottom: 0.5rem !important;
     margin-top: 0.5rem !important;
     margin-bottom: 0.25rem !important;
+  }
+
+  /* ── 10. Grid / flex children → reset negative margins ─────────
+     Grid and flex containers manage their own item positioning.
+     Children should NOT get the -1rem stretch — only the cosmetic
+     overrides (rounding, shadow, borders) apply.
+     Uses #main-content ID for higher specificity than rule 4. */
+  main#main-content .grid > .rounded-2xl,
+  main#main-content .grid > .rounded-xl,
+  main#main-content .flex > .rounded-2xl:not(:only-child),
+  main#main-content .flex > .rounded-xl:not(:only-child) {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Also reset for items nested inside already-flush cards */
+  main#main-content .rounded-2xl .grid .rounded-xl,
+  main#main-content .rounded-2xl .grid .rounded-lg,
+  main#main-content .rounded-2xl .flex .rounded-xl,
+  main#main-content .rounded-2xl .grid .rounded-2xl {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* ── 11. Single-column grids on mobile → flush the wrapper ───
+     When a grid collapses to 1 column, push the wrapper flush
+     so its children span the screen width. */
+  main > div > .grid.grid-cols-1:not(.rounded-2xl),
+  main > div > div > .grid.grid-cols-1:not(.rounded-2xl) {
+    margin-left: -1rem !important;
+    margin-right: -1rem !important;
   }
 }
