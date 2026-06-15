@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
     // Use the live URL in production — the app loads your deployed site
     // rather than bundled assets, so updates are instant (no app store review).
     // Comment this out and run `npm run build` to use bundled offline mode instead.
-    url: 'https://connectradie.com',
+    url: 'https://connectradie.com/login',
     cleartext: false,
   },
   plugins: {
@@ -24,6 +24,7 @@ const config: CapacitorConfig = {
     StatusBar: {
       style: 'DARK',
       backgroundColor: '#1D9E75', // ConnecTradie green
+      overlaysWebView: false,
     },
     Keyboard: {
       resize: 'body',
