@@ -21,3 +21,15 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Local helper batch scripts for this dev's workflow
+*.bat
+
+# Sitemaps are regenerated on every build by scripts/generate-sitemap.mjs
+public/sitemap.xml
+public/sitemap-index.xml
+public/sitemap-find.xml
+public/sitemap-hubs.xml
+
+# Local Claude Code permissions — should not be shared
+.claude/settings.local.json
