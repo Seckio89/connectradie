@@ -533,7 +533,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-navy-900 flex flex-col overflow-x-hidden max-w-[100vw]">
+    <div className="min-h-screen bg-navy-900 flex flex-col max-w-[100vw]">
       <div
         className={`fixed inset-0 bg-black/30 z-40 lg:hidden transition-opacity ${
           sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -703,7 +703,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </aside>
 
-      <div className="lg:pl-64 theme-aware flex-1 flex flex-col overflow-x-hidden">
+      <div className="lg:pl-64 theme-aware flex-1 flex flex-col">
         <header className="sticky top-0 z-30 bg-navy-900/95 backdrop-blur-sm border-b border-navy-800" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
           <div className="flex items-center justify-between px-4 py-3">
             <button
