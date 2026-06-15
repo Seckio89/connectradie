@@ -18,9 +18,9 @@ export default function Toast({ message, type = 'success', onClose, duration = 3
   }, [duration, onClose]);
 
   return (
-    <div className="fixed top-4 right-4 z-[60] animate-slide-in">
+    <div className="fixed top-4 right-4 z-[60] animate-slide-in max-w-[calc(100vw-2rem)]">
       <div className={`
-        flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg min-w-[320px] max-w-md
+        flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg min-w-[280px] sm:min-w-[320px] max-w-[calc(100vw-2rem)]
         ${type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}
       `}>
         {type === 'success' ? (

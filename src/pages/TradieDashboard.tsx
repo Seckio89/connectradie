@@ -1483,9 +1483,9 @@ export default function TradieDashboard() {
                           <div className="px-4 pt-4 pb-3">
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="font-semibold text-gray-900 truncate capitalize">{displayTitle}</h3>
-                                  <span className={`px-3 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
+                                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
+                                  <h3 className="font-semibold text-gray-900 truncate capitalize max-w-[60vw] sm:max-w-none">{displayTitle}</h3>
+                                  <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
                                     {job.status.replace(/_/g, ' ')}
                                   </span>
                                   {job.priority === 'high' && (
@@ -1874,8 +1874,8 @@ export default function TradieDashboard() {
                   const hours = Array.from({ length: 15 }, (_, i) => i + 6);
                   return (
                     <div>
-                      <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
-                        <div className="min-w-[600px]">
+                      <div className="overflow-x-auto overflow-y-hidden sm:mx-0 sm:px-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                        <div className="min-w-[480px]">
                           <div className="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[80px_repeat(7,1fr)] border border-gray-200 rounded-t-xl overflow-hidden">
                             <div className="bg-gray-50 border-r border-b border-gray-200 p-2" />
                             {weekDays.map(d => {
@@ -2138,28 +2138,28 @@ export default function TradieDashboard() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900">Earnings Summary</h3>
           </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-secondary-50 rounded-xl p-4 text-center">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+            <div className="bg-secondary-50 rounded-xl p-2 sm:p-4 text-center">
               <Calendar className="w-5 h-5 text-secondary-600 mx-auto mb-1" />
               {earnings.thisMonth > 0 ? (
-                <p className="text-xl font-bold text-secondary-700">${earnings.thisMonth.toLocaleString()}</p>
+                <p className="text-base sm:text-xl font-bold text-secondary-700">${earnings.thisMonth.toLocaleString()}</p>
               ) : (
                 <p className="text-sm text-secondary-600 font-medium mt-1">Quote on leads to start earning</p>
               )}
               <p className="text-xs text-secondary-600 mt-1">This Month</p>
             </div>
-            <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
+            <div className="bg-white rounded-xl p-2 sm:p-4 text-center border border-gray-200">
               <TrendingUp className="w-5 h-5 text-secondary-600 mx-auto mb-1" />
               {earnings.total > 0 ? (
-                <p className="text-xl font-bold text-gray-800">${earnings.total.toLocaleString()}</p>
+                <p className="text-base sm:text-xl font-bold text-gray-800">${earnings.total.toLocaleString()}</p>
               ) : (
                 <p className="text-sm text-gray-500 font-medium mt-1">Complete your first job!</p>
               )}
               <p className="text-xs text-gray-500 mt-1">All Time</p>
             </div>
-            <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
+            <div className="bg-white rounded-xl p-2 sm:p-4 text-center border border-gray-200">
               <Briefcase className="w-5 h-5 text-secondary-600 mx-auto mb-1" />
-              <p className="text-xl font-bold text-gray-800">{earnings.pendingJobs}</p>
+              <p className="text-base sm:text-xl font-bold text-gray-800">{earnings.pendingJobs}</p>
               <p className="text-xs text-gray-500 mt-1">Active Jobs</p>
             </div>
           </div>
