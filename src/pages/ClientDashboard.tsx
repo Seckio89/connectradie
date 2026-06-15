@@ -711,7 +711,7 @@ export default function ClientDashboard() {
     <DashboardLayout>
       <WelcomeGuide role="client" userName={profile?.full_name} />
       {showOnboardedBanner && (
-        <div className="max-w-[1600px] mx-auto mb-4">
+        <div className="max-w-5xl mx-auto mb-4">
           <div className="bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-2xl p-5 flex items-center justify-between">
             <div>
               <h3 className="font-bold text-primary-900 mb-1">Welcome to ConnecTradie!</h3>
@@ -723,7 +723,7 @@ export default function ClientDashboard() {
           </div>
         </div>
       )}
-      <div className="max-w-[1600px] mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">

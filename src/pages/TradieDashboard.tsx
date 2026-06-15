@@ -744,14 +744,14 @@ export default function TradieDashboard() {
     <DashboardLayout>
       <WelcomeGuide role="tradie" userName={profile?.full_name} />
       {showOnboardedBanner && (
-        <div className="max-w-[1600px] mx-auto mb-4 -mx-4 sm:mx-auto">
+        <div className="max-w-5xl mx-auto mb-4 -mx-4 sm:mx-auto">
           <div className="bg-gradient-to-r from-primary-50 to-secondary-50 border-y sm:border border-x-0 sm:border-x border-primary-200 rounded-none sm:rounded-2xl p-5 px-4 sm:px-5">
             <h3 className="font-bold text-primary-900 mb-1">Welcome to ConnecTradie!</h3>
             <p className="text-sm text-primary-800">Your account is set up. Set your availability below so clients can find and book you for jobs.</p>
           </div>
         </div>
       )}
-      <div className="max-w-[1600px] mx-auto px-0 md:px-0 overflow-x-hidden">
+      <div className="max-w-5xl mx-auto overflow-x-hidden">
         {/* Header */}
         <div className="mb-3 md:mb-6 bg-navy-900 rounded-none sm:rounded-2xl p-4 sm:p-6 md:p-8 border-b sm:border border-x-0 sm:border-x border-navy-800 -mx-4 sm:mx-0 px-4 sm:px-6 md:px-8">
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-white mb-1">Your Business Hub</h1>
@@ -796,7 +796,7 @@ export default function TradieDashboard() {
 
         {/* Free Tier Usage */}
         {!isProUser && (
-          <div className="mb-2 sm:mb-6 bg-white rounded-none sm:rounded-2xl sm:shadow-sm p-3 sm:p-4 border-y sm:border border-x-0 sm:border-x border-gray-100 -mx-4 sm:mx-0 px-4 sm:px-6 sm:max-w-sm">
+          <div className="mb-2 sm:mb-6 bg-white rounded-none sm:rounded-2xl sm:shadow-sm p-3 sm:p-4 border-y sm:border border-x-0 sm:border-x border-gray-100 -mx-4 sm:mx-0 px-4 sm:px-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-semibold text-gray-900">Free Plan Usage</h3>
               <button onClick={() => setShowSubscriptionModal(true)} className="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors">
