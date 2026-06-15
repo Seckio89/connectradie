@@ -36,6 +36,8 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
     captureInput: true,
     webContentsDebuggingEnabled: false,
+    overScrollMode: 'never',
+    backgroundColor: '#0f172a',
   },
 };
 
