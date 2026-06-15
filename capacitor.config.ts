@@ -15,16 +15,22 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 2000,
       launchAutoHide: true,
-      backgroundColor: '#0f172a', // navy-900 to match sidebar
-      showSpinner: false,
+      backgroundColor: '#1D9E75', // ConnecTradie green
+      showSpinner: true,
+      spinnerColor: '#FFFFFF',
+      splashFullScreen: true,
+      splashImmersive: true,
     },
     StatusBar: {
       style: 'DARK',
-      backgroundColor: '#0f172a',
+      backgroundColor: '#1D9E75', // ConnecTradie green
     },
     Keyboard: {
       resize: 'body',
       resizeOnFullScreen: true,
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert'],
     },
   },
   ios: {
@@ -37,7 +43,7 @@ const config: CapacitorConfig = {
     captureInput: true,
     webContentsDebuggingEnabled: false,
     overScrollMode: 'never',
-    backgroundColor: '#0f172a',
+    backgroundColor: '#1D9E75', // ConnecTradie green
   },
 };
 

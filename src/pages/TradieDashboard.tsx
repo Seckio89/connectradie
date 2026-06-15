@@ -2169,6 +2169,7 @@ export default function TradieDashboard() {
 
         {/* Recent Reviews */}
         {recentReviews.length > 0 && (
+        <>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-4 mb-2 sm:hidden mt-8 sm:mt-6">Recent reviews</p>
           <div className="bg-white rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-gray-200 px-4 sm:px-5 py-4 sm:py-5 mx-0">
             <div className="flex items-center justify-between mb-4">
@@ -2211,6 +2212,7 @@ export default function TradieDashboard() {
               ))}
             </div>
           </div>
+        </>
         )}
 
 
@@ -2415,4 +2417,35 @@ export default function TradieDashboard() {
               <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center"><Trash2 className="w-6 h-6 text-red-600" /></div>
             </div>
             <h3 className="text-xl font-bold text-gray-900 text-center mb-2">Delete Job</h3>
-            <p className="text-gray-600 text-center mb-6">Are you sure you want to
+            <p className="text-gray-600 text-center mb-6">Are you sure you want to delete this job? This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50">Cancel</button>
+              <button onClick={handleDeleteJob} disabled={deleting} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50">
+                {deleting ? <><Loader2 className="w-4 h-4 animate-spin" />Deleting...</> : <><Trash2 className="w-4 h-4" />Delete</>}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Toast */}
+      {toast.show && (
+        <div className={`fixed bottom-4 right-4 ${toast.isError ? 'bg-red-600' : 'bg-green-600'} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50 animate-slide-up`}>
+          <div className={`w-2 h-2 ${toast.isError ? 'bg-red-300' : 'bg-green-300'} rounded-full animate-pulse`} />
+          <span className="font-medium">{toast.message}</span>
+        </div>
+      )}
+
+      <SubscriptionModal isOpen={showSubscriptionModal} onClose={() => setShowSubscriptionModal(false)} />
+
+
+      <style>{`
+        @keyframes slide-up {
+          from { transform: translateY(100px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up { animation: slide-up 0.3s ease-out; }
+      `}</style>
+    </DashboardLayout>
+  );
+}
