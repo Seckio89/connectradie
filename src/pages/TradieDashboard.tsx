@@ -2168,7 +2168,8 @@ export default function TradieDashboard() {
 
         {/* Recent Reviews */}
         {recentReviews.length > 0 && (
-          <div className="mt-6 bg-white rounded-2xl border border-gray-200 p-5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-4 mb-2 sm:hidden mt-8 sm:mt-6">Recent reviews</p>
+          <div className="bg-white rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-gray-200 px-4 sm:px-5 py-4 sm:py-5 mx-0">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-yellow-50 rounded-lg">
@@ -2180,14 +2181,14 @@ export default function TradieDashboard() {
                 View All
               </Link>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-0 sm:space-y-3 divide-y sm:divide-y-0 divide-gray-100">
               {recentReviews.map((review) => (
-                <div key={review.id} className="flex items-start gap-3 p-3 bg-surface-50 border border-surface-200 rounded-lg">
+                <div key={review.id} className="flex items-start gap-3 rounded-none sm:rounded-lg border-x-0 sm:border-x border-b border-surface-200 sm:border last:border-b-0 sm:last:border-b bg-transparent sm:bg-surface-50 px-0 sm:px-3 py-3">
                   <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
                     <Users className="w-4 h-4 text-primary-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
+                    <div className="flex items-center justify-between mb-0.5">
                       <span className="text-sm font-semibold text-gray-900">{review.client_name || 'Client'}</span>
                       <div className="flex items-center gap-0.5">
                         {[...Array(5)].map((_, i) => (
@@ -2213,7 +2214,10 @@ export default function TradieDashboard() {
 
 
         <SectionErrorBoundary fallbackTitle="Quote insights failed to load">
-          <div className="mt-6" data-tour="quote-insights"><QuoteInsightsWidget /></div>
+          <div className="mt-8 sm:mt-6" data-tour="quote-insights">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-4 mb-2 sm:hidden">Quote insights</p>
+            <QuoteInsightsWidget />
+          </div>
         </SectionErrorBoundary>
 
         {/* Push Notification Banner — dismissible */}
@@ -2254,7 +2258,7 @@ export default function TradieDashboard() {
         )}
 
         {showPayoutBanner && (
-          <div className="mt-6 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
+          <div className="mt-6 flex items-center gap-2 sm:gap-2 px-4 py-3 bg-white sm:bg-green-50 border-y sm:border border-gray-100 sm:border-green-200 rounded-none sm:rounded-xl">
             <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
             <span className="text-sm font-semibold text-green-800">Pro Member — Lowest Fees</span>
             <span className="text-sm text-green-600 flex-1">You're keeping more of every job with Pro.</span>
@@ -2414,31 +2418,4 @@ export default function TradieDashboard() {
             <div className="flex gap-3">
               <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50">Cancel</button>
               <button onClick={handleDeleteJob} disabled={deleting} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50">
-                {deleting ? <><Loader2 className="w-4 h-4 animate-spin" />Deleting...</> : <><Trash2 className="w-4 h-4" />Delete</>}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Toast */}
-      {toast.show && (
-        <div className={`fixed bottom-4 right-4 ${toast.isError ? 'bg-red-600' : 'bg-green-600'} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50 animate-slide-up`}>
-          <div className={`w-2 h-2 ${toast.isError ? 'bg-red-300' : 'bg-green-300'} rounded-full animate-pulse`} />
-          <span className="font-medium">{toast.message}</span>
-        </div>
-      )}
-
-      <SubscriptionModal isOpen={showSubscriptionModal} onClose={() => setShowSubscriptionModal(false)} />
-
-
-      <style>{`
-        @keyframes slide-up {
-          from { transform: translateY(100px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        .animate-slide-up { animation: slide-up 0.3s ease-out; }
-      `}</style>
-    </DashboardLayout>
-  );
-}
+                {deleting ? <><Loader2 className="w-4 h-4 animate-spin" />Deleting...</> : <><Tras
