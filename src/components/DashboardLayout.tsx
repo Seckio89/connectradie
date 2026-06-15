@@ -966,8 +966,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {children}
         </main>
 
-        {/* Mobile bottom navigation bar */}
-        {!isAdmin && (
+        {/* Mobile bottom navigation bar — hidden when sidebar is open */}
+        {!isAdmin && !sidebarOpen && (
           <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-navy-900 border-t border-navy-800 pb-[env(safe-area-inset-bottom)]">
             <div className="grid grid-cols-5 h-16">
               {isTradie ? (

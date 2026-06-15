@@ -317,6 +317,42 @@ body {
 }
 
 /* =============================================================================
+   MOBILE LAYOUT FIXES — Issues #1-#9
+   ============================================================================= */
+
+/* --- #1 Bottom tab bar: ensure tabs are centered with tighter spacing --- */
+@media (max-width: 639px) {
+  nav[class*="fixed"][class*="bottom-0"] .grid.grid-cols-5 {
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+  }
+
+  nav[class*="fixed"][class*="bottom-0"] .grid.grid-cols-5 > a,
+  nav[class*="fixed"][class*="bottom-0"] .grid.grid-cols-5 > button {
+    padding-left: 0.125rem !important;
+    padding-right: 0.125rem !important;
+  }
+}
+
+/* --- #3/#7 Calendar: ensure day headers and content are not cut off on left --- */
+@media (max-width: 767px) {
+  /* Calendar navigation bar */
+  .bg-white[class*="border-y"] .flex[class*="justify-between"] {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+/* --- #8 Settings tabs: scrollbar hide for tab row --- */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* =============================================================================
    Mobile-flush cards & Android safe-area fixes
    ============================================================================= */
 

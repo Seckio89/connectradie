@@ -2263,8 +2263,8 @@ export default function TradieDashboard() {
         {showPayoutBanner && (
           <div className="mt-6 flex items-center gap-2 sm:gap-2 px-4 py-3 bg-white sm:bg-green-50 border-y sm:border border-gray-100 sm:border-green-200 rounded-none sm:rounded-xl">
             <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-            <span className="text-sm font-semibold text-green-800">Pro Member — Lowest Fees</span>
-            <span className="text-sm text-green-600 flex-1">You're keeping more of every job with Pro.</span>
+            <span className="text-sm font-semibold text-green-800">Pro Member<span className="hidden sm:inline"> — Lowest Fees</span></span>
+            <span className="text-sm text-green-600 flex-1 hidden sm:inline">You're keeping more of every job with Pro.</span>
             <button
               onClick={() => { localStorage.setItem('dismissedPayoutBanner', 'true'); setShowPayoutBanner(false); }}
               className="p-1 text-green-500 hover:text-green-700 rounded transition-colors flex-shrink-0"

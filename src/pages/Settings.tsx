@@ -503,7 +503,7 @@ export default function Settings() {
           <p className="text-gray-500 mt-1">Manage your account settings and profile</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col max-h-[calc(100vh-12rem)] sm:max-h-none">
           <div className="flex flex-col sm:flex-row items-center gap-6 p-6 md:p-8 pb-8 border-b border-gray-200">
             <div className="flex flex-col items-center gap-3">
               <button
@@ -623,11 +623,11 @@ export default function Settings() {
           )}
 
           <div className="border-b border-gray-200 mt-2">
-            <div className="flex items-center gap-4 sm:gap-6 lg:gap-8 px-6 md:px-8 pt-2 overflow-x-auto scrollbar-hide">
+            <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 px-4 sm:px-6 md:px-8 pt-2 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
               <button
                 type="button"
                 onClick={() => setActiveTab('profile')}
-                className={`flex items-center gap-2 pb-3 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors ${
+                className={`flex items-center gap-1.5 pb-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'profile'
                     ? 'border-warm-500 text-warm-600'
                     : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
@@ -640,20 +640,21 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() => setActiveTab('professional')}
-                  className={`flex items-center gap-2 pb-3 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors ${
+                  className={`flex items-center gap-1.5 pb-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
                     activeTab === 'professional'
                       ? 'border-warm-500 text-warm-600'
                       : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
                   }`}
                 >
                   <Settings2 className="w-4 h-4" />
-                  Professional
+                  <span className="hidden sm:inline">Professional</span>
+                  <span className="sm:hidden">Pro</span>
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => setActiveTab('security')}
-                className={`flex items-center gap-2 pb-3 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors ${
+                className={`flex items-center gap-1.5 pb-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'security'
                     ? 'border-warm-500 text-warm-600'
                     : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
@@ -666,45 +667,49 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() => setActiveTab('verification')}
-                  className={`flex items-center gap-2 pb-3 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors ${
+                  className={`flex items-center gap-1.5 pb-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
                     activeTab === 'verification'
                       ? 'border-warm-500 text-warm-600'
                       : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
                   }`}
                 >
                   <Shield className="w-4 h-4" />
-                  Get Verified
+                  <span className="hidden sm:inline">Get Verified</span>
+                  <span className="sm:hidden">Verify</span>
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => setActiveTab('notifications')}
-                className={`flex items-center gap-2 pb-3 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors ${
+                className={`flex items-center gap-1.5 pb-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === 'notifications'
                     ? 'border-warm-500 text-warm-600'
                     : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
                 }`}
               >
                 <Bell className="w-4 h-4" />
-                Notifications
+                <span className="hidden sm:inline">Notifications</span>
+                <span className="sm:hidden">Notify</span>
               </button>
               {isAdmin && (
                 <button
                   type="button"
                   onClick={() => setActiveTab('admin')}
-                  className={`flex items-center gap-2 pb-3 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors ${
+                  className={`flex items-center gap-1.5 pb-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
                     activeTab === 'admin'
                       ? 'border-warm-500 text-warm-600'
                       : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
                   }`}
                 >
                   <Wrench className="w-4 h-4" />
-                  Admin Tools
+                  <span className="hidden sm:inline">Admin Tools</span>
+                  <span className="sm:hidden">Admin</span>
                 </button>
               )}
             </div>
           </div>
 
+          <div className="flex-1 overflow-y-auto">
           {activeTab === 'profile' && (
             <ProfileTab
               email={profile?.email || ''}
@@ -792,6 +797,7 @@ export default function Settings() {
               <VerificationCenter />
             </SectionErrorBoundary>
           )}
+          </div>{/* end scrollable content wrapper */}
         </div>
       </div>
 

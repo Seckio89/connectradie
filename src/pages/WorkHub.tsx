@@ -29,12 +29,12 @@ export default function WorkHub() {
     setActiveTab(paramTab);
   }, [searchParams]);
 
-  const tabs: { key: WorkHubTab; label: string; icon: typeof Briefcase }[] = [
-    { key: 'leads', label: 'Leads', icon: Briefcase },
-    { key: 'quotes', label: 'My Quotes', icon: FileText },
-    { key: 'jobs', label: 'My Jobs', icon: Package },
-    { key: 'services', label: 'Ongoing Services', icon: InfinityIcon },
-    { key: 'hiring', label: 'Hiring', icon: GraduationCap },
+  const tabs: { key: WorkHubTab; label: string; shortLabel: string; icon: typeof Briefcase }[] = [
+    { key: 'leads', label: 'Leads', shortLabel: 'Leads', icon: Briefcase },
+    { key: 'quotes', label: 'My Quotes', shortLabel: 'Quotes', icon: FileText },
+    { key: 'jobs', label: 'My Jobs', shortLabel: 'Jobs', icon: Package },
+    { key: 'services', label: 'Ongoing Services', shortLabel: 'Services', icon: InfinityIcon },
+    { key: 'hiring', label: 'Hiring', shortLabel: 'Hire', icon: GraduationCap },
   ];
 
   return (
@@ -81,7 +81,7 @@ export default function WorkHub() {
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{tab.key === 'services' ? 'Services' : tab.key === 'hiring' ? 'Hiring' : tab.label}</span>
+                <span className="sm:hidden">{tab.shortLabel}</span>
               </button>
             );
           })}
