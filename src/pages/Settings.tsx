@@ -503,7 +503,7 @@ export default function Settings() {
           <p className="text-gray-500 mt-1">Manage your account settings and profile</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col max-h-[calc(100vh-12rem)] sm:max-h-none">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-visible sm:overflow-hidden">
           <div className="flex flex-col sm:flex-row items-center gap-6 p-6 md:p-8 pb-8 border-b border-gray-200">
             <div className="flex flex-col items-center gap-3">
               <button
@@ -709,7 +709,6 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
           {activeTab === 'profile' && (
             <ProfileTab
               email={profile?.email || ''}
@@ -797,7 +796,6 @@ export default function Settings() {
               <VerificationCenter />
             </SectionErrorBoundary>
           )}
-          </div>{/* end scrollable content wrapper */}
         </div>
       </div>
 
