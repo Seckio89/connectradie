@@ -88,7 +88,7 @@ export default function QuoteInsightsWidget() {
 
   if (stats.totalQuotes === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+      <div className="bg-white rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-gray-200 px-4 sm:px-6 py-4 sm:py-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
             <FileText className="w-5 h-5 text-secondary-600" />
@@ -109,7 +109,7 @@ export default function QuoteInsightsWidget() {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+    <div className="bg-white rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-gray-200 px-4 sm:px-6 py-4 sm:py-6">
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
@@ -125,15 +125,15 @@ export default function QuoteInsightsWidget() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <div className="p-3 bg-secondary-50 rounded-xl border border-secondary-100">
+      <div className="grid grid-cols-2 gap-0 sm:gap-3 divide-x sm:divide-x-0 divide-gray-200 mb-5">
+        <div className="p-3 bg-secondary-50 rounded-none sm:rounded-xl border-0 sm:border border-secondary-100 pr-3 sm:pr-3">
           <div className="flex items-center gap-2 mb-1">
             <Target className="w-4 h-4 text-secondary-600" />
             <span className="text-xs text-secondary-600 font-medium">Win Rate</span>
           </div>
           <p className="text-2xl font-bold text-secondary-800">{stats.winRate}%</p>
         </div>
-        <div className="p-3 bg-white rounded-xl border border-gray-200">
+        <div className="p-3 bg-white rounded-none sm:rounded-xl border-0 sm:border border-gray-200 pl-3 sm:pl-3">
           <div className="flex items-center gap-2 mb-1">
             <DollarSign className="w-4 h-4 text-secondary-600" />
             <span className="text-xs text-gray-500 font-medium">Quoted Earnings</span>
@@ -142,44 +142,31 @@ export default function QuoteInsightsWidget() {
         </div>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-center justify-between text-sm">
+      <div className="space-y-0 sm:space-y-3 divide-y sm:divide-y-0 divide-gray-100">
+        <div className="flex items-center justify-between text-sm py-3 sm:py-0">
           <span className="flex items-center gap-2 text-gray-600">
-            <Clock className="w-4 h-4 text-warm-500" />
+            <span className="w-2 h-2 rounded-full bg-warm-500 sm:hidden" />
+            <Clock className="w-4 h-4 text-warm-500 hidden sm:block" />
             Pending
           </span>
           <span className="font-semibold text-gray-900">{stats.pendingQuotes}</span>
         </div>
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between text-sm py-3 sm:py-0">
           <span className="flex items-center gap-2 text-gray-600">
-            <CheckCircle2 className="w-4 h-4 text-green-500" />
+            <span className="w-2 h-2 rounded-full bg-green-500 sm:hidden" />
+            <CheckCircle2 className="w-4 h-4 text-green-500 hidden sm:block" />
             Won
           </span>
           <span className="font-semibold text-green-700">{stats.wonQuotes}</span>
         </div>
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between text-sm py-3 sm:py-0">
           <span className="flex items-center gap-2 text-gray-600">
-            <XCircle className="w-4 h-4 text-red-400" />
+            <span className="w-2 h-2 rounded-full bg-red-400 sm:hidden" />
+            <XCircle className="w-4 h-4 text-red-400 hidden sm:block" />
             Not Selected
           </span>
           <span className="font-semibold text-gray-600">{stats.declinedQuotes}</span>
         </div>
       </div>
 
-      <div className="mt-5 pt-4 border-t border-gray-100">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-500">This Month</span>
-          <span className="font-semibold text-gray-900">
-            {stats.thisMonthQuotes} quoted, {stats.thisMonthWon} won
-          </span>
-        </div>
-        {stats.avgQuoteAmount > 0 && (
-          <div className="flex items-center justify-between text-sm mt-1">
-            <span className="text-gray-500">Avg. Quote</span>
-            <span className="font-semibold text-gray-900">${stats.avgQuoteAmount.toLocaleString()}</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+      <div className="mt-5 pt-4 border-t bor
