@@ -1177,9 +1177,9 @@ export default function TradieDashboard() {
                           : 'bg-primary-400'
                         }`} />
                         <div className="flex-1 min-w-0">
-                          <div className="px-5 py-4">
-                            <div className="flex items-start justify-between gap-3 mb-2">
-                              <h3 className="text-base font-bold text-gray-900 leading-snug capitalize">{title}</h3>
+                          <div className="px-3 sm:px-5 py-3 sm:py-4">
+                            <div className="flex items-start justify-between gap-2 sm:gap-3 mb-2">
+                              <h3 className="text-sm sm:text-base font-bold text-gray-900 leading-snug capitalize">{title}</h3>
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 {isInvited && (
                                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200">
@@ -1243,14 +1243,14 @@ export default function TradieDashboard() {
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-                            <span className="text-xs text-gray-400">
-                              Posted by {clientName} · {formatDate(lead.created_at)}
+                          <div className="flex items-center justify-between px-3 sm:px-5 py-3 border-t border-gray-100 gap-2" onClick={(e) => e.stopPropagation()}>
+                            <span className="text-[10px] sm:text-xs text-gray-400 truncate min-w-0">
+                              {clientName} · {formatDate(lead.created_at)}
                             </span>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                               <button
                                 onClick={() => dismissLead(lead.id)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+                                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
                               >
                                 <XCircle className="w-3.5 h-3.5" />
                                 Pass
@@ -1260,10 +1260,10 @@ export default function TradieDashboard() {
                                   if (isLicenseExpired) { navigate(`/work?job=${lead.id}`); return; }
                                   setQuoteModalJob(lead);
                                 }}
-                                className="inline-flex items-center gap-1.5 px-5 py-1.5 rounded-lg text-xs font-semibold bg-warm-500 text-white hover:bg-warm-600 shadow-sm transition-all"
+                                className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-5 py-1.5 rounded-lg text-xs font-semibold bg-warm-500 text-white hover:bg-warm-600 shadow-sm transition-all"
                               >
                                 <FileText className="w-3.5 h-3.5" />
-                                Submit Quote
+                                <span className="hidden sm:inline">Submit </span>Quote
                               </button>
                             </div>
                           </div>
@@ -1278,9 +1278,9 @@ export default function TradieDashboard() {
         })()}
 
         {/* Tabbed Content */}
-        <div className="bg-white rounded-2xl border border-gray-200 mb-6 shadow-sm mt-6 ring-1 ring-primary-100/50" data-tour="jobs-tab">
+        <div className="bg-white rounded-2xl border border-gray-200 mb-6 shadow-sm mt-6 ring-1 ring-primary-100/50 overflow-hidden" data-tour="jobs-tab">
           <div className="border-b border-gray-200">
-            <div className="flex gap-2 p-4">
+            <div className="flex gap-1 sm:gap-2 p-2 sm:p-4">
               {(['jobs', 'messages'] as TabType[]).map((tab) => {
                 const icons = { overview: Calendar, jobs: Briefcase, messages: MessageSquare };
                 const labels = { overview: 'Overview', jobs: 'Jobs', messages: 'Messages' };
@@ -1289,13 +1289,13 @@ export default function TradieDashboard() {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all min-h-[44px] ${
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl text-sm sm:text-base font-semibold transition-all min-h-[44px] ${
                       activeTab === tab
                         ? 'bg-warm-500 text-white shadow-md'
                         : 'text-gray-600 hover:bg-gray-50 active:scale-95'
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                     {labels[tab]}
                   </button>
                 );
@@ -1303,7 +1303,7 @@ export default function TradieDashboard() {
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-3 sm:p-6">
             {/* ─── JOBS TAB ─── */}
             {activeTab === 'jobs' && (() => {
               const activeJobs = jobs.filter((j: DashboardJob) => !['completed', 'cancelled', 'declined'].includes(j.status));
@@ -1734,16 +1734,16 @@ export default function TradieDashboard() {
 
         {/* Calendar */}
         <div className="mt-6 bg-white rounded-2xl border border-gray-200 shadow-sm p-3 sm:p-6 ring-1 ring-primary-100/50 max-w-full overflow-hidden" data-tour="calendar">
-          <div className="grid lg:grid-cols-3 gap-8 max-w-full overflow-hidden">
+          <div className="grid lg:grid-cols-3 gap-4 sm:gap-8 max-w-full overflow-hidden">
             {/* Calendar */}
             <div className="lg:col-span-2 min-w-0">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-                <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-                  <div className="flex items-center gap-2 sm:gap-4">
+              <div className="flex flex-col gap-3 mb-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1 sm:gap-4">
                     <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1)); setSelectedDay(null); }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
                       <ChevronLeft className="w-5 h-5 text-gray-600" />
                     </button>
-                    <h2 className="text-base sm:text-lg font-semibold text-gray-900 whitespace-nowrap">
+                    <h2 className="text-sm sm:text-lg font-semibold text-gray-900 whitespace-nowrap">
                       {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                     </h2>
                     <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1)); setSelectedDay(null); }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
@@ -1753,25 +1753,25 @@ export default function TradieDashboard() {
                   <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
                     {(['day', 'week', 'month'] as const).map(v => (
                       <button key={v} onClick={() => setCalendarView(v)}
-                        className={`px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${calendarView === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                        className={`px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${calendarView === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                         {v.charAt(0).toUpperCase() + v.slice(1)}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2 w-full">
                   {isProUser ? (
-                    <button onClick={() => setShowAddSlot(true)} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-emerald-600 text-white text-sm sm:text-base font-medium rounded-xl hover:bg-emerald-700 transition-colors min-h-[44px]">
+                    <button onClick={() => setShowAddSlot(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-emerald-600 text-white text-xs sm:text-base font-medium rounded-xl hover:bg-emerald-700 transition-colors min-h-[44px]">
                       <Plus className="w-4 h-4" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots
                     </button>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-warm-500 text-white text-sm sm:text-base font-medium rounded-xl hover:bg-warm-600 transition-all min-h-[44px]">
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-warm-500 text-white text-xs sm:text-base font-medium rounded-xl hover:bg-warm-600 transition-all min-h-[44px]">
                       <Crown className="w-4 h-4" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots<span className="text-xs font-bold bg-white/20 px-1.5 py-0.5 rounded">PRO</span>
                     </button>
                   )}
                   {isProUser ? (
-                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 border border-gray-200 text-gray-700 text-sm sm:text-base font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
+                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 border border-gray-200 text-gray-700 text-xs sm:text-base font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
                       {syncLoading ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">{calendarIntegration ? 'Syncing...' : 'Connecting...'}</span><span className="sm:hidden">Sync</span></>
                       ) : calendarIntegration ? (
@@ -1781,11 +1781,11 @@ export default function TradieDashboard() {
                       )}
                     </button>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 border border-warm-300 text-warm-700 text-sm sm:text-base font-medium rounded-xl hover:bg-warm-50 transition-colors min-h-[44px]">
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 border border-warm-300 text-warm-700 text-xs sm:text-base font-medium rounded-xl hover:bg-warm-50 transition-colors min-h-[44px]">
                       <Calendar className="w-4 h-4" /><span className="hidden sm:inline">Google Calendar</span><span className="sm:hidden">Calendar</span><span className="text-xs font-bold bg-warm-100 text-warm-600 px-1.5 py-0.5 rounded">PRO</span>
                     </button>
                   )}
-                  <div className="relative">
+                  <div className="relative flex-shrink-0">
                     <button onClick={() => setShowManageMenu(!showManageMenu)} className="p-2 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors">
                       <MoreVertical className="w-5 h-5" />
                     </button>
@@ -1928,13 +1928,13 @@ export default function TradieDashboard() {
               ) : (
                 /* Month View (existing) */
                 <>
-                  <div className="grid grid-cols-7 gap-1 mb-2" role="row">
+                  <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2 w-full" role="row">
                     {dayNames.map((day) => (
-                      <div key={day} className="text-center text-xs font-medium text-gray-500 py-2" role="columnheader">{day}</div>
+                      <div key={day} className="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2 truncate" role="columnheader">{day}</div>
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-7 gap-1" role="grid" aria-label="Availability calendar">
+                  <div className="grid grid-cols-7 gap-0.5 sm:gap-1 w-full" role="grid" aria-label="Availability calendar">
                     {[...Array(startingDay)].map((_, i) => <div key={`empty-${i}`} className="aspect-square" />)}
                     {[...Array(daysInMonth)].map((_, i) => {
                       const day = i + 1;
@@ -1958,7 +1958,7 @@ export default function TradieDashboard() {
                           onClick={() => setSelectedDay(day)}
                           aria-label={`${dateLabel}${slotSummary}`}
                           aria-pressed={isSelected}
-                          className={`aspect-square rounded-lg p-0.5 sm:p-1 text-sm transition-all sm:min-w-[40px] sm:min-h-[40px] ${
+                          className={`aspect-square rounded-lg p-0 sm:p-1 text-xs sm:text-sm transition-all min-w-0 ${
                             isSelected ? 'bg-warm-500 text-white ring-2 ring-primary-600 ring-offset-2'
                             : isPast ? 'opacity-50 hover:opacity-75'
                             : hasAvailable && hasBooked ? 'bg-gradient-to-br from-green-50 to-red-50 hover:from-green-100 hover:to-red-100'
@@ -1969,10 +1969,10 @@ export default function TradieDashboard() {
                           }`}
                         >
                           <div className="flex flex-col items-center">
-                            <span className={`font-medium ${isPast ? 'text-gray-400' : isSelected ? 'text-white' : isToday ? 'text-primary-600 font-bold' : 'text-gray-700'}`}>{day}</span>
-                            <div className="flex gap-1 mt-0.5">
-                              {hasAvailable && <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-green-300' : 'bg-green-500'}`} />}
-                              {hasBooked && <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-red-300' : 'bg-red-500'}`} />}
+                            <span className={`text-xs sm:text-sm font-medium ${isPast ? 'text-gray-400' : isSelected ? 'text-white' : isToday ? 'text-primary-600 font-bold' : 'text-gray-700'}`}>{day}</span>
+                            <div className="flex gap-0.5 mt-0.5">
+                              {hasAvailable && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-green-300' : 'bg-green-500'}`} />}
+                              {hasBooked && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-red-300' : 'bg-red-500'}`} />}
                             </div>
                           </div>
                         </button>
