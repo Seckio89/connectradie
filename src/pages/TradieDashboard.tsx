@@ -768,7 +768,7 @@ export default function TradieDashboard() {
 
         {/* License Expired Banner */}
         {isLicenseExpired && (
-          <div className="mb-6 bg-red-50 border-2 border-red-300 rounded-2xl p-5">
+          <div className="mb-6 bg-red-50 border-y-2 sm:border-2 border-x-0 sm:border-x-2 border-red-300 rounded-none sm:rounded-2xl p-5 -mx-4 sm:mx-0">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
                 <ShieldAlert className="w-6 h-6 text-red-600" />
@@ -796,7 +796,7 @@ export default function TradieDashboard() {
 
         {/* Free Tier Usage */}
         {!isProUser && (
-          <div className="mb-4 md:mb-6 max-w-sm bg-white md:rounded-xl md:shadow-sm p-4 border-b md:border border-gray-100">
+          <div className="mb-4 md:mb-6 max-w-sm bg-white rounded-none md:rounded-xl md:shadow-sm p-4 border-y md:border border-x-0 md:border-x border-gray-100">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-semibold text-gray-900">Free Plan Usage</h3>
               <button onClick={() => setShowSubscriptionModal(true)} className="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors">
@@ -841,7 +841,7 @@ export default function TradieDashboard() {
 
         {/* First-Time Guidance — shown when tradie has no jobs and no availability */}
         {jobs.length === 0 && slots.length === 0 && !slotsLoading && (
-          <div className="mb-6 bg-gradient-to-r from-warm-50 to-secondary-50 border border-warm-200 rounded-2xl p-5">
+          <div className="mb-6 bg-gradient-to-r from-warm-50 to-secondary-50 border-y sm:border border-x-0 sm:border-x border-warm-200 rounded-none sm:rounded-2xl p-5 -mx-4 sm:mx-0">
             <h3 className="font-bold text-gray-900 mb-1">What to do first</h3>
             <p className="text-sm text-gray-600 mb-4">Complete these three steps to start getting work — most tradies are set up in under 5 minutes.</p>
             <div className="grid sm:grid-cols-3 gap-3">
@@ -894,7 +894,7 @@ export default function TradieDashboard() {
           const pendingConfirmations = recurringSessions.filter(s => s.status === 'pending_confirmation');
           if (pendingConfirmations.length === 0) return null;
           return (
-            <div className="bg-white rounded-xl border-2 border-amber-300 shadow-sm p-5 mt-6 mb-4">
+            <div className="bg-white rounded-none sm:rounded-xl border-y-2 sm:border-2 border-x-0 sm:border-x-2 border-amber-300 shadow-sm p-5 mt-6 mb-4 -mx-4 sm:mx-0">
               <div className="flex items-center gap-2 mb-3">
                 <AlertCircle className="w-5 h-5 text-amber-500" />
                 <h3 className="text-sm font-bold text-gray-900">New Service Request{pendingConfirmations.length !== 1 ? 's' : ''} Awaiting Your Response</h3>
@@ -974,7 +974,7 @@ export default function TradieDashboard() {
           const unreadConvos = conversations.filter(c => c.messages.some(m => m.receiver_id === user?.id && !m.read_at));
           const pendingConfirmations = recurringSessions.filter(s => s.status === 'pending_confirmation');
           if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0 && newLeads.length === 0) return (
-            <div className="bg-emerald-50 border border-emerald-200 md:rounded-xl p-3 md:p-4 mt-4 md:mt-6 mb-2" style={{ borderBottom: '0.5px solid #d1fae5' }}>
+            <div className="bg-emerald-50 border-y md:border border-x-0 md:border-x rounded-none md:rounded-xl p-3 md:p-4 mt-4 md:mt-6 mb-2 -mx-4 sm:mx-0" style={{ borderBottom: '0.5px solid #d1fae5' }}>
               <div className="flex items-center gap-2 text-emerald-700">
                 <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
                 <span className="text-sm font-medium">All caught up</span>
@@ -1071,7 +1071,7 @@ export default function TradieDashboard() {
 
         {/* Invoices ready to send */}
         {pendingInvoiceCount > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="bg-amber-50 border-y sm:border border-x-0 sm:border-x border-amber-200 rounded-none sm:rounded-2xl px-5 py-4 flex items-center justify-between gap-4 flex-wrap -mx-4 sm:mx-0">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <FileText className="w-5 h-5 text-amber-700" />
@@ -1278,7 +1278,7 @@ export default function TradieDashboard() {
         })()}
 
         {/* Tabbed Content */}
-        <div className="bg-white rounded-2xl border border-gray-200 mb-6 shadow-sm mt-6 ring-1 ring-primary-100/50 overflow-hidden" data-tour="jobs-tab">
+        <div className="bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 mb-6 shadow-sm mt-6 sm:ring-1 ring-primary-100/50 overflow-hidden -mx-4 sm:mx-0" data-tour="jobs-tab">
           <div className="border-b border-gray-200">
             <div className="flex gap-1 sm:gap-2 p-2 sm:p-4">
               {(['jobs', 'messages'] as TabType[]).map((tab) => {
@@ -1369,10 +1369,10 @@ export default function TradieDashboard() {
 
                   return (
                     <div className="mb-6">
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between mb-3 flex-wrap gap-y-1">
                         <div className="flex items-center gap-2">
                           <RefreshCw className="w-4 h-4 text-emerald-600" />
-                          <h2 className="text-lg font-bold text-gray-900">Ongoing Services</h2>
+                          <h2 className="text-base sm:text-lg font-bold text-gray-900">Ongoing Services</h2>
                           <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
                             {items.length}
                           </span>
@@ -1448,6 +1448,7 @@ export default function TradieDashboard() {
                             icon={Briefcase}
                             title={emptyTitle}
                             description={emptyDesc}
+                            compact
                             actionLabel="Set Your Availability"
                             onAction={() => navigate('/schedule')}
                           />
@@ -1733,7 +1734,7 @@ export default function TradieDashboard() {
         </div>
 
         {/* Calendar */}
-        <div className="mt-6 bg-white rounded-2xl border border-gray-200 shadow-sm p-3 sm:p-6 ring-1 ring-primary-100/50 max-w-full overflow-hidden" data-tour="calendar">
+        <div className="mt-6 bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 shadow-sm p-3 sm:p-6 sm:ring-1 ring-primary-100/50 max-w-full overflow-hidden -mx-4 sm:mx-0" data-tour="calendar">
           <div className="grid lg:grid-cols-3 gap-4 sm:gap-8 max-w-full overflow-hidden">
             {/* Calendar */}
             <div className="lg:col-span-2 min-w-0">
@@ -1989,7 +1990,7 @@ export default function TradieDashboard() {
             </div>
 
             {/* Slot Sidebar */}
-            <div className="bg-gray-50 rounded-xl p-4">
+            <div className="bg-gray-50 rounded-xl p-4 overflow-hidden">
               <h3 className="font-semibold text-gray-900 mb-4">
                 {selectedDay
                   ? new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -2024,11 +2025,11 @@ export default function TradieDashboard() {
                         </p>
                       </div>
                       {slot.status === 'available' && (
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => startEditingSlot(slot)} className="p-2.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" title="Edit time" aria-label="Edit time slot">
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button onClick={() => startEditingSlot(slot)} className="p-1.5 sm:p-2.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors min-w-[36px] sm:min-w-[44px] min-h-[36px] sm:min-h-[44px] flex items-center justify-center" title="Edit time" aria-label="Edit time slot">
                             <Pencil className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDeleteSlot(slot.id)} className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" title="Delete slot" aria-label="Delete time slot">
+                          <button onClick={() => handleDeleteSlot(slot.id)} className="p-1.5 sm:p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors min-w-[36px] sm:min-w-[44px] min-h-[36px] sm:min-h-[44px] flex items-center justify-center" title="Delete slot" aria-label="Delete time slot">
                             <X className="w-4 h-4" />
                           </button>
                         </div>
@@ -2065,7 +2066,7 @@ export default function TradieDashboard() {
         </div>
 
         {/* Quick Stats */}
-        <div data-tour="quick-stats">
+        <div data-tour="quick-stats" className="[&>div]:rounded-none [&>div]:sm:rounded-xl [&>div]:border-x-0 [&>div]:sm:border-x -mx-4 sm:mx-0">
         <CollapsibleSection
           title="Quick Stats"
           defaultOpen={true}
@@ -2222,7 +2223,7 @@ export default function TradieDashboard() {
 
         {/* Push Notification Banner — dismissible */}
         {showPushBanner && pushStatus !== 'granted' && pushStatus !== 'unsupported' && (
-          <div className="bg-gradient-to-r from-primary-50 to-warm-50 rounded-2xl border border-primary-200 p-5 mb-6 mt-6">
+          <div className="bg-gradient-to-r from-primary-50 to-warm-50 rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-primary-200 p-5 mb-6 mt-6 -mx-4 sm:mx-0">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -2414,8 +2415,4 @@ export default function TradieDashboard() {
               <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center"><Trash2 className="w-6 h-6 text-red-600" /></div>
             </div>
             <h3 className="text-xl font-bold text-gray-900 text-center mb-2">Delete Job</h3>
-            <p className="text-gray-600 text-center mb-6">Are you sure you want to delete this job? This action cannot be undone.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50">Cancel</button>
-              <button onClick={handleDeleteJob} disabled={deleting} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50">
-                {deleting ? <><Loader2 className="w-4 h-4 animate-spin" />Deleting...</> : <><Tras
+            <p className="text-gray-600 text-center mb-6">Are you sure you want to
