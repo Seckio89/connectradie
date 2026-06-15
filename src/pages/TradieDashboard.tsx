@@ -1760,18 +1760,18 @@ export default function TradieDashboard() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 w-full">
+                <div className="flex flex-wrap items-center gap-2 w-full">
                   {isProUser ? (
-                    <button onClick={() => setShowAddSlot(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-emerald-600 text-white text-xs sm:text-base font-medium rounded-xl hover:bg-emerald-700 transition-colors min-h-[44px]">
-                      <Plus className="w-4 h-4" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots
+                    <button onClick={() => setShowAddSlot(true)} className="flex-1 min-w-0 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-emerald-600 text-white text-xs sm:text-base font-medium rounded-xl hover:bg-emerald-700 transition-colors min-h-[44px]">
+                      <Plus className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots
                     </button>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-warm-500 text-white text-xs sm:text-base font-medium rounded-xl hover:bg-warm-600 transition-all min-h-[44px]">
-                      <Crown className="w-4 h-4" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots<span className="text-xs font-bold bg-white/20 px-1.5 py-0.5 rounded">PRO</span>
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-1 min-w-0 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-warm-500 text-white text-xs sm:text-base font-medium rounded-xl hover:bg-warm-600 transition-all min-h-[44px]">
+                      <Crown className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots<span className="text-xs font-bold bg-white/20 px-1.5 py-0.5 rounded">PRO</span>
                     </button>
                   )}
                   {isProUser ? (
-                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 border border-gray-200 text-gray-700 text-xs sm:text-base font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
+                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-1 min-w-0 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 border border-gray-200 text-gray-700 text-xs sm:text-base font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
                       {syncLoading ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">{calendarIntegration ? 'Syncing...' : 'Connecting...'}</span><span className="sm:hidden">Sync</span></>
                       ) : calendarIntegration ? (
@@ -1874,9 +1874,9 @@ export default function TradieDashboard() {
                   const hours = Array.from({ length: 15 }, (_, i) => i + 6);
                   return (
                     <div>
-                      <div className="overflow-x-auto">
-                        <div className="min-w-[700px]">
-                          <div className="grid grid-cols-[80px_repeat(7,1fr)] border border-gray-200 rounded-t-xl overflow-hidden">
+                      <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+                        <div className="min-w-[600px]">
+                          <div className="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[80px_repeat(7,1fr)] border border-gray-200 rounded-t-xl overflow-hidden">
                             <div className="bg-gray-50 border-r border-b border-gray-200 p-2" />
                             {weekDays.map(d => {
                               const isToday = d.toDateString() === new Date().toDateString();
@@ -1892,7 +1892,7 @@ export default function TradieDashboard() {
                             {hours.map(hour => {
                               const label = hour < 12 ? `${hour}:00 AM` : hour === 12 ? '12:00 PM' : `${hour - 12}:00 PM`;
                               return (
-                                <div key={hour} className="grid grid-cols-[80px_repeat(7,1fr)] border-b border-gray-100 last:border-b-0">
+                                <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[80px_repeat(7,1fr)] border-b border-gray-100 last:border-b-0">
                                   <div className="px-3 py-1.5 text-xs text-gray-400 font-medium border-r border-gray-100">{label}</div>
                                   {weekDays.map(d => {
                                     const isSameMonth = d.getMonth() === currentDate.getMonth() && d.getFullYear() === currentDate.getFullYear();
