@@ -20,12 +20,12 @@ export default function EmptyState({
   return (
     <div
       className={`flex flex-col items-center text-center ${
-        compact ? 'py-8 px-4' : 'py-16 px-6'
+        compact ? 'py-4 sm:py-8 px-4' : 'py-16 px-6'
       }`}
     >
       <div
-        className={`rounded-full bg-primary-50 flex items-center justify-center mb-4 ${
-          compact ? 'w-12 h-12' : 'w-16 h-16'
+        className={`rounded-full bg-primary-50 flex items-center justify-center ${
+          compact ? 'w-10 h-10 sm:w-12 sm:h-12 mb-2 sm:mb-4' : 'w-16 h-16 mb-4'
         }`}
       >
         <Icon
@@ -47,8 +47,8 @@ export default function EmptyState({
       {actionLabel && onAction && (
         <button
           onClick={onAction}
-          className={`mt-5 inline-flex items-center gap-2 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 active:scale-[0.97] transition-all ${
-            compact ? 'px-4 py-2 text-sm' : 'px-6 py-3'
+          className={`inline-flex items-center gap-2 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 active:scale-[0.97] transition-all ${
+            compact ? 'px-4 py-2 text-sm mt-3 sm:mt-5' : 'px-6 py-3 mt-5'
           }`}
         >
           {actionLabel}

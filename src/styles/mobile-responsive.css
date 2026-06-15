@@ -12,6 +12,20 @@ body,
   width: 100% !important;
 }
 
+/* --- Prevent rubber-band bounce in Capacitor WebView --- */
+html,
+body {
+  overscroll-behavior: none !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* --- Native-feel: prevent long-press callout & double-tap zoom --- */
+body {
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 /* Double-lock for Capacitor Android WebView which ignores overflow-x on html/body */
 html {
   overflow-x: clip !important;       /* stronger than hidden — no programmatic scroll */
@@ -258,6 +272,15 @@ body {
   .page-break {
     page-break-before: always;
   }
+}
+
+/* --- Hide scrollbar on horizontally-scrollable tab rows --- */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 /* --- Scrollbar styling for mobile --- */

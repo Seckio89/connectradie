@@ -57,7 +57,7 @@ export default function WorkHub() {
           {activeTab === 'hiring' && 'Post vacancies and find apprentices or qualified tradies to join your team'}
         </p>
 
-        <div className="flex items-center gap-0.5 border-b border-gray-200 mb-5 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex items-center gap-0 border-b border-gray-200 mb-5 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
           {tabs.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.key;
@@ -73,7 +73,7 @@ export default function WorkHub() {
                     setSearchParams({}, { replace: true });
                   }
                 }}
-                className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-2.5 text-xs sm:text-sm font-medium transition-all border-b-2 -mb-px whitespace-nowrap ${
+                className={`flex items-center gap-1.5 sm:gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium transition-all border-b-2 -mb-px whitespace-nowrap min-h-[44px] ${
                   isActive
                     ? 'border-warm-500 text-gray-900'
                     : 'border-transparent text-gray-400 hover:text-gray-600'
