@@ -1765,16 +1765,16 @@ export default function TradieDashboard() {
 
                 <div className="flex flex-wrap items-center gap-2 w-full overflow-visible">
                   {isProUser ? (
-                    <button onClick={() => setShowAddSlot(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-4 py-2 bg-emerald-600 text-white text-xs sm:text-base font-medium rounded-xl hover:bg-emerald-700 transition-colors min-h-[44px]">
+                    <button onClick={() => setShowAddSlot(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-emerald-600 text-white text-[10px] sm:text-sm font-medium rounded-xl hover:bg-emerald-700 transition-colors min-h-[36px] sm:min-h-[44px]">
                       <Plus className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots
                     </button>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-4 py-2 bg-warm-500 text-white text-xs sm:text-base font-medium rounded-xl hover:bg-warm-600 transition-all min-h-[44px]">
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-warm-500 text-white text-[10px] sm:text-sm font-medium rounded-xl hover:bg-warm-600 transition-all min-h-[36px] sm:min-h-[44px]">
                       <Crown className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots<span className="text-xs font-bold bg-white/20 px-1.5 py-0.5 rounded ml-1">PRO</span>
                     </button>
                   )}
                   {isProUser ? (
-                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-1 min-w-0 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 border border-gray-200 text-gray-700 text-xs sm:text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
+                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-1 min-w-0 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 border border-gray-200 text-gray-700 text-[10px] sm:text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[36px] sm:min-h-[44px]">
                       {syncLoading ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">{calendarIntegration ? 'Syncing...' : 'Connecting...'}</span><span className="sm:hidden">Sync</span></>
                       ) : calendarIntegration ? (
@@ -1784,7 +1784,7 @@ export default function TradieDashboard() {
                       )}
                     </button>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 border border-warm-300 text-warm-700 text-xs sm:text-base font-medium rounded-xl hover:bg-warm-50 transition-colors min-h-[44px]">
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 border border-warm-300 text-warm-700 text-[10px] sm:text-sm font-medium rounded-xl hover:bg-warm-50 transition-colors min-h-[36px] sm:min-h-[44px]">
                       <Calendar className="w-4 h-4" /><span className="hidden sm:inline">Google Calendar</span><span className="sm:hidden">Calendar</span><span className="text-xs font-bold bg-warm-100 text-warm-600 px-1.5 py-0.5 rounded">PRO</span>
                     </button>
                   )}
@@ -2068,7 +2068,7 @@ export default function TradieDashboard() {
         </div>
 
         {/* Quick Stats */}
-        <div data-tour="quick-stats" className="[&>div]:rounded-none [&>div]:sm:rounded-xl [&>div]:border-x-0 [&>div]:sm:border-x -mx-4 sm:mx-0 [&>div>button]:justify-center [&>div>button]:sm:justify-start">
+        <div data-tour="quick-stats" className="[&>div]:rounded-none [&>div]:sm:rounded-xl [&>div]:border-x-0 [&>div]:sm:border-x -mx-4 sm:mx-0 [&>div>button]:justify-center">
         <CollapsibleSection
           title="Quick Stats"
           defaultOpen={true}
@@ -2076,7 +2076,7 @@ export default function TradieDashboard() {
         >
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col items-center gap-2 text-center">
                 <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
                   <Clock className="w-6 h-6 text-primary-600" />
                 </div>
@@ -2088,7 +2088,7 @@ export default function TradieDashboard() {
             </div>
 
             <div className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col items-center gap-2 text-center">
                 <div className="w-12 h-12 bg-secondary-100 rounded-xl flex items-center justify-center">
                   <Calendar className="w-6 h-6 text-secondary-600" />
                 </div>
@@ -2100,7 +2100,7 @@ export default function TradieDashboard() {
             </div>
 
             <Link to="/work?tab=active" className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md hover:border-primary-300 transition-all cursor-pointer">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col items-center gap-2 text-center">
                 <div className="w-12 h-12 bg-secondary-50 rounded-xl flex items-center justify-center">
                   <Users className="w-6 h-6 text-secondary-600" />
                 </div>
@@ -2113,13 +2113,13 @@ export default function TradieDashboard() {
 
             <button
               onClick={() => setShowSubscriptionModal(true)}
-              className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md transition-all cursor-pointer text-left"
+              className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md transition-all cursor-pointer text-center"
             >
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col items-center gap-2">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isProUser ? 'bg-secondary-100' : 'bg-gray-100'}`}>
                   <Crown className={`w-6 h-6 ${isProUser ? 'text-secondary-600' : 'text-gray-500'}`} />
                 </div>
-                <div className="flex-1">
+                <div>
                   <p className="text-sm text-navy-500 font-medium">Your Plan</p>
                   <p className="text-xl font-bold text-navy-900">
                     {isProUser ? 'Pro' : 'Free'}
