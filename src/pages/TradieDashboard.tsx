@@ -1278,9 +1278,9 @@ export default function TradieDashboard() {
         })()}
 
         {/* Tabbed Content */}
-        <div className="bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 mb-3 sm:mb-6 shadow-sm mt-3 sm:mt-6 sm:ring-1 ring-primary-100/50 overflow-hidden -mx-4 sm:mx-0" data-tour="jobs-tab">
-          <div className="border-b border-gray-200">
-            <div className="flex gap-1 sm:gap-2 p-2 sm:p-4">
+        <div className="bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 mb-3 sm:mb-6 shadow-sm mt-3 sm:mt-6 sm:ring-1 ring-primary-100/50 -mx-4 sm:mx-0" data-tour="jobs-tab">
+          <div className="border-b border-gray-200 overflow-visible">
+            <div className="flex gap-1 sm:gap-2 p-2 sm:p-4 overflow-visible">
               {(['jobs', 'messages'] as TabType[]).map((tab) => {
                 const icons = { overview: Calendar, jobs: Briefcase, messages: MessageSquare };
                 const labels = { overview: 'Overview', jobs: 'Jobs', messages: 'Messages' };
@@ -1289,13 +1289,13 @@ export default function TradieDashboard() {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl text-sm sm:text-base font-semibold transition-all min-h-[44px] ${
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl text-sm sm:text-base font-semibold transition-all min-h-[44px] overflow-visible ${
                       activeTab === tab
                         ? 'bg-warm-500 text-white shadow-md'
                         : 'text-gray-600 hover:bg-gray-50 active:scale-95'
                     }`}
                   >
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                     {labels[tab]}
                   </button>
                 );
@@ -1303,7 +1303,7 @@ export default function TradieDashboard() {
             </div>
           </div>
 
-          <div className="px-4 py-3 sm:p-6">
+          <div className="px-4 py-3 sm:p-6 overflow-hidden">
             {/* ─── JOBS TAB ─── */}
             {activeTab === 'jobs' && (() => {
               const activeJobs = jobs.filter((j: DashboardJob) => !['completed', 'cancelled', 'declined'].includes(j.status));
@@ -1734,8 +1734,8 @@ export default function TradieDashboard() {
         </div>
 
         {/* Calendar */}
-        <div className="mt-6 bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 shadow-sm p-3 sm:p-6 sm:ring-1 ring-primary-100/50 max-w-full overflow-hidden -mx-4 sm:mx-0" data-tour="calendar">
-          <div className="grid lg:grid-cols-3 gap-4 sm:gap-8 max-w-full overflow-hidden">
+        <div className="mt-6 bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 shadow-sm p-3 sm:p-6 sm:ring-1 ring-primary-100/50 max-w-full overflow-visible -mx-4 sm:mx-0" data-tour="calendar">
+          <div className="grid lg:grid-cols-3 gap-4 sm:gap-8 max-w-full overflow-visible">
             {/* Calendar */}
             <div className="lg:col-span-2 min-w-0">
               <div className="flex flex-col gap-3 mb-6">
@@ -1761,14 +1761,14 @@ export default function TradieDashboard() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 w-full">
+                <div className="flex flex-wrap items-center gap-2 w-full overflow-visible">
                   {isProUser ? (
-                    <button onClick={() => setShowAddSlot(true)} className="flex-1 min-w-0 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-emerald-600 text-white text-xs sm:text-base font-medium rounded-xl hover:bg-emerald-700 transition-colors min-h-[44px]">
+                    <button onClick={() => setShowAddSlot(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-4 py-2 bg-emerald-600 text-white text-xs sm:text-base font-medium rounded-xl hover:bg-emerald-700 transition-colors min-h-[44px]">
                       <Plus className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots
                     </button>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-1 min-w-0 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-warm-500 text-white text-xs sm:text-base font-medium rounded-xl hover:bg-warm-600 transition-all min-h-[44px]">
-                      <Crown className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots<span className="text-xs font-bold bg-white/20 px-1.5 py-0.5 rounded">PRO</span>
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-4 py-2 bg-warm-500 text-white text-xs sm:text-base font-medium rounded-xl hover:bg-warm-600 transition-all min-h-[44px]">
+                      <Crown className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots<span className="text-xs font-bold bg-white/20 px-1.5 py-0.5 rounded ml-1">PRO</span>
                     </button>
                   )}
                   {isProUser ? (
@@ -1981,7 +1981,7 @@ export default function TradieDashboard() {
                     })}
                   </div>
 
-                  <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-gray-700">
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-sm text-gray-700">
                     <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded flex-shrink-0" /><span className="font-medium">Available</span></div>
                     <div className="flex items-center gap-2"><span className="w-4 h-4 bg-red-100 border-2 border-red-500 rounded flex-shrink-0" /><span className="font-medium">Booked</span></div>
                   </div>
@@ -2066,7 +2066,7 @@ export default function TradieDashboard() {
         </div>
 
         {/* Quick Stats */}
-        <div data-tour="quick-stats" className="[&>div]:rounded-none [&>div]:sm:rounded-xl [&>div]:border-x-0 [&>div]:sm:border-x -mx-4 sm:mx-0">
+        <div data-tour="quick-stats" className="[&>div]:rounded-none [&>div]:sm:rounded-xl [&>div]:border-x-0 [&>div]:sm:border-x -mx-4 sm:mx-0 [&>div>button]:justify-center [&>div>button]:sm:justify-start">
         <CollapsibleSection
           title="Quick Stats"
           defaultOpen={true}
