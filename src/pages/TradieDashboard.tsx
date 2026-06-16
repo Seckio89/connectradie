@@ -1411,7 +1411,7 @@ export default function TradieDashboard() {
                                 </div>
                               </div>
                             </div>
-                            <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-emerald-100 text-emerald-700 text-[10px] sm:text-xs font-medium rounded-full flex-shrink-0 ml-2">
+                            <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-emerald-100 text-emerald-700 text-[10px] sm:text-xs font-medium rounded-full flex-shrink-0 ml-2 mr-2 sm:mr-0">
                               Active
                             </span>
                           </Link>
@@ -1436,7 +1436,7 @@ export default function TradieDashboard() {
                     : 'Set up your calendar so clients can find and book you for their next project.';
                   return (
                     <>
-                      <div className="flex items-center justify-between mb-2 sm:mb-4">
+                      <div className="flex items-center justify-between mb-2 sm:mb-4 pl-1 sm:pl-0">
                         <h2 className="text-base sm:text-lg font-bold text-gray-900">{heading}</h2>
                         <Link to="/work?tab=active" className="text-xs sm:text-sm text-primary-600 hover:text-primary-700 font-medium">
                           View all in Work Hub &rarr;
@@ -1990,7 +1990,7 @@ export default function TradieDashboard() {
             </div>
 
             {/* Slot Sidebar */}
-            <div className="bg-gray-50 rounded-xl p-4 overflow-hidden">
+            <div className="bg-gray-50 rounded-xl p-4 overflow-hidden mb-4 sm:mb-0">
               <h3 className="font-semibold text-gray-900 mb-4">
                 {selectedDay
                   ? new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
