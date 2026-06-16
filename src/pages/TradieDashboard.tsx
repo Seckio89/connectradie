@@ -1774,7 +1774,7 @@ export default function TradieDashboard() {
                     </button>
                   )}
                   {isProUser ? (
-                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-1 min-w-0 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 border border-gray-200 text-gray-700 text-[10px] sm:text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[36px] sm:min-h-[44px]">
+                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-gray-200 text-gray-700 text-[10px] sm:text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[32px] sm:min-h-[44px]">
                       {syncLoading ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">{calendarIntegration ? 'Syncing...' : 'Connecting...'}</span><span className="sm:hidden">Sync</span></>
                       ) : calendarIntegration ? (
@@ -1784,7 +1784,7 @@ export default function TradieDashboard() {
                       )}
                     </button>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 border border-warm-300 text-warm-700 text-[10px] sm:text-sm font-medium rounded-xl hover:bg-warm-50 transition-colors min-h-[36px] sm:min-h-[44px]">
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-warm-300 text-warm-700 text-[10px] sm:text-sm font-medium rounded-xl hover:bg-warm-50 transition-colors min-h-[32px] sm:min-h-[44px]">
                       <Calendar className="w-4 h-4" /><span className="hidden sm:inline">Google Calendar</span><span className="sm:hidden">Calendar</span><span className="text-xs font-bold bg-warm-100 text-warm-600 px-1.5 py-0.5 rounded">PRO</span>
                     </button>
                   )}
