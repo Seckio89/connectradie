@@ -1386,14 +1386,19 @@ export default function TradieDashboard() {
                           <Link
                             key={item.key}
                             to="/work?tab=services"
-                            className="flex items-center justify-between p-3 bg-white border-b sm:border border-gray-200 rounded-none sm:rounded-xl border-x-0 sm:border-x hover:border-emerald-200 hover:bg-emerald-50/30 transition-colors group -mx-4 sm:mx-0 px-4 sm:px-3"
+                            className="flex items-center p-3 bg-white border-b sm:border border-gray-200 rounded-none sm:rounded-xl border-x-0 sm:border-x hover:border-emerald-200 hover:bg-emerald-50/30 transition-colors group -mx-4 sm:mx-0 px-4 sm:px-3"
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-xs flex items-center justify-center flex-shrink-0">
                                 {initials(item.clientName)}
                               </div>
                               <div className="min-w-0">
-                                <p className="text-sm text-gray-900 font-semibold truncate">{item.clientName}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm text-gray-900 font-semibold truncate">{item.clientName}</p>
+                                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] sm:text-xs font-medium rounded-full flex-shrink-0">
+                                    Active
+                                  </span>
+                                </div>
                                 <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
                                   <span className="capitalize">{item.label}</span>
                                   {item.rate && item.rate > 0 && (
@@ -1411,9 +1416,6 @@ export default function TradieDashboard() {
                                 </div>
                               </div>
                             </div>
-                            <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-emerald-100 text-emerald-700 text-[10px] sm:text-xs font-medium rounded-full flex-shrink-0 ml-2 mr-2 sm:mr-0">
-                              Active
-                            </span>
                           </Link>
                         ))}
                       </div>
