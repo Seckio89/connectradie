@@ -9,7 +9,8 @@ const config: CapacitorConfig = {
     // rather than bundled assets, so updates are instant (no app store review).
     // Comment this out and run `npm run build` to use bundled offline mode instead.
     url: 'https://connectradie.com/login',
-    cleartext: false,
+    cleartext: true,
+    androidScheme: 'https',
   },
   plugins: {
     SplashScreen: {
@@ -40,11 +41,13 @@ const config: CapacitorConfig = {
     scheme: 'ConnecTradie',
   },
   android: {
-    allowMixedContent: false,
+    allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: false,
+    webContentsDebuggingEnabled: true,
     overScrollMode: 'never',
     backgroundColor: '#1D9E75', // ConnecTradie green
+    // Force WebView to not cache
+    appendUserAgent: 'ConnecTradie-App',
   },
 };
 

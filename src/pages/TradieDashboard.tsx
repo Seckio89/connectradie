@@ -1774,7 +1774,7 @@ export default function TradieDashboard() {
                     </button>
                   )}
                   {isProUser ? (
-                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-1 min-w-0 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 border border-gray-200 text-gray-700 text-xs sm:text-base font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
+                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-1 min-w-0 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 border border-gray-200 text-gray-700 text-xs sm:text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
                       {syncLoading ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">{calendarIntegration ? 'Syncing...' : 'Connecting...'}</span><span className="sm:hidden">Sync</span></>
                       ) : calendarIntegration ? (
