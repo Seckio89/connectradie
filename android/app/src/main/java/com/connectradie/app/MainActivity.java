@@ -27,7 +27,10 @@ public class MainActivity extends BridgeActivity {
         settings.setUseWideViewPort(false);
         settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
 
-        // 3. Inject CSS on every page load to forcefully prevent overflow
+        // 3. Inject CSS on every page load to prevent horizontal overflow.
+        //    IMPORTANT: Do NOT set overflow-x on html/body — Android WebView
+        //    treats it as overflow:hidden (both axes), killing vertical scroll.
+        //    Only constrain #root and use max-width to prevent horizontal blowout.
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
@@ -36,17 +39,18 @@ public class MainActivity extends BridgeActivity {
                     "(function() {" +
                     "  var s = document.createElement('style');" +
                     "  s.textContent = '" +
-                    "    html, body, #root { " +
+                    "    html, body { " +
+                    "      max-width: 100vw !important; " +
+                    "      width: 100% !important; " +
+                    "    } " +
+                    "    #root { " +
                     "      overflow-x: hidden !important; " +
                     "      max-width: 100vw !important; " +
                     "      width: 100% !important; " +
                     "    } " +
                     "    * { max-width: 100vw !important; } " +
-                    "    body { position: relative !important; } " +
                     "  ';" +
                     "  document.head.appendChild(s);" +
-                    "  document.documentElement.style.overflowX = 'hidden';" +
-                    "  document.body.style.overflowX = 'hidden';" +
                     "})();", null);
             }
         });
