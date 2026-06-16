@@ -1763,7 +1763,7 @@ export default function TradieDashboard() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 w-full overflow-visible">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 w-full overflow-visible">
                   {isProUser ? (
                     <button onClick={() => setShowAddSlot(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-emerald-600 text-white text-[10px] sm:text-sm font-medium rounded-xl hover:bg-emerald-700 transition-colors min-h-[36px] sm:min-h-[44px]">
                       <Plus className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots
