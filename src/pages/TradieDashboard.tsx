@@ -1279,8 +1279,8 @@ export default function TradieDashboard() {
 
         {/* Tabbed Content */}
         <div className="bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 mb-3 sm:mb-6 shadow-sm mt-3 sm:mt-6 sm:ring-1 ring-primary-100/50 -mx-4 sm:mx-0" data-tour="jobs-tab">
-          <div className="border-b border-gray-200 overflow-visible">
-            <div className="flex gap-2 sm:gap-2 px-3 py-2 sm:p-4">
+          <div className="border-b border-gray-200">
+            <div className="flex justify-center sm:justify-start gap-2 sm:gap-2 px-3 py-2 sm:p-4">
               {(['jobs', 'messages'] as TabType[]).map((tab) => {
                 const icons = { overview: Calendar, jobs: Briefcase, messages: MessageSquare };
                 const labels = { overview: 'Overview', jobs: 'Jobs', messages: 'Messages' };
