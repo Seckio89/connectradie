@@ -35,7 +35,7 @@ export default function Breadcrumbs() {
 
   return (
     <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-1.5 text-sm text-gray-500 mb-4">
-      <Link to="/dashboard" className="flex items-center gap-1 hover:text-gray-700 transition-colors">
+      <Link to="/dashboard" className="hidden sm:flex hover:text-gray-700 transition-colors">
         <Home className="w-3.5 h-3.5" />
       </Link>
       {segments.map((segment, index) => {
