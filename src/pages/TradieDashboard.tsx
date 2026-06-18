@@ -2068,7 +2068,7 @@ export default function TradieDashboard() {
         </div>
 
         {/* Quick Stats */}
-        <div data-tour="quick-stats" className="[&>div]:rounded-none [&>div]:sm:rounded-xl [&>div]:border-x-0 [&>div]:sm:border-x -mx-4 sm:mx-0 [&>div>button]:justify-center">
+        <div data-tour="quick-stats" className="[&>div]:rounded-none [&>div]:sm:rounded-xl [&>div]:border-x-0 [&>div]:sm:border-x -mx-4 sm:mx-0 [&>div>button]:justify-center [&>div>button]:sm:justify-start">
         <CollapsibleSection
           title="Quick Stats"
           defaultOpen={true}
