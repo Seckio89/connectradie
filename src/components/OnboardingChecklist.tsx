@@ -21,10 +21,11 @@ export default function OnboardingChecklist() {
   const [dismissed, setDismissed] = useState(() => {
     return localStorage.getItem('onboarding_checklist_dismissed') === 'true';
   });
-  const [allComplete] = useState(() => {
+  const [allComplete, setAllComplete] = useState(() => {
     return localStorage.getItem('onboarding_checklist_complete') === 'true';
   });
   const [showDismissWarning, setShowDismissWarning] = useState(false);
+  const [fadingOut, setFadingOut] = useState(false);
   const [loading, setLoading] = useState(true);
   const [connectLoading, setConnectLoading] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
@@ -107,9 +108,20 @@ export default function OnboardingChecklist() {
   };
 
   const handleDismiss = () => {
-    setDismissed(true);
-    localStorage.setItem('onboarding_checklist_dismissed', 'true');
+    setFadingOut(true);
+    setTimeout(() => {
+      setDismissed(true);
+      localStorage.setItem('onboarding_checklist_dismissed', 'true');
+    }, 500);
   };
+
+  // Auto-dismiss the "all set" banner after 3 seconds with fade-out
+  useEffect(() => {
+    if (!allComplete || dismissed) return;
+    const timer = setTimeout(() => handleDismiss(), 2500);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allComplete, dismissed]);
 
   // If already dismissed, bail early (before loading check to avoid flicker)
   if (dismissed) return null;
@@ -117,7 +129,7 @@ export default function OnboardingChecklist() {
   // If already completed (from localStorage), show "all set" immediately without waiting for fetch
   if (allComplete && profile) {
     return (
-      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 overflow-hidden p-5 text-center">
+      <div className={`bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 overflow-hidden p-5 text-center transition-opacity duration-500 ${fadingOut ? 'opacity-0' : 'opacity-100'}`}>
         <div className="flex items-center justify-between mb-3">
           <div />
           <button
@@ -249,11 +261,12 @@ export default function OnboardingChecklist() {
   // Persist completion so it survives page navigations without flicker
   if (percentage === 100 && !allComplete) {
     localStorage.setItem('onboarding_checklist_complete', 'true');
+    setAllComplete(true);
   }
 
   if (allComplete || percentage === 100) {
     return (
-      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 overflow-hidden p-5 text-center">
+      <div className={`bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 overflow-hidden p-5 text-center transition-opacity duration-500 ${fadingOut ? 'opacity-0' : 'opacity-100'}`}>
         <div className="flex items-center justify-between mb-3">
           <div />
           <button
