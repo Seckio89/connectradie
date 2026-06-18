@@ -24,7 +24,7 @@ export default function CollapsibleSection({
     <div className="border border-gray-200 rounded-xl overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center relative px-5 py-4 bg-gray-50 hover:bg-gray-100 transition-colors min-h-[52px]"
+        className="collapsible-header-btn w-full flex items-center relative px-5 py-4 bg-gray-50 hover:bg-gray-100 transition-colors min-h-[52px]"
       >
         <div className="flex items-center gap-3 mx-auto sm:mx-0">
           {icon && <span className="flex-shrink-0">{icon}</span>}

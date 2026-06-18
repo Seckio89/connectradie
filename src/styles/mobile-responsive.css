@@ -509,4 +509,12 @@ body {
     margin-left: -1rem !important;
     margin-right: -1rem !important;
   }
+
+  /* ── 12. Force CollapsibleSection headings to center on mobile ──
+     Nuclear !important override — works regardless of Tailwind
+     arbitrary-variant compilation or specificity conflicts. */
+  .collapsible-header-btn {
+    justify-content: center !important;
+    text-align: center !important;
+  }
 }
