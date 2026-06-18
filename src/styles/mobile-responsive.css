@@ -511,13 +511,8 @@ body {
   }
 
   /* ── 12. Force CollapsibleSection headings to center on mobile ──
-     Nuclear !important override — works regardless of Tailwind
-     arbitrary-variant compilation or specificity conflicts. */
+     Keep button full-width; center the flex children instead. */
   .collapsible-header-btn {
-    width: auto !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
     justify-content: center !important;
-    text-align: center !important;
   }
 }
