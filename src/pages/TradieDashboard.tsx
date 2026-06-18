@@ -1452,7 +1452,7 @@ export default function TradieDashboard() {
                             description={emptyDesc}
                             compact
                             actionLabel="Set Your Availability"
-                            onAction={() => navigate('/schedule')}
+                            onAction={() => setShowAddSlot(true)}
                           />
                           <div className="text-center -mt-1 sm:mt-1 pb-1">
                             <Link to="/work?tab=recruitment" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
