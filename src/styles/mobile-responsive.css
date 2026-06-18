@@ -316,24 +316,14 @@ body {
    MOBILE LAYOUT FIXES — Issues #1-#9
    ============================================================================= */
 
-/* --- Breadcrumb: prevent wrapping / overflow on mobile --- */
+/* --- Hide breadcrumb on mobile — nuclear approach with multiple selectors --- */
 @media (max-width: 639px) {
   nav[aria-label="Breadcrumb"],
-  nav[aria-label="breadcrumb"] {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    font-size: 0.7rem !important;
-    gap: 0.25rem !important;
-    margin-bottom: 0.5rem !important;
-  }
-
-  nav[aria-label="Breadcrumb"] *,
-  nav[aria-label="breadcrumb"] * {
-    white-space: nowrap !important;
-    flex-shrink: 0 !important;
+  nav[aria-label="breadcrumb"],
+  nav.breadcrumb,
+  main > div > nav:first-of-type,
+  [class*="breadcrumb" i] {
+    display: none !important;
   }
 }
 
