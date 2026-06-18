@@ -1111,7 +1111,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
 
   const content = (
     <>
-      <div className="space-y-5 max-w-[1600px] mx-auto overflow-x-hidden">
+      <div className="space-y-5 max-w-[1600px] mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4 px-4 md:px-0">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Site Calendar</h1>
@@ -1379,7 +1379,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 return (
                   <div key={i} className={isPastDay ? 'opacity-60' : ''}>
                     {/* Day header */}
-                    <div className={`px-4 py-2 flex items-center justify-between ${today ? 'bg-emerald-50' : 'bg-gray-50'}`}>
+                    <div className={`pl-5 pr-4 py-2 flex items-center justify-between ${today ? 'bg-emerald-50' : 'bg-gray-50'}`}>
                       <div className="flex items-center gap-2">
                         <span className={`text-[11px] font-bold uppercase tracking-wider ${today ? 'text-emerald-700' : 'text-gray-500'}`}>
                           {day.toLocaleDateString('en-AU', { weekday: 'short' })} {day.getDate()}
@@ -1400,7 +1400,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
 
                     {/* Jobs list */}
                     {entries.length === 0 ? (
-                      <div className="px-4 py-3 text-xs text-gray-400">
+                      <div className="pl-5 pr-4 py-3 text-xs text-gray-400">
                         {hasAvailable ? 'Available — no jobs booked' : 'No jobs'}
                       </div>
                     ) : (
@@ -1421,7 +1421,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                             <div
                               key={job.id}
                               onClick={() => setSelectedJob(job)}
-                              className={`flex items-center gap-3 px-4 py-3 border-l-4 ${accentColor} cursor-pointer active:bg-gray-50 transition-colors`}
+                              className={`flex items-center gap-3 pl-5 pr-4 py-3 border-l-4 ${accentColor} cursor-pointer active:bg-gray-50 transition-colors`}
                               style={{ borderBottom: '0.5px solid #eee' }}
                             >
                               {/* Job info */}
