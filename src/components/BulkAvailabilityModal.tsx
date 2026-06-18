@@ -196,10 +196,10 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/30 z-50"
+        className="fixed inset-0 bg-black/30 z-[60]"
         onClick={onClose}
       />
-      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="fixed inset-x-0 bottom-0 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl z-[60] w-full sm:max-w-4xl max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h3 className="text-xl font-semibold text-gray-900">Add Availability Slots</h3>
@@ -213,7 +213,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="grid lg:grid-cols-2 gap-6">
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -261,7 +261,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                         key={day}
                         onClick={() => !isPast && toggleDate(day)}
                         disabled={isPast}
-                        className={`aspect-square rounded-lg text-sm font-medium transition-all ${
+                        className={`aspect-square rounded-lg text-sm font-medium transition-all flex items-center justify-center ${
                           selected
                             ? 'bg-warm-500 text-white shadow-sm'
                             : isPast
@@ -450,7 +450,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
           </div>
         </div>
 
-        <div className="border-t border-gray-200 p-6 flex items-center justify-between bg-gray-50">
+        <div className="border-t border-gray-200 p-4 pb-20 sm:p-6 sm:pb-6 flex items-center justify-between bg-gray-50">
           <button
             onClick={onClose}
             className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-200 rounded-xl transition-colors"
