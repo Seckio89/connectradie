@@ -227,10 +227,10 @@ export default function AdminRecommendations() {
 
       {/* Category Tabs */}
       {active.length > 0 && (
-        <div className="flex items-center gap-1 mb-4 border-b border-gray-200">
+        <div className="flex items-center gap-1 mb-4 border-b border-gray-200 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
           <button
             onClick={() => setActiveCategory('all')}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-3 py-2 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               activeCategory === 'all'
                 ? 'border-gray-900 text-gray-900'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -246,7 +246,7 @@ export default function AdminRecommendations() {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+                className={`px-3 py-2 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                   activeCategory === cat
                     ? 'border-gray-900 text-gray-900'
                     : 'border-transparent text-gray-500 hover:text-gray-700'

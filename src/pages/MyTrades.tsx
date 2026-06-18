@@ -129,7 +129,7 @@ export default function MyTrades() {
         </div>
 
         <div className="mb-8">
-          <div className="flex items-center gap-6 border-b border-gray-200 overflow-x-auto">
+          <div className="flex items-center gap-6 border-b border-gray-200 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
             <button
               onClick={() => setFilter('all')}
               className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${

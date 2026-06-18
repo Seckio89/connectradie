@@ -348,6 +348,36 @@ body {
   display: none;
 }
 
+/* --- #10 Horizontal tab rows: scrollable on mobile, no wrapping --- */
+@media (max-width: 639px) {
+  /* Any flex row of buttons inside a border-b container -> scrollable */
+  .border-b > .flex,
+  .border-b.flex {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .border-b > .flex::-webkit-scrollbar,
+  .border-b.flex::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Prevent tab text from wrapping inside any border-b tab row */
+  .border-b > .flex > button,
+  .border-b.flex > button {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Card-style tab rows (flex-1 tabs inside overflow-hidden cards) */
+  .overflow-hidden > .border-b > .flex > button,
+  .overflow-hidden > .border-b.flex > button {
+    min-width: 0;
+    font-size: 0.75rem; /* text-xs fallback for very small screens */
+  }
+}
+
 /* =============================================================================
    Mobile-flush cards & Android safe-area fixes
    ============================================================================= */

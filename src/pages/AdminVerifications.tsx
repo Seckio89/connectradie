@@ -213,18 +213,18 @@ export default function AdminVerifications() {
 
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           {/* Tabs */}
-          <div className="border-b border-gray-200">
-            <div className="flex">
+          <div className="border-b border-gray-200 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="flex min-w-max">
               <button
                 onClick={() => setActiveTab('pending')}
-                className={`flex-1 px-6 py-4 text-sm font-semibold transition-all relative ${
+                className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'pending'
                     ? 'text-warm-700 bg-warm-50/50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <div className="flex items-center justify-center gap-2">
-                  <Clock className="w-4 h-4" />
+                <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                  <Clock className="w-4 h-4 flex-shrink-0" />
                   <span>Pending</span>
                   {pendingCount > 0 && (
                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
@@ -243,14 +243,14 @@ export default function AdminVerifications() {
 
               <button
                 onClick={() => setActiveTab('approved')}
-                className={`flex-1 px-6 py-4 text-sm font-semibold transition-all relative ${
+                className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'approved'
                     ? 'text-green-700 bg-green-50/50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <div className="flex items-center justify-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" />
+                <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                   <span>Approved</span>
                   {approvedCount > 0 && (
                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
@@ -269,14 +269,14 @@ export default function AdminVerifications() {
 
               <button
                 onClick={() => setActiveTab('declined')}
-                className={`flex-1 px-6 py-4 text-sm font-semibold transition-all relative ${
+                className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'declined'
                     ? 'text-red-700 bg-red-50/50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <div className="flex items-center justify-center gap-2">
-                  <XCircle className="w-4 h-4" />
+                <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                  <XCircle className="w-4 h-4 flex-shrink-0" />
                   <span>Declined</span>
                   {declinedCount > 0 && (
                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${

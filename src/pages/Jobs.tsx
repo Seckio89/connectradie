@@ -688,7 +688,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
         )}
 
         {/* Tabs */}
-        <div className="flex items-center gap-6 border-b border-gray-200 mb-6 overflow-x-auto">
+        <div className="flex items-center gap-6 border-b border-gray-200 mb-6 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
           {([
             { key: 'pending', label: 'Pending' },
             { key: 'active', label: 'Active' },

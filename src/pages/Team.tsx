@@ -539,17 +539,18 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
   const content = (
     <>
       <div className="max-w-[1600px] mx-auto space-y-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Team</h1>
-            <p className="text-gray-500 mt-1">Manage employees and subcontractors in your business</p>
+        <div className="flex items-start justify-between gap-3 sm:gap-4">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Team</h1>
+            <p className="text-gray-500 mt-1 text-sm sm:text-base">Manage employees and subcontractors in your business</p>
           </div>
           <button
             onClick={() => { setEditMember(null); setShowAddModal(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 transition-colors text-sm"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 transition-colors text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
-            Add Member
+            <span className="hidden sm:inline">Add Member</span>
+            <span className="sm:hidden">Add</span>
           </button>
         </div>
 
@@ -682,19 +683,20 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
         )}
 
         <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-          <div className="flex border-b border-gray-100">
+          <div className="flex border-b border-gray-100 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
             {teamTabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-4 text-sm font-medium transition-colors relative ${
+                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm font-medium transition-colors relative whitespace-nowrap ${
                   activeTab === tab.key
                     ? 'text-primary-700'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
+                <tab.icon className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.label === 'Role Permissions' ? 'Roles' : tab.label === 'Manually Added' ? 'Manual' : tab.label === 'Active Team' ? 'Active' : tab.label === 'Team Calendar' ? 'Calendar' : tab.label}</span>
                 {tab.count > 0 && (
                   <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
                     activeTab === tab.key ? 'bg-warm-100 text-warm-700' : 'bg-gray-100 text-gray-600'

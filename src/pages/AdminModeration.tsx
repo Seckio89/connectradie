@@ -247,19 +247,20 @@ export default function AdminModeration() {
 
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           {/* Tabs */}
-          <div className="border-b border-gray-200">
-            <div className="flex">
+          <div className="border-b border-gray-200 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="flex min-w-max">
               <button
                 onClick={() => { setActiveTab('reports'); setSearchQuery(''); }}
-                className={`flex-1 px-6 py-4 text-sm font-semibold transition-all relative ${
+                className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'reports'
                     ? 'text-red-700 bg-red-50/50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <div className="flex items-center justify-center gap-2">
-                  <Flag className="w-4 h-4" />
-                  <span>Abuse Reports</span>
+                <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                  <Flag className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Abuse Reports</span>
+                  <span className="sm:hidden">Reports</span>
                   {pendingReportsCount > 0 && (
                     <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-500 text-white">
                       {pendingReportsCount}
@@ -272,15 +273,16 @@ export default function AdminModeration() {
               </button>
               <button
                 onClick={() => { setActiveTab('flagged'); setSearchQuery(''); }}
-                className={`flex-1 px-6 py-4 text-sm font-semibold transition-all relative ${
+                className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'flagged'
                     ? 'text-amber-700 bg-amber-50/50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <div className="flex items-center justify-center gap-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>Flagged Jobs</span>
+                <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Flagged Jobs</span>
+                  <span className="sm:hidden">Flagged</span>
                   {flaggedJobs.length > 0 && (
                     <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-white">
                       {flaggedJobs.length}
@@ -293,14 +295,14 @@ export default function AdminModeration() {
               </button>
               <button
                 onClick={() => { setActiveTab('reviews'); setSearchQuery(''); }}
-                className={`flex-1 px-6 py-4 text-sm font-semibold transition-all relative ${
+                className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'reviews'
                     ? 'text-warm-700 bg-warm-50/50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <div className="flex items-center justify-center gap-2">
-                  <MessageSquare className="w-4 h-4" />
+                <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                  <MessageSquare className="w-4 h-4 flex-shrink-0" />
                   <span>Reviews</span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                     activeTab === 'reviews' ? 'bg-warm-200 text-warm-800' : 'bg-gray-200 text-gray-700'
@@ -314,15 +316,16 @@ export default function AdminModeration() {
               </button>
               <button
                 onClick={() => { setActiveTab('jobs'); setSearchQuery(''); }}
-                className={`flex-1 px-6 py-4 text-sm font-semibold transition-all relative ${
+                className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'jobs'
                     ? 'text-primary-700 bg-primary-50/50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <div className="flex items-center justify-center gap-2">
-                  <Briefcase className="w-4 h-4" />
-                  <span>Job Listings</span>
+                <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                  <Briefcase className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Job Listings</span>
+                  <span className="sm:hidden">Jobs</span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                     activeTab === 'jobs' ? 'bg-primary-200 text-primary-800' : 'bg-gray-200 text-gray-700'
                   }`}>
