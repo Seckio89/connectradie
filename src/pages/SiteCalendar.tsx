@@ -2382,4 +2382,6 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
   if (defaultCollapsed && calendarCollapsed) {
     return embedded ? collapsedView : <DashboardLayout>{collapsedView}</DashboardLayout>;
   }
- 
+  if (embedded) return content;
+  return <DashboardLayout>{content}</DashboardLayout>;
+}
