@@ -1379,7 +1379,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 return (
                   <div key={i} className={isPastDay ? 'opacity-60' : ''}>
                     {/* Day header */}
-                    <div className={`pl-5 pr-4 py-2 flex items-center justify-between ${today ? 'bg-emerald-50' : 'bg-gray-50'}`}>
+                    <div className={`pl-5 pr-4 py-2 flex items-center justify-between ${today ? 'bg-emerald-50' : 'bg-gray-50'}`} style={{ paddingLeft: '1.25rem' }}>
                       <div className="flex items-center gap-2">
                         <span className={`text-[11px] font-bold uppercase tracking-wider ${today ? 'text-emerald-700' : 'text-gray-500'}`}>
                           {day.toLocaleDateString('en-AU', { weekday: 'short' })} {day.getDate()}
@@ -1400,7 +1400,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
 
                     {/* Jobs list */}
                     {entries.length === 0 ? (
-                      <div className="pl-5 pr-4 py-3 text-xs text-gray-400">
+                      <div className="pl-5 pr-4 py-3 text-xs text-gray-400" style={{ paddingLeft: '1.25rem' }}>
                         {hasAvailable ? 'Available — no jobs booked' : 'No jobs'}
                       </div>
                     ) : (
@@ -1422,7 +1422,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                               key={job.id}
                               onClick={() => setSelectedJob(job)}
                               className={`flex items-center gap-3 pl-5 pr-4 py-3 border-l-4 ${accentColor} cursor-pointer active:bg-gray-50 transition-colors`}
-                              style={{ borderBottom: '0.5px solid #eee' }}
+                              style={{ borderBottom: '0.5px solid #eee', paddingLeft: '1.25rem' }}
                             >
                               {/* Job info */}
                               <div className="flex-1 min-w-0">
@@ -2382,6 +2382,4 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
   if (defaultCollapsed && calendarCollapsed) {
     return embedded ? collapsedView : <DashboardLayout>{collapsedView}</DashboardLayout>;
   }
-  if (embedded) return content;
-  return <DashboardLayout>{content}</DashboardLayout>;
-}
+ 
