@@ -470,4 +470,12 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
             ) : (
               <>
                 <Plus className="w-4 h-4" />
-                A
+                Add {totalSlots} Slot{totalSlots !== 1 ? 's' : ''}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}

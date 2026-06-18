@@ -2450,4 +2450,4 @@ export default function TradieDashboard() {
       `}</style>
     </DashboardLayout>
   );
-} 
+}

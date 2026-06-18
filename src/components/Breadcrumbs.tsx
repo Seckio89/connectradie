@@ -53,4 +53,7 @@ export default function Breadcrumbs() {
             )}
           </span>
         );
-     
+      })}
+    </nav>
+  );
+}
