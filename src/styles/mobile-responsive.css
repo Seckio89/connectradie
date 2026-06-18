@@ -514,6 +514,9 @@ body {
      Nuclear !important override — works regardless of Tailwind
      arbitrary-variant compilation or specificity conflicts. */
   .collapsible-header-btn {
+    width: auto !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
     justify-content: center !important;
     text-align: center !important;
   }
