@@ -212,10 +212,10 @@ export default function TradieProfessionalSettings() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 p-6 md:p-8">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 p-3 sm:p-6 md:p-8">
       {/* ── Trade Service Selector ─────────────────────────────── */}
       <div className="bg-white border border-gray-200 rounded-xl">
-        <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 rounded-t-xl">
+        <div className="px-3 py-3 sm:px-5 sm:py-4 border-b border-gray-100 bg-gray-50/50 rounded-t-xl">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-primary-100 rounded-lg flex items-center justify-center">
               <Wrench className="w-5 h-5 text-primary-600" />
@@ -227,7 +227,7 @@ export default function TradieProfessionalSettings() {
             {tradeSaving && <Loader2 className="w-4 h-4 text-primary-500 animate-spin ml-auto" />}
           </div>
         </div>
-        <div className="p-5 space-y-4">
+        <div className="p-3 sm:p-5 space-y-3 sm:space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Popular trades</label>
             <div className="flex flex-wrap gap-2">
@@ -277,7 +277,7 @@ export default function TradieProfessionalSettings() {
 
       {/* ── Business Details ───────────────────────────────────── */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+        <div className="px-3 py-3 sm:px-5 sm:py-4 border-b border-gray-100 bg-gray-50/50">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-secondary-100 rounded-lg flex items-center justify-center">
               <ShieldCheck className="w-5 h-5 text-secondary-600" />
@@ -288,7 +288,7 @@ export default function TradieProfessionalSettings() {
             </div>
           </div>
         </div>
-        <div className="p-5 space-y-5">
+        <div className="p-3 sm:p-5 space-y-3 sm:space-y-5">
           <div>
             <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
               ABN (Australian Business Number)
@@ -302,7 +302,7 @@ export default function TradieProfessionalSettings() {
                 onChange={(e) => handleAbnChange(e.target.value.replace(/\s/g, ''))}
                 placeholder="51 824 753 556"
                 maxLength={14}
-                className="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                className="w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
               />
               {abnValidating && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
@@ -319,7 +319,7 @@ export default function TradieProfessionalSettings() {
           </div>
 
           {/* GST Registration */}
-          <label className="flex items-center gap-3 cursor-pointer border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors">
+          <label className="flex items-center gap-3 cursor-pointer border border-gray-200 rounded-xl p-3 sm:p-4 hover:bg-gray-50 transition-colors">
             <input
               type="checkbox"
               checked={isGstRegistered}
@@ -345,7 +345,7 @@ export default function TradieProfessionalSettings() {
               <select
                 value={licenseState}
                 onChange={(e) => setLicenseState(e.target.value as AustralianState)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white transition-shadow"
+                className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white transition-shadow"
               >
                 <option value="">Select state...</option>
                 {AUSTRALIAN_STATES.map((s) => (
@@ -401,7 +401,7 @@ export default function TradieProfessionalSettings() {
           {licenseRequired && (
             <>
               {/* Apprentice toggle */}
-              <div className="flex items-center justify-between p-4 bg-warm-50 rounded-xl border border-warm-200">
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-warm-50 rounded-xl border border-warm-200">
                 <div className="flex items-center gap-3">
                   <GraduationCap className="w-5 h-5 text-warm-600" />
                   <div>
@@ -439,7 +439,7 @@ export default function TradieProfessionalSettings() {
                         value={supervisorLicense}
                         onChange={(e) => setSupervisorLicense(e.target.value)}
                         placeholder="e.g., 123456C"
-                        className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                        className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                       />
                     </div>
                   </div>
@@ -455,7 +455,7 @@ export default function TradieProfessionalSettings() {
                         value={supervisorName}
                         onChange={(e) => setSupervisorName(e.target.value)}
                         placeholder="e.g., John Smith"
-                        className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                        className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                       />
                     </div>
                   </div>
@@ -473,7 +473,7 @@ export default function TradieProfessionalSettings() {
                       value={licenseNumber}
                       onChange={(e) => setLicenseNumber(e.target.value)}
                       placeholder="e.g., 123456C"
-                      className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                      className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                     />
                   </div>
                 </div>
@@ -491,14 +491,14 @@ export default function TradieProfessionalSettings() {
                     type="date"
                     value={licenseExpiry}
                     onChange={(e) => setLicenseExpiry(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                    className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                   />
                 </div>
               </div>
             </>
           )}
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+          <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-xl border border-gray-200">
             <div className="flex items-center gap-3">
               <ShieldCheck className="w-5 h-5 text-green-600" />
               <div>
@@ -524,7 +524,7 @@ export default function TradieProfessionalSettings() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+        <div className="px-3 py-3 sm:px-5 sm:py-4 border-b border-gray-100 bg-gray-50/50">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-secondary-100 rounded-lg flex items-center justify-center">
               <Radar className="w-5 h-5 text-secondary-600" />
@@ -535,7 +535,7 @@ export default function TradieProfessionalSettings() {
             </div>
           </div>
         </div>
-        <div className="p-5 space-y-6">
+        <div className="p-3 sm:p-5 space-y-4 sm:space-y-6">
           <div>
             <label className="flex items-center text-sm font-medium text-gray-700 mb-3">
               Service Radius
@@ -561,7 +561,7 @@ export default function TradieProfessionalSettings() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-warm-50 to-warm-50 rounded-xl border border-warm-200">
+          <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-warm-50 to-warm-50 rounded-xl border border-warm-200">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-warm-100 rounded-lg flex items-center justify-center">
                 <Zap className="w-5 h-5 text-warm-600" />
@@ -586,7 +586,7 @@ export default function TradieProfessionalSettings() {
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-secondary-50 to-secondary-50 rounded-xl border border-secondary-200">
+          <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-secondary-50 to-secondary-50 rounded-xl border border-secondary-200">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-secondary-100 rounded-lg flex items-center justify-center">
                 <CheckCircle2 className="w-5 h-5 text-secondary-600" />
@@ -618,7 +618,7 @@ export default function TradieProfessionalSettings() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+        <div className="px-3 py-3 sm:px-5 sm:py-4 border-b border-gray-100 bg-gray-50/50">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-secondary-100 rounded-lg flex items-center justify-center">
               <PenLine className="w-5 h-5 text-secondary-600" />
@@ -629,7 +629,7 @@ export default function TradieProfessionalSettings() {
             </div>
           </div>
         </div>
-        <div className="p-5 space-y-5">
+        <div className="p-3 sm:p-5 space-y-3 sm:space-y-5">
           <div>
             <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
               Team Size
@@ -640,7 +640,7 @@ export default function TradieProfessionalSettings() {
               <select
                 value={teamSize}
                 onChange={(e) => setTeamSize(e.target.value as TeamSize)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white transition-shadow"
+                className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white transition-shadow"
               >
                 <option value="">Select team size...</option>
                 {TEAM_SIZE_OPTIONS.map((opt) => (

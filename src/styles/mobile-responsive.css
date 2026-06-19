@@ -556,4 +556,13 @@ body {
   .collapsible-header-btn {
     justify-content: center !important;
   }
+
+  /* ── 13. Compact form card sections on mobile ──────────────────
+     Tighten vertical gaps between stacked form sections so cards
+     fit professionally on small screens without excess whitespace. */
+  main .space-y-6 > * + * {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse))) !important;
+    margin-bottom: calc(0.75rem * var(--tw-space-y-reverse)) !important;
+  }
 }
