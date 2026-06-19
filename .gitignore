@@ -33,3 +33,8 @@ public/sitemap-hubs.xml
 
 # Local Claude Code permissions — should not be shared
 .claude/settings.local.json
+
+# Source archives (created for hand-off, not part of repo)
+connectradie.zip
+connectradie.tar.gz
+src.zip

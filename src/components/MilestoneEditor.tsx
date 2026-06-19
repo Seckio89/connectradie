@@ -149,6 +149,19 @@ const MILESTONE_TEMPLATES: Record<string, MilestoneTemplate[]> = {
     { title: 'Structural Demolition', description: 'Main structure demolished safely per SWMS (Safe Work Method Statement). Machine or hand demolition' },
     { title: 'Site Clear & Waste Disposal', description: 'All debris removed, waste classified and disposed to licensed facilities, site left clean and level' },
   ],
+
+  // ── Metal fabrication & welding ──
+  // Stages reflect typical custom steel fabrication workflow (gates, balustrades, structural steel, repairs).
+  // Materials-deposit first stage covers steel/material procurement up front — fab shops carry significant
+  // material cost before install. Structural steelwork is fabricated/erected to AS/NZS 5131.
+  Welder: [
+    { title: 'Materials Deposit & Steel Order', description: 'Deposit to procure steel sections, plate, and fixings. Materials ordered against approved drawings/measurements — covers upfront material cost before work begins' },
+    { title: 'Cutting & Fabrication', description: 'Steel cut to size and components fabricated to drawings in the workshop. Structural work fabricated to AS/NZS 5131 where applicable' },
+    { title: 'Welding & Assembly', description: 'Components welded and assembled, fit-up and weld quality checked. Weld procedure/material certs recorded for structural jobs' },
+    { title: 'Finishing & Corrosion Protection', description: 'Surface treatment applied — hot-dip galvanising, powder-coat, or paint — for durability and corrosion protection' },
+    { title: 'Delivery & Installation', description: 'Fabricated work transported to site, fixed/erected in position, and fixings completed' },
+    { title: 'Final Inspection & Sign-off', description: 'Client inspection, any snags rectified, handover and compliance documentation provided' },
+  ],
 };
 
 interface LocalMilestone {

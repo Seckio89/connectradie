@@ -217,7 +217,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
   const MILESTONE_TRADES = new Set([
     'Builder', 'Renovation', 'Extension', 'Carpenter', 'Landscaper',
     'Kitchen', 'Bathroom', 'Concreter', 'Bricklayer', 'Roofer',
-    'Pool Builder', 'Fencer', 'Demolition', 'Excavation',
+    'Pool Builder', 'Fencer', 'Demolition', 'Excavation', 'Welder',
   ]);
 
   const jobCategoryRaw = job?.description.match(/^\[([^\]]+)\]/)?.[1] || '';
