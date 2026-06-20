@@ -1220,4 +1220,11 @@ function PayoutStatusBadge({ status }: { status: string }) {
   return (
     <span
       className={`inline-flex items-center text-xs font-medium px-3 py-1 rounded-full ${
-        styles[status] || 'bg-gray-100 text
+        styles[status] || 'bg-gray-100 text-gray-300'
+      }`}
+      title={tooltips[status] || ''}
+    >
+      {labels[status] || status}
+    </span>
+  );
+}
