@@ -690,3 +690,65 @@ body {
     gap: 0.125rem !important;
   }
 }
+
+/* =============================================================================
+   MOBILE FIXES — Payment truncation & Calendar clipping
+   ============================================================================= */
+@media (max-width: 639px) {
+  /* Widen payment job names on mobile — remove inline max-width constraints
+     that cause "Office Clean" → "Office Clea..." truncation */
+  main [class*="max-w-["] {
+    max-width: none !important;
+  }
+
+  /* Calendar grid right-edge clipping — now handled by the consolidated
+     padding rule in the toggle/calendar section below */
+}
+
+/* =============================================================================
+   MOBILE FIXES — Toggle touch targets & Calendar selected-state clipping
+   ============================================================================= */
+
+/* Undo the blanket 44px min-height on toggle switches (rounded-full buttons)
+   — it distorts the track. The ::before pseudo below provides the 44px
+   touch target invisibly instead. */
+@media (pointer: coarse) {
+  button.rounded-full {
+    min-height: unset !important;
+    min-width: unset !important;
+  }
+}
+
+@media (max-width: 639px) {
+  /* Expand toggle switch tap area without visual distortion.
+     The button already has position:relative from Tailwind, so the
+     ::before absolute positioning works relative to the toggle. */
+  button.rounded-full {
+    z-index: 1 !important;
+    overflow: visible !important;
+  }
+
+  button.rounded-full::before {
+    content: '' !important;
+    position: absolute !important;
+    top: -8px !important;
+    bottom: -8px !important;
+    left: -4px !important;
+    right: -4px !important;
+  }
+
+  /* Fix calendar today/selected ring clipping — the blanket
+     button { overflow: hidden } (rule 14) clips ring-2 and
+     ring-offset-2 box-shadows on calendar day buttons */
+  main .grid-cols-7 > button {
+    overflow: visible !important;
+  }
+
+  /* Pad calendar grid on all sides so ring decorations at edges
+     (especially ring-offset-2 on selected dates) aren't clipped
+     by the grid container. Right side gets more padding (from the
+     earlier fix) since the today highlight clips most there. */
+  main .grid-cols-7 {
+    padding: 0.25rem 0.5rem 0.25rem 0.25rem !important;
+  }
+}
