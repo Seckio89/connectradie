@@ -2448,4 +2448,8 @@ export default function TradieDashboard() {
           from { transform: translateY(100px); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
-        .animate-slide-up { animation: slide-up 0.3s eas
+        .animate-slide-up { animation: slide-up 0.3s ease-out; }
+      `}</style>
+    </DashboardLayout>
+  );
+}
