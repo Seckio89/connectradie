@@ -600,4 +600,30 @@ body {
     padding-right: 0.25rem !important;
     flex: 0 0 auto !important;
   }
+
+  /* ── 17. Reduce Quick Stats card sizes on mobile ───────────────
+     The vertical stat cards (flex-col items-center text-center) have
+     oversized numbers and labels on small screens.  Compact padding,
+     gap, font sizes, and icon dimensions so they don't dominate the
+     viewport. */
+  main .flex.flex-col.items-center.text-center {
+    padding: 0.75rem !important;
+    gap: 0.25rem !important;
+  }
+
+  main .flex.flex-col.items-center.text-center .text-3xl,
+  main .flex.flex-col.items-center.text-center .text-4xl {
+    font-size: 1.5rem !important;
+  }
+
+  main .flex.flex-col.items-center.text-center .text-sm,
+  main .flex.flex-col.items-center.text-center .text-base {
+    font-size: 0.75rem !important;
+  }
+
+  /* Shrink stat-card icons so they match the reduced text */
+  main .flex.flex-col.items-center.text-center svg {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+  }
 }
