@@ -1772,7 +1772,8 @@ export default function TradieDashboard() {
                     {(['day', 'week', 'month'] as const).map(v => (
                       <button key={v} onClick={() => setCalendarView(v)}
                         className={`px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${calendarView === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                        {v.charAt(0).toUpperCase() + v.slice(1)}
+                        <span className="sm:hidden">{v === 'month' ? 'Mo' : v.charAt(0).toUpperCase() + v.slice(1)}</span>
+                        <span className="hidden sm:inline">{v.charAt(0).toUpperCase() + v.slice(1)}</span>
                       </button>
                     ))}
                   </div>

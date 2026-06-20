@@ -939,7 +939,7 @@ export default function Payouts() {
                                             </td>
                                             <td className="px-5 py-3">
                                               <div className="flex items-center gap-2">
-                                                <p className="text-sm font-medium text-navy-900 truncate max-w-[180px]">{jobTitle}</p>
+                                                <p className="text-sm font-medium text-navy-900 truncate max-w-[260px] sm:max-w-[180px] md:max-w-[260px]">{jobTitle}</p>
                                                 {p.isRecurring && (
                                                   <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
                                                     isCancelled ? 'bg-red-100 text-red-600' : 'bg-secondary-100 text-secondary-700'
@@ -994,13 +994,13 @@ export default function Payouts() {
                                     const statusClass = isInvoice ? 'bg-emerald-100 text-emerald-700' : isReleased ? 'bg-green-100 text-green-700' : p.status === 'completed' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600';
                                     const isCancelled = p.jobStatus === 'cancelled' || p.jobStatus === 'declined';
                                     return (
-                                      <div key={p.id} onClick={() => !isInvoice && setSelectedJobId(p.job_id)} className={`flex items-center gap-3 px-5 py-3.5 ${isInvoice ? '' : 'cursor-pointer'} hover:bg-surface-50 transition-colors ${isCancelled ? 'opacity-60' : ''}`}>
+                                      <div key={p.id} onClick={() => !isInvoice && setSelectedJobId(p.job_id)} className={`flex items-center gap-3 px-3 sm:px-5 py-3.5 ${isInvoice ? '' : 'cursor-pointer'} hover:bg-surface-50 transition-colors ${isCancelled ? 'opacity-60' : ''}`}>
                                         <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-warm-50">
                                           <DollarSign className="w-4 h-4 text-warm-600" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-center gap-1.5">
-                                            <p className="text-sm font-medium text-navy-900 truncate">{jobTitle}</p>
+                                            <p className="text-sm font-medium text-navy-900 truncate max-w-[55vw] sm:max-w-none">{jobTitle}</p>
                                             {p.isRecurring && (
                                               <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${isCancelled ? 'bg-red-100 text-red-600' : 'bg-secondary-100 text-secondary-700'}`}>
                                                 {isCancelled ? 'Cancelled' : 'Ongoing'}

@@ -50,10 +50,32 @@ body {
     max-width: 100% !important;
     overflow-x: hidden !important;
     overflow-y: visible !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
   }
 
   [data-tour="calendar"] .grid {
     max-width: 100% !important;
+  }
+
+  /* Compact calendar day cells on mobile — reduce height */
+  [data-tour="calendar"] button.aspect-square {
+    aspect-ratio: unset !important;
+    padding-top: 0.35rem !important;
+    padding-bottom: 0.35rem !important;
+  }
+
+  /* Reduce calendar card vertical padding */
+  [data-tour="calendar"] .mb-6 {
+    margin-bottom: 0.75rem !important;
+  }
+
+  /* Compact legend spacing */
+  [data-tour="calendar"] .mt-4.flex-wrap {
+    margin-top: 0.5rem !important;
+    gap: 0.5rem !important;
   }
 
   /* Kill any element that tries to be wider than the screen */
