@@ -766,6 +766,21 @@ export default function TradieDashboard() {
           )}
         </div>
 
+        {/* Pro Member Banner */}
+        {showPayoutBanner && (
+          <div className="mt-3 sm:mt-6 flex items-center gap-2 sm:gap-2 px-4 py-3 bg-white sm:bg-green-50 border-y sm:border border-gray-100 sm:border-green-200 rounded-none sm:rounded-xl -mx-4 sm:mx-0">
+            <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+            <span className="text-sm font-semibold text-green-800">Pro Member<span className="hidden sm:inline"> — Lowest Fees</span></span>
+            <span className="text-sm text-green-600 flex-1 hidden sm:inline">You're keeping more of every job with Pro.</span>
+            <button
+              onClick={() => { localStorage.setItem('dismissedPayoutBanner', 'true'); setShowPayoutBanner(false); }}
+              className="p-1 text-green-500 hover:text-green-700 rounded transition-colors flex-shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* License Expired Banner */}
         {isLicenseExpired && (
           <div className="mb-6 bg-red-50 border-y-2 sm:border-2 border-x-0 sm:border-x-2 border-red-300 rounded-none sm:rounded-2xl p-5 -mx-4 sm:mx-0">
@@ -2262,19 +2277,6 @@ export default function TradieDashboard() {
           </div>
         )}
 
-        {showPayoutBanner && (
-          <div className="mt-6 flex items-center gap-2 sm:gap-2 px-4 py-3 bg-white sm:bg-green-50 border-y sm:border border-gray-100 sm:border-green-200 rounded-none sm:rounded-xl">
-            <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-            <span className="text-sm font-semibold text-green-800">Pro Member<span className="hidden sm:inline"> — Lowest Fees</span></span>
-            <span className="text-sm text-green-600 flex-1 hidden sm:inline">You're keeping more of every job with Pro.</span>
-            <button
-              onClick={() => { localStorage.setItem('dismissedPayoutBanner', 'true'); setShowPayoutBanner(false); }}
-              className="p-1 text-green-500 hover:text-green-700 rounded transition-colors flex-shrink-0"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
       </div>
 
       {/* ─── MODALS ─── */}
@@ -2446,8 +2448,4 @@ export default function TradieDashboard() {
           from { transform: translateY(100px); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
-        .animate-slide-up { animation: slide-up 0.3s ease-out; }
-      `}</style>
-    </DashboardLayout>
-  );
-}
+        .animate-slide-up { animation: slide-up 0.3s eas
