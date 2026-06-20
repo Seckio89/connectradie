@@ -13,11 +13,11 @@ import type { TradeVacancyWithEmployer, VacancyRoleType } from '../types/databas
 type RoleFilter = 'all' | 'apprentice' | 'qualified' | 'senior_advisory';
 type ViewTab = 'browse' | 'my_listings';
 
-const ROLE_FILTERS: { value: RoleFilter; label: string; icon: typeof Briefcase }[] = [
+const ROLE_FILTERS: { value: RoleFilter; label: string; shortLabel?: string; icon: typeof Briefcase }[] = [
   { value: 'all', label: 'All Roles', icon: Briefcase },
-  { value: 'apprentice', label: 'Apprenticeships', icon: GraduationCap },
+  { value: 'apprentice', label: 'Apprenticeships', shortLabel: 'Apprentice', icon: GraduationCap },
   { value: 'qualified', label: 'Qualified', icon: Briefcase },
-  { value: 'senior_advisory', label: 'Senior Roles', icon: Award },
+  { value: 'senior_advisory', label: 'Senior Roles', shortLabel: 'Senior', icon: Award },
 ];
 
 export default function TradeCareers({ embedded = false }: { embedded?: boolean }) {
@@ -279,7 +279,8 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
-                    {f.label}
+                    <span className="hidden sm:inline">{f.label}</span>
+                    <span className="sm:hidden">{f.shortLabel || f.label}</span>
                   </button>
                 );
               })}

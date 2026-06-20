@@ -57,7 +57,8 @@ export default function WorkHub() {
           {activeTab === 'hiring' && 'Post vacancies and find apprentices or qualified tradies to join your team'}
         </p>
 
-        <div className="flex items-center gap-0 border-b border-gray-200 mb-5 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex items-center gap-0 border-b border-gray-200 mb-5 overflow-x-auto -mx-4 sm:mx-0 scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="w-4 sm:w-0 flex-shrink-0" aria-hidden="true" />
           {tabs.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.key;
@@ -85,6 +86,7 @@ export default function WorkHub() {
               </button>
             );
           })}
+          <div className="w-4 sm:w-0 flex-shrink-0" aria-hidden="true" />
         </div>
 
         <SectionErrorBoundary>
