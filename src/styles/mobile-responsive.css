@@ -626,4 +626,22 @@ body {
     width: 1.25rem !important;
     height: 1.25rem !important;
   }
+
+  /* ── 18. Reduce Quote Insights numbers on mobile ──────────────
+     Shrink all large/medium text sizes by ~10% so Quote Insights
+     stats and similar numbers fit comfortably on small screens.
+     text-3xl 1.875rem → 1.7rem | text-2xl 1.5rem → 1.35rem
+     text-xl  1.25rem  → 1.125rem | text-lg 1.125rem → 1rem */
+  main .text-3xl {
+    font-size: 1.7rem !important;
+  }
+  main .text-2xl {
+    font-size: 1.35rem !important;
+  }
+  main .text-xl {
+    font-size: 1.125rem !important;
+  }
+  main .text-lg {
+    font-size: 1rem !important;
+  }
 }
