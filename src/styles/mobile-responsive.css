@@ -586,4 +586,18 @@ body {
     text-align: center !important;
     justify-content: center !important;
   }
+
+  /* ── 16. Compact sub-tab text on Jobs and similar tab rows ─────
+     "Pending / Active / Completed / All Jobs 44" clips on narrow
+     screens because gap-6 and text-sm are too large.  Tighten gap,
+     shrink font, and size buttons to content instead of flex-1. */
+  main .border-b.flex.overflow-x-auto {
+    gap: 0.5rem !important;
+  }
+  main .border-b.flex.overflow-x-auto > button {
+    font-size: 0.75rem !important;
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+    flex: 0 0 auto !important;
+  }
 }
