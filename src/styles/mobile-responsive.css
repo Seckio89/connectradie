@@ -565,4 +565,25 @@ body {
     margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse))) !important;
     margin-bottom: calc(0.75rem * var(--tw-space-y-reverse)) !important;
   }
+
+  /* ── 14. Prevent text overflow on any button ──────────────────
+     Buttons should always contain their text — fixes filter/role
+     buttons on the Work Hub Hire tab where text extends past the
+     green background. */
+  button {
+    overflow: hidden !important;
+  }
+
+  /* ── 15. Even-space role filter buttons on Hire page ─────────
+     The overflow-x-auto flex row of role filter buttons (All Roles,
+     Apprentice, Qualified, Senior) should distribute evenly across
+     the screen width instead of being left-aligned and unevenly
+     spaced. The icon sibling (flex-shrink-0) keeps its natural
+     size; only the buttons expand to share remaining space. */
+  main .overflow-x-auto.flex > button {
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+    text-align: center !important;
+    justify-content: center !important;
+  }
 }
