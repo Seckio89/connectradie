@@ -1751,8 +1751,8 @@ export default function TradieDashboard() {
         </div>
 
         {/* Calendar */}
-        <div className="mt-6 bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 shadow-sm p-3 sm:p-6 sm:ring-1 ring-primary-100/50 max-w-full overflow-visible -mx-4 sm:mx-0" data-tour="calendar">
-          <div className="grid lg:grid-cols-3 gap-4 sm:gap-8 max-w-full overflow-visible">
+        <div className="mt-6 bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 shadow-sm px-4 py-3 sm:p-6 sm:ring-1 ring-primary-100/50 -mx-4 sm:mx-0" data-tour="calendar">
+          <div className="grid lg:grid-cols-3 gap-4 sm:gap-8 max-w-full overflow-hidden">
             {/* Calendar */}
             <div className="lg:col-span-2 min-w-0">
               <div className="flex flex-col gap-3 mb-6">
