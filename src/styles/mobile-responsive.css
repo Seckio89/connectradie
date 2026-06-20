@@ -348,6 +348,11 @@ body {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
   }
+
+  /* Center calendar content on mobile — shift ~10% right to visually center */
+  [data-tour="calendar"] {
+    padding-left: 5% !important;
+  }
 }
 
 /* --- #8 Settings tabs: scrollbar hide for tab row --- */
