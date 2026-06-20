@@ -865,7 +865,8 @@ export default function Payouts() {
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-navy-500 border border-surface-200 rounded-lg hover:bg-surface-50 transition-colors"
                       >
                         <FileText className="w-3.5 h-3.5" />
-                        Upload Invoice Template
+                        <span className="sm:hidden">Upload Invoice</span>
+                        <span className="hidden sm:inline">Upload Invoice Template</span>
                       </button>
                     )}
                   </div>
@@ -1219,11 +1220,4 @@ function PayoutStatusBadge({ status }: { status: string }) {
   return (
     <span
       className={`inline-flex items-center text-xs font-medium px-3 py-1 rounded-full ${
-        styles[status] || 'bg-gray-100 text-gray-300'
-      }`}
-      title={tooltips[status] || ''}
-    >
-      {labels[status] || status}
-    </span>
-  );
-}
+        styles[status] || 'bg-gray-100 text
