@@ -572,7 +572,7 @@ export default function Settings() {
                 </div>
                 <p className="text-gray-500 capitalize">{profile?.role}</p>
                 {(isTradie || (isAdmin && trainingModeEnabled)) && (
-                  <div className="mt-3">
+                  <div className="hidden sm:block mt-3">
                     {(tradieDetails?.subscription_tier === 'pro' || profile?.is_premium) ? (
                       <button
                         onClick={() => setShowSubscriptionModal(true)}
@@ -780,21 +780,4 @@ export default function Settings() {
         >
           <button
             onClick={() => setShowAvatarModal(false)}
-            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
-            aria-label="Close photo preview"
-          >
-            <X className="w-6 h-6" />
-          </button>
-          <div className="max-w-4xl max-h-[90vh] relative">
-            <img
-              src={profile.avatar_url}
-              alt={profile.full_name || 'Profile photo'}
-              className="max-w-full max-h-[90vh] object-contain rounded-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        </div>
-      )}
-    </DashboardLayout>
-  );
-}
+            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-whit
