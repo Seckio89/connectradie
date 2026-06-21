@@ -161,6 +161,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, user, tradieDetails, signOut } = useAuth();
@@ -174,11 +175,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [location.pathname]);
 
-  // Listen for WelcomeGuide requesting sidebar open (for tour steps targeting sidebar elements)
+  // Listen for WelcomeGuide requesting sidebar open (for tour steps targeting sidebar elements).
+  // Skip the CSS transition so the sidebar snaps open instantly — this prevents the tour
+  // highlight from calculating a stale bounding rect during the slide animation.
   useEffect(() => {
     const handler = (e: Event) => {
       const { open } = (e as CustomEvent).detail;
+      // Disable the transition before React re-renders with the new state
+      if (sidebarRef.current) {
+        sidebarRef.current.style.transition = 'none';
+      }
       setSidebarOpen(open);
+      // Re-enable transitions after the browser has painted the sidebar in its final position
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (sidebarRef.current) {
+            sidebarRef.current.style.transition = '';
+          }
+        });
+      });
     };
     window.addEventListener('welcomeguide:sidebar', handler);
     return () => window.removeEventListener('welcomeguide:sidebar', handler);
@@ -552,6 +567,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       />
 
       <aside
+        ref={sidebarRef}
         className={`fixed top-0 left-0 z-50 h-full w-64 bg-navy-900 border-r border-navy-800 transform transition-transform lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
