@@ -185,7 +185,7 @@ const tradieTour: TourStep[] = [
       { icon: DollarSign, text: 'Revenue tracking — monitor your earnings over time' },
       { icon: TrendingUp, text: 'AI-powered tips — get suggestions to improve your profile' },
     ],
-    position: 'bottom',
+    position: 'top',
   },
 ];
 
