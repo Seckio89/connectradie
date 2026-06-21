@@ -294,7 +294,7 @@ export default function OnboardingChecklist() {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden" data-tour="onboarding-checklist">
       <div className="p-5 pb-4">
         <div className="flex items-center justify-between mb-1">
           <h3 className="font-semibold text-gray-900 text-sm">Get Started</h3>
