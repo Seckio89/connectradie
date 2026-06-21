@@ -26,6 +26,7 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const state = location.state as { tab?: string } | null;
     if (state?.tab === 'verification') return 'verification';
+    if (state?.tab === 'professional') return 'professional';
     if (state?.tab === 'admin') return 'admin';
     return 'profile';
   });

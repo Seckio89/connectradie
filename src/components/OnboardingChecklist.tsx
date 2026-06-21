@@ -190,9 +190,7 @@ export default function OnboardingChecklist() {
   const primaryTrade = profile.declared_trades?.[0] || '';
   const tradeExempt = isTradeExempt(primaryTrade);
 
-  const abnLicenseComplete = tradeExempt
-    ? !!profile.abn_number
-    : !!(profile.abn_number && profile.license_number);
+  const abnLicenseComplete = !!profile.abn_number;
 
   const isVerifiedOrPending =
     profile.verification_status === 'verified' || profile.verification_status === 'pending';
@@ -212,7 +210,7 @@ export default function OnboardingChecklist() {
       description: abnLicenseComplete ? 'Credentials added' : 'Required to appear in client search results',
       icon: FileText,
       complete: abnLicenseComplete,
-      action: () => navigate('/settings', { state: { tab: 'verification' } }),
+      action: () => navigate('/settings', { state: { tab: 'professional' } }),
     },
     {
       id: 'verification',
