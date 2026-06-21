@@ -409,11 +409,31 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
 
     const scrollY = window.scrollY;
     const scrollX = window.scrollX;
-    const x = targetRect.left - scrollX - pad;
+    let x = targetRect.left - scrollX - pad;
     const y = targetRect.top - scrollY - pad;
-    const w = targetRect.width + pad * 2;
+    let w = targetRect.width + pad * 2;
     const h = targetRect.height + pad * 2;
     const r = 12;
+
+    // On mobile, clamp spotlight to sidebar bounds so highlight
+    // doesn't bleed past the sidebar into the main content area
+    if (window.innerWidth < 1024) {
+      const sidebar = document.querySelector('aside');
+      if (sidebar) {
+        const sidebarRect = sidebar.getBoundingClientRect();
+        const elViewLeft = targetRect.left - scrollX;
+        // Only clamp when the target element lives inside the sidebar
+        if (elViewLeft >= sidebarRect.left && elViewLeft < sidebarRect.right) {
+          if (x < sidebarRect.left) {
+            w -= sidebarRect.left - x;
+            x = sidebarRect.left;
+          }
+          if (x + w > sidebarRect.right) {
+            w = sidebarRect.right - x;
+          }
+        }
+      }
+    }
 
     return (
       <svg className="fixed inset-0 w-full h-full z-[60] pointer-events-none" style={{ width: '100vw', height: '100vh' }}>
