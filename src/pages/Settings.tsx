@@ -641,7 +641,7 @@ export default function Settings() {
           )}
 
           <div className="border-b border-gray-200 mt-2">
-            <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 px-4 sm:px-6 md:px-8 pt-2 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 px-4 sm:px-6 md:px-8 pt-2 overflow-x-auto scrollbar-hide scrollbar-none">
               {settingsTabs.filter(tab => tab.show).map(tab => {
                 const Icon = tab.icon;
                 return (

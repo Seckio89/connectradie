@@ -229,7 +229,7 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
     const timer = setTimeout(() => {
       const available = allSteps.filter((s) => {
         const el = document.querySelector(s.selector) as HTMLElement | null;
-        return el && el.offsetHeight > 0;
+        return !!el;
       });
       setVisibleSteps(available);
     }, 100);
@@ -243,7 +243,7 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
     const current = steps[step];
     if (!current) return;
     const el = document.querySelector(current.selector) as HTMLElement | null;
-    if (el && el.offsetHeight > 0) {
+    if (el) {
       const rect = el.getBoundingClientRect();
       setTargetRect({
         top: rect.top + window.scrollY,
@@ -252,7 +252,7 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
         height: rect.height,
       });
     } else {
-      // Element not visible, skip to next step
+      // Element not in DOM at all, skip to next step
       if (step < steps.length - 1) {
         setStep(step + 1);
       }
@@ -266,7 +266,7 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
     const current = steps[step];
     if (!current) return;
     const el = document.querySelector(current.selector) as HTMLElement | null;
-    if (el && el.offsetHeight > 0) {
+    if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, [showTour, step, steps]);

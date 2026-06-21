@@ -392,7 +392,6 @@ body {
   .border-b > .flex,
   .border-b.flex {
     overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
