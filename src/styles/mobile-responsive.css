@@ -18,6 +18,15 @@ body,
   overflow-x: hidden !important;
 }
 
+/* overflow-x:clip on <main> — prevents horizontal scroll without
+   creating a scroll container (unlike hidden), so position:sticky
+   works for descendant elements like the Settings tab bar.
+   First line is a fallback for browsers without clip support. */
+main#main-content {
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
 /* --- Prevent rubber-band bounce in Capacitor WebView --- */
 html,
 body {
