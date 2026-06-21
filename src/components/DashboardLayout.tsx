@@ -174,6 +174,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [location.pathname]);
 
+  // Listen for WelcomeGuide requesting sidebar open (for tour steps targeting sidebar elements)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { open } = (e as CustomEvent).detail;
+      setSidebarOpen(open);
+    };
+    window.addEventListener('welcomeguide:sidebar', handler);
+    return () => window.removeEventListener('welcomeguide:sidebar', handler);
+  }, []);
+
   // Count ALL items needing the client's attention — releases, pending
   // quotes, incomplete payments, invoices. This drives the sidebar dot
   // and matches the "Needs your attention" card on the dashboard.

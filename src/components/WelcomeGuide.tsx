@@ -281,6 +281,23 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
     };
   }, [updateTargetRect]);
 
+  // When the current tour step targets an element inside the sidebar, request it to open
+  useEffect(() => {
+    if (!showTour) return;
+    const activeSteps = visibleSteps.length > 0 ? visibleSteps : allSteps;
+    const currentStep = activeSteps[step];
+    const sidebarSelectors = ['[data-tour="sidebar-nav"]', '[data-tour="get-quote"]'];
+    const needsSidebar = currentStep != null && sidebarSelectors.includes(currentStep.selector);
+    if (needsSidebar) {
+      window.dispatchEvent(new CustomEvent('welcomeguide:sidebar', { detail: { open: true } }));
+    }
+    return () => {
+      if (needsSidebar) {
+        window.dispatchEvent(new CustomEvent('welcomeguide:sidebar', { detail: { open: false } }));
+      }
+    };
+  }, [showTour, step, visibleSteps, allSteps]);
+
   const dismiss = () => {
     setVisible(false);
     localStorage.setItem(storageKey, 'true');
