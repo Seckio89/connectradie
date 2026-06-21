@@ -415,23 +415,16 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
     const h = targetRect.height + pad * 2;
     const r = 12;
 
-    // On mobile, clamp spotlight to sidebar bounds so highlight
-    // doesn't bleed past the sidebar into the main content area
-    if (window.innerWidth < 1024) {
-      const sidebar = document.querySelector('aside');
-      if (sidebar) {
-        const sidebarRect = sidebar.getBoundingClientRect();
-        const elViewLeft = targetRect.left - scrollX;
-        // Only clamp when the target element lives inside the sidebar
-        if (elViewLeft >= sidebarRect.left && elViewLeft < sidebarRect.right) {
-          if (x < sidebarRect.left) {
-            w -= sidebarRect.left - x;
-            x = sidebarRect.left;
-          }
-          if (x + w > sidebarRect.right) {
-            w = sidebarRect.right - x;
-          }
-        }
+    // When the target lives inside the sidebar, snap the highlight
+    // horizontally to the full sidebar width for a flush appearance
+    const sidebar = document.querySelector('aside');
+    if (sidebar) {
+      const sidebarRect = sidebar.getBoundingClientRect();
+      const elViewLeft = targetRect.left - scrollX;
+      // Only adjust when the target element lives inside the sidebar
+      if (elViewLeft >= sidebarRect.left && elViewLeft < sidebarRect.right) {
+        x = sidebarRect.left;
+        w = sidebarRect.width;
       }
     }
 

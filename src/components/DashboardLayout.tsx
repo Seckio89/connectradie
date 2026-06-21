@@ -573,7 +573,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </button>
           </div>
 
-          <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto min-h-0" data-tour="sidebar-nav">
+          <nav className="flex-1 px-3 py-2 overflow-y-auto min-h-0">
+            <div data-tour="sidebar-nav" className="space-y-0.5">
             {!isTradie && !isAdmin && (
               <Link
                 to="/post-lead"
@@ -669,6 +670,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Link>
               );
             })}
+            </div>
           </nav>
 
           <div className="px-3 py-2 border-t border-navy-800 flex-shrink-0">
