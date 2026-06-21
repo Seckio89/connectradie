@@ -290,13 +290,22 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
     const needsSidebar = currentStep != null && sidebarSelectors.includes(currentStep.selector);
     if (needsSidebar) {
       window.dispatchEvent(new CustomEvent('welcomeguide:sidebar', { detail: { open: true } }));
+      // The sidebar DOM may not have painted yet, so force a delayed recalculation
+      // of the overlay position once the sidebar is visible.
+      const recalcTimer = setTimeout(() => {
+        updateTargetRect();
+      }, 150);
+      return () => {
+        clearTimeout(recalcTimer);
+        window.dispatchEvent(new CustomEvent('welcomeguide:sidebar', { detail: { open: false } }));
+      };
     }
     return () => {
       if (needsSidebar) {
         window.dispatchEvent(new CustomEvent('welcomeguide:sidebar', { detail: { open: false } }));
       }
     };
-  }, [showTour, step, visibleSteps, allSteps]);
+  }, [showTour, step, visibleSteps, allSteps, updateTargetRect]);
 
   const dismiss = () => {
     setVisible(false);
