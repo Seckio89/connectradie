@@ -654,6 +654,16 @@ body {
     height: 1.25rem !important;
   }
 
+  /* ── 17b. Restore Quick Stats card borders ────────────────────
+     Flush-card rules 1 & 3 strip border-radius and side borders
+     from all rounded containers.  Quick Stats cards need their
+     full primary-200 border and rounded corners intact. */
+  [data-tour="quick-stats"] .grid > .rounded-2xl {
+    border-left-width: 1px !important;
+    border-right-width: 1px !important;
+    border-radius: 0.75rem !important;
+  }
+
   /* ── 18. Reduce Quote Insights numbers on mobile ──────────────
      Shrink all large/medium text sizes by ~10% so Quote Insights
      stats and similar numbers fit comfortably on small screens.
