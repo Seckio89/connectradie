@@ -515,78 +515,84 @@ export default function Settings() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 overflow-visible sm:overflow-hidden">
-          <div className="flex flex-col sm:flex-row items-center gap-6 p-6 md:p-8 pb-8 border-b border-gray-200">
-            <div className="flex flex-col items-center gap-3">
-              <button
-                type="button"
-                onClick={() => profile?.avatar_url && setShowAvatarModal(true)}
-                disabled={!profile?.avatar_url}
-                className="relative w-28 h-28 rounded-xl flex-shrink-0 ring-4 ring-gray-200 hover:ring-primary-200 transition-all"
-              >
-                {profile?.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.full_name || 'Avatar'}
-                    className="w-28 h-28 rounded-xl object-cover cursor-pointer"
-                  />
-                ) : (
-                  <div className="w-28 h-28 bg-primary-100 rounded-xl flex items-center justify-center">
-                    <span className="text-4xl font-bold text-primary-600">
-                      {profile?.full_name?.charAt(0) || 'U'}
-                    </span>
-                  </div>
-                )}
-                {avatarUploading && (
-                  <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 text-white animate-spin" />
-                  </div>
-                )}
-              </button>
-              <input
-                ref={avatarInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => avatarInputRef.current?.click()}
-                disabled={avatarUploading}
-                className="text-sm font-medium text-primary-600 hover:text-primary-700 disabled:opacity-50 transition-colors"
-              >
-                {profile?.avatar_url ? 'Change photo' : 'Upload photo'}
-              </button>
-            </div>
-            <div className="flex-1 text-center sm:text-left">
-              <div className="flex items-center gap-2 justify-center sm:justify-start">
-                <h2 className="text-xl font-semibold text-gray-900">{profile?.full_name}</h2>
-                {(tradieDetails?.subscription_tier === 'pro' || profile?.is_premium) && (
-                  <BadgeCheck className="w-5 h-5 text-primary-500" />
-                )}
-              </div>
-              <p className="text-gray-500 capitalize">{profile?.role}</p>
-              {(isTradie || (isAdmin && trainingModeEnabled)) && (
-                <div className="mt-3">
-                  {(tradieDetails?.subscription_tier === 'pro' || profile?.is_premium) ? (
-                    <button
-                      onClick={() => setShowSubscriptionModal(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 text-sm font-medium rounded-full border border-green-200 hover:bg-green-100 transition-colors"
-                    >
-                      <Crown className="w-3.5 h-3.5" />
-                      Pro Member — Manage
-                    </button>
+          {/* Wrapper separates border-b from flex so the mobile CSS rule
+              `.border-b.flex { overflow-x:auto }` (mobile-responsive.css #10)
+              doesn't turn this header into a scrollable touch-layer that
+              bleeds into the tab bar and hijacks taps to the subscription button. */}
+          <div className="border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row items-center gap-6 p-6 md:p-8 pb-8">
+              <div className="flex flex-col items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => profile?.avatar_url && setShowAvatarModal(true)}
+                  disabled={!profile?.avatar_url}
+                  className="relative w-28 h-28 rounded-xl flex-shrink-0 ring-4 ring-gray-200 hover:ring-primary-200 transition-all"
+                >
+                  {profile?.avatar_url ? (
+                    <img
+                      src={profile.avatar_url}
+                      alt={profile.full_name || 'Avatar'}
+                      className="w-28 h-28 rounded-xl object-cover cursor-pointer"
+                    />
                   ) : (
-                    <button
-                      onClick={() => setShowSubscriptionModal(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 text-warm-600 text-sm font-medium rounded-full border border-warm-200 hover:bg-warm-100 transition-colors"
-                    >
-                      <Crown className="w-3.5 h-3.5" />
-                      Upgrade to Pro
-                    </button>
+                    <div className="w-28 h-28 bg-primary-100 rounded-xl flex items-center justify-center">
+                      <span className="text-4xl font-bold text-primary-600">
+                        {profile?.full_name?.charAt(0) || 'U'}
+                      </span>
+                    </div>
+                  )}
+                  {avatarUploading && (
+                    <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
+                      <Loader2 className="w-8 h-8 text-white animate-spin" />
+                    </div>
+                  )}
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={avatarUploading}
+                  className="text-sm font-medium text-primary-600 hover:text-primary-700 disabled:opacity-50 transition-colors"
+                >
+                  {profile?.avatar_url ? 'Change photo' : 'Upload photo'}
+                </button>
+              </div>
+              <div className="flex-1 text-center sm:text-left">
+                <div className="flex items-center gap-2 justify-center sm:justify-start">
+                  <h2 className="text-xl font-semibold text-gray-900">{profile?.full_name}</h2>
+                  {(tradieDetails?.subscription_tier === 'pro' || profile?.is_premium) && (
+                    <BadgeCheck className="w-5 h-5 text-primary-500" />
                   )}
                 </div>
-              )}
+                <p className="text-gray-500 capitalize">{profile?.role}</p>
+                {(isTradie || (isAdmin && trainingModeEnabled)) && (
+                  <div className="mt-3">
+                    {(tradieDetails?.subscription_tier === 'pro' || profile?.is_premium) ? (
+                      <button
+                        onClick={() => setShowSubscriptionModal(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 text-sm font-medium rounded-full border border-green-200 hover:bg-green-100 transition-colors"
+                      >
+                        <Crown className="w-3.5 h-3.5" />
+                        Pro Member — Manage
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setShowSubscriptionModal(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 text-warm-600 text-sm font-medium rounded-full border border-warm-200 hover:bg-warm-100 transition-colors"
+                      >
+                        <Crown className="w-3.5 h-3.5" />
+                        Upgrade to Pro
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -774,21 +780,4 @@ export default function Settings() {
         >
           <button
             onClick={() => setShowAvatarModal(false)}
-            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
-            aria-label="Close photo preview"
-          >
-            <X className="w-6 h-6" />
-          </button>
-          <div className="max-w-4xl max-h-[90vh] relative">
-            <img
-              src={profile.avatar_url}
-              alt={profile.full_name || 'Profile photo'}
-              className="max-w-full max-h-[90vh] object-contain rounded-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        </div>
-      )}
-    </DashboardLayout>
-  );
-}
+            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-col
