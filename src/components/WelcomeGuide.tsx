@@ -320,7 +320,7 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
   if (!showTour) {
     return (
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-gray-900/40 " onClick={dismiss} />
+        <div className="absolute inset-0 bg-gray-900/40 " />
 
         <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
           <button
@@ -470,8 +470,8 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
     <>
       {getOverlaySvg()}
 
-      {/* Clickable backdrop */}
-      <div className="fixed inset-0 z-[60]" onClick={dismiss} />
+      {/* Non-interactive backdrop — tour closes only via X button or completing all steps */}
+      <div className="fixed inset-0 z-[60]" />
 
       {/* Tooltip card */}
       <div
