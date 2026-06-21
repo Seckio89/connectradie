@@ -29,7 +29,7 @@ const clientTour: TourStep[] = [
       { icon: MessageCircle, text: 'Messages — chat directly with your tradies' },
       { icon: Settings, text: 'Settings — update your profile and preferences' },
     ],
-    position: 'right',
+    position: 'bottom',
   },
   {
     selector: '[data-tour="get-quote"]',
@@ -116,7 +116,7 @@ const tradieTour: TourStep[] = [
       { icon: Wallet, text: 'Payouts — manage your earnings and bank details' },
       { icon: Settings, text: 'Settings — update credentials, ABN and license info' },
     ],
-    position: 'right',
+    position: 'bottom',
   },
   {
     selector: '[data-tour="notifications"]',
@@ -377,10 +377,21 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
     let left = 0;
 
     switch (current.position) {
-      case 'bottom':
+      case 'bottom': {
         top = viewTop + targetRect.height + pad + margin;
         left = viewLeft + targetRect.width / 2 - tooltipW / 2;
+        // When the target is inside the sidebar, place the tooltip just to
+        // the right of the sidebar so it doesn't awkwardly straddle or
+        // overlap sidebar content if viewport clamping pushes it upward.
+        const sidebar = document.querySelector('aside');
+        if (sidebar) {
+          const sidebarRect = sidebar.getBoundingClientRect();
+          if (viewLeft >= sidebarRect.left && viewLeft < sidebarRect.right) {
+            left = sidebarRect.right + margin;
+          }
+        }
         break;
+      }
       case 'top':
         top = viewTop - pad - margin - tooltipH;
         left = viewLeft + targetRect.width / 2 - tooltipW / 2;
