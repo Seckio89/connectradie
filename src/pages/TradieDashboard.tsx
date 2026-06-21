@@ -848,7 +848,7 @@ export default function TradieDashboard() {
         )}
 
         {/* Onboarding Checklist */}
-        <div className="mb-3 sm:mb-6">
+        <div className="mb-3 sm:mb-6" data-tour="onboarding-checklist">
           <SectionErrorBoundary fallbackTitle="Onboarding checklist failed to load">
             <OnboardingChecklist />
           </SectionErrorBoundary>

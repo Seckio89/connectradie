@@ -2300,7 +2300,7 @@ export default function ClientDashboard() {
               );
             })()}
 
-            <div>
+            <div data-tour="onboarding-checklist">
               <SectionErrorBoundary fallbackTitle="Onboarding checklist failed to load">
                 <OnboardingChecklist />
               </SectionErrorBoundary>
