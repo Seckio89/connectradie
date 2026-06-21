@@ -495,6 +495,17 @@ export default function Settings() {
     }
   };
 
+  // Tab config — switching is driven by `id`, never by label text.
+  // Mobile labels (mobileLabel) are purely visual shorthand.
+  const settingsTabs: { id: TabType; label: string; mobileLabel?: string; icon: typeof User; show: boolean }[] = [
+    { id: 'profile', label: 'Profile', icon: User, show: true },
+    { id: 'professional', label: 'Professional', mobileLabel: 'Pro', icon: Settings2, show: showTradieFeatures },
+    { id: 'security', label: 'Security', icon: Lock, show: true },
+    { id: 'verification', label: 'Get Verified', mobileLabel: 'Verify', icon: Shield, show: showTradieFeatures },
+    { id: 'notifications', label: 'Notifications', mobileLabel: 'Notify', icon: Bell, show: true },
+    { id: 'admin', label: 'Admin Tools', mobileLabel: 'Admin', icon: Wrench, show: isAdmin },
+  ];
+
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
@@ -624,88 +635,32 @@ export default function Settings() {
 
           <div className="border-b border-gray-200 mt-2">
             <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 px-4 sm:px-6 md:px-8 pt-2 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
-              <button
-                type="button"
-                onClick={() => setActiveTab('profile')}
-                className={`flex items-center gap-1.5 pb-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'profile'
-                    ? 'border-warm-500 text-warm-600'
-                    : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
-                }`}
-              >
-                <User className="w-4 h-4" />
-                Profile
-              </button>
-              {showTradieFeatures && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('professional')}
-                  className={`flex items-center gap-1.5 pb-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
-                    activeTab === 'professional'
-                      ? 'border-warm-500 text-warm-600'
-                      : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
-                  }`}
-                >
-                  <Settings2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Professional</span>
-                  <span className="sm:hidden">Pro</span>
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setActiveTab('security')}
-                className={`flex items-center gap-1.5 pb-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'security'
-                    ? 'border-warm-500 text-warm-600'
-                    : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
-                }`}
-              >
-                <Lock className="w-4 h-4" />
-                Security
-              </button>
-              {showTradieFeatures && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('verification')}
-                  className={`flex items-center gap-1.5 pb-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
-                    activeTab === 'verification'
-                      ? 'border-warm-500 text-warm-600'
-                      : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
-                  }`}
-                >
-                  <Shield className="w-4 h-4" />
-                  <span className="hidden sm:inline">Get Verified</span>
-                  <span className="sm:hidden">Verify</span>
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setActiveTab('notifications')}
-                className={`flex items-center gap-1.5 pb-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === 'notifications'
-                    ? 'border-warm-500 text-warm-600'
-                    : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
-                }`}
-              >
-                <Bell className="w-4 h-4" />
-                <span className="hidden sm:inline">Notifications</span>
-                <span className="sm:hidden">Notify</span>
-              </button>
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('admin')}
-                  className={`flex items-center gap-1.5 pb-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
-                    activeTab === 'admin'
-                      ? 'border-warm-500 text-warm-600'
-                      : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
-                  }`}
-                >
-                  <Wrench className="w-4 h-4" />
-                  <span className="hidden sm:inline">Admin Tools</span>
-                  <span className="sm:hidden">Admin</span>
-                </button>
-              )}
+              {settingsTabs.filter(tab => tab.show).map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    data-tab-id={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-1.5 pb-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
+                      activeTab === tab.id
+                        ? 'border-warm-500 text-warm-600'
+                        : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {tab.mobileLabel ? (
+                      <>
+                        <span className="hidden sm:inline">{tab.label}</span>
+                        <span className="sm:hidden">{tab.mobileLabel}</span>
+                      </>
+                    ) : (
+                      tab.label
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
