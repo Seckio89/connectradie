@@ -97,7 +97,7 @@ const clientTour: TourStep[] = [
       { icon: Home, text: 'Enter your address so we can show nearby tradies' },
       { icon: Briefcase, text: 'Post your first job to start receiving quotes' },
     ],
-    position: 'left',
+    position: 'top',
   },
 ];
 
@@ -558,3 +558,4 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
     </>
   );
 }
+                                
