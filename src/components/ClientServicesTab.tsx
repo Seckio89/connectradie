@@ -467,7 +467,7 @@ function QuickChat({ tradieId, tradieName, userId, recurringJobId }: { tradieId:
           <button
             onClick={handleSend}
             disabled={!newMessage.trim() || sending}
-            className="px-3 py-2 bg-secondary-500 text-white rounded-lg hover:bg-secondary-600 disabled:opacity-50 transition-colors"
+            className="px-3 py-2 bg-secondary-500 text-white rounded-lg hover:bg-secondary-600 disabled:opacity-50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
@@ -1890,7 +1890,7 @@ export default function ClientServicesTab() {
                     <div className="relative">
                       <button
                         onClick={() => setMenuOpen(menuOpen === job.id ? null : job.id)}
-                        className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+                        className="p-2.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>
@@ -2625,10 +2625,4 @@ export default function ClientServicesTab() {
             serviceLabel={label}
             otherPartyRole="tradie"
             onCancel={() => setCancelTarget(null)}
-            onConfirm={(payload) => handleCancel(cancelTarget, payload)}
-          />
-        );
-      })()}
-    </div>
-  );
-}
+            onConfirm={(payload) => handleCancel(cancelTarget, payload)}

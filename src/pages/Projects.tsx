@@ -219,12 +219,12 @@ export default function Projects() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Jobs</h1>
             <p className="text-gray-600 mt-1">Group related jobs to keep everything organised and on track</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-shrink-0">
             {projects.length > 0 && (
               <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
                 <button
@@ -316,13 +316,13 @@ export default function Projects() {
                               <button
                                 onClick={() => handleSaveTitle(project.id)}
                                 disabled={savingTitle}
-                                className="p-1 text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                                className="p-2 text-primary-600 hover:bg-primary-50 rounded transition-colors"
                               >
                                 <CheckCircle2 className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => setEditingId(null)}
-                                className="p-1 text-gray-400 hover:bg-gray-100 rounded transition-colors"
+                                className="p-2 text-gray-400 hover:bg-gray-100 rounded transition-colors"
                               >
                                 <X className="w-4 h-4" />
                               </button>
@@ -338,7 +338,7 @@ export default function Projects() {
                                   setEditingId(project.id);
                                   setEditTitle(project.title);
                                 }}
-                                className="p-1 rounded text-gray-300 hover:text-primary-600 hover:bg-primary-50 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
+                                className="p-2 rounded text-gray-300 hover:text-primary-600 hover:bg-primary-50 transition-all sm:opacity-0 sm:group-hover:opacity-100 flex-shrink-0"
                                 title="Rename project"
                               >
                                 <PenLine className="w-3.5 h-3.5" />
@@ -358,7 +358,7 @@ export default function Projects() {
                           e.stopPropagation();
                           setProjectToDelete(project);
                         }}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0"
+                        className="p-2.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0"
                         title="Delete project"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -551,9 +551,4 @@ function ProjectTimeline({ projects, onSelect, formatDate, getStatusColor, getSt
                 </div>
               </div>
             </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
+      

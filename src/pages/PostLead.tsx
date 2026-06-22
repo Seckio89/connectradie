@@ -236,7 +236,7 @@ function SmartCalendar({
           type="button"
           onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))}
           disabled={!canGoPrev}
-          className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft className="w-4 h-4 text-gray-600" />
         </button>
@@ -246,7 +246,7 @@ function SmartCalendar({
         <button
           type="button"
           onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))}
-          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
         >
           <ChevronRight className="w-4 h-4 text-gray-600" />
         </button>
@@ -880,7 +880,7 @@ export default function PostLead() {
                         <button
                           type="button"
                           onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                          className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 text-white rounded-md hover:bg-black/80 transition-colors opacity-0 group-hover/photo:opacity-100"
+                          className="absolute top-0.5 right-0.5 p-1 bg-black/60 text-white rounded-md hover:bg-black/80 transition-colors sm:opacity-0 sm:group-hover/photo:opacity-100"
                         >
                           <X className="w-2.5 h-2.5" />
                         </button>
@@ -1334,7 +1334,7 @@ export default function PostLead() {
             <button
               type="button"
               onClick={() => setPreviewPhoto(null)}
-              className="absolute -top-3 -right-3 p-1.5 bg-white text-gray-700 rounded-full shadow-lg hover:bg-gray-100 transition-colors"
+              className="absolute top-2 right-2 p-2 bg-white text-gray-700 rounded-full shadow-lg hover:bg-gray-100 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1344,3 +1344,4 @@ export default function PostLead() {
     </DashboardLayout>
   );
 }
+    

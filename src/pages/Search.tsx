@@ -1008,15 +1008,15 @@ export default function Search() {
   );
 
   const quoteRequestModal = quoteRequestTradie && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div
         className="fixed inset-0 bg-black/50"
         onClick={() => setQuoteRequestTradie(null)}
       />
-      <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
         <button
           onClick={() => setQuoteRequestTradie(null)}
-          className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 rounded-lg"
+          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-lg"
         >
           <X className="w-5 h-5" />
         </button>
@@ -1147,7 +1147,7 @@ export default function Search() {
         {viewLimitModal}
         {quoteRequestModal}
         {toast.show && (
-          <div className={`fixed bottom-4 right-4 ${toast.isError ? 'bg-red-600' : 'bg-green-600'} text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-slide-up`}>
+          <div className={`fixed bottom-20 sm:bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm ${toast.isError ? 'bg-red-600' : 'bg-green-600'} text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-slide-up`}>
             {toast.message}
           </div>
         )}
@@ -1247,11 +1247,4 @@ function MapView({
               position={{ lat, lng }}
               title={(tradie.tradie_details?.subscription_tier === 'pro' || tradie.tradie_details?.subscription_tier === 'business')
                 ? (tradie.tradie_details?.business_name || tradie.full_name || '')
-                : (redactName(tradie.full_name) || '')}
-            />
-          ) : null;
-        })}
-      </GoogleMap>
-    </div>
-  );
-}
+                : 

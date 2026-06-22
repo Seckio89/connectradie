@@ -679,7 +679,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-2xl border border-surface-200 p-5 hover:border-primary-200 transition-colors">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-lg bg-primary-50"><DollarSign className="w-5 h-5 text-primary-600" /></div>
@@ -1087,12 +1087,12 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   </p>
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-                      className="p-1.5 rounded-lg text-navy-400 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                      className="p-2 rounded-lg text-navy-400 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <span className="text-xs font-medium text-navy-400 px-2">{page + 1} / {totalPages}</span>
                     <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
-                      className="p-1.5 rounded-lg text-navy-400 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                      className="p-2 rounded-lg text-navy-400 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -1708,10 +1708,4 @@ function RefundSection({ paymentId, onSuccess, onError }: { paymentId: string; o
         </button>
         <button onClick={handleRefund} disabled={processing || !reason.trim()}
           className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5">
-          {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-          Submit
-        </button>
-      </div>
-    </div>
-  );
-}
+          {processing ? <Loader2 className=

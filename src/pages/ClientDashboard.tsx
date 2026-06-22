@@ -712,12 +712,12 @@ export default function ClientDashboard() {
       <WelcomeGuide role="client" userName={profile?.full_name} />
       {showOnboardedBanner && (
         <div className="max-w-5xl mx-auto mb-4">
-          <div className="bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-2xl p-5 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="font-bold text-primary-900 mb-1">Welcome to ConnecTradie!</h3>
               <p className="text-sm text-primary-800">Post your first job to get quotes from verified tradies in your area.</p>
             </div>
-            <Link to="/post-lead" className="flex-shrink-0 px-4 py-2 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors text-sm">
+            <Link to="/post-lead" className="flex-shrink-0 px-4 py-2.5 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors text-sm text-center min-h-[44px] inline-flex items-center justify-center">
               Post a Job
             </Link>
           </div>
@@ -764,7 +764,7 @@ export default function ClientDashboard() {
                   const category = job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
                   const label = (job.title || category || 'Job').toString();
                   return (
-                    <div key={`release-${job.id}`} className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors">
+                    <div key={`release-${job.id}`} className="px-3 sm:px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors">
                       <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       </div>
@@ -775,7 +775,7 @@ export default function ClientDashboard() {
                       <button
                         onClick={() => handleReleasePayment(job.id)}
                         disabled={releasingJobId === job.id}
-                        className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors"
+                        className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors min-h-[44px]"
                       >
                         {releasingJobId === job.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <DollarSign className="w-3.5 h-3.5" />}
                         Release & Review
@@ -801,7 +801,7 @@ export default function ClientDashboard() {
                   );
                 })}
                 {pendingPayments.map(pp => (
-                  <div key={`pay-${pp.id}`} className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors">
+                  <div key={`pay-${pp.id}`} className="px-3 sm:px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors">
                     <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
                       <CreditCard className="w-4 h-4 text-amber-600" />
                     </div>
@@ -822,7 +822,7 @@ export default function ClientDashboard() {
                         }
                       }}
                       disabled={payingPendingId === pp.id}
-                      className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 disabled:opacity-60 transition-colors"
+                      className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 disabled:opacity-60 transition-colors min-h-[44px]"
                     >
                       {payingPendingId === pp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
                       Pay Now
@@ -1225,7 +1225,7 @@ export default function ClientDashboard() {
                                   {!isArchived && job.status === 'pending' && !job.tradie_id && (
                                     <button
                                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCancelJobTarget(job); }}
-                                      className="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                      className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors sm:opacity-0 sm:group-hover:opacity-100"
                                       title="Cancel job"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
@@ -1234,7 +1234,7 @@ export default function ClientDashboard() {
                                   {!isArchived && (
                                     <button
                                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); archiveJob(job.id); }}
-                                      className="p-1 text-gray-300 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                      className="p-1.5 text-gray-300 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors sm:opacity-0 sm:group-hover:opacity-100"
                                       title="Archive job"
                                     >
                                       <Archive className="w-3.5 h-3.5" />
@@ -1243,7 +1243,7 @@ export default function ClientDashboard() {
                                   {isArchived && (
                                     <button
                                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); unarchiveJob(job.id); }}
-                                      className="p-1 text-gray-300 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                      className="p-1.5 text-gray-300 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors sm:opacity-0 sm:group-hover:opacity-100"
                                       title="Restore job"
                                     >
                                       <ArchiveRestore className="w-3.5 h-3.5" />
@@ -1314,7 +1314,7 @@ export default function ClientDashboard() {
                               </div>
                             )}
                             {job.status === 'completed' && isReleased && !isReviewed && (
-                              <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
+                              <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
                                 <span className="text-xs text-gray-400">Payment released — how was the job?</span>
                                 <div className="flex items-center gap-2">
                                   {!recurringJobIds.has(job.id) && (
@@ -1805,7 +1805,7 @@ export default function ClientDashboard() {
                             <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
                               <button
                                 onClick={() => setEditingJobId(job.id)}
-                                className="p-1.5 text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                className="p-2 text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                                 title="Edit ongoing service"
                               >
                                 <Pencil className="w-4 h-4" />
@@ -1820,7 +1820,7 @@ export default function ClientDashboard() {
                                     showToast('Failed to pause service', true);
                                   }
                                 }}
-                                className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
+                                className="p-2 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
                                 title="Pause ongoing service"
                               >
                                 <Pause className="w-4 h-4" />
@@ -2328,10 +2328,10 @@ export default function ClientDashboard() {
 
       {/* Cancel Service Modal */}
       {cancelServiceTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="fixed inset-0 bg-black/50" onClick={() => setCancelServiceTarget(null)} />
-          <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <button onClick={() => setCancelServiceTarget(null)} className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 rounded-lg">
+          <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setCancelServiceTarget(null)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-lg">
               <X className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3 mb-4">
@@ -2345,13 +2345,13 @@ export default function ClientDashboard() {
             </div>
             <p className="text-sm text-gray-600 mb-4">This will permanently cancel this service. It cannot be resumed after cancellation.</p>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Reason for cancellation</label>
-            <div className="flex flex-wrap gap-1.5 mb-3">
+            <div className="flex flex-wrap gap-2 mb-3">
               {['No longer needed', 'Found another provider', 'Too expensive', 'Poor quality', 'Moving house', 'Other'].map(reason => (
                 <button
                   key={reason}
                   type="button"
                   onClick={() => setCancelReason(reason)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                  className={`px-3 py-2 rounded-full text-xs font-medium border transition-all ${
                     cancelReason === reason
                       ? 'bg-red-500 text-white border-red-500'
                       : 'bg-white text-gray-600 border-gray-200 hover:border-red-300'
@@ -2489,7 +2489,7 @@ export default function ClientDashboard() {
       )}
 
       {toast.show && (
-        <div className={`fixed bottom-4 right-4 ${toast.isError ? 'bg-red-600' : 'bg-green-600'} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50 animate-slide-up`}>
+        <div className={`fixed bottom-20 sm:bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm ${toast.isError ? 'bg-red-600' : 'bg-green-600'} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50 animate-slide-up`}>
           <div className={`w-2 h-2 ${toast.isError ? 'bg-red-300' : 'bg-green-300'} rounded-full animate-pulse`} />
           <span className="font-medium">{toast.message}</span>
         </div>
@@ -3190,12 +3190,4 @@ function RecurringJobEditForm({ job, savedTradies, onSave, onCancel }: {
         <button
           onClick={handleSave}
           disabled={saving || !description.trim()}
-          className="flex-1 px-3 py-1.5 bg-warm-500 text-white rounded-lg text-xs font-medium hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
-        >
-          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-          Save Changes
-        </button>
-      </div>
-    </div>
-  );
-}
+          className="flex-1 px-3 py-1.5 bg-warm-500 text-white rounded-lg 

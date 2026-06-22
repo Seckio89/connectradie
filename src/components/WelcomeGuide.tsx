@@ -41,7 +41,7 @@ const clientTour: TourStep[] = [
       { icon: Zap, text: 'Receive quotes — tradies will respond with pricing' },
       { icon: Star, text: 'Compare & choose — pick the best tradie for the job' },
     ],
-    position: 'right',
+    position: 'bottom',
   },
   {
     selector: '[data-tour="notifications"]',

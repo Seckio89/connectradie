@@ -1068,3 +1068,99 @@ body {
     word-break: break-word !important;
   }
 }
+
+/* =============================================================================
+   W-AD: Client-facing mobile audit fixes (June 2026)
+   ============================================================================= */
+
+/* -- W. Client forms -- adequate input heights on mobile --------------------- */
+@media (max-width: 639px) {
+  /* Ensure form inputs inside main content are tall enough to tap */
+  main select,
+  main input[type="text"],
+  main input[type="number"],
+  main input[type="date"],
+  main input[type="time"],
+  main input[type="email"],
+  main input[type="tel"],
+  main input[type="url"],
+  main textarea {
+    min-height: 44px !important;
+  }
+}
+
+/* -- X. ClientServicesTab -- Recent Visits table overflow prevention ---------- */
+@media (max-width: 639px) {
+  /* Make visit row fixed-width spans flexible on mobile */
+  main .divide-y > div > .flex.items-center.gap-1 > span[class*="w-["] {
+    min-width: 0 !important;
+    width: auto !important;
+    flex-shrink: 1 !important;
+  }
+
+  /* Supplies form: stack 3-col grid on mobile */
+  main .grid.grid-cols-3.gap-2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* -- Y. Search page -- map height + modal overflow --------------------------- */
+@media (max-width: 639px) {
+  /* Constrain map height on mobile */
+  main div[style*="height: 500"] {
+    height: 60vh !important;
+    max-height: 400px !important;
+  }
+
+  /* Ensure search modals can scroll on short screens */
+  .fixed.inset-0.z-50 > .relative.bg-white {
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* -- Z. PostLead -- time slot grid on small phones --------------------------- */
+@media (max-width: 479px) {
+  /* Time slot grid: 2 columns on tiny phones instead of 3 */
+  main .grid.grid-cols-3.gap-3:has(> button) {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* -- AA. Lightbox close buttons -- safe area on notched phones --------------- */
+@media (max-width: 768px) {
+  /* Ensure lightbox/fullscreen close buttons stay below safe area */
+  .fixed.inset-0 button[aria-label*="lose"][class*="top-4"] {
+    top: max(1rem, env(safe-area-inset-top, 1rem)) !important;
+  }
+}
+
+/* -- AB. Global -- hover-only buttons visible on touch devices --------------- */
+@media (pointer: coarse) {
+  /* Make opacity-0 group-hover elements always visible on touch devices
+     unless they have already been fixed with sm:opacity-0 pattern */
+  [class*="opacity-0"][class*="group-hover"]:not([class*="sm:opacity-0"]) {
+    opacity: 0.7 !important;
+  }
+}
+
+/* -- AC. PaymentHistory -- filter inputs full width on mobile ---------------- */
+@media (max-width: 639px) {
+  /* Filter panel date inputs and selects: full width */
+  main .flex.flex-wrap.items-center.gap-3 > div {
+    width: 100% !important;
+  }
+
+  main .flex.flex-wrap.items-center.gap-3 select,
+  main .flex.flex-wrap.items-center.gap-3 input[type="date"] {
+    width: 100% !important;
+  }
+}
+
+/* -- AD. FAB button prominence -- ensure raised center button stands out ----- */
+@media (max-width: 1023px) {
+  /* The center Post Job button in bottom nav: ensure ring is visible */
+  nav.fixed.bottom-0 .grid.grid-cols-5 a:nth-child(3) > div.rounded-full {
+    box-shadow: 0 -2px 10px rgba(29, 158, 117, 0.3), 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+  }
+}

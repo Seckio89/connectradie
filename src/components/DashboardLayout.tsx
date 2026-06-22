@@ -1068,10 +1068,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     to="/post-lead"
                     className="flex flex-col items-center justify-center gap-1"
                   >
-                    <div className="bg-[#1D9E75] text-white rounded-full w-12 h-12 flex items-center justify-center -mt-4 shadow-lg">
-                      <Plus className="w-6 h-6" />
+                    <div className="bg-[#1D9E75] text-white rounded-full w-14 h-14 flex items-center justify-center -mt-6 shadow-xl ring-4 ring-navy-900">
+                      <Plus className="w-7 h-7" strokeWidth={2.5} />
                     </div>
-                    <span className="text-[10px] text-[#1D9E75] -mt-0.5">Post Job</span>
+                    <span className="text-[10px] font-semibold text-[#1D9E75] -mt-1">Post Job</span>
                   </Link>
                   <Link
                     to="/messages"
@@ -1134,8 +1134,4 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       <SubscriptionModal
         isOpen={showSubscriptionModal}
-        onClose={() => setShowSubscriptionModal(false)}
-      />
-    </div>
-  );
-}
+        onClose={() => setShowSu

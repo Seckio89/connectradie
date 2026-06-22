@@ -150,7 +150,7 @@ export default function OnboardingChecklist() {
         </p>
         <button
           onClick={() => navigate(profile.role === 'tradie' ? '/work' : '/post-lead')}
-          className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors"
+          className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors py-2 px-3"
         >
           {profile.role === 'tradie' ? 'Browse available leads \u2192' : 'Post your first job \u2192'}
         </button>
@@ -285,7 +285,7 @@ export default function OnboardingChecklist() {
         </p>
         <button
           onClick={() => navigate(profile.role === 'tradie' ? '/work' : '/post-lead')}
-          className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors"
+          className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors py-2 px-3"
         >
           {profile.role === 'tradie' ? 'Browse available leads \u2192' : 'Post your first job \u2192'}
         </button>
@@ -310,16 +310,16 @@ export default function OnboardingChecklist() {
           </div>
         </div>
         {showDismissWarning && (
-          <div className="mx-5 mb-3 p-3 bg-warm-50 border border-warm-200 rounded-lg">
+          <div className="mb-3 mx-3 sm:mx-5 p-3 bg-warm-50 border border-warm-200 rounded-lg">
             <p className="text-xs text-warm-800 mb-2">
               {profile.role === 'tradie'
                 ? 'Completing setup helps clients find and trust you. Incomplete profiles rank lower in search.'
                 : 'Finishing setup helps tradies respond to you faster with accurate quotes.'}
             </p>
             <div className="flex items-center gap-2">
-              <button onClick={() => setShowDismissWarning(false)} className="text-xs font-medium text-warm-700 hover:text-warm-900">Keep going</button>
+              <button onClick={() => setShowDismissWarning(false)} className="text-xs font-medium text-warm-700 hover:text-warm-900 py-1.5 px-1">Keep going</button>
               <span className="text-gray-300">|</span>
-              <button onClick={handleDismiss} className="text-xs text-gray-500 hover:text-gray-700">Hide anyway</button>
+              <button onClick={handleDismiss} className="text-xs text-gray-500 hover:text-gray-700 py-1.5 px-1">Hide anyway</button>
             </div>
           </div>
         )}
@@ -388,9 +388,4 @@ export default function OnboardingChecklist() {
                 <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 flex-shrink-0 transition-colors" />
               )}
             </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+   

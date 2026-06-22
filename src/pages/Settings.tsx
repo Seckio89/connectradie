@@ -515,7 +515,7 @@ export default function Settings() {
           <p className="text-gray-500 mt-1">Manage your account settings and profile</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-visible sm:overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-x-hidden overflow-y-visible sm:overflow-hidden">
           {/* Wrapper separates border-b from flex so the mobile CSS rule
               `.border-b.flex { overflow-x:auto }` (mobile-responsive.css #10)
               doesn't turn this header into a scrollable touch-layer that
@@ -573,7 +573,7 @@ export default function Settings() {
                 </div>
                 <p className="text-gray-500 capitalize">{profile?.role}</p>
                 {(isTradie || (isAdmin && trainingModeEnabled)) && (
-                  <div className="hidden sm:block mt-3">
+                  <div className="mt-3">
                     {(tradieDetails?.subscription_tier === 'pro' || profile?.is_premium) ? (
                       <button
                         onClick={() => setShowSubscriptionModal(true)}
@@ -650,7 +650,7 @@ export default function Settings() {
                     type="button"
                     data-tab-id={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-1.5 pb-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
+                    className={`flex items-center gap-1.5 py-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
                       activeTab === tab.id
                         ? 'border-warm-500 text-warm-600'
                         : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
@@ -797,5 +797,4 @@ export default function Settings() {
         </div>
       )}
     </DashboardLayout>
-  );
-}
+  )

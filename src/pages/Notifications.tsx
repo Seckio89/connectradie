@@ -461,7 +461,7 @@ export default function Notifications() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                className={`py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                   isActive
                     ? 'border-warm-500 text-warm-600'
                     : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'

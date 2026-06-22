@@ -1480,7 +1480,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     {isClientEditable && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setDeleteJobTarget(lead); }}
-                        className="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         title="Cancel job"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -1563,7 +1563,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleDismissLead(lead.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+                      className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
                     >
                       <XCircle className="w-3.5 h-3.5" />
                       Pass
@@ -1571,7 +1571,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     {canQuoteOnLead(lead) ? (
                       <button
                         onClick={() => handleQuoteClick(lead)}
-                        className="inline-flex items-center gap-1.5 px-5 py-1.5 rounded-lg text-xs font-semibold bg-warm-500 text-white hover:bg-warm-600 shadow-sm transition-all"
+                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-xs font-semibold bg-warm-500 text-white hover:bg-warm-600 shadow-sm transition-all"
                       >
                         <FileText className="w-3.5 h-3.5" />
                         Submit Quote
@@ -1579,7 +1579,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     ) : (
                       <button
                         onClick={() => handleQuoteClick(lead)}
-                        className="inline-flex items-center gap-1.5 px-5 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-white hover:bg-amber-600 shadow-sm transition-all"
+                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-xs font-semibold bg-amber-500 text-white hover:bg-amber-600 shadow-sm transition-all"
                         title="Get verified to quote on this trade"
                       >
                         <Shield className="w-3.5 h-3.5" />
@@ -1670,7 +1670,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   {qs === 'pending' && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setWithdrawQuoteTarget(lead); }}
-                      className="text-xs text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                      className="text-xs text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 px-2 py-1.5"
                     >
                       Withdraw
                     </button>
@@ -1784,7 +1784,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   {!lead.archived_at && filter !== 'history' && (
                     <button
                       onClick={() => handleArchiveJob(lead.id)}
-                      className="p-1.5 text-gray-300 hover:text-gray-500 rounded-lg transition-colors"
+                      className="p-2 text-gray-300 hover:text-gray-500 rounded-lg transition-colors"
                       title="Archive"
                     >
                       <Archive className="w-3.5 h-3.5" />
@@ -1797,14 +1797,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           })()}
 
           {!isTradie && lead.status === 'funded' && lead.tradie_id && !pendingIncreases[lead.id] && (
-            <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-gray-100">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
               <div className="flex items-center gap-2 text-sm text-green-600">
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                 Payment received — waiting for tradie to start
               </div>
               <button
                 onClick={(e) => { e.stopPropagation(); handleMessageTradie(lead.tradie_id!, lead.id); }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-secondary-700 bg-secondary-50 border border-secondary-200 rounded-lg hover:bg-secondary-100 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-secondary-700 bg-secondary-50 border border-secondary-200 rounded-lg hover:bg-secondary-100 transition-colors"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
                 Message tradie
@@ -1834,7 +1834,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>Price adjusted after site visit</span>
               </div>
-              <div className="flex items-center gap-4 text-xs text-amber-700 mb-3 ml-6">
+              <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-xs text-amber-700 mb-3 ml-0 sm:ml-6">
                 <span>Original: <span className="font-semibold">${pendingIncreases[lead.id].originalAmount.toFixed(2)}</span></span>
                 <span className="text-amber-400">→</span>
                 <span>Final: <span className="font-semibold">${pendingIncreases[lead.id].finalAmount.toFixed(2)}</span></span>
@@ -1871,10 +1871,10 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           {!isTradie && lead.tradie_id && lead.quoting_status === 'awarded' && lead.status !== 'completed' && lead.status !== 'in_progress' && lead.status !== 'funded' && (
             <div className="px-5 py-3 border-t border-gray-100">
               {acceptedQuotes[lead.id] ? (
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 text-sm text-green-700">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>{(() => {
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-sm text-green-700 min-w-0">
+                    <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{(() => {
                       const q = acceptedQuotes[lead.id];
                       const hasGst = tradieGstMap[q.tradie_id];
                       const gstLabel = hasGst ? ' + GST' : '';
@@ -1882,7 +1882,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       if (q.requires_site_inspection && q.price_min) {
                         const budget = typeof lead.budget_amount === 'number' ? lead.budget_amount : null;
                         const deposit = Math.max(q.price_min, budget ?? q.price_min);
-                        return <>Deposit <span className="font-semibold">${deposit.toLocaleString()}{gstLabel}</span> <span className="text-gray-400">· final price confirmed after site visit</span></>;
+                        return <>Deposit <span className="font-semibold">${deposit.toLocaleString()}{gstLabel}</span> <span className="text-gray-400">· final after site visit</span></>;
                       }
                       return <>Quoted <span className="font-semibold">${q.price_min.toLocaleString()} – ${q.price_max.toLocaleString()}{gstLabel}</span></>;
                     })()}</span>
@@ -2460,7 +2460,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                         )}
                         <button
                           onClick={() => handleArchiveJob(lead.id)}
-                          className="p-1.5 rounded-lg text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-all"
+                          className="p-2 rounded-lg text-gray-300 hover:text-gray-500 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
                           title="Archive"
                         >
                           <Archive className="w-3.5 h-3.5" />
@@ -3428,6 +3428,4 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     </>
   );
 
-  if (embedded) return content;
-  return <DashboardLayout><SectionErrorBoundary>{content}</SectionErrorBoundary></DashboardLayout>;
-}
+  if (embed

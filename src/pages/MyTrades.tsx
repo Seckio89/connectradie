@@ -129,10 +129,10 @@ export default function MyTrades() {
         </div>
 
         <div className="mb-8">
-          <div className="flex items-center gap-6 border-b border-gray-200 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="flex items-center gap-3 sm:gap-6 border-b border-gray-200 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
             <button
               onClick={() => setFilter('all')}
-              className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
+              className={`py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 filter === 'all'
                   ? 'border-warm-500 text-warm-600'
                   : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
@@ -142,7 +142,7 @@ export default function MyTrades() {
             </button>
             <button
               onClick={() => setFilter('available')}
-              className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
+              className={`py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 filter === 'available'
                   ? 'border-warm-500 text-warm-600'
                   : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
@@ -152,7 +152,7 @@ export default function MyTrades() {
             </button>
             <button
               onClick={() => setFilter('verified')}
-              className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
+              className={`py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 filter === 'verified'
                   ? 'border-warm-500 text-warm-600'
                   : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
@@ -177,7 +177,7 @@ export default function MyTrades() {
         </div>
 
         {error ? (
-          <div className="bg-white rounded-2xl border border-red-200 p-12 text-center">
+          <div className="bg-white rounded-2xl border border-red-200 p-6 sm:p-12 text-center">
             <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Something went wrong</h3>
             <p className="text-gray-600 mb-4">{error}</p>
@@ -191,7 +191,7 @@ export default function MyTrades() {
             <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
           </div>
         ) : filteredTradies.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-12 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-8 h-8 text-gray-400" />
             </div>
@@ -241,6 +241,4 @@ export default function MyTrades() {
         onClose={() => setCalendarTradie(null)}
         tradie={calendarTradie}
       />
-    </DashboardLayout>
-  );
-}
+    </D
