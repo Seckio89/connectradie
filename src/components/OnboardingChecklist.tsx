@@ -388,4 +388,9 @@ export default function OnboardingChecklist() {
                 <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 flex-shrink-0 transition-colors" />
               )}
             </button>
-   
+          );
+        })}
+      </div>
+    </div>
+  );
+}

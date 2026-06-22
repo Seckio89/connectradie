@@ -1164,3 +1164,120 @@ body {
     box-shadow: 0 -2px 10px rgba(29, 158, 117, 0.3), 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
   }
 }
+minence — ensure raised center button stands out ──────── */
+@media (max-width: 1023px) {
+  /* The center Post Job button in bottom nav: ensure ring is visible */
+  nav.fixed.bottom-0 .grid.grid-cols-5 a:nth-child(3) > div.rounded-full {
+    box-shadow: 0 -2px 10px rgba(29, 158, 117, 0.3), 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+/* =============================================================================
+   W–Z: Client-facing mobile audit fixes (June 2026)
+   ============================================================================= */
+
+/* ── W. Client Dashboard — attention row padding + action buttons ────────────── */
+@media (max-width: 639px) {
+  /* Tighter padding on attention items for narrow screens */
+  main .divide-y > div.px-5 {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  /* Ensure form inputs inside recurring job forms are tall enough to tap */
+  main select,
+  main input[type="text"],
+  main input[type="number"],
+  main input[type="date"],
+  main input[type="time"],
+  main input[type="email"],
+  main input[type="tel"],
+  main input[type="url"],
+  main textarea {
+    min-height: 44px !important;
+  }
+
+  /* Recurring job form grids — stack on mobile */
+  main .grid.grid-cols-2.gap-3:has(> div > label),
+  main .grid.grid-cols-2.gap-2:has(> div > label) {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── X. ClientServicesTab — Recent Visits table overflow prevention ──────────── */
+@media (max-width: 639px) {
+  /* Make visit rows scroll horizontally within their container if needed */
+  main .divide-y > div > .flex.items-center.gap-1 > span[class*="w-["] {
+    min-width: 0 !important;
+    width: auto !important;
+    flex-shrink: 1 !important;
+  }
+
+  /* Supplies form: stack 3-col grid on mobile */
+  main .grid.grid-cols-3.gap-2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Y. Search page — map height + modal overflow ───────────────────────────── */
+@media (max-width: 639px) {
+  /* Constrain map height on mobile */
+  main div[style*="height: 500"] {
+    height: 60vh !important;
+    max-height: 400px !important;
+  }
+
+  /* Ensure search modals can scroll on short screens */
+  .fixed.inset-0.z-50 > .relative.bg-white {
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* ── Z. PostLead — time slot grid + calendar nav ────────────────────────────── */
+@media (max-width: 479px) {
+  /* Time slot grid: 1 column on tiny phones */
+  main .grid.grid-cols-3.gap-3:has(> button) {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* ── AA. Messages — lightbox & avatar modal close buttons safe area ──────────── */
+@media (max-width: 768px) {
+  /* Ensure lightbox/fullscreen close buttons stay below safe area */
+  .fixed.inset-0 button[aria-label*="lose"][class*="top-4"] {
+    top: max(1rem, env(safe-area-inset-top, 1rem)) !important;
+  }
+}
+
+/* ── AB. Search — toast position above mobile nav ───────────────────────────── */
+@media (max-width: 639px) {
+  /* Push toast notifications above the mobile bottom bar */
+  .fixed.bottom-4.right-4:not(.left-4) {
+    bottom: 5rem !important;
+    left: 1rem !important;
+    right: 1rem !important;
+    max-width: none !important;
+  }
+}
+
+/* ── AC. Global — hover-only buttons visible on touch devices ───────────────── */
+@media (pointer: coarse) {
+  /* Make opacity-0 group-hover elements always visible on touch devices */
+  [class*="opacity-0"][class*="group-hover"]:not([class*="sm:opacity-0"]) {
+    opacity: 0.7 !important;
+  }
+}
+
+/* ── AD. PaymentHistory — filter inputs full width on mobile ────────────────── */
+@media (max-width: 639px) {
+  /* Filter panel date inputs and selects: full width */
+  main .flex.flex-wrap.items-center.gap-3 > div {
+    width: 100% !important;
+  }
+
+  main .flex.flex-wrap.items-center.gap-3 select,
+  main .flex.flex-wrap.items-center.gap-3 input[type="date"] {
+    width: 100% !important;
+  }
+}

@@ -32,7 +32,7 @@ const clientTour: TourStep[] = [
     position: 'bottom',
   },
   {
-    selector: '[data-tour="get-quote"]',
+    selector: '[data-tour="post-job"]',
     title: 'Post a Job — Start Here',
     description: 'This is the quickest way to get help. Post a job in under a minute and let tradies come to you:',
     hints: [
@@ -41,7 +41,7 @@ const clientTour: TourStep[] = [
       { icon: Zap, text: 'Receive quotes — tradies will respond with pricing' },
       { icon: Star, text: 'Compare & choose — pick the best tradie for the job' },
     ],
-    position: 'bottom',
+    position: 'top',
   },
   {
     selector: '[data-tour="notifications"]',
@@ -286,7 +286,7 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
     if (!showTour) return;
     const activeSteps = visibleSteps.length > 0 ? visibleSteps : allSteps;
     const currentStep = activeSteps[step];
-    const sidebarSelectors = ['[data-tour="sidebar-nav"]', '[data-tour="get-quote"]'];
+    const sidebarSelectors = ['[data-tour="sidebar-nav"]'];
     const needsSidebar = currentStep != null && sidebarSelectors.includes(currentStep.selector);
     if (needsSidebar) {
       window.dispatchEvent(new CustomEvent('welcomeguide:sidebar', { detail: { open: true } }));

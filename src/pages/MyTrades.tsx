@@ -241,4 +241,6 @@ export default function MyTrades() {
         onClose={() => setCalendarTradie(null)}
         tradie={calendarTradie}
       />
-    </D
+    </DashboardLayout>
+  );
+}

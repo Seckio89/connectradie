@@ -1708,4 +1708,10 @@ function RefundSection({ paymentId, onSuccess, onError }: { paymentId: string; o
         </button>
         <button onClick={handleRefund} disabled={processing || !reason.trim()}
           className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5">
-          {processing ? <Loader2 className=
+          {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+          Submit
+        </button>
+      </div>
+    </div>
+  );
+}

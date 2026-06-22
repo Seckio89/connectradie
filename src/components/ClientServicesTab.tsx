@@ -2625,4 +2625,10 @@ export default function ClientServicesTab() {
             serviceLabel={label}
             otherPartyRole="tradie"
             onCancel={() => setCancelTarget(null)}
-            onConfirm={(payload) => handleCancel(cancelTarget, payload)}
+            onConfirm={(payload) => handleCancel(cancelTarget, payload)}
+          />
+        );
+      })()}
+    </div>
+  );
+}

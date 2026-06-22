@@ -3428,4 +3428,6 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     </>
   );
 
-  if (embed
+  if (embedded) return content;
+  return <DashboardLayout><SectionErrorBoundary>{content}</SectionErrorBoundary></DashboardLayout>;
+}

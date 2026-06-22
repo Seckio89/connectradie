@@ -1048,6 +1048,7 @@ export default function ClientDashboard() {
                   <div className="grid sm:grid-cols-2 gap-4 mb-6">
                     <Link
                       to="/post-lead"
+                      data-tour="post-job"
                       className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-warm-300 hover:shadow-sm transition-all"
                     >
                       <div className="w-10 h-10 bg-warm-100 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -3190,4 +3191,12 @@ function RecurringJobEditForm({ job, savedTradies, onSave, onCancel }: {
         <button
           onClick={handleSave}
           disabled={saving || !description.trim()}
-          className="flex-1 px-3 py-1.5 bg-warm-500 text-white rounded-lg 
+          className="flex-1 px-3 py-1.5 bg-warm-500 text-white rounded-lg text-xs font-medium hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
+        >
+          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+          Save Changes
+        </button>
+      </div>
+    </div>
+  );
+}

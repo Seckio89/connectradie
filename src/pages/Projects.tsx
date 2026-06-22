@@ -551,4 +551,9 @@ function ProjectTimeline({ projects, onSelect, formatDate, getStatusColor, getSt
                 </div>
               </div>
             </div>
-      
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}

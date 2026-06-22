@@ -1134,4 +1134,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       <SubscriptionModal
         isOpen={showSubscriptionModal}
-        onClose={() => setShowSu
+        onClose={() => setShowSubscriptionModal(false)}
+      />
+    </div>
+  );
+}

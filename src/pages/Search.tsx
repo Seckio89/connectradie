@@ -1247,4 +1247,11 @@ function MapView({
               position={{ lat, lng }}
               title={(tradie.tradie_details?.subscription_tier === 'pro' || tradie.tradie_details?.subscription_tier === 'business')
                 ? (tradie.tradie_details?.business_name || tradie.full_name || '')
-                : 
+                : (redactName(tradie.full_name) || '')}
+            />
+          ) : null;
+        })}
+      </GoogleMap>
+    </div>
+  );
+}
