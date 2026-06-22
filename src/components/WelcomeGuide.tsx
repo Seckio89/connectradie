@@ -86,7 +86,7 @@ const clientTour: TourStep[] = [
       { icon: MessageCircle, text: 'Tap any tradie to start a conversation instantly' },
       { icon: Star, text: 'Find new options you might not have searched for' },
     ],
-    position: 'left',
+    position: 'top',
   },
   {
     selector: '[data-tour="onboarding-checklist"]',
