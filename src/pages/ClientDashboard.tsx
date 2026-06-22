@@ -1140,7 +1140,7 @@ export default function ClientDashboard() {
                                           <p className="text-sm text-gray-500 line-clamp-3">{desc}</p>
                                         </div>
                                         {isReleased && isReviewed && (
-                                          <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
+                                          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
                                             <span className="text-xs text-gray-400">Payment released to tradie</span>
                                             <div className="flex items-center gap-2 flex-wrap">
                                               {!recurringJobIds.has(job.id) && (
@@ -1315,7 +1315,7 @@ export default function ClientDashboard() {
                               </div>
                             )}
                             {job.status === 'completed' && isReleased && !isReviewed && (
-                              <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
+                              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
                                 <span className="text-xs text-gray-400">Payment released — how was the job?</span>
                                 <div className="flex items-center gap-2">
                                   {!recurringJobIds.has(job.id) && (
@@ -1346,7 +1346,7 @@ export default function ClientDashboard() {
                               </div>
                             )}
                             {job.status === 'completed' && isReleased && isReviewed && (
-                              <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
+                              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
                                 <span className="text-xs text-gray-400">Payment released to tradie</span>
                                 <div className="flex items-center gap-2 flex-wrap">
                                   {!recurringJobIds.has(job.id) && (
@@ -1442,214 +1442,6 @@ export default function ClientDashboard() {
               )}
             </div>
 
-            {/* Saved Tradies */}
-            {savedTradies.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-4" data-tour="saved-tradies">
-                  <h2 className="text-lg font-semibold text-gray-900">Saved Tradies</h2>
-                  <span className="text-sm text-gray-600">{savedTradies.length} saved</span>
-                </div>
-                {loading ? (
-                  <div className="space-y-6">
-                    <DashboardStatsSkeleton />
-                    <ListSkeleton rows={4} />
-                  </div>
-                ) : (
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {savedTradies.map((tradie) => (
-                      <TradieCard
-                        key={tradie.id}
-                        tradie={tradie}
-                        onChat={handleOpenChat}
-                        onViewCalendar={setCalendarTradie}
-                        onSave={handleRemoveTradie}
-                        isSaved={true}
-                        onRequestQuote={handleRequestQuote}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Three-up summary row — pulled out of the sidebar so the boxes
-                aren't buried below the fold on tall screens. */}
-            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {/* Invoices */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-5">
-                <Link to="/payments" className="font-semibold text-gray-900 flex items-center gap-2 mb-4 hover:text-primary-600 transition-colors">
-                  <DollarSign className="w-4 h-4 text-secondary-600" />
-                  Invoices
-                </Link>
-                {/* Pending job payments — abandoned or stale checkouts */}
-                {pendingPayments.length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-xs font-medium text-amber-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      Awaiting payment
-                    </p>
-                    <div className="space-y-2">
-                      {pendingPayments.map(pp => (
-                        <div key={pp.id} className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{pp.jobTitle}</p>
-                            <p className="text-xs text-gray-500">${(pp.amount / 100).toFixed(2)}</p>
-                          </div>
-                          <button
-                            onClick={async () => {
-                              setPayingPendingId(pp.id);
-                              try {
-                                const { url } = await createJobPaymentCheckout(pp.id);
-                                if (url) window.location.href = url;
-                              } catch (err) {
-                                showToast(err instanceof Error ? err.message : 'Failed to start payment', true);
-                              } finally {
-                                setPayingPendingId(null);
-                              }
-                            }}
-                            disabled={payingPendingId === pp.id}
-                            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors"
-                          >
-                            {payingPendingId === pp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
-                            Pay Now
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {invoices.length > 0 ? (
-                  <div className="space-y-3">
-                    {invoices.map((inv) => (
-                      <RecurringInvoiceCard
-                        key={inv.id}
-                        invoice={inv}
-                        userRole="client"
-                        onApprove={async (invoiceId) => {
-                          try {
-                            const result = await callEdgeFunction<{ status: string; checkout_url?: string }>(
-                              'approve-invoice',
-                              { invoiceId, action: 'approve', forceCheckout: true },
-                            );
-                            if (result.checkout_url) {
-                              window.location.href = result.checkout_url;
-                            } else {
-                              showToast('Invoice approved — payment is processing');
-                              fetchInvoices();
-                            }
-                          } catch (err) {
-                            console.error('Approve invoice error:', err);
-                            showToast(err instanceof Error ? err.message : 'Something went wrong — please try again', true);
-                          }
-                        }}
-                        onDecline={async (invoiceId, reason) => {
-                          try {
-                            await callEdgeFunction('approve-invoice', { invoiceId, action: 'decline', disputeReason: reason });
-                            showToast('Invoice disputed — the tradie has been notified');
-                            fetchInvoices();
-                          } catch (err) {
-                            showToast(err instanceof Error ? err.message : 'Failed to dispute invoice', true);
-                          }
-                        }}
-                        onAcceptResponse={async (invoiceId) => {
-                          try {
-                            await callEdgeFunction('respond-to-dispute', { invoiceId, action: 'accept_response' });
-                            showToast('Response accepted — invoice is ready for approval');
-                            fetchInvoices();
-                          } catch (err) {
-                            showToast(err instanceof Error ? err.message : 'Failed to accept response', true);
-                          }
-                        }}
-                        onEscalate={async (invoiceId) => {
-                          try {
-                            await callEdgeFunction('respond-to-dispute', { invoiceId, action: 'escalate' });
-                            showToast('Dispute escalated to admin for review');
-                            fetchInvoices();
-                          } catch (err) {
-                            showToast(err instanceof Error ? err.message : 'Failed to escalate dispute', true);
-                          }
-                        }}
-                      />
-                    ))}
-                  </div>
-                ) : pendingPayments.length === 0 ? (
-                  <div className="text-center py-4">
-                    <DollarSign className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">No invoices yet</p>
-                    <p className="text-xs text-gray-400 mt-1">Generated at the end of each billing cycle</p>
-                  </div>
-                ) : null}
-              </div>
-
-              {/* This Week — personal upcoming-events feed (replaced the old
-                  global Platform Activity widget). */}
-              <SectionErrorBoundary fallbackTitle="Timeline failed to load">
-                <UpcomingTimeline />
-              </SectionErrorBoundary>
-
-              {/* Recommended Tradies — ranked, trade-aware, postcode-proximate.
-                  Replaced the old .limit(4) of all tradies that pretended to be
-                  "near" the client. */}
-              <RecommendedTradies />
-            </div>
-          </div>
-
-          <div className="lg:col-span-1 space-y-6">
-            {trainingModeEnabled && (
-              <button
-                onClick={() => setShowSubscriptionModal(true)}
-                className={`w-full rounded-2xl border p-5 text-left transition-all hover:shadow-lg ${
-                  isClientPro
-                    ? 'bg-gradient-to-br from-warm-50 to-yellow-50 border-warm-300'
-                    : 'bg-gradient-to-br from-gray-50 to-primary-50 border-gray-200 hover:border-warm-300'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                    isClientPro ? 'bg-warm-200' : 'bg-gray-200'
-                  }`}>
-                    <Crown className={`w-5 h-5 ${isClientPro ? 'text-warm-700' : 'text-gray-500'}`} />
-                  </div>
-                  <div>
-                    <p className={`text-sm font-semibold ${isClientPro ? 'text-warm-900' : 'text-gray-900'}`}>
-                      {isClientPro ? 'Pro Member' : 'Upgrade to Pro'}
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      {isClientPro ? 'All features unlocked' : 'Get premium features'}
-                    </p>
-                  </div>
-                </div>
-              </button>
-            )}
-            {/* Spending Summary */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                <DollarSign className="w-4 h-4 text-green-600" />
-                Spending Summary
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">This Month</span>
-                  <span className="text-sm font-semibold text-gray-900">${(spendingSummary.thisMonth / 100).toFixed(2)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">All Time</span>
-                  <span className="text-sm font-semibold text-gray-900">${(spendingSummary.total / 100).toFixed(2)}</span>
-                </div>
-                <Link to="/leads" className="flex items-center justify-between pt-2 border-t border-gray-100 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors">
-                  <span className="text-sm text-gray-600">Active Jobs</span>
-                  <span className="text-sm font-semibold text-warm-600">{spendingSummary.pendingJobs}</span>
-                </Link>
-                <Link to="/leads?tab=services" className="flex items-center justify-between hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors">
-                  <span className="text-sm text-gray-600">Ongoing Services</span>
-                  <span className="text-sm font-semibold text-secondary-600">{spendingSummary.activeServices}</span>
-                </Link>
-              </div>
-              <Link to="/payments" className="mt-4 block text-center text-xs font-medium text-primary-600 hover:text-primary-700">
-                View Payment History
-              </Link>
-            </div>
 
             {/* Ongoing Services */}
             <div className="bg-white rounded-2xl border border-gray-200 p-5">
@@ -2302,6 +2094,214 @@ export default function ClientDashboard() {
               );
             })()}
 
+            {/* Saved Tradies */}
+            {savedTradies.length > 0 && (
+              <div>
+                <div className="flex items-center justify-center sm:justify-between mb-4 gap-2" data-tour="saved-tradies">
+                  <h2 className="text-lg font-semibold text-gray-900">Saved Tradies</h2>
+                  <span className="text-sm text-gray-600">{savedTradies.length} saved</span>
+                </div>
+                {loading ? (
+                  <div className="space-y-6">
+                    <DashboardStatsSkeleton />
+                    <ListSkeleton rows={4} />
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {savedTradies.map((tradie) => (
+                      <TradieCard
+                        key={tradie.id}
+                        tradie={tradie}
+                        onChat={handleOpenChat}
+                        onViewCalendar={setCalendarTradie}
+                        onSave={handleRemoveTradie}
+                        isSaved={true}
+                        onRequestQuote={handleRequestQuote}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Three-up summary row — pulled out of the sidebar so the boxes
+                aren't buried below the fold on tall screens. */}
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {/* Invoices */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-5">
+                <Link to="/payments" className="font-semibold text-gray-900 flex items-center gap-2 mb-4 hover:text-primary-600 transition-colors">
+                  <DollarSign className="w-4 h-4 text-secondary-600" />
+                  Invoices
+                </Link>
+                {/* Pending job payments — abandoned or stale checkouts */}
+                {pendingPayments.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-medium text-amber-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      Awaiting payment
+                    </p>
+                    <div className="space-y-2">
+                      {pendingPayments.map(pp => (
+                        <div key={pp.id} className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{pp.jobTitle}</p>
+                            <p className="text-xs text-gray-500">${(pp.amount / 100).toFixed(2)}</p>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              setPayingPendingId(pp.id);
+                              try {
+                                const { url } = await createJobPaymentCheckout(pp.id);
+                                if (url) window.location.href = url;
+                              } catch (err) {
+                                showToast(err instanceof Error ? err.message : 'Failed to start payment', true);
+                              } finally {
+                                setPayingPendingId(null);
+                              }
+                            }}
+                            disabled={payingPendingId === pp.id}
+                            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors"
+                          >
+                            {payingPendingId === pp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+                            Pay Now
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {invoices.length > 0 ? (
+                  <div className="space-y-3">
+                    {invoices.map((inv) => (
+                      <RecurringInvoiceCard
+                        key={inv.id}
+                        invoice={inv}
+                        userRole="client"
+                        onApprove={async (invoiceId) => {
+                          try {
+                            const result = await callEdgeFunction<{ status: string; checkout_url?: string }>(
+                              'approve-invoice',
+                              { invoiceId, action: 'approve', forceCheckout: true },
+                            );
+                            if (result.checkout_url) {
+                              window.location.href = result.checkout_url;
+                            } else {
+                              showToast('Invoice approved — payment is processing');
+                              fetchInvoices();
+                            }
+                          } catch (err) {
+                            console.error('Approve invoice error:', err);
+                            showToast(err instanceof Error ? err.message : 'Something went wrong — please try again', true);
+                          }
+                        }}
+                        onDecline={async (invoiceId, reason) => {
+                          try {
+                            await callEdgeFunction('approve-invoice', { invoiceId, action: 'decline', disputeReason: reason });
+                            showToast('Invoice disputed — the tradie has been notified');
+                            fetchInvoices();
+                          } catch (err) {
+                            showToast(err instanceof Error ? err.message : 'Failed to dispute invoice', true);
+                          }
+                        }}
+                        onAcceptResponse={async (invoiceId) => {
+                          try {
+                            await callEdgeFunction('respond-to-dispute', { invoiceId, action: 'accept_response' });
+                            showToast('Response accepted — invoice is ready for approval');
+                            fetchInvoices();
+                          } catch (err) {
+                            showToast(err instanceof Error ? err.message : 'Failed to accept response', true);
+                          }
+                        }}
+                        onEscalate={async (invoiceId) => {
+                          try {
+                            await callEdgeFunction('respond-to-dispute', { invoiceId, action: 'escalate' });
+                            showToast('Dispute escalated to admin for review');
+                            fetchInvoices();
+                          } catch (err) {
+                            showToast(err instanceof Error ? err.message : 'Failed to escalate dispute', true);
+                          }
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : pendingPayments.length === 0 ? (
+                  <div className="text-center py-4">
+                    <DollarSign className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">No invoices yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Generated at the end of each billing cycle</p>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* This Week — personal upcoming-events feed (replaced the old
+                  global Platform Activity widget). */}
+              <SectionErrorBoundary fallbackTitle="Timeline failed to load">
+                <UpcomingTimeline />
+              </SectionErrorBoundary>
+
+              {/* Recommended Tradies — ranked, trade-aware, postcode-proximate.
+                  Replaced the old .limit(4) of all tradies that pretended to be
+                  "near" the client. */}
+              <RecommendedTradies />
+            </div>
+          </div>
+
+          <div className="lg:col-span-1 space-y-6">
+            {trainingModeEnabled && (
+              <button
+                onClick={() => setShowSubscriptionModal(true)}
+                className={`w-full rounded-2xl border p-5 text-left transition-all hover:shadow-lg ${
+                  isClientPro
+                    ? 'bg-gradient-to-br from-warm-50 to-yellow-50 border-warm-300'
+                    : 'bg-gradient-to-br from-gray-50 to-primary-50 border-gray-200 hover:border-warm-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    isClientPro ? 'bg-warm-200' : 'bg-gray-200'
+                  }`}>
+                    <Crown className={`w-5 h-5 ${isClientPro ? 'text-warm-700' : 'text-gray-500'}`} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-semibold ${isClientPro ? 'text-warm-900' : 'text-gray-900'}`}>
+                      {isClientPro ? 'Pro Member' : 'Upgrade to Pro'}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      {isClientPro ? 'All features unlocked' : 'Get premium features'}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            )}
+            {/* Spending Summary */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
+                <DollarSign className="w-4 h-4 text-green-600" />
+                Spending Summary
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">This Month</span>
+                  <span className="text-sm font-semibold text-gray-900">${(spendingSummary.thisMonth / 100).toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">All Time</span>
+                  <span className="text-sm font-semibold text-gray-900">${(spendingSummary.total / 100).toFixed(2)}</span>
+                </div>
+                <Link to="/leads" className="flex items-center justify-between pt-2 border-t border-gray-100 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors">
+                  <span className="text-sm text-gray-600">Active Jobs</span>
+                  <span className="text-sm font-semibold text-warm-600">{spendingSummary.pendingJobs}</span>
+                </Link>
+                <Link to="/leads?tab=services" className="flex items-center justify-between hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors">
+                  <span className="text-sm text-gray-600">Ongoing Services</span>
+                  <span className="text-sm font-semibold text-secondary-600">{spendingSummary.activeServices}</span>
+                </Link>
+              </div>
+              <Link to="/payments" className="mt-4 block text-center text-xs font-medium text-primary-600 hover:text-primary-700">
+                View Payment History
+              </Link>
+            </div>
             <div data-tour="onboarding-checklist">
               <SectionErrorBoundary fallbackTitle="Onboarding checklist failed to load">
                 <OnboardingChecklist />

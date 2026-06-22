@@ -1281,3 +1281,15 @@ minence — ensure raised center button stands out ──────── */
     width: 100% !important;
   }
 }
+
+/* =============================================================================
+   AE. Invoice page — force white background on mobile (override any green)
+   ============================================================================= */
+@media (max-width: 639px) {
+  .invoice-page,
+  .invoice-page [class*="bg-primary"],
+  .invoice-page [class*="bg-warm"] {
+    background-color: white !important;
+    color: black !important;
+  }
+}

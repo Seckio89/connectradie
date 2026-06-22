@@ -137,7 +137,7 @@ export default function Invoice() {
   const supplierLocation = [data.tradie.address, data.tradie.suburb].filter(Boolean).join(', ');
 
   return (
-    <div className="min-h-screen bg-white sm:bg-gray-50 py-6 sm:py-8 px-4 print:py-0 print:px-0 print:bg-white">
+    <div className="invoice-page min-h-screen bg-white sm:bg-gray-50 py-6 sm:py-8 px-4 print:py-0 print:px-0 print:bg-white">
       {/* Navigation and actions — hidden when printing */}
       <div className="max-w-3xl mx-auto mb-4 flex items-center justify-between print:hidden">
         <button
