@@ -1965,7 +1965,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         </div>
 
         {showQuoteComparison && (
-          <div className="relative mt-0 ml-6 pl-6 border-l-2 border-gray-200">
+          <div className="relative mt-0 ml-2 pl-3 sm:ml-6 sm:pl-6 border-l-2 border-gray-200">
             {/* Connector from job card to quotes */}
             <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-gray-300" />
             <div className="pt-2">
@@ -2245,8 +2245,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             </div>
           )
         ) : (
-          <div className="overflow-x-auto -mx-1 px-1 border-b border-gray-200 mb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <div className="flex items-center gap-6 flex-nowrap">
+          <div className="overflow-x-auto -mx-1 px-1 border-b border-gray-200 mb-6 scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="flex items-center gap-3 sm:gap-6 flex-nowrap">
               {filters.map((f) => (
                 <button
                   key={f.key}
@@ -2623,7 +2623,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 )}
 
                 {/* Details grid */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {vl.location_address && (
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
                       <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
@@ -3344,7 +3344,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 )}
 
                 {/* Details grid */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {cj.location_address && (
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
                       <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />

@@ -476,14 +476,14 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
       {/* Tooltip card */}
       <div
         ref={tooltipRef}
-        className="z-[70] bg-white rounded-2xl shadow-2xl border border-gray-100 w-[340px] overflow-hidden"
+        className="z-[70] bg-white rounded-2xl shadow-2xl border border-gray-100 w-[min(340px,calc(100vw-24px))] overflow-hidden"
         style={getTooltipStyle()}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close */}
         <button
           onClick={dismiss}
-          className="absolute top-3.5 right-3.5 p-1 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors z-10"
+          className="absolute top-2.5 right-2.5 p-2.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors z-10 min-w-[44px] min-h-[44px] flex items-center justify-center"
         >
           <X className="w-3.5 h-3.5" />
         </button>

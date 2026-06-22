@@ -617,7 +617,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
             </div>
             <div className="divide-y divide-warm-200">
               {pendingRequests.map(emp => (
-                <div key={emp.id} className="flex items-center gap-4 p-5 bg-white/40">
+                <div key={emp.id} className="flex items-center gap-4 p-5 bg-white/40 flex-wrap sm:flex-nowrap">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-warm-200 to-warm-300 flex items-center justify-center flex-shrink-0">
                     <span className="text-lg font-bold text-warm-800">
                       {emp.full_name.charAt(0).toUpperCase()}
@@ -777,7 +777,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                     <button
                       onClick={() => setMemberToRemove({ id: emp.id, name: emp.full_name, type: 'linked' })}
                       disabled={processingId === emp.id}
-                      className="flex items-center gap-1.5 px-3 py-2 border border-red-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors opacity-0 group-hover:opacity-100"
+                      className="flex items-center gap-1.5 px-3 py-2 border border-red-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors sm:opacity-0 opacity-60 group-hover:opacity-100 min-h-[44px]"
                     >
                       {processingId === emp.id ? (
                         <span className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
@@ -1127,7 +1127,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                     <div className="relative">
                       <button
                         onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)}
-                        className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-all"
+                        className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 sm:opacity-0 opacity-60 group-hover:opacity-100 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>

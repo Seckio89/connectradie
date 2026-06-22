@@ -770,3 +770,301 @@ body {
     padding: 0.25rem 0.5rem 0.25rem 0.25rem !important;
   }
 }
+
+/* =============================================================================
+   COMPREHENSIVE MOBILE AUDIT FIXES — June 2026
+   Touch targets, overflow prevention, layout fixes, visibility on touch devices
+   ============================================================================= */
+
+/* ── A. Touch-device visibility for hover-only action buttons ─────────────────
+   Several pages hide action buttons behind group-hover:opacity-100 which is
+   inaccessible on touch devices. Show them at reduced opacity on mobile. */
+@media (pointer: coarse) {
+  /* Notifications delete button */
+  .group .opacity-0.group-hover\:opacity-100 {
+    opacity: 0.6 !important;
+  }
+
+  /* Team page remove button */
+  .group .opacity-0.group-hover\:opacity-100:hover {
+    opacity: 1 !important;
+  }
+}
+
+/* ── B. Notifications header — prevent overflow on narrow screens ────────────── */
+@media (max-width: 639px) {
+  /* Stack notifications header vertically on mobile */
+  .max-w-3xl > .flex.items-center.justify-between:first-child {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Compact notification action buttons */
+  .max-w-3xl > .flex.items-center.justify-between:first-child .flex.items-center.gap-2 button {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* Ensure notification delete button is always tappable (44px) */
+  .group button[aria-label="Delete notification"] {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+/* ── C. Team page — pending request card buttons stack on mobile ──────────────── */
+@media (max-width: 639px) {
+  /* Pending request cards: stack content vertically */
+  .divide-y.divide-warm-200 > div.flex.items-center {
+    flex-wrap: wrap !important;
+  }
+
+  /* Action buttons group (Decline/Approve): full width below content */
+  .divide-y.divide-warm-200 > div.flex.items-center > .flex.items-center.gap-2.flex-shrink-0 {
+    width: 100% !important;
+    margin-top: 0.75rem !important;
+    padding-top: 0.75rem !important;
+    border-top: 1px solid #f3eeec !important;
+    justify-content: flex-end !important;
+  }
+
+  /* Team member remove button: always visible on mobile */
+  .divide-y.divide-gray-100 > div .opacity-0.group-hover\:opacity-100 {
+    opacity: 0.7 !important;
+  }
+}
+
+/* ── D. TradeCareers stats grid — collapse to fit on mobile ──────────────────── */
+@media (max-width: 479px) {
+  /* 3-col stats grid → stack when screen is very narrow */
+  main .grid.grid-cols-3.gap-4 {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Stat cards: horizontal layout (icon + text) on narrow screens */
+  main .grid.grid-cols-3.gap-4 > div .flex.flex-col.items-center.text-center {
+    flex-direction: row !important;
+    text-align: left !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+  }
+}
+
+/* ── E. TradeCareers role filter — scrollbar hide + touch targets ─────────────── */
+@media (max-width: 639px) {
+  .overflow-x-auto.pb-1 {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
+  .overflow-x-auto.pb-1::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Ensure role filter buttons meet 44px touch target */
+  .overflow-x-auto.pb-1 > button,
+  .overflow-x-auto > button {
+    min-height: 44px !important;
+  }
+}
+
+/* ── F. ServicesTab supply grid — responsive columns ──────────────────────────── */
+@media (max-width: 479px) {
+  /* 4-col supply grids → 2-col on very narrow screens */
+  main .grid.grid-cols-4.gap-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Supply quantity +/- buttons: ensure 44px tap targets */
+  main .grid.grid-cols-4.gap-2 button {
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+}
+
+/* ── G. ServicesTab supply table — horizontal scroll on mobile ─────────────────── */
+@media (max-width: 639px) {
+  /* Wrap supply tables in scrollable container */
+  main table {
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+}
+
+/* ── H. Jobs page — toast position fix ────────────────────────────────────────── */
+@media (max-width: 639px) {
+  .fixed.bottom-4.right-4 {
+    left: 1rem !important;
+    right: 1rem !important;
+    max-width: calc(100vw - 2rem) !important;
+  }
+}
+
+/* ── I. Jobs/Leads — action button rows wrap on mobile ────────────────────────── */
+@media (max-width: 639px) {
+  /* Action button groups that contain Accept/Decline/Quote buttons */
+  main .flex.items-center.gap-2:has(> button + button),
+  main .flex.items-center.gap-3:has(> button + button) {
+    flex-wrap: wrap !important;
+  }
+
+  /* Ensure main action buttons meet touch targets */
+  main .flex.items-center.gap-2 > button,
+  main .flex.items-center.gap-3 > button {
+    min-height: 44px !important;
+  }
+}
+
+/* ── J. Leads quote comparison — reduce indent on mobile ──────────────────────── */
+@media (max-width: 639px) {
+  /* Quote comparison connector: reduce left indent */
+  main .ml-6.pl-6 {
+    margin-left: 0.5rem !important;
+    padding-left: 0.75rem !important;
+  }
+}
+
+/* ── K. Modal detail grids — single column on mobile ──────────────────────────── */
+@media (max-width: 479px) {
+  /* 2-col detail grids in modals → 1 column */
+  .fixed .grid.grid-cols-2.gap-3,
+  .fixed .grid.grid-cols-2.gap-4,
+  [role="dialog"] .grid.grid-cols-2.gap-3,
+  [role="dialog"] .grid.grid-cols-2.gap-4 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── L. WelcomeGuide tooltip — constrain width on tiny screens ────────────────── */
+@media (max-width: 374px) {
+  [class*="w-[340px]"],
+  .w-\[340px\] {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+  }
+}
+
+/* ── M. Payouts incomplete-setup banner — flex-wrap for narrow screens ─────────── */
+@media (max-width: 639px) {
+  /* Banner flex rows with buttons: allow wrapping */
+  main .flex.items-center.justify-between.gap-3,
+  main .flex.items-center.justify-between.gap-4 {
+    flex-wrap: wrap !important;
+  }
+
+  main .flex.items-center.justify-between.gap-3 > .flex-shrink-0,
+  main .flex.items-center.justify-between.gap-4 > .flex-shrink-0 {
+    flex-shrink: 1 !important;
+  }
+}
+
+/* ── N. OnboardingChecklist dismiss buttons — adequate touch targets ───────────── */
+@media (pointer: coarse) {
+  /* All dismiss/close buttons that use p-1 */
+  button[class*="p-1"]:not(.rounded-full):not([class*="p-1."]) {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+/* ── O. Push notification banner — stack on mobile ────────────────────────────── */
+@media (max-width: 639px) {
+  /* Push/Payout banners: stack icon+text and buttons */
+  main .flex.items-center.justify-between.gap-4 {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  main .flex.items-center.justify-between.gap-4 > .flex.items-center.gap-2.flex-shrink-0 {
+    align-self: flex-end !important;
+    margin-top: 0.75rem !important;
+  }
+}
+
+/* ── P. AnalyticsDashboard date pills — hide scrollbar ────────────────────────── */
+@media (max-width: 639px) {
+  .overflow-x-auto.max-w-full {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
+  .overflow-x-auto.max-w-full::-webkit-scrollbar {
+    display: none !important;
+  }
+}
+
+/* ── Q. Earnings summary grid — proper sizing on mobile ───────────────────────── */
+@media (max-width: 639px) {
+  /* 3-col earnings grid: tighter padding */
+  main .grid.grid-cols-3.gap-2 {
+    gap: 0.375rem !important;
+  }
+
+  main .grid.grid-cols-3.gap-2 > div {
+    padding: 0.5rem !important;
+  }
+
+  main .grid.grid-cols-3.gap-2 .text-base {
+    font-size: 0.875rem !important;
+  }
+}
+
+/* ── R. Recent reviews section — flush on mobile ──────────────────────────────── */
+@media (max-width: 639px) {
+  /* Reviews section: flush edges */
+  main > div > .bg-white.rounded-none.border-x-0 {
+    margin-left: -1rem !important;
+    margin-right: -1rem !important;
+  }
+}
+
+/* ── S. Messages page — proper mobile layout ──────────────────────────────────── */
+@media (max-width: 639px) {
+  /* Ensure message input area doesn't get squished */
+  main .flex.items-end.gap-2 textarea {
+    min-height: 44px !important;
+  }
+
+  /* Message send button minimum touch target */
+  main .flex.items-end.gap-2 button {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+}
+
+/* ── T. Login page modal close — touch target ─────────────────────────────────── */
+@media (pointer: coarse) {
+  /* Ensure all X/close buttons are tappable */
+  button:has(> svg[class*="w-3"]),
+  button:has(> svg[class*="w-4"]) {
+    min-width: 40px !important;
+    min-height: 40px !important;
+  }
+}
+
+/* ── U. SiteCalendar — already well-handled, ensure dot indicators visible ────── */
+@media (max-width: 639px) {
+  /* Dot indicators on compact month view: ensure visible */
+  main .w-1\.5.h-1\.5,
+  main .w-2.h-2 {
+    flex-shrink: 0 !important;
+  }
+}
+
+/* ── V. Settings — ensure Professional tab content doesn't overflow ────────────── */
+@media (max-width: 639px) {
+  /* Settings inner content: prevent any overflows */
+  main .space-y-4 > div,
+  main .space-y-6 > div {
+    max-width: 100% !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+  }
+}

@@ -1115,14 +1115,14 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
                         <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={() => handleUpdateStock(item.id, Math.max(0, (item.stock_level ?? 0) - 1))}
-                            className="w-6 h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center transition-colors"
+                            className="w-8 h-8 sm:w-6 sm:h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center transition-colors min-w-[32px] min-h-[32px]"
                           >−</button>
                           <span className={`text-xs font-bold min-w-[24px] text-center ${isLow ? 'text-amber-700' : 'text-gray-800'}`}>
                             {item.stock_level}
                           </span>
                           <button
                             onClick={() => handleUpdateStock(item.id, (item.stock_level ?? 0) + 1)}
-                            className="w-6 h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center transition-colors"
+                            className="w-8 h-8 sm:w-6 sm:h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center transition-colors min-w-[32px] min-h-[32px]"
                           >+</button>
                         </div>
                       ) : (
@@ -1205,7 +1205,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
           )}
 
           {/* Details row */}
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div>
               <label className="block text-[10px] font-medium text-gray-500 mb-1">Unit</label>
               <input

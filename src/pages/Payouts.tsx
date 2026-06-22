@@ -720,9 +720,9 @@ export default function Payouts() {
               </div>
             ) : hasRequirements ? (
               <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl border border-amber-200 p-5">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <AlertTriangle className="w-6 h-6 text-amber-600" />
+                    <AlertTriangle className="w-6 h-6 text-amber-600 flex-shrink-0" />
                     <div>
                       <p className="font-semibold text-amber-900">Setup Incomplete</p>
                       <p className="text-sm text-amber-700">

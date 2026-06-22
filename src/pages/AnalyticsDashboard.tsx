@@ -277,7 +277,7 @@ export default function AnalyticsDashboard() {
             <h1 className="text-2xl font-bold text-gray-900">My Stats</h1>
             <p className="text-gray-500 mt-1">See how your business is tracking and where to improve</p>
           </div>
-          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-sm overflow-x-auto max-w-full">
+          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-sm overflow-x-auto max-w-full scrollbar-hide scrollbar-none">
             {([
               { key: '7d' as DateRange, label: '7 Days' },
               { key: '30d' as DateRange, label: '30 Days' },

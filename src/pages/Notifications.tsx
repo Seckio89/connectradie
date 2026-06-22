@@ -412,9 +412,9 @@ export default function Notifications() {
     <DashboardLayout>
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Notifications</h1>
             {unreadCount > 0 && (
               <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-bold text-white bg-red-500 rounded-full">
                 {unreadCount}
@@ -426,35 +426,35 @@ export default function Notifications() {
               <button
                 onClick={handleMarkAllRead}
                 disabled={markingAll}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50 min-h-[44px]"
               >
                 {markingAll ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <CheckCheck className="w-4 h-4" />
                 )}
-                Mark all read
+                <span className="hidden sm:inline">Mark all read</span><span className="sm:hidden">Read all</span>
               </button>
             )}
             {notifications.length > 0 && (
               <button
                 onClick={handleClearAll}
                 disabled={clearingAll}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 min-h-[44px]"
               >
                 {clearingAll ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Trash2 className="w-4 h-4" />
                 )}
-                Clear all
+                <span className="hidden sm:inline">Clear all</span><span className="sm:hidden">Clear</span>
               </button>
             )}
           </div>
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex items-center gap-6 border-b border-gray-200 mb-6 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex items-center gap-3 sm:gap-6 border-b border-gray-200 mb-6 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
           {FILTER_TABS.map(tab => {
             const isActive = activeTab === tab.key;
             return (
@@ -534,7 +534,7 @@ export default function Notifications() {
 
                       <button
                         onClick={(e) => handleDelete(e, notification.id)}
-                        className="p-1.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0 rounded hover:bg-red-50"
+                        className="p-2.5 text-gray-300 hover:text-red-500 sm:opacity-0 opacity-60 group-hover:opacity-100 transition-all flex-shrink-0 rounded hover:bg-red-50 min-w-[44px] min-h-[44px] flex items-center justify-center"
                         aria-label="Delete notification"
                       >
                         <X className="w-4 h-4" />

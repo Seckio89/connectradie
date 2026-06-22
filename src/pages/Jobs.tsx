@@ -688,7 +688,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
         )}
 
         {/* Tabs */}
-        <div className="flex items-center gap-6 border-b border-gray-200 mb-6 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex items-center gap-3 sm:gap-6 border-b border-gray-200 mb-6 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
           {([
             { key: 'pending', label: 'Pending' },
             { key: 'active', label: 'Active' },
@@ -1312,7 +1312,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
 
       {/* Toast */}
       {toast.show && (
-        <div className={`fixed bottom-4 right-4 ${toast.isError ? 'bg-red-600' : 'bg-green-600'} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50 animate-slide-up`}>
+        <div className={`fixed bottom-20 sm:bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm ${toast.isError ? 'bg-red-600' : 'bg-green-600'} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50 animate-slide-up`}>
           <div className={`w-2 h-2 ${toast.isError ? 'bg-red-300' : 'bg-green-300'} rounded-full animate-pulse`} />
           <span className="font-medium">{toast.message}</span>
         </div>

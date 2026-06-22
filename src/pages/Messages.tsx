@@ -1245,7 +1245,7 @@ export default function Messages() {
         />
       )}
       {toast.show && (
-        <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-white text-sm font-medium animate-slide-in ${toast.isError ? 'bg-red-600' : 'bg-green-600'}`}>
+        <div className={`fixed bottom-20 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-50 px-5 py-3 rounded-xl shadow-lg text-white text-sm font-medium animate-slide-in ${toast.isError ? 'bg-red-600' : 'bg-green-600'}`}>
           {toast.message}
         </div>
       )}

@@ -134,7 +134,7 @@ export default function OnboardingChecklist() {
           <div />
           <button
             onClick={handleDismiss}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-white/60 transition-colors"
+            className="p-2.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-white/60 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -269,7 +269,7 @@ export default function OnboardingChecklist() {
           <div />
           <button
             onClick={handleDismiss}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-white/60 transition-colors"
+            className="p-2.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-white/60 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -302,7 +302,7 @@ export default function OnboardingChecklist() {
             <span className="text-xs font-bold text-primary-600">{percentage}% Setup</span>
             <button
               onClick={() => percentage < 100 ? setShowDismissWarning(true) : handleDismiss()}
-              className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-2.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Dismiss checklist"
             >
               <X className="w-3.5 h-3.5" />

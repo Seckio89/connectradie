@@ -245,7 +245,7 @@ export default function Login() {
                 </div>
                 <button
                   onClick={() => setRemovedNotice(null)}
-                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="p-2.5 text-gray-400 hover:text-gray-600 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
                   <X className="w-5 h-5" />
                 </button>

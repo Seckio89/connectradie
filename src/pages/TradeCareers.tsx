@@ -211,7 +211,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           {[
             { label: 'Open Positions', value: vacancies.filter(v => v.status === 'open').length, color: 'bg-secondary-50', iconColor: 'text-secondary-600', Icon: Briefcase },
             { label: 'Apprenticeships', value: vacancies.filter(v => v.status === 'open' && v.role_type === 'apprentice').length, color: 'bg-secondary-50', iconColor: 'text-secondary-600', Icon: GraduationCap },
@@ -264,7 +264,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
                 className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none text-sm"
               />
             </div>
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-hide scrollbar-none">
               <SlidersHorizontal className="w-4 h-4 text-gray-400 flex-shrink-0" />
               {ROLE_FILTERS.map(f => {
                 const Icon = f.icon;

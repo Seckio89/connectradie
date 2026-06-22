@@ -1120,7 +1120,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
         {/* Toast */}
         {toast.show && (
-          <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-lg shadow-lg text-sm font-medium ${
+          <div className={`fixed bottom-20 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-50 flex items-center gap-2 px-5 py-3 rounded-lg shadow-lg text-sm font-medium ${
             toast.isError ? 'bg-red-600 text-white' : 'bg-primary-700 text-white'
           }`}>
             {toast.isError ? <XCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
