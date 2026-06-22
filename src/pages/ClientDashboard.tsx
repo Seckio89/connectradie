@@ -1134,15 +1134,15 @@ export default function ClientDashboard() {
                                       <div className="flex-1 min-w-0">
                                         <div className="px-5 py-4">
                                           <div className="flex items-start justify-between gap-3 mb-2">
-                                            <h3 className="text-base font-bold text-gray-900 leading-snug capitalize truncate">{(job.title || category || 'Untitled Job').replace(/_/g, ' ')}</h3>
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColor}`}>{statusLabel}</span>
+                                            <h3 className="text-base font-bold text-gray-900 leading-snug capitalize line-clamp-2">{(job.title || category || 'Untitled Job').replace(/_/g, ' ')}</h3>
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${statusColor}`}>{statusLabel}</span>
                                           </div>
-                                          <p className="text-sm text-gray-500 line-clamp-2">{desc}</p>
+                                          <p className="text-sm text-gray-500 line-clamp-3">{desc}</p>
                                         </div>
                                         {isReleased && isReviewed && (
-                                          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
+                                          <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
                                             <span className="text-xs text-gray-400">Payment released to tradie</span>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
                                               {!recurringJobIds.has(job.id) && (
                                                 <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setBonusTarget({ jobId: job.id, jobLabel: (job.title || category || 'the job').toString() }); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-warm-200 text-warm-700 text-xs font-semibold rounded-lg hover:bg-warm-50 transition-colors">
                                                   <Gift className="w-3.5 h-3.5" /> Give extra
@@ -1213,10 +1213,10 @@ export default function ClientDashboard() {
                           {/* Left accent bar */}
                           <div className={`w-1.5 flex-shrink-0 ${accentColor}`} />
                           <div className="flex-1 min-w-0">
-                            <div className="px-5 py-4">
+                            <div className="px-4 sm:px-5 py-4">
                               {/* Header: title + status badge + archive icon */}
                               <div className="flex items-start justify-between gap-3 mb-2">
-                                <h3 className="text-base font-bold text-gray-900 leading-snug capitalize truncate">
+                                <h3 className="text-base font-bold text-gray-900 leading-snug capitalize line-clamp-2">
                                   {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
                                 </h3>
                                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -1254,7 +1254,7 @@ export default function ClientDashboard() {
                               </div>
 
                               {/* Description */}
-                              <p className="text-sm text-gray-500 mb-3 line-clamp-2 leading-relaxed">{desc}</p>
+                              <p className="text-sm text-gray-500 mb-3 line-clamp-3 leading-relaxed">{desc}</p>
 
                               {/* Details row */}
                               <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap text-xs text-gray-500">
@@ -1346,9 +1346,9 @@ export default function ClientDashboard() {
                               </div>
                             )}
                             {job.status === 'completed' && isReleased && isReviewed && (
-                              <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
+                              <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
                                 <span className="text-xs text-gray-400">Payment released to tradie</span>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   {!recurringJobIds.has(job.id) && (
                                     <button
                                       onClick={(e) => {
@@ -2273,9 +2273,10 @@ export default function ClientDashboard() {
                               </div>
                             </div>
                             <button
-                              onClick={() => { setCancelServiceTarget({ id: job.id, label: tradeLabel }); setCancelReason(''); }}
-                              className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCancelServiceTarget({ id: job.id, label: tradeLabel }); setCancelReason(''); }}
+                              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 font-medium rounded-lg transition-colors min-h-[44px]"
                             >
+                              <Trash2 className="w-3.5 h-3.5" />
                               Cancel Service
                             </button>
                           </div>

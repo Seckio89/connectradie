@@ -80,7 +80,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
             <div className="flex items-center gap-1.5 flex-wrap">
               <Link
                 to={`/tradie/${tradie.id}`}
-                className="font-semibold text-gray-900 text-sm truncate hover:text-primary-600 transition-colors"
+                className="font-semibold text-gray-900 text-sm line-clamp-2 break-words hover:text-primary-600 transition-colors"
               >
                 {displayName}
               </Link>
@@ -226,11 +226,11 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
 
       {/* Actions footer */}
       <div className="px-5 py-3 border-t border-gray-100">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {onRequestQuote && (
             <button
               onClick={() => onRequestQuote(tradie)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors min-h-[44px]"
             >
               <FileText className="w-3.5 h-3.5" />
               Request Quote
@@ -238,22 +238,22 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
           )}
           <button
             onClick={() => onChat(tradie)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors min-h-[44px]"
           >
             <MessageCircle className="w-3.5 h-3.5" />
             Chat
           </button>
-          <div className="flex items-center gap-0.5 ml-auto">
+          <div className="flex items-center gap-2 ml-auto">
             <button
               onClick={() => onViewCalendar(tradie)}
-              className="p-2 text-secondary-400 hover:text-secondary-600 hover:bg-secondary-50 rounded-lg transition-colors"
+              className="p-2.5 text-secondary-400 hover:text-secondary-600 hover:bg-secondary-50 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               title="Check Calendar"
             >
               <Calendar className="w-4 h-4" />
             </button>
             <Link
               to={`/tradie/${tradie.id}`}
-              className="p-2 text-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+              className="p-2.5 text-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               title="View Full Profile"
             >
               <ExternalLink className="w-4 h-4" />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Printer, Loader2, AlertCircle } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Printer, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 type InvoiceData = {
@@ -35,6 +35,7 @@ type InvoiceData = {
 
 export default function Invoice() {
   const { paymentId } = useParams<{ paymentId: string }>();
+  const navigate = useNavigate();
   const [data, setData] = useState<InvoiceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +91,7 @@ export default function Invoice() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white sm:bg-gray-50">
         <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
       </div>
     );
@@ -98,11 +99,20 @@ export default function Invoice() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-        <div className="max-w-md text-center">
-          <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
-          <h1 className="text-lg font-semibold text-gray-900 mb-1">Can't load invoice</h1>
-          <p className="text-sm text-gray-600">{error || 'Invoice data is missing.'}</p>
+      <div className="min-h-screen flex flex-col bg-white sm:bg-gray-50 p-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors min-h-[44px] self-start mb-8"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </button>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="max-w-md text-center">
+            <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
+            <h1 className="text-lg font-semibold text-gray-900 mb-1">Can't load invoice</h1>
+            <p className="text-sm text-gray-600">{error || 'Invoice data is missing.'}</p>
+          </div>
         </div>
       </div>
     );
@@ -127,12 +137,19 @@ export default function Invoice() {
   const supplierLocation = [data.tradie.address, data.tradie.suburb].filter(Boolean).join(', ');
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 print:py-0 print:px-0 print:bg-white">
-      {/* Print button — hidden when printing */}
-      <div className="max-w-3xl mx-auto mb-4 flex justify-end print:hidden">
+    <div className="min-h-screen bg-white sm:bg-gray-50 py-6 sm:py-8 px-4 print:py-0 print:px-0 print:bg-white">
+      {/* Navigation and actions — hidden when printing */}
+      <div className="max-w-3xl mx-auto mb-4 flex items-center justify-between print:hidden">
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors min-h-[44px]"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </button>
         <button
           onClick={() => window.print()}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors min-h-[44px]"
         >
           <Printer className="w-4 h-4" />
           Download / Print
