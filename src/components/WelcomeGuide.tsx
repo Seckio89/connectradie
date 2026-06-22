@@ -229,7 +229,7 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
     const timer = setTimeout(() => {
       const available = allSteps.filter((s) => {
         const el = document.querySelector(s.selector) as HTMLElement | null;
-        return !!el;
+        return el != null && el.offsetWidth > 0 && el.offsetHeight > 0;
       });
       setVisibleSteps(available);
     }, 100);
@@ -252,10 +252,6 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
         height: rect.height,
       });
     } else {
-      // Element not in DOM at all, skip to next step
-      if (step < steps.length - 1) {
-        setStep(step + 1);
-      }
       setTargetRect(null);
     }
   }, [showTour, step, steps]);
@@ -270,6 +266,35 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
       el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, [showTour, step, steps]);
+
+  // Auto-skip steps whose target element is missing or invisible (zero dimensions).
+  // This handles collapsed checklists, dismissed sections, or elements that don't
+  // exist for certain user states. Scans forward for the next visible target; if
+  // none remain the tour ends, preventing an infinite loop.
+  useEffect(() => {
+    if (!showTour || steps.length === 0) return;
+    const current = steps[step];
+    if (!current) return;
+
+    const el = document.querySelector(current.selector) as HTMLElement | null;
+    if (el && el.offsetWidth > 0 && el.offsetHeight > 0) return; // target is visible
+
+    // Find the next step whose target is present and visible
+    let next = step + 1;
+    while (next < steps.length) {
+      const nextEl = document.querySelector(steps[next].selector) as HTMLElement | null;
+      if (nextEl && nextEl.offsetWidth > 0 && nextEl.offsetHeight > 0) break;
+      next++;
+    }
+
+    if (next < steps.length) {
+      setStep(next);
+    } else {
+      // No remaining steps have visible targets — end the tour
+      setVisible(false);
+      localStorage.setItem(storageKey, 'true');
+    }
+  }, [showTour, step, steps, storageKey]);
 
   useEffect(() => {
     updateTargetRect();
@@ -558,4 +583,3 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
     </>
   );
 }
-                                
