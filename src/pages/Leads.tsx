@@ -767,16 +767,6 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
     }
   };
 
-  const handleRestoreJob = async (jobId: string) => {
-    const { error } = await supabase
-      .from('jobs')
-      .update({ deleted_at: null, deleted_by: null })
-      .eq('id', jobId);
-    if (!error) {
-      setLeads(prev => prev.filter(j => j.id !== jobId));
-    }
-  };
-
   const handleArchiveJob = async (jobId: string) => {
     const { error } = await supabase
       .from('jobs')

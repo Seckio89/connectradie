@@ -693,11 +693,6 @@ export default function Messages() {
     return data.publicUrl;
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  };
-
   const formatRelativeTime = (dateString: string) => {
     const now = new Date();
     const date = new Date(dateString);
