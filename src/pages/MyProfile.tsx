@@ -7,7 +7,6 @@ import {
   ShieldCheck,
   FileCheck,
   Crown,
-  Truck,
   Users,
   Zap,
   Loader2,

@@ -1313,8 +1313,8 @@ export default function ClientServicesTab() {
 
           // Fetch tradie details + ratings for quote authors
           const tradieIds = [...new Set((origQuotes || []).map(q => q.tradie_id).filter(Boolean))];
-          let tradieDetailsMap = new Map<string, { business_name: string | null; subscription_tier: string | null }>();
-          let tradieRatingsMap = new Map<string, { avg: number | null; count: number }>();
+          const tradieDetailsMap = new Map<string, { business_name: string | null; subscription_tier: string | null }>();
+          const tradieRatingsMap = new Map<string, { avg: number | null; count: number }>();
           if (tradieIds.length > 0) {
             const [detailsRes, ratingsRes] = await Promise.all([
               supabase.from('tradie_details').select('profile_id, business_name, subscription_tier').in('profile_id', tradieIds),

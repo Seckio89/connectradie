@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CalendarDays, Users, ChevronRight, RefreshCw } from 'lucide-react';
+import { CalendarDays, Users, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import SiteCalendar from './SiteCalendar';

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { RefreshCw, FileText, Inbox, Loader2, CheckCircle2, CheckCheck, Shield, MapPin, User, Clock, ClipboardList, ChevronDown, ChevronRight, Plus, Calendar, Phone, Mail, MessageCircle, Send, Package, AlertTriangle, X, Search } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { RefreshCw, FileText, Inbox, Loader2, CheckCircle2, CheckCheck, Shield, MapPin, User, Clock, ClipboardList, ChevronDown, ChevronRight, Plus, Calendar, Phone, Mail, MessageCircle, Send, Package, X, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { callEdgeFunction } from '../lib/edgeFn';

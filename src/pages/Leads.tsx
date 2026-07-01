@@ -8,7 +8,6 @@ import {
   Briefcase,
   Plus,
   Calendar,
-  AlertTriangle,
   AlertCircle,
   RefreshCw,
   WifiOff,
@@ -438,7 +437,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
     }
 
     if (jobParam && !loading && leads.length > 0) {
-      let targetJob = leads.find((l) => l.id === jobParam);
+      const targetJob = leads.find((l) => l.id === jobParam);
       searchParams.delete('job');
       searchParams.delete('job_id');
       setSearchParams(searchParams, { replace: true });

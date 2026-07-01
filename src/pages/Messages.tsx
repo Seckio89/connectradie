@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageSquare, Send, Loader2, Paperclip, Calendar, X, Lock, Image as ImageIcon, FileText, Mic, Settings, Archive, Search as SearchIcon, RotateCcw, AlertTriangle, CheckCheck, ArrowLeft, User as UserIcon } from 'lucide-react';
+import { MessageSquare, Send, Loader2, Paperclip, Calendar, X, Lock, Image as ImageIcon, FileText, Mic, Settings, Archive, Search as SearchIcon, RotateCcw, AlertTriangle, CheckCheck, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useSearchParams, useNavigate } from 'react-router-dom';

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { BadgeCheck, Shield, FileCheck, Calendar, MessageCircle, Star, Truck, ShieldCheck, MapPin, ExternalLink, FileText } from 'lucide-react';
+import { BadgeCheck, Shield, FileCheck, Calendar, MessageCircle, Star, ShieldCheck, MapPin, ExternalLink, FileText } from 'lucide-react';
 import ProBadge from './ProBadge';
 import type { TradieWithDetails } from '../types/database';
 import { getTradieRating, type TradieRating } from '../lib/reviews';
