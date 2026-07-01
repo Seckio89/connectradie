@@ -26,6 +26,18 @@ function formatCurrency(cents: number): string {
   return `$${(cents / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+// Escape user-controlled text before interpolating into innerHTML/PDF markup.
+// Prevents stored XSS from free-text fields (client name, job title) that are
+// rendered into a live DOM node by html2pdf in another user's browser.
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export default function Payouts() {
   const { session, user } = useAuth();
   const [accountDetails, setAccountDetails] = useState<ConnectAccountDetails | null>(null);
@@ -474,8 +486,8 @@ export default function Payouts() {
             </td>
             <td style="vertical-align: top; text-align: right; width: 50%;">
               <p style="font-size: 24px; font-weight: 700; color: #004d40; margin: 0; letter-spacing: -0.5px;">RECEIPT</p>
-              <p style="font-size: 14px; font-weight: 600; margin: 6px 0 0; color: #333;">${invoiceNum}</p>
-              <p style="font-size: 12px; color: #888; margin: 4px 0 0;">Issued: ${date}</p>
+              <p style="font-size: 14px; font-weight: 600; margin: 6px 0 0; color: #333;">${escapeHtml(invoiceNum)}</p>
+              <p style="font-size: 12px; color: #888; margin: 4px 0 0;">Issued: ${escapeHtml(date)}</p>
             </td>
           </tr>
         </table>
@@ -488,11 +500,11 @@ export default function Payouts() {
           <tr>
             <td style="vertical-align: top; width: 50%; padding-right: 20px;">
               <p style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 6px; font-weight: 600;">Client</p>
-              <p style="font-size: 14px; font-weight: 600; margin: 0; color: #1a1a2e;">${p.client_name}</p>
+              <p style="font-size: 14px; font-weight: 600; margin: 0; color: #1a1a2e;">${escapeHtml(p.client_name)}</p>
             </td>
             <td style="vertical-align: top; width: 50%;">
               <p style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 6px; font-weight: 600;">Job Reference</p>
-              <p style="font-size: 14px; font-weight: 600; margin: 0; color: #1a1a2e;">${jobTitle}</p>
+              <p style="font-size: 14px; font-weight: 600; margin: 0; color: #1a1a2e;">${escapeHtml(jobTitle)}</p>
             </td>
           </tr>
         </table>
@@ -508,7 +520,7 @@ export default function Payouts() {
           </thead>
           <tbody>
             <tr>
-              <td style="padding: 14px 16px; font-size: 13px; border-bottom: 1px solid #eee; color: #333;">${jobTitle}</td>
+              <td style="padding: 14px 16px; font-size: 13px; border-bottom: 1px solid #eee; color: #333;">${escapeHtml(jobTitle)}</td>
               <td style="padding: 14px 16px; font-size: 13px; border-bottom: 1px solid #eee; text-align: center; color: #666;">1</td>
               <td style="padding: 14px 16px; font-size: 13px; border-bottom: 1px solid #eee; text-align: right; font-weight: 600;">$${amountDollars}</td>
             </tr>
@@ -539,7 +551,7 @@ export default function Payouts() {
           <tr>
             <td style="padding: 14px 20px; width: 33%;">
               <p style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 4px; font-weight: 600;">Status</p>
-              <p style="font-size: 13px; font-weight: 700; margin: 0; color: ${statusColor};">${statusText}</p>
+              <p style="font-size: 13px; font-weight: 700; margin: 0; color: ${statusColor};">${escapeHtml(statusText)}</p>
             </td>
             <td style="padding: 14px 20px; width: 33%;">
               <p style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 4px; font-weight: 600;">Payment Method</p>

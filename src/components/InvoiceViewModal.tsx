@@ -3,6 +3,19 @@ import { X, Printer, FileText, Download, Loader2 } from 'lucide-react';
 import Modal from './Modal';
 import { supabase } from '../lib/supabase';
 
+// Escape user/DB-controlled text before writing it raw into an HTML string
+// (e.g. the print window <title>). Note: printContents comes from
+// printRef.current.innerHTML, which is already escaped by React, so it must
+// NOT be passed through this — doing so would double-escape legitimate characters.
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 interface InvoiceData {
   id: string;
   business_name: string;
@@ -89,7 +102,7 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Invoice ${invoice?.invoice_number || ''}</title>
+          <title>Invoice ${escapeHtml(invoice?.invoice_number || '')}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
