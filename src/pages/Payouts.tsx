@@ -560,10 +560,26 @@ export default function Payouts() {
       </div>
     `;
 
-    // If custom template uploaded, use it as background with data overlay
-    const finalHtml = customInvoiceTemplate
+    // If a custom template was uploaded, use it as a background with data overlay.
+    // Validate it is a safe image reference (data:image/* or https:) and escape it
+    // for the HTML attribute context before interpolating into innerHTML below,
+    // to prevent HTML/attribute injection.
+    const safeTemplateSrc = (() => {
+      if (!customInvoiceTemplate) return null;
+      const v = customInvoiceTemplate.trim();
+      const isImageDataUrl = /^data:image\/(png|jpe?g|gif|webp|avif|svg\+xml);base64,[a-z0-9+/=\s]+$/i.test(v);
+      const isHttps = /^https:\/\/[^\s"'<>]+$/i.test(v);
+      if (!isImageDataUrl && !isHttps) return null;
+      return v
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    })();
+
+    const finalHtml = safeTemplateSrc
       ? `<div style="position: relative; width: 210mm; min-height: 297mm;">
-          <img src="${customInvoiceTemplate}" style="width: 100%; position: absolute; top: 0; left: 0; z-index: 0; opacity: 0.15;" />
+          <img src="${safeTemplateSrc}" style="width: 100%; position: absolute; top: 0; left: 0; z-index: 0; opacity: 0.15;" />
           <div style="position: relative; z-index: 1;">${html}</div>
         </div>`
       : html;
@@ -581,7 +597,7 @@ export default function Payouts() {
       const html2pdf = (await import('html2pdf.js')).default;
       await html2pdf()
         .set({
-          margin: customInvoiceTemplate ? [0, 0, 0, 0] : [15, 15, 15, 15],
+          margin: safeTemplateSrc ? [0, 0, 0, 0] : [15, 15, 15, 15],
           filename: `ConnecTradie-Receipt-${invoiceNum}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
