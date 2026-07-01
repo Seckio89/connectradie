@@ -28,6 +28,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/useToast';
 import { friendlyError } from '../lib/utils';
+import { escapeHtml } from '../lib/escapeHtml';
 import { ListSkeleton } from '../components/SkeletonLoader';
 import { releaseEscrow, processRefund, createJobPaymentCheckout, verifyPayment, payPriceIncrease, requestPriceReduction } from '../lib/stripePayments';
 import { callEdgeFunction } from '../lib/edgeFn';
@@ -477,7 +478,7 @@ export default function PaymentHistory() {
     const jobDesc = payment.jobs?.description ? cleanDescription(payment.jobs.description) : 'Service payment';
     const jobCategory = payment.jobs?.description ? getCategory(payment.jobs.description) : '';
 
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${invoiceNum} - Tax Invoice</title>
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(invoiceNum)} - Tax Invoice</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:680px;margin:0 auto;padding:40px 32px;color:#1a1a1a;font-size:14px}
@@ -513,14 +514,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
   <div class="brand"><h1>ConnecTradie</h1><p>ABN: XX XXX XXX XXX</p></div>
   <div class="invoice-meta">
     <div class="label">Tax Invoice</div>
-    <div class="value">${invoiceNum}</div>
+    <div class="value">${escapeHtml(invoiceNum)}</div>
     <div style="font-size:12px;color:#6b7280;margin-top:4px">${formatDate(payment.created_at)}</div>
   </div>
 </div>
 <p class="invoice-title">Service</p>
 <div class="service-box">
-  ${jobCategory ? `<span class="cat">${jobCategory}</span>` : ''}
-  <div class="desc">${jobDesc}</div>
+  ${jobCategory ? `<span class="cat">${escapeHtml(jobCategory)}</span>` : ''}
+  <div class="desc">${escapeHtml(jobDesc)}</div>
 </div>
 <p class="invoice-title">Amount</p>
 <table>
@@ -533,7 +534,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
   </tbody>
 </table>
 <div class="details-grid">
-  <div class="detail-item"><div class="dl">Invoice #</div><div class="dv">${invoiceNum}</div></div>
+  <div class="detail-item"><div class="dl">Invoice #</div><div class="dv">${escapeHtml(invoiceNum)}</div></div>
   <div class="detail-item"><div class="dl">Date & Time</div><div class="dv">${formatDateTime(payment.created_at)}</div></div>
   <div class="detail-item"><div class="dl">Payment Type</div><div class="dv" style="text-transform:capitalize">${payment.payment_type.replace(/_/g, ' ')}</div></div>
   <div class="detail-item"><div class="dl">Status</div><div class="dv"><span class="badge ${payment.status}">${payment.status}</span></div></div>

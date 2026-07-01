@@ -21,21 +21,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getConnectAccountDetails, createConnectOnboardingSession } from '../lib/stripe';
 import type { ConnectAccountDetails } from '../lib/stripe';
+import { escapeHtml } from '../lib/escapeHtml';
 
 function formatCurrency(cents: number): string {
   return `$${(cents / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-// Escape user-controlled text before interpolating into innerHTML/PDF markup.
-// Prevents stored XSS from free-text fields (client name, job title) that are
-// rendered into a live DOM node by html2pdf in another user's browser.
-function escapeHtml(value: unknown): string {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }
 
 export default function Payouts() {
