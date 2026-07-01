@@ -26,7 +26,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import JobPostGuide from '../components/JobPostGuide';
 import SearchableSelect from '../components/SearchableSelect';
-import { notifyTradiesForUrgentJob, notifyTradiesForNewLead } from '../lib/notifications';
+import { notifyTradiesForUrgentJob } from '../lib/notifications';
 import { redactContactInfo, detectContactInfo, getContactWarningMessage } from '../lib/redaction';
 import { getJobHints } from '../lib/jobDescriptionHints';
 import type { Job } from '../types/database';

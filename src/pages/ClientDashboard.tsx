@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { Bell, Plus, Loader2, MapPin, ArrowRight, Crown, RefreshCw, Repeat, Trash2, CalendarClock, DollarSign, Briefcase, Clock, Zap, Eye, CheckCircle2, Archive, ArchiveRestore, Pencil, X, Check, Send, Play, ExternalLink, Pause, FileText, Star, ChevronDown, Gift, AlertCircle, CreditCard } from 'lucide-react';
+import { Bell, Plus, Loader2, MapPin, ArrowRight, Crown, RefreshCw, Repeat, Trash2, CalendarClock, DollarSign, Briefcase, Clock, Eye, CheckCircle2, Archive, ArchiveRestore, Pencil, X, Check, Send, Play, ExternalLink, Pause, FileText, Star, ChevronDown, Gift, AlertCircle, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { TradieWithDetails, AvailabilitySlot, Job } from '../types/database';
@@ -14,7 +14,6 @@ import OnboardingChecklist from '../components/OnboardingChecklist';
 import { redactName } from '../lib/contactGating';
 import SubscriptionModal from '../components/SubscriptionModal';
 // TooltipHint available for future use
-import UserTradeBadges from '../components/UserTradeBadges';
 import WelcomeGuide from '../components/WelcomeGuide';
 import { DashboardStatsSkeleton, ListSkeleton } from '../components/SkeletonLoader';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
@@ -225,7 +224,7 @@ export default function ClientDashboard() {
         const jobs = data as Job[];
         // Check payment status BEFORE rendering jobs to avoid flash
         const completedIds = jobs.filter(j => j.status === 'completed').map(j => j.id);
-        let released = new Set<string>();
+        const released = new Set<string>();
         if (completedIds.length > 0) {
           const { data: payments } = await supabase
             .from('payments')

@@ -255,7 +255,6 @@ Deno.serve(async (req: Request) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    console.log("Authorization header present:", !!authHeader);
 
     if (!authHeader) {
       return new Response(
@@ -291,7 +290,6 @@ Deno.serve(async (req: Request) => {
       error: userError,
     } = await supabase.auth.getUser();
 
-    console.log("User fetch result:", { hasUser: !!user, error: userError });
 
     if (!user) {
       return new Response(

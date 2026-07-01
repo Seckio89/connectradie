@@ -8,7 +8,6 @@ import {
   ShieldCheck,
   FileCheck,
   Crown,
-  Truck,
   Users,
   Zap,
   Clock,

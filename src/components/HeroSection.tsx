@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronDown, Shield, ShieldCheck, Lock, Star, ArrowRight, CheckCircle2, Wallet, Clock } from 'lucide-react';
+import { Search, ChevronDown, Shield, ShieldCheck, Lock, Star, CheckCircle2, Wallet, Clock } from 'lucide-react';
 import { getPlatformStats, type PlatformStats } from '../lib/reviews';
 import { TRADE_OPTIONS } from '../lib/tradeCategories';
 

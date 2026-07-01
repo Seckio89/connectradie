@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Clock, Calendar, CheckCircle2, AlertCircle, XCircle, Loader2, User, Star, Check, X as XIcon, Package, ClipboardList, Zap, WifiOff, ShieldAlert, Settings, Users, MapPin, Repeat, ChevronDown } from 'lucide-react';
+import { Clock, Calendar, CheckCircle2, AlertCircle, Loader2, User, Star, Check, X as XIcon, ClipboardList, Zap, WifiOff, ShieldAlert, Settings, Users, MapPin, Repeat, ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { offlineAcceptJob } from '../lib/offlineSync';

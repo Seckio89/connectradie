@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, ArrowRight, Heart, Star, Crown } from 'lucide-react';
+import { ArrowRight, Heart, Star, Crown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { redactName } from '../lib/contactGating';
@@ -117,7 +117,7 @@ export default function RecommendedTradies() {
 
         // 4. Pull ratings for these candidates only.
         const ids = candidateList.map((t) => t.id);
-        let ratingMap = new Map<string, { avg: number; count: number }>();
+        const ratingMap = new Map<string, { avg: number; count: number }>();
         if (ids.length > 0) {
           const { data: ratings } = await supabase
             .from('tradie_ratings')

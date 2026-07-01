@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { RefreshCw, FileText, Inbox, Loader2, CheckCircle2, CheckCheck, Shield, MapPin, User, Clock, ClipboardList, ChevronDown, ChevronRight, Plus, Calendar, Phone, Mail, MessageCircle, Send, Package, AlertTriangle, X, Search } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { RefreshCw, FileText, Inbox, Loader2, CheckCircle2, CheckCheck, Shield, MapPin, User, Clock, ClipboardList, ChevronDown, ChevronRight, Plus, Calendar, Phone, Mail, MessageCircle, Send, Package, X, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { callEdgeFunction } from '../lib/edgeFn';
@@ -1393,7 +1393,7 @@ function JobCard({
                 </a>
               )}
               {freqLabel && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500 whitespace-nowrap">
                   <RefreshCw className="w-3 h-3 text-gray-400" />
                   {freqLabel}
                 </span>
@@ -1405,7 +1405,7 @@ function JobCard({
                 </span>
               )}
               {agreedPrice != null && agreedPrice > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 whitespace-nowrap">
                   ${agreedPrice.toFixed(2)}/visit
                 </span>
               )}
@@ -1916,14 +1916,14 @@ export default function ServicesTab() {
                               <p className="text-sm font-semibold text-gray-900 truncate">{row.clientName}</p>
                               <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusPill.cls}`}>{statusPill.label}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                              <span className="capitalize">{row.jobLabel}</span>
-                              {row.freqLabel && (<><span className="text-gray-300">·</span><span>{row.freqLabel}</span></>)}
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500 mt-0.5">
+                              <span className="capitalize whitespace-nowrap">{row.jobLabel}</span>
+                              {row.freqLabel && (<><span className="text-gray-300">·</span><span className="whitespace-nowrap">{row.freqLabel}</span></>)}
                               {row.agreedPrice != null && row.agreedPrice > 0 && (
-                                <><span className="text-gray-300">·</span><span className="text-emerald-600 font-medium">${row.agreedPrice.toFixed(0)}/visit</span></>
+                                <><span className="text-gray-300">·</span><span className="text-emerald-600 font-medium whitespace-nowrap">${row.agreedPrice.toFixed(0)}/visit</span></>
                               )}
                               {nextLabel && !row.isCancelled && (
-                                <><span className="text-gray-300">·</span><span className="font-medium text-gray-700">Next: {nextLabel}</span></>
+                                <><span className="text-gray-300">·</span><span className="font-medium text-gray-700 whitespace-nowrap">Next: {nextLabel}</span></>
                               )}
                             </div>
                           </div>

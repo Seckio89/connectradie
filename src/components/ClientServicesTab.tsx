@@ -1251,6 +1251,8 @@ export default function ClientServicesTab() {
   }, [routerLocation.state]);
   const [chatOpenJobId, setChatOpenJobId] = useState<string | null>(null);
   const [expandedSessionsJobId, setExpandedSessionsJobId] = useState<string | null>(null);
+  // Which Recent Visits row is expanded to reveal its full details (mobile-friendly tap target)
+  const [expandedVisitId, setExpandedVisitId] = useState<string | null>(null);
   const [setAllTimeJobId, setSetAllTimeJobId] = useState<string | null>(null);
   const [allStartTime, setAllStartTime] = useState('');
   const [allEndTime, setAllEndTime] = useState('');
@@ -1313,8 +1315,8 @@ export default function ClientServicesTab() {
 
           // Fetch tradie details + ratings for quote authors
           const tradieIds = [...new Set((origQuotes || []).map(q => q.tradie_id).filter(Boolean))];
-          let tradieDetailsMap = new Map<string, { business_name: string | null; subscription_tier: string | null }>();
-          let tradieRatingsMap = new Map<string, { avg: number | null; count: number }>();
+          const tradieDetailsMap = new Map<string, { business_name: string | null; subscription_tier: string | null }>();
+          const tradieRatingsMap = new Map<string, { avg: number | null; count: number }>();
           if (tradieIds.length > 0) {
             const [detailsRes, ratingsRes] = await Promise.all([
               supabase.from('tradie_details').select('profile_id, business_name, subscription_tier').in('profile_id', tradieIds),
@@ -2108,13 +2110,24 @@ export default function ClientServicesTab() {
                             const date = new Date(s.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', {
                               weekday: 'short', day: 'numeric', month: 'short',
                             });
+                            const fullDate = new Date(s.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', {
+                              weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+                            });
+                            const isExpandedVisit = expandedVisitId === s.id;
                             const isCompleted = s.status === 'completed';
                             const isOverdue = s.status === 'scheduled' && s.scheduled_date < today;
                             const paymentStatus = isCompleted ? getPaymentStatus(s.id, s.scheduled_date) : null;
                             const isPaid = paymentStatus?.label === 'Paid';
                             return (
                               <div key={s.id} className={`rounded-lg ${isOverdue ? 'bg-red-50' : 'bg-gray-50'}`}>
-                                <div className="flex items-center py-2 px-3">
+                                {/* Tap the row to reveal full details — the compact
+                                    badges collapse below the date on narrow screens. */}
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedVisitId(isExpandedVisit ? null : s.id)}
+                                  aria-expanded={isExpandedVisit}
+                                  className="w-full flex items-center flex-wrap gap-y-1 py-2 px-3 text-left"
+                                >
                                   {/* Date */}
                                   <div className="flex items-center gap-2 min-w-0 flex-1">
                                     {isOverdue ? (
@@ -2124,7 +2137,8 @@ export default function ClientServicesTab() {
                                     ) : (
                                       <X className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                     )}
-                                    <span className={`text-sm ${isOverdue ? 'text-red-700 font-medium' : 'text-gray-700'}`}>{date}</span>
+                                    <span className={`text-sm whitespace-nowrap ${isOverdue ? 'text-red-700 font-medium' : 'text-gray-700'}`}>{date}</span>
+                                    <ChevronDown className={`w-3.5 h-3.5 text-gray-400 flex-shrink-0 ml-0.5 transition-transform ${isExpandedVisit ? 'rotate-180' : ''}`} />
                                   </div>
                                   {/* Price | Status | Payment | Method — fixed widths for alignment */}
                                   <div className="flex items-center gap-1 flex-shrink-0">
@@ -2148,8 +2162,46 @@ export default function ClientServicesTab() {
                                       {isCompleted && paymentStatus?.method ? paymentStatus.method : '-'}
                                     </span>
                                   </div>
-                                </div>
-                                {s.status === 'skipped' && s.reschedule_reason && (
+                                </button>
+                                {/* Expanded detail — the same info, laid out so it's
+                                    always readable regardless of screen width. */}
+                                {isExpandedVisit && (
+                                  <div className="px-3 pb-3 pt-1 mt-0.5 border-t border-gray-100 space-y-1.5 text-xs">
+                                    <div className="flex items-center justify-between gap-3">
+                                      <span className="text-gray-400">Date</span>
+                                      <span className="text-gray-700 text-right">{fullDate}</span>
+                                    </div>
+                                    {(isCompleted || isOverdue) && job.agreed_price != null && job.agreed_price > 0 && (
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="text-gray-400">Price</span>
+                                        <span className="text-gray-700 font-medium">${job.agreed_price.toFixed(2)}</span>
+                                      </div>
+                                    )}
+                                    <div className="flex items-center justify-between gap-3">
+                                      <span className="text-gray-400">Status</span>
+                                      <span className="text-gray-700">{isOverdue ? 'Not Completed' : isCompleted ? 'Completed' : 'Skipped'}</span>
+                                    </div>
+                                    {isCompleted && paymentStatus && (
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="text-gray-400">Payment</span>
+                                        <span className="text-gray-700">{paymentStatus.label}</span>
+                                      </div>
+                                    )}
+                                    {isCompleted && paymentStatus?.method && (
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="text-gray-400">Method</span>
+                                        <span className="text-gray-700">{paymentStatus.method}</span>
+                                      </div>
+                                    )}
+                                    {s.status === 'skipped' && s.reschedule_reason && (
+                                      <div className="flex items-start justify-between gap-3">
+                                        <span className="text-gray-400 flex-shrink-0">Reason</span>
+                                        <span className="text-gray-600 italic text-right">{s.reschedule_reason}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {!isExpandedVisit && s.status === 'skipped' && s.reschedule_reason && (
                                   <p className="px-3 pb-2 text-[10px] text-gray-400 italic truncate">
                                     Reason: {s.reschedule_reason}
                                   </p>

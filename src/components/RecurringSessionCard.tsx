@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Calendar, CheckCircle2, SkipForward, Clock, Plus, X, AlertTriangle, Send, Trash2, MoreVertical } from 'lucide-react';
+import { Calendar, CheckCircle2, SkipForward, Clock, Plus, X, AlertTriangle, Trash2, MoreVertical } from 'lucide-react';
 import type { RecurringSession, RecurringSessionStatus } from '../lib/recurringJobs';
 import {
   rescheduleSession,

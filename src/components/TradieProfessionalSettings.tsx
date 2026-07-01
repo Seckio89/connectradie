@@ -6,7 +6,6 @@ import {
   Radar,
   Zap,
   Users,
-  Truck,
   PenLine,
   Loader2,
   CheckCircle2,

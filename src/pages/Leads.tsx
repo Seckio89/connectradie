@@ -8,7 +8,6 @@ import {
   Briefcase,
   Plus,
   Calendar,
-  AlertTriangle,
   AlertCircle,
   RefreshCw,
   WifiOff,
@@ -438,7 +437,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
     }
 
     if (jobParam && !loading && leads.length > 0) {
-      let targetJob = leads.find((l) => l.id === jobParam);
+      const targetJob = leads.find((l) => l.id === jobParam);
       searchParams.delete('job');
       searchParams.delete('job_id');
       setSearchParams(searchParams, { replace: true });
@@ -765,16 +764,6 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
       } else {
         setLeads(jobs);
       }
-    }
-  };
-
-  const handleRestoreJob = async (jobId: string) => {
-    const { error } = await supabase
-      .from('jobs')
-      .update({ deleted_at: null, deleted_by: null })
-      .eq('id', jobId);
-    if (!error) {
-      setLeads(prev => prev.filter(j => j.id !== jobId));
     }
   };
 

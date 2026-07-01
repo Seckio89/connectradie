@@ -93,19 +93,6 @@ function getDaysInMonth(date: Date) {
   return { daysInMonth: lastDay.getDate(), startingDay: firstDay.getDay() };
 }
 
-function getStatusIcon(status: string) {
-  switch (status) {
-    case 'completed':
-      return <CheckCircle2 className="w-5 h-5 text-green-600" />;
-    case 'in_progress':
-      return <Clock className="w-5 h-5 text-secondary-600" />;
-    case 'cancelled':
-      return <XCircle className="w-5 h-5 text-red-600" />;
-    default:
-      return <AlertCircle className="w-5 h-5 text-warm-600" />;
-  }
-}
-
 function getStatusColor(status: string) {
   switch (status) {
     case 'completed':
@@ -243,7 +230,7 @@ export default function TradieDashboard() {
 
   // Recurring sessions
   const [recurringSessions, setRecurringSessions] = useState<(RecurringSession & { recurring_job?: { trade_category: string; service_subtype: string | null; description: string; client_id: string; preferred_time: string | null } })[]>([]);
-  const [recurringLoading, setRecurringLoading] = useState(false);
+  const [, setRecurringLoading] = useState(false);
   // Ongoing service agreements
   const [agreements, setAgreements] = useState<(ServiceAgreement & { client?: { full_name: string }; tradie?: { full_name: string } })[]>([]);
   const [recurringJobs, setRecurringJobs] = useState<(RecurringJob & { client?: { full_name: string } | null })[]>([]);
