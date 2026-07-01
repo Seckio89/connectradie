@@ -50,6 +50,7 @@ import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import ConfirmModal from '../components/ConfirmModal';
 import Modal from '../components/Modal';
 import { formatDate, checkLicenseExpired } from '../lib/utils';
+import { escapeHtml } from '../lib/escapeHtml';
 import { cancelRecurringJob } from '../lib/recurringJobs';
 import { extractSuburb } from '../lib/contactGating';
 import { tradeRequiresLicense } from '../lib/tradeCategories';
@@ -819,9 +820,9 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
       totalGst += gst;
       const bg = idx % 2 === 0 ? '#FFFFFF' : '#F9FAFB';
       jobRows += `<tr style="background-color:${bg};">` +
-        `<td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-size:13px;color:#374151;font-weight:500;">${category}</td>` +
-        `<td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-size:13px;color:#374151;">${desc.length > 50 ? desc.slice(0, 50) + '...' : desc}</td>` +
-        `<td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#6b7280;text-align:center;">${invNum}</td>` +
+        `<td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-size:13px;color:#374151;font-weight:500;">${escapeHtml(category)}</td>` +
+        `<td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-size:13px;color:#374151;">${escapeHtml(desc.length > 50 ? desc.slice(0, 50) + '...' : desc)}</td>` +
+        `<td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#6b7280;text-align:center;">${escapeHtml(invNum)}</td>` +
         `<td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#6b7280;text-align:center;">${completedDate}</td>` +
         `<td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;font-size:13px;color:#111827;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCurrency(total)}</td>` +
         '</tr>';
@@ -867,7 +868,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
   </div>
 </div>
 <div class="bill-to">
-  <div><div class="section-label">Bill To</div><div class="name">${userName}</div>${userEmail ? `<div class="email">${userEmail}</div>` : ''}</div>
+  <div><div class="section-label">Bill To</div><div class="name">${escapeHtml(userName)}</div>${userEmail ? `<div class="email">${escapeHtml(userEmail)}</div>` : ''}</div>
   <div style="text-align:right"><div class="section-label">Platform</div><div class="name">ConnecTradie Pty Ltd</div><div class="email">support@connectradie.com</div></div>
 </div>
 <p class="invoice-title">Completed Jobs</p>
@@ -3196,7 +3197,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             : completedDate;
           const fmtCurrency = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
-          const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${invoiceNum} - Tax Invoice</title>
+          const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(invoiceNum)} - Tax Invoice</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:680px;margin:0 auto;padding:40px 32px;color:#1a1a1a;font-size:14px}
@@ -3230,16 +3231,16 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
   <div class="brand"><h1>ConnecTradie</h1><p>ABN: XX XXX XXX XXX</p></div>
   <div class="invoice-meta">
     <div class="label">Tax Invoice</div>
-    <div class="value">${invoiceNum}</div>
+    <div class="value">${escapeHtml(invoiceNum)}</div>
     <div style="font-size:12px;color:#6b7280;margin-top:4px">${issueDate}</div>
   </div>
 </div>
 <p class="invoice-title">Service Details</p>
 <div class="service-box">
-  <span class="cat">${category}</span>
+  <span class="cat">${escapeHtml(category)}</span>
   <span class="badge completed">Completed</span>
-  <div class="desc">${desc}</div>
-  ${tradieName ? `<div class="provider">Service Provider: <strong>${tradieName}</strong></div>` : ''}
+  <div class="desc">${escapeHtml(desc)}</div>
+  ${tradieName ? `<div class="provider">Service Provider: <strong>${escapeHtml(tradieName)}</strong></div>` : ''}
 </div>
 <p class="invoice-title">Amount Breakdown</p>
 <table>
@@ -3251,7 +3252,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
   </tbody>
 </table>
 <div class="details-grid">
-  <div class="detail-item"><div class="dl">Invoice #</div><div class="dv">${invoiceNum}</div></div>
+  <div class="detail-item"><div class="dl">Invoice #</div><div class="dv">${escapeHtml(invoiceNum)}</div></div>
   <div class="detail-item"><div class="dl">Date Completed</div><div class="dv">${completedDate}</div></div>
   <div class="detail-item"><div class="dl">Payment Type</div><div class="dv">Job Funding (Stripe Secured)</div></div>
   <div class="detail-item"><div class="dl">Currency</div><div class="dv">AUD</div></div>

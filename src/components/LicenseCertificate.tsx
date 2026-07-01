@@ -9,6 +9,7 @@ import {
   Hash,
   Building2,
 } from 'lucide-react';
+import { escapeHtml } from '../lib/escapeHtml';
 
 interface LicenseCertificateProps {
   isOpen: boolean;
@@ -56,7 +57,7 @@ export default function LicenseCertificate({
       <!DOCTYPE html>
       <html>
         <head>
-          <title>License Certificate - ${holderName}</title>
+          <title>License Certificate - ${escapeHtml(holderName)}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
