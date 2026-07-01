@@ -12,6 +12,7 @@ import ForTradiesSection from '../components/ForTradiesSection';
 import HowItWorksSection from '../components/HowItWorksSection';
 import Footer from '../components/Footer';
 import SEO from '../components/SEO';
+import OneflareBanner from '../components/OneflareBanner';
 
 /** Returns true when viewport is below the md breakpoint (768px). */
 function useIsMobile(breakpoint = 768) {
@@ -101,6 +102,7 @@ export default function LandingPage() {
           }
         ]}
       />
+      <OneflareBanner />
       <Navbar />
       <main id="main-content" className="flex-1">
         <HeroSection />

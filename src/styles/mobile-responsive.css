@@ -1293,3 +1293,12 @@ minence — ensure raised center button stands out ──────── */
     color: black !important;
   }
 }
+
+/* =============================================================================
+   AF. Completed jobs table — shrink text and buttons 10% on mobile
+   ============================================================================= */
+@media (max-width: 639px) {
+  /* Completed jobs table compact */
+  main details .text-sm { font-size: 0.7rem !important; }
+  main details button { font-size: 0.65rem !important; padding: 0.25rem 0.5rem !important; }
+}

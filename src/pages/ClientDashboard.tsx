@@ -1956,6 +1956,113 @@ export default function ClientDashboard() {
               )}
             </div>
 
+              {/* Invoices */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-5">
+                <Link to="/payments" className="font-semibold text-gray-900 flex items-center gap-2 mb-4 hover:text-primary-600 transition-colors">
+                  <DollarSign className="w-4 h-4 text-secondary-600" />
+                  Invoices
+                </Link>
+                {/* Pending job payments — abandoned or stale checkouts */}
+                {pendingPayments.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-medium text-amber-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      Awaiting payment
+                    </p>
+                    <div className="space-y-2">
+                      {pendingPayments.map(pp => (
+                        <div key={pp.id} className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{pp.jobTitle}</p>
+                            <p className="text-xs text-gray-500">${(pp.amount / 100).toFixed(2)}</p>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              setPayingPendingId(pp.id);
+                              try {
+                                const { url } = await createJobPaymentCheckout(pp.id);
+                                if (url) window.location.href = url;
+                              } catch (err) {
+                                showToast(err instanceof Error ? err.message : 'Failed to start payment', true);
+                              } finally {
+                                setPayingPendingId(null);
+                              }
+                            }}
+                            disabled={payingPendingId === pp.id}
+                            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors"
+                          >
+                            {payingPendingId === pp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+                            Pay Now
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {invoices.length > 0 ? (
+                  <div className="space-y-3">
+                    {invoices.map((inv) => (
+                      <RecurringInvoiceCard
+                        key={inv.id}
+                        invoice={inv}
+                        userRole="client"
+                        onApprove={async (invoiceId) => {
+                          try {
+                            const result = await callEdgeFunction<{ status: string; checkout_url?: string }>(
+                              'approve-invoice',
+                              { invoiceId, action: 'approve', forceCheckout: true },
+                            );
+                            if (result.checkout_url) {
+                              window.location.href = result.checkout_url;
+                            } else {
+                              showToast('Invoice approved — payment is processing');
+                              fetchInvoices();
+                            }
+                          } catch (err) {
+                            console.error('Approve invoice error:', err);
+                            showToast(err instanceof Error ? err.message : 'Something went wrong — please try again', true);
+                          }
+                        }}
+                        onDecline={async (invoiceId, reason) => {
+                          try {
+                            await callEdgeFunction('approve-invoice', { invoiceId, action: 'decline', disputeReason: reason });
+                            showToast('Invoice disputed — the tradie has been notified');
+                            fetchInvoices();
+                          } catch (err) {
+                            showToast(err instanceof Error ? err.message : 'Failed to dispute invoice', true);
+                          }
+                        }}
+                        onAcceptResponse={async (invoiceId) => {
+                          try {
+                            await callEdgeFunction('respond-to-dispute', { invoiceId, action: 'accept_response' });
+                            showToast('Response accepted — invoice is ready for approval');
+                            fetchInvoices();
+                          } catch (err) {
+                            showToast(err instanceof Error ? err.message : 'Failed to accept response', true);
+                          }
+                        }}
+                        onEscalate={async (invoiceId) => {
+                          try {
+                            await callEdgeFunction('respond-to-dispute', { invoiceId, action: 'escalate' });
+                            showToast('Dispute escalated to admin for review');
+                            fetchInvoices();
+                          } catch (err) {
+                            showToast(err instanceof Error ? err.message : 'Failed to escalate dispute', true);
+                          }
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : pendingPayments.length === 0 ? (
+                  <div className="text-center py-4">
+                    <DollarSign className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">No invoices yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Generated at the end of each billing cycle</p>
+                  </div>
+                ) : null}
+              </div>
+
             {/* Paused Services — only show most recent resumable one */}
             {(() => {
               const inactive = recurringJobs.filter(j => !j.is_active && !j.cancelled_at);
@@ -2126,114 +2233,7 @@ export default function ClientDashboard() {
 
             {/* Three-up summary row — pulled out of the sidebar so the boxes
                 aren't buried below the fold on tall screens. */}
-            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {/* Invoices */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-5">
-                <Link to="/payments" className="font-semibold text-gray-900 flex items-center gap-2 mb-4 hover:text-primary-600 transition-colors">
-                  <DollarSign className="w-4 h-4 text-secondary-600" />
-                  Invoices
-                </Link>
-                {/* Pending job payments — abandoned or stale checkouts */}
-                {pendingPayments.length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-xs font-medium text-amber-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      Awaiting payment
-                    </p>
-                    <div className="space-y-2">
-                      {pendingPayments.map(pp => (
-                        <div key={pp.id} className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{pp.jobTitle}</p>
-                            <p className="text-xs text-gray-500">${(pp.amount / 100).toFixed(2)}</p>
-                          </div>
-                          <button
-                            onClick={async () => {
-                              setPayingPendingId(pp.id);
-                              try {
-                                const { url } = await createJobPaymentCheckout(pp.id);
-                                if (url) window.location.href = url;
-                              } catch (err) {
-                                showToast(err instanceof Error ? err.message : 'Failed to start payment', true);
-                              } finally {
-                                setPayingPendingId(null);
-                              }
-                            }}
-                            disabled={payingPendingId === pp.id}
-                            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors"
-                          >
-                            {payingPendingId === pp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
-                            Pay Now
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {invoices.length > 0 ? (
-                  <div className="space-y-3">
-                    {invoices.map((inv) => (
-                      <RecurringInvoiceCard
-                        key={inv.id}
-                        invoice={inv}
-                        userRole="client"
-                        onApprove={async (invoiceId) => {
-                          try {
-                            const result = await callEdgeFunction<{ status: string; checkout_url?: string }>(
-                              'approve-invoice',
-                              { invoiceId, action: 'approve', forceCheckout: true },
-                            );
-                            if (result.checkout_url) {
-                              window.location.href = result.checkout_url;
-                            } else {
-                              showToast('Invoice approved — payment is processing');
-                              fetchInvoices();
-                            }
-                          } catch (err) {
-                            console.error('Approve invoice error:', err);
-                            showToast(err instanceof Error ? err.message : 'Something went wrong — please try again', true);
-                          }
-                        }}
-                        onDecline={async (invoiceId, reason) => {
-                          try {
-                            await callEdgeFunction('approve-invoice', { invoiceId, action: 'decline', disputeReason: reason });
-                            showToast('Invoice disputed — the tradie has been notified');
-                            fetchInvoices();
-                          } catch (err) {
-                            showToast(err instanceof Error ? err.message : 'Failed to dispute invoice', true);
-                          }
-                        }}
-                        onAcceptResponse={async (invoiceId) => {
-                          try {
-                            await callEdgeFunction('respond-to-dispute', { invoiceId, action: 'accept_response' });
-                            showToast('Response accepted — invoice is ready for approval');
-                            fetchInvoices();
-                          } catch (err) {
-                            showToast(err instanceof Error ? err.message : 'Failed to accept response', true);
-                          }
-                        }}
-                        onEscalate={async (invoiceId) => {
-                          try {
-                            await callEdgeFunction('respond-to-dispute', { invoiceId, action: 'escalate' });
-                            showToast('Dispute escalated to admin for review');
-                            fetchInvoices();
-                          } catch (err) {
-                            showToast(err instanceof Error ? err.message : 'Failed to escalate dispute', true);
-                          }
-                        }}
-                      />
-                    ))}
-                  </div>
-                ) : pendingPayments.length === 0 ? (
-                  <div className="text-center py-4">
-                    <DollarSign className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">No invoices yet</p>
-                    <p className="text-xs text-gray-400 mt-1">Generated at the end of each billing cycle</p>
-                  </div>
-                ) : null}
-              </div>
-
+            <div className="grid md:grid-cols-2 gap-6">
               {/* This Week — personal upcoming-events feed (replaced the old
                   global Platform Activity widget). */}
               <SectionErrorBoundary fallbackTitle="Timeline failed to load">

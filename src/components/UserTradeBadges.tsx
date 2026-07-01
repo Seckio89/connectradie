@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { CheckCircle2, Clock } from 'lucide-react';
 
 interface UserTradeBadgesProps {
@@ -11,6 +12,13 @@ export default function UserTradeBadges({ verifiedTrades, declaredTrades, size =
   const declared = declaredTrades || [];
 
   const pendingTrades = declared.filter(trade => !verified.includes(trade));
+  const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!visibleTooltip) return;
+    const timer = setTimeout(() => setVisibleTooltip(null), 3000);
+    return () => clearTimeout(timer);
+  }, [visibleTooltip]);
 
   if (verified.length === 0 && pendingTrades.length === 0) return null;
 
@@ -33,12 +41,13 @@ export default function UserTradeBadges({ verifiedTrades, declaredTrades, size =
       {pendingTrades.map((trade) => (
         <div key={`p-${trade}`} className="relative group">
           <span
-            className={`inline-flex items-center gap-1 ${paddingClass} bg-white text-gray-500 ${textClass} font-medium rounded-full border border-gray-300`}
+            className={`inline-flex items-center gap-1 ${paddingClass} bg-white text-gray-500 ${textClass} font-medium rounded-full border border-gray-300 cursor-pointer`}
+            onClick={() => setVisibleTooltip(visibleTooltip === trade ? null : trade)}
           >
             <Clock className={iconClass} />
             {trade}
           </span>
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50 shadow-xl">
+          <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap transition-all duration-200 pointer-events-none z-50 shadow-xl ${visibleTooltip === trade ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'}`}>
             Awaiting Certificate Verification
             <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900" />
           </div>

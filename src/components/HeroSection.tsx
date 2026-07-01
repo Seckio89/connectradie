@@ -65,12 +65,12 @@ export default function HeroSection() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-[-0.02em]">
-              <span className="text-white">The Platform That Puts</span><br />
-              <span className="text-white">You in </span><span className="text-warm-500">Control.</span>
+              <span className="text-white">Find a Licensed Tradie</span><br />
+              <span className="text-white">You Can Actually </span><span className="text-warm-500">Trust.</span>
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-gray-400 leading-relaxed max-w-xl mx-auto lg:mx-0">
-              Australian-owned. Stripe holds the money — we don&apos;t. Funds auto-release to your tradie 48 hours after you mark the job done, so nobody has to chase a payment.
+              Payment protected by Stripe. Funds auto-release 48 hours after you mark the job done.
             </p>
 
             <form onSubmit={handleSearch} className="mt-10">
