@@ -184,16 +184,22 @@ export default function MyProfile() {
           {/* ====== HERO BANNER ====== */}
           <EditableSection label="Cover Photo" onEdit={() => setEditCoverPhoto(true)} dark>
             <div className="rounded-2xl relative overflow-hidden dark-overlay">
-              {profile?.cover_photo_url ? (
-                <img
-                  src={profile.cover_photo_url}
-                  alt="Cover"
-                  className="w-full h-56 sm:h-72 object-cover"
-                />
-              ) : (
-                <div className="w-full h-56 sm:h-72 bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900" />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+              {/* Cover image / gradient as an absolute background so the info
+                  block below defines the banner height. This prevents the
+                  avatar + business name from overflowing a fixed-height banner
+                  and overlapping the header on mobile. */}
+              <div className="absolute inset-0">
+                {profile?.cover_photo_url ? (
+                  <img
+                    src={profile.cover_photo_url}
+                    alt="Cover"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+              </div>
 
               {!profile?.cover_photo_url && (
                 <button
@@ -205,7 +211,7 @@ export default function MyProfile() {
                 </button>
               )}
 
-              <div className="absolute inset-x-0 bottom-0 px-6 pb-6 pt-16">
+              <div className="relative px-6 pb-6 pt-16 min-h-[14rem] sm:min-h-[18rem] flex flex-col justify-end">
                 <div className="flex flex-col sm:flex-row items-start gap-5">
                   <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gray-700 overflow-hidden ring-4 ring-white/20 flex-shrink-0 relative group shadow-xl">
                     {profile?.avatar_url ? (
