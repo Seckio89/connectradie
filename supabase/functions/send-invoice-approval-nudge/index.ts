@@ -14,6 +14,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+// Escape user-controlled text (e.g. the client's display name) before
+// interpolating it into the email HTML body sent to Resend.
+function escapeHtml(str: string): string {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function errorJson(message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
     status,
@@ -101,7 +112,7 @@ Deno.serve(async (req: Request) => {
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:12px;overflow:hidden;">
         <tr><td style="background:#06D6A0;padding:24px 32px;"><h1 style="margin:0;color:#fff;font-size:20px;">ConnecTradie</h1></td></tr>
         <tr><td style="padding:32px;">
-          <h2 style="margin:0 0 16px;color:#111827;font-size:18px;">Hi ${(client.full_name || "there").split(" ")[0]},</h2>
+          <h2 style="margin:0 0 16px;color:#111827;font-size:18px;">Hi ${escapeHtml((client.full_name || "there").split(" ")[0])},</h2>
           <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">
             Your weekly Office Clean invoice is ready and waiting on your approval before payment can be processed.
           </p>

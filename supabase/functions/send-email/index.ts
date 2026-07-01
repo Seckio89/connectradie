@@ -38,6 +38,20 @@ function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;");
 }
 
+// Only allow http(s) URLs in email CTA buttons. metadata.link is
+// caller-controlled, so a raw href could otherwise be `javascript:`/`data:`
+// (script/redirect vector) inside a ConnecTradie-branded email. Anything that
+// isn't a valid absolute http(s) URL falls back to the dashboard.
+function safeHref(raw: string): string {
+  const fallback = "https://connectradie.com/dashboard";
+  try {
+    const u = new URL(String(raw ?? "").trim());
+    return u.protocol === "http:" || u.protocol === "https:" ? u.href : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function buildHtmlEmail(subject: string, body: string, notificationType?: string): string {
   return `<!DOCTYPE html>
 <html>
@@ -121,7 +135,7 @@ function emailShell(accentColor: string, innerHtml: string, subject: string): st
 }
 
 function ctaButton(label: string, href: string, color: string): string {
-  return `<a href="${escapeHtml(href)}" style="display:inline-block;background-color:${color};color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;">${escapeHtml(label)}</a>`;
+  return `<a href="${escapeHtml(safeHref(href))}" style="display:inline-block;background-color:${color};color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;">${escapeHtml(label)}</a>`;
 }
 
 function buildLeadJobEmail(
