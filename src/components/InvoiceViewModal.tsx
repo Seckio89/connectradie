@@ -258,7 +258,7 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
             </div>
             <h2 className="text-xl font-bold text-gray-900">Invoice</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <button
               onClick={handleDownloadPdf}
               disabled={pdfLoading}
@@ -269,14 +269,14 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
               ) : (
                 <Download className="w-4 h-4" />
               )}
-              {pdfLoading ? 'Generating...' : 'Download PDF'}
+              <span className="hidden sm:inline">{pdfLoading ? 'Generating...' : 'Download PDF'}</span>
             </button>
             <button
               onClick={handlePrint}
               className="flex items-center gap-2 px-4 py-2 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 text-sm font-medium transition-colors"
             >
               <Printer className="w-4 h-4" />
-              Print / Save PDF
+              <span className="hidden sm:inline">Print / Save PDF</span>
             </button>
             <button
               onClick={onClose}
