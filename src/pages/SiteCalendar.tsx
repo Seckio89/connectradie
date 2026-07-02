@@ -228,9 +228,15 @@ function AssignTeamModal({ job, teamMembers, existingAssignments, onClose, onSav
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 ">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-start justify-between p-6 border-b border-gray-100">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sticky top-0 z-10 bg-white rounded-t-2xl flex items-start justify-between p-6 border-b border-gray-100">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Assign Team</h2>
             <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{job.description}</p>
@@ -240,7 +246,7 @@ function AssignTeamModal({ job, teamMembers, existingAssignments, onClose, onSav
               </p>
             )}
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 ml-4">
+          <button onClick={onClose} aria-label="Close" className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 ml-4 flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center">
             <X className="w-5 h-5" />
           </button>
         </div>
