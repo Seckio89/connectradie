@@ -609,6 +609,13 @@ body {
     overflow: hidden !important;
   }
 
+  /* Exception to rule 14: the notification bell's unread-count badge is
+     positioned just outside the button's top-right corner (−top/−right),
+     so overflow:hidden clips it. Let this specific button overflow. */
+  button[aria-label="Open notifications"] {
+    overflow: visible !important;
+  }
+
   /* ── 15. Even-space role filter buttons on Hire page ─────────
      The overflow-x-auto flex row of role filter buttons (All Roles,
      Apprentice, Qualified, Senior) should distribute evenly across

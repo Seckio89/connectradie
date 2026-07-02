@@ -2385,8 +2385,9 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       {!isReleased && completedAt2 && (
                         <AutoReleaseCountdown completedAt={completedAt2} jobTitle={lead.title || lead.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ')} invoiceNumber={jobPaymentIds.get(lead.id) ? fmtInvoiceRef(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id)) : undefined} />
                       )}
-                      <div className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors group">
-                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors group">
+                      <div className="flex items-start sm:items-center gap-3 min-w-0 sm:flex-1">
+                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5 sm:mt-0" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <h4 className="text-sm font-semibold text-gray-900 truncate capitalize">
@@ -2405,7 +2406,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                         </div>
                         <p className="text-xs text-gray-400 truncate mt-0.5">{desc}</p>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0 pl-7 sm:pl-0" onClick={(e) => e.stopPropagation()}>
                         {isFullyDone ? (
                           <>
                             <button
