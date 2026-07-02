@@ -601,19 +601,16 @@ body {
     margin-bottom: calc(0.75rem * var(--tw-space-y-reverse)) !important;
   }
 
-  /* ── 14. Prevent text overflow on any button ──────────────────
-     Buttons should always contain their text — fixes filter/role
-     buttons on the Work Hub Hire tab where text extends past the
-     green background. */
-  button {
+  /* ── 14. Clip overflowing labels on horizontal-scroll filter buttons ──
+     The Work Hub Hire (TradeCareers) role-filter pills are made shrinkable
+     by rule 15 (flex:1 1 0; min-width:0) and use whitespace-nowrap labels,
+     so their text would spill past the pill's coloured background. Scope the
+     clip to exactly those buttons — the same set rule 15 shrinks.
+     A previous blanket `button { overflow: hidden }` also clipped positioned
+     decorations (the notification bell's count badge, calendar date rings),
+     which is why this is now scoped rather than global. */
+  main .overflow-x-auto.flex > button {
     overflow: hidden !important;
-  }
-
-  /* Exception to rule 14: the notification bell's unread-count badge is
-     positioned just outside the button's top-right corner (−top/−right),
-     so overflow:hidden clips it. Let this specific button overflow. */
-  button[aria-label="Open notifications"] {
-    overflow: visible !important;
   }
 
   /* ── 15. Even-space role filter buttons on Hire page ─────────
