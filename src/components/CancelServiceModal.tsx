@@ -92,7 +92,7 @@ export default function CancelServiceModal({
           <button
             onClick={onCancel}
             disabled={submitting}
-            className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-40"
+            className="p-1 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 disabled:opacity-40"
             aria-label="Close"
           >
             <X className="w-5 h-5" />

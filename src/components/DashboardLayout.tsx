@@ -157,6 +157,45 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [expandedNav, setExpandedNav] = useState<string | null>(null);
   const [pendingReleaseCount, setPendingReleaseCount] = useState(0);
   const [toastNotification, setToastNotification] = useState<Notification | null>(null);
+
+  // ── Bottom-nav visibility (mobile) ─────────────────────────────
+  // Hide on scroll-down / reveal on scroll-up (standard mobile UX), and hide
+  // whenever a modal/overlay is open so the fixed bar never covers modal
+  // content or action buttons. Applies app-wide (the nav is lg:hidden).
+  const [scrollHidden, setScrollHidden] = useState(false);
+  const [overlayOpen, setOverlayOpen] = useState(false);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const y = window.scrollY;
+        if (y < 24) setScrollHidden(false);            // always show near the top
+        else if (y - lastY > 8) setScrollHidden(true);  // scrolling down → hide
+        else if (lastY - y > 8) setScrollHidden(false); // scrolling up → show
+        lastY = y;
+        ticking = false;
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const check = () => setOverlayOpen(
+      document.body.style.overflow === 'hidden' ||
+      !!document.querySelector('.fixed.inset-0.z-50, [role="dialog"]')
+    );
+    check();
+    const obs = new MutationObserver(check);
+    obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+    return () => obs.disconnect();
+  }, []);
+
+  const bottomNavHidden = scrollHidden || overlayOpen;
   const lastNotificationIdRef = useRef<string | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -996,7 +1035,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Mobile bottom navigation bar — hidden when sidebar is open */}
         {!isAdmin && !sidebarOpen && (
-          <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-navy-900 border-t border-navy-800 pb-[env(safe-area-inset-bottom)]">
+          <nav className={`fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-navy-900 border-t border-navy-800 pb-[env(safe-area-inset-bottom)] transition-transform duration-300 ${bottomNavHidden ? 'translate-y-full' : 'translate-y-0'}`}>
             <div className="grid grid-cols-5 h-16">
               {isTradie ? (
                 <>
