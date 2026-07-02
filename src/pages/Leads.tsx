@@ -2036,7 +2036,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <span className="text-sm font-semibold text-secondary-700">{group.label}</span>
                     <div className="flex-1 h-px bg-secondary-100" />
                   </div>
-                  <div className="space-y-3 ml-6">
+                  <div className="space-y-3 sm:ml-6">
                     {group.leads.map(renderLeadCard)}
                   </div>
                 </div>
