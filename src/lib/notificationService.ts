@@ -139,6 +139,10 @@ async function dispatchEmail(payload: NotificationPayload): Promise<ChannelResul
       method: 'POST',
       headers,
       body: JSON.stringify({
+        // recipientUserId lets send-email resolve the address server-side
+        // (authoritative — not spoofable). `to` is kept for the migration
+        // window so deploy ordering can't drop notifications.
+        recipientUserId: payload.userId,
         to: payload.recipientEmail,
         subject,
         body: payload.message,
