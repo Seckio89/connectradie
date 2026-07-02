@@ -1780,9 +1780,15 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
           ? (firstLine.length > 90 ? firstLine.slice(0, 90) + '…' : firstLine)
           : (serviceTag ?? 'Job');
         return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 ">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-start justify-between p-6 border-b border-gray-100">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+          onClick={() => setSelectedJob(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 z-10 bg-white rounded-t-2xl flex items-start justify-between p-6 border-b border-gray-100">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-2">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium border ${STATUS_COLORS[selectedJob.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
@@ -1799,7 +1805,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 </div>
                 <h2 className="text-base font-semibold text-gray-900 leading-snug line-clamp-2">{headerTitle}</h2>
               </div>
-              <button onClick={() => setSelectedJob(null)} className="ml-4 p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 flex-shrink-0">
+              <button onClick={() => setSelectedJob(null)} aria-label="Close" className="ml-4 p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center">
                 <X className="w-5 h-5" />
               </button>
             </div>
