@@ -23,7 +23,11 @@ const corsHeaders = {
 };
 
 interface EmailRequest {
-  to: string;
+  // Legacy / trusted-internal callers may still pass a raw address. Untrusted
+  // (user-JWT) callers should send recipientUserId so the address is resolved
+  // server-side and cannot be spoofed.
+  to?: string;
+  recipientUserId?: string;
   subject: string;
   body: string;
   notificationType?: string;
@@ -420,17 +424,39 @@ Deno.serve(async (req: Request) => {
     const resendKey = Deno.env.get("RESEND_API_KEY")!;
     const fromEmail = Deno.env.get("EMAIL_FROM_ADDRESS") || "notifications@connectradie.com";
 
-    const { to, subject, body, notificationType, metadata }: EmailRequest = await req.json();
+    const { to, recipientUserId, subject, body, notificationType, metadata }: EmailRequest = await req.json();
 
-    if (!to || !subject || !body) {
+    // Resolve the recipient address. Prefer a server-side lookup from
+    // recipientUserId — the caller cannot spoof the delivered address that way.
+    // A caller-supplied `to` is still accepted for the migration window and for
+    // trusted internal callers (service-role / cron) that already derive the
+    // address server-side.
+    let recipientEmail = typeof to === "string" ? to.trim() : "";
+    if (recipientUserId) {
+      const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+      const { data: recipientProfile } = await adminClient
+        .from("profiles")
+        .select("email")
+        .eq("id", recipientUserId)
+        .maybeSingle();
+      if (!recipientProfile?.email) {
+        return new Response(
+          JSON.stringify({ error: "Recipient not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      recipientEmail = recipientProfile.email;
+    }
+
+    if (!recipientEmail || !subject || !body) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: to, subject, body" }),
+        JSON.stringify({ error: "Missing required fields: recipientUserId (or to), subject, body" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Rate limit: 20 requests per minute per recipient
-    const rateLimitKey = `${to}-send-email`;
+    const rateLimitKey = `${recipientEmail}-send-email`;
     const { allowed } = checkRateLimit(rateLimitKey, 20, 60000);
     if (!allowed) {
       return new Response(
@@ -452,7 +478,7 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         from: `ConnecTradie <${fromEmail}>`,
-        to: [to],
+        to: [recipientEmail],
         subject,
         html,
       }),
