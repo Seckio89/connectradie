@@ -675,7 +675,8 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Close"
             >
               <X className="w-4 h-4" />
             </button>
