@@ -1,5 +1,5 @@
-const CACHE_NAME = 'connecttradie-v2';
-const API_CACHE_NAME = 'connecttradie-api-v2';
+const CACHE_NAME = 'connecttradie-v3';
+const API_CACHE_NAME = 'connecttradie-api-v3';
 const API_CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 const APP_SHELL = [
   '/',
@@ -97,8 +97,38 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Navigation requests (the HTML document) → NETWORK-FIRST. A stale-while-
+  // revalidate index.html pins the app to old content-hashed JS bundles, so
+  // deployed fixes never reach the installed (Capacitor) app until the cache
+  // happens to refresh. Network-first means each app launch loads the latest
+  // HTML (and therefore the latest bundles) when online, falling back to the
+  // cached shell only when offline.
+  if (request.mode === 'navigate') {
+    event.respondWith(networkFirstDocument(request));
+    return;
+  }
+
   event.respondWith(staleWhileRevalidate(request));
 });
+
+async function networkFirstDocument(request) {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse && networkResponse.ok) {
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch {
+    const cached = await cache.match(request);
+    return (
+      cached ||
+      (await cache.match('/index.html')) ||
+      (await cache.match('/')) ||
+      new Response('Offline', { status: 503, statusText: 'Service Unavailable' })
+    );
+  }
+}
 
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(CACHE_NAME);

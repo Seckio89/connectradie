@@ -13,9 +13,29 @@ export async function registerServiceWorker() {
   }
 
   try {
+    // Only auto-reload on a SW UPDATE, not on first install. If a controller
+    // already exists, a later `controllerchange` means a new SW took over
+    // (skipWaiting + clients.claim) — reload once so the page picks up the
+    // fresh HTML/bundle. The `refreshing` guard prevents reload loops.
+    if (navigator.serviceWorker.controller) {
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+    }
+
     const registration = await navigator.serviceWorker.register('/service-worker.js', {
       scope: '/',
+      // Always revalidate the SW script itself against the network so a new
+      // version is detected promptly instead of being served from HTTP cache.
+      updateViaCache: 'none',
     });
+
+    // Proactively check for a new SW on startup (Capacitor apps stay open for
+    // days, so the periodic browser check may not fire).
+    registration.update().catch(() => {});
 
     registration.addEventListener('updatefound', () => {
       const newWorker = registration.installing;
