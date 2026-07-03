@@ -43,6 +43,7 @@ import { checkLicenseExpired, formatDate } from '../lib/utils';
 import { extractSuburb } from '../lib/contactGating';
 import type { AvailabilitySlot, CalendarIntegration, Job } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
+import PayoutSummaryCard from '../components/PayoutSummaryCard';
 import BulkAvailabilityModal from '../components/BulkAvailabilityModal';
 import ConversationSettingsModal from '../components/ConversationSettingsModal';
 import JobManagementModal from '../components/JobManagementModal';
@@ -1735,6 +1736,11 @@ export default function TradieDashboard() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Payout summary */}
+        <div className="mt-6">
+          <PayoutSummaryCard />
         </div>
 
         {/* Calendar */}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { User, Loader2, CheckCircle2, Shield, X, Zap, Crown, BadgeCheck, Wrench, Bell, Settings2, Lock, Moon, Sun, Monitor } from 'lucide-react';
+import { User, Loader2, CheckCircle2, Shield, X, Zap, Crown, BadgeCheck, Wrench, Bell, Settings2, Lock, Moon, Sun, Monitor, CreditCard } from 'lucide-react';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -13,18 +13,24 @@ import ProfileTab from '../components/settings/ProfileTab';
 import SecurityTab from '../components/settings/SecurityTab';
 import NotificationsTab from '../components/settings/NotificationsTab';
 import AdminToolsTab from '../components/settings/AdminToolsTab';
+import PaymentSettings from '../components/settings/PaymentSettings';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import { calculateProfileCompletion, getProfileCompletionTasks, friendlyError } from '../lib/utils';
 import { requestPushPermission, subscribeToPush, savePushPreferences, saveSmsPreference, getPushPermissionStatus } from '../lib/notifications';
 
-type TabType = 'profile' | 'professional' | 'security' | 'verification' | 'notifications' | 'admin';
+type TabType = 'profile' | 'professional' | 'security' | 'verification' | 'notifications' | 'payments' | 'admin';
 
 export default function Settings() {
   const { user, profile, tradieDetails, refreshProfile, signOut } = useAuth();
   const { isDark, toggle: toggleDarkMode } = useDarkMode();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabType>(() => {
+    // ?tab=payments (used by the Stripe bank-update return URL) takes priority,
+    // then router state.
+    const queryTab = new URLSearchParams(location.search).get('tab');
+    if (queryTab === 'payments') return 'payments';
     const state = location.state as { tab?: string } | null;
+    if (state?.tab === 'payments') return 'payments';
     if (state?.tab === 'verification') return 'verification';
     if (state?.tab === 'professional') return 'professional';
     if (state?.tab === 'admin') return 'admin';
@@ -504,6 +510,7 @@ export default function Settings() {
     { id: 'security', label: 'Security', icon: Lock, show: true },
     { id: 'verification', label: 'Get Verified', mobileLabel: 'Verify', icon: Shield, show: showTradieFeatures },
     { id: 'notifications', label: 'Notifications', mobileLabel: 'Notify', icon: Bell, show: true },
+    { id: 'payments', label: 'Payments', mobileLabel: 'Pay', icon: CreditCard, show: showTradieFeatures },
     { id: 'admin', label: 'Admin Tools', mobileLabel: 'Admin', icon: Wrench, show: isAdmin },
   ];
 
@@ -694,6 +701,12 @@ export default function Settings() {
 
           {activeTab === 'professional' && showTradieFeatures && (
             <TradieProfessionalSettings />
+          )}
+
+          {activeTab === 'payments' && showTradieFeatures && (
+            <div className="p-4 sm:p-6 md:p-8">
+              <PaymentSettings />
+            </div>
           )}
 
           {activeTab === 'security' && (

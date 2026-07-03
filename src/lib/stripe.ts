@@ -243,6 +243,18 @@ export interface ConnectAccountDetails {
     available: number;
     pending: number;
   };
+  bankAccount?: {
+    last4: string | null;
+    bankName: string | null;
+    currency: string | null;
+    routingNumber?: string | null;
+  } | null;
+  payoutSchedule?: {
+    interval: string; // 'manual' | 'daily' | 'weekly' | 'monthly'
+    weeklyAnchor: string | null;
+    monthlyAnchor?: number | null;
+    delayDays: number | null;
+  } | null;
   payouts?: {
     id: string;
     amount: number;
@@ -252,6 +264,53 @@ export interface ConnectAccountDetails {
     created: number;
   }[];
   dashboardUrl?: string | null;
+}
+
+/** Create a Stripe hosted Account Link to update bank details, and return its URL. */
+export async function createBankUpdateLink(): Promise<string> {
+  const token = await getValidAccessToken();
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const response = await fetchWithTimeout(`${supabaseUrl}/functions/v1/stripe-payout-settings`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      action: 'update-bank',
+      refreshUrl: `${window.location.origin}/settings?tab=payments&bank=refresh`,
+      returnUrl: `${window.location.origin}/settings?tab=payments&bank=updated`,
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.url) {
+    throw new Error(data.error || 'Unable to start the bank update. Please try again.');
+  }
+  return data.url as string;
+}
+
+/** Change the connected account's payout schedule (manual vs automatic daily/weekly). */
+export async function updatePayoutSchedule(
+  interval: 'manual' | 'daily' | 'weekly',
+  weeklyAnchor?: string,
+): Promise<ConnectAccountDetails['payoutSchedule']> {
+  const token = await getValidAccessToken();
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const response = await fetchWithTimeout(`${supabaseUrl}/functions/v1/stripe-payout-settings`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ action: 'update-schedule', interval, weeklyAnchor }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || 'Unable to update the payout schedule.');
+  }
+  return data.payoutSchedule ?? null;
 }
 
 async function getValidAccessToken(): Promise<string> {
