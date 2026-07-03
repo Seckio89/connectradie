@@ -1137,7 +1137,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                           <span className="text-xs text-amber-700">After site visit</span>
                         </div>
                       ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                       <button
                         onClick={async (e) => {
                           e.stopPropagation();
