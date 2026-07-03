@@ -477,9 +477,11 @@ body {
 @media (max-width: 639px) {
 
   /* ── 1. Square corners on ALL card containers ────────────────────
-     Excludes interactive / inline elements that also use rounding. */
-  main .rounded-2xl:not(button):not(a):not(label):not(input):not(select):not(textarea):not(span),
-  main .rounded-xl:not(button):not(a):not(label):not(input):not(select):not(textarea):not(span) {
+     Excludes interactive / inline elements that also use rounding, and
+     :not(.fixed):not(.fixed *) excludes modals/overlays (a fixed dialog or a
+     card inside a fixed overlay) — those must keep their rounded corners. */
+  main .rounded-2xl:not(button):not(a):not(label):not(input):not(select):not(textarea):not(span):not(.fixed):not(.fixed *),
+  main .rounded-xl:not(button):not(a):not(label):not(input):not(select):not(textarea):not(span):not(.fixed):not(.fixed *) {
     border-radius: 0 !important;
   }
 
@@ -492,10 +494,10 @@ body {
   }
 
   /* ── 3. Remove side borders from rounded containers ──────────── */
-  main div.rounded-2xl[class*="border"],
-  main div.rounded-xl[class*="border"],
-  main section.rounded-2xl[class*="border"],
-  main section.rounded-xl[class*="border"] {
+  main div.rounded-2xl[class*="border"]:not(.fixed):not(.fixed *),
+  main div.rounded-xl[class*="border"]:not(.fixed):not(.fixed *),
+  main section.rounded-2xl[class*="border"]:not(.fixed):not(.fixed *),
+  main section.rounded-xl[class*="border"]:not(.fixed):not(.fixed *) {
     border-left-width: 0 !important;
     border-right-width: 0 !important;
   }
@@ -504,12 +506,12 @@ body {
      Negative margins (-1rem) counteract main's px-4 padding.
      :not(.rounded-2xl *) prevents cards nested INSIDE other cards
      from double-stretching past the viewport. */
-  main .rounded-2xl:not(button):not(a):not(.rounded-2xl *) {
+  main .rounded-2xl:not(button):not(a):not(.rounded-2xl *):not(.fixed):not(.fixed *) {
     margin-left: -1rem !important;
     margin-right: -1rem !important;
   }
 
-  main .rounded-xl:not(button):not(a):not(label):not(span):not(.rounded-2xl *):not(.rounded-xl *) {
+  main .rounded-xl:not(button):not(a):not(label):not(span):not(.rounded-2xl *):not(.rounded-xl *):not(.fixed):not(.fixed *) {
     margin-left: -1rem !important;
     margin-right: -1rem !important;
   }
