@@ -93,10 +93,13 @@ Deno.serve(async (req: Request) => {
 
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
-    const [account, balance, payouts] = await Promise.all([
+    const [account, balance, payouts, externalAccounts] = await Promise.all([
       stripe.accounts.retrieve(accountId),
       stripe.balance.retrieve({ stripeAccount: accountId }),
       stripe.payouts.list({ stripeAccount: accountId, limit: 20 }),
+      stripe.accounts
+        .listExternalAccounts(accountId, { object: "bank_account", limit: 1 })
+        .catch(() => null),
     ]);
 
     // Sync onboarding status from Stripe → DB (covers cases where webhook is delayed/missing)
@@ -125,6 +128,28 @@ Deno.serve(async (req: Request) => {
       .filter((b) => b.currency === "aud")
       .reduce((sum, b) => sum + b.amount, 0);
 
+    // Default external bank account (masked) for in-app display.
+    const bank = externalAccounts?.data?.[0] as Stripe.BankAccount | undefined;
+    const bankAccount = bank
+      ? {
+          last4: bank.last4 ?? null,
+          bankName: bank.bank_name ?? null,
+          currency: bank.currency ?? null,
+          routingNumber: bank.routing_number ?? null,
+        }
+      : null;
+
+    // Payout schedule (manual vs automatic + interval) for in-app display/toggle.
+    const sched = account.settings?.payouts?.schedule;
+    const payoutSchedule = sched
+      ? {
+          interval: sched.interval, // 'manual' | 'daily' | 'weekly' | 'monthly'
+          weeklyAnchor: sched.weekly_anchor ?? null,
+          monthlyAnchor: sched.monthly_anchor ?? null,
+          delayDays: sched.delay_days ?? null,
+        }
+      : null;
+
     return new Response(
       JSON.stringify({
         connected: true,
@@ -137,6 +162,8 @@ Deno.serve(async (req: Request) => {
             pastDue: account.requirements?.past_due || [],
           },
         },
+        bankAccount,
+        payoutSchedule,
         balance: {
           available: audAvailable,
           pending: audPending,

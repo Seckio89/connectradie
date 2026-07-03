@@ -1,0 +1,238 @@
+import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { Landmark, Wallet, CalendarClock, Loader2, AlertCircle, ExternalLink, CheckCircle2, ArrowRight } from 'lucide-react';
+import {
+  getConnectAccountDetails,
+  createConnectOnboardingSession,
+  createBankUpdateLink,
+  updatePayoutSchedule,
+  type ConnectAccountDetails,
+} from '../../lib/stripe';
+import { useToast } from '../../hooks/useToast';
+
+const fmtAud = (cents: number) =>
+  `$${(cents / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+function scheduleLabel(s: ConnectAccountDetails['payoutSchedule']): string {
+  if (!s) return 'Not set';
+  if (s.interval === 'manual') return 'Manual — you request payouts';
+  if (s.interval === 'daily') return 'Automatic — daily';
+  if (s.interval === 'weekly') return `Automatic — weekly${s.weeklyAnchor ? ` (${s.weeklyAnchor})` : ''}`;
+  if (s.interval === 'monthly') return 'Automatic — monthly';
+  return s.interval;
+}
+
+export default function PaymentSettings() {
+  const { showToast } = useToast();
+  const [details, setDetails] = useState<ConnectAccountDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [bankLoading, setBankLoading] = useState(false);
+  const [setupLoading, setSetupLoading] = useState(false);
+  const [scheduleSaving, setScheduleSaving] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      setDetails(await getConnectAccountDetails());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load payment settings');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Show a confirmation if the user just returned from the hosted bank-update form.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('bank') === 'updated') showToast('Bank details updated');
+  }, [showToast]);
+
+  const handleUpdateBank = async () => {
+    setBankLoading(true);
+    try {
+      window.location.href = await createBankUpdateLink();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not open the bank update form', true);
+      setBankLoading(false);
+    }
+  };
+
+  const handleSetup = async () => {
+    setSetupLoading(true);
+    try {
+      await createConnectOnboardingSession();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not start payout setup', true);
+      setSetupLoading(false);
+    }
+  };
+
+  const handleSchedule = async (interval: 'manual' | 'daily' | 'weekly') => {
+    if (scheduleSaving) return;
+    setScheduleSaving(interval);
+    try {
+      const next = await updatePayoutSchedule(interval);
+      setDetails((d) => (d ? { ...d, payoutSchedule: next } : d));
+      showToast(interval === 'manual' ? 'Switched to manual payouts' : `Automatic ${interval} payouts on`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not update payout schedule', true);
+    } finally {
+      setScheduleSaving(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-md bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+        <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+        <div>
+          <p className="text-sm font-medium text-red-700">{error}</p>
+          <button onClick={load} className="mt-2 text-sm font-medium text-red-700 underline">Try again</button>
+        </div>
+      </div>
+    );
+  }
+
+  // Not connected yet → guide to onboarding.
+  if (!details?.connected) {
+    return (
+      <div className="max-w-lg bg-white rounded-xl border border-gray-200 shadow-sm p-6 text-center">
+        <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-3">
+          <Landmark className="w-6 h-6 text-emerald-600" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900">Set up payouts</h3>
+        <p className="text-sm text-gray-600 mt-1 mb-4">
+          Connect your bank account to receive payments from completed jobs — securely via Stripe.
+        </p>
+        <button
+          onClick={handleSetup}
+          disabled={setupLoading}
+          className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-60 transition-colors"
+        >
+          {setupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+          Set up payouts
+        </button>
+      </div>
+    );
+  }
+
+  const bank = details.bankAccount;
+  const schedule = details.payoutSchedule;
+  const currentInterval = schedule?.interval === 'daily' || schedule?.interval === 'weekly' || schedule?.interval === 'manual'
+    ? schedule.interval
+    : 'manual';
+  const needsAttention = (details.account?.requirements?.currentlyDue?.length ?? 0) > 0
+    || (details.account?.requirements?.pastDue?.length ?? 0) > 0;
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      {needsAttention && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800">
+            Stripe needs more information before payouts can run. Use <strong>Update Bank Details</strong> below to finish.
+          </p>
+        </div>
+      )}
+
+      {/* Bank account */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+              <Landmark className="w-3.5 h-3.5" /> Bank account
+            </p>
+            {bank?.last4 ? (
+              <p className="mt-2 text-base font-semibold text-gray-900 tabular-nums">
+                •••• {bank.last4}
+                {bank.bankName && <span className="ml-2 text-sm font-normal text-gray-500">{bank.bankName}</span>}
+              </p>
+            ) : (
+              <p className="mt-2 text-sm text-gray-500">No bank account on file yet.</p>
+            )}
+          </div>
+          {details.account?.payoutsEnabled && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 flex-shrink-0">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Active
+            </span>
+          )}
+        </div>
+        <button
+          onClick={handleUpdateBank}
+          disabled={bankLoading}
+          className="mt-4 inline-flex items-center gap-2 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-60 transition-colors"
+        >
+          {bankLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
+          Update Bank Details
+        </button>
+      </div>
+
+      {/* Balance */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+          <Wallet className="w-3.5 h-3.5" /> Stripe balance
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="rounded-lg bg-gray-50 p-3">
+            <p className="text-lg font-bold text-gray-900">{fmtAud(details.balance?.available ?? 0)}</p>
+            <p className="text-xs text-gray-500 mt-0.5">Available</p>
+          </div>
+          <div className="rounded-lg bg-gray-50 p-3">
+            <p className="text-lg font-bold text-gray-900">{fmtAud(details.balance?.pending ?? 0)}</p>
+            <p className="text-xs text-gray-500 mt-0.5">Pending (clearing)</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Payout schedule */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+          <CalendarClock className="w-3.5 h-3.5" /> Payout schedule
+        </p>
+        <p className="mt-2 text-sm text-gray-700">{scheduleLabel(schedule)}</p>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {([
+            { key: 'manual', label: 'Manual' },
+            { key: 'daily', label: 'Daily' },
+            { key: 'weekly', label: 'Weekly' },
+          ] as const).map((opt) => {
+            const active = currentInterval === opt.key;
+            return (
+              <button
+                key={opt.key}
+                onClick={() => !active && handleSchedule(opt.key)}
+                disabled={!!scheduleSaving}
+                className={`py-2.5 rounded-lg text-sm font-medium border transition-colors disabled:opacity-60 ${
+                  active
+                    ? 'border-secondary-300 bg-secondary-50 text-secondary-700'
+                    : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {scheduleSaving === opt.key ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : opt.label}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-xs text-gray-400">
+          Automatic payouts transfer your available balance to your bank on the chosen cadence. Manual lets you request payouts yourself.
+        </p>
+      </div>
+
+      <Link to="/payouts" className="inline-flex items-center gap-1.5 text-sm font-medium text-secondary-600 hover:text-secondary-700">
+        View full payout history <ArrowRight className="w-4 h-4" />
+      </Link>
+    </div>
+  );
+}
