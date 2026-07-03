@@ -830,7 +830,7 @@ export default function Payouts() {
                 {onboardingComplete === false ? (
                   <button
                     onClick={() => setOnboardingWarning(true)}
-                    className="inline-flex items-center gap-2 px-5 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-colors"
+                    className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
                     Manage Bank Details & Payout Schedule
@@ -840,7 +840,7 @@ export default function Payouts() {
                     href={accountDetails.dashboardUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-5 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-colors"
+                    className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
                     Manage Bank Details & Payout Schedule
@@ -852,13 +852,16 @@ export default function Payouts() {
             {/* Recent Job Payments */}
             {recentPayments.length > 0 && (
               <div className="bg-white rounded-2xl border border-surface-200 overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-3.5 border-b border-surface-200">
-                  <div className="flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-navy-300" />
-                    <h2 className="text-sm font-semibold text-navy-800">Recent Payments</h2>
-                    <span className="text-xs text-navy-300 font-medium">(Last 5 days)</span>
+                <div className="flex items-start justify-between gap-2 px-4 sm:px-5 py-3.5 border-b border-surface-200">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-navy-300 flex-shrink-0" />
+                      <h2 className="text-sm font-semibold text-navy-800 whitespace-nowrap">Recent Payments</h2>
+                      <span className="text-xs text-navy-300 font-medium hidden sm:inline">(Last 5 days)</span>
+                    </div>
+                    <span className="text-[11px] text-navy-300 font-medium ml-6 sm:hidden">Last 5 days</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <input
                       ref={templateInputRef}
                       type="file"
@@ -868,7 +871,7 @@ export default function Payouts() {
                     />
                     {customInvoiceTemplate ? (
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-3 py-1 rounded-full">Custom template active</span>
+                        <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-3 py-1 rounded-full whitespace-nowrap">Custom template active</span>
                         <button
                           onClick={handleRemoveTemplate}
                           className="text-xs text-red-500 hover:text-red-700 font-medium"
@@ -879,9 +882,9 @@ export default function Payouts() {
                     ) : (
                       <button
                         onClick={() => templateInputRef.current?.click()}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-navy-500 border border-surface-200 rounded-lg hover:bg-surface-50 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-navy-500 border border-surface-200 rounded-lg hover:bg-surface-50 transition-colors whitespace-nowrap flex-shrink-0"
                       >
-                        <FileText className="w-3.5 h-3.5" />
+                        <FileText className="w-3.5 h-3.5 flex-shrink-0" />
                         <span className="sm:hidden">Upload Invoice</span>
                         <span className="hidden sm:inline">Upload Invoice Template</span>
                       </button>
@@ -1017,8 +1020,8 @@ export default function Payouts() {
                                           <DollarSign className="w-4 h-4 text-warm-600" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-1.5">
-                                            <p className="text-sm font-medium text-navy-900 truncate max-w-[55vw] sm:max-w-none">{jobTitle}</p>
+                                          <div className="flex items-center gap-1.5 min-w-0">
+                                            <p className="text-sm font-medium text-navy-900 truncate">{jobTitle}</p>
                                             {p.isRecurring && (
                                               <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${isCancelled ? 'bg-red-100 text-red-600' : 'bg-secondary-100 text-secondary-700'}`}>
                                                 {isCancelled ? 'Cancelled' : 'Ongoing'}
