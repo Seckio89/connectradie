@@ -680,7 +680,7 @@ export default function Payouts() {
           {accountDetails?.connected && (accountDetails.payouts?.length ?? 0) > 0 && (
             <button
               onClick={handleExportCSV}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-surface-300 rounded-lg text-sm font-medium text-navy-700 hover:bg-surface-50 transition-colors"
+              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 bg-white border border-surface-300 rounded-lg text-sm font-medium text-navy-700 hover:bg-surface-50 transition-colors flex-shrink-0"
             >
               <Download className="w-4 h-4" />
               Export CSV
@@ -759,7 +759,7 @@ export default function Payouts() {
             ) : null}
 
             {/* Summary */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
               <div className="flex items-baseline justify-between mb-5">
                 <div>
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Earned</p>
