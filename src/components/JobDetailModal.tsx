@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X,
   MapPin,
@@ -79,6 +79,21 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
   const [milestones, setMilestones] = useState<JobMilestone[]>([]);
   const [statusLoading, setStatusLoading] = useState(false);
   const [localStatus, setLocalStatus] = useState<string>(job?.status || 'pending');
+
+  // On mobile the progress stepper scrolls horizontally; auto-scroll it so the
+  // current step (e.g. "Completed") is in view on open instead of clipped off
+  // the right edge. No-op on desktop where the stepper isn't overflowing.
+  const stepperScrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    const scroller = stepperScrollRef.current;
+    if (!scroller || scroller.scrollWidth <= scroller.clientWidth) return;
+    const active = scroller.querySelector('[data-active-step="true"]');
+    if (!active) return;
+    const aRect = active.getBoundingClientRect();
+    const sRect = scroller.getBoundingClientRect();
+    scroller.scrollLeft += (aRect.left - sRect.left) - (scroller.clientWidth - aRect.width) / 2;
+  }, [isOpen, localStatus]);
   const [recurringJob, setRecurringJob] = useState<RecurringJob | null>(null);
   const [selectedAvailDate, setSelectedAvailDate] = useState<string | null>(null);
 
@@ -442,7 +457,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
               )}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 ml-3">
+          <button onClick={onClose} aria-label="Close" className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 ml-3 min-w-[44px] min-h-[44px] flex items-center justify-center">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
@@ -453,12 +468,13 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
         {!isDeclined && (
           <div className="bg-gray-50 rounded-xl p-4">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Job Progress</p>
-            <div className="flex items-center justify-between">
+            <div ref={stepperScrollRef} className="overflow-x-auto sm:overflow-visible scrollbar-hide -mx-1 px-1">
+            <div className="flex items-center justify-between min-w-[280px] sm:min-w-0">
               {STEPS.map((step, i) => {
                 const done = i <= currentStep;
                 const isCurrent = i === currentStep;
                 return (
-                  <div key={step.key} className="flex items-center flex-1">
+                  <div key={step.key} data-active-step={isCurrent ? 'true' : undefined} className="flex items-center flex-1">
                     <div className="flex flex-col items-center text-center flex-shrink-0">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
                         done
@@ -473,20 +489,21 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
                           <span className="text-xs font-bold">{i + 1}</span>
                         )}
                       </div>
-                      <span className={`text-xs mt-1.5 font-medium leading-tight ${
+                      <span className={`text-[10px] sm:text-xs mt-1.5 font-medium leading-tight whitespace-nowrap ${
                         isCurrent ? 'text-secondary-700' : done ? 'text-gray-600' : 'text-gray-400'
                       }`}>
                         {step.label}
                       </span>
                     </div>
                     {i < STEPS.length - 1 && (
-                      <div className={`flex-1 h-0.5 mx-2 rounded ${
+                      <div className={`flex-1 h-0.5 mx-1 sm:mx-2 rounded ${
                         i < currentStep ? 'bg-secondary-400' : 'bg-gray-200'
                       }`} />
                     )}
                   </div>
                 );
               })}
+            </div>
             </div>
           </div>
         )}
@@ -872,7 +889,10 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
           {statusError}
         </div>
       )}
-      <div className="sticky bottom-0 p-4 border-t border-gray-100 bg-white flex gap-3">
+      <div
+        className="sticky bottom-0 px-4 pt-4 border-t border-gray-100 bg-white flex gap-3"
+        style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+      >
         <button
           onClick={onClose}
           className="px-5 py-3 border border-gray-200 text-gray-600 font-medium rounded-xl hover:bg-gray-50 transition-colors"
