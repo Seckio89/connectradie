@@ -35,12 +35,45 @@ export default function Login() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     setError('');
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
-    });
-    if (error) {
-      setError(friendlyError(error, 'Unable to sign in with Google. Please try again.'));
+    try {
+      // Preflight: confirm Google is actually enabled as an auth provider BEFORE
+      // handing the browser to Supabase. signInWithOAuth navigates the top-level
+      // window straight to the authorize URL, and a disabled/misconfigured
+      // provider responds with a raw JSON error page ("Unsupported provider…")
+      // instead of an error we can catch — especially jarring inside the
+      // Capacitor WebView. /auth/v1/settings is CORS-enabled and lists which
+      // external providers are on, so we can fail gracefully here instead.
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      try {
+        const res = await fetch(`${supabaseUrl}/auth/v1/settings`, {
+          headers: { apikey: anonKey },
+        });
+        if (res.ok) {
+          const settings = await res.json();
+          if (settings?.external?.google === false) {
+            throw new Error('google-provider-disabled');
+          }
+        }
+      } catch (preflightErr) {
+        // Only block if we positively confirmed the provider is off; a network
+        // hiccup on the settings probe shouldn't stop a working sign-in.
+        if (preflightErr instanceof Error && preflightErr.message === 'google-provider-disabled') {
+          throw preflightErr;
+        }
+      }
+
+      // redirectTo resolves to the live origin (e.g. https://connectradie.com/dashboard),
+      // which is what the Capacitor WebView loads — so the OAuth round-trip stays
+      // in-app. This URL must be whitelisted in Supabase Auth → URL Configuration.
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/dashboard` },
+      });
+      if (error) throw error;
+      // Success: the browser is now redirecting to Google — keep the spinner up.
+    } catch {
+      setError('Google sign-in isn’t available right now. Please sign in with your email and password.');
       setGoogleLoading(false);
     }
   };
