@@ -1028,7 +1028,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
-        <main id="main-content" className="px-4 py-3 sm:p-6 lg:p-8 flex-1 pb-20 lg:pb-8">
+        <main id="main-content" className="px-4 py-3 sm:p-6 lg:p-8 flex-1 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-8">
           <PlatformUpdateBanner />
           {children}
         </main>
