@@ -380,9 +380,21 @@ body {
     padding-right: 0.5rem;
   }
 
-  /* Center calendar content on mobile — shift ~10% right to visually center */
-  [data-tour="calendar"] {
-    padding-left: 5% !important;
+  /* Dashboard calendar card: full-bleed AND symmetric on mobile.
+     The card uses -mx-4 to go edge-to-edge, but an earlier max-width:100% rule
+     capped it to the parent width — so it couldn't widen on the right and ended
+     up shifted left (32px gap on the right), which also pulled the "Upcoming
+     Slots" card inside it off-centre. max-width:none lets the negative margins
+     actually reach both viewport edges; even 1rem gutters replace the old
+     padding-left:5% centering hack. `main [data-tour]` outranks the Tailwind
+     -mx-4 / bare [data-tour] rules so these win. */
+  main [data-tour="calendar"] {
+    margin-left: -1rem !important;
+    margin-right: -1rem !important;
+    max-width: none !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    overflow-x: hidden !important;
   }
 }
 
