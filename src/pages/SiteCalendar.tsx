@@ -468,7 +468,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
     // Fetch recurring sessions and convert to pseudo-jobs for the calendar
     const { data: recurringSessions } = await supabase
       .from('recurring_sessions')
-      .select('id, scheduled_date, start_time, status, recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(tradie_id, client_id, trade_category, service_subtype, description, location, preferred_time)')
+      .select('id, scheduled_date, start_time, end_time, proposed_start_time, proposed_end_time, time_proposal_by, status, recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(tradie_id, client_id, original_job_id, trade_category, service_subtype, description, location, preferred_time)')
       .in('status', ['pending_confirmation', 'scheduled', 'completed'])
       .gte('scheduled_date', startStr)
       .lte('scheduled_date', endStr);
@@ -480,15 +480,19 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
     });
     const recurringPseudoJobs: Job[] = myRecurringSessions.map((s) => {
       const rj = s.recurring_job as { tradie_id: string | null; trade_category: string; service_subtype: string | null; description: string | null; location: string | null; preferred_time: string | null } | null;
-      // Per-session start_time wins (it's the override the user sets via the time
-      // chips); fall back to the parent recurring_job's preferred_time.
-      const sessionStart = (s as { start_time: string | null }).start_time;
-      const timeStr = sessionStart ?? rj?.preferred_time;
+      const ss = s as { start_time: string | null; end_time: string | null; proposed_start_time: string | null };
+      // Per-session confirmed start_time wins (the tradie-confirmed override);
+      // fall back to the parent recurring_job's preferred_time for display.
+      const confirmedStart = ss.start_time;
+      const timeStr = confirmedStart ?? rj?.preferred_time;
       const slot = timeStr ? (
         parseInt(timeStr.split(':')[0]) < 12 ? 'morning' :
         parseInt(timeStr.split(':')[0]) < 14 ? 'midday' :
         parseInt(timeStr.split(':')[0]) < 17 ? 'afternoon' : 'evening'
       ) : null;
+      // A pending client proposal (proposed_start_time set, not yet confirmed)
+      // means the time is awaiting the tradie's confirmation.
+      const pendingProposal = !!ss.proposed_start_time && !confirmedStart;
       return {
         id: `recurring-${s.id}`,
         description: `[${(rj?.service_subtype || rj?.trade_category || 'Ongoing').toUpperCase()}] ${rj?.description?.split('\n')[0] || 'Ongoing service'}`,
@@ -496,8 +500,10 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
         scheduled_date: s.scheduled_date,
         preferred_time_slot: slot,
         start_time: timeStr || null,
-        end_time: (s as { end_time?: string | null }).end_time ?? null,
-        time_confirmed: true,
+        end_time: ss.end_time ?? null,
+        time_confirmed: !pendingProposal,
+        // Surfaced so a tradie can see & confirm a client's proposed time.
+        proposed_start_time: ss.proposed_start_time,
         location_address: rj?.location || null,
         contact_name: null,
         budget_amount: null,
@@ -505,7 +511,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
         is_emergency: false,
         project_id: null,
         tradie_id: user.id,
-      };
+      } as Job;
     });
 
     const oneOffJobs: Job[] = (jobsRes.data || []).map((j) => ({
@@ -704,11 +710,69 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
     const isRecurring = job.id.startsWith('recurring-');
     if (isRecurring) {
       const sessionId = job.id.replace('recurring-', '');
+      const sessionUpdate: Record<string, string | null> = { scheduled_date: newDate };
+      if (newTime) {
+        const endT = addMinutesToTime(newTime, newDurationMinutes ?? 120);
+        if (isTradie) {
+          // Tradie confirms the exact time → lock it in and clear any pending
+          // client proposal.
+          sessionUpdate.start_time = newTime;
+          sessionUpdate.end_time = endT;
+          sessionUpdate.proposed_start_time = null;
+          sessionUpdate.proposed_end_time = null;
+          sessionUpdate.time_proposal_by = null;
+        } else {
+          // Client proposes a time → awaits the tradie's confirmation.
+          sessionUpdate.proposed_start_time = newTime;
+          sessionUpdate.proposed_end_time = endT;
+          sessionUpdate.time_proposal_by = 'client';
+        }
+      } else if (isTradie) {
+        // Tradie cleared the exact time → fall back to slot-only timing.
+        sessionUpdate.start_time = null;
+        sessionUpdate.end_time = null;
+      }
       const { error } = await supabase
         .from('recurring_sessions')
-        .update({ scheduled_date: newDate })
+        .update(sessionUpdate)
         .eq('id', sessionId);
       if (error) throw error;
+
+      // Notify the counterparty (best-effort). The parent job (original_job_id)
+      // satisfies create_notification's shared-job relationship check.
+      try {
+        const { data: sess } = await supabase
+          .from('recurring_sessions')
+          .select('recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(tradie_id, client_id, original_job_id)')
+          .eq('id', sessionId)
+          .maybeSingle();
+        const rj = sess?.recurring_job as { tradie_id?: string; client_id?: string; original_job_id?: string } | null;
+        if (rj?.original_job_id) {
+          const dateLabel = new Date(newDate + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
+          const timeLabel = newTime ? `${formatJobTime(newTime)} – ${formatJobTime(addMinutesToTime(newTime, newDurationMinutes ?? 120))}` : null;
+          const whenLabel = timeLabel ? `${dateLabel}, ${timeLabel}` : dateLabel;
+          const svcTitle = jobShortTitle(job);
+          if (isTradie && rj.client_id) {
+            await supabase.rpc('create_notification', {
+              p_user_id: rj.client_id,
+              p_title: 'Visit time confirmed',
+              p_message: `Your tradie confirmed "${svcTitle}" for ${whenLabel}.`,
+              p_type: 'job_time_confirmed', p_channel: 'in_app', p_read: false,
+              p_link: null, p_job_id: rj.original_job_id, p_metadata: null,
+            });
+          } else if (!isTradie && rj.tradie_id && newTime) {
+            await supabase.rpc('create_notification', {
+              p_user_id: rj.tradie_id,
+              p_title: 'New time to confirm',
+              p_message: `The client proposed ${whenLabel} for "${svcTitle}". Please confirm or adjust the time.`,
+              p_type: 'job_time_proposed', p_channel: 'in_app', p_read: false,
+              p_link: null, p_job_id: rj.original_job_id, p_metadata: null,
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('Recurring reschedule notify failed (non-fatal):', e);
+      }
       return;
     }
 
@@ -1825,6 +1889,13 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                   </span>
                 </div>
               )}
+              {selectedJob.id.startsWith('recurring-') && !selectedJob.time_confirmed && (selectedJob as { proposed_start_time?: string | null }).proposed_start_time && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  {isTradie
+                    ? `Client proposed ${formatJobTime((selectedJob as { proposed_start_time?: string | null }).proposed_start_time!)} — set the exact time below to confirm.`
+                    : `You proposed ${formatJobTime((selectedJob as { proposed_start_time?: string | null }).proposed_start_time!)} — awaiting the tradie's confirmation.`}
+                </div>
+              )}
               <div className="grid grid-cols-1 gap-3">
                 {/* Quick reschedule chips */}
                 {selectedJob.status !== 'completed' && (() => {
@@ -1870,7 +1941,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                             setRescheduleJob(selectedJob);
                             setRescheduleDate(selectedJob.scheduled_date || '');
                             setRescheduleSlot(selectedJob.preferred_time_slot || '');
-                            setRescheduleTime(selectedJob.start_time || '');
+                            setRescheduleTime(selectedJob.start_time || (selectedJob as { proposed_start_time?: string | null }).proposed_start_time || '');
                             setRescheduleDuration(inferRescheduleDuration(selectedJob));
                             setSelectedJob(null);
                           }}
@@ -2232,7 +2303,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                   </div>
                 </div>
               )}
-              {!rescheduleJob.id.startsWith('recurring-') && (
+              {(
                 <div>
                   <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">{isTradie ? 'Confirm start time & duration' : 'Preferred start time (optional)'}</label>
                   <div className="flex flex-col sm:flex-row gap-2.5">
