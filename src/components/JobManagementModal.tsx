@@ -1347,7 +1347,7 @@ export default function JobManagementModal({
             </div>
 
             {/* ── Footer ── */}
-            <div className="px-6 py-4 border-t border-gray-100 space-y-2">
+            <div className="px-6 pt-4 border-t border-gray-100 space-y-2" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
               {isFinished && (
                 <button
                   onClick={handleArchiveToggle}

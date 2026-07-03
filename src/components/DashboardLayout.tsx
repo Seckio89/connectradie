@@ -810,7 +810,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </button>
 
                 {notificationsOpen && (
-                  <div className="fixed inset-x-0 top-14 mx-2 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:mx-0 sm:w-96 bg-navy-800 rounded-xl shadow-lg border border-navy-700 z-50 max-h-[80vh] sm:max-h-96 flex flex-col">
+                  <div role="dialog" aria-label="Notifications" className="fixed inset-x-0 top-14 mx-2 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:mx-0 sm:w-96 bg-navy-800 rounded-xl shadow-lg border border-navy-700 z-50 max-h-[80vh] sm:max-h-96 flex flex-col">
                     <div className="p-3 px-4 border-b border-navy-700 flex items-center justify-between flex-shrink-0">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-white text-sm">Notifications</h3>

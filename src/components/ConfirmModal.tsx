@@ -45,7 +45,7 @@ export default function ConfirmModal({
   const colors = getColors();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-end sm:items-center justify-center z-[70] p-0 sm:p-4 animate-fade-in modal-sheet-overlay" onClick={onCancel}>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black bg-opacity-40 flex items-end sm:items-center justify-center z-[70] p-0 sm:p-4 animate-fade-in modal-sheet-overlay" onClick={onCancel}>
       <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-2xl animate-scale-in modal-sheet" onClick={(e) => e.stopPropagation()}>
         <div className="p-6">
           <div className="flex items-start gap-4">
@@ -63,7 +63,7 @@ export default function ConfirmModal({
           </div>
         </div>
 
-        <div className="px-6 pb-6 flex gap-3">
+        <div className="px-6 flex gap-3" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}>
           <button
             onClick={onCancel}
             className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
