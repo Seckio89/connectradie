@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { RefreshCw, FileText, Inbox, Loader2, CheckCircle2, CheckCheck, Shield, MapPin, User, Clock, ClipboardList, ChevronDown, ChevronRight, Plus, Calendar, Phone, Mail, MessageCircle, Send, Package, X, Search } from 'lucide-react';
+import { RefreshCw, FileText, Inbox, Loader2, CheckCircle2, CheckCheck, Shield, MapPin, User, Clock, ClipboardList, ChevronDown, ChevronRight, Plus, Calendar, Phone, Mail, MessageCircle, Send, Package, X, Search, UserCheck, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -8,6 +8,7 @@ import { getTradieUpcomingSessions, getTradieRecurringJobs, cancelRecurringJob, 
 import { getSupplySuggestions, SUPPLY_DEFAULT_UNITS } from '../lib/tradeCategories';
 import type { RecurringSession, RecurringJob, CancellationCategory } from '../lib/recurringJobs';
 import CancelServiceModal from './CancelServiceModal';
+import AssignWorkerModal from './AssignWorkerModal';
 import { getActiveAgreements } from '../lib/ongoingServices';
 import type { ServiceAgreement, SupplyItem } from '../types/database';
 import RecurringSessionCard from './RecurringSessionCard';
@@ -1289,6 +1290,7 @@ function JobCard({
   jobId, jobLabel, clientName, clientPhone, clientEmail, clientId, freqLabel, location, descLines, agreedPrice,
   isAutoAccept, isActive, isCancelled, billingCycle, lastInvoicedAt, sessions, userId, onUpdate,
   agreement, onAgreementRefresh, supplies, tradeCategory, consumablesProvider,
+  assignedWorkerId, assignedWorkerName,
 }: {
   jobId: string;
   jobLabel: string;
@@ -1313,11 +1315,14 @@ function JobCard({
   supplies?: SupplyItem[];
   tradeCategory?: string;
   consumablesProvider?: 'client' | 'tradie_billed';
+  assignedWorkerId?: string | null;
+  assignedWorkerName?: string | null;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showFutureVisits, setShowFutureVisits] = useState(false);
   const [showLogVisit, setShowLogVisit] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [showAssignWorker, setShowAssignWorker] = useState(false);
   const [showSetAllTime, setShowSetAllTime] = useState(false);
   const [allStart, setAllStart] = useState('');
   const [allEnd, setAllEnd] = useState('');
@@ -1442,11 +1447,46 @@ function JobCard({
                 Message Client
               </button>
             )}
+            {!isCancelled && (
+              <button
+                onClick={() => setShowAssignWorker(true)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors max-w-[180px] ${
+                  assignedWorkerId
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                    : 'text-gray-600 border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                {assignedWorkerId ? (
+                  <>
+                    <UserCheck className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="truncate">{assignedWorkerName || 'Assigned'}</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-3.5 h-3.5 flex-shrink-0" />
+                    Assign Worker
+                  </>
+                )}
+              </button>
+            )}
             <div className="ml-auto flex items-center gap-2">
               <ServiceControls jobId={jobId} jobLabel={jobLabel} isActive={isActive} isCancelled={isCancelled} onChanged={onUpdate} />
             </div>
           </div>
         </div>
+
+        {/* ─── Assign Worker ─── */}
+        {showAssignWorker && (
+          <AssignWorkerModal
+            isOpen={showAssignWorker}
+            onClose={() => setShowAssignWorker(false)}
+            jobId={jobId}
+            jobLabel={jobLabel}
+            clientName={clientName}
+            currentAssignedId={assignedWorkerId ?? null}
+            onAssigned={onUpdate}
+          />
+        )}
 
         {/* ─── Quick Chat ─── */}
         {showChat && clientId && userId && (
@@ -1731,6 +1771,8 @@ export default function ServicesTab() {
     supplies: SupplyItem[];
     tradeCategory: string;
     consumablesProvider: 'client' | 'tradie_billed';
+    assignedWorkerId: string | null;
+    assignedWorkerName: string | null;
     nextVisitIso: string | null;
     nextVisitSortKey: number;
   };
@@ -1788,6 +1830,10 @@ export default function ServicesTab() {
       supplies: (jobInfo?.supplies as SupplyItem[] | undefined) ?? (fallbackJob?.supplies as SupplyItem[] | undefined) ?? [],
       tradeCategory,
       consumablesProvider: (jobInfo?.consumables_provider ?? (fallbackJob as { consumables_provider?: 'client' | 'tradie_billed' } | undefined)?.consumables_provider ?? 'client') as 'client' | 'tradie_billed',
+      // Worker assignment comes from the jobs fetch (tradieJobs) — the
+      // sessions join doesn't carry it, and every active job is in tradieJobs.
+      assignedWorkerId: fallbackJob?.assigned_team_member_id ?? null,
+      assignedWorkerName: fallbackJob?.assigned_team_member?.invite_name ?? null,
       nextVisitIso,
       nextVisitSortKey: nextVisitIso ? new Date(nextVisitIso + 'T00:00:00').getTime() : FAR_FUTURE,
     };
@@ -1925,6 +1971,9 @@ export default function ServicesTab() {
                               {nextLabel && !row.isCancelled && (
                                 <><span className="text-gray-300">·</span><span className="font-medium text-gray-700 whitespace-nowrap">Next: {nextLabel}</span></>
                               )}
+                              {row.assignedWorkerName && !row.isCancelled && (
+                                <><span className="text-gray-300">·</span><span className="inline-flex items-center gap-1 text-emerald-700 font-medium whitespace-nowrap"><UserCheck className="w-3 h-3" />{row.assignedWorkerName}</span></>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1957,6 +2006,8 @@ export default function ServicesTab() {
                             supplies={row.supplies}
                             tradeCategory={row.tradeCategory}
                             consumablesProvider={row.consumablesProvider}
+                            assignedWorkerId={row.assignedWorkerId}
+                            assignedWorkerName={row.assignedWorkerName}
                           />
                         </div>
                       )}

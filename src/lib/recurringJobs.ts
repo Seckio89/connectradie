@@ -559,6 +559,12 @@ export interface RecurringJob {
   end_date?: string | null;
   supplies?: Record<string, unknown>[];
   consumables_provider?: 'client' | 'tradie_billed';
+  assigned_team_member_id?: string | null;
+  assigned_team_member?: {
+    id: string;
+    invite_name: string;
+    member_profile_id: string | null;
+  } | null;
   tradie?: {
     id: string;
     full_name: string;
@@ -938,7 +944,8 @@ export async function getTradieRecurringJobs(tradieId: string): Promise<Recurrin
     .from('recurring_jobs')
     .select(`
       *,
-      client:profiles!recurring_jobs_client_id_fkey(id, full_name, email, phone)
+      client:profiles!recurring_jobs_client_id_fkey(id, full_name, email, phone),
+      assigned_team_member:business_team_members!recurring_jobs_assigned_team_member_id_fkey(id, invite_name, member_profile_id)
     `)
     .eq('tradie_id', tradieId)
     .is('cancelled_at', null)

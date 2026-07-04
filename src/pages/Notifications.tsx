@@ -91,6 +91,8 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
       return { icon: Users, bgClass: 'bg-secondary-100', iconClass: 'text-secondary-600' };
     case 'vacancy_match':
       return { icon: Briefcase, bgClass: 'bg-warm-100', iconClass: 'text-warm-600' };
+    case 'service_assignment':
+      return { icon: Users, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
     case 'JOB_DECLINED':
       return { icon: XCircle, bgClass: 'bg-red-100', iconClass: 'text-red-600' };
     case 'JOB_COMPLETED':
@@ -148,6 +150,7 @@ function getFilterCategory(type: string): FilterTab {
     case 'team':
     case 'vacancy_application':
     case 'vacancy_match':
+    case 'service_assignment':
       return 'team';
     case 'payment':
     case 'invoice':
