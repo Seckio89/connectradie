@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { X, AlertCircle, Check, Sparkles } from 'lucide-react';
+import { X, AlertCircle, Check, Sparkles, FileText } from 'lucide-react';
 import Modal from './Modal';
-import type { TradeVacancy, VacancyRoleType, EmploymentType, PayPeriod } from '../types/database';
+import type { TradeVacancy, VacancyRoleType, VacancyStatus, EmploymentType, PayPeriod } from '../types/database';
 import { EMPLOYMENT_TYPES, PAY_PERIODS, COMMON_TICKETS, ROLE_TEMPLATES, VACANCY_TRADE_OPTIONS, NON_TRADE_CATEGORY } from '../lib/vacancyOptions';
 
 export interface VacancyFormData {
@@ -10,6 +10,7 @@ export interface VacancyFormData {
   description: string;
   trade_category: string;
   location: string;
+  status: VacancyStatus;
   employment_type: EmploymentType | null;
   pay_min: number | null;
   pay_max: number | null;
@@ -27,6 +28,8 @@ interface PostVacancyModalProps {
   onClose: () => void;
   onSave: (data: VacancyFormData) => Promise<void>;
   editVacancy?: TradeVacancy | null;
+  /** Prefill from an existing listing but save as a NEW one (repost/duplicate). */
+  duplicateFrom?: TradeVacancy | null;
 }
 
 const ROLE_OPTIONS: { value: VacancyRoleType; label: string; hint: string }[] = [
@@ -40,25 +43,29 @@ const inputCls =
   'w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none';
 const labelCls = 'block text-sm font-medium text-gray-700 mb-1.5';
 
-export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy }: PostVacancyModalProps) {
+export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy, duplicateFrom }: PostVacancyModalProps) {
+  // Prefill source: an edit keeps its identity; a duplicate copies content into
+  // a brand-new listing (dates cleared — a repost's old dates are stale).
+  const source = editVacancy || duplicateFrom || null;
+  const isEdit = !!editVacancy;
   const [form, setForm] = useState({
-    title: editVacancy?.title || '',
-    role_type: (editVacancy?.role_type || 'apprentice') as VacancyRoleType,
-    description: editVacancy?.description || '',
-    trade_category: editVacancy?.trade_category || '',
-    location: editVacancy?.location || '',
-    employment_type: (editVacancy?.employment_type || 'full_time') as EmploymentType,
-    pay_min: editVacancy?.pay_min != null ? String(editVacancy.pay_min) : '',
-    pay_max: editVacancy?.pay_max != null ? String(editVacancy.pay_max) : '',
-    pay_period: (editVacancy?.pay_period || 'hour') as PayPeriod,
-    pay_note: editVacancy?.pay_note || '',
-    hours: editVacancy?.hours || '',
-    start_date: editVacancy?.start_date || '',
-    experience_level: editVacancy?.experience_level || '',
-    closing_date: editVacancy?.closing_date || '',
+    title: source?.title || '',
+    role_type: (source?.role_type || 'apprentice') as VacancyRoleType,
+    description: source?.description || '',
+    trade_category: source?.trade_category || '',
+    location: source?.location || '',
+    employment_type: (source?.employment_type || 'full_time') as EmploymentType,
+    pay_min: source?.pay_min != null ? String(source.pay_min) : '',
+    pay_max: source?.pay_max != null ? String(source.pay_max) : '',
+    pay_period: (source?.pay_period || 'hour') as PayPeriod,
+    pay_note: source?.pay_note || '',
+    hours: source?.hours || '',
+    start_date: isEdit ? (editVacancy?.start_date || '') : '',
+    experience_level: source?.experience_level || '',
+    closing_date: isEdit ? (editVacancy?.closing_date || '') : '',
   });
-  const [tickets, setTickets] = useState<string[]>(editVacancy?.required_tickets || []);
-  const [saving, setSaving] = useState(false);
+  const [tickets, setTickets] = useState<string[]>(source?.required_tickets || []);
+  const [saving, setSaving] = useState<false | VacancyStatus>(false);
   const [error, setError] = useState('');
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
@@ -83,8 +90,12 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy 
     setTickets(prev => Array.from(new Set([...prev, ...tpl.tickets])));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Editing an already-open/closed listing keeps its status; everything else
+  // (create, duplicate, editing a draft) chooses Draft vs Publish per button.
+  const isDraftFlow = !isEdit || editVacancy?.status === 'draft';
+  const defaultStatus: VacancyStatus = isDraftFlow ? 'open' : (editVacancy as TradeVacancy).status;
+
+  const submit = async (status: VacancyStatus) => {
     if (!form.title.trim()) return setError('Title is required');
     if (!form.trade_category.trim()) return setError('Trade category is required');
     if (!form.description.trim()) return setError('Description is required');
@@ -95,7 +106,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy 
     };
     const str = (s: string) => (s.trim() === '' ? null : s.trim());
 
-    setSaving(true);
+    setSaving(status);
     setError('');
     try {
       await onSave({
@@ -104,6 +115,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy 
         description: form.description.trim(),
         trade_category: form.trade_category,
         location: form.location.trim(),
+        status,
         employment_type: form.employment_type,
         pay_min: num(form.pay_min),
         pay_max: num(form.pay_max),
@@ -123,13 +135,24 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy 
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submit(defaultStatus);
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="lg">
       <div className="flex items-center justify-between p-6 border-b border-gray-100">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">{editVacancy ? 'Edit Vacancy' : 'Post a Vacancy'}</h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            {editVacancy ? 'Edit Vacancy' : duplicateFrom ? 'Repost Vacancy' : 'Post a Vacancy'}
+          </h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            {editVacancy ? 'Update your job listing details' : 'Find your next team member'}
+            {editVacancy
+              ? 'Update your job listing details'
+              : duplicateFrom
+                ? 'Review the copied details, set new dates, and post'
+                : 'Find your next team member'}
           </p>
         </div>
         <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
@@ -338,25 +361,41 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy 
           />
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <button
             type="button"
             onClick={onClose}
+            disabled={!!saving}
             className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
+          {isDraftFlow && (
+            <button
+              type="button"
+              onClick={() => submit('draft')}
+              disabled={!!saving}
+              className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            >
+              {saving === 'draft' ? (
+                <span className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+              ) : (
+                <FileText className="w-4 h-4" />
+              )}
+              Save Draft
+            </button>
+          )}
           <button
             type="submit"
-            disabled={saving}
+            disabled={!!saving}
             className="flex-1 px-4 py-2.5 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
           >
-            {saving ? (
+            {saving && saving !== 'draft' ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
               <Check className="w-4 h-4" />
             )}
-            {editVacancy ? 'Save Changes' : 'Post Vacancy'}
+            {isEdit ? (editVacancy?.status === 'draft' ? 'Publish' : 'Save Changes') : 'Post Vacancy'}
           </button>
         </div>
       </form>

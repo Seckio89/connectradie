@@ -580,7 +580,7 @@ export type TradieRatingView = {
 }
 
 export type VacancyRoleType = 'apprentice' | 'qualified' | 'senior_advisory' | 'non_trade';
-export type VacancyStatus = 'open' | 'closed';
+export type VacancyStatus = 'open' | 'closed' | 'draft';
 export type ApplicationStatus = 'pending' | 'reviewed' | 'shortlisted' | 'rejected';
 export type EmploymentType = 'full_time' | 'part_time' | 'casual' | 'contract' | 'subcontract' | 'apprenticeship';
 export type PayPeriod = 'hour' | 'day' | 'week' | 'year';

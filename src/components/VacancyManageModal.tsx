@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Mail, Phone, Briefcase, Clock, UserCheck, UserX, Eye, Loader2, Trash2, AlertTriangle } from 'lucide-react';
+import { X, Mail, Phone, Briefcase, Clock, UserCheck, UserX, Eye, Loader2, Trash2, AlertTriangle, Pencil, Copy } from 'lucide-react';
 import Modal from './Modal';
 import { supabase } from '../lib/supabase';
 import type { TradeVacancyWithEmployer, VacancyApplicationWithApplicant, ApplicationStatus } from '../types/database';
@@ -17,9 +17,11 @@ interface VacancyManageModalProps {
   vacancy: TradeVacancyWithEmployer;
   onToggleStatus: (vacancy: TradeVacancyWithEmployer) => Promise<void>;
   onDelete: (vacancy: TradeVacancyWithEmployer) => Promise<void>;
+  onEdit: (vacancy: TradeVacancyWithEmployer) => void;
+  onRepost: (vacancy: TradeVacancyWithEmployer) => void;
 }
 
-export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleStatus, onDelete }: VacancyManageModalProps) {
+export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleStatus, onDelete, onEdit, onRepost }: VacancyManageModalProps) {
   const [applications, setApplications] = useState<VacancyApplicationWithApplicant[]>([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
@@ -93,6 +95,15 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+          {vacancy.status === 'closed' && (
+            <button
+              onClick={() => onRepost(vacancy)}
+              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <Copy className="w-4 h-4" />
+              Repost
+            </button>
+          )}
           <button
             onClick={handleToggle}
             disabled={toggling}
@@ -104,7 +115,15 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
           >
             {toggling ? (
               <Loader2 className="w-4 h-4 animate-spin" />
-            ) : vacancy.status === 'open' ? 'Close Listing' : 'Reopen Listing'}
+            ) : vacancy.status === 'open' ? 'Close Listing' : vacancy.status === 'draft' ? 'Publish Listing' : 'Reopen Listing'}
+          </button>
+          <button
+            onClick={() => onEdit(vacancy)}
+            title="Edit listing"
+            aria-label="Edit listing"
+            className="p-2 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <Pencil className="w-5 h-5" />
           </button>
           <button
             onClick={() => setConfirmDelete(true)}

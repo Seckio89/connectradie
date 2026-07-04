@@ -53,6 +53,11 @@ export default function VacancyCard({ vacancy, onApply, hasApplied, isOwner, onM
               Closed
             </span>
           )}
+          {vacancy.status === 'draft' && (
+            <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-700">
+              Draft
+            </span>
+          )}
         </div>
 
         <h3 className="text-lg font-bold text-gray-900 mb-2 leading-snug group-hover:text-primary-700 transition-colors">
