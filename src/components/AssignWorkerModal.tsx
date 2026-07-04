@@ -125,10 +125,10 @@ export default function AssignWorkerModal({
               Add employees, subcontractors or apprentices to your team first.
             </p>
             <Link
-              to="/team"
+              to="/schedule?tab=team"
               className="inline-flex items-center gap-2 mt-4 px-4 py-2.5 bg-warm-500 text-white text-sm font-semibold rounded-xl hover:bg-warm-600 transition-colors"
             >
-              Go to Team
+              Go to My Team
             </Link>
           </div>
         ) : (
