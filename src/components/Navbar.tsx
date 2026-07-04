@@ -11,6 +11,9 @@ export default function Navbar() {
 
   const isTradie = profile?.role === 'tradie';
   const postJobHref = user ? '/dashboard' : '/register?type=client';
+  // On the homeowner marketing page (/hire) show homeowner-appropriate links
+  // instead of the tradie-first set the rest of the site uses.
+  const onHirePage = location.pathname === '/hire';
 
   const navLinks = user
     ? isTradie
@@ -26,12 +29,18 @@ export default function Navbar() {
           { name: 'Schedule', href: '/schedule', isRoute: true },
           { name: 'Messages', href: '/messages', isRoute: true },
         ]
-    : [
-        { name: 'Features', href: '/#for-tradies', isRoute: false },
-        { name: 'How It Works', href: '/#how-it-works', isRoute: false },
-        { name: 'Pricing', href: '/pricing', isRoute: true },
-        { name: 'Hire a Tradie', href: '/hire', isRoute: true },
-      ];
+    : onHirePage
+      ? [
+          { name: 'How It Works', href: '/hire#protected', isRoute: false },
+          { name: 'Pricing', href: '/pricing', isRoute: true },
+          { name: 'For Tradies', href: '/', isRoute: true },
+        ]
+      : [
+          { name: 'Features', href: '/#for-tradies', isRoute: false },
+          { name: 'How It Works', href: '/#how-it-works', isRoute: false },
+          { name: 'Pricing', href: '/pricing', isRoute: true },
+          { name: 'Hire a Tradie', href: '/hire', isRoute: true },
+        ];
 
   const handleSignOut = async () => {
     await signOut();
