@@ -99,8 +99,8 @@ export default function MarketplaceSection() {
                 </p>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="px-2.5 py-1 rounded-lg bg-navy-900/60 border border-navy-700 text-xs text-gray-300">Full reno</span>
-                  <span className="px-2.5 py-1 rounded-lg bg-navy-900/60 border border-navy-700 text-xs text-gray-300">Tiling + waterproofing</span>
+                  <span className="px-2.5 py-1 rounded-lg bg-[#1a2740] border border-white/10 text-xs text-[#cbd5e1]">Full reno</span>
+                  <span className="px-2.5 py-1 rounded-lg bg-[#1a2740] border border-white/10 text-xs text-[#cbd5e1]">Tiling + waterproofing</span>
                   <span className="px-2.5 py-1 rounded-lg bg-sky-500/10 border border-sky-500/20 text-xs text-sky-300">Matches your trade</span>
                 </div>
 
@@ -115,9 +115,9 @@ export default function MarketplaceSection() {
                   </button>
                 </div>
 
-                <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-navy-900/60 border border-navy-700">
+                <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-[#1a2740] border border-white/10">
                   <ShieldCheck className="w-4 h-4 text-warm-400 flex-shrink-0" />
-                  <p className="text-[11px] text-gray-400 leading-snug">
+                  <p className="text-[11px] text-[#cbd5e1] leading-snug">
                     Funded in Stripe escrow before you start — released when the homeowner approves the work.
                   </p>
                 </div>
