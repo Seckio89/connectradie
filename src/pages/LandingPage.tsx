@@ -5,9 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import HeroSection from '../components/HeroSection';
-import HowItWorksClientsSection from '../components/HowItWorksClientsSection';
-import CategoriesSection from '../components/CategoriesSection';
-import FeaturesSection from '../components/FeaturesSection';
 import ForTradiesSection from '../components/ForTradiesSection';
 import HowItWorksSection from '../components/HowItWorksSection';
 import Footer from '../components/Footer';
@@ -69,8 +66,8 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-navy-900 font-sans antialiased theme-aware flex flex-col">
       <SEO
-        title="Hire Local Tradies in Australia"
-        description="Find and book verified plumbers, electricians, builders and 30+ trade categories across Australia. Real-time availability, instant quotes, zero hassle."
+        title="Run Your Trade Business & Get Paid Safely"
+        description="ConnecTradie is the all-in-one app for Australian tradies — jobs, site calendar, team scheduling, GST invoicing and Stripe-secured payments. No per-lead fees. Free to start."
         canonical="/"
         jsonLd={[
           {
@@ -106,11 +103,10 @@ export default function LandingPage() {
       <Navbar />
       <main id="main-content" className="flex-1">
         <HeroSection />
-        <HowItWorksClientsSection />
-        <CategoriesSection />
-        <FeaturesSection />
-        <ForTradiesSection />
-        <HowItWorksSection />
+        <div id="platform">
+          <ForTradiesSection />
+          <HowItWorksSection />
+        </div>
       </main>
       <Footer />
     </div>
