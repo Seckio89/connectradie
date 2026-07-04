@@ -32,6 +32,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
 
   const [showPostModal, setShowPostModal] = useState(false);
   const [editVacancy, setEditVacancy] = useState<TradeVacancyWithEmployer | null>(null);
+  const [duplicateFrom, setDuplicateFrom] = useState<TradeVacancyWithEmployer | null>(null);
   const [applyVacancy, setApplyVacancy] = useState<TradeVacancyWithEmployer | null>(null);
   const [manageVacancy, setManageVacancy] = useState<TradeVacancyWithEmployer | null>(null);
 
@@ -142,6 +143,8 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
     await fetchVacancies();
   };
 
+  // open -> closed; closed -> open (reopen); draft -> open (publish — fires
+  // the matching-tradie notification via the draft->open DB trigger).
   const handleToggleStatus = async (vacancy: TradeVacancyWithEmployer) => {
     const newStatus = vacancy.status === 'open' ? 'closed' : 'open';
     await supabase
@@ -337,9 +340,10 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
       {showPostModal && (
         <PostVacancyModal
           isOpen={showPostModal}
-          onClose={() => { setShowPostModal(false); setEditVacancy(null); }}
+          onClose={() => { setShowPostModal(false); setEditVacancy(null); setDuplicateFrom(null); }}
           onSave={handlePostVacancy}
           editVacancy={editVacancy}
+          duplicateFrom={duplicateFrom}
         />
       )}
 
@@ -359,6 +363,8 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
           vacancy={manageVacancy}
           onToggleStatus={handleToggleStatus}
           onDelete={handleDeleteVacancy}
+          onEdit={(v) => { setManageVacancy(null); setEditVacancy(v); setShowPostModal(true); }}
+          onRepost={(v) => { setManageVacancy(null); setDuplicateFrom(v); setShowPostModal(true); }}
         />
       )}
     </>
