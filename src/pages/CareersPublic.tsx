@@ -1,30 +1,29 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, DollarSign, Briefcase, Clock, BadgeCheck, GraduationCap, Award, Search, Loader2, HardHat } from 'lucide-react';
+import { MapPin, DollarSign, Briefcase, Clock, BadgeCheck, GraduationCap, Award, Search, Loader2, HardHat, Laptop } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SEO from '../components/SEO';
 import { supabase } from '../lib/supabase';
 import type { PublicVacancy, VacancyRoleType } from '../types/database';
-import { formatPay, employmentLabel, ROLE_LABELS } from '../lib/vacancyOptions';
-import { TRADE_CATEGORIES } from '../lib/tradeCategories';
+import { formatPay, employmentLabel, ROLE_LABELS, VACANCY_TRADE_OPTIONS, vacancyTradeLabel } from '../lib/vacancyOptions';
 
 const ROLE_FILTERS: { value: 'all' | VacancyRoleType; label: string }[] = [
   { value: 'all', label: 'All roles' },
   { value: 'apprentice', label: 'Apprenticeships' },
   { value: 'qualified', label: 'Qualified' },
   { value: 'senior_advisory', label: 'Senior' },
+  { value: 'non_trade', label: 'Office' },
 ];
 
 const ROLE_ICON: Record<VacancyRoleType, typeof GraduationCap> = {
   apprentice: GraduationCap,
   qualified: Briefcase,
   senior_advisory: Award,
+  non_trade: Laptop,
 };
 
-function tradeLabel(value: string) {
-  return TRADE_CATEGORIES.find(c => c.value === value)?.label || value;
-}
+const tradeLabel = vacancyTradeLabel;
 
 function timeAgo(iso: string) {
   const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
@@ -101,7 +100,7 @@ export default function CareersPublic() {
                 className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-warm-500 focus:border-transparent outline-none"
               >
                 <option value="all">All trades</option>
-                {TRADE_CATEGORIES.map(c => (
+                {VACANCY_TRADE_OPTIONS.map(c => (
                   <option key={c.value} value={c.value}>{c.label}</option>
                 ))}
               </select>

@@ -10,13 +10,10 @@ import SEO from '../components/SEO';
 import { supabase } from '../lib/supabase';
 import type { PublicVacancy } from '../types/database';
 import {
-  formatPay, employmentLabel, ROLE_LABELS, EMPLOYMENT_SCHEMA, PAY_UNIT_TEXT,
+  formatPay, employmentLabel, ROLE_LABELS, EMPLOYMENT_SCHEMA, PAY_UNIT_TEXT, vacancyTradeLabel,
 } from '../lib/vacancyOptions';
-import { TRADE_CATEGORIES } from '../lib/tradeCategories';
 
-function tradeLabel(value: string) {
-  return TRADE_CATEGORIES.find(c => c.value === value)?.label || value;
-}
+const tradeLabel = vacancyTradeLabel;
 function fmtDate(iso: string | null) {
   return iso ? new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : null;
 }

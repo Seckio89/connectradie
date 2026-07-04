@@ -579,10 +579,10 @@ export type TradieRatingView = {
   one_star_count: number;
 }
 
-export type VacancyRoleType = 'apprentice' | 'qualified' | 'senior_advisory';
+export type VacancyRoleType = 'apprentice' | 'qualified' | 'senior_advisory' | 'non_trade';
 export type VacancyStatus = 'open' | 'closed';
 export type ApplicationStatus = 'pending' | 'reviewed' | 'shortlisted' | 'rejected';
-export type EmploymentType = 'full_time' | 'part_time' | 'casual' | 'contract' | 'apprenticeship';
+export type EmploymentType = 'full_time' | 'part_time' | 'casual' | 'contract' | 'subcontract' | 'apprenticeship';
 export type PayPeriod = 'hour' | 'day' | 'week' | 'year';
 
 export type TradeVacancy = {

@@ -1,12 +1,31 @@
 import type { EmploymentType, PayPeriod, VacancyRoleType, TradeVacancy } from '../types/database';
+import { TRADE_CATEGORIES } from './tradeCategories';
 
 export const EMPLOYMENT_TYPES: { value: EmploymentType; label: string }[] = [
   { value: 'full_time', label: 'Full-time' },
   { value: 'part_time', label: 'Part-time' },
   { value: 'casual', label: 'Casual' },
   { value: 'contract', label: 'Contract' },
+  { value: 'subcontract', label: 'Subcontract' },
   { value: 'apprenticeship', label: 'Apprenticeship' },
 ];
+
+/**
+ * Trade options for vacancy posting = the real trade categories plus a
+ * non-trade bucket for office/support roles (admin, accounts, ops) that trade
+ * businesses also hire for. 'non_trade' is deliberately NOT in
+ * TRADE_CATEGORIES — it must not appear in quoting/search flows.
+ */
+export const NON_TRADE_CATEGORY = { value: 'non_trade', label: 'Office / Non-trade' };
+export const VACANCY_TRADE_OPTIONS: { value: string; label: string }[] = [
+  ...TRADE_CATEGORIES.map(c => ({ value: c.value, label: c.label })),
+  NON_TRADE_CATEGORY,
+];
+
+/** Label for a vacancy's trade_category, handling the non-trade bucket. */
+export function vacancyTradeLabel(value: string): string {
+  return VACANCY_TRADE_OPTIONS.find(o => o.value === value)?.label || value;
+}
 
 export const PAY_PERIODS: { value: PayPeriod; label: string; short: string }[] = [
   { value: 'hour', label: 'per hour', short: '/hr' },
@@ -34,6 +53,11 @@ export const COMMON_TICKETS: string[] = [
  * template" action to kill the blank-page problem when posting a vacancy.
  */
 export const ROLE_TEMPLATES: Record<VacancyRoleType, { description: string; tickets: string[] }> = {
+  non_trade: {
+    description:
+      "We're hiring for an office/support role in our trade business.\n\nWhat you'll do:\n• Keep the office running — scheduling, invoicing, client calls\n• Support the crews on the tools with admin and coordination\n• Help quotes, jobs and payments move smoothly\n\nWhat we offer:\n• Steady hours and a friendly team\n• Variety — no two days the same\n• A business that values the office as much as the tools",
+    tickets: [],
+  },
   apprentice: {
     description:
       "We're taking on a motivated apprentice to learn the trade with our team. No experience needed — just reliability, a good attitude and a willingness to learn.\n\nWhat you'll do:\n• Assist qualified tradespeople on-site\n• Learn on the tools day to day\n• Complete your TAFE / RTO training with our support\n\nWhat we offer:\n• Award apprentice wages + genuine mentoring\n• A clear path to becoming qualified\n• Ongoing, varied work",
@@ -71,6 +95,7 @@ export const ROLE_LABELS: Record<VacancyRoleType, string> = {
   apprentice: 'Apprenticeship',
   qualified: 'Qualified Trade',
   senior_advisory: 'Senior / Advisory',
+  non_trade: 'Office / Support',
 };
 
 /** schema.org JobPosting employmentType mapping. */
@@ -79,6 +104,7 @@ export const EMPLOYMENT_SCHEMA: Record<EmploymentType, string> = {
   part_time: 'PART_TIME',
   casual: 'PART_TIME',
   contract: 'CONTRACTOR',
+  subcontract: 'CONTRACTOR',
   apprenticeship: 'FULL_TIME',
 };
 

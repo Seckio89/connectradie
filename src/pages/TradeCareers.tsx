@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, GraduationCap, Award, Briefcase, Search, Loader2, HardHat, SlidersHorizontal } from 'lucide-react';
+import { Plus, GraduationCap, Award, Briefcase, Search, Loader2, HardHat, SlidersHorizontal, Laptop } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import VacancyCard from '../components/VacancyCard';
 import PostVacancyModal, { type VacancyFormData } from '../components/PostVacancyModal';
@@ -10,7 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { TradeVacancyWithEmployer } from '../types/database';
 
-type RoleFilter = 'all' | 'apprentice' | 'qualified' | 'senior_advisory';
+type RoleFilter = 'all' | 'apprentice' | 'qualified' | 'senior_advisory' | 'non_trade';
 type ViewTab = 'browse' | 'my_listings';
 
 const ROLE_FILTERS: { value: RoleFilter; label: string; shortLabel?: string; icon: typeof Briefcase }[] = [
@@ -18,6 +18,7 @@ const ROLE_FILTERS: { value: RoleFilter; label: string; shortLabel?: string; ico
   { value: 'apprentice', label: 'Apprenticeships', shortLabel: 'Apprentice', icon: GraduationCap },
   { value: 'qualified', label: 'Qualified', icon: Briefcase },
   { value: 'senior_advisory', label: 'Senior Roles', shortLabel: 'Senior', icon: Award },
+  { value: 'non_trade', label: 'Office / Support', shortLabel: 'Office', icon: Laptop },
 ];
 
 export default function TradeCareers({ embedded = false }: { embedded?: boolean }) {
