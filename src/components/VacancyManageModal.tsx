@@ -87,59 +87,63 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="2xl">
-      <div className="flex items-center justify-between p-6 border-b border-gray-100">
+      <div className="flex items-start justify-between gap-3 p-5 sm:p-6 border-b border-gray-100">
         <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-bold text-gray-900 truncate">{vacancy.title}</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug line-clamp-2">{vacancy.title}</h2>
           <p className="text-sm text-gray-500 mt-0.5">
             {vacancy.application_count || 0} application{(vacancy.application_count || 0) !== 1 ? 's' : ''} received
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-          {vacancy.status === 'closed' && (
-            <button
-              onClick={() => onRepost(vacancy)}
-              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <Copy className="w-4 h-4" />
-              Repost
-            </button>
-          )}
-          <button
-            onClick={handleToggle}
-            disabled={toggling}
-            className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${
-              vacancy.status === 'open'
-                ? 'border border-red-200 text-red-600 hover:bg-red-50'
-                : 'border border-green-200 text-green-600 hover:bg-green-50'
-            }`}
-          >
-            {toggling ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : vacancy.status === 'open' ? 'Close Listing' : vacancy.status === 'draft' ? 'Publish Listing' : 'Reopen Listing'}
-          </button>
-          <button
-            onClick={() => onEdit(vacancy)}
-            title="Edit listing"
-            aria-label="Edit listing"
-            className="p-2 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <Pencil className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setConfirmDelete(true)}
-            title="Delete listing"
-            aria-label="Delete listing"
-            className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="p-2 -mr-1 -mt-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 flex-shrink-0"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
-      <div className="p-6 max-h-[60vh] overflow-y-auto">
+      {/* Action bar — wraps on mobile so the buttons never crowd the title */}
+      <div className="flex flex-wrap items-center gap-2 px-5 sm:px-6 py-3 border-b border-gray-100 bg-gray-50/50">
+        <button
+          onClick={handleToggle}
+          disabled={toggling}
+          className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl transition-colors ${
+            vacancy.status === 'open'
+              ? 'border border-red-200 text-red-600 hover:bg-red-50'
+              : 'border border-green-200 text-green-600 hover:bg-green-50'
+          }`}
+        >
+          {toggling ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : vacancy.status === 'open' ? 'Close Listing' : vacancy.status === 'draft' ? 'Publish Listing' : 'Reopen Listing'}
+        </button>
+        {vacancy.status === 'closed' && (
+          <button
+            onClick={() => onRepost(vacancy)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <Copy className="w-4 h-4" />
+            Repost
+          </button>
+        )}
+        <button
+          onClick={() => onEdit(vacancy)}
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          <Pencil className="w-4 h-4" />
+          Edit
+        </button>
+        <button
+          onClick={() => setConfirmDelete(true)}
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors sm:ml-auto"
+        >
+          <Trash2 className="w-4 h-4" />
+          Delete
+        </button>
+      </div>
+
+      <div className="p-5 sm:p-6 max-h-[55vh] overflow-y-auto">
         {confirmDelete && (
           <div className="mb-4 p-4 rounded-xl border border-red-200 bg-red-50">
             <div className="flex items-start gap-2">
