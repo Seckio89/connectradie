@@ -8,14 +8,16 @@ interface FooterLink {
 }
 
 const footerLinks: Record<string, FooterLink[]> = {
-  homeowners: [
-    { name: 'Post a Job', href: '/register?type=client' },
-    { name: 'How It Works', href: '/#how-it-works-clients', isHash: true },
-    { name: 'Browse Trades', href: '/explore' },
-  ],
-  platform: [
-    { name: 'Find a Trade', href: '/search' },
+  tradies: [
+    { name: 'Register as Tradie', href: '/register?type=tradie' },
+    { name: 'Features', href: '/#for-tradies', isHash: true },
+    { name: 'How It Works', href: '/#how-it-works', isHash: true },
     { name: 'Pricing', href: '/pricing' },
+  ],
+  homeowners: [
+    { name: 'Hire a Tradie', href: '/hire' },
+    { name: 'Post a Job', href: '/register?type=client' },
+    { name: 'How Escrow Works', href: '/hire#protected' },
   ],
   support: [
     { name: 'Contact Us', href: '/contact' },
@@ -25,10 +27,6 @@ const footerLinks: Record<string, FooterLink[]> = {
     { name: 'Terms of Service', href: '/terms' },
     { name: 'Privacy Policy', href: '/privacy' },
   ],
-  tradies: [
-    { name: 'Register as Tradie', href: '/register?type=tradie' },
-    { name: 'For Tradies', href: '/#for-tradies', isHash: true },
-  ],
 };
 
 export default function Footer() {
@@ -36,7 +34,7 @@ export default function Footer() {
     <footer className="bg-navy-900 text-gray-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-16 lg:py-20">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-8 lg:gap-10">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-10">
             <div className="col-span-2">
               <Link to="/" className="flex items-center group">
                 <span className="text-xl font-bold">
@@ -45,7 +43,7 @@ export default function Footer() {
               </Link>
 
               <p className="mt-4 text-gray-400 leading-relaxed max-w-sm">
-                Australia's verified trade platform. Every professional is ABN-checked, licensed, and reviewed by real clients before they can quote.
+                The all-in-one app for Australian tradies — jobs, site calendar, team scheduling, GST invoicing and Stripe-secured payments in one place.
               </p>
 
               <div className="mt-6 space-y-3">
@@ -61,9 +59,9 @@ export default function Footer() {
             </div>
 
             <div>
-              <h4 className="text-white font-semibold mb-4">For Homeowners</h4>
+              <h4 className="text-white font-semibold mb-4">For Tradies</h4>
               <ul className="space-y-3">
-                {footerLinks.homeowners.map((link) => (
+                {footerLinks.tradies.map((link) => (
                   <li key={link.name}>
                     {link.isHash ? (
                       <a href={link.href} className="text-gray-400 hover:text-white transition-colors">
@@ -80,9 +78,9 @@ export default function Footer() {
             </div>
 
             <div>
-              <h4 className="text-white font-semibold mb-4">Platform</h4>
+              <h4 className="text-white font-semibold mb-4">For Homeowners</h4>
               <ul className="space-y-3">
-                {footerLinks.platform.map((link) => (
+                {footerLinks.homeowners.map((link) => (
                   <li key={link.name}>
                     {link.isHash ? (
                       <a href={link.href} className="text-gray-400 hover:text-white transition-colors">
@@ -119,25 +117,6 @@ export default function Footer() {
                     <Link to={link.href} className="text-gray-400 hover:text-white transition-colors">
                       {link.name}
                     </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-white font-semibold mb-4">For Tradies</h4>
-              <ul className="space-y-3">
-                {footerLinks.tradies.map((link) => (
-                  <li key={link.name}>
-                    {link.isHash ? (
-                      <a href={link.href} className="text-gray-400 hover:text-white transition-colors">
-                        {link.name}
-                      </a>
-                    ) : (
-                      <Link to={link.href} className="text-gray-400 hover:text-white transition-colors">
-                        {link.name}
-                      </Link>
-                    )}
                   </li>
                 ))}
               </ul>
