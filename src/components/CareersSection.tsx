@@ -19,7 +19,7 @@ export default function CareersSection() {
     <section id="careers" className="py-16 lg:py-20 bg-navy-900 border-t border-navy-800">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-navy-800 border border-navy-700 rounded-2xl p-8 lg:p-10 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-navy-900/60 text-gray-300 border border-navy-700 rounded-full text-sm font-semibold mb-5">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#1a2740] text-[#cbd5e1] border border-white/10 rounded-full text-sm font-semibold mb-5">
             <GraduationCap className="w-4 h-4 text-warm-400" />
             Trade careers
           </div>
@@ -38,7 +38,7 @@ export default function CareersSection() {
               return (
                 <span
                   key={r.label}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-navy-900/60 border border-navy-700 text-sm font-medium text-gray-300"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1a2740] border border-white/10 text-sm font-medium text-[#cbd5e1]"
                 >
                   <Icon className="w-4 h-4 text-warm-400" />
                   {r.label}
