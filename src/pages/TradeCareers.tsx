@@ -220,7 +220,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           {[
             { label: 'Open Positions', value: vacancies.filter(v => v.status === 'open').length, color: 'bg-secondary-50', iconColor: 'text-secondary-600', Icon: Briefcase },
             { label: 'Apprenticeships', value: vacancies.filter(v => v.status === 'open' && v.role_type === 'apprentice').length, color: 'bg-secondary-50', iconColor: 'text-secondary-600', Icon: GraduationCap },
@@ -273,26 +273,31 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
                 className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none text-sm"
               />
             </div>
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-hide scrollbar-none">
-              <SlidersHorizontal className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              {ROLE_FILTERS.map(f => {
-                const Icon = f.icon;
-                return (
-                  <button
-                    key={f.value}
-                    onClick={() => setRoleFilter(f.value)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
-                      roleFilter === f.value
-                        ? 'bg-warm-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">{f.label}</span>
-                    <span className="sm:hidden">{f.shortLabel || f.label}</span>
-                  </button>
-                );
-              })}
+            {/* Outer scrolls, inner is the flex row — kept as two elements so the
+                mobile CSS rule targeting `.overflow-x-auto.flex > button`
+                (flex:1 + overflow:hidden) doesn't squeeze and clip the labels. */}
+            <div className="overflow-x-auto pb-1 sm:pb-0 scrollbar-hide scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
+              <div className="flex items-center gap-2 w-max">
+                <SlidersHorizontal className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                {ROLE_FILTERS.map(f => {
+                  const Icon = f.icon;
+                  return (
+                    <button
+                      key={f.value}
+                      onClick={() => setRoleFilter(f.value)}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors ${
+                        roleFilter === f.value
+                          ? 'bg-warm-500 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{f.label}</span>
+                      <span className="sm:hidden">{f.shortLabel || f.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
