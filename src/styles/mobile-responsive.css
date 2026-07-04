@@ -523,7 +523,7 @@ body {
     margin-right: -1rem !important;
   }
 
-  main .rounded-xl:not(button):not(a):not(label):not(span):not(.rounded-2xl *):not(.rounded-xl *):not(.fixed):not(.fixed *) {
+  main .rounded-xl:not(button):not(a):not(label):not(input):not(select):not(textarea):not(span):not(.rounded-2xl *):not(.rounded-xl *):not(.fixed):not(.fixed *) {
     margin-left: -1rem !important;
     margin-right: -1rem !important;
   }

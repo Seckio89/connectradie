@@ -306,7 +306,11 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
                   key={t}
                   type="button"
                   onClick={() => toggleTicket(t)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  // rounded-lg (not rounded-full): the mobile CSS adds an
+                  // overlapping ::before tap-overlay to every rounded-full
+                  // button (meant for toggle switches), which hijacks taps on
+                  // these wrapped chips so they can't be selected.
+                  className={`px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${
                     on
                       ? 'bg-warm-500 border-warm-500 text-white'
                       : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
