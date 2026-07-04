@@ -7,6 +7,8 @@ import Navbar from '../components/Navbar';
 import HeroSection from '../components/HeroSection';
 import ForTradiesSection from '../components/ForTradiesSection';
 import HowItWorksSection from '../components/HowItWorksSection';
+import MarketplaceSection from '../components/MarketplaceSection';
+import CareersSection from '../components/CareersSection';
 import Footer from '../components/Footer';
 import SEO from '../components/SEO';
 
@@ -105,6 +107,8 @@ export default function LandingPage() {
           <ForTradiesSection />
           <HowItWorksSection />
         </div>
+        <MarketplaceSection />
+        <CareersSection />
       </main>
       <Footer />
     </div>
