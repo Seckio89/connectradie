@@ -1,17 +1,18 @@
 import { Link } from 'react-router-dom';
-import { GraduationCap, Award, Briefcase, ArrowRight } from 'lucide-react';
+import { GraduationCap, Award, Briefcase, ArrowRight, Laptop } from 'lucide-react';
 
 /**
  * Tertiary landing beat (bottom of the scroll, least emphasis): ConnecTradie
- * also runs Trade Careers — post apprenticeships and roles, get applications
- * from local tradies. Deliberately compact (a single band, no large visual)
- * so it sits below the software and marketplace beats. Roles mirror the real
- * ROLE_FILTERS in TradeCareers (apprentice / qualified / senior).
+ * also runs Trade Careers — post roles, get applications from local tradies.
+ * Deliberately compact (a single band, no large visual) so it sits below the
+ * software and marketplace beats. Roles mirror the real ROLE_FILTERS in
+ * TradeCareers (apprentice / qualified / senior / non_trade).
  */
 const roles = [
   { icon: GraduationCap, label: 'Apprenticeships' },
   { icon: Briefcase, label: 'Qualified tradies' },
   { icon: Award, label: 'Senior roles' },
+  { icon: Laptop, label: 'Office & support' },
 ];
 
 export default function CareersSection() {
@@ -29,7 +30,7 @@ export default function CareersSection() {
           </h2>
 
           <p className="mt-4 text-base text-gray-400 leading-relaxed max-w-2xl mx-auto">
-            Post apprenticeships, qualified and senior roles — and get applications from local tradies, right inside the app you already run your business in.
+            Post apprenticeships, trade and office roles — full-time, casual or subcontract — with pay, tickets and start dates. Applications come to you, right inside the app you already run your business in.
           </p>
 
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
