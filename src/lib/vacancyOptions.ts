@@ -66,3 +66,26 @@ export function formatPay(v: Pick<TradeVacancy, 'pay_min' | 'pay_max' | 'pay_per
 export function employmentLabel(t: EmploymentType | null): string {
   return EMPLOYMENT_TYPES.find(e => e.value === t)?.label ?? '';
 }
+
+export const ROLE_LABELS: Record<VacancyRoleType, string> = {
+  apprentice: 'Apprenticeship',
+  qualified: 'Qualified Trade',
+  senior_advisory: 'Senior / Advisory',
+};
+
+/** schema.org JobPosting employmentType mapping. */
+export const EMPLOYMENT_SCHEMA: Record<EmploymentType, string> = {
+  full_time: 'FULL_TIME',
+  part_time: 'PART_TIME',
+  casual: 'PART_TIME',
+  contract: 'CONTRACTOR',
+  apprenticeship: 'FULL_TIME',
+};
+
+/** schema.org QuantitativeValue unitText for a pay period. */
+export const PAY_UNIT_TEXT: Record<PayPeriod, string> = {
+  hour: 'HOUR',
+  day: 'DAY',
+  week: 'WEEK',
+  year: 'YEAR',
+};

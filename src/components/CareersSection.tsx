@@ -47,13 +47,16 @@ export default function CareersSection() {
             })}
           </div>
 
-          <div className="mt-8">
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-3">
             <Link
               to="/register?type=tradie"
               className="inline-flex items-center gap-2 px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-all shadow-lg shadow-warm-500/25 active:scale-95"
             >
               Post a role — free
               <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link to="/careers" className="text-sm font-semibold text-warm-400 hover:text-warm-300 underline underline-offset-2">
+              Or browse trade jobs
             </Link>
           </div>
         </div>
