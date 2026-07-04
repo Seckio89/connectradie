@@ -582,6 +582,8 @@ export type TradieRatingView = {
 export type VacancyRoleType = 'apprentice' | 'qualified' | 'senior_advisory';
 export type VacancyStatus = 'open' | 'closed';
 export type ApplicationStatus = 'pending' | 'reviewed' | 'shortlisted' | 'rejected';
+export type EmploymentType = 'full_time' | 'part_time' | 'casual' | 'contract' | 'apprenticeship';
+export type PayPeriod = 'hour' | 'day' | 'week' | 'year';
 
 export type TradeVacancy = {
   id: string;
@@ -594,6 +596,17 @@ export type TradeVacancy = {
   status: VacancyStatus;
   created_at: string;
   updated_at: string;
+  // Detail fields (added 2026-07-04) — all optional / nullable
+  employment_type: EmploymentType | null;
+  pay_min: number | null;
+  pay_max: number | null;
+  pay_period: PayPeriod | null;
+  pay_note: string | null;
+  required_tickets: string[];
+  hours: string | null;
+  start_date: string | null;
+  experience_level: string | null;
+  closing_date: string | null;
 }
 
 export type VacancyApplication = {
