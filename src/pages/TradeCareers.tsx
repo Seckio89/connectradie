@@ -220,7 +220,10 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        {/* gap-3 (not gap-2/gap-4): the mobile CSS force-stacks
+            .grid-cols-3.gap-2 (supplies form) and .grid-cols-3.gap-4 (old
+            stats rule) to one column — gap-3 keeps this a 3-across row. */}
+        <div className="grid grid-cols-3 gap-3 sm:gap-4">
           {[
             { label: 'Open Positions', value: vacancies.filter(v => v.status === 'open').length, color: 'bg-secondary-50', iconColor: 'text-secondary-600', Icon: Briefcase },
             { label: 'Apprenticeships', value: vacancies.filter(v => v.status === 'open' && v.role_type === 'apprentice').length, color: 'bg-secondary-50', iconColor: 'text-secondary-600', Icon: GraduationCap },
