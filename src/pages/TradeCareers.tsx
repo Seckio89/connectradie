@@ -157,6 +157,17 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
     }
   };
 
+  const handleDeleteVacancy = async (vacancy: TradeVacancyWithEmployer) => {
+    const { error } = await supabase
+      .from('trade_vacancies')
+      .delete()
+      .eq('id', vacancy.id);
+    if (error) throw new Error(error.message);
+
+    setVacancies(prev => prev.filter(v => v.id !== vacancy.id));
+    setManageVacancy(null);
+  };
+
   const myListings = useMemo(
     () => vacancies.filter(v => v.employer_id === user?.id),
     [vacancies, user]
@@ -346,6 +357,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
           onClose={() => setManageVacancy(null)}
           vacancy={manageVacancy}
           onToggleStatus={handleToggleStatus}
+          onDelete={handleDeleteVacancy}
         />
       )}
     </>
