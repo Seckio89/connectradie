@@ -364,6 +364,35 @@ export default function TradieDashboard() {
     }
   }, []);
 
+  // Post-onboarding join-a-business flow lands here with ?joined=requested.
+  // Confirm it immediately (toast) — the persistent pending banner below
+  // carries the state until the employer approves.
+  useEffect(() => {
+    if (searchParams.get('joined') === 'requested') {
+      setSearchParams((prev) => { prev.delete('joined'); return prev; }, { replace: true });
+      showToast('Request sent! Your employer will review it.');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Employer display name for the pending-approval banner
+  const isPendingEmployerApproval = profile?.employer_status === 'pending_approval' && !!profile?.employer_id;
+  const [employerName, setEmployerName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isPendingEmployerApproval || !profile?.employer_id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [{ data: emp }, { data: empTd }] = await Promise.all([
+          supabase.from('profiles').select('full_name').eq('id', profile.employer_id).maybeSingle(),
+          supabase.from('tradie_details').select('business_name').eq('profile_id', profile.employer_id).maybeSingle(),
+        ]);
+        if (!cancelled) setEmployerName(empTd?.business_name || emp?.full_name || null);
+      } catch { /* banner falls back to generic copy */ }
+    })();
+    return () => { cancelled = true; };
+  }, [isPendingEmployerApproval, profile?.employer_id]);
+
   // Calendar computed values
   const { daysInMonth, startingDay } = getDaysInMonth(currentDate);
 
@@ -736,6 +765,29 @@ export default function TradieDashboard() {
           <div className="bg-gradient-to-r from-primary-50 to-secondary-50 border-y sm:border border-x-0 sm:border-x border-primary-200 rounded-none sm:rounded-2xl p-5 px-4 sm:px-5">
             <h3 className="font-bold text-primary-900 mb-1">Welcome to ConnecTradie!</h3>
             <p className="text-sm text-primary-800">Your account is set up. Set your availability below so clients can find and book you for jobs.</p>
+          </div>
+        </div>
+      )}
+      {/* Join-a-business request pending — persists until the employer approves */}
+      {isPendingEmployerApproval && (
+        <div className="max-w-5xl mx-auto mb-4 -mx-4 sm:mx-auto">
+          <div className="bg-amber-50 border-y sm:border border-x-0 sm:border-x border-amber-200 rounded-none sm:rounded-2xl p-4 sm:p-5 px-4 sm:px-5">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Clock className="w-5 h-5 text-amber-600" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-bold text-amber-900">
+                  Request sent{employerName ? ` to ${employerName}` : ''} — waiting for approval
+                </h3>
+                <p className="text-sm text-amber-800 mt-0.5">
+                  Your request to join{employerName ? ` ${employerName}` : ' the business'} as
+                  {profile?.employment_type === 'subcontractor' ? ' a subcontractor' : ' an employee'} is with your
+                  employer. You&rsquo;ll get a notification as soon as they approve it. In the meantime you can
+                  finish setting up your profile.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}
