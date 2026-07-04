@@ -21,6 +21,7 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 
 // Eagerly loaded — these are entry points visitors hit first
 import LandingPage from './pages/LandingPage';
+import HireLanding from './pages/HireLanding';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import NotFound from './pages/NotFound';
@@ -193,6 +194,7 @@ function AppRoutes() {
     <Suspense fallback={<PageSpinner />}>
       <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/hire" element={<HireLanding />} />
       <Route
         path="/login"
         element={
