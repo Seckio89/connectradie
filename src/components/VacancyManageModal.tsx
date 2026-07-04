@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Mail, Phone, Briefcase, Clock, UserCheck, UserX, Eye, Loader2 } from 'lucide-react';
+import { X, Mail, Phone, Briefcase, Clock, UserCheck, UserX, Eye, Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import Modal from './Modal';
 import { supabase } from '../lib/supabase';
 import type { TradeVacancyWithEmployer, VacancyApplicationWithApplicant, ApplicationStatus } from '../types/database';
@@ -16,13 +16,16 @@ interface VacancyManageModalProps {
   onClose: () => void;
   vacancy: TradeVacancyWithEmployer;
   onToggleStatus: (vacancy: TradeVacancyWithEmployer) => Promise<void>;
+  onDelete: (vacancy: TradeVacancyWithEmployer) => Promise<void>;
 }
 
-export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleStatus }: VacancyManageModalProps) {
+export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleStatus, onDelete }: VacancyManageModalProps) {
   const [applications, setApplications] = useState<VacancyApplicationWithApplicant[]>([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (isOpen && vacancy) {
@@ -71,6 +74,15 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
     setToggling(false);
   };
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await onDelete(vacancy); // parent closes the modal on success
+    } catch {
+      setDeleting(false);
+    }
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="2xl">
       <div className="flex items-center justify-between p-6 border-b border-gray-100">
@@ -94,6 +106,14 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : vacancy.status === 'open' ? 'Close Listing' : 'Reopen Listing'}
           </button>
+          <button
+            onClick={() => setConfirmDelete(true)}
+            title="Delete listing"
+            aria-label="Delete listing"
+            className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
             <X className="w-5 h-5" />
           </button>
@@ -101,6 +121,40 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
       </div>
 
       <div className="p-6 max-h-[60vh] overflow-y-auto">
+        {confirmDelete && (
+          <div className="mb-4 p-4 rounded-xl border border-red-200 bg-red-50">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-red-800">Delete this listing?</p>
+                <p className="text-xs text-red-600 mt-0.5">
+                  This permanently removes the listing
+                  {applications.length > 0
+                    ? ` and its ${applications.length} application${applications.length !== 1 ? 's' : ''}`
+                    : ''}
+                  . This can’t be undone.
+                </p>
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                  >
+                    {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                    Delete listing
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    disabled={deleting}
+                    className="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
