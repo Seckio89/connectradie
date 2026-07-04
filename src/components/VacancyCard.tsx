@@ -1,5 +1,7 @@
-import { MapPin, Clock, BadgeCheck, GraduationCap, Award, Briefcase, Users, Building2 } from 'lucide-react';
+import { MapPin, Clock, BadgeCheck, GraduationCap, Award, Briefcase, Users, Building2, DollarSign, CalendarDays } from 'lucide-react';
 import type { TradeVacancyWithEmployer } from '../types/database';
+import { formatPay, employmentLabel } from '../lib/vacancyOptions';
+import { TRADE_CATEGORIES } from '../lib/tradeCategories';
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: typeof GraduationCap }> = {
   apprentice: { label: 'Apprenticeship', color: 'bg-secondary-50 text-secondary-700 border-secondary-200', icon: GraduationCap },
@@ -23,13 +25,28 @@ export default function VacancyCard({ vacancy, onApply, hasApplied, isOwner, onM
   const daysAgo = Math.floor((Date.now() - new Date(vacancy.created_at).getTime()) / (1000 * 60 * 60 * 24));
   const timeLabel = daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
 
+  const pay = formatPay(vacancy);
+  const employment = employmentLabel(vacancy.employment_type);
+  const tradeLabel = TRADE_CATEGORIES.find(c => c.value === vacancy.trade_category)?.label || vacancy.trade_category;
+  const tickets = vacancy.required_tickets || [];
+  const closes = vacancy.closing_date
+    ? new Date(vacancy.closing_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+    : null;
+
   return (
     <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group">
       <div className="p-5 sm:p-6">
         <div className="flex items-start justify-between gap-3 mb-3">
-          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${role.color}`}>
-            <RoleIcon className="w-3.5 h-3.5" />
-            {role.label}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${role.color}`}>
+              <RoleIcon className="w-3.5 h-3.5" />
+              {role.label}
+            </div>
+            {employment && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                {employment}
+              </span>
+            )}
           </div>
           {vacancy.status === 'closed' && (
             <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-gray-100 text-gray-500">
@@ -48,21 +65,41 @@ export default function VacancyCard({ vacancy, onApply, hasApplied, isOwner, onM
           </div>
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="text-sm font-medium text-gray-700 truncate">{businessName}</span>
-            {isVerified && (
-              <BadgeCheck className="w-4 h-4 text-primary-500 flex-shrink-0" />
-            )}
+            {isVerified && <BadgeCheck className="w-4 h-4 text-primary-500 flex-shrink-0" />}
           </div>
         </div>
+
+        {pay && (
+          <div className="flex items-center gap-1.5 mb-3 text-sm font-semibold text-emerald-600">
+            <DollarSign className="w-4 h-4" />
+            {pay}
+          </div>
+        )}
 
         <p className="text-sm text-gray-600 leading-relaxed mb-4 line-clamp-3">
           {vacancy.description}
         </p>
 
+        {tickets.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {tickets.slice(0, 4).map(t => (
+              <span key={t} className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-50 text-gray-600 border border-gray-200">
+                {t}
+              </span>
+            ))}
+            {tickets.length > 4 && (
+              <span className="px-2 py-0.5 rounded-md text-[11px] font-medium text-gray-400">
+                +{tickets.length - 4} more
+              </span>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center gap-4 flex-wrap text-xs text-gray-500">
-          {vacancy.trade_category && (
+          {tradeLabel && (
             <span className="flex items-center gap-1">
               <Briefcase className="w-3.5 h-3.5" />
-              {vacancy.trade_category}
+              {tradeLabel}
             </span>
           )}
           {vacancy.location && (
@@ -75,6 +112,12 @@ export default function VacancyCard({ vacancy, onApply, hasApplied, isOwner, onM
             <Clock className="w-3.5 h-3.5" />
             {timeLabel}
           </span>
+          {closes && vacancy.status === 'open' && (
+            <span className="flex items-center gap-1">
+              <CalendarDays className="w-3.5 h-3.5" />
+              Closes {closes}
+            </span>
+          )}
           {isOwner && vacancy.application_count !== undefined && (
             <span className="flex items-center gap-1">
               <Users className="w-3.5 h-3.5" />

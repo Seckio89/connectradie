@@ -2,13 +2,13 @@ import { useState, useEffect, useMemo } from 'react';
 import { Plus, GraduationCap, Award, Briefcase, Search, Loader2, HardHat, SlidersHorizontal } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import VacancyCard from '../components/VacancyCard';
-import PostVacancyModal from '../components/PostVacancyModal';
+import PostVacancyModal, { type VacancyFormData } from '../components/PostVacancyModal';
 import ApplicationModal from '../components/ApplicationModal';
 import VacancyManageModal from '../components/VacancyManageModal';
 import EmptyState from '../components/EmptyState';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import type { TradeVacancyWithEmployer, VacancyRoleType } from '../types/database';
+import type { TradeVacancyWithEmployer } from '../types/database';
 
 type RoleFilter = 'all' | 'apprentice' | 'qualified' | 'senior_advisory';
 type ViewTab = 'browse' | 'my_listings';
@@ -99,13 +99,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
     setMyApplicationIds(new Set((data || []).map((a: { vacancy_id: string }) => a.vacancy_id)));
   };
 
-  const handlePostVacancy = async (formData: {
-    title: string;
-    role_type: VacancyRoleType;
-    description: string;
-    trade_category: string;
-    location: string;
-  }) => {
+  const handlePostVacancy = async (formData: VacancyFormData) => {
     if (!user) return;
 
     if (editVacancy) {
