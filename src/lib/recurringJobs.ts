@@ -570,6 +570,12 @@ export interface RecurringJob {
     full_name: string;
     email: string;
   } | null;
+  // Owning business (populated for the assigned-worker view)
+  owner?: {
+    id: string;
+    full_name: string;
+    tradie_details?: { business_name: string | null } | { business_name: string | null }[] | null;
+  } | null;
 }
 
 export type RecurringSessionStatus = 'pending_confirmation' | 'scheduled' | 'awaiting_completion' | 'completed' | 'rescheduled' | 'skipped' | 'extra';
@@ -953,6 +959,77 @@ export async function getTradieRecurringJobs(tradieId: string): Promise<Recurrin
 
   if (error) throw new Error(error.message);
   return (data as unknown as RecurringJob[]) ?? [];
+}
+
+/**
+ * Fetch ongoing services a user is ASSIGNED to as a team worker (not the owner).
+ * Read-only view — the owning tradie still controls the service. Includes the
+ * owning business name so the worker knows who assigned it.
+ */
+export async function getAssignedRecurringJobs(userId: string): Promise<RecurringJob[]> {
+  const { data: memberships } = await supabase
+    .from('business_team_members')
+    .select('id')
+    .eq('member_profile_id', userId);
+  const memberIds = (memberships ?? []).map(m => m.id);
+  if (memberIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from('recurring_jobs')
+    .select(`
+      *,
+      client:profiles!recurring_jobs_client_id_fkey(id, full_name, email, phone),
+      owner:profiles!recurring_jobs_tradie_id_fkey(id, full_name, tradie_details(business_name)),
+      assigned_team_member:business_team_members!recurring_jobs_assigned_team_member_id_fkey(id, invite_name, member_profile_id)
+    `)
+    .in('assigned_team_member_id', memberIds)
+    .is('cancelled_at', null)
+    .order('next_due_date', { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return (data as unknown as RecurringJob[]) ?? [];
+}
+
+/** Upcoming visits for the services a user is assigned to (worker view). */
+export async function getAssignedUpcomingSessions(userId: string, limit = 30) {
+  const { data: memberships } = await supabase
+    .from('business_team_members')
+    .select('id')
+    .eq('member_profile_id', userId);
+  const memberIds = (memberships ?? []).map(m => m.id);
+  if (memberIds.length === 0) return [];
+
+  const { data: jobs } = await supabase
+    .from('recurring_jobs')
+    .select('id')
+    .in('assigned_team_member_id', memberIds)
+    .is('cancelled_at', null);
+  const jobIds = (jobs ?? []).map(j => j.id);
+  if (jobIds.length === 0) return [];
+
+  const lookback = new Date();
+  lookback.setDate(lookback.getDate() - 7);
+  const lookbackDate = lookback.toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('recurring_sessions')
+    .select(`
+      *,
+      recurring_job:recurring_jobs!recurring_sessions_recurring_job_id_fkey(
+        trade_category, service_subtype, description, client_id, preferred_time,
+        agreed_price, auto_accept, location, frequency_months, billing_cycle,
+        last_invoiced_at, supplies, is_active, cancelled_at, tradie_id,
+        client:profiles!recurring_jobs_client_id_fkey(full_name, phone, email)
+      )
+    `)
+    .in('recurring_job_id', jobIds)
+    .in('status', ['pending_confirmation', 'scheduled', 'awaiting_completion'])
+    .gte('scheduled_date', lookbackDate)
+    .order('scheduled_date', { ascending: true })
+    .limit(limit);
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as Awaited<ReturnType<typeof getTradieUpcomingSessions>>;
 }
 
 /**

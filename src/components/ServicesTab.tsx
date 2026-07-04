@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { callEdgeFunction } from '../lib/edgeFn';
-import { getTradieUpcomingSessions, getTradieRecurringJobs, cancelRecurringJob, pauseRecurringJob, resumeRecurringJob, generateFutureSessions } from '../lib/recurringJobs';
+import { getTradieUpcomingSessions, getTradieRecurringJobs, getAssignedRecurringJobs, getAssignedUpcomingSessions, cancelRecurringJob, pauseRecurringJob, resumeRecurringJob, generateFutureSessions } from '../lib/recurringJobs';
 import { getSupplySuggestions, SUPPLY_DEFAULT_UNITS } from '../lib/tradeCategories';
 import type { RecurringSession, RecurringJob, CancellationCategory } from '../lib/recurringJobs';
 import CancelServiceModal from './CancelServiceModal';
@@ -35,6 +35,7 @@ type RecurringSessionWithJob = RecurringSession & {
     client?: { full_name: string; phone?: string | null; email?: string | null } | null;
     is_active?: boolean;
     cancelled_at?: string | null;
+    tradie_id?: string;
   };
 };
 
@@ -1290,7 +1291,7 @@ function JobCard({
   jobId, jobLabel, clientName, clientPhone, clientEmail, clientId, freqLabel, location, descLines, agreedPrice,
   isAutoAccept, isActive, isCancelled, billingCycle, lastInvoicedAt, sessions, userId, onUpdate,
   agreement, onAgreementRefresh, supplies, tradeCategory, consumablesProvider,
-  assignedWorkerId, assignedWorkerName,
+  assignedWorkerId, assignedWorkerName, isOwner = true, ownerName,
 }: {
   jobId: string;
   jobLabel: string;
@@ -1317,6 +1318,8 @@ function JobCard({
   consumablesProvider?: 'client' | 'tradie_billed';
   assignedWorkerId?: string | null;
   assignedWorkerName?: string | null;
+  isOwner?: boolean;
+  ownerName?: string | null;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showFutureVisits, setShowFutureVisits] = useState(false);
@@ -1409,7 +1412,7 @@ function JobCard({
                   {location.split(',')[0]}
                 </span>
               )}
-              {agreedPrice != null && agreedPrice > 0 && (
+              {isOwner && agreedPrice != null && agreedPrice > 0 && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 whitespace-nowrap">
                   ${agreedPrice.toFixed(2)}/visit
                 </span>
@@ -1426,7 +1429,18 @@ function JobCard({
 
       {!isCollapsed && (
         <>
-        {/* ─── Quick Controls ─── */}
+        {/* ─── Assigned-worker banner (read-only view) ─── */}
+        {!isOwner && (
+          <div className="px-5 pb-4">
+            <div className="flex items-center gap-2 pt-3 border-t border-gray-100 text-xs text-emerald-700">
+              <UserCheck className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>Assigned to you{ownerName ? ` by ${ownerName}` : ''} — view your visits below.</span>
+            </div>
+          </div>
+        )}
+
+        {/* ─── Quick Controls (owner only) ─── */}
+        {isOwner && (
         <div className="px-5 pb-4">
           <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-gray-100">
             <AcceptModeToggle
@@ -1474,6 +1488,7 @@ function JobCard({
             </div>
           </div>
         </div>
+        )}
 
         {/* ─── Assign Worker ─── */}
         {showAssignWorker && (
@@ -1536,8 +1551,30 @@ function JobCard({
         <SuppliesSection supplies={supplies ?? []} jobId={jobId} clientId={clientId} tradeCategory={tradeCategory} onUpdate={onUpdate} />
       )}
 
+      {/* ─── Your Visits (assigned worker — read-only) ─── */}
+      {!isOwner && (upcomingSessions.length > 0 || futureSessionsList.length > 0) && (
+        <div className="border-t border-gray-100 px-5 py-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Your Upcoming Visits</p>
+          <div className="space-y-1.5">
+            {[...upcomingSessions, ...futureSessionsList].slice(0, 8).map((s) => {
+              const d = new Date((s.actual_date || s.scheduled_date) + 'T00:00:00');
+              const t = s.start_time ? String(s.start_time).slice(0, 5)
+                : (s.recurring_job?.preferred_time ? String(s.recurring_job.preferred_time).slice(0, 5) : null);
+              return (
+                <div key={s.id} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg text-xs">
+                  <Calendar className="w-3.5 h-3.5 text-secondary-400 flex-shrink-0" />
+                  <span className="font-medium text-gray-800">{d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                  {t && <span className="text-gray-500">· {t}</span>}
+                  <span className="ml-auto text-gray-400 capitalize">{String(s.status).replace(/_/g, ' ')}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ─── Next Visits — full session cards (up to 3) ─── */}
-      {upcomingSessions.length > 0 && (
+      {isOwner && upcomingSessions.length > 0 && (
         <div className="border-t border-gray-100">
           <div className="px-5 pt-3 pb-1">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -1581,7 +1618,7 @@ function JobCard({
       )}
 
       {/* ─── Later Visits — collapsible ─── */}
-      {futureSessionsList.length > 0 && (
+      {isOwner && futureSessionsList.length > 0 && (
         <div className="border-t border-gray-100">
           <button
             onClick={() => setShowFutureVisits(!showFutureVisits)}
@@ -1631,7 +1668,8 @@ function JobCard({
         </div>
       )}
 
-      {/* ─── Invoice & Billing ─── */}
+      {/* ─── Invoice & Billing (owner only) ─── */}
+      {isOwner && (
       <div className="border-t border-gray-100 px-5 py-3 space-y-3">
         <p className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600">
           <FileText className="w-3.5 h-3.5 text-gray-400" />
@@ -1653,6 +1691,7 @@ function JobCard({
           onSent={onUpdate}
         />
       </div>
+      )}
         </>
       )}
 
@@ -1700,14 +1739,24 @@ export default function ServicesTab() {
 
   const fetchRecurringSessions = useCallback(async () => {
     if (!user) return;
-    // Fetch sessions and jobs independently so one failing doesn't block the other
+    // Fetch owned + assigned independently so one failing doesn't block the rest.
+    // Assigned services are ones this tradie was assigned to as a team worker;
+    // they render read-only (owner controls hidden).
     try {
-      const sessions = await getTradieUpcomingSessions(user.id, 20);
-      setRecurringSessions(sessions);
+      const [owned, assigned] = await Promise.all([
+        getTradieUpcomingSessions(user.id, 20).catch(() => []),
+        getAssignedUpcomingSessions(user.id).catch(() => []),
+      ]);
+      const seen = new Set(owned.map(s => s.id));
+      setRecurringSessions([...owned, ...assigned.filter(s => !seen.has(s.id))]);
     } catch { /* ignore */ }
     try {
-      const jobs = await getTradieRecurringJobs(user.id);
-      setTradieJobs(jobs);
+      const [owned, assigned] = await Promise.all([
+        getTradieRecurringJobs(user.id).catch(() => []),
+        getAssignedRecurringJobs(user.id).catch(() => []),
+      ]);
+      const seen = new Set(owned.map(j => j.id));
+      setTradieJobs([...owned, ...assigned.filter(j => !seen.has(j.id))]);
     } catch { /* ignore */ }
   }, [user]);
 
@@ -1773,6 +1822,8 @@ export default function ServicesTab() {
     consumablesProvider: 'client' | 'tradie_billed';
     assignedWorkerId: string | null;
     assignedWorkerName: string | null;
+    isOwner: boolean;
+    ownerName: string | null;
     nextVisitIso: string | null;
     nextVisitSortKey: number;
   };
@@ -1805,6 +1856,14 @@ export default function ServicesTab() {
     const isActive = jobInfo?.is_active !== false && fallbackJob?.is_active !== false;
     const isCancelled = !!(jobInfo?.cancelled_at || fallbackJob?.cancelled_at);
 
+    // Ownership: the service belongs to whoever's tradie_id it is. If that's not
+    // the current user, they're viewing it as an assigned worker (read-only).
+    const jobTradieId = jobInfo?.tradie_id ?? fallbackJob?.tradie_id;
+    const isOwner = !jobTradieId || jobTradieId === user?.id;
+    const ownerTd = fallbackJob?.owner?.tradie_details;
+    const ownerBusiness = Array.isArray(ownerTd) ? ownerTd[0]?.business_name : ownerTd?.business_name;
+    const ownerName = ownerBusiness || fallbackJob?.owner?.full_name || null;
+
     // Next scheduled visit
     const scheduled = sessions.find(s => s.status === 'scheduled' || s.status === 'pending_confirmation');
     const nextVisitIso = scheduled?.scheduled_date || fallbackJob?.next_due_date || null;
@@ -1834,10 +1893,12 @@ export default function ServicesTab() {
       // sessions join doesn't carry it, and every active job is in tradieJobs.
       assignedWorkerId: fallbackJob?.assigned_team_member_id ?? null,
       assignedWorkerName: fallbackJob?.assigned_team_member?.invite_name ?? null,
+      isOwner,
+      ownerName,
       nextVisitIso,
       nextVisitSortKey: nextVisitIso ? new Date(nextVisitIso + 'T00:00:00').getTime() : FAR_FUTURE,
     };
-  }), [groupedByJob, tradieJobs, agreements, FAR_FUTURE]);
+  }), [groupedByJob, tradieJobs, agreements, FAR_FUTURE, user?.id]);
 
   const hasPast = jobRows.some(r => r.isCancelled);
   const showControls = jobRows.length > PROGRESSIVE_REVEAL_THRESHOLD || hasPast;
@@ -2008,6 +2069,8 @@ export default function ServicesTab() {
                             consumablesProvider={row.consumablesProvider}
                             assignedWorkerId={row.assignedWorkerId}
                             assignedWorkerName={row.assignedWorkerName}
+                            isOwner={row.isOwner}
+                            ownerName={row.ownerName}
                           />
                         </div>
                       )}
