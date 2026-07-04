@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Loader2, AlertCircle, Eye, EyeOff, CheckCircle2, ArrowLeft, ShieldX, X, UserX } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -31,6 +31,23 @@ export default function Login() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
+
+  // Google sign-in does a top-level redirect to Google, so we keep the spinner
+  // up on the way out. If the user then cancels / hits Back, the browser can
+  // restore this page from the back-forward cache with `googleLoading` still
+  // true — leaving the button stuck spinning. Reset all in-flight loading state
+  // whenever the page is restored from bfcache (pageshow.persisted).
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        setGoogleLoading(false);
+        setLoading(false);
+        setResetLoading(false);
+      }
+    };
+    window.addEventListener('pageshow', onPageShow);
+    return () => window.removeEventListener('pageshow', onPageShow);
+  }, []);
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
