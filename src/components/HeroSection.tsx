@@ -77,11 +77,11 @@ export default function HeroSection() {
           <div className="relative hidden lg:block" aria-hidden="true">
             <div className="relative pt-8 pb-8 px-4">
               <div className="bg-navy-800 rounded-2xl shadow-xl shadow-black/30 border border-navy-700 overflow-hidden max-w-md mx-auto">
-                <div className="px-5 py-4 bg-navy-900/60 border-b border-navy-700">
-                  <p className="text-sm font-semibold text-white flex items-center gap-2">
+                <div className="px-5 py-4 bg-[#1a2740] border-b border-white/10">
+                  <p className="text-sm font-semibold text-[#f1f5f9] flex items-center gap-2">
                     <CalendarDays className="w-4 h-4 text-warm-400" /> Site Calendar — this week
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">Mon 12 – Sun 18 May</p>
+                  <p className="text-xs text-[#94a3b8] mt-0.5">Mon 12 – Sun 18 May</p>
                 </div>
                 <div className="p-3 space-y-2">
                   <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-sky-500/10 border border-sky-500/20">
