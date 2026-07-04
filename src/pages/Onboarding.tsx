@@ -101,6 +101,20 @@ export default function Onboarding() {
     const roleLabel = employmentRole === 'employee' ? 'an Employee' : 'a Subcontractor';
 
     try {
+      // Create the join-request row FIRST — if this fails, nothing else has
+      // been written and the user can simply retry (previously the profile
+      // was updated first, so a failure here stranded a half-joined profile).
+      await supabase.from('business_team_members').upsert({
+        business_owner_id: selectedBusiness.profile_id,
+        member_profile_id: user.id,
+        invite_name: profile.full_name,
+        invite_email: profile.email,
+        trade_specialty: tradeCategory,
+        role: employmentRole,
+        status: 'invited',
+        joined_at: null,
+      }, { onConflict: 'business_owner_id,member_profile_id' }).throwOnError();
+
       const profileUpdates: Record<string, unknown> = {
         role: 'tradie' as const,
         postcode: addressDetails?.postcode || undefined,
@@ -122,17 +136,6 @@ export default function Onboarding() {
         trade_type: tradeType,
       });
       if (tradieError) throw new Error('Failed to save tradie details');
-
-      await supabase.from('business_team_members').upsert({
-        business_owner_id: selectedBusiness.profile_id,
-        member_profile_id: user.id,
-        invite_name: profile.full_name,
-        invite_email: profile.email,
-        trade_specialty: tradeCategory,
-        role: employmentRole,
-        status: 'invited',
-        joined_at: null,
-      }, { onConflict: 'business_owner_id,member_profile_id' }).throwOnError();
 
       await supabase.rpc('create_notification', {
         p_user_id: selectedBusiness.profile_id,
