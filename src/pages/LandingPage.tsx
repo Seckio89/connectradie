@@ -7,9 +7,10 @@ import Navbar from '../components/Navbar';
 import HeroSection from '../components/HeroSection';
 import ForTradiesSection from '../components/ForTradiesSection';
 import HowItWorksSection from '../components/HowItWorksSection';
+import MarketplaceSection from '../components/MarketplaceSection';
+import CareersSection from '../components/CareersSection';
 import Footer from '../components/Footer';
 import SEO from '../components/SEO';
-import OneflareBanner from '../components/OneflareBanner';
 
 /** Returns true when viewport is below the md breakpoint (768px). */
 function useIsMobile(breakpoint = 768) {
@@ -76,7 +77,7 @@ export default function LandingPage() {
             "name": "ConnecTradie",
             "url": "https://connectradie.com",
             "logo": "https://connectradie.com/icons/icon-192x192.svg",
-            "description": "Australia's trusted marketplace connecting homeowners with verified trade professionals.",
+            "description": "All-in-one business app for Australian tradies — jobs, site calendar, team scheduling, GST invoicing and Stripe-secured escrow payments.",
             "contactPoint": {
               "@type": "ContactPoint",
               "contactType": "customer service",
@@ -85,21 +86,20 @@ export default function LandingPage() {
           },
           {
             "@context": "https://schema.org",
-            "@type": "WebSite",
+            "@type": "SoftwareApplication",
             "name": "ConnecTradie",
             "url": "https://connectradie.com",
-            "potentialAction": {
-              "@type": "SearchAction",
-              "target": {
-                "@type": "EntryPoint",
-                "urlTemplate": "https://connectradie.com/search?trade={search_term_string}"
-              },
-              "query-input": "required name=search_term_string"
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web, iOS, Android",
+            "description": "Run your whole trade business in one app — job scheduling, team assignment, GST invoicing and Stripe-secured payments. No per-lead fees.",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "AUD"
             }
           }
         ]}
       />
-      <OneflareBanner />
       <Navbar />
       <main id="main-content" className="flex-1">
         <HeroSection />
@@ -107,6 +107,8 @@ export default function LandingPage() {
           <ForTradiesSection />
           <HowItWorksSection />
         </div>
+        <MarketplaceSection />
+        <CareersSection />
       </main>
       <Footer />
     </div>
