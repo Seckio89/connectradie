@@ -1,12 +1,12 @@
-import { MapPin, Clock, BadgeCheck, GraduationCap, Award, Briefcase, Users, Building2, DollarSign, CalendarDays } from 'lucide-react';
+import { MapPin, Clock, BadgeCheck, GraduationCap, Award, Briefcase, Users, Building2, DollarSign, CalendarDays, Laptop } from 'lucide-react';
 import type { TradeVacancyWithEmployer } from '../types/database';
-import { formatPay, employmentLabel } from '../lib/vacancyOptions';
-import { TRADE_CATEGORIES } from '../lib/tradeCategories';
+import { formatPay, employmentLabel, vacancyTradeLabel } from '../lib/vacancyOptions';
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: typeof GraduationCap }> = {
   apprentice: { label: 'Apprenticeship', color: 'bg-secondary-50 text-secondary-700 border-secondary-200', icon: GraduationCap },
   qualified: { label: 'Qualified Trade', color: 'bg-secondary-50 text-secondary-700 border-secondary-200', icon: Briefcase },
   senior_advisory: { label: 'Senior / Advisory', color: 'bg-warm-50 text-warm-700 border-warm-200', icon: Award },
+  non_trade: { label: 'Office / Support', color: 'bg-gray-50 text-gray-700 border-gray-200', icon: Laptop },
 };
 
 interface VacancyCardProps {
@@ -27,7 +27,7 @@ export default function VacancyCard({ vacancy, onApply, hasApplied, isOwner, onM
 
   const pay = formatPay(vacancy);
   const employment = employmentLabel(vacancy.employment_type);
-  const tradeLabel = TRADE_CATEGORIES.find(c => c.value === vacancy.trade_category)?.label || vacancy.trade_category;
+  const tradeLabel = vacancyTradeLabel(vacancy.trade_category);
   const tickets = vacancy.required_tickets || [];
   const closes = vacancy.closing_date
     ? new Date(vacancy.closing_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })

@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { X, AlertCircle, Check, Sparkles } from 'lucide-react';
 import Modal from './Modal';
 import type { TradeVacancy, VacancyRoleType, EmploymentType, PayPeriod } from '../types/database';
-import { TRADE_CATEGORIES } from '../lib/tradeCategories';
-import { EMPLOYMENT_TYPES, PAY_PERIODS, COMMON_TICKETS, ROLE_TEMPLATES } from '../lib/vacancyOptions';
+import { EMPLOYMENT_TYPES, PAY_PERIODS, COMMON_TICKETS, ROLE_TEMPLATES, VACANCY_TRADE_OPTIONS, NON_TRADE_CATEGORY } from '../lib/vacancyOptions';
 
 export interface VacancyFormData {
   title: string;
@@ -34,6 +33,7 @@ const ROLE_OPTIONS: { value: VacancyRoleType; label: string; hint: string }[] = 
   { value: 'apprentice', label: 'Apprentice', hint: 'Entry-level training position' },
   { value: 'qualified', label: 'Qualified Tradesperson', hint: 'Licensed / experienced worker' },
   { value: 'senior_advisory', label: 'Senior / Advisory', hint: 'Leadership or mentoring role' },
+  { value: 'non_trade', label: 'Office / Support', hint: 'Admin, accounts, operations' },
 ];
 
 const inputCls =
@@ -73,6 +73,8 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy 
       role_type: value,
       // sensible employment default when switching to an apprenticeship
       employment_type: value === 'apprentice' ? 'apprenticeship' : f.employment_type,
+      // office/support roles auto-fill the non-trade category (still editable)
+      trade_category: value === 'non_trade' && !f.trade_category ? NON_TRADE_CATEGORY.value : f.trade_category,
     }));
 
   const insertTemplate = () => {
@@ -156,7 +158,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy 
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Role Type *</label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {ROLE_OPTIONS.map(opt => (
               <button
                 key={opt.value}
@@ -182,7 +184,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy 
             <label className={labelCls}>Trade Category *</label>
             <select value={form.trade_category} onChange={e => set('trade_category', e.target.value)} className={inputCls}>
               <option value="">Select a trade…</option>
-              {TRADE_CATEGORIES.map(c => (
+              {VACANCY_TRADE_OPTIONS.map(c => (
                 <option key={c.value} value={c.value}>
                   {c.label}
                 </option>
