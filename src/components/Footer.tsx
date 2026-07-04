@@ -10,6 +10,7 @@ interface FooterLink {
 const footerLinks: Record<string, FooterLink[]> = {
   tradies: [
     { name: 'Register as Tradie', href: '/register?type=tradie' },
+    { name: 'Trade Jobs', href: '/careers' },
     { name: 'Features', href: '/#for-tradies', isHash: true },
     { name: 'How It Works', href: '/#how-it-works', isHash: true },
     { name: 'Pricing', href: '/pricing' },

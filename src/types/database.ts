@@ -618,6 +618,30 @@ export type VacancyApplication = {
   created_at: string;
 }
 
+/** Row shape of the public_vacancies view — safe columns for the public /careers pages. */
+export type PublicVacancy = {
+  id: string;
+  title: string;
+  role_type: VacancyRoleType;
+  description: string;
+  trade_category: string;
+  location: string;
+  employment_type: EmploymentType | null;
+  pay_min: number | null;
+  pay_max: number | null;
+  pay_period: PayPeriod | null;
+  pay_note: string | null;
+  required_tickets: string[];
+  hours: string | null;
+  start_date: string | null;
+  experience_level: string | null;
+  closing_date: string | null;
+  created_at: string;
+  employer_business_name: string | null;
+  employer_name: string | null;
+  employer_verified: boolean;
+}
+
 export type PortfolioImage = {
   id: string;
   tradie_id: string;

@@ -35,6 +35,8 @@ const Settings = lazy(() => import('./pages/Settings'));
 const Jobs = lazy(() => import('./pages/Jobs'));
 const Messages = lazy(() => import('./pages/Messages'));
 const Explore = lazy(() => import('./pages/Explore'));
+const CareersPublic = lazy(() => import('./pages/CareersPublic'));
+const CareerDetailPublic = lazy(() => import('./pages/CareerDetailPublic'));
 const Projects = lazy(() => import('./pages/Projects'));
 const PostLead = lazy(() => import('./pages/PostLead'));
 const Leads = lazy(() => import('./pages/Leads'));
@@ -150,6 +152,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/work': 'Work Hub | ConnecTradie',
   '/my-profile': 'My Profile | ConnecTradie',
   '/explore': 'Explore | ConnecTradie',
+  '/careers': 'Trade Jobs & Apprenticeships | ConnecTradie',
   '/contact': 'Contact | ConnecTradie',
   '/help': 'Help & FAQ | ConnecTradie',
   '/pricing': 'Pricing | ConnecTradie',
@@ -230,6 +233,8 @@ function AppRoutes() {
       <Route path="/search" element={<Search />} />
       <Route path="/tradie/:id" element={<PublicTradieProfile />} />
       <Route path="/explore" element={<Explore />} />
+      <Route path="/careers" element={<CareersPublic />} />
+      <Route path="/careers/:id" element={<CareerDetailPublic />} />
 
       {/* SEO landing pages — order matters; most specific first */}
       <Route path="/find/:trade/:locationSlug" element={<FindTradies />} />
