@@ -257,6 +257,7 @@ function AppRoutes() {
         }
       />
       <Route path="/jobs" element={<Navigate to="/work" replace />} />
+      <Route path="/team" element={<Navigate to="/schedule?tab=team" replace />} />
       <Route
         path="/projects"
         element={

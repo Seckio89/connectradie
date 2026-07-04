@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CalendarDays, Users, ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import SiteCalendar from './SiteCalendar';
 import Team from './Team';
@@ -12,9 +12,18 @@ import { supabase } from '../lib/supabase';
 type ScheduleTab = 'calendar' | 'team';
 
 export default function Schedule() {
-  const [activeTab, setActiveTab] = useState<ScheduleTab>('calendar');
+  // Deep-linkable tab (?tab=team) — used by e.g. the Assign Worker modal's
+  // "Go to My Team" link. Mirrors the WorkHub ?tab= pattern.
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<ScheduleTab>(
+    searchParams.get('tab') === 'team' ? 'team' : 'calendar'
+  );
   const { profile, user } = useAuth();
   const isTradie = profile?.role === 'tradie';
+
+  useEffect(() => {
+    setActiveTab(searchParams.get('tab') === 'team' ? 'team' : 'calendar');
+  }, [searchParams]);
 
   // Single-service clients get a focused layout: their service first, the
   // calendar collapsed below it. null = still counting (avoids a layout flash).
