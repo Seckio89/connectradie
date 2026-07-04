@@ -104,6 +104,8 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
       return { icon: Users, bgClass: 'bg-secondary-500/15', iconClass: 'text-secondary-400' };
     case 'vacancy_match':
       return { icon: Briefcase, bgClass: 'bg-warm-500/15', iconClass: 'text-warm-400' };
+    case 'service_assignment':
+      return { icon: Users, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
     case 'price_increase_requested':
       return { icon: DollarSign, bgClass: 'bg-amber-500/15', iconClass: 'text-amber-400' };
     case 'price_adjusted':
