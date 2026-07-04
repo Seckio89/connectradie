@@ -102,6 +102,8 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
     case 'vacancy_application':
     case 'team':
       return { icon: Users, bgClass: 'bg-secondary-500/15', iconClass: 'text-secondary-400' };
+    case 'vacancy_match':
+      return { icon: Briefcase, bgClass: 'bg-warm-500/15', iconClass: 'text-warm-400' };
     case 'price_increase_requested':
       return { icon: DollarSign, bgClass: 'bg-amber-500/15', iconClass: 'text-amber-400' };
     case 'price_adjusted':
@@ -502,6 +504,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       setNotificationsOpen(false);
     } else if (notification.type === 'vacancy_application') {
       navigate('/work');
+      setNotificationsOpen(false);
+    } else if (notification.type === 'vacancy_match') {
+      navigate('/work?tab=recruitment');
       setNotificationsOpen(false);
     } else if (notification.type === 'new_lead' || notification.type === 'quote_reminder' || notification.type === 'new_job') {
       // Un-dismiss the job so it shows in the leads list

@@ -89,6 +89,8 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
     case 'vacancy_application':
     case 'team':
       return { icon: Users, bgClass: 'bg-secondary-100', iconClass: 'text-secondary-600' };
+    case 'vacancy_match':
+      return { icon: Briefcase, bgClass: 'bg-warm-100', iconClass: 'text-warm-600' };
     case 'JOB_DECLINED':
       return { icon: XCircle, bgClass: 'bg-red-100', iconClass: 'text-red-600' };
     case 'JOB_COMPLETED':
@@ -145,6 +147,7 @@ function getFilterCategory(type: string): FilterTab {
       return 'message';
     case 'team':
     case 'vacancy_application':
+    case 'vacancy_match':
       return 'team';
     case 'payment':
     case 'invoice':
@@ -383,6 +386,8 @@ export default function Notifications() {
       navigate(isTradie ? '/work?tab=active' : '/leads');
     } else if (notification.type === 'vacancy_application') {
       navigate('/work');
+    } else if (notification.type === 'vacancy_match') {
+      navigate('/work?tab=recruitment');
     } else if (notification.type === 'message' || notification.type === 'new_message') {
       navigate('/messages');
     } else if (notification.type === 'payment' || notification.type === 'invoice') {
