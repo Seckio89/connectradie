@@ -570,7 +570,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'My Profile', href: '/my-profile', icon: UserCircle },
     { name: 'Work Hub', href: '/work', icon: ClipboardList },
-    { name: 'Schedule', href: '/schedule', icon: CalendarDays },
+    { name: 'Teams & Schedule', href: '/schedule', icon: CalendarDays },
     { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Messages', href: '/messages', icon: MessageCircle },
     { name: 'Insights', href: '/analytics', icon: BarChart3, children: [

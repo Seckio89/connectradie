@@ -62,7 +62,7 @@ export default function Schedule() {
         <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-4">
           <Link to="/dashboard" className="hover:text-primary-600 transition-colors">Dashboard</Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="font-medium text-gray-900">Schedule</span>
+          <span className="font-medium text-gray-900">{isTradie ? 'Teams & Schedule' : 'Schedule'}</span>
           <ChevronRight className="w-3 h-3" />
           <span className="text-gray-700">{breadcrumbLabel}</span>
         </nav>
