@@ -4,7 +4,7 @@ import { Mail, Lock, Loader2, AlertCircle, Eye, EyeOff, CheckCircle2, ArrowLeft,
 import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { signInWithGoogleNative, isGoogleCancel } from '../lib/nativeGoogleAuth';
+import { signInWithGoogleNative, isGoogleCancel, showGoogleSignIn } from '../lib/nativeGoogleAuth';
 import { friendlyError } from '../lib/utils';
 import SEO from '../components/SEO';
 import BetaModal from '../components/BetaModal';
@@ -473,6 +473,9 @@ export default function Login() {
             </button>
           </form>
 
+          {/* Hidden on the native app until native Google auth is configured
+              (see showGoogleSignIn / nativeGoogleAuth.ts). Web always shows it. */}
+          {showGoogleSignIn() && (
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -496,6 +499,7 @@ export default function Login() {
               Continue with Google
             </button>
           </div>
+          )}
 
           <p className="mt-6 text-center text-sm text-gray-600">
             New here?{' '}
