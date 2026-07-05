@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Loader2, AlertCircle, Eye, EyeOff, CheckCircle2, ArrowLeft, ShieldX, X, UserX } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { signInWithGoogleNative, isGoogleCancel } from '../lib/nativeGoogleAuth';
 import { friendlyError } from '../lib/utils';
 import SEO from '../components/SEO';
 import BetaModal from '../components/BetaModal';
@@ -52,6 +54,23 @@ export default function Login() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     setError('');
+
+    // Native app: Google blocks OAuth inside embedded WebViews (Error 403:
+    // disallowed_useragent), so use the plugin's native account picker +
+    // signInWithIdToken instead of the web redirect below.
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await signInWithGoogleNative();
+        navigate('/dashboard');
+      } catch (err) {
+        if (!isGoogleCancel(err)) {
+          setError('Google sign-in didn’t complete. Please try again, or use your email and password.');
+        }
+        setGoogleLoading(false);
+      }
+      return;
+    }
+
     try {
       // Preflight: confirm Google is actually enabled as an auth provider BEFORE
       // handing the browser to Supabase. signInWithOAuth navigates the top-level

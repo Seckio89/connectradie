@@ -34,6 +34,15 @@ const config: CapacitorConfig = {
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],
     },
+    // Native Google Sign-In — Google blocks OAuth in embedded WebViews
+    // (Error 403: disallowed_useragent). serverClientId MUST be the Web OAuth
+    // client ID from Google Cloud Console and match GOOGLE_WEB_CLIENT_ID in
+    // src/lib/nativeGoogleAuth.ts.
+    GoogleAuth: {
+      scopes: ['profile', 'email'],
+      serverClientId: '491568884460-unfmph1ckhu27ut9kh5b6cbgui02b6se.apps.googleusercontent.com',
+      forceCodeForRefreshToken: false,
+    },
   },
   ios: {
     contentInset: 'always',
