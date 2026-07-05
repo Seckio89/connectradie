@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Phone, Loader2, AlertCircle, CheckCircle2, Eye, EyeOff, Shield, Star, Zap, Check } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { signInWithGoogleNative, isGoogleCancel } from '../lib/nativeGoogleAuth';
 import { friendlyError } from '../lib/utils';
 import SEO from '../components/SEO';
 import BetaModal from '../components/BetaModal';
@@ -45,6 +47,7 @@ export default function Register() {
   const [showNameExpanded, setShowNameExpanded] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const { signUp } = useAuth();
+  const navigate = useNavigate();
 
   // Google sign-up redirects the top-level window to Google, so the spinner is
   // kept up on the way out. If the user cancels / hits Back, the browser can
@@ -65,6 +68,22 @@ export default function Register() {
   const handleGoogleSignUp = async () => {
     setGoogleLoading(true);
     setError('');
+
+    // Native app: Google blocks OAuth in embedded WebViews, so use the plugin's
+    // native picker + signInWithIdToken instead of the web redirect.
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await signInWithGoogleNative();
+        navigate('/onboarding');
+      } catch (err) {
+        if (!isGoogleCancel(err)) {
+          setError('Google sign-up didn’t complete. Please try again.');
+        }
+        setGoogleLoading(false);
+      }
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/onboarding` },
