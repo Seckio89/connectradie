@@ -19,6 +19,30 @@ export function isNativeApp(): boolean {
   return Capacitor.isNativePlatform();
 }
 
+/**
+ * Native Google Sign-In needs out-of-code setup before it works, so the
+ * "Continue with Google" button is HIDDEN on the Capacitor app until it's ready
+ * — otherwise mobile users see a Google option that fails. Web is unaffected.
+ *
+ * To turn it on, complete ALL of these, then set VITE_NATIVE_GOOGLE_ENABLED=true
+ * and redeploy the web app + rebuild the APK:
+ *   1. Google Cloud Console → Credentials → an **Android** OAuth client with
+ *      package `com.connectradie.app` and the app's SHA-1 fingerprint
+ *      (debug for testing; the Play App Signing SHA-1 for release).
+ *   2. GOOGLE_WEB_CLIENT_ID above (and serverClientId in capacitor.config.ts +
+ *      server_client_id in android strings.xml) = the **Web** OAuth client ID.
+ *   3. Supabase → Authentication → Providers → Google: enabled, with that Web
+ *      client ID + secret, and the Web client ID added to "Authorized Client IDs".
+ *   4. `npx cap sync android` + rebuild the Android app (it's a native plugin).
+ */
+export const NATIVE_GOOGLE_SIGNIN_ENABLED =
+  (import.meta.env.VITE_NATIVE_GOOGLE_ENABLED as string | undefined) === 'true';
+
+/** Web: always show the Google button. Native: only once configured (flag above). */
+export function showGoogleSignIn(): boolean {
+  return !Capacitor.isNativePlatform() || NATIVE_GOOGLE_SIGNIN_ENABLED;
+}
+
 /** True when the user backed out of the native Google picker (not a real error). */
 export function isGoogleCancel(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err ?? '');
