@@ -4,7 +4,7 @@ import { Mail, Lock, Loader2, AlertCircle, Eye, EyeOff, CheckCircle2, ArrowLeft,
 import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { signInWithGoogleNative, isGoogleCancel, showGoogleSignIn } from '../lib/nativeGoogleAuth';
+import { signInWithGoogleNative, isGoogleCancel, showGoogleSignIn, describeAuthError } from '../lib/nativeGoogleAuth';
 import { friendlyError } from '../lib/utils';
 import SEO from '../components/SEO';
 import BetaModal from '../components/BetaModal';
@@ -64,7 +64,8 @@ export default function Login() {
         navigate('/dashboard');
       } catch (err) {
         if (!isGoogleCancel(err)) {
-          setError('Google sign-in didn’t complete. Please try again, or use your email and password.');
+          // TEMP: surface the exact error (with code) to finish native setup.
+          setError(`Google error: ${describeAuthError(err)}`);
         }
         setGoogleLoading(false);
       }

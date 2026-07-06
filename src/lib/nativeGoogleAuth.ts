@@ -50,10 +50,25 @@ export const NATIVE_GOOGLE_SIGNIN_ENABLED =
  *   return !Capacitor.isNativePlatform() || NATIVE_GOOGLE_SIGNIN_ENABLED;
  */
 export function showGoogleSignIn(): boolean {
-  // Hidden on the native app — native Google isn't configured/working yet, so
-  // the button only produced errors. Web is unaffected. To re-enable on native
-  // once verified working, return `NATIVE_GOOGLE_SIGNIN_ENABLED` instead.
-  return !Capacitor.isNativePlatform();
+  // Shown on native so we can finish/debug the native Google flow. Switch to
+  // `return !Capacitor.isNativePlatform();` to hide it on native again.
+  return true;
+}
+
+/**
+ * Pull the most useful detail out of a native/plugin error for on-screen
+ * debugging — the plugin often nests a numeric code (e.g. 10 = DEVELOPER_ERROR,
+ * 12500/12501) that pinpoints the failing piece far better than the message.
+ */
+export function describeAuthError(err: unknown): string {
+  if (err && typeof err === 'object') {
+    const e = err as { code?: unknown; message?: unknown; errorMessage?: unknown };
+    const parts = [e.code != null ? `code ${e.code}` : null, e.message ?? e.errorMessage]
+      .filter(Boolean);
+    if (parts.length) return parts.join(' — ');
+    try { return JSON.stringify(err); } catch { /* ignore */ }
+  }
+  return String(err);
 }
 
 /** True when the user backed out of the native Google picker (not a real error). */
