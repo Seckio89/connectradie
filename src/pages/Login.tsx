@@ -64,9 +64,7 @@ export default function Login() {
         navigate('/dashboard');
       } catch (err) {
         if (!isGoogleCancel(err)) {
-          // TEMP: surface the raw error so we can diagnose the native flow.
-          const msg = err instanceof Error ? err.message : String(err);
-          setError(`Google error: ${msg}`);
+          setError('Google sign-in didn’t complete. Please try again, or use your email and password.');
         }
         setGoogleLoading(false);
       }
