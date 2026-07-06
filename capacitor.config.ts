@@ -40,7 +40,7 @@ const config: CapacitorConfig = {
     // src/lib/nativeGoogleAuth.ts.
     GoogleAuth: {
       scopes: ['profile', 'email'],
-      serverClientId: '491568884460-unfmph1ckhu27ut9kh5b6cbgui02b6se.apps.googleusercontent.com',
+      serverClientId: '491568884460-unfmph1ckhu227ut9kh5b6cbgui028se.apps.googleusercontent.com',
       forceCodeForRefreshToken: false,
     },
   },
