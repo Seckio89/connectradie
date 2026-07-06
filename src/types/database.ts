@@ -52,6 +52,10 @@ export type Profile = {
   push_subscription: Record<string, unknown> | null;
   insurance_policy: boolean;
   service_radius_km: number;
+  // Tradie base coordinates — the centre point for service_radius_km matching.
+  // Geocoded from their address; null until set.
+  base_latitude: number | null;
+  base_longitude: number | null;
   is_emergency_available: boolean;
   team_size: string | null;
   call_out_fee: number | null;
@@ -184,6 +188,12 @@ export type Job = {
   contact_name: string | null;
   contact_phone: string | null;
   location_address: string | null;
+  // Geocoded job-site coordinates (WGS84). Captured from Google Places at post
+  // time, backfilled for older jobs. Null until geocoded. Used for tradie
+  // service-area matching and the native on-site geofence.
+  latitude: number | null;
+  longitude: number | null;
+  geofence_radius_m: number;
   parking_available: boolean | null;
   budget_type: BudgetType | null;
   budget_amount: number | null;

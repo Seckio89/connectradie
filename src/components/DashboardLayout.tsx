@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { useSiteGeofencing } from '../hooks/useSiteGeofencing';
 import { markNotificationRead, markAllNotificationsRead } from '../lib/notificationService';
 import type { LucideIcon } from 'lucide-react';
 import type { Notification } from '../types/database';
@@ -210,6 +211,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { profile, user, tradieDetails, signOut } = useAuth();
 
   const isTradie = profile?.role === 'tradie';
+
+  // Keep native site geofences in sync with scheduled visits (no-op on web).
+  useSiteGeofencing();
 
   // Auto-expand nav group when navigating to a child route
   useEffect(() => {
