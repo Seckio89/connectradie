@@ -40,6 +40,9 @@ export default function Settings() {
   const [businessName, setBusinessName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  // Coords from a freshly picked address; null means "not changed this session"
+  // so we don't overwrite existing base coords on an unrelated save.
+  const [baseCoords, setBaseCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [postcode, setPostcode] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -324,12 +327,19 @@ export default function Settings() {
       return;
     }
 
-    const updates: Record<string, string> = {
+    const updates: Record<string, unknown> = {
       full_name: fullName,
       phone,
       address,
       postcode,
     };
+
+    // Only refresh base coords when a new address was actually picked this
+    // session — otherwise leave whatever's already stored untouched.
+    if (baseCoords) {
+      updates.base_latitude = baseCoords.lat;
+      updates.base_longitude = baseCoords.lng;
+    }
 
     try {
       const { error: updateError } = await supabase
@@ -690,6 +700,7 @@ export default function Settings() {
               setPhone={setPhone}
               address={address}
               setAddress={setAddress}
+              onAddressCoords={setBaseCoords}
               postcode={postcode}
               setPostcode={setPostcode}
               loading={loading}

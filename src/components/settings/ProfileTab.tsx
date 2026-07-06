@@ -12,6 +12,8 @@ interface ProfileTabProps {
   setPhone: (v: string) => void;
   address: string;
   setAddress: (v: string) => void;
+  /** Called with the picked address's coordinates (or null if typed by hand). */
+  onAddressCoords?: (coords: { lat: number; lng: number } | null) => void;
   postcode: string;
   setPostcode: (v: string) => void;
   loading: boolean;
@@ -23,7 +25,7 @@ interface ProfileTabProps {
 export default function ProfileTab({
   email, fullName, setFullName, businessName, setBusinessName, isTradie,
   phone, setPhone,
-  address, setAddress, postcode, setPostcode,
+  address, setAddress, onAddressCoords, postcode, setPostcode,
   loading, success, error, onSubmit,
 }: ProfileTabProps) {
   return (
@@ -66,7 +68,14 @@ export default function ProfileTab({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-        <AddressAutocomplete value={address} onChange={(value) => setAddress(value)} placeholder="Start typing your address..." />
+        <AddressAutocomplete
+          value={address}
+          onChange={(value, coordinates) => {
+            setAddress(value);
+            onAddressCoords?.(coordinates ?? null);
+          }}
+          placeholder="Start typing your address..."
+        />
       </div>
 
       <div>

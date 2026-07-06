@@ -334,6 +334,10 @@ export default function PostLead() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  // Coordinates from Google Places for the chosen address — powers tradie
+  // service-area matching and the native on-site geofence. Cleared when the
+  // address text is edited by hand (no place selected = no reliable coords).
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [parkingAvailable, setParkingAvailable] = useState(false);
   const [budgetType, setBudgetType] = useState<'request_quote' | 'fixed_budget'>('request_quote');
   const [budgetAmount, setBudgetAmount] = useState('');
@@ -478,6 +482,8 @@ export default function PostLead() {
       description: `[${category}] ${cleanDescription}`,
       status: 'pending',
       location_address: location,
+      latitude: coords?.lat ?? null,
+      longitude: coords?.lng ?? null,
       parking_available: parkingAvailable,
       budget_type: budgetType,
       budget_amount: budgetType === 'fixed_budget' && budgetAmount ? parseFloat(budgetAmount) : null,
@@ -851,7 +857,12 @@ export default function PostLead() {
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Location</label>
                   <AddressAutocomplete
                     value={location}
-                    onChange={(value) => setLocation(value)}
+                    onChange={(value, coordinates) => {
+                      setLocation(value);
+                      // Only a picked suggestion carries coordinates; typing by
+                      // hand clears them so we never store a stale lat/lng.
+                      setCoords(coordinates ?? null);
+                    }}
                     placeholder="Where is the job?"
                   />
                   <label className="mt-2.5 inline-flex items-center gap-2 cursor-pointer select-none">

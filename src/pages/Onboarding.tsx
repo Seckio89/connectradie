@@ -119,6 +119,9 @@ export default function Onboarding() {
         role: 'tradie' as const,
         postcode: addressDetails?.postcode || undefined,
         suburb: addressDetails?.suburb || undefined,
+        // Base coords for service-area matching (Google Places lat/lng).
+        base_latitude: addressDetails?.lat ?? undefined,
+        base_longitude: addressDetails?.lng ?? undefined,
         onboarding_completed: true,
         employer_id: selectedBusiness.profile_id,
         employment_type: employmentRole,
@@ -175,7 +178,7 @@ export default function Onboarding() {
     setError('');
 
     try {
-      const profileUpdates: Record<string, unknown> = { role: selectedRole, postcode: addressDetails?.postcode || undefined, suburb: addressDetails?.suburb || undefined, onboarding_completed: true };
+      const profileUpdates: Record<string, unknown> = { role: selectedRole, postcode: addressDetails?.postcode || undefined, suburb: addressDetails?.suburb || undefined, base_latitude: addressDetails?.lat ?? undefined, base_longitude: addressDetails?.lng ?? undefined, onboarding_completed: true };
       if (selectedRole === 'tradie' && tradeCategory) {
         profileUpdates.declared_trades = [tradeCategory];
       }
