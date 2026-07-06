@@ -38,9 +38,19 @@ export function isNativeApp(): boolean {
 export const NATIVE_GOOGLE_SIGNIN_ENABLED =
   (import.meta.env.VITE_NATIVE_GOOGLE_ENABLED as string | undefined) === 'true';
 
-/** Web: always show the Google button. Native: only once configured (flag above). */
+/**
+ * Web: always show the "Continue with Google" button. Native: **hidden**.
+ *
+ * The native Google flow still isn't working end-to-end (SHA-1 propagation /
+ * Google Cloud / Supabase config), so on the phone the button only produced a
+ * failing "sign-in didn't complete" message — worse than not being there. It's
+ * hard-hidden on native regardless of the VITE_NATIVE_GOOGLE_ENABLED flag.
+ *
+ * To re-enable on native once it's verified working, change the return to:
+ *   return !Capacitor.isNativePlatform() || NATIVE_GOOGLE_SIGNIN_ENABLED;
+ */
 export function showGoogleSignIn(): boolean {
-  return !Capacitor.isNativePlatform() || NATIVE_GOOGLE_SIGNIN_ENABLED;
+  return !Capacitor.isNativePlatform();
 }
 
 /** True when the user backed out of the native Google picker (not a real error). */
