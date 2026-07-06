@@ -33,6 +33,13 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Transistorsoft background-geolocation license key (site geofencing).
+             Required for RELEASE builds only; debug builds run unlicensed.
+             Set the value in res/values/strings.xml. -->
+        <meta-data
+            android:name="com.transistorsoft.locationmanager.license"
+            android:value="@string/transistor_bg_geo_license" />
     </application>
 
     <!-- Permissions -->
@@ -44,4 +51,11 @@
     <!-- Push notifications (Firebase Cloud Messaging) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Background geofencing (on-site arrival/departure detection).
+         ACCESS_BACKGROUND_LOCATION triggers the Play Store "prominent disclosure"
+         review — see docs/native-geofencing-setup.md. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 </manifest>

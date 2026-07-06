@@ -7,4 +7,7 @@
     <!-- Web OAuth client ID for native Google Sign-In (@codetrix-studio/capacitor-google-auth).
          MUST match serverClientId in capacitor.config.ts and the Web client in Google Cloud Console. -->
     <string name="server_client_id">491568884460-unfmph1ckhu227ut9kh5b6cbgui028se.apps.googleusercontent.com</string>
+    <!-- Transistorsoft background-geolocation license key (paste your purchased
+         key here before a RELEASE build; leave empty for debug/dev). -->
+    <string name="transistor_bg_geo_license"></string>
 </resources>
