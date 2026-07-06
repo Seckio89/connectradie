@@ -2,6 +2,33 @@ import { supabase } from './supabase';
 import type { Job } from '../types/database';
 import { sendNotification } from './notificationService';
 import { NOTIFICATION_TYPES } from './notificationTypes';
+import { calculateDistance } from '../hooks/useGeolocation';
+
+/**
+ * Narrow a list of tradie profile IDs to those whose service area covers the
+ * job site. Fails OPEN: if the job has no coordinates, or a tradie has no base
+ * coordinates, that tradie is kept (we never suppress a lead on missing data).
+ */
+async function filterTradiesByServiceArea(tradieIds: string[], job: Job): Promise<string[]> {
+  if (tradieIds.length === 0) return tradieIds;
+  if (job.latitude == null || job.longitude == null) return tradieIds;
+
+  const { data: profs, error } = await supabase
+    .from('profiles')
+    .select('id, base_latitude, base_longitude, service_radius_km')
+    .in('id', tradieIds);
+
+  if (error || !profs) return tradieIds; // fail open on query error
+
+  const byId = new Map(profs.map((p) => [p.id, p]));
+  return tradieIds.filter((id) => {
+    const p = byId.get(id);
+    if (!p || p.base_latitude == null || p.base_longitude == null) return true;
+    const radiusKm = p.service_radius_km ?? 20;
+    const distanceKm = calculateDistance(job.latitude!, job.longitude!, p.base_latitude, p.base_longitude);
+    return distanceKm <= radiusKm;
+  });
+}
 
 export async function requestPushPermission(): Promise<'granted' | 'denied' | 'default'> {
   if (!('Notification' in window)) return 'denied';
@@ -182,7 +209,10 @@ export async function notifyTradiesForNewLead(job: Job) {
 
       if (!allTradies || allTradies.length === 0) return { notified: 0 };
 
-      const fallbackIds = allTradies.map((t) => t.id).filter((id) => id !== job.client_id);
+      const fallbackCandidates = allTradies.map((t) => t.id).filter((id) => id !== job.client_id);
+      // Only notify tradies whose service area covers the job (fail-open).
+      const fallbackIds = await filterTradiesByServiceArea(fallbackCandidates, job);
+      if (fallbackIds.length === 0) return { notified: 0 };
       await supabase
         .from('lead_impressions')
         .upsert(
@@ -206,9 +236,12 @@ export async function notifyTradiesForNewLead(job: Job) {
     }
 
     // Filter out the client who posted the job
-    const tradieIds = tradies
+    const categoryTradieIds = tradies
       .map((t) => t.profile_id)
       .filter((id) => id !== job.client_id);
+
+    // Then narrow to tradies whose service area covers the job (fail-open).
+    const tradieIds = await filterTradiesByServiceArea(categoryTradieIds, job);
 
     if (tradieIds.length === 0) return { notified: 0 };
 

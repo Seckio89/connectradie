@@ -53,6 +53,7 @@ import { formatDate, checkLicenseExpired } from '../lib/utils';
 import { escapeHtml } from '../lib/escapeHtml';
 import { cancelRecurringJob } from '../lib/recurringJobs';
 import { extractSuburb } from '../lib/contactGating';
+import { calculateDistance } from '../hooks/useGeolocation';
 import { tradeRequiresLicense } from '../lib/tradeCategories';
 import { useTradieVerification } from '../hooks/useTradieVerification';
 import SignedImage from '../components/SignedImage';
@@ -192,7 +193,13 @@ function getDateGroupLabel(dateStr: string): string {
 
 type LeadFilter = 'all' | 'active' | 'pending' | 'accepted' | 'boosted' | 'urgent' | 'scheduled' | 'quoted' | 'history' | 'archived' | 'deleted' | 'open' | 'quoting' | 'in_progress' | 'completed' | 'services';
 
-type LeadWithClient = Job & { client_name?: string; my_quote?: Quote | null };
+type LeadWithClient = Job & {
+  client_name?: string;
+  my_quote?: Quote | null;
+  // Distance in km from the tradie's base to the job site. null when either the
+  // job or the tradie has no coordinates yet (older rows / hand-typed address).
+  distance_km?: number | null;
+};
 
 /** Use pre-formatted invoice_ref from payments table, falling back to UUID-based format */
 function fmtInvoiceRef(ref: string | null | undefined, paymentId?: string): string {
@@ -221,6 +228,9 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
   const [quoteModalJob, setQuoteModalJob] = useState<Job | null>(null);
   const [expandedJobId, setExpandedJobId] = useState<string | null>(searchParams.get('job'));
   const [quoteAcceptedBanner, setQuoteAcceptedBanner] = useState<false | 'success' | 'recurring_success' | 'price_increase_success' | 'cancelled' | 'error'>(false);
+  // Service-area filter: hide available leads beyond the tradie's service radius.
+  // On by default; tradies can flip it off to see everything.
+  const [radiusFilterOn, setRadiusFilterOn] = useState(true);
 
   // Sync filter when URL params change (e.g. notification navigating to ?tab=services)
   useEffect(() => {
@@ -519,12 +529,20 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
       const quoteMap = new Map<string, Quote>();
       ((myQuotes || []) as Quote[]).forEach((q) => quoteMap.set(q.job_id, q));
 
+      // Tradie base coords power the distance badge + service-area filter.
+      const baseLat = profile?.base_latitude ?? null;
+      const baseLng = profile?.base_longitude ?? null;
+
       let mapped = data
         .filter((lead: { id: string }) => lead.id === highlightedJobId || !dismissedJobIds.has(lead.id))
         .map((lead: Job & { profiles: { full_name: string } | null }) => ({
           ...lead,
           client_name: lead.profiles?.full_name || 'Client',
           my_quote: quoteMap.get(lead.id) || null,
+          distance_km:
+            baseLat != null && baseLng != null && lead.latitude != null && lead.longitude != null
+              ? calculateDistance(baseLat, baseLng, lead.latitude, lead.longitude)
+              : null,
         }));
 
       if (filter === 'quoted') {
@@ -899,15 +917,29 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     }
   };
 
-  const { urgentLeads, scheduledGroups, otherLeads } = useMemo(() => {
-    if (!isTradie) return { urgentLeads: [], scheduledGroups: [], otherLeads: leads };
+  const serviceRadiusKm = profile?.service_radius_km ?? 20;
+  const hasBaseCoords = profile?.base_latitude != null && profile?.base_longitude != null;
+
+  const { urgentLeads, scheduledGroups, otherLeads, hiddenByRadius } = useMemo(() => {
+    if (!isTradie) return { urgentLeads: [], scheduledGroups: [], otherLeads: leads, hiddenByRadius: 0 };
+
+    // Apply the service-area filter first. Fail open: a lead stays visible if it
+    // has no distance (older/hand-typed address) or the tradie already quoted it.
+    let hidden = 0;
+    const inRange = leads.filter((lead) => {
+      if (!radiusFilterOn || !hasBaseCoords) return true;
+      if (lead.my_quote || lead.distance_km == null) return true;
+      if (lead.distance_km <= serviceRadiusKm) return true;
+      hidden++;
+      return false;
+    });
 
     const now = new Date();
     const urgent: LeadWithClient[] = [];
     const scheduled: LeadWithClient[] = [];
     const other: LeadWithClient[] = [];
 
-    for (const lead of leads) {
+    for (const lead of inRange) {
       const isFlashActive = lead.is_flash_boost && lead.flash_expiry && new Date(lead.flash_expiry) > now;
       if (lead.priority === 'high' || isFlashActive) {
         urgent.push(lead);
@@ -939,8 +971,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
       }
     }
 
-    return { urgentLeads: urgent, scheduledGroups: groups, otherLeads: other };
-  }, [leads, isTradie]);
+    return { urgentLeads: urgent, scheduledGroups: groups, otherLeads: other, hiddenByRadius: hidden };
+  }, [leads, isTradie, radiusFilterOn, hasBaseCoords, serviceRadiusKm]);
 
   const [offlineQueued] = useState<string | null>(null);
 
@@ -1499,6 +1531,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       })()}
                     </span>
                   )}
+                  {isTradie && lead.distance_km != null && (
+                    <span
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-50 text-secondary-700 border border-secondary-100 font-medium"
+                      title={`Approx. ${lead.distance_km.toFixed(1)} km from your base`}
+                    >
+                      {lead.distance_km < 1 ? '<1' : Math.round(lead.distance_km)} km away
+                    </span>
+                  )}
                   {lead.scheduled_date && (
                     <span className="inline-flex items-center gap-1">
                       <CalendarDays className="w-3 h-3 text-secondary-500" />
@@ -2000,6 +2040,49 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
     return (
       <div className="space-y-6">
+        {isTradie && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-gray-200 bg-white px-4 py-3">
+            <MapPin className="w-4 h-4 text-secondary-500 flex-shrink-0" />
+            {!hasBaseCoords ? (
+              <p className="text-sm text-gray-600">
+                Add your business address in{' '}
+                <Link to="/settings" className="text-secondary-600 font-medium hover:text-secondary-700">
+                  Settings
+                </Link>{' '}
+                to filter jobs by distance.
+              </p>
+            ) : radiusFilterOn ? (
+              <>
+                <p className="text-sm text-gray-700">
+                  Showing jobs within{' '}
+                  <span className="font-semibold text-gray-900">{serviceRadiusKm} km</span> of your base
+                  {hiddenByRadius > 0 && (
+                    <span className="text-gray-500"> · {hiddenByRadius} further away hidden</span>
+                  )}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setRadiusFilterOn(false)}
+                  className="ml-auto text-sm font-medium text-secondary-600 hover:text-secondary-700"
+                >
+                  Show all
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-gray-700">Showing jobs everywhere</p>
+                <button
+                  type="button"
+                  onClick={() => setRadiusFilterOn(true)}
+                  className="ml-auto text-sm font-medium text-secondary-600 hover:text-secondary-700"
+                >
+                  Within {serviceRadiusKm} km
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
         {showUrgent && urgentLeads.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
