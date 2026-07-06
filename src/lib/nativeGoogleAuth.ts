@@ -50,7 +50,10 @@ export const NATIVE_GOOGLE_SIGNIN_ENABLED =
  *   return !Capacitor.isNativePlatform() || NATIVE_GOOGLE_SIGNIN_ENABLED;
  */
 export function showGoogleSignIn(): boolean {
-  return !Capacitor.isNativePlatform();
+  // TEMP (debugging native Google): shown on native too so the real error can
+  // be reproduced. Revert to `return !Capacitor.isNativePlatform();` to hide it
+  // on native once native Google is confirmed working — or abandoned.
+  return true;
 }
 
 /** True when the user backed out of the native Google picker (not a real error). */
