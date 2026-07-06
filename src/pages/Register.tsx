@@ -77,9 +77,7 @@ export default function Register() {
         navigate('/onboarding');
       } catch (err) {
         if (!isGoogleCancel(err)) {
-          // TEMP: surface the raw error so we can diagnose the native flow.
-          const msg = err instanceof Error ? err.message : String(err);
-          setError(`Google error: ${msg}`);
+          setError('Google sign-up didn’t complete. Please try again.');
         }
         setGoogleLoading(false);
       }

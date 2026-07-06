@@ -50,10 +50,10 @@ export const NATIVE_GOOGLE_SIGNIN_ENABLED =
  *   return !Capacitor.isNativePlatform() || NATIVE_GOOGLE_SIGNIN_ENABLED;
  */
 export function showGoogleSignIn(): boolean {
-  // TEMP (debugging native Google): shown on native too so the real error can
-  // be reproduced. Revert to `return !Capacitor.isNativePlatform();` to hide it
-  // on native once native Google is confirmed working — or abandoned.
-  return true;
+  // Hidden on the native app — native Google isn't configured/working yet, so
+  // the button only produced errors. Web is unaffected. To re-enable on native
+  // once verified working, return `NATIVE_GOOGLE_SIGNIN_ENABLED` instead.
+  return !Capacitor.isNativePlatform();
 }
 
 /** True when the user backed out of the native Google picker (not a real error). */
