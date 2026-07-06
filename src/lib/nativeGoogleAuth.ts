@@ -13,7 +13,7 @@ import { supabase } from './supabase';
  */
 export const GOOGLE_WEB_CLIENT_ID =
   (import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID as string | undefined) ||
-  '491568884460-unfmph1ckhu27ut9kh5b6cbgui02b6se.apps.googleusercontent.com';
+  '491568884460-unfmph1ckhu227ut9kh5b6cbgui028se.apps.googleusercontent.com';
 
 export function isNativeApp(): boolean {
   return Capacitor.isNativePlatform();
