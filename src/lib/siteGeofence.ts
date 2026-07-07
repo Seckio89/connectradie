@@ -88,7 +88,7 @@ export async function initSiteGeofencing(tradieId: string): Promise<boolean> {
       '@transistorsoft/capacitor-background-geolocation'
     );
 
-    await BackgroundGeolocation.ready({
+    const state = await BackgroundGeolocation.ready({
       desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
       distanceFilter: 50,
       // Keep running across app terminate / device reboot so a scheduled visit
@@ -115,9 +115,22 @@ export async function initSiteGeofencing(tradieId: string): Promise<boolean> {
       locationAuthorizationRequest: 'Always',
     });
 
-    // Geofence-only mode: the SDK sleeps until a boundary is crossed.
-    await BackgroundGeolocation.startGeofences();
+    // ready() is the real initialisation signal — mark it done now so geofence
+    // sync can proceed even if the startGeofences() call below no-ops.
     initialised = true;
+
+    // Geofence-only mode: the SDK sleeps until a boundary is crossed. Because
+    // stopOnTerminate:false persists the started state, ready() often restores
+    // an already-enabled SDK — calling startGeofences() again then rejects with
+    // "Waiting for previous start action to complete". Only start when not
+    // already enabled, and tolerate the race triggered by the permission flow.
+    if (!state.enabled) {
+      try {
+        await BackgroundGeolocation.startGeofences();
+      } catch (startErr) {
+        console.warn('siteGeofence: startGeofences race (SDK already starting)', startErr);
+      }
+    }
     return true;
   } catch (err) {
     console.error('siteGeofence: init failed', err);
