@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Mail, Phone, Briefcase, MoreVertical, Pencil, Trash2, UserCheck, Star, HardHat, Wrench, X, Check, AlertCircle, Clock, Shield, Calendar, ChevronLeft, ChevronRight, Lock, Timer, CheckCircle2, XCircle } from 'lucide-react';
+import { Users, Plus, Mail, Phone, Briefcase, MoreVertical, Pencil, Trash2, UserCheck, Star, HardHat, Wrench, X, Check, AlertCircle, Clock, Shield, Calendar, ChevronLeft, ChevronRight, Lock, Timer, CheckCircle2, XCircle, MapPin } from 'lucide-react';
+import SiteActivityTab from '../components/team/SiteActivityTab';
 import DashboardLayout from '../components/DashboardLayout';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import ConfirmModal from '../components/ConfirmModal';
@@ -36,7 +37,7 @@ interface TeamMember {
   joined_at: string | null;
 }
 
-type ActiveTab = 'active' | 'manual' | 'permissions' | 'calendar' | 'timesheets';
+type ActiveTab = 'active' | 'manual' | 'permissions' | 'calendar' | 'timesheets' | 'siteactivity';
 
 interface TimeEntry {
   id: string;
@@ -534,6 +535,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
     { key: 'permissions', label: 'Role Permissions', count: 0, icon: Lock },
     { key: 'calendar', label: 'Team Calendar', count: 0, icon: Calendar },
     { key: 'timesheets', label: 'Timesheets', count: 0, icon: Timer },
+    { key: 'siteactivity', label: 'Site Activity', count: 0, icon: MapPin },
   ];
 
   const content = (
@@ -696,7 +698,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
               >
                 <tab.icon className="w-4 h-4 flex-shrink-0" />
                 <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{tab.label === 'Role Permissions' ? 'Roles' : tab.label === 'Manually Added' ? 'Manual' : tab.label === 'Active Team' ? 'Active' : tab.label === 'Team Calendar' ? 'Calendar' : tab.label}</span>
+                <span className="sm:hidden">{tab.label === 'Role Permissions' ? 'Roles' : tab.label === 'Manually Added' ? 'Manual' : tab.label === 'Active Team' ? 'Active' : tab.label === 'Team Calendar' ? 'Calendar' : tab.label === 'Site Activity' ? 'Sites' : tab.label}</span>
                 {tab.count > 0 && (
                   <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
                     activeTab === tab.key ? 'bg-warm-100 text-warm-700' : 'bg-gray-100 text-gray-600'
@@ -1055,6 +1057,14 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                 </div>
               )}
             </div>
+          ) : activeTab === 'siteactivity' ? (
+            <SiteActivityTab
+              activeMembers={activeTeam.map(e => ({
+                id: e.id,
+                full_name: e.full_name,
+                employment_type: e.employment_type,
+              }))}
+            />
           ) : (
             manualMembers.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center px-4">
