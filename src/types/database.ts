@@ -188,7 +188,10 @@ export type HintTracking = {
 
 export type Job = {
   id: string;
-  client_id: string;
+  // Nullable since 20260708110000: a job belongs to EITHER a platform user
+  // (client_id) OR a tradie's off-app CRM contact (client_contact_id).
+  client_id: string | null;
+  client_contact_id: string | null;
   tradie_id: string | null;
   title: string | null;
   description: string;
@@ -274,6 +277,10 @@ export type Quote = {
   site_visit_fee_status: 'paid' | 'credited' | null;
   site_visit_fee_paid_at: string | null;
   site_visit_fee_payment_intent_id: string | null;
+  // Off-app email quotes: unguessable token for the public accept page + the
+  // email it was sent to.
+  public_token: string | null;
+  sent_to_email: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -4,9 +4,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState, useMemo } from 'react';
-import { Users, Plus, Mail, Phone, MapPin, Pencil, Trash2, Search, UserCheck, Loader2 } from 'lucide-react';
+import { Users, Plus, Mail, Phone, MapPin, Pencil, Trash2, Search, UserCheck, Loader2, FileText } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import ClientContactModal from '../components/ClientContactModal';
+import NewQuoteModal from '../components/NewQuoteModal';
 import ConfirmModal from '../components/ConfirmModal';
 import EmptyState from '../components/EmptyState';
 import { supabase } from '../lib/supabase';
@@ -23,6 +24,7 @@ export default function Clients() {
   const [showModal, setShowModal] = useState(false);
   const [editContact, setEditContact] = useState<ClientContact | null>(null);
   const [toDelete, setToDelete] = useState<ClientContact | null>(null);
+  const [quoteContact, setQuoteContact] = useState<ClientContact | null>(null);
 
   const fetchContacts = async () => {
     if (!user) return;
@@ -151,6 +153,13 @@ export default function Clients() {
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <button
+                      onClick={() => setQuoteContact(c)}
+                      className="p-2 text-gray-400 hover:text-warm-600 rounded-lg hover:bg-warm-50 transition-colors"
+                      title="New quote"
+                    >
+                      <FileText className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={() => { setEditContact(c); setShowModal(true); }}
                       className="p-2 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
                       title="Edit"
@@ -182,6 +191,16 @@ export default function Clients() {
           onSaved={fetchContacts}
           ownerId={user.id}
           editContact={editContact}
+        />
+      )}
+
+      {quoteContact && user && (
+        <NewQuoteModal
+          isOpen={!!quoteContact}
+          onClose={() => setQuoteContact(null)}
+          onSent={() => {}}
+          tradieId={user.id}
+          contact={quoteContact}
         />
       )}
 
