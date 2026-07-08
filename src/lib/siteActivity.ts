@@ -21,8 +21,16 @@ interface RawEvent {
   job_address: string | null;
   latitude: number | null;
   longitude: number | null;
-  action: 'ENTER' | 'EXIT';
+  action: 'ENTER' | 'EXIT' | 'START_ONSITE' | 'START_OFFSITE';
+  distance_m: number | null;
   occurred_at: string;
+}
+
+export interface OffSiteStart {
+  jobTitle: string | null;
+  occurredAt: string;
+  /** Straight-line distance from the job site when the worker started, metres. */
+  distanceM: number | null;
 }
 
 export interface SiteVisit {
@@ -53,6 +61,7 @@ export interface WorkerDayActivity {
   date: string;
   visits: SiteVisit[];
   legs: TravelLeg[];
+  offSiteStarts: OffSiteStart[];
   totalOnSiteMs: number;
 }
 
@@ -162,25 +171,42 @@ export async function fetchTeamSiteActivity(sinceDays = 30): Promise<WorkerSiteA
 
   const workers: WorkerSiteActivity[] = [];
   for (const [tradieId, events] of byTradie) {
-    const visits = pairVisits(events);
+    // Only geofence crossings pair into visits; off-site starts are separate.
+    const crossings = events.filter((e) => e.action === 'ENTER' || e.action === 'EXIT');
+    const offSites = events.filter((e) => e.action === 'START_OFFSITE');
 
-    // Group visits (and their outbound leg) by local day of arrival.
+    const visits = pairVisits(crossings);
     const legs = buildLegs(visits);
     const legByDeparture = new Map<string, TravelLeg>();
     for (const leg of legs) legByDeparture.set(leg.departedAt, leg);
 
     const dayMap = new Map<string, WorkerDayActivity>();
+    const ensureDay = (key: string): WorkerDayActivity => {
+      let day = dayMap.get(key);
+      if (!day) {
+        day = { date: key, visits: [], legs: [], offSiteStarts: [], totalOnSiteMs: 0 };
+        dayMap.set(key, day);
+      }
+      return day;
+    };
+
     for (const visit of visits) {
-      const key = localDateKey(visit.arrivedAt);
-      const day =
-        dayMap.get(key) ?? { date: key, visits: [], legs: [], totalOnSiteMs: 0 };
+      const day = ensureDay(localDateKey(visit.arrivedAt));
       day.visits.push(visit);
       if (visit.durationMs) day.totalOnSiteMs += visit.durationMs;
       // Attach the leg that departs from this visit (same day as departure).
       if (visit.leftAt && legByDeparture.has(visit.leftAt)) {
         day.legs.push(legByDeparture.get(visit.leftAt)!);
       }
-      dayMap.set(key, day);
+    }
+
+    for (const os of offSites) {
+      const day = ensureDay(localDateKey(os.occurred_at));
+      day.offSiteStarts.push({
+        jobTitle: os.job_title,
+        occurredAt: os.occurred_at,
+        distanceM: os.distance_m,
+      });
     }
 
     workers.push({
@@ -213,6 +239,12 @@ export function formatTime(iso: string): string {
     minute: '2-digit',
     hour12: true,
   });
+}
+
+/** "350 m" / "2.3 km" / "" when unknown. */
+export function formatDistanceShort(m: number | null): string {
+  if (m == null) return '';
+  return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`;
 }
 
 /** "Wed 8 Jul" in local time. */

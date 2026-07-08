@@ -79,6 +79,26 @@ function toRad(deg: number): number {
 }
 
 /**
+ * One-shot current position that bypasses the sessionStorage cache — for
+ * point-in-time checks like "is the worker at the job site right now?".
+ * Resolves null on denial / unavailability / timeout (never throws) so callers
+ * can fail open rather than blocking the user.
+ */
+export function getCurrentPositionOnce(timeoutMs = 8000): Promise<GeoPosition | null> {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      resolve(null);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => resolve(null),
+      { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 },
+    );
+  });
+}
+
+/**
  * Sort an array of items that have `lat` and `lng` properties by distance
  * from the given user coordinates (nearest first).
  */

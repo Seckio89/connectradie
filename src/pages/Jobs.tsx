@@ -19,6 +19,8 @@ import DeclineJobModal from '../components/DeclineJobModal';
 import EmptyState from '../components/EmptyState';
 import VerificationGateModal from '../components/VerificationGateModal';
 import JobCompletionModal from '../components/JobCompletionModal';
+import ConfirmModal from '../components/ConfirmModal';
+import { calculateDistance, getCurrentPositionOnce } from '../hooks/useGeolocation';
 import SubmitQuoteModal from '../components/SubmitQuoteModal';
 import { ListSkeleton } from '../components/SkeletonLoader';
 
@@ -68,6 +70,10 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
   const [gateReason, setGateReason] = useState<'unverified' | 'expired'>('unverified');
   const [completionJob, setCompletionJob] = useState<JobWithRelations | null>(null);
   const [quoteJob, setQuoteJob] = useState<JobWithRelations | null>(null);
+  // Pending off-site job start awaiting the worker's "start anyway" confirmation.
+  const [offSiteStart, setOffSiteStart] = useState<
+    { job: JobWithRelations; distanceM: number; pos: { lat: number; lng: number } } | null
+  >(null);
   const [proposedStartDate, setProposedStartDate] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<{ id: string; invite_name: string; role: string }[]>([]);
   const [assignJobId, setAssignJobId] = useState<string | null>(null);
@@ -562,7 +568,32 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
       return;
     }
 
-    // Normalize profiles to undefined if null
+    // Warn-but-allow on-site check — only for workers assigned by an employer
+    // (the flag is for employer oversight; solo tradies start normally). Fails
+    // open: no job coords or no GPS fix just proceeds without a warning.
+    const isEmployedWorker = !!profile?.employer_id && profile?.employer_status === 'active';
+    if (isEmployedWorker && job.latitude != null && job.longitude != null) {
+      setActionLoading(job.id);
+      const pos = await getCurrentPositionOnce();
+      setActionLoading(null);
+      if (pos) {
+        const distanceM = calculateDistance(pos.lat, pos.lng, job.latitude, job.longitude) * 1000;
+        const radiusM = job.geofence_radius_m ?? 150;
+        if (distanceM > radiusM) {
+          setOffSiteStart({ job, distanceM, pos });
+          return;
+        }
+      }
+    }
+
+    await proceedStartJob(job);
+  };
+
+  const proceedStartJob = async (
+    job: JobWithRelations,
+    offSite?: { distanceM: number; pos: { lat: number; lng: number } },
+  ) => {
+    if (!user) return;
     const normalizedJob = { ...job, profiles: job.profiles ?? undefined };
     setActionLoading(normalizedJob.id);
 
@@ -573,6 +604,19 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
         .eq('id', normalizedJob.id);
 
       if (!error) {
+        // Log the off-site start so the employer sees it in Site Activity.
+        // Best-effort — never fail the start on this.
+        if (offSite) {
+          const { error: logError } = await supabase.from('site_visit_events').insert({
+            tradie_id: user.id,
+            job_id: normalizedJob.id,
+            action: 'START_OFFSITE',
+            latitude: offSite.pos.lat,
+            longitude: offSite.pos.lng,
+            distance_m: offSite.distanceM,
+          });
+          if (logError) console.error('proceedStartJob: off-site log failed', logError);
+        }
         await fetchJobs();
       } else {
         console.error('handleStartJob error:', error);
@@ -1282,6 +1326,26 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
         onClose={() => setShowVerificationGate(false)}
         reason={gateReason}
       />
+
+      {offSiteStart && (
+        <ConfirmModal
+          type="warning"
+          title="You're not at the job site"
+          message={`You appear to be about ${
+            offSiteStart.distanceM >= 1000
+              ? `${(offSiteStart.distanceM / 1000).toFixed(1)} km`
+              : `${Math.round(offSiteStart.distanceM)} m`
+          } from ${offSiteStart.job.title || 'the job site'}. Starting a job away from the site is logged and visible to your employer. Start anyway?`}
+          confirmText="Start anyway"
+          cancelText="Cancel"
+          onConfirm={() => {
+            const s = offSiteStart;
+            setOffSiteStart(null);
+            proceedStartJob(s.job, { distanceM: s.distanceM, pos: s.pos });
+          }}
+          onCancel={() => setOffSiteStart(null)}
+        />
+      )}
 
       {completionJob && user && (
         <JobCompletionModal
