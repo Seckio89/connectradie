@@ -50,6 +50,7 @@ const AdminUpdates = lazy(() => import('./pages/AdminUpdates'));
 const AdminFinancials = lazy(() => import('./pages/AdminFinancials'));
 const Schedule = lazy(() => import('./pages/Schedule'));
 const Clients = lazy(() => import('./pages/Clients'));
+const PublicQuote = lazy(() => import('./pages/PublicQuote'));
 const WorkHub = lazy(() => import('./pages/WorkHub'));
 const PerformanceInsights = lazy(() => import('./pages/PerformanceInsights'));
 const Payouts = lazy(() => import('./pages/Payouts'));
@@ -241,6 +242,7 @@ function AppRoutes() {
       <Route path="/find/:trade/:locationSlug" element={<FindTradies />} />
       <Route path="/find/:trade" element={<FindByTrade />} />
       <Route path="/find-in/:locationSlug" element={<FindByLocation />} />
+      <Route path="/quote/:token" element={<PublicQuote />} />
       <Route path="/costs/:trade" element={<CostGuide />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
