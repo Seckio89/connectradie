@@ -98,6 +98,20 @@ Deno.serve(async (req: Request) => {
       const quoteId = gf.extras?.quote_id ?? gf.identifier;
       if (!jobId) continue; // can't attribute without a job
 
+      // Guard against STALE geofences: if a job has ended/cancelled but its
+      // geofence hasn't been removed from the device yet (device only reconciles
+      // on next app-open), silently drop the crossing rather than logging a
+      // bogus arrival. Fetched once here and reused by the arrival-notify path.
+      const { data: job } = await supabase
+        .from("jobs")
+        .select("status, client_id, title, description")
+        .eq("id", jobId)
+        .maybeSingle();
+      if (!job) continue;
+      if (["completed", "cancelled", "declined"].includes(job.status as string)) {
+        continue; // terminal job — geofence is stale, ignore
+      }
+
       const occurredAt = rec.timestamp || new Date().toISOString();
       const lat = rec.coords?.latitude ?? null;
       const lng = rec.coords?.longitude ?? null;
@@ -133,11 +147,6 @@ Deno.serve(async (req: Request) => {
 
           // count includes the row we just inserted; >1 means a recent prior ENTER.
           if ((count ?? 1) <= 1) {
-            const { data: job } = await supabase
-              .from("jobs")
-              .select("client_id, title, description")
-              .eq("id", jobId)
-              .maybeSingle();
             const { data: tradie } = await supabase
               .from("profiles")
               .select("full_name")
