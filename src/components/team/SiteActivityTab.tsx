@@ -6,12 +6,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState } from 'react';
-import { MapPin, Clock, Navigation, LogIn, LogOut, Loader2, Radar, Info } from 'lucide-react';
+import { MapPin, Clock, Navigation, LogIn, LogOut, Loader2, Radar, Info, AlertTriangle } from 'lucide-react';
 import {
   fetchTeamSiteActivity,
   formatDuration,
   formatTime,
   formatDayLabel,
+  formatDistanceShort,
   type WorkerSiteActivity,
 } from '../../lib/siteActivity';
 
@@ -238,6 +239,24 @@ function WorkerCard({ member, activity }: { member: ActiveMember; activity?: Wor
                   );
                 })}
               </ol>
+
+              {day.offSiteStarts.length > 0 && (
+                <div className="mt-3 space-y-1.5">
+                  {day.offSiteStarts.map((os, i) => (
+                    <div
+                      key={`${os.occurredAt}-${i}`}
+                      className="flex items-start gap-2 text-xs bg-warm-50 border border-warm-200 rounded-lg px-3 py-2"
+                    >
+                      <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-warm-600" />
+                      <span className="text-warm-800">
+                        Started <span className="font-medium">{os.jobTitle || 'job'}</span> off-site
+                        {os.distanceM != null && ` · ~${formatDistanceShort(os.distanceM)} away`}
+                        {` · ${formatTime(os.occurredAt)}`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
