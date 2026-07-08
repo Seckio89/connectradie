@@ -132,6 +132,25 @@ export type MyTrade = {
   created_at: string;
 }
 
+/** A tradie's CRM contact — an on- or off-app client they can quote / assign work for. */
+export type ClientContact = {
+  id: string;
+  owner_id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  suburb: string | null;
+  state: string | null;
+  postcode: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  notes: string | null;
+  linked_profile_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export type AvailabilitySlot = {
   id: string;
   tradie_id: string;
