@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import type { JobWithRelations } from '../types/database';
 import { calculateNextDueDate, createRecurringJob, FREQ_WEEKLY, FREQ_FORTNIGHTLY, insertNotification } from '../lib/recurringJobs';
 import { getFilteredCompletionPrompts } from '../lib/hintToCompletionMap';
+import { useAuth } from '../contexts/AuthContext';
 
 // ── Quick-text prompts per trade category ──
 // Each prompt is a tappable chip the tradie can add to their notes.
@@ -242,6 +243,10 @@ interface JobCompletionModalProps {
 }
 
 export default function JobCompletionModal({ isOpen, onClose, job, userId, onCompleted }: JobCompletionModalProps) {
+  const { profile } = useAuth();
+  // Workers completing jobs on behalf of a business must attach photo proof —
+  // the employer relies on it since they weren't on site.
+  const photosRequired = !!profile?.employer_id && profile?.employer_status === 'active';
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -341,6 +346,10 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
   const handleSubmit = async () => {
     if (!notesValue.trim()) {
       setError('Please select at least one item or add notes.');
+      return;
+    }
+    if (photosRequired && photos.length === 0) {
+      setError('Please add at least one photo of the finished work — required for jobs done on behalf of a business.');
       return;
     }
     const notes = notesValue;
