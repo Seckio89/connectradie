@@ -49,6 +49,7 @@ const AdminDisputes = lazy(() => import('./pages/AdminDisputes'));
 const AdminUpdates = lazy(() => import('./pages/AdminUpdates'));
 const AdminFinancials = lazy(() => import('./pages/AdminFinancials'));
 const Schedule = lazy(() => import('./pages/Schedule'));
+const Clients = lazy(() => import('./pages/Clients'));
 const WorkHub = lazy(() => import('./pages/WorkHub'));
 const PerformanceInsights = lazy(() => import('./pages/PerformanceInsights'));
 const Payouts = lazy(() => import('./pages/Payouts'));
@@ -375,6 +376,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Schedule />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/clients"
+        element={
+          <ProtectedRoute requireTradie>
+            <Clients />
           </ProtectedRoute>
         }
       />
