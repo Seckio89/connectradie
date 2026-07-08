@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { RefreshCw, User, Clock, MapPin, Loader2, Pause, AlertTriangle, X, Briefcase, MoreVertical, Plus, CheckCircle2, CheckCheck, FileText as FileTextIcon, Handshake, ChevronDown, RotateCcw, MessageCircle, Building2, Send, Package, Trash2, CreditCard, Camera, Eye } from 'lucide-react';
+import { RefreshCw, User, Clock, MapPin, Loader2, Pause, AlertTriangle, X, Briefcase, MoreVertical, Plus, CheckCircle2, CheckCheck, FileText as FileTextIcon, Handshake, ChevronDown, RotateCcw, MessageCircle, Building2, Send, Package, Trash2, CreditCard, Camera, Eye, ShieldCheck } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { TRADE_OPTIONS, getSupplySuggestions, SUPPLY_DEFAULT_UNITS } from '../lib/tradeCategories';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,6 +18,7 @@ import {
 } from '../lib/recurringJobs';
 import type { RecurringJob, RecurringSession, KeywordSuggestion, CancellationCategory } from '../lib/recurringJobs';
 import CancelServiceModal from './CancelServiceModal';
+import WorkerDetailsModal from './WorkerDetailsModal';
 import { getActiveAgreements } from '../lib/ongoingServices';
 import type { ServiceAgreement, SupplyItem } from '../types/database';
 import RecurringSessionCard from './RecurringSessionCard';
@@ -1223,6 +1224,8 @@ export default function ClientServicesTab() {
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [collapsedServiceIds, setCollapsedServiceIds] = useState<Set<string>>(new Set());
+  // Service whose assigned worker's (gated) details are being viewed.
+  const [workerModalJobId, setWorkerModalJobId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showPastServices, setShowPastServices] = useState(false);
   const [savedMethods, setSavedMethods] = useState<Map<string, { id: string; bsb_last4: string | null; account_last4: string | null; mandate_status: string }>>(new Map());
@@ -1688,6 +1691,18 @@ export default function ClientServicesTab() {
                           <User className="w-3 h-3" />
                           {tradieName}
                         </span>
+                        {(job as Record<string, unknown>).assigned_team_member_id != null && (
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => { e.stopPropagation(); setWorkerModalJobId(job.id); }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setWorkerModalJobId(job.id); } }}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-secondary-600 hover:text-secondary-700 hover:underline cursor-pointer"
+                          >
+                            <ShieldCheck className="w-3 h-3" />
+                            Who&apos;s coming
+                          </span>
+                        )}
                         {freq && (
                           <span className="inline-flex items-center gap-1 text-xs text-gray-500">
                             <Clock className="w-3 h-3" />
@@ -2681,6 +2696,14 @@ export default function ClientServicesTab() {
           />
         );
       })()}
+
+      {workerModalJobId && (
+        <WorkerDetailsModal
+          isOpen={!!workerModalJobId}
+          onClose={() => setWorkerModalJobId(null)}
+          recurringJobId={workerModalJobId}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { X, Loader2, Check, UserCheck, Users, CircleSlash } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { X, Loader2, Check, UserCheck, Users, CircleSlash, MessageCircle } from 'lucide-react';
 import Modal from './Modal';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -41,6 +41,7 @@ export default function AssignWorkerModal({
 }: AssignWorkerModalProps) {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [members, setMembers] = useState<TeamMemberOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(currentAssignedId);
@@ -174,6 +175,26 @@ export default function AssignWorkerModal({
                       {!m.member_profile_id ? ' · invite pending (won’t be notified)' : ''}
                     </p>
                   </div>
+                  {m.member_profile_id && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      title={`Message ${m.invite_name || 'worker'}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/messages?tradie=${m.member_profile_id}`);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.stopPropagation();
+                          navigate(`/messages?tradie=${m.member_profile_id}`);
+                        }
+                      }}
+                      className="p-2 text-gray-400 hover:text-secondary-600 rounded-lg hover:bg-secondary-50 transition-colors flex-shrink-0"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                    </span>
+                  )}
                   {selected && <Check className="w-5 h-5 text-warm-500 flex-shrink-0" />}
                 </button>
               );
