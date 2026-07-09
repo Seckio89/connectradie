@@ -127,7 +127,7 @@ function heuristicEstimate(req: EstimateRequest): Estimate {
     confidence: isLicensed ? "low" : sqm || rooms ? "medium" : "low",
     needsSiteVisit: isLicensed || (sqm === 0 && rooms === 0),
     assumptions,
-    note: "Estimate only — review before quoting. Add ANTHROPIC_API_KEY to enable AI photo analysis.",
+    note: "Estimate only — review before quoting.",
   };
 }
 
@@ -179,20 +179,30 @@ async function aiEstimate(req: EstimateRequest, apiKey: string): Promise<Estimat
     },
     body: JSON.stringify({
       model: "claude-opus-4-8",
-      max_tokens: 2048,
+      // Generous budget: adaptive thinking + the JSON answer must both fit, or
+      // the answer truncates (stop_reason:"max_tokens") and parsing fails.
+      max_tokens: 6000,
       thinking: { type: "adaptive" },
       output_config: { format: { type: "json_schema", schema: OUTPUT_SCHEMA } },
       messages: [{ role: "user", content }],
     }),
   });
 
-  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const data = await res.json();
   if (data.stop_reason === "refusal") throw new Error("refusal");
 
-  const textBlock = (data.content || []).find((b: { type: string }) => b.type === "text");
-  if (!textBlock?.text) throw new Error("no text block");
-  const parsed = JSON.parse(textBlock.text) as Omit<Estimate, "source">;
+  const textBlock = (data.content || []).find((b: { type: string; text?: string }) => b.type === "text" && b.text);
+  if (!textBlock?.text) throw new Error(`no text block (stop_reason=${data.stop_reason})`);
+  // Structured output should be pure JSON; extract the object defensively.
+  let parsed: Omit<Estimate, "source">;
+  try {
+    parsed = JSON.parse(textBlock.text);
+  } catch {
+    const m = textBlock.text.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error(`unparseable: ${textBlock.text.slice(0, 200)}`);
+    parsed = JSON.parse(m[0]);
+  }
 
   return {
     source: "ai",
