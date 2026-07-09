@@ -64,6 +64,7 @@ const Pricing = lazy(() => import('./pages/Pricing'));
 const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
 const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
+const PaymentCancelled = lazy(() => import('./pages/PaymentCancelled'));
 const Invoice = lazy(() => import('./pages/Invoice'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const LeaveReview = lazy(() => import('./pages/LeaveReview'));
@@ -250,6 +251,7 @@ function AppRoutes() {
       <Route path="/help" element={<HelpFAQ />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/payment-success" element={<PaymentSuccess />} />
+      <Route path="/payment-cancelled" element={<PaymentCancelled />} />
       <Route path="/invoice/:paymentId" element={<Invoice />} />
       <Route
         path="/my-trades"

@@ -11,6 +11,19 @@ const config: CapacitorConfig = {
     url: 'https://connectradie.com/login',
     cleartext: true,
     androidScheme: 'https',
+    // Keep Stripe Checkout INSIDE the app WebView. Without this, navigating to
+    // checkout.stripe.com is treated as an external link and opens the system
+    // browser, so after paying the user is stranded on Stripe's "you're all done"
+    // page with no way back into the app. Allow-listing Stripe's hosts means the
+    // hosted checkout loads in-WebView and its success_url redirect back to
+    // connectradie.com/payment-success returns straight to the app.
+    allowNavigation: [
+      'connectradie.com',
+      '*.stripe.com',
+      'checkout.stripe.com',
+      'js.stripe.com',
+      'hooks.stripe.com',
+    ],
   },
   plugins: {
     SplashScreen: {

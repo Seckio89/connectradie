@@ -256,8 +256,8 @@ Deno.serve(async (req: Request) => {
     const session = await stripe.checkout.sessions.create({
       line_items: lineItems,
       mode: "payment",
-      success_url: `${siteUrl}/payment-success`,
-      cancel_url: `${siteUrl}/leads?tab=services`,
+      success_url: `${siteUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}/payment-cancelled`,
       payment_intent_data: {
         application_fee_amount: platformFeeCents + processingFeeCents,
         transfer_data: { destination: destinationAccount },

@@ -183,8 +183,10 @@ export async function createJobPaymentCheckout(
   const result = await callEdgeFunction<{ url: string }>('create-job-payment-checkout', {
     paymentId,
     idempotencyKey,
-    successUrl: `${window.location.origin}/payments?payment=success&payment_id=${paymentId}`,
-    cancelUrl: `${window.location.origin}/payments?payment=cancelled&payment_id=${paymentId}`,
+    // {CHECKOUT_SESSION_ID} is substituted by Stripe; the edge function passes
+    // these strings through verbatim (it only reads the hostname for validation).
+    successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&payment_id=${paymentId}`,
+    cancelUrl: `${window.location.origin}/payment-cancelled`,
   });
 
   if (!result.url) {
