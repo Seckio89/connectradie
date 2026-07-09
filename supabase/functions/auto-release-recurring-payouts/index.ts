@@ -26,6 +26,17 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@14.21.0";
+import { calculatePlatformFee, resolveTradieTier } from "../_shared/pricing.ts";
+
+// Invoices paid at/after this instant get an automatic BANK PAYOUT (Stripe
+// balance → bank) once their funds settle. Tradie accounts are on MANUAL payouts
+// (see migrate-payout-schedules — the escrow replacement), and modern invoices use
+// destination charges that land funds in the tradie's balance at charge time, so
+// nothing ever moved them to the bank. This cutover is the deploy time of that fix:
+// invoices paid BEFORE it were auto-paid-out under the old automatic-payout schedule
+// (or reconciled by a one-time balance release), so gating on it prevents re-paying
+// historical earnings.
+const BANK_PAYOUT_CUTOVER = "2026-07-09T12:00:00Z";
 
 function requireEnv(key: string): string {
   const val = Deno.env.get(key);
@@ -92,6 +103,50 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
+
+    // Cron posts '{}'; an admin/ops call may pass a body for the one-time release.
+    let body: Record<string, unknown> = {};
+    try { body = await req.json(); } catch { /* no/invalid body → treat as empty */ }
+
+    // ── Admin one-time release: pay out a tradie's settled Connect balance ────
+    // Clears earnings that piled up as "available" while accounts were on manual
+    // payouts with nothing moving them to the bank. A payout can NEVER exceed the
+    // available balance, so it can't over-pay; reserveCents leaves escrow-held
+    // one-off funds (funded but not yet released) untouched.
+    if (typeof body.releaseAvailableBalanceForTradie === "string") {
+      const tradieId = body.releaseAvailableBalanceForTradie;
+      const reserveCents = typeof body.reserveCents === "number" ? Math.max(0, Math.round(body.reserveCents)) : 0;
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("stripe_connect_account_id, stripe_connect_onboarding_complete")
+        .eq("id", tradieId)
+        .maybeSingle();
+      if (!prof?.stripe_connect_account_id || !prof.stripe_connect_onboarding_complete) {
+        return errorJson("Tradie has no completed Connect account", 400);
+      }
+      const bal = await stripe.balance.retrieve({ stripeAccount: prof.stripe_connect_account_id });
+      const availableAud = bal.available.filter((b) => b.currency === "aud").reduce((s, b) => s + b.amount, 0);
+      const payoutAmount = availableAud - reserveCents;
+      if (payoutAmount <= 0) {
+        return jsonResponse({ mode: "balance_release", tradie_id: tradieId, available_cents: availableAud, reserve_cents: reserveCents, paid_out_cents: 0, note: "Nothing available to pay out after reserve." });
+      }
+      const idem = typeof body.idempotencyKey === "string" ? body.idempotencyKey : `manual_release_${tradieId}`;
+      const payout = await stripe.payouts.create(
+        { amount: payoutAmount, currency: "aud", description: "ConnecTradie balance release", metadata: { type: "manual_balance_release", tradie_id: tradieId } },
+        { stripeAccount: prof.stripe_connect_account_id, idempotencyKey: idem },
+      );
+      try {
+        await supabase.from("notifications").insert({
+          user_id: tradieId,
+          title: "Payout On Its Way",
+          message: `$${(payoutAmount / 100).toFixed(2)} from your ConnecTradie balance is heading to your bank account.`,
+          type: "payment_received",
+          read: false,
+          metadata: { payout_id: payout.id },
+        });
+      } catch { /* non-fatal */ }
+      return jsonResponse({ mode: "balance_release", tradie_id: tradieId, available_cents: availableAud, reserve_cents: reserveCents, paid_out_cents: payoutAmount, payout_id: payout.id, payout_status: payout.status, arrival_date: payout.arrival_date });
+    }
 
     const cutoffIso = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
@@ -290,12 +345,96 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Bank-payout stage — move SETTLED recurring earnings from the tradie's Stripe
+    // balance to their bank. Destination charges land funds in the tradie's balance
+    // at charge time and accounts are on MANUAL payouts, so without this nothing
+    // reaches the bank. Gated to paid_at >= BANK_PAYOUT_CUTOVER so historical
+    // 'transferred' invoices are never re-paid; 'transferred' → 'paid_out' with a
+    // per-invoice idempotency key as belt-and-suspenders.
+    const bankPayouts: { invoice_id: string; outcome: string; amount_cents?: number; payout_id?: string; reason?: string }[] = [];
+    let bankPaidCount = 0;
+    let bankPaidAmount = 0;
+
+    const { data: awaiting, error: awaitingErr } = await supabase
+      .from("recurring_invoices")
+      .select("id, tradie_id, total, recurring_job_id, paid_at")
+      .eq("status", "paid")
+      .eq("payout_status", "transferred")
+      .gte("paid_at", BANK_PAYOUT_CUTOVER)
+      .lte("paid_at", cutoffIso);
+
+    if (awaitingErr) {
+      console.error("Failed to fetch awaiting-bank-payout invoices:", awaitingErr);
+    } else {
+      const tradieCache = new Map<string, { connectId: string | null; onboarded: boolean; tier: ReturnType<typeof resolveTradieTier> }>();
+      for (const inv of awaiting || []) {
+        if (!inv.tradie_id) { bankPayouts.push({ invoice_id: inv.id, outcome: "skipped", reason: "no tradie_id" }); continue; }
+
+        let meta = tradieCache.get(inv.tradie_id);
+        if (!meta) {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("stripe_connect_account_id, stripe_connect_onboarding_complete")
+            .eq("id", inv.tradie_id)
+            .maybeSingle();
+          const { data: td } = await supabase
+            .from("tradie_details")
+            .select("subscription_tier")
+            .eq("profile_id", inv.tradie_id)
+            .maybeSingle();
+          meta = {
+            connectId: prof?.stripe_connect_account_id ?? null,
+            onboarded: !!prof?.stripe_connect_onboarding_complete,
+            tier: resolveTradieTier(td?.subscription_tier),
+          };
+          tradieCache.set(inv.tradie_id, meta);
+        }
+
+        if (!meta.connectId || !meta.onboarded) { bankPayouts.push({ invoice_id: inv.id, outcome: "skipped", reason: "no connect account" }); continue; }
+
+        // Net that landed in the tradie's balance = total − platform fee (processing
+        // was added on top of the charge and taken back as part of the application fee).
+        const totalDollars = Number(inv.total) || 0;
+        const netCents = Math.round(totalDollars * 100) - Math.round(calculatePlatformFee(totalDollars, meta.tier) * 100);
+        if (netCents <= 0) { bankPayouts.push({ invoice_id: inv.id, outcome: "skipped", reason: "non-positive net" }); continue; }
+
+        try {
+          const payout = await stripe.payouts.create(
+            { amount: netCents, currency: "aud", description: "ConnecTradie recurring invoice", metadata: { type: "recurring_invoice_bank_payout", invoice_id: inv.id, tradie_id: inv.tradie_id, recurring_job_id: inv.recurring_job_id ?? "" } },
+            { stripeAccount: meta.connectId, idempotencyKey: `bank_payout_${inv.id}` },
+          );
+          await supabase
+            .from("recurring_invoices")
+            .update({ payout_status: "paid_out", payout_error_message: null })
+            .eq("id", inv.id);
+          bankPayouts.push({ invoice_id: inv.id, outcome: "paid_out", amount_cents: netCents, payout_id: payout.id });
+          bankPaidCount++;
+          bankPaidAmount += netCents;
+        } catch (payErr) {
+          const msg = payErr instanceof Error ? payErr.message : String(payErr);
+          const code = (payErr as { code?: string } | undefined)?.code;
+          // Insufficient available balance (funds still settling) → leave as
+          // 'transferred' so the next hourly run retries once they clear.
+          console.warn(`Bank payout deferred for invoice ${inv.id}: ${code ?? ""} ${msg}`);
+          await supabase
+            .from("recurring_invoices")
+            .update({ payout_error_message: `[bank_payout] ${code ?? ""} ${msg}`.slice(0, 500) })
+            .eq("id", inv.id);
+          bankPayouts.push({ invoice_id: inv.id, outcome: "deferred", reason: code ?? msg });
+        }
+      }
+    }
+
     return jsonResponse({
       processed: invoices.length,
       released,
       total_amount_cents: totalAmount,
       total_amount_dollars: `$${(totalAmount / 100).toFixed(2)}`,
       results,
+      bank_paid_count: bankPaidCount,
+      bank_paid_amount_cents: bankPaidAmount,
+      bank_payouts: bankPayouts,
     });
   } catch (err) {
     console.error("auto-release-recurring-payouts error:", err);
