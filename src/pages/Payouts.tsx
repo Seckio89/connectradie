@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import JobManagementModal from '../components/JobManagementModal';
+import PaymentRequestsSection from '../components/PaymentRequestsSection';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getConnectAccountDetails, createConnectOnboardingSession } from '../lib/stripe';
@@ -638,7 +639,10 @@ export default function Payouts() {
   if (error) {
     return (
       <DashboardLayout>
-        <div className="max-w-[1600px] mx-auto">
+        <div className="max-w-[1600px] mx-auto space-y-6">
+          {/* Payment requests work without Stripe — many subcontractors are paid
+              purely off-platform, so don't hide them behind a Connect failure. */}
+          <PaymentRequestsSection />
           <div className="flex flex-col items-center justify-center py-24">
             <AlertTriangle className="w-12 h-12 text-red-400 mb-4" />
             <p className="text-gray-900 font-semibold mb-2">Something went wrong</p>
@@ -687,6 +691,9 @@ export default function Payouts() {
             </button>
           )}
         </div>
+
+        {/* Off-platform payment requests (worker ↔ employer, BSB transfer) */}
+        <PaymentRequestsSection />
 
         {/* Not Connected state */}
         {!accountDetails?.connected && (
