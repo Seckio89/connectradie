@@ -96,7 +96,24 @@ Deno.serve(async (req: Request) => {
     const [account, balance, payouts, externalAccounts] = await Promise.all([
       stripe.accounts.retrieve(accountId),
       stripe.balance.retrieve({ stripeAccount: accountId }),
-      stripe.payouts.list({ stripeAccount: accountId, limit: 20 }),
+      (async () => {
+        // Paginate the full payout history (capped for safety). The Payouts page
+        // derives lifetime-earnings totals and the CSV/tax export from this list —
+        // the old limit:20 silently understated both for high-volume tradies.
+        const all: Stripe.Payout[] = [];
+        let startingAfter: string | undefined;
+        for (let i = 0; i < 5 && all.length < 500; i++) {
+          const page = await stripe.payouts.list({
+            stripeAccount: accountId,
+            limit: 100,
+            ...(startingAfter ? { starting_after: startingAfter } : {}),
+          });
+          all.push(...page.data);
+          if (!page.has_more || page.data.length === 0) break;
+          startingAfter = page.data[page.data.length - 1].id;
+        }
+        return all;
+      })(),
       stripe.accounts
         .listExternalAccounts(accountId, { object: "bank_account", limit: 1 })
         .catch(() => null),
@@ -168,7 +185,7 @@ Deno.serve(async (req: Request) => {
           available: audAvailable,
           pending: audPending,
         },
-        payouts: payouts.data.map((p) => ({
+        payouts: payouts.map((p) => ({
           id: p.id,
           amount: p.amount,
           currency: p.currency,

@@ -145,8 +145,13 @@ Deno.serve(async (req: Request) => {
     // Determine payment flow: destination charges (new) vs custodial escrow (legacy)
     const isDestinationCharge = payment.metadata?.flow === "destination";
 
-    // Create refund for the full amount (base + processing fee)
-    const refundAmount = payment.amount + (payment.processing_fee || 0);
+    // Full refund = base amount + GST + processing fee. GST is charged as a
+    // separate checkout line item (stored in metadata.gst, in cents) and, on
+    // destination charges, was routed to the tradie — reverse_transfer only
+    // reverses the portion of the amount actually refunded, so omitting GST here
+    // would under-refund the client and leave the GST collected.
+    const gstCents = payment.metadata?.gst != null ? (parseInt(String(payment.metadata.gst), 10) || 0) : 0;
+    const refundAmount = payment.amount + gstCents + (payment.processing_fee || 0);
 
     // ── DESTINATION CHARGE REFUND ──────────────────────────────────────
     // For destination charges, the funds were split at payment time between

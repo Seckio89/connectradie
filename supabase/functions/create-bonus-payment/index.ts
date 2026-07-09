@@ -130,20 +130,20 @@ Deno.serve(async (req: Request) => {
       return errorJson("Only the client on this payment can give a bonus", 403);
     }
 
-    if (payment.status !== "completed") {
-      return errorJson("Original payment must be completed", 400);
-    }
-
-    const existingMetadata = (payment.metadata || {}) as Record<string, unknown>;
-
-    // Bonus only makes sense AFTER the escrow has been released to the tradie —
-    // otherwise the client should adjust the original payment upward via pay-price-increase instead.
-    if (!existingMetadata.transfer_id) {
+    // A bonus tops up AFTER the original payment has been released to the tradie.
+    // (While it's still in escrow — status 'completed' — the client should adjust
+    // the amount via pay-price-increase instead.) 'released' covers BOTH flows:
+    // legacy transfers (metadata.transfer_id) and destination-charge payouts
+    // (metadata.payout_id). The old gate required status='completed' AND a
+    // transfer_id, which no released payment ever satisfies, so bonuses were dead.
+    if (payment.status !== "released") {
       return errorJson(
-        "You can only add a bonus after the original payment has been released. Try adjusting the payment amount instead.",
+        "You can only add a bonus after the original payment has been released to your tradie. While it's still in escrow, adjust the amount instead.",
         400
       );
     }
+
+    const existingMetadata = (payment.metadata || {}) as Record<string, unknown>;
 
     // Sanity cap: bonus cannot exceed 2x the original amount (guard against slipped decimals)
     const originalAmountCents = payment.amount;
