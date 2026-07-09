@@ -280,7 +280,13 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const siteUrl = Deno.env.get("SITE_URL") || "http://localhost:5173";
+    // Redirect base for Stripe checkout. NEVER fall back to localhost — these
+    // sessions are stored on the invoice and reused by "Pay Now" days later, so a
+    // bad success_url is baked in permanently (sessions are immutable) and strands
+    // the payer on Stripe's domain after paying.
+    const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") || "";
+    const siteUrl = Deno.env.get("SITE_URL") ||
+      (allowedOrigin && allowedOrigin !== "*" ? allowedOrigin : "https://connectradie.com");
 
     // Check for saved BECS payment method
     const { data: savedBecs } = await supabase
@@ -352,8 +358,8 @@ Deno.serve(async (req: Request) => {
           customer_email: customerId ? undefined : homeowner?.email,
           line_items: lineItems,
           mode: "payment",
-          success_url: `${siteUrl}/payment-success`,
-          cancel_url: `${siteUrl}/payments?invoice_cancelled=true`,
+          success_url: `${siteUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${siteUrl}/payment-cancelled`,
           payment_intent_data: {
             application_fee_amount: platformFeeCents + processingFee,
             transfer_data: { destination: destinationAccount },
@@ -392,8 +398,8 @@ Deno.serve(async (req: Request) => {
         customer_email: customerId ? undefined : homeowner?.email,
         line_items: lineItems,
         mode: "payment",
-        success_url: `${siteUrl}/payment-success`,
-        cancel_url: `${siteUrl}/payments?invoice_cancelled=true`,
+        success_url: `${siteUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${siteUrl}/payment-cancelled`,
         payment_intent_data: {
           application_fee_amount: platformFeeCents + processingFee,
           transfer_data: { destination: destinationAccount },
