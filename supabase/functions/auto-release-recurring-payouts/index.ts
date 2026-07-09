@@ -115,7 +115,7 @@ Deno.serve(async (req: Request) => {
     // one-off funds (funded but not yet released) untouched.
     if (typeof body.releaseAvailableBalanceForTradie === "string") {
       const tradieId = body.releaseAvailableBalanceForTradie;
-      const reserveCents = typeof body.reserveCents === "number" ? Math.max(0, Math.round(body.reserveCents)) : 0;
+      const callerReserve = typeof body.reserveCents === "number" ? Math.max(0, Math.round(body.reserveCents)) : 0;
       const { data: prof } = await supabase
         .from("profiles")
         .select("stripe_connect_account_id, stripe_connect_onboarding_complete")
@@ -124,17 +124,42 @@ Deno.serve(async (req: Request) => {
       if (!prof?.stripe_connect_account_id || !prof.stripe_connect_onboarding_complete) {
         return errorJson("Tradie has no completed Connect account", 400);
       }
+
+      // Auto-reserve un-released escrow: one-off destination charges that funded a
+      // job but the homeowner hasn't approved release yet ALSO sit in this same
+      // available balance. Paying them out would release escrow early, so we always
+      // hold them back (plus any caller-supplied reserve). This makes the endpoint
+      // safe even if invoked with reserveCents=0.
+      const { data: escrowRows } = await supabase
+        .from("payments")
+        .select("amount")
+        .eq("metadata->>tradie_id", tradieId)
+        .eq("metadata->>flow", "destination")
+        .in("status", ["completed", "funded", "paid"]);
+      const escrowReserve = (escrowRows || []).reduce((s, r) => s + (r.amount || 0), 0);
+      const reserveCents = callerReserve + escrowReserve;
+
       const bal = await stripe.balance.retrieve({ stripeAccount: prof.stripe_connect_account_id });
       const availableAud = bal.available.filter((b) => b.currency === "aud").reduce((s, b) => s + b.amount, 0);
       const payoutAmount = availableAud - reserveCents;
       if (payoutAmount <= 0) {
-        return jsonResponse({ mode: "balance_release", tradie_id: tradieId, available_cents: availableAud, reserve_cents: reserveCents, paid_out_cents: 0, note: "Nothing available to pay out after reserve." });
+        return jsonResponse({ mode: "balance_release", tradie_id: tradieId, available_cents: availableAud, reserve_cents: reserveCents, escrow_reserve_cents: escrowReserve, paid_out_cents: 0, note: "Nothing available to pay out after reserve." });
       }
       const idem = typeof body.idempotencyKey === "string" ? body.idempotencyKey : `manual_release_${tradieId}`;
       const payout = await stripe.payouts.create(
         { amount: payoutAmount, currency: "aud", description: "ConnecTradie balance release", metadata: { type: "manual_balance_release", tradie_id: tradieId } },
         { stripeAccount: prof.stripe_connect_account_id, idempotencyKey: idem },
       );
+
+      // Reconcile: the recurring invoices whose funds this payout just drained must
+      // be marked 'paid_out' so the hourly bank-payout stage doesn't pay them AGAIN.
+      await supabase
+        .from("recurring_invoices")
+        .update({ payout_status: "paid_out", payout_error_message: null })
+        .eq("tradie_id", tradieId)
+        .eq("status", "paid")
+        .eq("payout_status", "transferred");
+
       try {
         await supabase.from("notifications").insert({
           user_id: tradieId,
@@ -145,7 +170,7 @@ Deno.serve(async (req: Request) => {
           metadata: { payout_id: payout.id },
         });
       } catch { /* non-fatal */ }
-      return jsonResponse({ mode: "balance_release", tradie_id: tradieId, available_cents: availableAud, reserve_cents: reserveCents, paid_out_cents: payoutAmount, payout_id: payout.id, payout_status: payout.status, arrival_date: payout.arrival_date });
+      return jsonResponse({ mode: "balance_release", tradie_id: tradieId, available_cents: availableAud, reserve_cents: reserveCents, escrow_reserve_cents: escrowReserve, paid_out_cents: payoutAmount, payout_id: payout.id, payout_status: payout.status, arrival_date: payout.arrival_date });
     }
 
     const cutoffIso = new Date(Date.now() - 60 * 60 * 1000).toISOString();
@@ -358,7 +383,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: awaiting, error: awaitingErr } = await supabase
       .from("recurring_invoices")
-      .select("id, tradie_id, total, recurring_job_id, paid_at")
+      .select("id, tradie_id, total, recurring_job_id, paid_at, stripe_checkout_session_id, stripe_payment_intent_id")
       .eq("status", "paid")
       .eq("payout_status", "transferred")
       .gte("paid_at", BANK_PAYOUT_CUTOVER)
@@ -395,8 +420,24 @@ Deno.serve(async (req: Request) => {
 
         // Net that landed in the tradie's balance = total − platform fee (processing
         // was added on top of the charge and taken back as part of the application fee).
+        // Use the platform fee ACTUALLY applied at charge time (stored in the session /
+        // payment-intent metadata) rather than recomputing from the tradie's CURRENT
+        // tier — a mid-cycle tier change would otherwise make the payout ≠ what landed.
         const totalDollars = Number(inv.total) || 0;
-        const netCents = Math.round(totalDollars * 100) - Math.round(calculatePlatformFee(totalDollars, meta.tier) * 100);
+        let platformFeeCents: number | null = null;
+        try {
+          if (inv.stripe_checkout_session_id) {
+            const s = await stripe.checkout.sessions.retrieve(inv.stripe_checkout_session_id);
+            if (s.metadata?.platform_fee) platformFeeCents = parseInt(s.metadata.platform_fee, 10);
+          } else if (inv.stripe_payment_intent_id) {
+            const p = await stripe.paymentIntents.retrieve(inv.stripe_payment_intent_id);
+            if (p.metadata?.platform_fee) platformFeeCents = parseInt(p.metadata.platform_fee, 10);
+          }
+        } catch { /* fall back to tier-based compute below */ }
+        if (platformFeeCents === null || Number.isNaN(platformFeeCents)) {
+          platformFeeCents = Math.round(calculatePlatformFee(totalDollars, meta.tier) * 100);
+        }
+        const netCents = Math.round(totalDollars * 100) - platformFeeCents;
         if (netCents <= 0) { bankPayouts.push({ invoice_id: inv.id, outcome: "skipped", reason: "non-positive net" }); continue; }
 
         try {

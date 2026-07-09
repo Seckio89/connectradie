@@ -172,7 +172,7 @@ Deno.serve(async (req: Request) => {
     // Sum any completed price_adjustment child payments
     const { data: additionalPayments } = await supabase
       .from("payments")
-      .select("amount, metadata")
+      .select("id, amount, metadata")
       .eq("parent_payment_id", paymentId)
       .eq("status", "completed")
       .eq("payment_type", "price_adjustment");
@@ -209,10 +209,12 @@ Deno.serve(async (req: Request) => {
     if (isDestinationCharge) {
       let payoutId: string | null = null;
       let payoutAmount: number | null = null;
+      let payoutError: string | null = null;
 
-      // Attempt to trigger an immediate payout to the tradie's bank.
-      // This is best-effort — if it fails, the connected account's
-      // automatic payout schedule will handle it.
+      // Attempt to move the funds from the tradie's Stripe balance to their bank.
+      // If it fails (e.g. balance still settling) we keep the payment retryable
+      // rather than marking it released — manual-payout accounts have no schedule
+      // that would otherwise complete it.
       try {
         const payout = await stripe.payouts.create(
           {
@@ -229,34 +231,43 @@ Deno.serve(async (req: Request) => {
           },
           {
             stripeAccount: tradieProfile.stripe_connect_account_id,
-            ...(idempotencyKey ? { idempotencyKey } : {}),
+            // Deterministic key shared with auto-release-payments so a client
+            // release racing the cron can't create two payouts for one payment.
+            idempotencyKey: `release_payout_${paymentId}`,
           },
         );
         payoutId = payout.id;
         payoutAmount = payout.amount;
       } catch (payoutErr) {
-        // Payout failed — not critical for destination charges since the
-        // transfer already happened. The tradie will get paid via their
-        // connected account's normal payout schedule.
+        payoutError = payoutErr instanceof Error ? payoutErr.message : String(payoutErr);
         console.warn(
-          "Destination charge payout failed (non-critical). Funds already in tradie's Stripe account. Payment:",
+          "Destination payout failed — keeping payment retryable. Payment:",
           paymentId,
           "Error:",
-          payoutErr instanceof Error ? payoutErr.message : payoutErr,
+          payoutError,
         );
       }
 
-      // Always mark the payment as released — the money is already with the tradie.
       const { pending_increase: _droppedIncrease, ...cleanMetadata } = existingMetadata as Record<string, unknown>;
+      const releasedAt = new Date().toISOString();
+
+      // Only mark 'released' once the BANK PAYOUT actually landed. Accounts are on
+      // MANUAL payouts, so a 'released' row with no payout_id would strand the funds
+      // in the tradie's balance forever — auto-release-payments only rescans
+      // 'completed'. On failure keep status 'completed' + payout_pending so the cron
+      // retries; record the homeowner's approval either way.
+      const newStatus = payoutId ? "released" : "completed";
       const { error: metaUpdateError } = await supabase
         .from("payments")
         .update({
-          status: "released",
+          status: newStatus,
           metadata: {
             ...cleanMetadata,
-            ...(payoutId ? { payout_id: payoutId, payout_amount: payoutAmount } : {}),
+            ...(payoutId
+              ? { payout_id: payoutId, payout_amount: payoutAmount, released_at: releasedAt }
+              : { payout_pending: true, payout_last_error: payoutError }),
             platform_fee_deducted: platformFeeCents,
-            released_at: new Date().toISOString(),
+            release_approved_at: releasedAt,
             released_by: user.id,
             flow: "destination",
           },
@@ -269,6 +280,18 @@ Deno.serve(async (req: Request) => {
           paymentId,
           metaUpdateError
         );
+      }
+
+      // Mark the summed child price_adjustment rows released too (only once the
+      // payout landed) so reconciliation/reporting stays consistent.
+      if (payoutId) {
+        for (const addl of (additionalPayments || [])) {
+          const am = (addl.metadata || {}) as Record<string, unknown>;
+          await supabase
+            .from("payments")
+            .update({ status: "released", metadata: { ...am, payout_id: payoutId, released_at: releasedAt } })
+            .eq("id", addl.id);
+        }
       }
 
       return new Response(

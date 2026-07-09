@@ -199,7 +199,62 @@ async function markSiteVisitFeePaid(
   console.info(`Site-visit fee paid; quote ${quoteId} -> site_visit_scheduled`);
 }
 
+// A bank payout bounced (or a transfer was reversed): Stripe returns the money to
+// the connected account's balance, but our DB may still say 'paid_out'/'released'.
+// Revert to a retryable state, flag the error, and notify the tradie so stranded
+// funds never sit silently. NOTE: the Stripe webhook endpoint must be subscribed to
+// payout.failed / payout.canceled / transfer.reversed for these to arrive.
+async function handlePayoutReverted(payout: Stripe.Payout) {
+  const meta = (payout.metadata || {}) as Record<string, string>;
+  const reason = payout.failure_message || payout.failure_code || 'unknown';
+  const detail = `[payout.${payout.status}] ${reason}`.slice(0, 500);
+  console.error(`ALERT payout reverted ${payout.id} status=${payout.status} reason=${reason} meta=${JSON.stringify(meta)}`);
+
+  try {
+    // Recurring invoice bank payout → back to 'transferred' so the hourly sweep retries.
+    if (meta.type === 'recurring_invoice_bank_payout' && meta.invoice_id) {
+      await supabase
+        .from('recurring_invoices')
+        .update({ payout_status: 'transferred', payout_error_message: detail })
+        .eq('id', meta.invoice_id);
+    }
+    // One-off destination release → back to retryable so payout-reconciliation retries.
+    if (meta.payment_id) {
+      const { data: p } = await supabase.from('payments').select('metadata').eq('id', meta.payment_id).maybeSingle();
+      const pm = (p?.metadata || {}) as Record<string, unknown>;
+      const { payout_id: _pid, payout_amount: _pa, ...rest } = pm;
+      await supabase
+        .from('payments')
+        .update({ status: 'released', metadata: { ...rest, payout_pending: true, payout_failed_reason: detail } })
+        .eq('id', meta.payment_id);
+    }
+    if (meta.tradie_id) {
+      await supabase.from('notifications').insert({
+        user_id: meta.tradie_id,
+        title: "Payout Issue — We're Retrying",
+        message: `A payout to your bank didn't go through (${reason}). We'll retry automatically. If it keeps failing, please check your bank details in Settings.`,
+        type: 'payout_blocked',
+        read: false,
+        metadata: { payout_id: payout.id },
+      });
+    }
+  } catch (e) {
+    console.error('handlePayoutReverted error:', e);
+  }
+}
+
 async function handleEvent(event: Stripe.Event) {
+  if (event.type === 'payout.failed' || event.type === 'payout.canceled') {
+    await handlePayoutReverted(event.data.object as Stripe.Payout);
+    return;
+  }
+
+  if (event.type === 'transfer.reversed') {
+    const t = event.data.object as Stripe.Transfer;
+    console.error(`ALERT transfer.reversed ${t.id} amount=${t.amount} destination=${t.destination}`);
+    return;
+  }
+
   if (event.type === 'account.updated') {
     await handleConnectAccountUpdate(event.data.object as Stripe.Account);
     return;
@@ -651,10 +706,16 @@ async function handleEvent(event: Stripe.Event) {
             // Record payout outcome on the invoice — isolated so a flag write can never
             // block the payment-confirmation notifications below.
             try {
+              // Guard on NULL so a redelivered webhook can't clobber a later
+              // 'paid_out' (bank stage) — that would re-arm a second bank payout.
+              // Stamp transferred_at when funds landed so the bank stage can gate on it.
+              const flagUpdate: Record<string, unknown> = { payout_status: payoutOutcome };
+              if (payoutOutcome === 'transferred') flagUpdate.transferred_at = new Date().toISOString();
               await supabase
                 .from('recurring_invoices')
-                .update({ payout_status: payoutOutcome })
-                .eq('id', invoiceId);
+                .update(flagUpdate)
+                .eq('id', invoiceId)
+                .is('payout_status', null);
             } catch (flagErr) {
               console.error('Failed to record payout_status (non-fatal):', flagErr);
             }
@@ -890,10 +951,15 @@ async function handleEvent(event: Stripe.Event) {
 
               if (routedAtCharge) {
                 try {
+                  // Guard on payout_status IS NULL: a redelivered webhook (Stripe is
+                  // at-least-once) must NOT reset a later 'paid_out' back to
+                  // 'transferred', which would let the bank-payout stage pay it twice.
+                  // transferred_at stamps when funds landed so the bank stage can gate.
                   await supabase
                     .from('recurring_invoices')
-                    .update({ payout_status: 'transferred' })
-                    .eq('stripe_checkout_session_id', session.id);
+                    .update({ payout_status: 'transferred', transferred_at: new Date().toISOString() })
+                    .eq('stripe_checkout_session_id', session.id)
+                    .is('payout_status', null);
                 } catch (flagErr) {
                   console.error('Failed to record payout_status (non-fatal):', flagErr);
                 }

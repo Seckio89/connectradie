@@ -214,7 +214,9 @@ Deno.serve(async (req: Request) => {
             },
             {
               stripeAccount: tradieProfile.stripe_connect_account_id,
-              idempotencyKey: `auto_release_${payment.id}`,
+              // Deterministic key shared with release-escrow so a cron run racing a
+              // client release can't create two payouts for one payment.
+              idempotencyKey: `release_payout_${payment.id}`,
             },
           );
 
