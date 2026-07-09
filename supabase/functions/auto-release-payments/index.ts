@@ -157,6 +157,9 @@ Deno.serve(async (req: Request) => {
       let totalPlatformFee = typeof existingMetadata.platform_fee === "number"
         ? existingMetadata.platform_fee
         : 0;
+      // GST (metadata.gst, cents string) was routed to the tradie's balance on
+      // destination charges — include it in the payout so it reaches their bank.
+      let totalGst = Number(existingMetadata.gst) || 0;
 
       for (const child of (childPayments || [])) {
         const childMeta = (child.metadata || {}) as Record<string, unknown>;
@@ -164,6 +167,7 @@ Deno.serve(async (req: Request) => {
           ? childMeta.platform_fee
           : 0;
         totalPlatformFee += childFee;
+        totalGst += Number(childMeta.gst) || 0;
       }
 
       const totalBase = payment.amount + childTotal;
@@ -198,10 +202,13 @@ Deno.serve(async (req: Request) => {
       // The transfer already happened automatically — trigger a payout so
       // funds move from the tradie's Stripe balance to their bank account.
       if (isDestinationCharge) {
+        // Pay out base + GST − platform fee (what actually landed in the balance).
+        // MUST match release-escrow's amount — shared idempotency key.
+        const destinationPayoutCents = totalTransferAmount + totalGst;
         try {
           const payout = await stripe.payouts.create(
             {
-              amount: totalTransferAmount,
+              amount: destinationPayoutCents,
               currency: "aud",
               metadata: {
                 payment_id: payment.id,
@@ -209,6 +216,7 @@ Deno.serve(async (req: Request) => {
                 client_id: job.client_id,
                 tradie_id: job.tradie_id,
                 auto_released: "true",
+                gst: String(totalGst),
                 flow: "destination",
               },
             },

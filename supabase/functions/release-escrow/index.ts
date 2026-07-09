@@ -181,6 +181,10 @@ Deno.serve(async (req: Request) => {
     let totalPlatformFee = typeof existingMetadata.platform_fee === "number"
       ? existingMetadata.platform_fee
       : 0;
+    // GST (stored as a string in metadata.gst, cents) was charged on top of the base
+    // and, on destination charges, routed to the tradie's Stripe balance. It must be
+    // included in the payout or it strands in their balance and never reaches the bank.
+    let totalGst = Number(existingMetadata.gst) || 0;
 
     for (const addl of (additionalPayments || [])) {
       totalBase += addl.amount;
@@ -188,6 +192,7 @@ Deno.serve(async (req: Request) => {
         ? addl.metadata.platform_fee
         : 0;
       totalPlatformFee += addlPlatformFee;
+      totalGst += Number(addl.metadata?.gst) || 0;
     }
 
     // Calculate transfer/payout amount: total base minus total platform fees
@@ -215,10 +220,15 @@ Deno.serve(async (req: Request) => {
       // If it fails (e.g. balance still settling) we keep the payment retryable
       // rather than marking it released — manual-payout accounts have no schedule
       // that would otherwise complete it.
+      // Pay out what actually landed in the tradie's balance: base + GST − platform
+      // fee (the processing fee was taken back as part of the application fee).
+      // MUST match auto-release-payments' amount exactly — they share the idempotency
+      // key, so a differing amount would make Stripe reject the racing retry.
+      const destinationPayoutCents = transferAmount + totalGst;
       try {
         const payout = await stripe.payouts.create(
           {
-            amount: transferAmount,
+            amount: destinationPayoutCents,
             currency: "aud",
             metadata: {
               payment_id: paymentId,
@@ -226,6 +236,7 @@ Deno.serve(async (req: Request) => {
               client_id: user.id,
               tradie_id: job.tradie_id,
               platform_fee: String(platformFeeCents),
+              gst: String(totalGst),
               flow: "destination",
             },
           },
