@@ -5,8 +5,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState } from 'react';
-import { Loader2, Send, Copy, CheckCircle2, Check } from 'lucide-react';
+import { Loader2, Send, Copy, CheckCircle2, Check, Sparkles } from 'lucide-react';
 import Modal from './Modal';
+import QuoteEstimator from './QuoteEstimator';
 import { supabase } from '../lib/supabase';
 import type { ClientContact } from '../types/database';
 
@@ -25,6 +26,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [showEstimator, setShowEstimator] = useState(false);
   const [sentLink, setSentLink] = useState<string | null>(null);
   const [emailed, setEmailed] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -175,7 +177,17 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Price (AUD)</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-medium text-gray-700">Price (AUD)</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowEstimator((v) => !v)}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-secondary-600 hover:text-secondary-700"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    {showEstimator ? 'Hide pricing helper' : 'Help me price this'}
+                  </button>
+                </div>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                   <input
@@ -188,6 +200,17 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                     className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
+                {showEstimator && (
+                  <div className="mt-3">
+                    <QuoteEstimator
+                      onApply={(suggested, summary) => {
+                        setPrice(String(suggested));
+                        setDescription((prev) => (prev.trim() ? `${prev.trim()}\n\n${summary}` : summary));
+                        setShowEstimator(false);
+                      }}
+                    />
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
