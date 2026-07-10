@@ -99,7 +99,9 @@ function buildHtmlEmail(subject: string, body: string, notificationType?: string
 
 // --- Advanced template system ---
 
-function emailShell(accentColor: string, innerHtml: string, subject: string): string {
+function emailShell(accentColor: string, innerHtml: string, subject: string, footerHtml?: string): string {
+  const footer = footerHtml ?? `You received this email because of activity on your ConnecTradie account.
+                To manage your notification preferences, visit your Settings page.`;
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -125,8 +127,7 @@ function emailShell(accentColor: string, innerHtml: string, subject: string): st
           <tr>
             <td style="padding:24px 32px;border-top:1px solid #e5e7eb;">
               <p style="margin:0;color:#9ca3af;font-size:12px;line-height:1.5;">
-                You received this email because of activity on your ConnecTradie account.
-                To manage your notification preferences, visit your Settings page.
+                ${footer}
               </p>
             </td>
           </tr>
@@ -217,6 +218,40 @@ function buildFinancialEmail(
               ${ctaButton(ctaLabel, link, accent)}`;
 
   return emailShell(accent, inner, subject);
+}
+
+// A quote goes to an OFF-APP client with no ConnecTradie account, so it gets its
+// own warmer, account-free template (the generic "financial" one talks about
+// "your account" and "Settings", which would confuse the recipient).
+function buildQuoteEmail(
+  subject: string,
+  body: string,
+  metadata: Record<string, unknown>,
+): string {
+  const accent = "#059669"; // emerald — matches the Accept button on the quote page
+  const amount = metadata.amount ? String(metadata.amount) : "";
+  const link = metadata.link ? String(metadata.link) : "https://connectradie.com/dashboard";
+
+  const priceBox = amount
+    ? `<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin:0 0 20px;">
+                <tr>
+                  <td align="center" style="padding:24px 16px;">
+                    <p style="margin:0 0 4px;color:#6b7280;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;">Quoted price</p>
+                    <p style="margin:0;color:#047857;font-size:28px;font-weight:700;">${escapeHtml(amount)}</p>
+                  </td>
+                </tr>
+              </table>`
+    : "";
+
+  const inner = `<h2 style="margin:0 0 16px;color:#111827;font-size:18px;font-weight:600;">${escapeHtml(subject)}</h2>
+              <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.6;">${escapeHtml(body)}</p>
+              ${priceBox}
+              ${ctaButton("View & accept quote", link, accent)}
+              <p style="margin:16px 0 0;color:#9ca3af;font-size:13px;line-height:1.5;">No payment is taken now — the button above just opens your quote to view and accept.</p>`;
+
+  const footer = `This quote was sent to you through ConnecTradie. You don't need an account to view or accept it.`;
+
+  return emailShell(accent, inner, subject, footer);
 }
 
 function buildBookingEmail(
@@ -329,7 +364,7 @@ const TEMPLATE_CATEGORY_MAP: Record<string, string> = {
   JOB_ACCEPTED: "lead_job",
   JOB_COMPLETED: "lead_job",
   INVOICE_RECEIVED: "financial",
-  QUOTE_RECEIVED: "financial",
+  QUOTE_RECEIVED: "quote",
   PAYMENT_RECEIVED: "financial",
   JOB_BOOKING_CONFIRMED: "booking",
   TIME_CHANGE_REQUEST: "booking",
@@ -355,6 +390,8 @@ function buildEmailHtml(
       return buildLeadJobEmail(subject, body, meta, notificationType);
     case "financial":
       return buildFinancialEmail(subject, body, meta, notificationType);
+    case "quote":
+      return buildQuoteEmail(subject, body, meta);
     case "booking":
       return buildBookingEmail(subject, body, meta, notificationType);
     case "reminder":
