@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState } from 'react';
-import { Loader2, Send, Copy, CheckCircle2, Check, Sparkles } from 'lucide-react';
+import { Loader2, Send, Copy, CheckCircle2, Check, Sparkles, FileText } from 'lucide-react';
 import Modal from './Modal';
 import QuoteEstimator from './QuoteEstimator';
 import { supabase } from '../lib/supabase';
@@ -148,11 +148,21 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
           </div>
         ) : (
           <>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">New quote</h2>
-              <p className="text-sm text-gray-500 mt-0.5">
-                For {contact.full_name}{contact.email ? ` · ${contact.email}` : ''}
-              </p>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-secondary-50 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-5 h-5 text-secondary-600" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-gray-900">New quote</h2>
+                <p className="text-sm text-gray-500 mt-0.5 truncate">
+                  For <span className="font-medium text-gray-700">{contact.full_name}</span>{contact.email ? ` · ${contact.email}` : ''}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {contact.email
+                    ? 'They’ll get an email with a link to view and accept — no account needed.'
+                    : 'No email on file — you’ll get a shareable link to send them.'}
+                </p>
+              </div>
             </div>
 
             <div className="space-y-4">
