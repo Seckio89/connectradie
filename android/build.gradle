@@ -21,6 +21,10 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // Transistorsoft background-geolocation / background-fetch ship their
+        // AARs in the plugin's own /libs dir rather than a public maven repo.
+        maven { url("${project(':transistorsoft-capacitor-background-geolocation').projectDir}/libs") }
+        maven { url("${project(':transistorsoft-capacitor-background-fetch').projectDir}/libs") }
     }
 }
 

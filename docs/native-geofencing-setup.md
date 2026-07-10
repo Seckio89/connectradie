@@ -33,7 +33,7 @@ INSERT site_visit_events (ENTER/EXIT)  +  notify client on first ENTER
 - `supabase/functions/geofence-event/index.ts` — receives crossings
 - Migrations: `..._site_geofence_tables.sql` (device tokens + event log)
 - `AndroidManifest.xml` — `ACCESS_*_LOCATION` + `ACCESS_BACKGROUND_LOCATION` + license meta-data
-- `res/values/strings.xml` — empty `transistor_bg_geo_license` string
+- `res/values/strings.xml` — `transistor_bg_geo_license` key installed (order #16756, app_id `com.connectradie.app`, CORE)
 - npm deps: `@transistorsoft/capacitor-background-geolocation`, `@transistorsoft/capacitor-background-fetch`
 
 ## Manual steps to go live
@@ -51,10 +51,12 @@ After `npx cap sync android`, follow the plugin's Android setup:
   `compileSdkVersion`/`targetSdkVersion` current.
 - Sync Gradle in Android Studio; resolve any version alignment it flags.
 
-### 3. License key (RELEASE builds only)
-- Purchase a license at https://www.transistorsoft.com for the app id `com.connectradie.app`.
-- Paste it into `res/values/strings.xml` → `transistor_bg_geo_license`.
-- Debug builds run **unlicensed** — fine for development.
+### 3. License key — DONE
+- Purchased (order #16756, Starter tier, app_id `com.connectradie.app`, CORE entitlement).
+- Installed in `res/values/strings.xml` → `transistor_bg_geo_license`.
+- Key whitelists `.debug`/`.dev`/`.staging` suffixes, so it validates debug builds too.
+- `max_build_stamp` 2027-08-07: builds compiled after that date need a renewed key;
+  already-shipped APKs keep working.
 
 ### 4. Play Store prominent disclosure (REQUIRED for background location)
 `ACCESS_BACKGROUND_LOCATION` triggers Google Play review. You must:

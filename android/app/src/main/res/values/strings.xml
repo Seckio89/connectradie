@@ -7,7 +7,8 @@
     <!-- Web OAuth client ID for native Google Sign-In (@codetrix-studio/capacitor-google-auth).
          MUST match serverClientId in capacitor.config.ts and the Web client in Google Cloud Console. -->
     <string name="server_client_id">491568884460-unfmph1ckhu227ut9kh5b6cbgui028se.apps.googleusercontent.com</string>
-    <!-- Transistorsoft background-geolocation license key (paste your purchased
-         key here before a RELEASE build; leave empty for debug/dev). -->
-    <string name="transistor_bg_geo_license"></string>
+    <!-- Transistorsoft background-geolocation license key (order #16756, bound to
+         app_id com.connectradie.app, CORE entitlement). Validates debug + release
+         builds. Compiled into the APK and package-bound, so not a secret. -->
+    <string name="transistor_bg_geo_license">eyJhbGciOiJFZERTQSIsImtpZCI6ImVkMjU1MTktbWFpbi12MSJ9.eyJvcyI6ImFuZHJvaWQiLCJhcHBfaWQiOiJjb20uY29ubmVjdHJhZGllLmFwcCIsIm9yZGVyX251bWJlciI6MTY3NTYsInJlbmV3YWxfdXJsIjoiaHR0cHM6Ly9zaG9wLnRyYW5zaXN0b3Jzb2Z0LmNvbS9jYXJ0LzM5MzY3MDcxMjM2MTk5OjE_bm90ZT0xMTExNyIsImN1c3RvbWVyX2lkIjoxMDEwNSwicHJvZHVjdCI6ImNhcGFjaXRvci1iYWNrZ3JvdW5kLWdlb2xvY2F0aW9uIiwia2V5X3ZlcnNpb24iOjEsImFsbG93ZWRfc3VmZml4ZXMiOlsiLmRldiIsIi5kZXZlbG9wbWVudCIsIi5zdGFnaW5nIiwiLnN0YWdlIiwiLnFhIiwiLnVhdCIsIi50ZXN0IiwiLmRlYnVnIl0sIm1heF9idWlsZF9zdGFtcCI6MjAyNzA4MDcsImdyYWNlX2J1aWxkcyI6MCwiZW50aXRsZW1lbnRzIjpbImNvcmUiXSwiaWF0IjoxNzgzNDE0MjM0fQ.DQgnB08TSTL-0_gBs7PysMteLqRkCZmpu1JRDV7LCJaoJgVddKPutBQq8q7fjjpj8MkdV1YfS3U_D0x1_vBsCQ</string>
 </resources>
