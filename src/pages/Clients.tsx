@@ -151,33 +151,38 @@ export default function Clients() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
-                      onClick={() => setQuoteContact(c)}
-                      className="p-2 text-gray-400 hover:text-warm-600 rounded-lg hover:bg-warm-50 transition-colors"
-                      title="New quote"
-                    >
-                      <FileText className="w-4 h-4" />
-                    </button>
+                </div>
+                {c.notes && (
+                  <p className="mt-3 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 line-clamp-2">{c.notes}</p>
+                )}
+                {/* Action footer: the primary thing you do with a client is quote them,
+                    so it's a clear labelled button; edit/remove are quiet secondary icons. */}
+                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => setQuoteContact(c)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                  >
+                    <FileText className="w-4 h-4" /> New quote
+                  </button>
+                  <div className="flex items-center gap-1">
                     <button
                       onClick={() => { setEditContact(c); setShowModal(true); }}
                       className="p-2 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-                      title="Edit"
+                      title="Edit client"
+                      aria-label="Edit client"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setToDelete(c)}
                       className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                      title="Remove"
+                      title="Remove client"
+                      aria-label="Remove client"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-                {c.notes && (
-                  <p className="mt-3 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 line-clamp-2">{c.notes}</p>
-                )}
               </div>
             ))}
           </div>
