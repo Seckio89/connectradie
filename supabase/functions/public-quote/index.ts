@@ -64,13 +64,13 @@ Deno.serve(async (req: Request) => {
 
     const { data: job } = await supabase
       .from("jobs")
-      .select("id, title, description, location_address, status")
+      .select("id, title, description, location_address, status, client_contact_id")
       .eq("id", quote.job_id)
       .maybeSingle();
 
     const { data: tradie } = await supabase
       .from("profiles")
-      .select("full_name")
+      .select("full_name, email")
       .eq("id", quote.tradie_id)
       .maybeSingle();
 
@@ -93,15 +93,55 @@ Deno.serve(async (req: Request) => {
           .update({ status: "accepted", tradie_id: quote.tradie_id })
           .eq("id", quote.job_id);
 
-        // Notify the tradie in-app that the client accepted.
+        // Who accepted + for how much, so the tradie's alert actually says something.
+        const money = (n: number) => `$${Number(n).toLocaleString("en-AU")}`;
+        const priceStr =
+          quote.firm_price != null
+            ? money(quote.firm_price)
+            : quote.price_min != null && quote.price_max != null
+              ? (quote.price_min === quote.price_max ? money(quote.price_min) : `${money(quote.price_min)} – ${money(quote.price_max)}`)
+              : quote.price_min != null ? money(quote.price_min) : "";
+
+        let clientFirst = "Your client";
+        if (job?.client_contact_id) {
+          const { data: contact } = await supabase
+            .from("client_contacts")
+            .select("full_name")
+            .eq("id", job.client_contact_id)
+            .maybeSingle();
+          if (contact?.full_name) clientFirst = contact.full_name.split(" ")[0];
+        }
+
+        const jobTitle = job?.title || "the job";
+
+        // In-app notification for the tradie.
         await supabase.from("notifications").insert({
           user_id: quote.tradie_id,
           type: "quote_accepted",
           title: "Quote accepted",
-          message: `Your quote for ${job?.title || "the job"} was accepted.`,
+          message: `${clientFirst} accepted your quote${priceStr ? ` of ${priceStr}` : ""} for ${jobTitle}.`,
           job_id: quote.job_id,
           read: false,
         });
+
+        // Email the tradie too — they may not be in the app when the client accepts.
+        if (tradie?.email) {
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+              body: JSON.stringify({
+                to: tradie.email,
+                subject: `Quote accepted — ${jobTitle}`,
+                body: `Good news — ${clientFirst} accepted your quote${priceStr ? ` of ${priceStr}` : ""} for "${jobTitle}". The job is now in your ConnecTradie dashboard. Reach out to them to arrange the work.`,
+                notificationType: "QUOTE_ACCEPTED",
+                metadata: { amount: priceStr, link: "https://connectradie.com/work" },
+              }),
+            });
+          } catch (e) {
+            console.error("Failed to send quote-accepted email:", e);
+          }
+        }
       }
     }
 

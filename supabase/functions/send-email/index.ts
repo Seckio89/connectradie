@@ -254,6 +254,36 @@ function buildQuoteEmail(
   return emailShell(accent, inner, subject, footer);
 }
 
+// Sent to the TRADIE when their client accepts a quote — a "you won the job"
+// moment. The tradie has an account, so the default footer applies.
+function buildQuoteAcceptedEmail(
+  subject: string,
+  body: string,
+  metadata: Record<string, unknown>,
+): string {
+  const accent = "#059669";
+  const amount = metadata.amount ? String(metadata.amount) : "";
+  const link = metadata.link ? String(metadata.link) : "https://connectradie.com/work";
+
+  const amountBox = amount
+    ? `<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin:0 0 20px;">
+                <tr>
+                  <td align="center" style="padding:24px 16px;">
+                    <p style="margin:0 0 4px;color:#6b7280;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;">Quote value</p>
+                    <p style="margin:0;color:#047857;font-size:28px;font-weight:700;">${escapeHtml(amount)}</p>
+                  </td>
+                </tr>
+              </table>`
+    : "";
+
+  const inner = `<h2 style="margin:0 0 16px;color:#111827;font-size:18px;font-weight:600;">${escapeHtml(subject)}</h2>
+              <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.6;">${escapeHtml(body)}</p>
+              ${amountBox}
+              ${ctaButton("View job", link, accent)}`;
+
+  return emailShell(accent, inner, subject);
+}
+
 function buildBookingEmail(
   subject: string,
   body: string,
@@ -365,6 +395,7 @@ const TEMPLATE_CATEGORY_MAP: Record<string, string> = {
   JOB_COMPLETED: "lead_job",
   INVOICE_RECEIVED: "financial",
   QUOTE_RECEIVED: "quote",
+  QUOTE_ACCEPTED: "quote_accepted",
   PAYMENT_RECEIVED: "financial",
   JOB_BOOKING_CONFIRMED: "booking",
   TIME_CHANGE_REQUEST: "booking",
@@ -392,6 +423,8 @@ function buildEmailHtml(
       return buildFinancialEmail(subject, body, meta, notificationType);
     case "quote":
       return buildQuoteEmail(subject, body, meta);
+    case "quote_accepted":
+      return buildQuoteAcceptedEmail(subject, body, meta);
     case "booking":
       return buildBookingEmail(subject, body, meta, notificationType);
     case "reminder":
