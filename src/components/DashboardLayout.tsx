@@ -36,7 +36,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useSiteGeofencing } from '../hooks/useSiteGeofencing';
-import { hasGeofenceConsent } from '../lib/siteGeofence';
+import { hasGeofenceConsent, GEOFENCE_CONSENT_EVENT } from '../lib/siteGeofence';
 import SiteGeofenceConsent from './SiteGeofenceConsent';
 import { markNotificationRead, markAllNotificationsRead } from '../lib/notificationService';
 import type { LucideIcon } from 'lucide-react';
@@ -215,9 +215,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const isTradie = profile?.role === 'tradie';
 
   // Keep native site geofences in sync with scheduled visits (no-op on web).
-  // Gated on the in-app background-location disclosure being accepted first.
+  // Gated on the in-app background-location disclosure being accepted first;
+  // resyncs when consent changes anywhere (disclosure modal or Settings toggle).
   const [geoConsent, setGeoConsent] = useState(hasGeofenceConsent());
   useSiteGeofencing(geoConsent);
+  useEffect(() => {
+    const resync = () => setGeoConsent(hasGeofenceConsent());
+    window.addEventListener(GEOFENCE_CONSENT_EVENT, resync);
+    return () => window.removeEventListener(GEOFENCE_CONSENT_EVENT, resync);
+  }, []);
 
   // Auto-expand nav group when navigating to a child route
   useEffect(() => {
@@ -615,7 +621,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-navy-900 flex flex-col max-w-[100vw]">
       {/* Native background-location disclosure — no-op on web / for non-tradies. */}
-      <SiteGeofenceConsent onGranted={() => setGeoConsent(true)} />
+      <SiteGeofenceConsent />
 
       <div
         className={`fixed inset-0 bg-black/30 z-40 lg:hidden transition-opacity ${

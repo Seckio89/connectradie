@@ -12,6 +12,8 @@ import Toast from '../components/Toast';
 import ProfileTab from '../components/settings/ProfileTab';
 import SecurityTab from '../components/settings/SecurityTab';
 import NotificationsTab from '../components/settings/NotificationsTab';
+import SiteCheckInSetting from '../components/settings/SiteCheckInSetting';
+import { isNativeApp } from '../lib/siteGeofence';
 import AdminToolsTab from '../components/settings/AdminToolsTab';
 import PaymentSettings from '../components/settings/PaymentSettings';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
@@ -762,6 +764,8 @@ export default function Settings() {
                   </button>
                 </div>
               </div>
+              {/* Native-only: background-location check-in toggle (tradies). */}
+              {isTradie && isNativeApp() && <SiteCheckInSetting />}
             </>
           )}
 

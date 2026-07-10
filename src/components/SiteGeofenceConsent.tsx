@@ -17,12 +17,7 @@ import {
 } from '../lib/siteGeofence';
 import SiteLocationDisclosureModal from './SiteLocationDisclosureModal';
 
-interface SiteGeofenceConsentProps {
-  /** Called after the user accepts, so the parent can enable geofencing. */
-  onGranted: () => void;
-}
-
-export default function SiteGeofenceConsent({ onGranted }: SiteGeofenceConsentProps) {
+export default function SiteGeofenceConsent() {
   const { user, profile } = useAuth();
   const [show, setShow] = useState(false);
 
@@ -46,9 +41,8 @@ export default function SiteGeofenceConsent({ onGranted }: SiteGeofenceConsentPr
   }, [user, profile?.role]);
 
   const handleAllow = () => {
-    grantGeofenceConsent();
+    grantGeofenceConsent(); // broadcasts GEOFENCE_CONSENT_EVENT → layout enables geofencing
     setShow(false);
-    onGranted();
   };
 
   const handleDismiss = () => {

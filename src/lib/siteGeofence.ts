@@ -45,6 +45,18 @@ export function isNativeApp(): boolean {
 // BEFORE any background-location permission is requested. We record that consent
 // per-device and never call the plugin (which requests "Always") until it's given.
 
+/** Fired whenever consent changes, so mounted components (layout + Settings) resync. */
+export const GEOFENCE_CONSENT_EVENT = 'geofence-consent-changed';
+
+function writeConsent(status: 'granted' | 'dismissed' | 'revoked'): void {
+  try {
+    localStorage.setItem(CONSENT_KEY, JSON.stringify({ status, at: Date.now() }));
+  } catch { /* storage unavailable — the OS permission prompt still gates access */ }
+  try {
+    window.dispatchEvent(new Event(GEOFENCE_CONSENT_EVENT));
+  } catch { /* no window (SSR) — ignore */ }
+}
+
 /** True once the user has accepted the in-app background-location disclosure. */
 export function hasGeofenceConsent(): boolean {
   try {
@@ -55,13 +67,13 @@ export function hasGeofenceConsent(): boolean {
   }
 }
 
-/** Whether to show the disclosure now: not yet granted, and not recently dismissed. */
+/** Whether to auto-show the disclosure: never granted, and neither revoked nor recently dismissed. */
 export function shouldPromptGeofenceDisclosure(): boolean {
   try {
     const raw = localStorage.getItem(CONSENT_KEY);
     if (!raw) return true;
     const v = JSON.parse(raw) as { status?: string; at?: number };
-    if (v.status === 'granted') return false;
+    if (v.status === 'granted' || v.status === 'revoked') return false;
     if (v.status === 'dismissed' && typeof v.at === 'number') return Date.now() - v.at > DISMISS_SNOOZE_MS;
     return true;
   } catch {
@@ -70,15 +82,16 @@ export function shouldPromptGeofenceDisclosure(): boolean {
 }
 
 export function grantGeofenceConsent(): void {
-  try {
-    localStorage.setItem(CONSENT_KEY, JSON.stringify({ status: 'granted', at: Date.now() }));
-  } catch { /* storage unavailable — the OS permission prompt still gates access */ }
+  writeConsent('granted');
 }
 
 export function dismissGeofenceDisclosure(): void {
-  try {
-    localStorage.setItem(CONSENT_KEY, JSON.stringify({ status: 'dismissed', at: Date.now() }));
-  } catch { /* ignore */ }
+  writeConsent('dismissed');
+}
+
+/** Explicit opt-out from Settings — turns the feature off and stops auto-prompting. */
+export function revokeGeofenceConsent(): void {
+  writeConsent('revoked');
 }
 
 /**
