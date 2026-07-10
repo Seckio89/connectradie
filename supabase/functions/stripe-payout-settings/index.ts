@@ -108,17 +108,21 @@ Deno.serve(async (req: Request) => {
     }
 
     if (body.action === "update-schedule") {
-      const interval = body.interval;
-      if (interval !== "manual" && interval !== "daily" && interval !== "weekly") {
-        return errorResponse("Invalid payout interval", 400);
+      // Payout schedule MUST stay 'manual'. It is the escrow mechanism: destination
+      // charges land job/invoice funds in the tradie's Stripe balance immediately,
+      // and manual payouts let the platform control WHEN money reaches the bank (per
+      // job when the client approves, per recurring invoice via the payout crons).
+      // Automatic daily/weekly payouts would auto-pay escrowed funds before the
+      // client approves the work, breaking the hold — so we only accept 'manual'.
+      if (body.interval !== "manual") {
+        return errorResponse(
+          "Payouts are managed by ConnecTradie — your money is released to your bank per job (when the client approves) and per recurring invoice, so the payout schedule stays on manual. Switching to automatic daily/weekly payouts isn't available.",
+          400,
+        );
       }
-      const schedule: Stripe.AccountUpdateParams.Settings.Payouts.Schedule =
-        interval === "weekly"
-          ? { interval: "weekly", weekly_anchor: (body.weeklyAnchor as never) || ("friday" as never) }
-          : { interval };
 
       const updated = await stripe.accounts.update(accountId, {
-        settings: { payouts: { schedule } },
+        settings: { payouts: { schedule: { interval: "manual" } } },
       });
       const s = updated.settings?.payouts?.schedule;
       return json({

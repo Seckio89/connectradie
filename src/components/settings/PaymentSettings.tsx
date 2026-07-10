@@ -5,22 +5,12 @@ import {
   getConnectAccountDetails,
   createConnectOnboardingSession,
   createBankUpdateLink,
-  updatePayoutSchedule,
   type ConnectAccountDetails,
 } from '../../lib/stripe';
 import { useToast } from '../../hooks/useToast';
 
 const fmtAud = (cents: number) =>
   `$${(cents / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-function scheduleLabel(s: ConnectAccountDetails['payoutSchedule']): string {
-  if (!s) return 'Not set';
-  if (s.interval === 'manual') return 'Manual — you request payouts';
-  if (s.interval === 'daily') return 'Automatic — daily';
-  if (s.interval === 'weekly') return `Automatic — weekly${s.weeklyAnchor ? ` (${s.weeklyAnchor})` : ''}`;
-  if (s.interval === 'monthly') return 'Automatic — monthly';
-  return s.interval;
-}
 
 export default function PaymentSettings() {
   const { showToast } = useToast();
@@ -29,7 +19,6 @@ export default function PaymentSettings() {
   const [error, setError] = useState('');
   const [bankLoading, setBankLoading] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
-  const [scheduleSaving, setScheduleSaving] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -68,20 +57,6 @@ export default function PaymentSettings() {
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Could not start payout setup', true);
       setSetupLoading(false);
-    }
-  };
-
-  const handleSchedule = async (interval: 'manual' | 'daily' | 'weekly') => {
-    if (scheduleSaving) return;
-    setScheduleSaving(interval);
-    try {
-      const next = await updatePayoutSchedule(interval);
-      setDetails((d) => (d ? { ...d, payoutSchedule: next } : d));
-      showToast(interval === 'manual' ? 'Switched to manual payouts' : `Automatic ${interval} payouts on`);
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Could not update payout schedule', true);
-    } finally {
-      setScheduleSaving(null);
     }
   };
 
@@ -129,10 +104,6 @@ export default function PaymentSettings() {
   }
 
   const bank = details.bankAccount;
-  const schedule = details.payoutSchedule;
-  const currentInterval = schedule?.interval === 'daily' || schedule?.interval === 'weekly' || schedule?.interval === 'manual'
-    ? schedule.interval
-    : 'manual';
   const needsAttention = (details.account?.requirements?.currentlyDue?.length ?? 0) > 0
     || (details.account?.requirements?.pastDue?.length ?? 0) > 0;
 
@@ -196,37 +167,18 @@ export default function PaymentSettings() {
         </div>
       </div>
 
-      {/* Payout schedule */}
+      {/* Payouts — managed by the platform (escrow model), not a user-set schedule */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
-          <CalendarClock className="w-3.5 h-3.5" /> Payout schedule
+          <CalendarClock className="w-3.5 h-3.5" /> Payouts
         </p>
-        <p className="mt-2 text-sm text-gray-700">{scheduleLabel(schedule)}</p>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          {([
-            { key: 'manual', label: 'Manual' },
-            { key: 'daily', label: 'Daily' },
-            { key: 'weekly', label: 'Weekly' },
-          ] as const).map((opt) => {
-            const active = currentInterval === opt.key;
-            return (
-              <button
-                key={opt.key}
-                onClick={() => !active && handleSchedule(opt.key)}
-                disabled={!!scheduleSaving}
-                className={`py-2.5 rounded-lg text-sm font-medium border transition-colors disabled:opacity-60 ${
-                  active
-                    ? 'border-secondary-300 bg-secondary-50 text-secondary-700'
-                    : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {scheduleSaving === opt.key ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : opt.label}
-              </button>
-            );
-          })}
-        </div>
+        <p className="mt-2 text-sm text-gray-700">
+          ConnecTradie releases your money to your bank automatically — for each job when
+          the client approves the work, and for recurring services when each invoice is paid.
+        </p>
         <p className="mt-2 text-xs text-gray-400">
-          Automatic payouts transfer your available balance to your bank on the chosen cadence. Manual lets you request payouts yourself.
+          Funds are held securely until work is approved, so payout timing is managed for you
+          rather than set to a fixed daily or weekly schedule.
         </p>
       </div>
 
