@@ -575,7 +575,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                <p className="text-sm text-gray-500">Total Active</p>
+                <p className="text-sm text-gray-500">Total active</p>
               </div>
             </div>
           </div>
@@ -621,7 +621,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                 <AlertCircle className="w-5 h-5 text-warm-700" />
               </div>
               <div className="flex-1">
-                <h2 className="font-bold text-warm-900">Pending Requests</h2>
+                <h2 className="font-bold text-warm-900">Pending requests</h2>
                 <p className="text-xs text-warm-700 mt-0.5">These users want to join your team. Review and approve or decline.</p>
               </div>
               <span className="px-3 py-1 bg-warm-200 text-warm-800 rounded-full text-xs font-medium">
@@ -701,10 +701,10 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm font-medium transition-colors relative whitespace-nowrap ${
+                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 sm:py-4 -mb-px text-xs sm:text-sm font-medium transition-colors whitespace-nowrap border-b-2 ${
                   activeTab === tab.key
-                    ? 'text-primary-700'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'border-warm-500 text-warm-600'
+                    : 'border-transparent text-gray-400 hover:text-gray-600'
                 }`}
               >
                 <tab.icon className="w-4 h-4 flex-shrink-0" />
@@ -716,9 +716,6 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                   }`}>
                     {tab.count}
                   </span>
-                )}
-                {activeTab === tab.key && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-warm-500" />
                 )}
               </button>
             ))}
