@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Mail, Phone, Briefcase, MoreVertical, Pencil, Trash2, UserCheck, Star, HardHat, Wrench, X, Check, AlertCircle, Clock, Shield, Calendar, ChevronLeft, ChevronRight, Lock, Timer, CheckCircle2, XCircle, MapPin } from 'lucide-react';
+import { Users, Plus, Mail, Phone, Briefcase, MoreVertical, Pencil, Trash2, UserCheck, UserPlus, Star, HardHat, Wrench, X, Check, AlertCircle, Clock, Shield, Calendar, ChevronLeft, ChevronRight, Lock, Timer, CheckCircle2, XCircle, MapPin } from 'lucide-react';
 import SiteActivityTab from '../components/team/SiteActivityTab';
 import DashboardLayout from '../components/DashboardLayout';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
@@ -127,12 +127,17 @@ function AddMemberModal({ onClose, onSave, editMember }: AddMemberModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 ">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">{editMember ? 'Edit Team Member' : 'Add Team Member'}</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Add someone to your trade business team</p>
+        <div className="flex items-start gap-3 p-6 border-b border-gray-100">
+          <div className="w-10 h-10 rounded-xl bg-secondary-50 flex items-center justify-center flex-shrink-0">
+            <UserPlus className="w-5 h-5 text-secondary-600" />
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg font-bold text-gray-900">{editMember ? 'Edit team member' : 'Add a team member'}</h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {editMember ? 'Update their details.' : 'Track someone in your business — assign them to jobs and log their hours.'}
+            </p>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="p-2 -mr-1 -mt-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 flex-shrink-0">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -143,6 +148,12 @@ function AddMemberModal({ onClose, onSave, editMember }: AddMemberModalProps) {
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               {error}
             </div>
+          )}
+
+          {!editMember && (
+            <p className="text-xs text-gray-500 bg-secondary-50 border border-secondary-100 rounded-lg px-3 py-2.5 leading-relaxed">
+              Added to your business for scheduling, job assignment and timesheets. They won’t get app notifications unless they join ConnecTradie and link to your business.
+            </p>
           )}
 
           <div className="grid grid-cols-2 gap-4">
