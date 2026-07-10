@@ -91,7 +91,10 @@ export default function WorkerDetailsModal({ isOpen, onClose, recurringJobId }: 
           </div>
         ) : error ? (
           <div className="text-center py-8">
-            <p className="text-sm text-gray-500">{error}</p>
+            <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <HardHat className="w-6 h-6 text-gray-300" />
+            </div>
+            <p className="text-sm text-gray-500 max-w-xs mx-auto">{error}</p>
           </div>
         ) : details ? (
           <>
@@ -102,6 +105,7 @@ export default function WorkerDetailsModal({ isOpen, onClose, recurringJobId }: 
                 </span>
               </div>
               <div className="min-w-0">
+                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Coming to your service</p>
                 <h2 className="text-lg font-semibold text-gray-900 truncate">{details.worker_name}</h2>
                 <div className="flex items-center gap-2 flex-wrap mt-0.5">
                   {details.employment_type && ROLE_LABELS[details.employment_type] && (
@@ -117,16 +121,19 @@ export default function WorkerDetailsModal({ isOpen, onClose, recurringJobId }: 
             </div>
 
             {badges.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {badges.map(({ icon: Icon, label }) => (
-                  <span
-                    key={label}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700"
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    {label}
-                  </span>
-                ))}
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Verified by ConnecTradie</p>
+                <div className="flex flex-wrap gap-2">
+                  {badges.map(({ icon: Icon, label }) => (
+                    <span
+                      key={label}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700"
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {label}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 
