@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Users, Plus, Mail, Phone, MapPin, Pencil, Trash2, Search, UserCheck, Loader2, FileText } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import ClientContactModal from '../components/ClientContactModal';
@@ -124,45 +125,47 @@ export default function Clients() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filtered.map((c) => (
-              <div key={c.id} className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 group">
-                <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center flex-shrink-0">
-                    <span className="text-base font-bold text-secondary-800">
-                      {c.full_name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-gray-900 truncate">{c.full_name}</span>
-                      {c.linked_profile_id && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                          <UserCheck className="w-3 h-3" />
-                          On app
-                        </span>
-                      )}
+              <div key={c.id} className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 group hover:border-secondary-200 transition-colors">
+                <Link to={`/clients/${c.id}`} className="block">
+                  <div className="flex items-start gap-3">
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center flex-shrink-0">
+                      <span className="text-base font-bold text-secondary-800">
+                        {c.full_name.charAt(0).toUpperCase()}
+                      </span>
                     </div>
-                    <div className="mt-1.5 space-y-1">
-                      {c.email && (
-                        <p className="flex items-center gap-1.5 text-xs text-gray-600 truncate">
-                          <Mail className="w-3.5 h-3.5 flex-shrink-0" /> {c.email}
-                        </p>
-                      )}
-                      {c.phone && (
-                        <p className="flex items-center gap-1.5 text-xs text-gray-600">
-                          <Phone className="w-3.5 h-3.5 flex-shrink-0" /> {c.phone}
-                        </p>
-                      )}
-                      {c.address && (
-                        <p className="flex items-center gap-1.5 text-xs text-gray-500 truncate">
-                          <MapPin className="w-3.5 h-3.5 flex-shrink-0" /> {c.address}
-                        </p>
-                      )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-gray-900 truncate group-hover:text-secondary-700 transition-colors">{c.full_name}</span>
+                        {c.linked_profile_id && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                            <UserCheck className="w-3 h-3" />
+                            On app
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1.5 space-y-1">
+                        {c.email && (
+                          <p className="flex items-center gap-1.5 text-xs text-gray-600 truncate">
+                            <Mail className="w-3.5 h-3.5 flex-shrink-0" /> {c.email}
+                          </p>
+                        )}
+                        {c.phone && (
+                          <p className="flex items-center gap-1.5 text-xs text-gray-600">
+                            <Phone className="w-3.5 h-3.5 flex-shrink-0" /> {c.phone}
+                          </p>
+                        )}
+                        {c.address && (
+                          <p className="flex items-center gap-1.5 text-xs text-gray-500 truncate">
+                            <MapPin className="w-3.5 h-3.5 flex-shrink-0" /> {c.address}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                {c.notes && (
-                  <p className="mt-3 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 line-clamp-2">{c.notes}</p>
-                )}
+                  {c.notes && (
+                    <p className="mt-3 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 line-clamp-2">{c.notes}</p>
+                  )}
+                </Link>
                 {/* Action footer: the primary thing you do with a client is quote them,
                     so it's a clear labelled button; edit/remove are quiet secondary icons. */}
                 <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
