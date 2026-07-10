@@ -91,10 +91,13 @@ export default function AssignWorkerModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="md">
-      <div className="flex items-start justify-between gap-3 p-5 border-b border-gray-100">
-        <div className="min-w-0">
-          <h2 className="text-lg font-bold text-gray-900">Assign Worker</h2>
-          <p className="text-sm text-gray-500 mt-0.5 capitalize">
+      <div className="flex items-start gap-3 p-5 border-b border-gray-100">
+        <div className="w-10 h-10 rounded-xl bg-secondary-50 flex items-center justify-center flex-shrink-0">
+          <UserCheck className="w-5 h-5 text-secondary-600" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg font-bold text-gray-900">Assign a worker</h2>
+          <p className="text-sm text-gray-500 mt-0.5 capitalize truncate">
             {jobLabel} — {clientName}
           </p>
         </div>
@@ -134,6 +137,9 @@ export default function AssignWorkerModal({
           </div>
         ) : (
           <div className="space-y-2">
+            <p className="text-xs text-gray-500 bg-secondary-50 border border-secondary-100 rounded-lg px-3 py-2.5 leading-relaxed">
+              The worker you assign is notified and can see this job. Your client only sees who’s coming — their name and role, never contact details.
+            </p>
             {/* Unassigned option */}
             <button
               type="button"
@@ -168,7 +174,12 @@ export default function AssignWorkerModal({
                     {(m.invite_name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{m.invite_name || 'Unnamed'}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{m.invite_name || 'Unnamed'}</p>
+                      {m.id === currentAssignedId && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">Assigned</span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500 truncate">
                       {ROLE_LABELS[m.role] || m.role}
                       {m.trade_specialty ? ` · ${m.trade_specialty}` : ''}
