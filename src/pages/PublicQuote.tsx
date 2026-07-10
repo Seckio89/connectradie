@@ -108,9 +108,14 @@ export default function PublicQuote() {
           </div>
         ) : data ? (
           <div className="space-y-5">
-            <div>
-              <p className="text-sm text-gray-500">Quote from</p>
-              <h1 className="text-2xl font-bold text-gray-900">{businessName}</h1>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center flex-shrink-0">
+                <span className="text-lg font-bold text-secondary-800">{businessName.charAt(0).toUpperCase()}</span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">You’ve received a quote</p>
+                <h1 className="text-2xl font-bold text-gray-900 truncate">{businessName}</h1>
+              </div>
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -127,7 +132,7 @@ export default function PublicQuote() {
               </div>
 
               <div className="p-6 bg-gray-50 flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Price</span>
+                <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Quoted price</span>
                 <span className="text-2xl font-bold text-gray-900">{formatPrice(data.quote)}</span>
               </div>
 
@@ -148,14 +153,19 @@ export default function PublicQuote() {
                 </p>
               </div>
             ) : (
-              <button
-                onClick={handleAccept}
-                disabled={accepting}
-                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-              >
-                {accepting && <Loader2 className="w-4 h-4 animate-spin" />}
-                Accept quote
-              </button>
+              <div className="space-y-2.5">
+                <button
+                  onClick={handleAccept}
+                  disabled={accepting}
+                  className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  {accepting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Accept quote
+                </button>
+                <p className="text-center text-xs text-gray-500">
+                  No payment is taken now — accepting just lets {businessName} know you’d like to go ahead.
+                </p>
+              </div>
             )}
 
             <div className="flex items-start gap-2 text-xs text-gray-500 bg-white border border-gray-200 rounded-xl p-4">
