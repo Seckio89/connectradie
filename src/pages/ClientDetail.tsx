@@ -132,42 +132,44 @@ export default function ClientDetail() {
           <>
             {/* Client header */}
             <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 sm:p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xl font-bold text-secondary-800">
-                    {contact.full_name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-xl font-bold text-gray-900 truncate">{contact.full_name}</h1>
-                    {contact.linked_profile_id && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                        <UserCheck className="w-3 h-3" /> On app
-                      </span>
-                    )}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                <div className="flex items-start gap-4 flex-1 min-w-0">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xl font-bold text-secondary-800">
+                      {contact.full_name.charAt(0).toUpperCase()}
+                    </span>
                   </div>
-                  <div className="mt-2 space-y-1">
-                    {contact.email && (
-                      <p className="flex items-center gap-1.5 text-sm text-gray-600 truncate">
-                        <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" /> {contact.email}
-                      </p>
-                    )}
-                    {contact.phone && (
-                      <p className="flex items-center gap-1.5 text-sm text-gray-600">
-                        <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" /> {contact.phone}
-                      </p>
-                    )}
-                    {contact.address && (
-                      <p className="flex items-center gap-1.5 text-sm text-gray-500 truncate">
-                        <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" /> {contact.address}
-                      </p>
-                    )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h1 className="text-xl font-bold text-gray-900 truncate">{contact.full_name}</h1>
+                      {contact.linked_profile_id && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                          <UserCheck className="w-3 h-3" /> On app
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-2 space-y-1">
+                      {contact.email && (
+                        <p className="flex items-center gap-1.5 text-sm text-gray-600 truncate">
+                          <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" /> {contact.email}
+                        </p>
+                      )}
+                      {contact.phone && (
+                        <p className="flex items-center gap-1.5 text-sm text-gray-600">
+                          <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" /> {contact.phone}
+                        </p>
+                      )}
+                      {contact.address && (
+                        <p className="flex items-center gap-1.5 text-sm text-gray-500 truncate">
+                          <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" /> {contact.address}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowQuote(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600 transition-colors flex-shrink-0"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600 transition-colors w-full sm:w-auto flex-shrink-0"
                 >
                   <FileText className="w-4 h-4" /> New quote
                 </button>

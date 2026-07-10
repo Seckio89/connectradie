@@ -156,8 +156,8 @@ function AddMemberModal({ onClose, onSave, editMember }: AddMemberModalProps) {
             </p>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name *</label>
               <input
                 type="text"
@@ -214,7 +214,7 @@ function AddMemberModal({ onClose, onSave, editMember }: AddMemberModalProps) {
               />
             </div>
 
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Hourly Rate ($/hr)</label>
               <input
                 type="number"
@@ -227,7 +227,7 @@ function AddMemberModal({ onClose, onSave, editMember }: AddMemberModalProps) {
               />
             </div>
 
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
               <textarea
                 value={form.notes}
