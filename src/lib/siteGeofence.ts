@@ -29,12 +29,56 @@ export interface GeofenceSite {
 }
 
 const TOKEN_CACHE_KEY = 'connectradie_geofence_token';
+const CONSENT_KEY = 'connectradie_geofence_consent';
 const DEFAULT_RADIUS_M = 150;
+// After a "Not now", wait this long before showing the disclosure again.
+const DISMISS_SNOOZE_MS = 3 * 24 * 60 * 60 * 1000;
 
 let initialised = false;
 
 export function isNativeApp(): boolean {
   return Capacitor.isNativePlatform();
+}
+
+// ── Prominent-disclosure consent ─────────────────────────────────────────────
+// Google Play requires an in-app disclosure the user affirmatively accepts
+// BEFORE any background-location permission is requested. We record that consent
+// per-device and never call the plugin (which requests "Always") until it's given.
+
+/** True once the user has accepted the in-app background-location disclosure. */
+export function hasGeofenceConsent(): boolean {
+  try {
+    const raw = localStorage.getItem(CONSENT_KEY);
+    return !!raw && (JSON.parse(raw) as { status?: string }).status === 'granted';
+  } catch {
+    return false;
+  }
+}
+
+/** Whether to show the disclosure now: not yet granted, and not recently dismissed. */
+export function shouldPromptGeofenceDisclosure(): boolean {
+  try {
+    const raw = localStorage.getItem(CONSENT_KEY);
+    if (!raw) return true;
+    const v = JSON.parse(raw) as { status?: string; at?: number };
+    if (v.status === 'granted') return false;
+    if (v.status === 'dismissed' && typeof v.at === 'number') return Date.now() - v.at > DISMISS_SNOOZE_MS;
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+export function grantGeofenceConsent(): void {
+  try {
+    localStorage.setItem(CONSENT_KEY, JSON.stringify({ status: 'granted', at: Date.now() }));
+  } catch { /* storage unavailable — the OS permission prompt still gates access */ }
+}
+
+export function dismissGeofenceDisclosure(): void {
+  try {
+    localStorage.setItem(CONSENT_KEY, JSON.stringify({ status: 'dismissed', at: Date.now() }));
+  } catch { /* ignore */ }
 }
 
 /**

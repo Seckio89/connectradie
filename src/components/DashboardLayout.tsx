@@ -36,6 +36,8 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useSiteGeofencing } from '../hooks/useSiteGeofencing';
+import { hasGeofenceConsent } from '../lib/siteGeofence';
+import SiteGeofenceConsent from './SiteGeofenceConsent';
 import { markNotificationRead, markAllNotificationsRead } from '../lib/notificationService';
 import type { LucideIcon } from 'lucide-react';
 import type { Notification } from '../types/database';
@@ -213,7 +215,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const isTradie = profile?.role === 'tradie';
 
   // Keep native site geofences in sync with scheduled visits (no-op on web).
-  useSiteGeofencing();
+  // Gated on the in-app background-location disclosure being accepted first.
+  const [geoConsent, setGeoConsent] = useState(hasGeofenceConsent());
+  useSiteGeofencing(geoConsent);
 
   // Auto-expand nav group when navigating to a child route
   useEffect(() => {
@@ -610,6 +614,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-navy-900 flex flex-col max-w-[100vw]">
+      {/* Native background-location disclosure — no-op on web / for non-tradies. */}
+      <SiteGeofenceConsent onGranted={() => setGeoConsent(true)} />
+
       <div
         className={`fixed inset-0 bg-black/30 z-40 lg:hidden transition-opacity ${
           sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'

@@ -30,13 +30,16 @@ interface ScheduledVisitRow {
   } | null;
 }
 
-export function useSiteGeofencing(): void {
+export function useSiteGeofencing(hasConsent: boolean): void {
   const { user, profile } = useAuth();
   const role = profile?.role;
 
   useEffect(() => {
     if (!isNativeApp()) return;
     if (!user || role !== 'tradie') return;
+    // Prominent-disclosure gate: never request the OS "Always" permission until
+    // the user has accepted the in-app disclosure (SiteGeofenceConsent).
+    if (!hasConsent) return;
 
     let cancelled = false;
 
@@ -73,5 +76,5 @@ export function useSiteGeofencing(): void {
     return () => {
       cancelled = true;
     };
-  }, [user, role]);
+  }, [user, role, hasConsent]);
 }
