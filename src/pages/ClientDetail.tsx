@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, MapPin, UserCheck, FileText, Loader2, Copy, Check, Plus } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, UserCheck, FileText, Loader2, Copy, Check, Plus, RefreshCw } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import NewQuoteModal from '../components/NewQuoteModal';
 import { supabase } from '../lib/supabase';
@@ -29,6 +29,12 @@ interface JobWithQuote {
   title: string;
   created_at: string;
   quote: QuoteRow;
+}
+
+interface ServiceRow {
+  id: string;
+  trade_category: string;
+  assignedName: string | null;
 }
 
 // Client-facing status, quote-centric: "Sent" until they accept.
@@ -63,6 +69,7 @@ export default function ClientDetail() {
   const { showToast } = useToast();
   const [contact, setContact] = useState<ClientContact | null>(null);
   const [jobs, setJobs] = useState<JobWithQuote[]>([]);
+  const [services, setServices] = useState<ServiceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showQuote, setShowQuote] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -79,7 +86,8 @@ export default function ClientDetail() {
         .eq('client_contact_id', id)
         .order('created_at', { ascending: false }),
     ]);
-    setContact((c as ClientContact) ?? null);
+    const contactRow = (c as ClientContact) ?? null;
+    setContact(contactRow);
     const rows: JobWithQuote[] = ((j as unknown as Array<{ id: string; title: string; created_at: string; quotes: QuoteRow[] }>) ?? [])
       .map((job) => {
         const quote = job.quotes?.find((q) => q.public_token) ?? job.quotes?.[0];
@@ -87,6 +95,34 @@ export default function ClientDetail() {
       })
       .filter((r): r is JobWithQuote => r !== null);
     setJobs(rows);
+
+    // Ongoing services only exist for a client with an app account — recurring_jobs
+    // key on a profile (client_id), not an off-app contact.
+    if (contactRow?.linked_profile_id) {
+      const { data: rj } = await supabase
+        .from('recurring_jobs')
+        .select('id, trade_category, assigned_team_member_id')
+        .eq('tradie_id', user.id)
+        .eq('client_id', contactRow.linked_profile_id)
+        .eq('is_active', true);
+      const svc = (rj as Array<{ id: string; trade_category: string; assigned_team_member_id: string | null }>) ?? [];
+      const memberIds = [...new Set(svc.map((s) => s.assigned_team_member_id).filter((x): x is string => !!x))];
+      let names: Record<string, string> = {};
+      if (memberIds.length) {
+        const { data: members } = await supabase
+          .from('business_team_members')
+          .select('id, invite_name')
+          .in('id', memberIds);
+        names = Object.fromEntries(((members as Array<{ id: string; invite_name: string }>) ?? []).map((m) => [m.id, m.invite_name]));
+      }
+      setServices(svc.map((s) => ({
+        id: s.id,
+        trade_category: s.trade_category,
+        assignedName: s.assigned_team_member_id ? names[s.assigned_team_member_id] ?? null : null,
+      })));
+    } else {
+      setServices([]);
+    }
     setLoading(false);
   };
 
@@ -237,6 +273,38 @@ export default function ClientDetail() {
                 </div>
               )}
             </div>
+
+            {/* Ongoing services — only for on-app clients (recurring jobs key on a profile) */}
+            {services.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="text-lg font-semibold text-gray-900">Ongoing services</h2>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{services.length}</span>
+                </div>
+                <div className="bg-white border border-gray-100 rounded-2xl shadow-sm divide-y divide-gray-100 overflow-hidden">
+                  {services.map((s) => (
+                    <div key={s.id} className="flex items-center gap-4 p-4">
+                      <div className="w-9 h-9 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
+                        <RefreshCw className="w-4 h-4 text-secondary-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-gray-900 capitalize truncate">{s.trade_category.replace(/-/g, ' ')}</span>
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Active</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                          {s.assignedName ? (
+                            <><UserCheck className="w-3.5 h-3.5 text-gray-400" /> {s.assignedName}</>
+                          ) : (
+                            'No worker assigned'
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
