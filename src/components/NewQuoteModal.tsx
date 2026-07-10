@@ -31,6 +31,8 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
   const [emailed, setEmailed] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const firstName = contact.full_name.split(' ')[0] || 'them';
+
   const handleSend = async () => {
     if (!title.trim()) { setError('Add a short job title.'); return; }
     const priceNum = parseFloat(price);
@@ -67,7 +69,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
         price_min: priceNum,
         price_max: priceNum,
         firm_price: priceNum,
-        message: message.trim() || null,
+        message: message.trim(), // column is NOT NULL — empty string, never null
         status: 'pending',
         public_token: token,
         sent_to_email: contact.email,
@@ -116,29 +118,45 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="lg">
       <div className="p-6 space-y-5">
         {sentLink ? (
-          <div className="text-center space-y-4">
-            <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
-            <div>
+          <div className="space-y-4">
+            <div className="text-center">
+              <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+              </div>
               <h2 className="text-lg font-semibold text-gray-900">Quote sent</h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
                 {emailed
                   ? `Emailed to ${contact.email}. `
                   : contact.email
                     ? 'We couldn’t email it automatically — share the link below. '
-                    : 'This contact has no email — share the link below. '}
-                The job is now recorded in your app.
+                    : 'No email on file — share the link below. '}
+                We’ll notify you as soon as {firstName} accepts.
               </p>
             </div>
-            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl p-3">
-              <span className="flex-1 text-xs text-gray-600 truncate text-left">{sentLink}</span>
-              <button
-                onClick={copyLink}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied ? 'Copied' : 'Copy'}
-              </button>
+
+            {/* Recap of what was sent */}
+            <div className="flex items-center justify-between gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+              <span className="text-sm font-medium text-gray-900 truncate">{title.trim() || 'Quote'}</span>
+              {price && (
+                <span className="text-sm font-semibold text-gray-900 flex-shrink-0">{`$${Number(price).toLocaleString('en-AU')}`}</span>
+              )}
             </div>
+
+            {/* Shareable link — the fallback / manual way to deliver the quote */}
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-1.5">Or share this link</p>
+              <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl p-2 pl-3">
+                <span className="flex-1 text-xs text-gray-600 truncate text-left">{sentLink}</span>
+                <button
+                  onClick={copyLink}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 flex-shrink-0"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+            </div>
+
             <button
               onClick={onClose}
               className="w-full py-3 bg-warm-500 text-white rounded-xl font-medium hover:bg-warm-600 transition-colors"
