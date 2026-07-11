@@ -15,6 +15,52 @@ interface TokenResponse {
   token_type: string;
 }
 
+// ── Signed OAuth state ───────────────────────────────────────────────────────
+// The callback arrives from Google with NO auth header, so the state param is
+// the only claim of user identity. A bare user ID is forgeable (anyone could
+// bind their Google account to another tradie's calendar integration), so we
+// HMAC-sign it: state = "<userId>.<expiresAtMs>.<hmac(userId.expiresAtMs)>".
+// Verified with constant-time crypto.subtle.verify at the callback.
+const STATE_TTL_MS = 10 * 60 * 1000; // consent flow must complete within 10 min
+
+function stateKeyMaterial(): string {
+  // Dedicated secret preferred; service-role key as fallback so the flow keeps
+  // working before OAUTH_STATE_SECRET is provisioned. Both are server-only.
+  return Deno.env.get("OAUTH_STATE_SECRET") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+}
+
+async function stateHmacKey(usages: KeyUsage[]): Promise<CryptoKey> {
+  return await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(stateKeyMaterial()),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    usages,
+  );
+}
+
+async function signState(userId: string): Promise<string> {
+  const payload = `${userId}.${Date.now() + STATE_TTL_MS}`;
+  const key = await stateHmacKey(["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  const sigHex = Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return `${payload}.${sigHex}`;
+}
+
+// Returns the userId when the state is authentic and unexpired, else null.
+async function verifyState(state: string): Promise<string | null> {
+  const parts = state.split(".");
+  if (parts.length !== 3) return null;
+  const [userId, expStr, sigHex] = parts;
+  const exp = Number(expStr);
+  if (!userId || !Number.isFinite(exp) || Date.now() > exp) return null;
+  if (!/^[0-9a-f]+$/.test(sigHex) || sigHex.length % 2 !== 0) return null;
+  const sig = new Uint8Array(sigHex.match(/.{2}/g)!.map((h) => parseInt(h, 16)));
+  const key = await stateHmacKey(["verify"]);
+  const ok = await crypto.subtle.verify("HMAC", key, sig, new TextEncoder().encode(`${userId}.${exp}`));
+  return ok ? userId : null;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -35,9 +81,19 @@ Deno.serve(async (req: Request) => {
     const action = url.searchParams.get("action");
 
     // OAuth callback from Google — no auth header (browser redirect with ?code=)
-    // Skip auth check for the callback path; user identity comes from the state param.
+    // User identity comes from the SIGNED state param, verified below.
+    let callbackUserId: string | null = null;
+    let authedUser: { id: string; email?: string } | null = null;
     if (code && state) {
-      // This is the OAuth callback — handle it below (no Bearer token available)
+      // Callback path: the state must be authentic (HMAC) and unexpired —
+      // otherwise anyone could bind their Google account to another tradie.
+      callbackUserId = await verifyState(state);
+      if (!callbackUserId) {
+        return new Response(
+          JSON.stringify({ error: "Invalid or expired sign-in state. Please reconnect Google Calendar from Settings." }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     } else {
       // All other requests (initiation, disconnect) require auth
       const authHeader = req.headers.get("Authorization");
@@ -64,8 +120,9 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      // Store user for use in initiation/disconnect paths
-      (globalThis as Record<string, unknown>).__oauthUser = authUser;
+      // Local to this request — a globalThis stash here would race across
+      // concurrent requests in the same isolate.
+      authedUser = authUser;
 
       const { allowed } = checkRateLimit(`${authUser.id}-google-calendar-oauth`, 15, 60000);
       if (!allowed) {
@@ -77,10 +134,8 @@ Deno.serve(async (req: Request) => {
     }
 
     // For initiation/disconnect, use the authenticated user.
-    // For OAuth callback, the user ID comes from the state param.
-    const user = code && state
-      ? { id: state } as { id: string; email?: string }
-      : (globalThis as Record<string, unknown>).__oauthUser as { id: string; email?: string } | null;
+    // For the OAuth callback, use the identity proven by the signed state.
+    const user = callbackUserId ? { id: callbackUserId } : authedUser;
 
     // Handle OAuth initiation
     if (action === "initiate") {
@@ -104,7 +159,7 @@ Deno.serve(async (req: Request) => {
       authUrl.searchParams.set("scope", "https://www.googleapis.com/auth/calendar");
       authUrl.searchParams.set("access_type", "offline");
       authUrl.searchParams.set("prompt", "consent");
-      authUrl.searchParams.set("state", user.id);
+      authUrl.searchParams.set("state", await signState(user!.id));
 
       return new Response(
         JSON.stringify({ authUrl: authUrl.toString() }),
@@ -126,8 +181,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // State param is the user ID — already used to construct `user` above.
-    // No separate check needed since callback path sets user.id = state.
+    // State authenticity + expiry already verified above (verifyState) —
+    // `user.id` is the proven owner of this consent flow.
 
     const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
     const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
@@ -191,7 +246,7 @@ Deno.serve(async (req: Request) => {
     const { error: dbError } = await supabaseClient
       .from("calendar_integrations")
       .upsert({
-        tradie_id: state,
+        tradie_id: callbackUserId,
         provider: "google",
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token || null,
