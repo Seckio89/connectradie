@@ -231,6 +231,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                 {showEstimator && (
                   <div className="mt-3">
                     <QuoteEstimator
+                      contact={contact}
                       onApply={(suggested, summary) => {
                         setPrice(String(suggested));
                         setDescription((prev) => (prev.trim() ? `${prev.trim()}\n\n${summary}` : summary));
