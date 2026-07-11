@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Mail, Phone, Briefcase, MoreVertical, Pencil, Trash2, UserCheck, UserPlus, Star, HardHat, Wrench, X, Check, AlertCircle, Clock, Shield, Calendar, ChevronLeft, ChevronRight, Lock, Timer, CheckCircle2, XCircle, MapPin, LogIn, LogOut, Navigation } from 'lucide-react';
 import SiteActivityTab from '../components/team/SiteActivityTab';
+import MyHoursTab from '../components/team/MyHoursTab';
 import { formatTime, formatDuration } from '../lib/siteActivity';
 import DashboardLayout from '../components/DashboardLayout';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
@@ -38,7 +39,7 @@ interface TeamMember {
   joined_at: string | null;
 }
 
-type ActiveTab = 'active' | 'manual' | 'permissions' | 'calendar' | 'timesheets' | 'siteactivity';
+type ActiveTab = 'active' | 'manual' | 'permissions' | 'calendar' | 'timesheets' | 'siteactivity' | 'myhours';
 
 interface TimeEntry {
   id: string;
@@ -577,7 +578,11 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
     ...manualMembers.filter(m => m.status === 'active').map(m => ({ name: m.invite_name, role: m.role })),
   ];
 
+  // A tradie who is themselves an active employee/subcontractor gets a read-only
+  // view of the hours their employer has on record for them.
+  const isEmployed = !!profile?.employer_id && profile?.employer_status === 'active';
   const teamTabs: { key: ActiveTab; label: string; count: number; icon: typeof Users }[] = [
+    ...(isEmployed ? [{ key: 'myhours' as ActiveTab, label: 'My Hours', count: 0, icon: Clock }] : []),
     { key: 'active', label: 'Active Team', count: activeTeam.length, icon: UserCheck },
     { key: 'manual', label: 'Manually Added', count: manualMembers.length, icon: Users },
     { key: 'permissions', label: 'Role Permissions', count: 0, icon: Lock },
@@ -746,7 +751,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
               >
                 <tab.icon className="w-4 h-4 flex-shrink-0" />
                 <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{tab.label === 'Role Permissions' ? 'Roles' : tab.label === 'Manually Added' ? 'Manual' : tab.label === 'Active Team' ? 'Active' : tab.label === 'Team Calendar' ? 'Calendar' : tab.label === 'Site Activity' ? 'Sites' : tab.label}</span>
+                <span className="sm:hidden">{tab.label === 'Role Permissions' ? 'Roles' : tab.label === 'Manually Added' ? 'Manual' : tab.label === 'Active Team' ? 'Active' : tab.label === 'Team Calendar' ? 'Calendar' : tab.label === 'Site Activity' ? 'Sites' : tab.label === 'My Hours' ? 'Hours' : tab.label}</span>
                 {tab.count > 0 && (
                   <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
                     activeTab === tab.key ? 'bg-warm-100 text-warm-700' : 'bg-gray-100 text-gray-600'
@@ -1125,6 +1130,8 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                 </div>
               )}
             </div>
+          ) : activeTab === 'myhours' ? (
+            <MyHoursTab />
           ) : activeTab === 'siteactivity' ? (
             <SiteActivityTab
               activeMembers={activeTeam.map(e => ({
