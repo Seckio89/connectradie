@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Mail, Phone, Briefcase, MoreVertical, Pencil, Trash2, UserCheck, UserPlus, Star, HardHat, Wrench, X, Check, AlertCircle, Clock, Shield, Calendar, ChevronLeft, ChevronRight, Lock, Timer, CheckCircle2, XCircle, MapPin } from 'lucide-react';
+import { Users, Plus, Mail, Phone, Briefcase, MoreVertical, Pencil, Trash2, UserCheck, UserPlus, Star, HardHat, Wrench, X, Check, AlertCircle, Clock, Shield, Calendar, ChevronLeft, ChevronRight, Lock, Timer, CheckCircle2, XCircle, MapPin, LogIn, LogOut, Navigation } from 'lucide-react';
 import SiteActivityTab from '../components/team/SiteActivityTab';
+import { formatTime, formatDuration } from '../lib/siteActivity';
 import DashboardLayout from '../components/DashboardLayout';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import ConfirmModal from '../components/ConfirmModal';
@@ -53,6 +54,8 @@ interface TimeEntry {
   approved_at: string | null;
   created_at: string;
   source: string;
+  arrived_at: string | null;
+  departed_at: string | null;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -532,6 +535,27 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
     pending: pendingRequests.length,
     manual: manualMembers.length,
   };
+
+  // Travel time between a worker's consecutive geofenced sites on the same day
+  // (one site's departure → the next site's arrival), keyed by the later entry.
+  const geofenceTravelMs: Record<string, number> = {};
+  {
+    const byDay: Record<string, TimeEntry[]> = {};
+    for (const e of timeEntries) {
+      if (e.source !== 'geofence' || !e.arrived_at) continue;
+      (byDay[`${e.team_member_id}|${e.date}`] ||= []).push(e);
+    }
+    for (const key of Object.keys(byDay)) {
+      const list = byDay[key].slice().sort((a, b) => (a.arrived_at! < b.arrived_at! ? -1 : 1));
+      for (let i = 1; i < list.length; i++) {
+        const prev = list[i - 1], cur = list[i];
+        if (prev.departed_at && cur.arrived_at) {
+          const ms = new Date(cur.arrived_at).getTime() - new Date(prev.departed_at).getTime();
+          if (ms > 0) geofenceTravelMs[cur.id] = ms;
+        }
+      }
+    }
+  }
 
   if (profile?.role !== 'tradie') {
     const notAvailable = (
@@ -1062,6 +1086,21 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                           <span className="font-semibold text-gray-700">{entry.hours}h</span>
                           {entry.description && <span className="truncate">{entry.description}</span>}
                         </div>
+                        {entry.source === 'geofence' && entry.arrived_at && (
+                          <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 flex-wrap">
+                            <span className="inline-flex items-center gap-1" title="Arrived on site">
+                              <LogIn className="w-3.5 h-3.5 text-gray-400" /> {formatTime(entry.arrived_at)}
+                            </span>
+                            <span className="inline-flex items-center gap-1" title="Left site">
+                              <LogOut className="w-3.5 h-3.5 text-gray-400" /> {entry.departed_at ? formatTime(entry.departed_at) : '—'}
+                            </span>
+                            {geofenceTravelMs[entry.id] != null && (
+                              <span className="inline-flex items-center gap-1 text-secondary-600" title="Travel from the previous site">
+                                <Navigation className="w-3.5 h-3.5" /> {formatDuration(geofenceTravelMs[entry.id])} drive from last site
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                       {entry.status === 'pending' && (
                         <div className="flex items-center gap-1.5 flex-shrink-0">
