@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, MapPin, UserCheck, FileText, Loader2, Copy, Check, Plus, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, UserCheck, FileText, Loader2, Copy, Check, Plus, RefreshCw, Send } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import NewQuoteModal from '../components/NewQuoteModal';
 import { supabase } from '../lib/supabase';
@@ -37,6 +37,7 @@ interface ServiceRow {
   assignedName: string | null;
   agreedPrice: number | null;
   frequencyMonths: number;
+  isOffApp: boolean;
 }
 
 const freqLabel = (m: number): string =>
@@ -79,6 +80,7 @@ export default function ClientDetail() {
   const [loading, setLoading] = useState(true);
   const [showQuote, setShowQuote] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [invoicingId, setInvoicingId] = useState<string | null>(null);
 
   const load = async () => {
     if (!user || !id) return;
@@ -107,14 +109,14 @@ export default function ClientDetail() {
     if (contactRow) {
       let rjQuery = supabase
         .from('recurring_jobs')
-        .select('id, trade_category, assigned_team_member_id, agreed_price, frequency_months')
+        .select('id, trade_category, assigned_team_member_id, agreed_price, frequency_months, client_contact_id')
         .eq('tradie_id', user.id)
         .eq('is_active', true);
       rjQuery = contactRow.linked_profile_id
         ? rjQuery.or(`client_contact_id.eq.${contactRow.id},client_id.eq.${contactRow.linked_profile_id}`)
         : rjQuery.eq('client_contact_id', contactRow.id);
       const { data: rj } = await rjQuery;
-      const svc = (rj as Array<{ id: string; trade_category: string; assigned_team_member_id: string | null; agreed_price: number | null; frequency_months: number }>) ?? [];
+      const svc = (rj as Array<{ id: string; trade_category: string; assigned_team_member_id: string | null; agreed_price: number | null; frequency_months: number; client_contact_id: string | null }>) ?? [];
       const memberIds = [...new Set(svc.map((s) => s.assigned_team_member_id).filter((x): x is string => !!x))];
       let names: Record<string, string> = {};
       if (memberIds.length) {
@@ -130,6 +132,7 @@ export default function ClientDetail() {
         assignedName: s.assigned_team_member_id ? names[s.assigned_team_member_id] ?? null : null,
         agreedPrice: s.agreed_price ?? null,
         frequencyMonths: s.frequency_months,
+        isOffApp: !!s.client_contact_id,
       })));
     } else {
       setServices([]);
@@ -151,6 +154,31 @@ export default function ClientDetail() {
       setTimeout(() => setCopiedId((prev) => (prev === q.id ? null : prev)), 2000);
     } catch {
       showToast('Could not copy the link.', true);
+    }
+  };
+
+  // Bill an off-app client for a visit: invoice-contact creates a Stripe pay link
+  // (destination charge to the tradie) and emails it to the contact.
+  const sendInvoice = async (serviceId: string) => {
+    if (!contact) return;
+    setInvoicingId(serviceId);
+    try {
+      const { data, error } = await supabase.functions.invoke('invoice-contact', {
+        body: { recurringJobId: serviceId },
+      });
+      if (error) {
+        // Edge function returns a JSON { error } body on non-2xx — surface it.
+        let msg = 'Could not send the invoice.';
+        try { msg = (await (error as { context?: Response }).context?.json())?.error || msg; } catch { /* keep default */ }
+        showToast(msg, true);
+        return;
+      }
+      if (data?.error) { showToast(data.error, true); return; }
+      showToast(`Invoice for $${Number(data?.total ?? 0).toLocaleString('en-AU')} emailed to ${contact.full_name.split(' ')[0]}.`);
+    } catch {
+      showToast('Could not send the invoice.', true);
+    } finally {
+      setInvoicingId(null);
     }
   };
 
@@ -285,7 +313,9 @@ export default function ClientDetail() {
               )}
             </div>
 
-            {/* Ongoing services — only for on-app clients (recurring jobs key on a profile) */}
+            {/* Ongoing services — recurring jobs for this client (off-app via
+                client_contact_id, or the linked on-app profile). Off-app rows get
+                a "Send invoice" action that emails a Stripe card payment link. */}
             {services.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
@@ -316,6 +346,20 @@ export default function ClientDetail() {
                         <span className="text-sm font-semibold text-gray-900 flex-shrink-0 tabular-nums">
                           ${Number(s.agreedPrice).toLocaleString('en-AU')}<span className="text-xs font-normal text-gray-400">/visit</span>
                         </span>
+                      )}
+                      {s.isOffApp && contact.email && s.agreedPrice != null && s.agreedPrice > 0 && (
+                        <button
+                          onClick={() => sendInvoice(s.id)}
+                          disabled={invoicingId === s.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+                          title={`Email ${contact.full_name.split(' ')[0]} a card payment link for this visit`}
+                        >
+                          {invoicingId === s.id ? (
+                            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sending…</>
+                          ) : (
+                            <><Send className="w-3.5 h-3.5" /> Send invoice</>
+                          )}
+                        </button>
                       )}
                     </div>
                   ))}
