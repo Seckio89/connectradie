@@ -52,6 +52,7 @@ interface TimeEntry {
   approved_by: string | null;
   approved_at: string | null;
   created_at: string;
+  source: string;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -1035,6 +1036,14 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                           }`}>
                             {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
                           </span>
+                          {entry.source === 'geofence' && (
+                            <span
+                              title="Auto-logged from on-site check-in"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-secondary-50 text-secondary-700"
+                            >
+                              <MapPin className="w-3 h-3" /> Auto
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
                           <span>{new Date(entry.date).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
