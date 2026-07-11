@@ -39,6 +39,10 @@ interface Economics {
 
 const TRADES = ['Cleaning', 'Painting', 'Plumbing', 'Electrical', 'Flooring / Tiling', 'Fencing', 'Landscaping', 'Carpentry', 'Handyman', 'Other'];
 
+// Property type reshapes the quantity questions — commercial pricing runs on
+// workstations/toilets/area, not "rooms and bathrooms".
+const PROPERTY_TYPES = ['Residential', 'Office', 'Retail', 'Warehouse', 'Strata / common areas'];
+
 const TRADE_FIELDS: Record<string, { key: string; label: string }[]> = {
   Cleaning: [{ key: 'rooms', label: 'Rooms' }, { key: 'bathrooms', label: 'Bathrooms' }, { key: 'sqm', label: 'Area m²' }],
   Painting: [{ key: 'rooms', label: 'Rooms' }, { key: 'sqm', label: 'Wall m²' }, { key: 'coats', label: 'Coats' }],
@@ -51,6 +55,21 @@ const TRADE_FIELDS: Record<string, { key: string; label: string }[]> = {
   Handyman: [{ key: 'rooms', label: 'Rooms' }, { key: 'sqm', label: 'Area m²' }],
   Other: [{ key: 'rooms', label: 'Rooms' }, { key: 'sqm', label: 'Area m²' }],
 };
+
+// Commercial overrides (keyed `trade|property`); anything not listed falls back
+// to the trade defaults — most trades are already area/count based.
+const COMMERCIAL_FIELDS: Record<string, { key: string; label: string }[]> = {
+  'Cleaning|Office': [{ key: 'workstations', label: 'Workstations' }, { key: 'toilets', label: 'Toilets' }, { key: 'sqm', label: 'Area m²' }],
+  'Cleaning|Retail': [{ key: 'sqm', label: 'Floor m²' }, { key: 'toilets', label: 'Toilets' }],
+  'Cleaning|Warehouse': [{ key: 'sqm', label: 'Floor m²' }, { key: 'toilets', label: 'Toilets' }, { key: 'mezzanines', label: 'Mezzanines' }],
+  'Cleaning|Strata / common areas': [{ key: 'levels', label: 'Levels' }, { key: 'toilets', label: 'Shared toilets' }, { key: 'sqm', label: 'Common m²' }],
+  'Painting|Office': [{ key: 'sqm', label: 'Wall m²' }, { key: 'coats', label: 'Coats' }],
+  'Painting|Warehouse': [{ key: 'sqm', label: 'Wall/ceiling m²' }, { key: 'coats', label: 'Coats' }],
+};
+
+function fieldsFor(trade: string, property: string): { key: string; label: string }[] {
+  return COMMERCIAL_FIELDS[`${trade}|${property}`] ?? TRADE_FIELDS[trade] ?? TRADE_FIELDS.Other;
+}
 
 const CONDITIONS = ['light', 'standard', 'heavy', 'complex'];
 const ACCESS = ['Stairs', 'Tight access', 'No parking', 'Multi-storey'];
@@ -110,6 +129,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   const { user, profile, tradieDetails } = useAuth();
 
   const [trade, setTrade] = useState('');
+  const [property, setProperty] = useState('Residential');
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [condition, setCondition] = useState('');
   const [access, setAccess] = useState<Set<string>>(new Set());
@@ -191,6 +211,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
       const { data, error: fnError } = await supabase.functions.invoke('estimate-quote', {
         body: {
           trade: trade.toLowerCase(),
+          jobType: property.toLowerCase(),
           quantities: Object.fromEntries(Object.entries(quantities).filter(([, v]) => v !== '').map(([k, v]) => [k, Number(v)])),
           condition: condition || undefined,
           access: [...access],
@@ -228,7 +249,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
     onApply(Math.round(priced.total), summary);
   };
 
-  const fields = trade ? (TRADE_FIELDS[trade] ?? TRADE_FIELDS.Other) : [];
+  const fields = trade ? fieldsFor(trade, property) : [];
   const numInput = 'px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500';
 
   return (
@@ -251,6 +272,17 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
       {trade && (
         <>
+          {/* Property type — reshapes the quantity questions (office/warehouse ≠ rooms) */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] text-gray-500">Property:</span>
+            {PROPERTY_TYPES.map((p) => (
+              <button key={p} type="button" onClick={() => { setProperty(p); setQuantities({}); }}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                  property === p ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}>{p}</button>
+            ))}
+          </div>
+
           {/* Trade-specific quantities */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {fields.map((f) => (

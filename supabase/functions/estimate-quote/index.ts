@@ -166,11 +166,26 @@ function heuristicWork(req: EstimateRequest): WorkEstimate {
   const num = (k: string) => Math.max(0, Number(q[k]) || 0);
   const rooms = num("rooms"), sqm = num("sqm"), bathrooms = num("bathrooms");
   const fixtures = num("fixtures"), points = num("points"), linearMetres = num("linearMetres"), coats = Math.max(1, num("coats") || 2);
+  const workstations = num("workstations"), toilets = num("toilets"), levels = num("levels"), mezzanines = num("mezzanines");
+  const jobType = (req.jobType || "").toLowerCase();
+  const isCommercial = /office|retail|warehouse|strata|commercial/.test(jobType);
   const assumptions: string[] = [];
   const isLicensed = LICENSED_TRADES.some((t) => trade.includes(t));
 
   let hours = 0;
-  if (trade.includes("clean")) {
+  if (trade.includes("clean") && isCommercial) {
+    // Commercial cleaning scales on workstations/toilets/area, not rooms.
+    if (jobType.includes("warehouse")) {
+      hours = 1 + sqm * 0.004 + toilets * 0.5 + mezzanines * 0.75;
+      assumptions.push("Warehouse: open-floor rate (~0.004 h/m²) + amenities.");
+    } else if (jobType.includes("strata")) {
+      hours = 1 + levels * 0.75 + sqm * 0.006 + toilets * 0.5;
+      assumptions.push("Strata/common areas: per-level + shared amenities.");
+    } else {
+      hours = 1 + workstations * 0.08 + toilets * 0.5 + sqm * 0.006;
+      assumptions.push("Office/retail: ~5 min/workstation, 30 min/toilet, plus area.");
+    }
+  } else if (trade.includes("clean")) {
     hours = 0.5 + rooms * 0.4 + bathrooms * 0.6 + sqm * 0.008;
     assumptions.push("~0.4 h/room, 0.6 h/bathroom, plus area.");
   } else if (trade.includes("paint")) {
@@ -210,7 +225,7 @@ function heuristicWork(req: EstimateRequest): WorkEstimate {
     if (materialsCost > 0) assumptions.push("Materials are a rough guess — confirm from a supplier.");
   }
 
-  const thin = rooms + sqm + bathrooms + fixtures + points + linearMetres === 0;
+  const thin = rooms + sqm + bathrooms + fixtures + points + linearMetres + workstations + toilets + levels + mezzanines === 0;
   if (thin) assumptions.push("No quantities given — add them to sharpen this.");
   if (isLicensed) assumptions.push("Licensed trade: labour only — parts/compliance vary; a site inspection is recommended.");
 
