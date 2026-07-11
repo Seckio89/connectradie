@@ -1,4 +1,4 @@
-import { Bell, BellRing, Smartphone, MessageSquare } from 'lucide-react';
+import { Bell, BellRing, Smartphone, MessageSquare, MapPin } from 'lucide-react';
 
 interface NotificationsTabProps {
   pushEnabled: boolean;
@@ -7,10 +7,12 @@ interface NotificationsTabProps {
   onTogglePush: (enabled: boolean) => void;
   smsEnabled: boolean;
   onToggleSms: (enabled: boolean) => void;
+  siteArrivalEnabled: boolean;
+  onToggleSiteArrival: (enabled: boolean) => void;
   role?: 'tradie' | 'client' | 'admin';
 }
 
-export default function NotificationsTab({ pushEnabled, pushPermission, notifSaving, onTogglePush, smsEnabled, onToggleSms, role }: NotificationsTabProps) {
+export default function NotificationsTab({ pushEnabled, pushPermission, notifSaving, onTogglePush, smsEnabled, onToggleSms, siteArrivalEnabled, onToggleSiteArrival, role }: NotificationsTabProps) {
   const isClient = role === 'client';
 
   return (
@@ -90,6 +92,32 @@ export default function NotificationsTab({ pushEnabled, pushPermission, notifSav
             className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${smsEnabled ? 'bg-warm-500' : 'bg-gray-300'} ${notifSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${smsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
+
+        {/* Job-site arrival (geofence) alerts */}
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-secondary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <MapPin className="w-5 h-5 text-secondary-600" />
+            </div>
+            <div>
+              <p className="font-medium text-gray-900">Job-site arrival alerts</p>
+              <p className="text-sm text-gray-600">
+                {isClient
+                  ? 'Get notified when your tradie arrives on site'
+                  : 'Get notified when a worker arrives at one of your job sites'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onToggleSiteArrival(!siteArrivalEnabled)}
+            disabled={notifSaving}
+            aria-label={siteArrivalEnabled ? 'Disable job-site arrival alerts' : 'Enable job-site arrival alerts'}
+            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${siteArrivalEnabled ? 'bg-warm-500' : 'bg-gray-300'} ${notifSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          >
+            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${siteArrivalEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
           </button>
         </div>
       </div>

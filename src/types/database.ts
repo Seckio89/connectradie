@@ -49,6 +49,7 @@ export type Profile = {
   subscription_expiry: string | null;
   push_enabled: boolean;
   sms_alerts_enabled: boolean;
+  notify_site_arrival: boolean;
   push_subscription: Record<string, unknown> | null;
   insurance_policy: boolean;
   service_radius_km: number;

@@ -132,8 +132,10 @@ Deno.serve(async (req: Request) => {
       }
       recorded++;
 
-      // Notify the client on arrival — but only once per visit window, so a
-      // GPS bounce in and out of the fence doesn't spam them.
+      // On arrival, notify the client AND the arriving worker's contractor (the
+      // "first contractor" who assigned them) — but only once per visit window
+      // (a GPS bounce in/out shouldn't spam), and only recipients who haven't
+      // muted "site arrival" alerts.
       if (action === "ENTER") {
         try {
           const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
@@ -147,25 +149,47 @@ Deno.serve(async (req: Request) => {
 
           // count includes the row we just inserted; >1 means a recent prior ENTER.
           if ((count ?? 1) <= 1) {
-            const { data: tradie } = await supabase
+            const { data: worker } = await supabase
               .from("profiles")
-              .select("full_name")
+              .select("full_name, employer_id, employer_status")
               .eq("id", tradieId)
               .maybeSingle();
 
-            if (job?.client_id) {
-              const jobTitle = job.title
-                || job.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, " ")
-                || "your job";
-              await supabase.from("notifications").insert({
-                user_id: job.client_id,
-                type: "site_arrival",
-                title: "Tradie arrived on site",
-                message: `${tradie?.full_name || "Your tradie"} has arrived at the site for ${jobTitle}.`,
-                job_id: jobId,
-                metadata: { quote_id: quoteId ?? null, tradie_id: tradieId },
-                read: false,
-              });
+            const tradieName = worker?.full_name || "Your tradie";
+            const jobTitle = job.title
+              || job.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, " ")
+              || "your job";
+
+            // Client + the worker's ACTIVE employer, de-duplicated.
+            const employerId =
+              worker?.employer_status === "active" && worker?.employer_id ? worker.employer_id : null;
+            const recipientIds = [job.client_id, employerId]
+              .filter((id): id is string => !!id)
+              .filter((id, i, arr) => arr.indexOf(id) === i);
+
+            if (recipientIds.length) {
+              // Respect each recipient's mute preference.
+              const { data: prefs } = await supabase
+                .from("profiles")
+                .select("id, notify_site_arrival")
+                .in("id", recipientIds);
+              const muted = new Set(
+                (prefs ?? []).filter((p) => p.notify_site_arrival === false).map((p) => p.id),
+              );
+              const rows = recipientIds
+                .filter((id) => !muted.has(id))
+                .map((id) => ({
+                  user_id: id,
+                  type: "site_arrival",
+                  title: "Tradie arrived on site",
+                  message: id === job.client_id
+                    ? `${tradieName} has arrived at the site for ${jobTitle}.`
+                    : `${tradieName} has arrived on site for ${jobTitle}.`,
+                  job_id: jobId,
+                  metadata: { quote_id: quoteId ?? null, tradie_id: tradieId },
+                  read: false,
+                }));
+              if (rows.length) await supabase.from("notifications").insert(rows);
             }
           }
         } catch (notifyErr) {

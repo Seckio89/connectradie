@@ -62,6 +62,7 @@ export default function Settings() {
 
   const [pushEnabled, setPushEnabled] = useState(false);
   const [smsEnabled, setSmsEnabled] = useState(false);
+  const [siteArrivalEnabled, setSiteArrivalEnabled] = useState(true);
   const [pushPermission, setPushPermission] = useState<string>('default');
   const [notifSaving, setNotifSaving] = useState(false);
 
@@ -91,6 +92,7 @@ export default function Settings() {
       setPostcode(profile.postcode || '');
       setPushEnabled(profile.push_enabled || false);
       setSmsEnabled(profile.sms_alerts_enabled || false);
+      setSiteArrivalEnabled(profile.notify_site_arrival ?? true);
     }
     if (tradieDetails) {
       setBusinessName(tradieDetails.business_name || '');
@@ -178,6 +180,27 @@ export default function Settings() {
     } else {
       setToastMessage('Failed to save SMS preference.');
       setToastType('error');
+    }
+    setShowToast(true);
+    setNotifSaving(false);
+  };
+
+  const handleToggleSiteArrival = async (enabled: boolean) => {
+    if (!user) return;
+    setNotifSaving(true);
+    const prev = siteArrivalEnabled;
+    setSiteArrivalEnabled(enabled); // optimistic
+    const { error: saveErr } = await supabase
+      .from('profiles')
+      .update({ notify_site_arrival: enabled })
+      .eq('id', user.id);
+    if (saveErr) {
+      setSiteArrivalEnabled(prev);
+      setToastMessage('Failed to save arrival-alert preference.');
+      setToastType('error');
+    } else {
+      setToastMessage(enabled ? 'Job-site arrival alerts on.' : 'Job-site arrival alerts off.');
+      setToastType('success');
     }
     setShowToast(true);
     setNotifSaving(false);
@@ -735,6 +758,8 @@ export default function Settings() {
                 onTogglePush={handleTogglePush}
                 smsEnabled={smsEnabled}
                 onToggleSms={handleToggleSms}
+                siteArrivalEnabled={siteArrivalEnabled}
+                onToggleSiteArrival={handleToggleSiteArrival}
                 role={profile?.role as 'tradie' | 'client' | 'admin'}
               />
               <div className="border-t border-gray-200 p-6 md:p-8">
