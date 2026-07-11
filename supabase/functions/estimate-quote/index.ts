@@ -21,14 +21,25 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
     supabase functions deploy estimate-quote --no-verify-jwt
 */
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey, X-Supabase-Api-Version",
-};
+// CORS: same allow-list pattern as the rest of the fleet — echo the request
+// origin only when it's the prod domain (ALLOWED_ORIGIN) or a localhost dev
+// server, else fall back to the prod domain. Not a wildcard.
+const ALLOWED_ORIGINS = [
+  Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
+  "http://localhost:5173", // Vite dev server
+  "http://localhost:4173", // Vite preview
+  "http://127.0.0.1:5173",
+];
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+function corsFor(req: Request) {
+  const origin = req.headers.get("Origin") || "";
+  const allowOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey, X-Supabase-Api-Version",
+    "Vary": "Origin",
+  };
 }
 
 interface Economics {
@@ -326,7 +337,11 @@ async function aiWork(req: EstimateRequest, apiKey: string): Promise<WorkEstimat
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
+  const cors = corsFor(req);
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
+
+  if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: cors });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
