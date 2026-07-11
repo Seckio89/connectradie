@@ -514,6 +514,8 @@ export const RECURRING_SERVICE_DESCRIPTIONS: Record<string, string> = {
 
 export interface RecurringJobData {
   client_id?: string;
+  /** Off-app CRM contact (mutually satisfies the client-present check with client_id). */
+  client_contact_id?: string;
   tradie_id?: string | null;
   trade_category: string;
   service_subtype?: string;
@@ -779,7 +781,9 @@ export async function createRecurringJob(
   }
 
   const insertPayload: Record<string, unknown> = {
-    client_id: data.client_id ?? user.id,
+    // For an off-app contact, don't default client_id to the caller — the tradie
+    // is not the client; the contact carries the relationship.
+    client_id: data.client_contact_id ? (data.client_id ?? null) : (data.client_id ?? user.id),
     tradie_id: resolvedTradieId,
     trade_category: data.trade_category,
     description: data.description,

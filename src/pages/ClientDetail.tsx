@@ -35,7 +35,13 @@ interface ServiceRow {
   id: string;
   trade_category: string;
   assignedName: string | null;
+  agreedPrice: number | null;
+  frequencyMonths: number;
 }
+
+const freqLabel = (m: number): string =>
+  m === -1 ? 'weekly' : m === -2 ? 'fortnightly' : m === -3 ? 'daily'
+  : m === 1 ? 'monthly' : m === 3 ? 'quarterly' : m === 12 ? 'yearly' : `every ${m} mo`;
 
 // Client-facing status, quote-centric: "Sent" until they accept.
 const STATUS_META: Record<QuoteStatus, { label: string; cls: string }> = {
@@ -96,16 +102,19 @@ export default function ClientDetail() {
       .filter((r): r is JobWithQuote => r !== null);
     setJobs(rows);
 
-    // Ongoing services only exist for a client with an app account — recurring_jobs
-    // key on a profile (client_id), not an off-app contact.
-    if (contactRow?.linked_profile_id) {
-      const { data: rj } = await supabase
+    // Ongoing (recurring) services for this contact — off-app via client_contact_id,
+    // and/or the linked on-app profile via client_id.
+    if (contactRow) {
+      let rjQuery = supabase
         .from('recurring_jobs')
-        .select('id, trade_category, assigned_team_member_id')
+        .select('id, trade_category, assigned_team_member_id, agreed_price, frequency_months')
         .eq('tradie_id', user.id)
-        .eq('client_id', contactRow.linked_profile_id)
         .eq('is_active', true);
-      const svc = (rj as Array<{ id: string; trade_category: string; assigned_team_member_id: string | null }>) ?? [];
+      rjQuery = contactRow.linked_profile_id
+        ? rjQuery.or(`client_contact_id.eq.${contactRow.id},client_id.eq.${contactRow.linked_profile_id}`)
+        : rjQuery.eq('client_contact_id', contactRow.id);
+      const { data: rj } = await rjQuery;
+      const svc = (rj as Array<{ id: string; trade_category: string; assigned_team_member_id: string | null; agreed_price: number | null; frequency_months: number }>) ?? [];
       const memberIds = [...new Set(svc.map((s) => s.assigned_team_member_id).filter((x): x is string => !!x))];
       let names: Record<string, string> = {};
       if (memberIds.length) {
@@ -119,6 +128,8 @@ export default function ClientDetail() {
         id: s.id,
         trade_category: s.trade_category,
         assignedName: s.assigned_team_member_id ? names[s.assigned_team_member_id] ?? null : null,
+        agreedPrice: s.agreed_price ?? null,
+        frequencyMonths: s.frequency_months,
       })));
     } else {
       setServices([]);
@@ -291,6 +302,7 @@ export default function ClientDetail() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-gray-900 capitalize truncate">{s.trade_category.replace(/-/g, ' ')}</span>
                           <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Active</span>
+                          <span className="text-xs text-gray-400 capitalize">{freqLabel(s.frequencyMonths)}</span>
                         </div>
                         <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                           {s.assignedName ? (
@@ -300,6 +312,11 @@ export default function ClientDetail() {
                           )}
                         </p>
                       </div>
+                      {s.agreedPrice != null && (
+                        <span className="text-sm font-semibold text-gray-900 flex-shrink-0 tabular-nums">
+                          ${Number(s.agreedPrice).toLocaleString('en-AU')}<span className="text-xs font-normal text-gray-400">/visit</span>
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>

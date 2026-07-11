@@ -5,11 +5,30 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState } from 'react';
-import { Loader2, Send, Copy, CheckCircle2, Check, Sparkles, FileText } from 'lucide-react';
+import { Loader2, Send, Copy, CheckCircle2, Check, Sparkles, FileText, Repeat } from 'lucide-react';
 import Modal from './Modal';
 import QuoteEstimator from './QuoteEstimator';
 import { supabase } from '../lib/supabase';
+import { createRecurringJob, calculateNextDueDate, FREQ_WEEKLY, FREQ_FORTNIGHTLY } from '../lib/recurringJobs';
 import type { ClientContact } from '../types/database';
+
+const FREQUENCIES = [
+  { key: 'weekly', label: 'Weekly', months: FREQ_WEEKLY },
+  { key: 'fortnightly', label: 'Fortnightly', months: FREQ_FORTNIGHTLY },
+  { key: 'monthly', label: 'Monthly', months: 1 },
+  { key: 'quarterly', label: 'Quarterly', months: 3 },
+];
+
+// Lightweight trade categorisation for the recurring service record.
+function deriveTrade(title: string): string {
+  const t = title.toLowerCase();
+  if (/clean/.test(t)) return 'cleaning';
+  if (/paint/.test(t)) return 'painting';
+  if (/lawn|mow|garden|landscap/.test(t)) return 'gardening';
+  if (/plumb/.test(t)) return 'plumbing';
+  if (/electric/.test(t)) return 'electrical';
+  return 'general';
+}
 
 interface NewQuoteModalProps {
   isOpen: boolean;
@@ -30,8 +49,12 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
   const [sentLink, setSentLink] = useState<string | null>(null);
   const [emailed, setEmailed] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [frequency, setFrequency] = useState('weekly');
+  const [consumables, setConsumables] = useState<'client' | 'tradie_billed'>('client');
 
   const firstName = contact.full_name.split(' ')[0] || 'them';
+  const freqLabel = FREQUENCIES.find((f) => f.key === frequency)?.label.toLowerCase() ?? 'weekly';
 
   const handleSend = async () => {
     if (!title.trim()) { setError('Add a short job title.'); return; }
@@ -75,6 +98,26 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
         sent_to_email: contact.email,
       });
       if (quoteError) throw quoteError;
+
+      // 2b. Recurring: register an ongoing service (the price becomes per-visit).
+      if (isRecurring) {
+        const freq = FREQUENCIES.find((f) => f.key === frequency) ?? FREQUENCIES[0];
+        await createRecurringJob({
+          client_contact_id: contact.id,
+          client_id: contact.linked_profile_id ?? undefined,
+          tradie_id: tradieId,
+          trade_category: deriveTrade(title),
+          description: title.trim(),
+          frequency_months: freq.months,
+          next_due_date: calculateNextDueDate(new Date(), freq.months).toISOString().split('T')[0],
+          reminder_days_before: 14,
+          is_active: true,
+          original_job_id: createdJobId,
+          location: contact.address ?? undefined,
+          agreed_price: priceNum,
+          consumables_provider: consumables,
+        });
+      }
 
       const link = `${window.location.origin}/quote/${token}`;
       setSentLink(link);
@@ -253,6 +296,47 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                 />
               </div>
+
+              {/* Recurring service — turns the quote into an ongoing service */}
+              <div className="border border-gray-200 rounded-xl p-3">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <Repeat className="w-4 h-4 text-secondary-600" /> Recurring service
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsRecurring((v) => !v)}
+                    aria-label={isRecurring ? 'Turn off recurring' : 'Turn on recurring'}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isRecurring ? 'bg-warm-500' : 'bg-gray-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${isRecurring ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+                {isRecurring && (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs text-gray-500">
+                      The price above becomes the <span className="font-medium">per-visit</span> price. This creates an ongoing service you can track and re-bill.
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {FREQUENCIES.map((f) => (
+                        <button key={f.key} type="button" onClick={() => setFrequency(f.key)}
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                            frequency === f.key ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                          }`}>{f.label}</button>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[11px] text-gray-500">Consumables:</span>
+                      {(['client', 'tradie_billed'] as const).map((c) => (
+                        <button key={c} type="button" onClick={() => setConsumables(c)}
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                            consumables === c ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                          }`}>{c === 'client' ? 'Client supplies' : 'I supply & bill'}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {error && (
@@ -271,8 +355,8 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                 disabled={sending}
                 className="flex-1 px-4 py-3 bg-warm-500 text-white rounded-xl font-medium hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
               >
-                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                {contact.email ? 'Send quote' : 'Create quote'}
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : isRecurring ? <Repeat className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                {isRecurring ? `Send ${freqLabel} service` : contact.email ? 'Send quote' : 'Create quote'}
               </button>
             </div>
           </>
