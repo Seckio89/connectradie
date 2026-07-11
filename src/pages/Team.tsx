@@ -61,6 +61,18 @@ const ROLE_LABELS: Record<string, string> = {
   apprentice: 'Apprentice',
 };
 
+/**
+ * Local calendar date as yyyy-mm-dd — NOT via toISOString(), which converts to
+ * UTC and shifts the day in timezones ahead of UTC. time_entries.date is a plain
+ * calendar date, so week boundaries and the "today" default must be local.
+ */
+const toLocalYmd = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 const ROLE_COLORS: Record<string, string> = {
   employee: 'bg-secondary-100 text-secondary-700',
   subcontractor: 'bg-warm-100 text-warm-700',
@@ -288,7 +300,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
     return d;
   });
   const [showAddEntry, setShowAddEntry] = useState(false);
-  const [entryForm, setEntryForm] = useState({ member_id: '', date: new Date().toISOString().slice(0, 10), hours: '', description: '', job_id: '' });
+  const [entryForm, setEntryForm] = useState({ member_id: '', date: toLocalYmd(new Date()), hours: '', description: '', job_id: '' });
   const [savingEntry, setSavingEntry] = useState(false);
   const [calMonth, setCalMonth] = useState(new Date());
 
@@ -300,8 +312,8 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
       .from('time_entries')
       .select('*')
       .eq('business_owner_id', user.id)
-      .gte('date', timesheetWeekStart.toISOString().slice(0, 10))
-      .lte('date', weekEnd.toISOString().slice(0, 10))
+      .gte('date', toLocalYmd(timesheetWeekStart))
+      .lte('date', toLocalYmd(weekEnd))
       .order('date', { ascending: true });
     if (data) {
       const entries = (data as unknown as TimeEntry[]).map(entry => {
@@ -327,7 +339,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
       });
       if (error) throw error;
       setShowAddEntry(false);
-      setEntryForm({ member_id: '', date: new Date().toISOString().slice(0, 10), hours: '', description: '', job_id: '' });
+      setEntryForm({ member_id: '', date: toLocalYmd(new Date()), hours: '', description: '', job_id: '' });
       fetchTimeEntries();
     } catch (err) {
       console.error('Failed to add time entry:', err);
