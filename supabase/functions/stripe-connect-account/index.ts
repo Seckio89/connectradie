@@ -9,23 +9,37 @@ function requireEnv(key: string): string {
   return val;
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, X-Client-Info, Apikey",
-};
+// Allow the production origin plus the local dev/preview servers. The caller's
+// origin is echoed back ONLY if it's on this list — prod stays locked (never
+// "*"), but the localhost dev server can reach the function too.
+const ALLOWED_ORIGINS = [
+  Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
+  "http://localhost:5173", // Vite dev server
+  "http://localhost:4173", // Vite preview
+  "http://127.0.0.1:5173",
+];
 
-function errorResponse(message: string, status: number) {
-  return new Response(JSON.stringify({ error: message }), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+function corsFor(req: Request) {
+  const origin = req.headers.get("Origin") || "";
+  const allowOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+    "Vary": "Origin",
+  };
 }
 
 Deno.serve(async (req: Request) => {
+  const cors = corsFor(req);
+  const errorResponse = (message: string, status: number) =>
+    new Response(JSON.stringify({ error: message }), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 200, headers: corsHeaders });
+    return new Response(null, { status: 200, headers: cors });
   }
 
   if (req.method !== "POST") {
@@ -65,7 +79,7 @@ Deno.serve(async (req: Request) => {
     if (!allowed) {
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 429, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -86,7 +100,7 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({ connected: false }),
         {
           status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...cors, "Content-Type": "application/json" },
         }
       );
     }
@@ -197,7 +211,7 @@ Deno.serve(async (req: Request) => {
       }),
       {
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       }
     );
   } catch (err) {
