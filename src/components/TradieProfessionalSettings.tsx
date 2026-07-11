@@ -24,6 +24,18 @@ type TeamSize = 'Solo' | 'Small Team (2-5)' | 'Large Team (6+)';
 
 const TEAM_SIZE_OPTIONS: TeamSize[] = ['Solo', 'Small Team (2-5)', 'Large Team (6+)'];
 
+// Business timezone — used to stamp the local date on auto-logged (geofence)
+// timesheet entries. Australian zones only.
+const TIMEZONES: { value: string; label: string }[] = [
+  { value: 'Australia/Sydney', label: 'Sydney / Canberra (NSW, ACT)' },
+  { value: 'Australia/Melbourne', label: 'Melbourne (VIC)' },
+  { value: 'Australia/Brisbane', label: 'Brisbane (QLD)' },
+  { value: 'Australia/Adelaide', label: 'Adelaide (SA)' },
+  { value: 'Australia/Perth', label: 'Perth (WA)' },
+  { value: 'Australia/Hobart', label: 'Hobart (TAS)' },
+  { value: 'Australia/Darwin', label: 'Darwin (NT)' },
+];
+
 interface InfoTooltipProps {
   text: string;
 }
@@ -69,6 +81,7 @@ export default function TradieProfessionalSettings() {
   const [isEmergencyAvailable, setIsEmergencyAvailable] = useState(false);
   const [autoCompleteSessions, setAutoCompleteSessions] = useState(true);
   const [teamSize, setTeamSize] = useState<TeamSize | ''>('');
+  const [timezone, setTimezone] = useState('Australia/Sydney');
   const [callOutFee, setCallOutFee] = useState('');
   const [showCalloutFee, setShowCalloutFee] = useState(true);
   const [calloutFeeWaived, setCalloutFeeWaived] = useState(false);
@@ -114,6 +127,7 @@ export default function TradieProfessionalSettings() {
       setIsEmergencyAvailable(profile.is_emergency_available || false);
       setAutoCompleteSessions(profile.auto_complete_sessions ?? true);
       setTeamSize((profile.team_size as TeamSize) || '');
+      setTimezone(profile.timezone || 'Australia/Sydney');
       setCallOutFee(profile.call_out_fee ? String(profile.call_out_fee) : '');
       setShowCalloutFee(profile.show_callout_fee ?? true);
       setCalloutFeeWaived(profile.callout_fee_waived_on_proceed ?? false);
@@ -178,6 +192,7 @@ export default function TradieProfessionalSettings() {
       is_emergency_available: isEmergencyAvailable,
       auto_complete_sessions: autoCompleteSessions,
       team_size: teamSize || null,
+      timezone: timezone || 'Australia/Sydney',
       call_out_fee: callOutFee ? parseInt(callOutFee, 10) : null,
       show_callout_fee: showCalloutFee,
       callout_fee_waived_on_proceed: calloutFeeWaived,
@@ -557,6 +572,31 @@ export default function TradieProfessionalSettings() {
               <p className="text-xs text-gray-500">
                 You will receive leads within <span className="font-semibold">{serviceRadius}km</span> of <span className="font-semibold">{suburb}</span>.
               </p>
+            </div>
+          </div>
+
+          {/* Business timezone — stamps the local day on auto-logged timesheet hours */}
+          <div>
+            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+              Business timezone
+              <InfoTooltip text="Used to record the correct local day on automatically-logged (on-site check-in) timesheet hours" />
+            </label>
+            <div className="relative">
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white transition-shadow"
+              >
+                {TIMEZONES.map((tz) => (
+                  <option key={tz.value} value={tz.value}>{tz.label}</option>
+                ))}
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
 
