@@ -426,7 +426,8 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
       .from('jobs')
       .select('id, description, status, scheduled_date, preferred_time_slot, start_time, end_time, time_confirmed, location_address, contact_name, budget_amount, budget_type, is_emergency, project_id, tradie_id')
       .not('status', 'in', '(cancelled,declined)')
-      .or(`scheduled_date.gte.${startStr},scheduled_date.lte.${endStr}`)
+      .gte('scheduled_date', startStr)
+      .lte('scheduled_date', endStr)
       .order('scheduled_date', { ascending: true });
 
     if (isTradie) {
