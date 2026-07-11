@@ -465,16 +465,21 @@ Deno.serve(async (req: Request) => {
       });
     }
     const token = authHeader.slice(7);
+    // Trust tiers. Only the service-role key is fully trusted (it never leaves
+    // the server). The anon key is PUBLIC — it ships in the web bundle — so it
+    // is NOT trusted and can never send to a raw `to`. A user JWT is
+    // authenticated but only trusted to email its own saved clients (enforced
+    // at recipient resolution below).
     const isServiceRole = token === supabaseServiceKey;
-    const isAnonKey = token === supabaseAnonKey;
-
-    // Service-role key: trusted internal caller — skip user auth
-    // Anon key: likely Supabase cron scheduler — also trusted
-    if (!isServiceRole && !isAnonKey) {
-      // Must be a user JWT — validate it
+    let callerUserId: string | null = null;
+    if (!isServiceRole) {
       const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-      const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
-      if (authError || !user) {
+      const { data: { user } } = await supabaseClient.auth.getUser(token);
+      callerUserId = user?.id ?? null;
+      // Reject anything that is neither the service-role key, a valid user JWT,
+      // nor the (public) anon key. Anon is allowed through ONLY so callers that
+      // use recipientUserId keep working; it still cannot use a raw `to`.
+      if (!callerUserId && token !== supabaseAnonKey) {
         return new Response(
           JSON.stringify({ error: "Unauthorized" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -516,6 +521,32 @@ Deno.serve(async (req: Request) => {
         );
       }
       recipientEmail = recipientProfile.email;
+    } else if (recipientEmail && !isServiceRole) {
+      // Raw `to` from a non-service caller is only allowed to an address the
+      // caller actually owns as a saved client_contact. This is what stops a
+      // logged-in user (or a holder of the public anon key) from blasting a
+      // ConnecTradie-branded email to an arbitrary address. Trusted internal
+      // callers (service-role) derive the address server-side and are exempt.
+      if (!callerUserId) {
+        return new Response(
+          JSON.stringify({ error: "A raw recipient address is not permitted here — use recipientUserId." }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+      const esc = recipientEmail.replace(/([\\%_])/g, "\\$1"); // neutralise ilike metachars
+      const { data: owned } = await adminClient
+        .from("client_contacts")
+        .select("id")
+        .eq("owner_id", callerUserId)
+        .ilike("email", esc)
+        .limit(1);
+      if (!owned || owned.length === 0) {
+        return new Response(
+          JSON.stringify({ error: "You can only email your own saved clients. Add them to your client list first." }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     if (!recipientEmail || !subject || !body) {
