@@ -959,7 +959,7 @@ export default function Payouts() {
                                     <colgroup>
                                       <col className="w-[90px]" />
                                       <col />
-                                      <col className="w-[180px]" />
+                                      <col className="w-[240px]" />
                                       <col className="w-[110px]" />
                                       <col className="w-[132px]" />
                                       <col className="w-16" />
