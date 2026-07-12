@@ -76,14 +76,8 @@ The WebView loads `connectradie.com`, which will serve the new CSP.
 - [ ] Test a release build against the site **while CSP is in report-only** and watch for violations from Capacitor's injected bridge. If any, add the `capacitor:` scheme to `script-src`/`connect-src` in `vercel.json` **before** the CSP is switched to enforcing — otherwise the app white-screens.
 - [ ] Confirm Stripe Checkout still returns into the app (the `allowNavigation` allow-list in `capacitor.config.ts` handles this).
 
-## 8. Build the release artifact
-- [ ] `npm run build` (produces `dist/` — the offline fallback bundle)
-- [ ] `npx cap sync android`
-- [ ] Build a signed **AAB** (Play requires App Bundle, not APK):
-  ```
-  cd android && ./gradlew bundleRelease
-  # output: android/app/build/outputs/bundle/release/app-release.aab
-  ```
+## 8. Build the release artifact ✅ SIGNED AAB BUILT
+- [x] ✅ **Signed AAB built 2026-07-12** — `android/app/build/outputs/bundle/release/app-release.aab` (~22 MB), signed with the upload key (SHA-1 `6C:D4:68:…:3D`, Owner `CN=William Magson, O=Connectradie pty ltd`, valid to 2053). Verified via `keytool -printcert -jarfile` — NOT debug-signed. Build: `npm run build && npx cap sync android && cd android && ./gradlew bundleRelease` (JAVA_HOME=Android Studio jbr). **This .aab is ready to upload to Play.** (versionCode 1 — bump for every later upload.)
 - [ ] Install the equivalent signed build on a physical device and smoke-test: launch/splash, Google sign-in, a Stripe payment round-trip, push (if enabled), and a geofence ENTER/EXIT.
 
 ## 9. Play Console store listing & policies
