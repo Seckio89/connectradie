@@ -54,11 +54,15 @@ Steps in **Google Cloud Console** (project that owns the Web client `49156888446
 - [ ] APIs & Services → Credentials → **+ Create Credentials → OAuth client ID → Android** for the **upload key** and **Play App Signing** SHA-1s (own client each, same package `com.connectradie.app`, same project as the Web client `491568884460`)
 - [ ] Sanity-check sign-in on a device installed from an **internal-testing** track (Play-signed), not just a local debug build. If sign-in fails only in production, the Play App Signing SHA-1 is almost certainly unregistered — the #1 miss.
 
-## 4. Push notifications (FCM) ⚠️ google-services.json MISSING
-`android/app/build.gradle` applies the google-services plugin **only if `google-services.json` exists** — it currently does **not**, so push is disabled.
-- [ ] If launching with push: create/download `android/app/google-services.json` from the Firebase project for `com.connectradie.app`, and confirm the FCM server key is wired to the `send-sms`/push edge path.
-- [ ] `POST_NOTIFICATIONS` is already declared in the manifest (Android 13+ runtime prompt) — verify the app requests it at the right moment.
-- [ ] If NOT launching with push: fine to skip — the build degrades gracefully.
+## 4. Push notifications (FCM) — ⏭️ DEFERRED, NOT a go-live blocker
+Native push is **not implemented** and is **not required to launch**. Notifications are already delivered by **email** (`send-email`) and **in-app**; native push would be an additional nice-to-have channel.
+
+State of the feature (audited 2026-07-12):
+- `@capacitor/push-notifications` is installed but **never imported/called** — nothing registers a device token.
+- No device-token table in migrations; no server-side FCM sender (all edge-fn "push" matches are array `.push()`). `src/lib/notifications.ts` has Web Push only (`navigator.serviceWorker` + `pushManager`), which doesn't apply to the native WebView.
+- `google-services.json` is absent — but adding it alone does **nothing** except let the plugin compile; there's no code for it to drive.
+
+To build native push later (a real feature, not a file drop): (1) Firebase project attached to `com.connectradie.app` + `google-services.json` + FCM v1 service-account key; (2) client `PushNotifications.register()` on login → store token; (3) `device_push_tokens` table + RLS; (4) FCM-v1 sender edge function fanned out from existing notification events. `POST_NOTIFICATIONS` is already declared in the manifest for when this happens.
 
 ## 5. Background geofencing license ✅ DONE — just verify
 The Transistorsoft license is already in `android/app/src/main/res/values/strings.xml` (`transistor_bg_geo_license`, order #16756, bound to `com.connectradie.app`, CORE entitlement, validates debug + release).
@@ -106,6 +110,6 @@ The WebView loads `connectradie.com`, which will serve the new CSP.
 | targetSdk current | ✅ 36 |
 | Release signing config | ✅ gradle wired (`8e512ac`) — supply keystore locally |
 | SHA-1 → Android OAuth client | 🟡 debug ✅ registered; upload + Play App Signing still to add |
-| google-services.json (push) | ❌ **missing** (only if shipping push) |
+| Push notifications (FCM) | ⏭️ deferred — not implemented, NOT a blocker (email + in-app cover it) |
 | Background-location Play disclosure | ⏳ submit in console |
 | CSP × WebView check | ⏳ verify under report-only |
