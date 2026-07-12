@@ -26,10 +26,7 @@ from the actual project config, not generic boilerplate.
 
 ## 2. Release signing ✅ GRADLE WIRED — supply the keystore
 `android/app/build.gradle` now has a release `signingConfig` that loads credentials from `android/keystore.properties` (git-ignored) and falls back to debug signing when that file is absent (commit `8e512ac`). Remaining is the local, per-developer setup:
-- [ ] Create an upload keystore (once, store it OUTSIDE the repo and back it up — losing it means you can't update the app):
-  ```
-  keytool -genkey -v -keystore connectradie-upload.jks -alias connectradie -keyalg RSA -keysize 2048 -validity 10000
-  ```
+- [x] ✅ Upload keystore created 2026-07-12 at `~/AndroidKeys/connectradie-upload.jks` (alias `connectradie`, RSA 2048, 10000-day validity). **Back up the .jks + passwords securely — losing them means you can't update the app.**
 - [ ] `cp android/keystore.properties.example android/keystore.properties` and fill in `storeFile`, `storePassword`, `keyAlias`, `keyPassword` (this file is git-ignored — never commit it).
 - [ ] Enroll in **Play App Signing** (recommended) — you upload with the upload key; Google manages the distribution key.
 - [ ] Consider enabling `minifyEnabled true` for release (currently `false`) — optional; verify the WebView + plugins still work if you do.
@@ -42,7 +39,7 @@ Three certs, each its own Android OAuth client (same package `com.connectradie.a
 | Cert | SHA-1 | Status |
 |---|---|---|
 | **Debug** (this machine's `~/.android/debug.keystore`, valid to 2056) | `9C:05:C6:25:49:47:97:51:F2:31:42:F6:E0:B1:84:30:EB:21:57:01` | ✅ **registered** (Android OAuth client already exists for this package + SHA-1, confirmed 2026-07-12) |
-| **Upload key** | _TBD — fill after creating `connectradie-upload.jks`_ | ⏳ `keytool -list -v -keystore connectradie-upload.jks -alias connectradie` |
+| **Upload key** | `6C:D4:68:26:4E:6E:85:90:BE:2A:7E:88:10:A3:D8:00:F6:B5:E9:3D` | 🔵 extracted 2026-07-12 (keystore at `~/AndroidKeys/connectradie-upload.jks`) — register as an Android OAuth client |
 | **Play App Signing** (⭐ the one production users run) | _TBD — after first AAB upload_ | ⏳ Play Console → Setup → App integrity → App signing |
 
 > Debug SHA-256 (if a flow asks for it): `9D:FA:E4:6A:39:85:47:EE:62:04:39:22:4B:71:86:4B:72:30:8F:DC:22:9D:6F:8F:DB:45:C4:D4:32:9F:72:E0`
