@@ -4,6 +4,6 @@
     <color name="colorPrimary">#1D9E75</color>
     <color name="colorPrimaryDark">#177D5D</color>
     <color name="colorAccent">#1D9E75</color>
-    <color name="splashBackground">#1D9E75</color>
-    <color name="statusBarColor">#1D9E75</color>
+    <color name="splashBackground">#0F1B2D</color>
+    <color name="statusBarColor">#0F1B2D</color>
 </resources>

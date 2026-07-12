@@ -29,7 +29,7 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 2000,
       launchAutoHide: true,
-      backgroundColor: '#1D9E75', // ConnecTradie green
+      backgroundColor: '#0F1B2D', // ConnecTradie navy
       showSpinner: true,
       spinnerColor: '#FFFFFF',
       splashFullScreen: true,
@@ -37,7 +37,7 @@ const config: CapacitorConfig = {
     },
     StatusBar: {
       style: 'DARK',
-      backgroundColor: '#1D9E75', // ConnecTradie green
+      backgroundColor: '#0F1B2D', // ConnecTradie navy
       overlaysWebView: false,
     },
     Keyboard: {
@@ -67,7 +67,7 @@ const config: CapacitorConfig = {
     captureInput: true,
     webContentsDebuggingEnabled: true,
     overScrollMode: 'never',
-    backgroundColor: '#1D9E75', // ConnecTradie green
+    backgroundColor: '#0F1B2D', // ConnecTradie navy
     // Force WebView to not cache
     appendUserAgent: 'ConnecTradie-App',
   },
