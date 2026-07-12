@@ -951,7 +951,19 @@ export default function Payouts() {
                               <>
                                 {/* Desktop rows */}
                                 <div className="hidden md:block">
-                                  <table className="w-full">
+                                  {/* Fixed layout + shared colgroup so every week's
+                                      table has identical column widths — otherwise
+                                      each per-week table auto-sizes independently and
+                                      the columns drift out of alignment down the list. */}
+                                  <table className="w-full table-fixed">
+                                    <colgroup>
+                                      <col className="w-[90px]" />
+                                      <col />
+                                      <col className="w-[180px]" />
+                                      <col className="w-[110px]" />
+                                      <col className="w-[132px]" />
+                                      <col className="w-16" />
+                                    </colgroup>
                                     <tbody className="divide-y divide-surface-100">
                                       {weekGroup.payments.map((p) => {
                                         const jobTitle = p.jobs?.title || p.jobs?.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job';
@@ -966,8 +978,8 @@ export default function Payouts() {
                                               {new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                                             </td>
                                             <td className="px-5 py-3">
-                                              <div className="flex items-center gap-2">
-                                                <p className="text-sm font-medium text-navy-900 truncate max-w-[260px] sm:max-w-[180px] md:max-w-[260px]">{jobTitle}</p>
+                                              <div className="flex items-center gap-2 min-w-0">
+                                                <p className="text-sm font-medium text-navy-900 truncate">{jobTitle}</p>
                                                 {p.isRecurring && (
                                                   <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
                                                     isCancelled ? 'bg-red-100 text-red-600' : 'bg-secondary-100 text-secondary-700'
