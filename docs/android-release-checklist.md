@@ -24,13 +24,13 @@ from the actual project config, not generic boilerplate.
 ## 1. Versioning
 - [ ] Bump `versionCode` (integer, **must increase every upload**) and `versionName` in `android/app/build.gradle`. First release can stay `versionCode 1` / `1.0`.
 
-## 2. Release signing ⚠️ NOT YET CONFIGURED
-`android/app/build.gradle` has **no release `signingConfig`** — release builds are currently debug-signed and Play will reject them.
+## 2. Release signing ✅ GRADLE WIRED — supply the keystore
+`android/app/build.gradle` now has a release `signingConfig` that loads credentials from `android/keystore.properties` (git-ignored) and falls back to debug signing when that file is absent (commit `8e512ac`). Remaining is the local, per-developer setup:
 - [ ] Create an upload keystore (once, store it OUTSIDE the repo and back it up — losing it means you can't update the app):
   ```
   keytool -genkey -v -keystore connectradie-upload.jks -alias connectradie -keyalg RSA -keysize 2048 -validity 10000
   ```
-- [ ] Add a `signingConfigs { release { ... } }` block and wire `buildTypes.release.signingConfig`, reading the keystore path/passwords from `~/.gradle/gradle.properties` or env vars (**never** commit them).
+- [ ] `cp android/keystore.properties.example android/keystore.properties` and fill in `storeFile`, `storePassword`, `keyAlias`, `keyPassword` (this file is git-ignored — never commit it).
 - [ ] Enroll in **Play App Signing** (recommended) — you upload with the upload key; Google manages the distribution key.
 - [ ] Consider enabling `minifyEnabled true` for release (currently `false`) — optional; verify the WebView + plugins still work if you do.
 
@@ -93,7 +93,7 @@ The WebView loads `connectradie.com`, which will serve the new CSP.
 | Geofence license | ✅ configured (order #16756) |
 | Permissions in manifest | ✅ present |
 | targetSdk current | ✅ 36 |
-| Release signing config | ❌ **to do** |
+| Release signing config | ✅ gradle wired (`8e512ac`) — supply keystore locally |
 | SHA-1 → Android OAuth client | ❌ **to do** |
 | google-services.json (push) | ❌ **missing** (only if shipping push) |
 | Background-location Play disclosure | ⏳ submit in console |
