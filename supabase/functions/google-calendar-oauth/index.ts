@@ -156,7 +156,12 @@ Deno.serve(async (req: Request) => {
       authUrl.searchParams.set("client_id", clientId);
       authUrl.searchParams.set("redirect_uri", redirectUri);
       authUrl.searchParams.set("response_type", "code");
-      authUrl.searchParams.set("scope", "https://www.googleapis.com/auth/calendar");
+      // Narrowest scope that covers our use: read/write EVENTS on the user's
+      // calendars. We never touch calendar-list settings or other calendars, so
+      // the broader auth/calendar scope isn't needed (and it slows Google's
+      // sensitive-scope verification). We address the user's primary calendar by
+      // the literal id "primary", which the events API accepts.
+      authUrl.searchParams.set("scope", "https://www.googleapis.com/auth/calendar.events");
       authUrl.searchParams.set("access_type", "offline");
       authUrl.searchParams.set("prompt", "consent");
       authUrl.searchParams.set("state", await signState(user!.id));
@@ -229,18 +234,11 @@ Deno.serve(async (req: Request) => {
     // Calculate token expiry
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
-    // Get primary calendar ID
-    const calendarResponse = await fetch(
-      "https://www.googleapis.com/calendar/v3/users/me/calendarList/primary",
-      {
-        headers: {
-          Authorization: `Bearer ${tokens.access_token}`,
-        },
-      }
-    );
-
-    const calendar = await calendarResponse.json();
-    const calendarId = calendar.id || "primary";
+    // Address the primary calendar by the literal alias "primary". Fetching the
+    // real calendar id via calendarList would require the broader auth/calendar
+    // scope; the events API accepts "primary" and it maps to whichever calendar
+    // is primary for this account, so no extra scope is needed.
+    const calendarId = "primary";
 
     // Store integration in database
     const { error: dbError } = await supabaseClient
