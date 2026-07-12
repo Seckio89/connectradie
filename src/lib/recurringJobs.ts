@@ -795,6 +795,9 @@ export async function createRecurringJob(
     times_completed: 0,
   };
 
+  // Off-app CRM contact link. Required when client_id is null (line above) —
+  // without it the row fails the recurring_jobs_client_present check constraint.
+  if (data.client_contact_id) insertPayload.client_contact_id = data.client_contact_id;
   if (data.service_subtype) insertPayload.service_subtype = data.service_subtype;
   if (data.location) insertPayload.location = data.location;
   if (data.agreed_price != null) insertPayload.agreed_price = data.agreed_price;
