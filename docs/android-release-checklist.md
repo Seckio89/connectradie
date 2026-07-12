@@ -39,20 +39,19 @@ Native Google Sign-In (`@codetrix-studio/capacitor-google-auth`) validates the a
 
 Three certs, each its own Android OAuth client (same package `com.connectradie.app`):
 
-| Cert | SHA-1 | Source |
+| Cert | SHA-1 | Status |
 |---|---|---|
-| **Debug** (this machine's `~/.android/debug.keystore`, valid to 2056) | `9C:05:C6:25:49:47:97:51:F2:31:42:F6:E0:B1:84:30:EB:21:57:01` | extracted 2026-07-12 |
-| **Upload key** | _TBD — fill after creating `connectradie-upload.jks`_ | `keytool -list -v -keystore connectradie-upload.jks -alias connectradie` |
-| **Play App Signing** (⭐ the one production users run) | _TBD — after first AAB upload_ | Play Console → Setup → App integrity → App signing |
+| **Debug** (this machine's `~/.android/debug.keystore`, valid to 2056) | `9C:05:C6:25:49:47:97:51:F2:31:42:F6:E0:B1:84:30:EB:21:57:01` | ✅ **registered** (Android OAuth client already exists for this package + SHA-1, confirmed 2026-07-12) |
+| **Upload key** | _TBD — fill after creating `connectradie-upload.jks`_ | ⏳ `keytool -list -v -keystore connectradie-upload.jks -alias connectradie` |
+| **Play App Signing** (⭐ the one production users run) | _TBD — after first AAB upload_ | ⏳ Play Console → Setup → App integrity → App signing |
 
 > Debug SHA-256 (if a flow asks for it): `9D:FA:E4:6A:39:85:47:EE:62:04:39:22:4B:71:86:4B:72:30:8F:DC:22:9D:6F:8F:DB:45:C4:D4:32:9F:72:E0`
 > The debug SHA-1 is machine-specific — each dev's `debug.keystore` differs, so each needs its own entry to test sign-in locally.
 > Extract keytool on Windows from Android Studio's JDK: `"C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe"`.
 
 Steps in **Google Cloud Console** (project that owns the Web client `491568884460-…`):
-- [ ] APIs & Services → Credentials → **+ Create Credentials → OAuth client ID → Android**
-- [ ] Name e.g. `ConnecTradie Android (debug)`; Package `com.connectradie.app`; paste the **debug SHA-1** above → Create
-- [ ] Repeat for the **upload key** and **Play App Signing** SHA-1s (own client each, same package)
+- [x] ~~Debug SHA-1 Android client~~ — already registered (Google rejects duplicates: "package name and fingerprint already in use" = it exists). Nothing to create.
+- [ ] APIs & Services → Credentials → **+ Create Credentials → OAuth client ID → Android** for the **upload key** and **Play App Signing** SHA-1s (own client each, same package `com.connectradie.app`, same project as the Web client `491568884460`)
 - [ ] Sanity-check sign-in on a device installed from an **internal-testing** track (Play-signed), not just a local debug build. If sign-in fails only in production, the Play App Signing SHA-1 is almost certainly unregistered — the #1 miss.
 
 ## 4. Push notifications (FCM) ⚠️ google-services.json MISSING
@@ -106,7 +105,7 @@ The WebView loads `connectradie.com`, which will serve the new CSP.
 | Permissions in manifest | ✅ present |
 | targetSdk current | ✅ 36 |
 | Release signing config | ✅ gradle wired (`8e512ac`) — supply keystore locally |
-| SHA-1 → Android OAuth client | ❌ **to do** |
+| SHA-1 → Android OAuth client | 🟡 debug ✅ registered; upload + Play App Signing still to add |
 | google-services.json (push) | ❌ **missing** (only if shipping push) |
 | Background-location Play disclosure | ⏳ submit in console |
 | CSP × WebView check | ⏳ verify under report-only |
