@@ -9,7 +9,7 @@ export default function Privacy() {
         title="Privacy Policy"
         description="ConnecTradie Privacy Policy. How we collect, use, and protect your personal information in accordance with Australian Privacy Law."
         canonical="/privacy"
-        lastUpdated="March 2026"
+        lastUpdated="July 2026"
       />
 
       {/* Header */}
@@ -44,9 +44,9 @@ export default function Privacy() {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
                   <FileTextIcon className="w-3 h-3" />
-                  Version 1.3
+                  Version 1.4
                 </span>
-                <span className="text-xs text-gray-400">Last Updated: March 2026</span>
+                <span className="text-xs text-gray-400">Last Updated: July 2026</span>
                 <span className="text-xs text-gray-400">ConnecTradie Pty Ltd</span>
                 <span className="text-xs text-gray-400">ABN: 75 655 516 546</span>
               </div>
@@ -201,6 +201,34 @@ export default function Privacy() {
                       We may send you service-related notifications and, with your consent, promotional communications about ConnecTradie features and updates. All marketing communications comply with the Spam Act 2003 (Cth). You may opt out at any time via the unsubscribe link in any email or through your account notification settings.
                     </p>
                   </div>
+
+                  <div>
+                    <h3 className="text-[15px] font-semibold text-gray-800 mb-2">2.7 Google Account &amp; Calendar Integration (optional)</h3>
+                    <p className="text-[15px] text-gray-600 leading-relaxed mb-3">
+                      ConnecTradie offers optional features that connect to your Google Account. These are only ever activated by you, and you can disconnect them at any time.
+                    </p>
+                    <ul className="space-y-2">
+                      <li className="flex items-start gap-3 text-[15px] text-gray-600">
+                        <span className="w-1.5 h-1.5 bg-primary-500 rounded-full flex-shrink-0 mt-2" />
+                        <span><strong className="text-gray-800">Sign in with Google:</strong> if you choose this option, we receive your basic Google profile (name, email address, and profile picture) to create and authenticate your account. We request only the <span className="font-medium">email</span> and <span className="font-medium">profile</span> permissions for sign-in.</span>
+                      </li>
+                      <li className="flex items-start gap-3 text-[15px] text-gray-600">
+                        <span className="w-1.5 h-1.5 bg-primary-500 rounded-full flex-shrink-0 mt-2" />
+                        <span><strong className="text-gray-800">Google Calendar sync:</strong> if you connect Google Calendar from Settings, you grant ConnecTradie access to your calendar so we can create and update events for your ConnecTradie bookings and site visits, and read your existing events to help you avoid double-booking. We access only the signed-in user&rsquo;s own calendar, and only to provide this scheduling feature.</span>
+                      </li>
+                      <li className="flex items-start gap-3 text-[15px] text-gray-600">
+                        <span className="w-1.5 h-1.5 bg-primary-500 rounded-full flex-shrink-0 mt-2" />
+                        <span><strong className="text-gray-800">Disconnecting:</strong> you can revoke access at any time from Settings &rarr; Integrations, or via your Google Account permissions at <span className="font-medium">myaccount.google.com/permissions</span>. When you disconnect, we stop accessing your calendar and delete the Google access tokens we hold for you.</span>
+                      </li>
+                    </ul>
+                    <div className="mt-4 flex items-start gap-3 bg-secondary-50/70 border border-secondary-100 rounded-xl p-4">
+                      <Shield className="w-4 h-4 text-secondary-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-secondary-800 leading-relaxed">
+                        <strong className="font-semibold">Google Limited Use:</strong> ConnecTradie&rsquo;s use and transfer of information received from Google APIs adheres to the{' '}
+                        <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" className="font-medium underline decoration-secondary-300 underline-offset-2">Google API Services User Data Policy</a>, including its Limited Use requirements. We do not use Google Calendar data for advertising, we do not sell it, and we do not transfer it to others except as needed to provide a feature you have enabled or as required by law.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </section>
 
@@ -274,11 +302,16 @@ export default function Privacy() {
                             <td className="px-4 py-2.5">United States (AWS)</td>
                           </tr>
                           <tr className="border-t border-gray-100">
+                            <td className="px-4 py-2.5 font-medium text-gray-800">Google LLC</td>
+                            <td className="px-4 py-2.5">Google sign-in, optional Calendar sync, Maps &amp; analytics</td>
+                            <td className="px-4 py-2.5">United States</td>
+                          </tr>
+                          <tr className="border-t border-gray-100 bg-gray-50">
                             <td className="px-4 py-2.5 font-medium text-gray-800">ABN Lookup (ATO)</td>
                             <td className="px-4 py-2.5">ABN verification</td>
                             <td className="px-4 py-2.5">Australia</td>
                           </tr>
-                          <tr className="border-t border-gray-100 bg-gray-50">
+                          <tr className="border-t border-gray-100">
                             <td className="px-4 py-2.5 font-medium text-gray-800">Cloud Infrastructure</td>
                             <td className="px-4 py-2.5">Hosting & storage</td>
                             <td className="px-4 py-2.5">United States / Australia</td>
