@@ -67,25 +67,33 @@ export default function Schedule() {
           <span className="text-gray-700">{breadcrumbLabel}</span>
         </nav>
 
-        {tabs.length > 1 && (
-          <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 mb-6 w-fit">
-            {tabs.map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                    activeTab === tab.key
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {tab.label}
-                </button>
-              );
-            })}
+        {isTradie && (
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
+            <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+              {tabs.map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      activeTab === tab.key
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+            <Link
+              to="/calendar-import"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 whitespace-nowrap"
+            >
+              <CalendarDays className="w-4 h-4 text-secondary-600" /> Import from Google Calendar
+            </Link>
           </div>
         )}
 

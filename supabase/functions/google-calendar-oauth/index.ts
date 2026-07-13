@@ -156,12 +156,12 @@ Deno.serve(async (req: Request) => {
       authUrl.searchParams.set("client_id", clientId);
       authUrl.searchParams.set("redirect_uri", redirectUri);
       authUrl.searchParams.set("response_type", "code");
-      // Narrowest scope that covers our use: read/write EVENTS on the user's
-      // calendars. We never touch calendar-list settings or other calendars, so
-      // the broader auth/calendar scope isn't needed (and it slows Google's
-      // sensitive-scope verification). We address the user's primary calendar by
-      // the literal id "primary", which the events API accepts.
-      authUrl.searchParams.set("scope", "https://www.googleapis.com/auth/calendar.events");
+      // Scopes:
+      //  - calendar.events   → read/write events (existing push-to-Google sync).
+      //  - calendar.readonly → list ALL the user's calendars (calendarList) and
+      //    read their events, for the Google Calendar → ConnecTradie import.
+      // Both are sensitive; they go through Google verification round 2.
+      authUrl.searchParams.set("scope", "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly");
       authUrl.searchParams.set("access_type", "offline");
       authUrl.searchParams.set("prompt", "consent");
       authUrl.searchParams.set("state", await signState(user!.id));

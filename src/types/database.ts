@@ -554,6 +554,7 @@ export type BusinessTeamMember = {
   status: 'invited' | 'active' | 'inactive';
   hourly_rate: number;
   notes: string;
+  color: string | null;
   invited_at: string;
   joined_at: string | null;
   created_at: string;

@@ -49,6 +49,7 @@ const AdminDisputes = lazy(() => import('./pages/AdminDisputes'));
 const AdminUpdates = lazy(() => import('./pages/AdminUpdates'));
 const AdminFinancials = lazy(() => import('./pages/AdminFinancials'));
 const Schedule = lazy(() => import('./pages/Schedule'));
+const CalendarImport = lazy(() => import('./pages/CalendarImport'));
 const Clients = lazy(() => import('./pages/Clients'));
 const ClientDetail = lazy(() => import('./pages/ClientDetail'));
 const PublicQuote = lazy(() => import('./pages/PublicQuote'));
@@ -153,6 +154,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/review': 'Leave a Review | ConnecTradie',
   '/payouts': 'Payouts | ConnecTradie',
   '/schedule': 'Schedule | ConnecTradie',
+  '/calendar-import': 'Import from Google Calendar | ConnecTradie',
   '/work': 'Work Hub | ConnecTradie',
   '/my-profile': 'My Profile | ConnecTradie',
   '/explore': 'Explore | ConnecTradie',
@@ -381,6 +383,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Schedule />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/calendar-import"
+        element={
+          <ProtectedRoute requireTradie>
+            <CalendarImport />
           </ProtectedRoute>
         }
       />
