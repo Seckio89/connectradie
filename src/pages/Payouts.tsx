@@ -906,7 +906,7 @@ export default function Payouts() {
                       {/* Month header */}
                       <button
                         onClick={() => togglePaymentMonth(monthGroup.key)}
-                        className="w-full flex items-center justify-between px-5 py-3 bg-surface-50 border-b border-surface-200 hover:bg-surface-100 transition-colors"
+                        className="w-full flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-3 bg-surface-100 sm:bg-surface-50 border-b border-surface-200 hover:bg-surface-100 transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           {isMonthCollapsed ? (
@@ -914,7 +914,7 @@ export default function Payouts() {
                           ) : (
                             <ChevronDown className="w-4 h-4 text-navy-400" />
                           )}
-                          <span className="text-sm font-semibold text-navy-800">{monthGroup.label}</span>
+                          <span className="text-[15px] sm:text-sm font-bold sm:font-semibold text-navy-900">{monthGroup.label}</span>
                           <span className="text-xs text-navy-300">
                             ({monthGroup.weeks.reduce((s, w) => s + w.payments.length, 0)} payments)
                           </span>
@@ -1034,40 +1034,50 @@ export default function Payouts() {
                                     const statusClass = isInvoice ? 'bg-emerald-100 text-emerald-700' : isReleased ? 'bg-green-100 text-green-700' : p.status === 'completed' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600';
                                     const isCancelled = p.jobStatus === 'cancelled' || p.jobStatus === 'declined';
                                     return (
-                                      <div key={p.id} onClick={() => !isInvoice && setSelectedJobId(p.job_id)} className={`flex items-center gap-3 px-3 sm:px-5 py-3.5 ${isInvoice ? '' : 'cursor-pointer'} hover:bg-surface-50 transition-colors ${isCancelled ? 'opacity-60' : ''}`}>
-                                        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-warm-50">
-                                          <DollarSign className="w-4 h-4 text-warm-600" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-1.5 min-w-0">
-                                            <p className="text-sm font-medium text-navy-900 truncate">{jobTitle}</p>
-                                            {p.isRecurring && (
-                                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${isCancelled ? 'bg-red-100 text-red-600' : 'bg-secondary-100 text-secondary-700'}`}>
-                                                {isCancelled ? 'Cancelled' : 'Ongoing'}
-                                              </span>
-                                            )}
-                                            {!p.isRecurring && isCancelled && (
-                                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 bg-red-100 text-red-600">Cancelled</span>
-                                            )}
+                                      <div key={p.id} onClick={() => !isInvoice && setSelectedJobId(p.job_id)} className={`px-4 py-4 ${isInvoice ? '' : 'cursor-pointer'} hover:bg-surface-50 transition-colors ${isCancelled ? 'opacity-60' : ''}`}>
+                                        {/* Row 1: icon + full service name + amount */}
+                                        <div className="flex items-start justify-between gap-3">
+                                          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-warm-50 mt-0.5">
+                                              <DollarSign className="w-4 h-4 text-warm-600" />
+                                            </div>
+                                            <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
+                                              <p className="text-sm font-medium text-navy-900 leading-snug">{jobTitle}</p>
+                                              {p.isRecurring && (
+                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${isCancelled ? 'bg-red-100 text-red-600' : 'bg-secondary-100 text-secondary-700'}`}>
+                                                  {isCancelled ? 'Cancelled' : 'Ongoing'}
+                                                </span>
+                                              )}
+                                              {!p.isRecurring && isCancelled && (
+                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 bg-red-100 text-red-600">Cancelled</span>
+                                              )}
+                                            </div>
                                           </div>
-                                          <p className="text-xs text-navy-300 mt-0.5">
+                                          <p className="text-base font-semibold text-navy-900 tabular-nums flex-shrink-0">{formatCurrency(p.amount)}</p>
+                                        </div>
+
+                                        {/* Row 2: client · date + status badge (aligned under the name) */}
+                                        <div className="flex items-center justify-between gap-2 mt-2 pl-[42px]">
+                                          <p className="text-xs text-navy-400 truncate min-w-0">
                                             {p.client_name} · {new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                                           </p>
-                                        </div>
-                                        <div className="text-right flex-shrink-0">
-                                          <p className="text-sm font-semibold text-navy-900 tabular-nums">{formatCurrency(p.amount)}</p>
-                                          <span className={`inline-flex items-center text-xs font-medium px-3 py-1 rounded-full mt-1 ${statusClass}`}>
+                                          <span className={`inline-flex items-center text-[11px] font-medium px-2.5 py-1 rounded-full flex-shrink-0 ${statusClass}`}>
                                             {statusLabel}
                                           </span>
                                         </div>
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); handleDownloadInvoice(p); }}
-                                          disabled={pdfLoadingId === p.id}
-                                          className="p-1.5 text-navy-300 hover:text-secondary-600 flex-shrink-0"
-                                          title="Download Invoice"
-                                        >
-                                          {pdfLoadingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                                        </button>
+
+                                        {/* Row 3: download invoice */}
+                                        <div className="mt-2 pl-[42px]">
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); handleDownloadInvoice(p); }}
+                                            disabled={pdfLoadingId === p.id}
+                                            className="inline-flex items-center gap-1.5 text-xs font-medium text-secondary-600 hover:text-secondary-700 disabled:opacity-50 min-h-[36px]"
+                                            title="Download Invoice"
+                                          >
+                                            {pdfLoadingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+                                            Download invoice
+                                          </button>
+                                        </div>
                                       </div>
                                     );
                                   })}
