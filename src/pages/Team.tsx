@@ -1164,8 +1164,8 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
             ) : (
               <div className="divide-y divide-gray-50">
                 {manualMembers.map(member => (
-                  <div key={member.id} className="flex items-center gap-4 p-5 hover:bg-gray-50/50 transition-colors group">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center flex-shrink-0">
+                  <div key={member.id} className="flex items-start gap-3 sm:gap-4 p-4 sm:p-5 hover:bg-gray-50/50 transition-colors group">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center flex-shrink-0">
                       <span className="text-lg font-bold text-primary-700">
                         {member.invite_name.charAt(0).toUpperCase()}
                       </span>
@@ -1173,7 +1173,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-gray-900">{member.invite_name}</span>
+                        <span className="font-semibold text-gray-900 truncate">{member.invite_name}</span>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[member.role]}`}>
                           {ROLE_LABELS[member.role]}
                         </span>
@@ -1181,28 +1181,30 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                           {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
                         </span>
                       </div>
-                      <div className="flex items-center gap-4 mt-1 flex-wrap">
+                      {/* Meta: stack on mobile so long emails truncate on their own
+                          full-width line instead of wrapping; inline row on sm+. */}
+                      <div className="mt-1.5 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4 sm:flex-wrap">
                         {member.trade_specialty && (
-                          <span className="flex items-center gap-1 text-sm text-gray-500">
-                            <Briefcase className="w-3.5 h-3.5" />
-                            {member.trade_specialty}
+                          <span className="flex items-center gap-1.5 text-sm text-gray-500 min-w-0">
+                            <Briefcase className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span className="truncate">{member.trade_specialty}</span>
                           </span>
                         )}
                         {member.invite_email && (
-                          <span className="flex items-center gap-1 text-sm text-gray-500">
-                            <Mail className="w-3.5 h-3.5" />
-                            {member.invite_email}
+                          <span className="flex items-center gap-1.5 text-sm text-gray-500 min-w-0">
+                            <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span className="truncate">{member.invite_email}</span>
                           </span>
                         )}
                         {member.invite_phone && (
-                          <span className="flex items-center gap-1 text-sm text-gray-500">
-                            <Phone className="w-3.5 h-3.5" />
-                            {member.invite_phone}
+                          <span className="flex items-center gap-1.5 text-sm text-gray-500 min-w-0">
+                            <Phone className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span className="truncate">{member.invite_phone}</span>
                           </span>
                         )}
                         {member.hourly_rate > 0 && (
-                          <span className="flex items-center gap-1 text-sm text-gray-500">
-                            <Star className="w-3.5 h-3.5" />
+                          <span className="flex items-center gap-1.5 text-sm text-gray-500 flex-shrink-0">
+                            <Star className="w-3.5 h-3.5 flex-shrink-0" />
                             ${member.hourly_rate}/hr
                           </span>
                         )}
