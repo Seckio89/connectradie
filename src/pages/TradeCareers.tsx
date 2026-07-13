@@ -212,7 +212,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
           {isVerifiedBusiness && (
             <button
               onClick={() => { setEditVacancy(null); setShowPostModal(true); }}
-              className="flex items-center gap-2 px-5 py-2.5 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 active:scale-[0.98] transition-all shadow-sm text-sm"
+              className="self-center sm:self-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 active:scale-[0.98] transition-all shadow-sm text-sm"
             >
               <Plus className="w-4 h-4" />
               Post a Vacancy
@@ -234,9 +234,9 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
                 <div className={`w-10 h-10 ${stat.color} rounded-xl flex items-center justify-center flex-shrink-0`}>
                   <stat.Icon className={`w-5 h-5 ${stat.iconColor}`} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-xs sm:text-sm text-gray-500">{stat.label}</p>
+                  <p className="text-[11px] sm:text-sm text-gray-500 leading-tight whitespace-nowrap">{stat.label}</p>
                 </div>
               </div>
             </div>
