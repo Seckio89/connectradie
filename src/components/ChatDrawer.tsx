@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import type { TradieWithDetails, Message, AvailabilitySlot, BudgetType, JobComplexity } from '../types/database';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { proseInputProps } from '../lib/proseInput';
 import AddressAutocomplete from './AddressAutocomplete';
 import { redactContactInfo, shouldAllowContactSharing } from '../lib/redaction';
 import { redactName } from '../lib/contactGating';
@@ -569,6 +570,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
             </button>
             <div className="flex-1 relative">
               <textarea
+                {...proseInputProps}
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={handleKeyPress}

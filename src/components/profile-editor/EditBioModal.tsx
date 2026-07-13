@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
+import { proseInputProps } from '../../lib/proseInput';
 
 interface EditBioModalProps {
   isOpen: boolean;
@@ -44,6 +45,7 @@ export default function EditBioModal({ isOpen, onClose, currentBio, onSave }: Ed
             Tell clients about yourself and your work
           </label>
           <textarea
+            {...proseInputProps}
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             maxLength={MAX_BIO_LENGTH}

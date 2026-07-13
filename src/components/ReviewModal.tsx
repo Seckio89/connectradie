@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Star, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { proseInputProps } from '../lib/proseInput';
 
 const REVIEW_TAGS = [
   { key: 'punctual', label: 'Punctual' },
@@ -196,6 +197,7 @@ export default function ReviewModal({
               Review <span className="text-gray-400 font-normal">(optional)</span>
             </label>
             <textarea
+              {...proseInputProps}
               id="review-comment"
               value={comment}
               onChange={(e) => setComment(e.target.value)}

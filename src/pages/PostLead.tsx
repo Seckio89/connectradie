@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { proseInputProps } from '../lib/proseInput';
 import DashboardLayout from '../components/DashboardLayout';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import JobPostGuide from '../components/JobPostGuide';
@@ -808,6 +809,7 @@ export default function PostLead() {
               <div data-tour="postlead-description">
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
                 <textarea
+                  {...proseInputProps}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe the job in detail — size, materials, access, timeline... (no need to include contact info — tradies will message you through the platform)"

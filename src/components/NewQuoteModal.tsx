@@ -10,6 +10,7 @@ import Modal from './Modal';
 import QuoteEstimator from './QuoteEstimator';
 import { supabase } from '../lib/supabase';
 import { createRecurringJob, calculateNextDueDate, FREQ_WEEKLY, FREQ_FORTNIGHTLY } from '../lib/recurringJobs';
+import { proseInputProps } from '../lib/proseInput';
 import type { ClientContact } from '../types/database';
 
 const FREQUENCIES = [
@@ -239,6 +240,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
                 <textarea
+                  {...proseInputProps}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
@@ -288,6 +290,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                   Note to client <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <textarea
+                  {...proseInputProps}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   rows={2}

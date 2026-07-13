@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageSquare, Send, Loader2, Paperclip, Calendar, X, Lock, Image as ImageIcon, FileText, Mic, Settings, Archive, Search as SearchIcon, RotateCcw, AlertTriangle, CheckCheck, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { proseInputProps } from '../lib/proseInput';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import type { Message, Conversation, ConversationParticipant, Profile } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
@@ -1162,6 +1163,7 @@ export default function Messages() {
                       </div>
                       <div className="flex-1 relative">
                         <textarea
+                          {...proseInputProps}
                           value={newMessage}
                           onChange={(e) => { setNewMessage(e.target.value); handleTyping(); }}
                           onKeyDown={handleKeyPress}

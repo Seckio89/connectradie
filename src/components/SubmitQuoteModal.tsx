@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { proseInputProps } from '../lib/proseInput';
 import { useAuth } from '../contexts/AuthContext';
 import type { Job } from '../types/database';
 import { extractSuburb } from '../lib/contactGating';
@@ -847,6 +848,7 @@ export default function SubmitQuoteModal({
                 ) : (
                   <div className="transition-all duration-200">
                     <textarea
+                      {...proseInputProps}
                       ref={textareaRef}
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}

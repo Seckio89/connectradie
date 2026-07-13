@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Star, CheckCircle2, ChevronRight, MapPin, Loader2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { proseInputProps } from '../lib/proseInput';
 import { useAuth } from '../contexts/AuthContext';
 import { releaseEscrow } from '../lib/stripePayments';
 import DashboardLayout from '../components/DashboardLayout';
@@ -428,6 +429,7 @@ export default function LeaveReview() {
                 Review <span className="text-gray-400 font-normal">(optional)</span>
               </label>
               <textarea
+                {...proseInputProps}
                 id="review-comment"
                 value={comment}
                 onChange={e => setComment(e.target.value)}
