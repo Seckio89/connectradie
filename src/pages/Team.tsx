@@ -789,8 +789,8 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
             ) : (
               <div className="divide-y divide-gray-50">
                 {activeTeam.map(emp => (
-                  <div key={emp.id} className="flex items-center gap-4 p-5 hover:bg-gray-50/50 transition-colors group">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center flex-shrink-0">
+                  <div key={emp.id} className="flex items-start gap-3 sm:gap-4 p-4 sm:p-5 hover:bg-gray-50/50 transition-colors group">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center flex-shrink-0">
                       <span className="text-lg font-bold text-green-700">
                         {emp.full_name.charAt(0).toUpperCase()}
                       </span>
@@ -798,7 +798,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-gray-900">{emp.full_name}</span>
+                        <span className="font-semibold text-gray-900 truncate">{emp.full_name}</span>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[emp.employment_type]}`}>
                           {ROLE_LABELS[emp.employment_type]}
                         </span>
@@ -806,21 +806,23 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                           Active
                         </span>
                       </div>
-                      <div className="flex items-center gap-4 mt-1 flex-wrap">
+                      {/* Meta: stack on mobile so long emails truncate on their own line
+                          instead of wrapping/squishing; inline row on sm+. */}
+                      <div className="mt-1.5 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4 sm:flex-wrap">
                         {emp.tradie_details?.trade_category && (
-                          <span className="flex items-center gap-1 text-sm text-gray-500">
-                            <Briefcase className="w-3.5 h-3.5" />
-                            {emp.tradie_details.trade_category}
+                          <span className="flex items-center gap-1.5 text-sm text-gray-500 min-w-0">
+                            <Briefcase className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span className="truncate">{emp.tradie_details.trade_category}</span>
                           </span>
                         )}
-                        <span className="flex items-center gap-1 text-sm text-gray-500">
-                          <Mail className="w-3.5 h-3.5" />
-                          {emp.email}
+                        <span className="flex items-center gap-1.5 text-sm text-gray-500 min-w-0">
+                          <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span className="truncate">{emp.email}</span>
                         </span>
                         {emp.phone && (
-                          <span className="flex items-center gap-1 text-sm text-gray-500">
-                            <Phone className="w-3.5 h-3.5" />
-                            {emp.phone}
+                          <span className="flex items-center gap-1.5 text-sm text-gray-500 min-w-0">
+                            <Phone className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span className="truncate">{emp.phone}</span>
                           </span>
                         )}
                       </div>
@@ -829,14 +831,15 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                     <button
                       onClick={() => setMemberToRemove({ id: emp.id, name: emp.full_name, type: 'linked' })}
                       disabled={processingId === emp.id}
-                      className="flex items-center gap-1.5 px-3 py-2 border border-red-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors sm:opacity-0 opacity-60 group-hover:opacity-100 min-h-[44px]"
+                      title="Remove team member"
+                      className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 border border-red-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors sm:opacity-0 opacity-60 group-hover:opacity-100 min-h-[44px] flex-shrink-0"
                     >
                       {processingId === emp.id ? (
                         <span className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
                       ) : (
                         <Shield className="w-4 h-4" />
                       )}
-                      Remove
+                      <span className="hidden sm:inline">Remove</span>
                     </button>
                   </div>
                 ))}
