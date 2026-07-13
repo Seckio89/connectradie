@@ -226,7 +226,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           {[
             { label: 'Open Positions', value: vacancies.filter(v => v.status === 'open').length, color: 'bg-secondary-50', iconColor: 'text-secondary-600', Icon: Briefcase },
-            { label: 'Apprenticeships', value: vacancies.filter(v => v.status === 'open' && v.role_type === 'apprentice').length, color: 'bg-secondary-50', iconColor: 'text-secondary-600', Icon: GraduationCap },
+            { label: 'Apprentice', value: vacancies.filter(v => v.status === 'open' && v.role_type === 'apprentice').length, color: 'bg-secondary-50', iconColor: 'text-secondary-600', Icon: GraduationCap },
             { label: 'Senior Roles', value: vacancies.filter(v => v.status === 'open' && v.role_type === 'senior_advisory').length, color: 'bg-warm-50', iconColor: 'text-warm-600', Icon: Award },
           ].map(stat => (
             <div key={stat.label} className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 shadow-sm">
