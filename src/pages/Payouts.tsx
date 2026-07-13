@@ -20,6 +20,7 @@ import JobManagementModal from '../components/JobManagementModal';
 import PaymentRequestsSection from '../components/PaymentRequestsSection';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { Capacitor } from '@capacitor/core';
 import { getConnectAccountDetails, createConnectOnboardingSession } from '../lib/stripe';
 import type { ConnectAccountDetails } from '../lib/stripe';
 import { escapeHtml } from '../lib/escapeHtml';
@@ -595,18 +596,45 @@ export default function Payouts() {
     container.innerHTML = finalHtml;
     document.body.appendChild(container);
 
+    const filename = `ConnecTradie-Receipt-${invoiceNum}.pdf`;
     try {
       const html2pdf = (await import('html2pdf.js')).default;
-      await html2pdf()
+      const worker = html2pdf()
         .set({
           margin: safeTemplateSrc ? [0, 0, 0, 0] : [15, 15, 15, 15],
-          filename: `ConnecTradie-Receipt-${invoiceNum}.pdf`,
+          filename,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         })
-        .from(container)
-        .save();
+        .from(container);
+
+      if (Capacitor.isNativePlatform()) {
+        // Android/iOS WebView silently ignores html2pdf's blob-anchor download
+        // (`.save()`), which is why tapping did nothing in the app. Generate the
+        // PDF as a blob and hand it to the OS share sheet via the WebView's
+        // built-in Web Share API — the user can then Save to Files/Downloads,
+        // open it in a PDF viewer, or email it.
+        const blob: Blob = await worker.outputPdf('blob');
+        const file = new File([blob], filename, { type: 'application/pdf' });
+        const nav = navigator as Navigator & { canShare?: (data?: { files?: File[] }) => boolean };
+        if (nav.canShare?.({ files: [file] })) {
+          await nav.share({ files: [file], title: 'Payment receipt', text: `ConnecTradie receipt ${invoiceNum}` });
+        } else {
+          // Older WebView without file sharing: open the PDF so it can be viewed/saved.
+          const url = URL.createObjectURL(blob);
+          window.open(url, '_blank');
+          setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        }
+      } else {
+        // Web: normal browser download.
+        await worker.save();
+      }
+    } catch (err) {
+      // AbortError = the user dismissed the share sheet — that's fine, not an error.
+      if (!(err instanceof DOMException && err.name === 'AbortError')) {
+        console.error('Invoice download/share failed', err);
+      }
     } finally {
       document.body.removeChild(container);
       setPdfLoadingId(null);
