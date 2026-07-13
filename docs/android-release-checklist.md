@@ -40,7 +40,7 @@ Three certs, each its own Android OAuth client (same package `com.connectradie.a
 |---|---|---|
 | **Debug** (this machine's `~/.android/debug.keystore`, valid to 2056) | `9C:05:C6:25:49:47:97:51:F2:31:42:F6:E0:B1:84:30:EB:21:57:01` | ✅ **registered** (Android OAuth client already exists for this package + SHA-1, confirmed 2026-07-12) |
 | **Upload key** | `6C:D4:68:26:4E:6E:85:90:BE:2A:7E:88:10:A3:D8:00:F6:B5:E9:3D` | 🔵 extracted 2026-07-12 (keystore at `~/AndroidKeys/connectradie-upload.jks`) — register as an Android OAuth client |
-| **Play App Signing** (⭐ the one production users run) | _TBD — after first AAB upload_ | ⏳ Play Console → Setup → App integrity → App signing |
+| **Play App Signing** (⭐ the one production users run) | `1C:70:A0:E9:3D:F4:E4:17:E0:C5:A5:B6:AC:64:4E:B4:19:2A:56:0B` | 🔵 extracted 2026-07-12 (from Google-signed universal APK via apksigner; Play Console cert page has moved & is hard to find) — **register as an Android OAuth client (the production sign-in fingerprint)** |
 
 > Debug SHA-256 (if a flow asks for it): `9D:FA:E4:6A:39:85:47:EE:62:04:39:22:4B:71:86:4B:72:30:8F:DC:22:9D:6F:8F:DB:45:C4:D4:32:9F:72:E0`
 > The debug SHA-1 is machine-specific — each dev's `debug.keystore` differs, so each needs its own entry to test sign-in locally.
