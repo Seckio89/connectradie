@@ -54,7 +54,6 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
   const [consumables, setConsumables] = useState<'client' | 'tradie_billed'>('client');
 
   const firstName = contact.full_name.split(' ')[0] || 'them';
-  const freqLabel = FREQUENCIES.find((f) => f.key === frequency)?.label.toLowerCase() ?? 'weekly';
 
   const handleSend = async () => {
     if (!title.trim()) { setError('Add a short job title.'); return; }
@@ -356,7 +355,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                 className="flex-1 px-4 py-3 bg-warm-500 text-white rounded-xl font-medium hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
               >
                 {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : isRecurring ? <Repeat className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-                {isRecurring ? `Send ${freqLabel} service` : contact.email ? 'Send quote' : 'Create quote'}
+                Send Quote
               </button>
             </div>
           </>
