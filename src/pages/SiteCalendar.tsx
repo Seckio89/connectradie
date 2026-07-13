@@ -326,6 +326,7 @@ function AssignTeamModal({ job, teamMembers, existingAssignments, onClose, onSav
                     className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white">
                     <option value="lead">Lead</option>
                     <option value="assistant">Assistant</option>
+                    <option value="employee">Employee</option>
                     <option value="apprentice">Apprentice</option>
                     <option value="subcontractor">Subcontractor</option>
                   </select>
