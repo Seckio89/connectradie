@@ -65,8 +65,11 @@ export default function CalendarImport() {
       }
       const cals = (data.calendars as GCalendar[]) ?? [];
       setCalendars(cals);
+      // Nothing is selected by default — this is a SELECTIVE import. The user
+      // ticks only the specific calendars they want (e.g. employee calendars),
+      // leaving personal/other-account calendars untouched.
       setMap(Object.fromEntries(cals.map((c) => [c.id, {
-        selected: !c.primary, teamMemberId: null, color: c.backgroundColor || '#64748b', summary: c.summary,
+        selected: false, teamMemberId: null, color: c.backgroundColor || '#64748b', summary: c.summary,
       } as Mapping])));
     } catch { setError('Could not list calendars.'); }
     finally { setBusy(''); }
@@ -138,9 +141,13 @@ export default function CalendarImport() {
           </div>
 
           {calendars.length === 0 ? (
-            <p className="text-sm text-gray-400">Load your calendars, then tick the ones to import and map each to a team member.</p>
+            <p className="text-sm text-gray-400">Load your calendars, then tick the specific ones to import and map each to a team member.</p>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <>
+              <p className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+                Tick only the calendars you want to import (e.g. your employee calendars). Everything is unticked by default — personal calendars and other accounts are left out unless you tick them.
+              </p>
+              <div className="divide-y divide-gray-100 mt-2">
               {calendars.map((c) => {
                 const row = map[c.id];
                 if (!row) return null;
@@ -162,7 +169,8 @@ export default function CalendarImport() {
                   </div>
                 );
               })}
-            </div>
+              </div>
+            </>
           )}
 
           {team.length === 0 && calendars.length > 0 && (
@@ -170,14 +178,18 @@ export default function CalendarImport() {
           )}
         </div>
 
-        {/* Step 3 — import */}
-        {calendars.length > 0 && (
-          <div className="flex items-center justify-end gap-3">
-            <button onClick={runImport} disabled={busy === 'import'} className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60">
-              {busy === 'import' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />} Import selected calendars
-            </button>
-          </div>
-        )}
+        {/* Step 3 — import only the ticked calendars */}
+        {calendars.length > 0 && (() => {
+          const selectedCount = calendars.filter((c) => map[c.id]?.selected).length;
+          return (
+            <div className="flex items-center justify-end gap-3">
+              <span className="text-xs text-gray-500">{selectedCount} calendar{selectedCount === 1 ? '' : 's'} selected</span>
+              <button onClick={runImport} disabled={busy === 'import' || selectedCount === 0} className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed">
+                {busy === 'import' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />} Import Selected{selectedCount > 0 ? ` (${selectedCount})` : ''}
+              </button>
+            </div>
+          );
+        })()}
 
         {result && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
