@@ -771,6 +771,15 @@ body {
     bottom: -8px !important;
     left: -4px !important;
     right: -4px !important;
+    /* CRITICAL: this halo extends beyond the button and, for rows of pill
+       buttons (rounded-full) in a tight flex-wrap — e.g. the Pricing Helper
+       trade/property/condition/access selectors — it overlaps neighbouring
+       pills. Because the halo belongs to its own button, taps landing in the
+       overlap fire the wrong pill, making pills feel "locked" on mobile.
+       pointer-events:none lets the halo stay (visual only) without stealing
+       taps, so each pill receives its own taps. Toggle switches remain
+       tappable on their real box. */
+    pointer-events: none !important;
   }
 
   /* Fix calendar today/selected ring clipping — the blanket
