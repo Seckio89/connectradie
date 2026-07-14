@@ -92,7 +92,7 @@ Deno.serve(async (req: Request) => {
     // 3. Tradie must have a Connect account to receive the money.
     const { data: tradieConnect } = await supabase
       .from("profiles")
-      .select("stripe_connect_account_id, stripe_connect_onboarding_complete")
+      .select("stripe_connect_account_id, stripe_connect_onboarding_complete, full_name")
       .eq("id", job.tradie_id)
       .maybeSingle();
     const destinationAccount = tradieConnect?.stripe_connect_onboarding_complete ? tradieConnect.stripe_connect_account_id : null;
@@ -192,9 +192,14 @@ Deno.serve(async (req: Request) => {
         body: JSON.stringify({
           to: contact.email,
           subject: `Invoice for ${tradeLabel} — ${amountStr}`,
-          body: `Hi ${firstName}, here's your invoice for ${tradeLabel} — ${amountStr}${count > 1 ? ` (${count} visits)` : ""}${note ? `. ${note}` : ""}. Tap below to pay securely by card.`,
+          body: `Hi ${firstName}, here's your invoice for ${tradeLabel}${count > 1 ? ` (${count} visits)` : ""}${note ? `. ${note}` : ""}. You can pay securely by card in a few seconds — no account needed.`,
           notificationType: "INVOICE_RECEIVED",
-          metadata: { amount: amountStr, link: checkoutSession.url },
+          metadata: {
+            amount: amountStr,
+            link: checkoutSession.url,
+            service: tradeLabel,
+            businessName: tradieConnect?.full_name || undefined,
+          },
         }),
       });
     } catch (e) { console.error("invoice-contact: email failed", e); }
