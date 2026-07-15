@@ -127,8 +127,10 @@ export default function PublicQuote() {
                     <MapPin className="w-4 h-4" /> {data.job.address}
                   </p>
                 )}
+                {/* Client-facing: scope of work only — internal assumptions/conditions
+                    and hour estimates are the tradie's pricing rationale, not scope. */}
                 {data.job.description && (
-                  <JobDescription text={data.job.description} className="mt-3" />
+                  <JobDescription text={data.job.description} className="mt-3" hideNotes />
                 )}
               </div>
 

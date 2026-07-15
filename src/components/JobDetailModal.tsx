@@ -646,6 +646,18 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
           </div>
         )}
 
+        {/* ── Internal notes (tradie-only) — conditions, assumptions, pricing
+               rationale. Never shown to the client (public-quote doesn't return
+               jobs.notes, and this block is role-gated). ── */}
+        {isTradie && job.notes && (
+          <div className="bg-amber-50/60 border border-amber-200 rounded-xl p-4">
+            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">
+              Internal notes · not shown to client
+            </p>
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{job.notes}</p>
+          </div>
+        )}
+
         {/* ── Service Schedule (recurring only) ── */}
         {isRecurring && recurringJob && (
           <div className="bg-white border border-gray-200 rounded-xl p-4">

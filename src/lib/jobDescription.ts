@@ -9,8 +9,12 @@
 // site-observations into notes rather than deleting anything.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Explicit "Site notes:" / "Notes:" style prefixes (how composeDescription stores notes).
-const NOTE_MARKER = /^(site notes?|notes?|conditions?|access)\s*[:\-]\s*/i;
+// Explicit "Site notes:" / "Notes:" / "Assumptions:" style prefixes (how
+// composeDescription and the pricing helper mark non-scope lines).
+const NOTE_MARKER = /^(site notes?|notes?|conditions?|access|assumptions?|internal notes?)\s*[:\-]\s*/i;
+
+// Lines that are pricing rationale, not duties — e.g. "Estimated 2.5 h · $181".
+const ESTIMATE_LINE = /^estimated\s+[\d.]+\s*h\b/i;
 
 // Narrow set of clear site-observations (conditions, not duties). Kept tight to
 // avoid misrouting real tasks. Matched items go to notes, never dropped.
@@ -59,7 +63,7 @@ export function formatDescription(raw: string | null | undefined): FormattedDesc
     if (marked) item = item.trim().replace(NOTE_MARKER, '');
     const cleaned = cleanItem(item);
     if (!cleaned) continue;
-    if (marked || OBSERVATION.test(cleaned)) notes.push(cleaned);
+    if (marked || OBSERVATION.test(cleaned) || ESTIMATE_LINE.test(cleaned)) notes.push(cleaned);
     else scope.push(cleaned);
   }
   return { scope, notes };

@@ -9,10 +9,13 @@ interface JobDescriptionProps {
   className?: string;
   /** Muted style for compact contexts. */
   compact?: boolean;
+  /** Client-facing views: show only the scope of work, never notes/assumptions. */
+  hideNotes?: boolean;
 }
 
-export default function JobDescription({ text, className, compact }: JobDescriptionProps) {
-  const { scope, notes } = formatDescription(text);
+export default function JobDescription({ text, className, compact, hideNotes }: JobDescriptionProps) {
+  const { scope, notes: parsedNotes } = formatDescription(text);
+  const notes = hideNotes ? [] : parsedNotes;
   if (scope.length === 0 && notes.length === 0) return null;
 
   return (

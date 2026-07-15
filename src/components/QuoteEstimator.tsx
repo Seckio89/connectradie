@@ -18,7 +18,8 @@ import { calculateDistance } from '../hooks/useGeolocation';
 import type { ClientContact } from '../types/database';
 
 interface QuoteEstimatorProps {
-  onApply: (price: number, summary: string) => void;
+  /** scope = client-visible duty lines; internal = tradie-only assumptions/hours. */
+  onApply: (price: number, extras: { scope: string[]; internal: string }) => void;
   contact: ClientContact;
 }
 
@@ -73,6 +74,16 @@ function fieldsFor(trade: string, property: string): { key: string; label: strin
 
 const CONDITIONS = ['light', 'standard', 'heavy', 'complex'];
 const ACCESS = ['Stairs', 'Tight access', 'No parking', 'Multi-storey'];
+
+// Tasks/areas to clean — shown for ALL property types when the trade is
+// Cleaning. This is the primary way to describe the job; the property-type
+// quantity fields are additional context. Ticked tasks feed the estimate AND
+// become the client-visible scope of work when applied.
+const CLEANING_TASK_OPTIONS = [
+  'Bathrooms / Toilets', 'Kitchen / Breakroom', 'Floors (mop/vacuum)', 'Windows',
+  'Court / outdoor areas', 'Common areas / hallways', 'Bins / rubbish removal',
+  'Desks / workstations', 'Carpet steam clean', 'High dusting',
+];
 
 const CONF_CHIP: Record<string, string> = {
   high: 'bg-emerald-100 text-emerald-700',
@@ -135,6 +146,9 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   const [access, setAccess] = useState<Set<string>>(new Set());
   const [clientSupplies, setClientSupplies] = useState(false);
   const [notes, setNotes] = useState('');
+  // Ticked tasks → optional qty/detail note (e.g. "Bathrooms / Toilets" → "4 (male and female)").
+  const [tasks, setTasks] = useState<Record<string, string>>({});
+  const [customTask, setCustomTask] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const MAX_PHOTOS = 15;
 
@@ -198,6 +212,20 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
     const next = new Set(prev); next.has(a) ? next.delete(a) : next.add(a); return next;
   });
 
+  const toggleTask = (name: string) => setTasks((prev) => {
+    const next = { ...prev };
+    if (name in next) delete next[name];
+    else next[name] = '';
+    return next;
+  });
+  const addCustomTask = () => {
+    const name = customTask.trim();
+    if (!name) return;
+    setTasks((prev) => (name in prev ? prev : { ...prev, [name]: '' }));
+    setCustomTask('');
+  };
+  const taskList = Object.entries(tasks).map(([name, note]) => ({ name, note: note.trim() || undefined }));
+
   const handlePhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []).slice(0, MAX_PHOTOS - photos.length);
     for (const f of files) {
@@ -217,6 +245,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           condition: condition || undefined,
           access: [...access],
           materialsSuppliedBy: clientSupplies ? 'client' : 'tradie',
+          tasks: taskList.length ? taskList : undefined,
           notes: notes.trim() || undefined,
           economics,
           history,
@@ -244,10 +273,13 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
   const applyResult = () => {
     if (!result || !priced) return;
-    const summary =
+    // Ticked tasks become the client-visible scope; hours + assumptions are
+    // pricing rationale and stay tradie-only.
+    const scope = taskList.map((t) => (t.note ? `${t.name}: ${t.note}` : t.name));
+    const internal =
       `Estimated ${hoursEdit || result.hours} h · ${money(priced.total)}` +
-      (result.assumptions.length ? `\nAssumptions: ${result.assumptions.join(' ')}` : '');
-    onApply(Math.round(priced.total), summary);
+      (result.assumptions.length ? `\nAssumptions:\n${result.assumptions.map((a) => `- ${a}`).join('\n')}` : '');
+    onApply(Math.round(priced.total), { scope, internal });
   };
 
   const fields = trade ? fieldsFor(trade, property) : [];
@@ -264,7 +296,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
       {/* Trade */}
       <div className="flex flex-wrap gap-1.5">
         {TRADES.map((t) => (
-          <button key={t} type="button" onClick={() => { setTrade(t); setQuantities({}); }}
+          <button key={t} type="button" onClick={() => { setTrade(t); setQuantities({}); setTasks({}); }}
             className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
               trade === t ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
             }`}>{t}</button>
@@ -283,6 +315,50 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
                 }`}>{p}</button>
             ))}
           </div>
+
+          {/* Tasks / areas to clean — the primary description of the job, for
+              every property type. Property fields below are added context. */}
+          {trade === 'Cleaning' && (
+            <div className="border border-gray-200 bg-white rounded-lg p-2.5 space-y-2">
+              <span className="block text-[11px] font-medium text-gray-500">Tasks / areas to clean</span>
+              <div className="flex flex-wrap gap-1.5">
+                {CLEANING_TASK_OPTIONS.map((t) => {
+                  const active = t in tasks;
+                  return (
+                    <button key={t} type="button" onClick={() => toggleTask(t)}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                        active ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}>
+                      {active && <Check className="w-3 h-3" />}{t}
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Custom task */}
+              <div className="flex gap-1.5">
+                <input value={customTask} onChange={(e) => setCustomTask(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomTask(); } }}
+                  placeholder="Custom task, e.g. Pressure wash entry"
+                  className={`flex-1 min-w-0 ${numInput}`} />
+                <button type="button" onClick={addCustomTask}
+                  className="px-3 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 flex-shrink-0">Add</button>
+              </div>
+              {/* Per-task quantity / note */}
+              {Object.keys(tasks).length > 0 && (
+                <div className="space-y-1.5">
+                  {Object.entries(tasks).map(([name, note]) => (
+                    <div key={name} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-700 w-40 truncate flex-shrink-0" title={name}>{name}</span>
+                      <input value={note}
+                        onChange={(e) => setTasks((prev) => ({ ...prev, [name]: e.target.value }))}
+                        placeholder="qty / detail, e.g. 4 (male and female)"
+                        className={`flex-1 min-w-0 ${numInput}`} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Trade-specific quantities */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">

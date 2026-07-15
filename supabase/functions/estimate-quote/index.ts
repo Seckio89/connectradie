@@ -60,6 +60,9 @@ interface EstimateRequest {
   access?: string[];
   materialsSuppliedBy?: "tradie" | "client";
   materialsTier?: "budget" | "standard" | "premium";
+  // Specific tasks/areas the job covers (primary scope descriptor, e.g.
+  // cleaning: { name: "Bathrooms / Toilets", note: "4 (male and female)" }).
+  tasks?: { name: string; note?: string }[];
   notes?: string;
   economics?: Partial<Economics>;
   history?: { price: number; title: string }[];
@@ -219,6 +222,20 @@ function heuristicWork(req: EstimateRequest): WorkEstimate {
     assumptions.push("General estimate — confirm scope on site.");
   }
 
+  // Listed tasks add per-task time on top of the property-shape baseline —
+  // more tasks = more work, even when the area fields are the same.
+  const tasks = req.tasks ?? [];
+  if (tasks.length > 0) {
+    // A ticked task's note often carries a count ("4 (male and female)") — use it.
+    let taskHours = 0;
+    for (const t of tasks) {
+      const qty = Math.max(1, Number((t.note || "").match(/\d+/)?.[0]) || 1);
+      taskHours += Math.min(qty, 20) * 0.35;
+    }
+    hours += taskHours;
+    assumptions.push(`${tasks.length} listed task${tasks.length === 1 ? "" : "s"} (~0.35 h per task/unit).`);
+  }
+
   // Condition & scope multipliers.
   const cond = (req.condition || "").toLowerCase();
   if (cond === "heavy" || /end.?of.?lease|deep/i.test((req.jobType || "") + JSON.stringify(q))) { hours *= 1.5; assumptions.push("Heavy/deep scope (×1.5)."); }
@@ -236,7 +253,7 @@ function heuristicWork(req: EstimateRequest): WorkEstimate {
     if (materialsCost > 0) assumptions.push("Materials are a rough guess — confirm from a supplier.");
   }
 
-  const thin = rooms + sqm + bathrooms + fixtures + points + linearMetres + workstations + toilets + levels + mezzanines === 0;
+  const thin = rooms + sqm + bathrooms + fixtures + points + linearMetres + workstations + toilets + levels + mezzanines + tasks.length === 0;
   if (thin) assumptions.push("No quantities given — add them to sharpen this.");
   if (isLicensed) assumptions.push("Licensed trade: labour only — parts/compliance vary; a site inspection is recommended.");
 
@@ -289,6 +306,7 @@ async function aiWork(req: EstimateRequest, apiKey: string): Promise<WorkEstimat
     `Return: labour HOURS (for one worker-equivalent of total effort), likely MATERIALS cost in AUD (before markup; 0 if the client supplies or none apply), a confidence level, whether a site visit is needed, key assumptions, and up to 3 sharpening questions.\n\n` +
     `Trade: ${req.trade || "unspecified"}${req.jobType ? ` (${req.jobType})` : ""}.\n` +
     `${qStr ? `Quantities: ${qStr}.\n` : ""}` +
+    `${(req.tasks ?? []).length ? `Tasks/areas the job covers (size the work to these): ${req.tasks!.map((t) => t.note ? `${t.name} (${t.note})` : t.name).join("; ")}.\n` : ""}` +
     `${req.condition ? `Condition: ${req.condition}.\n` : ""}` +
     `${(req.access ?? []).length ? `Access issues: ${req.access!.join(", ")}.\n` : ""}` +
     `Materials supplied by: ${req.materialsSuppliedBy || "unspecified"}${req.materialsTier ? ` (${req.materialsTier} tier)` : ""}.\n` +

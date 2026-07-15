@@ -60,7 +60,10 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState('weekly');
   const [consumables, setConsumables] = useState<'client' | 'tradie_billed'>('client');
-  const [siteNotes, setSiteNotes] = useState('');
+  // Tradie-only: site conditions, assumptions, pricing rationale. Stored on
+  // jobs.notes — never in the description, never returned to the client.
+  const [internalNotes, setInternalNotes] = useState('');
+  const [emailFailReason, setEmailFailReason] = useState('');
 
   const firstName = contact.full_name.split(' ')[0] || 'them';
 
@@ -86,9 +89,10 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
     setSending(true);
     setError('');
 
-    // Compose the stored description: scope lines (one per line) + optional site notes.
+    // The stored description is the CLIENT-VISIBLE scope of work only.
+    // Internal notes go to jobs.notes (tradie-only).
     const scopeSource = description.trim() || title.trim();
-    const finalDescription = composeDescription(scopeSource.split('\n'), siteNotes);
+    const finalDescription = composeDescription(scopeSource.split('\n'));
 
     let createdJobId: string | null = null;
     try {
@@ -100,6 +104,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
           client_contact_id: contact.id,
           title: title.trim(),
           description: finalDescription,
+          notes: internalNotes.trim() || null,
           status: 'pending',
           location_address: contact.address,
           latitude: contact.latitude,
@@ -161,6 +166,23 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
           },
         });
         setEmailed(!emailError);
+        if (emailError) {
+          // Surface WHY it failed instead of a silent fallback.
+          let reason = '';
+          try { reason = (await (emailError as { context?: Response }).context?.json())?.error || ''; } catch { /* opaque */ }
+          setEmailFailReason(reason);
+          console.error('Quote email failed:', reason || emailError);
+        } else {
+          // Confirmation copy to the tradie so they KNOW it went out (and to
+          // which address). recipientUserId resolves their address server-side.
+          supabase.functions.invoke('send-email', {
+            body: {
+              recipientUserId: tradieId,
+              subject: `Quote sent to ${contact.full_name} — ${title.trim()}`,
+              body: `Your quote "${title.trim()}" ($${priceNum.toLocaleString('en-AU')}) was emailed to ${contact.full_name} at ${contact.email}. You'll be notified when they accept.`,
+            },
+          }).catch(() => { /* best-effort */ });
+        }
       }
 
       onSent();
@@ -197,7 +219,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                 {emailed
                   ? `Emailed to ${contact.email}. `
                   : contact.email
-                    ? 'We couldn’t email it automatically — share the link below. '
+                    ? `We couldn’t email it automatically${emailFailReason ? ` (${emailFailReason})` : ''} — share the link below. `
                     : 'No email on file — share the link below. '}
                 We’ll notify you as soon as {firstName} accepts.
               </p>
@@ -327,9 +349,19 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                   <div className="mt-3">
                     <QuoteEstimator
                       contact={contact}
-                      onApply={(suggested, summary) => {
+                      onApply={(suggested, extras) => {
                         setPrice(String(suggested));
-                        setDescription((prev) => (prev.trim() ? `${prev.trim()}\n\n${summary}` : summary));
+                        // Duties → client-visible scope; assumptions/hours → internal notes.
+                        if (extras.scope.length) {
+                          setDescription((prev) => {
+                            const existing = prev.split('\n').map((l) => l.trim()).filter(Boolean);
+                            const fresh = extras.scope.filter((s) => !existing.some((l) => l.toLowerCase() === s.toLowerCase()));
+                            return [...existing, ...fresh].join('\n');
+                          });
+                        }
+                        if (extras.internal) {
+                          setInternalNotes((prev) => (prev.trim() ? `${prev.trim()}\n\n${extras.internal}` : extras.internal));
+                        }
                         setShowEstimator(false);
                       }}
                     />
@@ -352,17 +384,17 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Site notes <span className="text-gray-400 font-normal">(optional)</span>
+                  Internal notes / conditions <span className="text-gray-400 font-normal">(never shown to the client)</span>
                 </label>
                 <textarea
                   {...proseInputProps}
-                  value={siteNotes}
-                  onChange={(e) => setSiteNotes(e.target.value)}
+                  value={internalNotes}
+                  onChange={(e) => setInternalNotes(e.target.value)}
                   rows={2}
-                  placeholder="Conditions & access — parking, gate code, pets… (not duties)"
+                  placeholder="Site conditions, assumptions, pricing rationale, access…"
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                 />
-                <p className="mt-1 text-xs text-gray-500">Kept separate from the scope of work.</p>
+                <p className="mt-1 text-xs text-gray-500">For your records only — the client sees just the scope of work above.</p>
               </div>
 
               {/* Recurring service — turns the quote into an ongoing service */}
