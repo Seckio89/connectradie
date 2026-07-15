@@ -135,9 +135,11 @@ function priceFrom(work: WorkEstimate, e: Economics, req: EstimateRequest, sourc
     items.push({ label: "Materials", amount: Math.round(materials), detail: `+${e.materialsMarkupPct}% markup` });
   }
 
-  // Call-out + travel (30c/km one-way as a simple, editable default).
-  const travel = e.travelKm > 0 ? Math.round(e.travelKm * 0.6) : 0; // round trip @ ~0.30/km
-  const callOut = e.callOutFee + travel;
+  // Call-out + travel (30c/km one-way as a simple, editable default). A $0
+  // call-out fee means the tradie doesn't charge one — skip the whole
+  // component, including the distance-based travel part.
+  const travel = e.callOutFee > 0 && e.travelKm > 0 ? Math.round(e.travelKm * 0.6) : 0; // round trip @ ~0.30/km
+  const callOut = e.callOutFee > 0 ? e.callOutFee + travel : 0;
   if (callOut > 0) {
     items.push({ label: "Call-out", amount: Math.round(callOut), detail: e.travelKm > 0 ? `incl. ~${Math.round(e.travelKm)} km travel` : undefined });
   }

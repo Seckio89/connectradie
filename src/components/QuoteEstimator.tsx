@@ -111,8 +111,10 @@ function fileToDataUrl(file: File): Promise<string> {
 function computePrice(hours: number, materialsCost: number, e: Economics, clientSupplies: boolean) {
   const labour = hours * e.hourlyRate * e.workers;
   const materials = clientSupplies ? 0 : materialsCost * (1 + e.materialsMarkupPct / 100);
-  const travel = e.travelKm > 0 ? Math.round(e.travelKm * 0.6) : 0;
-  const callOut = e.callOutFee + travel;
+  // No call-out fee set → no call-out component at all (including the
+  // distance-based travel part) — the line disappears from the breakdown.
+  const travel = e.callOutFee > 0 && e.travelKm > 0 ? Math.round(e.travelKm * 0.6) : 0;
+  const callOut = e.callOutFee > 0 ? e.callOutFee + travel : 0;
   const items: { label: string; amount: number; detail?: string }[] = [
     { label: 'Labour', amount: labour, detail: `${hours} h × ${money(e.hourlyRate)}/h${e.workers > 1 ? ` × ${e.workers}` : ''}` },
   ];
