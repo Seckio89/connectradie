@@ -48,6 +48,13 @@ export default function ClientContactModal({
       setError('Please enter the client’s name.');
       return;
     }
+    // Catch typos like "admi @domain.com" before they're saved — a bad address
+    // means quotes and invoices silently never reach the client.
+    const emailTrimmed = email.trim();
+    if (emailTrimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
+      setError('That email address doesn’t look right — check for typos or spaces.');
+      return;
+    }
     setSaving(true);
     setError('');
 
