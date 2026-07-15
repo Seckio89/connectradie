@@ -25,7 +25,7 @@ Update your `.env` file with your Stripe keys:
 ```env
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_key_here
 STRIPE_SECRET_KEY=sk_test_your_key_here
-VITE_STRIPE_PRO_PRICE_ID=price_1T0hN8RpEVKqtgNck4U4UaHC
+VITE_STRIPE_PRO_PRICE_ID=price_your_live_pro_price_id_here
 ```
 
 ### Supabase Edge Functions

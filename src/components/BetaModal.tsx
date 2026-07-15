@@ -2,8 +2,8 @@
 // BetaModal — first-visit beta disclosure surfaced on Login + Register pages.
 //
 // Sets honest expectations at the exact moment a user is about to commit to an
-// account: "this is beta, payments are test mode, tradie inventory is still
-// being built, email us if anything breaks." The two paths it appears on are
+// account: "this is beta, payments are LIVE and escrow-protected, tradie
+// inventory is still being built, email us if anything breaks." The two paths it appears on are
 // the only points where a casual SEO visitor turns into a real user.
 //
 // Persists dismissal in localStorage so a returning user is not pestered. The
@@ -14,7 +14,9 @@
 import { useEffect, useState } from 'react';
 import { X, CreditCard, Users, Mail } from 'lucide-react';
 
-const STORAGE_KEY = 'connectradie-beta-acknowledged-v1';
+// Bumped v1 → v2 at go-live: the old copy said payments were in test mode. Now
+// they're real, so everyone must re-see the corrected notice (informed consent).
+const STORAGE_KEY = 'connectradie-beta-acknowledged-v2';
 
 export default function BetaModal() {
   const [show, setShow] = useState(false);
@@ -94,13 +96,10 @@ export default function BetaModal() {
               <CreditCard className="w-4 h-4 text-amber-600" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-900">Payments are in test mode</p>
+              <p className="text-sm font-semibold text-gray-900">Payments are live &amp; protected</p>
               <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
-                No real money will be charged or paid yet. If you test checkout, use card{' '}
-                <code className="px-1 py-0.5 bg-gray-100 rounded text-gray-900 text-[11px] font-mono">
-                  4242 4242 4242 4242
-                </code>
-                .
+                Real payments run through secure Stripe escrow — funds are held safely and only
+                released to the tradie once the work is approved.
               </p>
             </div>
           </div>
