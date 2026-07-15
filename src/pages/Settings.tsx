@@ -814,10 +814,14 @@ export default function Settings() {
         </div>
       </div>
 
-      <SubscriptionModal
-        isOpen={showSubscriptionModal}
-        onClose={() => setShowSubscriptionModal(false)}
-      />
+      {showSubscriptionModal && (
+        <SectionErrorBoundary fallbackTitle="Subscriptions are temporarily unavailable">
+          <SubscriptionModal
+            isOpen={showSubscriptionModal}
+            onClose={() => setShowSubscriptionModal(false)}
+          />
+        </SectionErrorBoundary>
+      )}
 
       {showToast && (
         <Toast

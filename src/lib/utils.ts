@@ -126,6 +126,17 @@ export function friendlyError(error: string | { message?: string; code?: string 
     return 'The request took too long. Please try again.';
   }
 
+  // Subscription / Stripe price configuration (e.g. "No such price: price_...").
+  // Never surface a raw price id — subscriptions may not be set up in this
+  // environment yet. Must come before the short-message pass-through below.
+  if (
+    raw.includes('no such price') ||
+    raw.includes('price id') ||
+    (raw.includes('price') && (raw.includes('not configured') || raw.includes('no such') || raw.includes('does not exist')))
+  ) {
+    return 'Subscriptions aren’t available right now. Please try again later or contact support.';
+  }
+
   // Stripe / payment errors
   if (raw.includes('insufficient') && raw.includes('balance')) {
     return 'Payment could not be processed. Please try again or use a different payment method.';
