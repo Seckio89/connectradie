@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { Loader2, Send, Copy, CheckCircle2, Check, Sparkles, FileText, Repeat, Plus } from 'lucide-react';
 import Modal from './Modal';
 import QuoteEstimator from './QuoteEstimator';
+import QuoteFeeDisclosure from './QuoteFeeDisclosure';
 import { supabase } from '../lib/supabase';
 import { createRecurringJob, calculateNextDueDate, FREQ_WEEKLY, FREQ_FORTNIGHTLY } from '../lib/recurringJobs';
 import { proseInputProps } from '../lib/proseInput';
@@ -345,6 +346,8 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                   />
                 </div>
                 <p className="mt-1 text-xs text-gray-500">Enter your total price including labour and materials.</p>
+                {/* Fee transparency for the tradie (never shown to the client) */}
+                <QuoteFeeDisclosure priceDollars={parseFloat(price) || 0} className="mt-2" />
                 {showEstimator && (
                   <div className="mt-3">
                     <QuoteEstimator

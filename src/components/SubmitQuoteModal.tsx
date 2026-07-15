@@ -22,6 +22,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { proseInputProps } from '../lib/proseInput';
 import { useAuth } from '../contexts/AuthContext';
+import QuoteFeeDisclosure from './QuoteFeeDisclosure';
 import type { Job } from '../types/database';
 import { extractSuburb } from '../lib/contactGating';
 import { QUOTE_MESSAGE_OPTIONS, resolveMessageOptionsKey } from '../lib/recurringJobs';
@@ -794,6 +795,11 @@ export default function SubmitQuoteModal({
                     Typical range for similar jobs: ${priceHint.min.toLocaleString()} – ${priceHint.max.toLocaleString()}
                   </p>
                 )}
+                {/* Fee transparency for the tradie (never shown to clients) */}
+                <QuoteFeeDisclosure
+                  priceDollars={useFirmPrice ? parseFloat(firmPrice) || 0 : parseFloat(priceMax) || 0}
+                  className="mt-2"
+                />
               </div>
 
               <div>
