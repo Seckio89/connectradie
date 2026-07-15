@@ -49,6 +49,7 @@ import ConversationSettingsModal from '../components/ConversationSettingsModal';
 import JobManagementModal from '../components/JobManagementModal';
 import SubmitQuoteModal from '../components/SubmitQuoteModal';
 import OnboardingChecklist from '../components/OnboardingChecklist';
+import JobDescription from '../components/JobDescription';
 import QuoteInsightsWidget from '../components/QuoteInsightsWidget';
 import EmptyState from '../components/EmptyState';
 import SubscriptionModal from '../components/SubscriptionModal';
@@ -1269,7 +1270,7 @@ export default function TradieDashboard() {
                               </div>
                             </div>
 
-                            <p className="text-sm text-gray-500 mb-3 line-clamp-2 leading-relaxed">{desc}</p>
+                            <JobDescription text={desc} hideNotes maxItems={4} compact className="mb-3" />
 
                             <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap text-xs text-gray-500">
                               {category && (
@@ -1570,7 +1571,7 @@ export default function TradieDashboard() {
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-sm text-gray-600 line-clamp-2">{redactSensitiveInfo(cleanDesc, unlocked)}</p>
+                                <JobDescription text={redactSensitiveInfo(cleanDesc, unlocked)} hideNotes maxItems={4} compact className="mt-1" />
                               </div>
                               <button
                                 onClick={(e) => { e.stopPropagation(); if (!isLicenseExpired) { setSelectedJob(job.id); setShowJobManagement(true); } }}
@@ -1616,11 +1617,9 @@ export default function TradieDashboard() {
                             )}
                           </div>
 
-                          {job.notes && (
-                            <div className="mx-4 mb-3 px-3 py-2 bg-secondary-50 border border-secondary-100 rounded-lg">
-                              <p className="text-xs text-secondary-700"><span className="font-semibold">Note:</span> {job.notes}</p>
-                            </div>
-                          )}
+                          {/* Internal notes/assumptions are NOT shown on the card —
+                              they live in the collapsible Internal Notes section of the
+                              full job detail view (tradie-only). */}
                         </div>
                       );
                     })}
