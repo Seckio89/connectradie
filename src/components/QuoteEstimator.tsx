@@ -136,6 +136,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   const [clientSupplies, setClientSupplies] = useState(false);
   const [notes, setNotes] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
+  const MAX_PHOTOS = 15;
 
   const [econOpen, setEconOpen] = useState(false);
   const [rate, setRate] = useState('');
@@ -198,9 +199,9 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   });
 
   const handlePhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []).slice(0, 4 - photos.length);
+    const files = Array.from(e.target.files ?? []).slice(0, MAX_PHOTOS - photos.length);
     for (const f of files) {
-      try { const url = await fileToDataUrl(f); setPhotos((prev) => (prev.length < 4 ? [...prev, url] : prev)); } catch { /* skip */ }
+      try { const url = await fileToDataUrl(f); setPhotos((prev) => (prev.length < MAX_PHOTOS ? [...prev, url] : prev)); } catch { /* skip */ }
     }
     e.target.value = '';
   };
@@ -317,25 +318,36 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             ))}
           </div>
 
-          {/* Materials + photos */}
+          {/* Materials */}
           <div className="flex items-center gap-2 flex-wrap">
             <button type="button" onClick={() => setClientSupplies((v) => !v)}
               className="px-2.5 py-1 rounded-full text-xs font-medium border bg-white border-gray-200 text-gray-600 hover:bg-gray-50">
               Materials: <span className="font-semibold">{clientSupplies ? 'client supplies' : 'I supply'}</span>
             </button>
-            {photos.map((p, i) => (
-              <div key={i} className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-200">
-                <img src={p} alt="" className="w-full h-full object-cover" />
-                <button type="button" onClick={() => setPhotos((prev) => prev.filter((_, j) => j !== i))}
-                  className="absolute -top-1 -right-1 bg-white rounded-full border border-gray-200 p-0.5"><X className="w-2.5 h-2.5 text-gray-500" /></button>
-              </div>
-            ))}
-            {photos.length < 4 && (
-              <label className="flex items-center gap-1.5 px-3 py-2 border border-dashed border-gray-300 rounded-lg text-xs text-gray-500 cursor-pointer hover:bg-gray-50">
-                <Camera className="w-3.5 h-3.5" /> Photo
-                <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotos} />
-              </label>
-            )}
+          </div>
+
+          {/* Site photos — wrap across rows; count shows remaining capacity */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-medium text-gray-500">Site photos</span>
+              <span className="text-xs text-gray-400 tabular-nums">{photos.length}/{MAX_PHOTOS} photos</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {photos.map((p, i) => (
+                <div key={i} className="relative w-14 h-14 rounded-lg overflow-hidden border border-gray-200">
+                  <img src={p} alt="" className="w-full h-full object-cover" />
+                  <button type="button" onClick={() => setPhotos((prev) => prev.filter((_, j) => j !== i))}
+                    aria-label="Remove photo"
+                    className="absolute -top-1 -right-1 bg-white rounded-full border border-gray-200 p-0.5"><X className="w-2.5 h-2.5 text-gray-500" /></button>
+                </div>
+              ))}
+              {photos.length < MAX_PHOTOS && (
+                <label className="flex flex-col items-center justify-center gap-0.5 w-14 h-14 border border-dashed border-gray-300 rounded-lg text-[10px] text-gray-500 cursor-pointer hover:bg-gray-50">
+                  <Camera className="w-4 h-4" /> Add
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotos} />
+                </label>
+              )}
+            </div>
           </div>
 
           {/* History anchors */}
