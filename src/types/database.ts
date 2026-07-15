@@ -84,6 +84,10 @@ export type Profile = {
   license_trades: string[];
   stripe_identity_session_id: string | null;
   is_identity_verified: boolean;
+  // ToS acceptance audit + grandfathered external-pay permission (pricing phase 1).
+  terms_accepted_at: string | null;
+  tos_version: string | null;
+  external_pay_allowed: boolean;
   created_at: string;
 }
 
@@ -159,6 +163,30 @@ export type ClientContact = {
   // How this client pays. 'external' (default) = manual bank transfer / cash,
   // record-only invoices; 'stripe' = emailed card pay link.
   payment_method: 'stripe' | 'external';
+  created_at: string;
+  updated_at: string;
+}
+
+/** A message auto-flagged for off-platform-payment talk (anti-circumvention). Flag only, never blocks. */
+export type MessageFlag = {
+  id: string;
+  message_id: string | null;
+  conversation_id: string | null;
+  job_id: string | null;
+  sender_id: string | null;
+  flag_type: string;
+  matched_text: string | null;
+  created_at: string;
+}
+
+/** Client contact revealed to the assigned tradie only once the job is funded. */
+export type JobContactDetails = {
+  job_id: string;
+  contact_name: string | null;
+  contact_phone: string | null;
+  contact_email: string | null;
+  address: string | null;
+  access_notes: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -123,6 +123,8 @@ export default function Onboarding() {
         base_latitude: addressDetails?.lat ?? undefined,
         base_longitude: addressDetails?.lng ?? undefined,
         onboarding_completed: true,
+        terms_accepted_at: new Date().toISOString(),
+        tos_version: 'v1-2026-07',
         employer_id: selectedBusiness.profile_id,
         employment_type: employmentRole,
         employer_status: 'pending_approval' as const,
@@ -178,7 +180,7 @@ export default function Onboarding() {
     setError('');
 
     try {
-      const profileUpdates: Record<string, unknown> = { role: selectedRole, postcode: addressDetails?.postcode || undefined, suburb: addressDetails?.suburb || undefined, base_latitude: addressDetails?.lat ?? undefined, base_longitude: addressDetails?.lng ?? undefined, onboarding_completed: true };
+      const profileUpdates: Record<string, unknown> = { role: selectedRole, postcode: addressDetails?.postcode || undefined, suburb: addressDetails?.suburb || undefined, base_latitude: addressDetails?.lat ?? undefined, base_longitude: addressDetails?.lng ?? undefined, onboarding_completed: true, terms_accepted_at: new Date().toISOString(), tos_version: 'v1-2026-07' };
       if (selectedRole === 'tradie' && tradeCategory) {
         profileUpdates.declared_trades = [tradeCategory];
       }
