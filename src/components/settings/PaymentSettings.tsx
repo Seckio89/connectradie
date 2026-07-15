@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Landmark, Wallet, CalendarClock, Loader2, AlertCircle, ExternalLink, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Landmark, Wallet, CalendarClock, Loader2, AlertCircle, ExternalLink, CheckCircle2, ArrowRight, Save } from 'lucide-react';
 import {
   getConnectAccountDetails,
   createConnectOnboardingSession,
@@ -8,6 +8,95 @@ import {
   type ConnectAccountDetails,
 } from '../../lib/stripe';
 import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
+
+// Bank details printed on invoices to clients who pay by bank transfer (the
+// "external" payment method). Separate from the Stripe payout bank account —
+// this is what the tradie's off-app clients transfer to directly. Always shown,
+// so a tradie who only invoices externally (no Stripe) can still set it.
+function ExternalBankDetails() {
+  const { user, profile, refreshProfile } = useAuth();
+  const { showToast } = useToast();
+  const [accountName, setAccountName] = useState(profile?.bank_account_name ?? '');
+  const [bsb, setBsb] = useState(profile?.bank_bsb ?? '');
+  const [accountNumber, setAccountNumber] = useState(profile?.bank_account_number ?? '');
+  const [bankName, setBankName] = useState(profile?.bank_name ?? '');
+  const [saving, setSaving] = useState(false);
+
+  const dirty =
+    accountName !== (profile?.bank_account_name ?? '') ||
+    bsb !== (profile?.bank_bsb ?? '') ||
+    accountNumber !== (profile?.bank_account_number ?? '') ||
+    bankName !== (profile?.bank_name ?? '');
+
+  const handleSave = async () => {
+    if (!user) return;
+    if (bsb.trim() && !/^\d{3}-?\d{3}$/.test(bsb.trim())) {
+      showToast('BSB should be 6 digits, e.g. 062-000.', true);
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          bank_account_name: accountName.trim() || null,
+          bank_bsb: bsb.trim() || null,
+          bank_account_number: accountNumber.trim() || null,
+          bank_name: bankName.trim() || null,
+        })
+        .eq('id', user.id);
+      if (error) throw error;
+      await refreshProfile();
+      showToast('Bank details saved');
+    } catch {
+      showToast('Could not save your bank details. Please try again.', true);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputCls =
+    'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500';
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+        <Landmark className="w-3.5 h-3.5" /> Bank details for invoices
+      </p>
+      <p className="mt-2 text-sm text-gray-600">
+        Printed on invoices for clients who pay by bank transfer, so they know where to send it.
+      </p>
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="sm:col-span-2">
+          <label className="block text-xs font-medium text-gray-500 mb-1">Account name</label>
+          <input value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="e.g. Bright Spark Electrical Pty Ltd" className={inputCls} />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">BSB</label>
+          <input value={bsb} onChange={(e) => setBsb(e.target.value)} placeholder="062-000" inputMode="numeric" className={`${inputCls} tabular-nums`} />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Account number</label>
+          <input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="12345678" inputMode="numeric" className={`${inputCls} tabular-nums`} />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="block text-xs font-medium text-gray-500 mb-1">Bank name <span className="font-normal normal-case text-gray-400">(optional)</span></label>
+          <input value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. Commonwealth Bank" className={inputCls} />
+        </div>
+      </div>
+      <button
+        onClick={handleSave}
+        disabled={saving || !dirty}
+        className="mt-4 inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+      >
+        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+        Save bank details
+      </button>
+    </div>
+  );
+}
 
 const fmtAud = (cents: number) =>
   `$${(cents / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -80,25 +169,29 @@ export default function PaymentSettings() {
     );
   }
 
-  // Not connected yet → guide to onboarding.
+  // Not connected yet → guide to onboarding, but still let them set bank details
+  // for external (bank-transfer) invoices — those don't need Stripe.
   if (!details?.connected) {
     return (
-      <div className="max-w-lg bg-white rounded-xl border border-gray-200 shadow-sm p-6 text-center">
-        <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-3">
-          <Landmark className="w-6 h-6 text-emerald-600" />
+      <div className="space-y-6 max-w-2xl">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 text-center">
+          <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-3">
+            <Landmark className="w-6 h-6 text-emerald-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900">Set up payouts</h3>
+          <p className="text-sm text-gray-600 mt-1 mb-4">
+            Connect your bank account to receive card payments from jobs and pay links — securely via Stripe.
+          </p>
+          <button
+            onClick={handleSetup}
+            disabled={setupLoading}
+            className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-60 transition-colors"
+          >
+            {setupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+            Set up payouts
+          </button>
         </div>
-        <h3 className="text-lg font-semibold text-gray-900">Set up payouts</h3>
-        <p className="text-sm text-gray-600 mt-1 mb-4">
-          Connect your bank account to receive payments from completed jobs — securely via Stripe.
-        </p>
-        <button
-          onClick={handleSetup}
-          disabled={setupLoading}
-          className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-60 transition-colors"
-        >
-          {setupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-          Set up payouts
-        </button>
+        <ExternalBankDetails />
       </div>
     );
   }
@@ -149,6 +242,9 @@ export default function PaymentSettings() {
           Update Bank Details
         </button>
       </div>
+
+      {/* Bank details for external (bank-transfer) invoices */}
+      <ExternalBankDetails />
 
       {/* Balance */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">

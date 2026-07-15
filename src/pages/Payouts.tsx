@@ -59,6 +59,18 @@ export default function Payouts() {
     jobStatus: string;
     isRecurring: boolean;
   }[]>([]);
+  // Externally-received (bank transfer / cash) invoice payments — kept separate
+  // from Stripe so the two can be shown apart and filtered.
+  const [externalPayments, setExternalPayments] = useState<{
+    id: string;
+    amount: number; // cents
+    paidAt: string;
+    clientName: string;
+    method: string | null;
+    reference: string | null;
+    service: string;
+  }[]>([]);
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'stripe' | 'external'>('all');
 
   const fetchEarnings = useCallback(async () => {
     if (!user) return;
@@ -77,6 +89,38 @@ export default function Payouts() {
       );
       setEscrowHeld(unreleased.reduce((s, r) => s + (r.amount || 0), 0));
       setEscrowCount(unreleased.length);
+
+      // Externally-received payments: paid invoices marked settled off-platform.
+      const { data: extInv } = await supabase
+        .from('recurring_invoices')
+        .select('id, total, paid_at, created_at, external_payment_method, external_reference, client_contact_id, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category)')
+        .eq('tradie_id', user.id)
+        .eq('payment_method', 'external')
+        .eq('status', 'paid')
+        .order('paid_at', { ascending: false });
+      if (extInv && extInv.length > 0) {
+        const contactIds = [...new Set(extInv.map(i => i.client_contact_id).filter((x): x is string => !!x))];
+        let nameMap = new Map<string, string>();
+        if (contactIds.length > 0) {
+          const { data: contacts } = await supabase.from('client_contacts').select('id, full_name').in('id', contactIds);
+          nameMap = new Map((contacts || []).map(c => [c.id, c.full_name || 'Client']));
+        }
+        setExternalPayments(extInv.map(i => {
+          const rj = i.recurring_job as { trade_category?: string } | null;
+          const service = (rj?.trade_category || 'Service').replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+          return {
+            id: i.id,
+            amount: Math.round(Number(i.total) * 100),
+            paidAt: i.paid_at || i.created_at,
+            clientName: (i.client_contact_id && nameMap.get(i.client_contact_id)) || 'Client',
+            method: i.external_payment_method,
+            reference: i.external_reference,
+            service,
+          };
+        }));
+      } else {
+        setExternalPayments([]);
+      }
 
       // Fetch recent job payments for this tradie (last 5 days)
       const fiveDaysAgo = new Date();
@@ -153,6 +197,7 @@ export default function Payouts() {
             .select('id, total, status, created_at, paid_at, homeowner_id, billing_period_start, billing_period_end, regular_sessions_count, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, service_subtype)')
             .eq('tradie_id', user.id)
             .eq('status', 'paid')
+            .neq('payment_method', 'external')
             .order('paid_at', { ascending: false });
 
           if (invData && invData.length > 0) {
@@ -203,6 +248,7 @@ export default function Payouts() {
             .select('id, total, status, created_at, paid_at, homeowner_id, billing_period_start, billing_period_end, regular_sessions_count, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, service_subtype)')
             .eq('tradie_id', user.id)
             .eq('status', 'paid')
+            .neq('payment_method', 'external')
             .order('paid_at', { ascending: false });
 
           if (invData && invData.length > 0) {
@@ -647,7 +693,10 @@ export default function Payouts() {
   }, [accountDetails?.payouts]);
   const escrowAmount = escrowHeld;
   const onItsWay = (accountDetails?.balance?.available ?? 0) + (accountDetails?.balance?.pending ?? 0);
-  const computedTotalEarned = escrowAmount + onItsWay + totalPaidOut;
+  const externalTotal = useMemo(() => externalPayments.reduce((s, p) => s + p.amount, 0), [externalPayments]);
+  const computedTotalEarned = escrowAmount + onItsWay + totalPaidOut + externalTotal;
+  const methodLabel = (m: string | null) =>
+    m ? (({ bank_transfer: 'Bank transfer', cash: 'Cash', cheque: 'Cheque', accountant: 'Accountant' } as Record<string, string>)[m] ?? m) : '';
 
   if (loading) {
     return (
@@ -723,8 +772,64 @@ export default function Payouts() {
         {/* Off-platform payment requests (worker ↔ employer, BSB transfer) */}
         <PaymentRequestsSection />
 
+        {/* Stripe vs external filter — only shown when there are external payments */}
+        {externalPayments.length > 0 && (
+          <div className="flex items-center gap-1 bg-surface-100 rounded-xl p-1 w-full sm:w-auto sm:inline-flex">
+            {(['all', 'stripe', 'external'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setPaymentFilter(f)}
+                className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  paymentFilter === f ? 'bg-white text-navy-900 shadow-sm' : 'text-navy-500 hover:text-navy-700'
+                }`}
+              >
+                {f === 'all' ? 'All' : f === 'stripe' ? 'Stripe' : 'External'}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Externally received payments (bank transfer / cash / cheque) */}
+        {externalPayments.length > 0 && paymentFilter !== 'stripe' && (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4 gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="p-2 bg-secondary-50 rounded-lg flex-shrink-0">
+                  <Banknote className="w-4 h-4 text-secondary-600" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-lg font-semibold text-navy-900">Externally received</h2>
+                  <p className="text-xs text-navy-400">Bank transfer / cash — marked paid by you</p>
+                </div>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total</p>
+                <p className="text-xl font-bold text-navy-900">{formatCurrency(externalTotal)}</p>
+              </div>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {externalPayments.map((p) => (
+                <div key={p.id} className="flex items-center gap-3 py-3">
+                  <div className="w-9 h-9 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
+                    <Banknote className="w-4 h-4 text-secondary-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-navy-900 truncate">{p.clientName}</p>
+                    <p className="text-xs text-navy-400 truncate">
+                      {p.service} · {new Date(p.paidAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {p.method ? ` · ${methodLabel(p.method)}` : ''}
+                      {p.reference ? ` · ${p.reference}` : ''}
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold text-navy-900 tabular-nums flex-shrink-0">{formatCurrency(p.amount)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Not Connected state */}
-        {!accountDetails?.connected && (
+        {!accountDetails?.connected && paymentFilter !== 'external' && (
           <div className="bg-gradient-to-r from-secondary-50 to-primary-50 rounded-2xl border border-secondary-200 p-8 text-center">
             <div className="w-16 h-16 bg-secondary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Wallet className="w-8 h-8 text-secondary-600" />
@@ -757,7 +862,7 @@ export default function Payouts() {
         )}
 
         {/* Connected state */}
-        {accountDetails?.connected && (
+        {accountDetails?.connected && paymentFilter !== 'external' && (
           <>
             {/* Account Status banner */}
             {isFullyActive ? (

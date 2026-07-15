@@ -6,9 +6,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, MapPin, UserCheck, FileText, Loader2, Copy, Check, Plus, RefreshCw, Send } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, UserCheck, FileText, Loader2, Copy, Check, Plus, RefreshCw, Send, Receipt, Banknote, CheckCircle2 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import NewQuoteModal from '../components/NewQuoteModal';
+import Modal from '../components/Modal';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/useToast';
@@ -40,6 +41,42 @@ interface ServiceRow {
   isOffApp: boolean;
 }
 
+interface InvoiceRow {
+  id: string;
+  total: number;
+  status: string;
+  payment_method: string | null;
+  created_at: string;
+  paid_at: string | null;
+  external_payment_method: string | null;
+  external_reference: string | null;
+}
+
+const EXTERNAL_METHOD_LABEL: Record<string, string> = {
+  bank_transfer: 'Bank transfer',
+  cash: 'Cash',
+  cheque: 'Cheque',
+  accountant: 'Accountant',
+};
+
+// Invoice status → pill. External-paid gets its own colour (secondary/blue) so a
+// tradie can tell manually-settled invoices apart from Stripe-paid ones at a glance.
+function invoiceBadge(inv: InvoiceRow): { label: string; cls: string } {
+  const ext = inv.payment_method === 'external';
+  if (inv.status === 'paid') {
+    return ext
+      ? { label: 'Paid · External', cls: 'bg-secondary-100 text-secondary-700' }
+      : { label: 'Paid', cls: 'bg-emerald-100 text-emerald-700' };
+  }
+  if (inv.status === 'sent') return { label: ext ? 'Awaiting transfer' : 'Awaiting payment', cls: 'bg-amber-100 text-amber-700' };
+  if (inv.status === 'overdue') return { label: 'Overdue', cls: 'bg-red-100 text-red-700' };
+  if (inv.status === 'processing') return { label: 'Processing', cls: 'bg-secondary-100 text-secondary-700' };
+  if (inv.status === 'cancelled') return { label: 'Cancelled', cls: 'bg-gray-100 text-gray-600' };
+  return { label: inv.status, cls: 'bg-gray-100 text-gray-600' };
+}
+
+const todayISO = () => new Date().toISOString().split('T')[0];
+
 const freqLabel = (m: number): string =>
   m === -1 ? 'weekly' : m === -2 ? 'fortnightly' : m === -3 ? 'daily'
   : m === 1 ? 'monthly' : m === 3 ? 'quarterly' : m === 12 ? 'yearly' : `every ${m} mo`;
@@ -70,6 +107,111 @@ function priceOf(q: QuoteRow): string {
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
 
+// Record an external (off-platform) payment against an invoice — bank transfer,
+// cash, cheque or accountant remittance. Calls the mark-invoice-paid edge fn.
+function MarkPaidModal({ invoice, onClose, onDone }: { invoice: InvoiceRow; onClose: () => void; onDone: () => void }) {
+  const { showToast } = useToast();
+  const [method, setMethod] = useState<'bank_transfer' | 'cash' | 'cheque' | 'accountant'>('bank_transfer');
+  const [receivedDate, setReceivedDate] = useState(todayISO());
+  const [reference, setReference] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('mark-invoice-paid', {
+        body: { invoiceId: invoice.id, method, receivedDate, reference: reference.trim() || undefined },
+      });
+      if (error) {
+        let msg = 'Could not mark this invoice paid.';
+        try { msg = (await (error as { context?: Response }).context?.json())?.error || msg; } catch { /* keep default */ }
+        showToast(msg, true);
+        return;
+      }
+      if (data?.error) { showToast(data.error, true); return; }
+      showToast('Invoice marked as paid.');
+      onDone();
+    } catch {
+      showToast('Could not mark this invoice paid.', true);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal isOpen onClose={onClose} maxWidth="md">
+      <div className="p-6 space-y-5">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Mark invoice as paid</h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Record a payment you received outside the app for {money(invoice.total)}.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">How was it paid?</label>
+          <div className="grid grid-cols-2 gap-2">
+            {(['bank_transfer', 'cash', 'cheque', 'accountant'] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMethod(m)}
+                className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  method === m
+                    ? 'border-warm-500 bg-warm-50 text-warm-700 ring-1 ring-warm-500'
+                    : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {EXTERNAL_METHOD_LABEL[m]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Date received</label>
+            <input
+              type="date"
+              value={receivedDate}
+              max={todayISO()}
+              onChange={(e) => setReceivedDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Reference <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              placeholder="e.g. bank reference"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-3 pt-1">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={submit}
+            disabled={saving}
+            className="flex-1 px-4 py-2.5 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+          >
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />} Mark as paid
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -81,6 +223,8 @@ export default function ClientDetail() {
   const [showQuote, setShowQuote] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [invoicingId, setInvoicingId] = useState<string | null>(null);
+  const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
+  const [markPaid, setMarkPaid] = useState<InvoiceRow | null>(null);
 
   const load = async () => {
     if (!user || !id) return;
@@ -137,6 +281,17 @@ export default function ClientDetail() {
     } else {
       setServices([]);
     }
+
+    // Invoices raised for this contact (off-app, via client_contact_id). RLS
+    // scopes to this tradie; external + Stripe both live in recurring_invoices.
+    const { data: inv } = await supabase
+      .from('recurring_invoices')
+      .select('id, total, status, payment_method, created_at, paid_at, external_payment_method, external_reference')
+      .eq('tradie_id', user.id)
+      .eq('client_contact_id', id)
+      .order('created_at', { ascending: false });
+    setInvoices((inv as InvoiceRow[]) ?? []);
+
     setLoading(false);
   };
 
@@ -174,7 +329,14 @@ export default function ClientDetail() {
         return;
       }
       if (data?.error) { showToast(data.error, true); return; }
-      showToast(`Invoice for $${Number(data?.total ?? 0).toLocaleString('en-AU')} emailed to ${contact.full_name.split(' ')[0]}.`);
+      const amt = `$${Number(data?.total ?? 0).toLocaleString('en-AU')}`;
+      const first = contact.full_name.split(' ')[0];
+      if (data?.external) {
+        showToast(data?.emailed ? `Invoice for ${amt} emailed to ${first}.` : `Invoice for ${amt} recorded.`);
+      } else {
+        showToast(`Invoice for ${amt} emailed to ${first}.`);
+      }
+      await load();
     } catch {
       showToast('Could not send the invoice.', true);
     } finally {
@@ -347,22 +509,76 @@ export default function ClientDetail() {
                           ${Number(s.agreedPrice).toLocaleString('en-AU')}<span className="text-xs font-normal text-gray-400">/visit</span>
                         </span>
                       )}
-                      {s.isOffApp && contact.email && s.agreedPrice != null && s.agreedPrice > 0 && (
+                      {s.isOffApp && s.agreedPrice != null && s.agreedPrice > 0 && (contact.payment_method === 'external' || contact.email) && (
                         <button
                           onClick={() => sendInvoice(s.id)}
                           disabled={invoicingId === s.id}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
-                          title={`Email ${contact.full_name.split(' ')[0]} a card payment link for this visit`}
+                          title={contact.payment_method === 'external'
+                            ? `Invoice ${contact.full_name.split(' ')[0]} for this visit (bank transfer)`
+                            : `Email ${contact.full_name.split(' ')[0]} a card payment link for this visit`}
                         >
                           {invoicingId === s.id ? (
                             <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sending…</>
                           ) : (
-                            <><Send className="w-3.5 h-3.5" /> Send invoice</>
+                            <><Send className="w-3.5 h-3.5" /> {contact.payment_method === 'external' && !contact.email ? 'Record invoice' : 'Send invoice'}</>
                           )}
                         </button>
                       )}
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Invoices — every invoice raised for this client. External ones can
+                be marked paid manually; Stripe ones update themselves on payment. */}
+            {invoices.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="text-lg font-semibold text-gray-900">Invoices</h2>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{invoices.length}</span>
+                </div>
+                <div className="bg-white border border-gray-100 rounded-2xl shadow-sm divide-y divide-gray-100 overflow-hidden">
+                  {invoices.map((inv) => {
+                    const badge = invoiceBadge(inv);
+                    const ext = inv.payment_method === 'external';
+                    const canMark = ext && inv.status !== 'paid' && inv.status !== 'cancelled';
+                    return (
+                      <div key={inv.id} className="flex items-center gap-4 p-4">
+                        <div className="w-9 h-9 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
+                          <Receipt className="w-4 h-4 text-secondary-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-gray-900 tabular-nums">{money(inv.total)}</span>
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.cls}`}>{badge.label}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {inv.status === 'paid' && inv.paid_at ? (
+                              <>
+                                Paid {fmtDate(inv.paid_at)}
+                                {ext && inv.external_payment_method ? ` · ${EXTERNAL_METHOD_LABEL[inv.external_payment_method] ?? inv.external_payment_method}` : ''}
+                                {inv.external_reference ? ` · ${inv.external_reference}` : ''}
+                              </>
+                            ) : (
+                              <>Sent {fmtDate(inv.created_at)}</>
+                            )}
+                          </p>
+                        </div>
+                        {canMark ? (
+                          <button
+                            onClick={() => setMarkPaid(inv)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors flex-shrink-0"
+                          >
+                            <Banknote className="w-3.5 h-3.5" /> Mark as paid
+                          </button>
+                        ) : inv.status === 'paid' ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -377,6 +593,14 @@ export default function ClientDetail() {
           onSent={load}
           tradieId={user.id}
           contact={contact}
+        />
+      )}
+
+      {markPaid && (
+        <MarkPaidModal
+          invoice={markPaid}
+          onClose={() => setMarkPaid(null)}
+          onDone={() => { setMarkPaid(null); load(); }}
         />
       )}
     </DashboardLayout>

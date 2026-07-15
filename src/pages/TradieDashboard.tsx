@@ -432,8 +432,19 @@ export default function TradieDashboard() {
       const jobIds = (tradieJobs || []).map(j => j.id);
       const activeCount = (tradieJobs || []).filter(j => ['accepted', 'in_progress', 'funded'].includes(j.status)).length;
 
+      // Externally-received (bank transfer / cash) invoice income — counted in
+      // earnings alongside Stripe so totals reflect the whole business.
+      const { data: extPaid } = await supabase
+        .from('recurring_invoices')
+        .select('total, paid_at')
+        .eq('tradie_id', user.id)
+        .eq('payment_method', 'external')
+        .eq('status', 'paid');
+      const extTotal = (extPaid || []).reduce((s, r) => s + (Number(r.total) || 0), 0);
+      const extMonth = (extPaid || []).filter(r => r.paid_at && r.paid_at >= monthStart).reduce((s, r) => s + (Number(r.total) || 0), 0);
+
       if (jobIds.length === 0) {
-        setEarnings({ total: 0, thisMonth: 0, pendingJobs: activeCount });
+        setEarnings({ total: extTotal, thisMonth: extMonth, pendingJobs: activeCount });
         return;
       }
 
@@ -450,8 +461,8 @@ export default function TradieDashboard() {
       const monthCents = (monthResult.data || []).reduce((sum, p) => sum + (p.amount || 0), 0);
 
       setEarnings({
-        total: Math.round(totalCents) / 100,
-        thisMonth: Math.round(monthCents) / 100,
+        total: Math.round(totalCents) / 100 + extTotal,
+        thisMonth: Math.round(monthCents) / 100 + extMonth,
         pendingJobs: activeCount,
       });
     } catch (err) {

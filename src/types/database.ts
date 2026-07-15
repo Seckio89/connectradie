@@ -69,6 +69,11 @@ export type Profile = {
   stripe_connect_account_id: string | null;
   stripe_connect_onboarding_complete: boolean;
   stripe_customer_id: string | null;
+  // Bank details printed on external (manual-transfer) invoices. Null until set.
+  bank_name: string | null;
+  bank_bsb: string | null;
+  bank_account_number: string | null;
+  bank_account_name: string | null;
   employer_id: string | null;
   employment_type: 'employee' | 'subcontractor' | 'none';
   employer_status: 'active' | 'pending_approval' | 'rejected' | 'none';
@@ -149,6 +154,9 @@ export type ClientContact = {
   longitude: number | null;
   notes: string | null;
   linked_profile_id: string | null;
+  // How this client pays. 'external' (default) = manual bank transfer / cash,
+  // record-only invoices; 'stripe' = emailed card pay link.
+  payment_method: 'stripe' | 'external';
   created_at: string;
   updated_at: string;
 }

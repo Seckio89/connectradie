@@ -92,7 +92,7 @@ export default function AnalyticsDashboard() {
     if (!user) return;
     setLoading(true);
 
-    const [jobsRes, quotesRes, reviewsRes, paymentsRes] = await Promise.all([
+    const [jobsRes, quotesRes, reviewsRes, paymentsRes, extRes] = await Promise.all([
       supabase
         .from('jobs')
         .select('id, client_id, status, budget_amount, created_at, profiles!jobs_client_id_fkey(full_name)')
@@ -113,6 +113,15 @@ export default function AnalyticsDashboard() {
         .select('amount, created_at, status')
         .eq('profile_id', user.id)
         .gte('created_at', rangeStart),
+      // Externally-received (bank transfer / cash) invoice income — merged into
+      // payments as synthetic completed rows so revenue totals include them.
+      supabase
+        .from('recurring_invoices')
+        .select('total, paid_at')
+        .eq('tradie_id', user.id)
+        .eq('payment_method', 'external')
+        .eq('status', 'paid')
+        .gte('paid_at', rangeStart),
     ]);
 
     // Only set state if no error is present and data is an array
@@ -140,7 +149,15 @@ export default function AnalyticsDashboard() {
       setQuotes(validQuotes);
     }
     setReviews(Array.isArray(reviewsRes.data) && !reviewsRes.error ? (reviewsRes.data as ReviewRow[]) : []);
-    setPayments(Array.isArray(paymentsRes.data) && !paymentsRes.error ? (paymentsRes.data as PaymentRow[]) : []);
+    const basePayments = Array.isArray(paymentsRes.data) && !paymentsRes.error ? (paymentsRes.data as PaymentRow[]) : [];
+    const extRows: PaymentRow[] = Array.isArray(extRes.data) && !extRes.error
+      ? (extRes.data as { total: number; paid_at: string | null }[]).map((r) => ({
+          amount: Math.round(Number(r.total) * 100),
+          created_at: r.paid_at || new Date().toISOString(),
+          status: 'completed',
+        }))
+      : [];
+    setPayments([...basePayments, ...extRows]);
     setLoading(false);
   };
 

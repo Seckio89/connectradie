@@ -291,6 +291,115 @@ function buildInvoiceEmail(
 </html>`;
 }
 
+// External (manual-payment) invoice email for OFF-APP clients paying by bank
+// transfer / cash — NO Stripe pay button. Same polished brand shell as
+// buildInvoiceEmail, but the CTA is replaced by a "Pay by bank transfer" details
+// card (BSB / account / reference) plus ABN + GST line for a proper tax invoice.
+// Metadata: amount, service?, businessName?, abn?, gstNote?, bankName?, bsb?,
+// accountName?, accountNumber?, reference?, dueDate?.
+function buildExternalInvoiceEmail(
+  subject: string,
+  body: string,
+  metadata: Record<string, unknown>,
+): string {
+  const amount = metadata.amount ? String(metadata.amount) : "";
+  const service = metadata.service ? String(metadata.service) : "";
+  const business = metadata.businessName ? String(metadata.businessName) : "";
+  const abn = metadata.abn ? String(metadata.abn) : "";
+  const gstNote = metadata.gstNote ? String(metadata.gstNote) : "";
+  const bankName = metadata.bankName ? String(metadata.bankName) : "";
+  const bsb = metadata.bsb ? String(metadata.bsb) : "";
+  const accountName = metadata.accountName ? String(metadata.accountName) : "";
+  const accountNumber = metadata.accountNumber ? String(metadata.accountNumber) : "";
+  const reference = metadata.reference ? String(metadata.reference) : "";
+  const dueDate = metadata.dueDate ? String(metadata.dueDate) : "";
+
+  const heading = service ? `${service} invoice` : "Your invoice";
+  const preheader = amount
+    ? `Your invoice for ${amount}${business ? ` from ${business}` : ""} — pay by bank transfer.`
+    : "Your invoice — pay by bank transfer.";
+
+  const amountHero = amount
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:14px;background-color:#f8fafc;margin:0 0 26px;">
+                <tr><td align="center" style="padding:26px 20px;">
+                  <p style="margin:0 0 6px;color:#94a3b8;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">Amount due</p>
+                  <p style="margin:0;color:#0f172a;font-size:38px;font-weight:800;letter-spacing:-0.02em;line-height:1.1;">${escapeHtml(amount)}</p>
+                  ${dueDate ? `<p style="margin:10px 0 0;color:#64748b;font-size:13px;">Due by ${escapeHtml(dueDate)}</p>` : ""}
+                  ${gstNote ? `<p style="margin:4px 0 0;color:#94a3b8;font-size:12px;">${escapeHtml(gstNote)}</p>` : ""}
+                </td></tr>
+              </table>`
+    : "";
+
+  const row = (label: string, value: string) =>
+    value
+      ? `<tr>
+                  <td style="padding:8px 0;color:#64748b;font-size:13px;">${escapeHtml(label)}</td>
+                  <td align="right" style="padding:8px 0;color:#0f172a;font-size:14px;font-weight:600;">${escapeHtml(value)}</td>
+                </tr>`
+      : "";
+
+  const hasBank = bsb || accountNumber || accountName;
+  const bankCard = hasBank
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:14px;margin:0 0 22px;">
+                <tr><td style="padding:6px 20px 14px;">
+                  <p style="margin:14px 0 6px;color:#0f172a;font-size:14px;font-weight:700;">Pay by bank transfer</p>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    ${row("Account name", accountName)}
+                    ${row("BSB", bsb)}
+                    ${row("Account number", accountNumber)}
+                    ${bankName ? row("Bank", bankName) : ""}
+                    ${reference ? row("Reference", reference) : ""}
+                  </table>
+                </td></tr>
+              </table>`
+    : `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #fde68a;background-color:#fffbeb;border-radius:14px;margin:0 0 22px;">
+                <tr><td style="padding:16px 20px;">
+                  <p style="margin:0;color:#92400e;font-size:13px;line-height:1.6;">Bank transfer details will be provided separately${business ? ` by ${escapeHtml(business)}` : ""}.</p>
+                </td></tr>
+              </table>`;
+
+  const abnLine = abn
+    ? `<p style="margin:0 0 4px;color:#94a3b8;font-size:12px;">${business ? `${escapeHtml(business)} · ` : ""}ABN ${escapeHtml(abn)}</p>`
+    : "";
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light only">
+  <title>${escapeHtml(subject)}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#eef1f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#eef1f4;">${escapeHtml(preheader)}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef1f4;padding:32px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(15,27,45,0.08);">
+        <tr><td style="background-color:#0f1b2d;padding:26px 32px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td style="font-size:20px;font-weight:800;letter-spacing:-0.02em;color:#ffffff;">Connec<span style="color:#2dd4a7;">Tradie</span></td>
+            <td align="right" style="font-size:11px;font-weight:700;letter-spacing:0.14em;color:#8ba0b4;text-transform:uppercase;">Tax Invoice</td>
+          </tr></table>
+        </td></tr>
+        <tr><td style="padding:34px 32px 4px;">
+          ${abnLine}
+          <p style="margin:${abn ? "4px" : "0"} 0 8px;color:#0f172a;font-size:20px;font-weight:700;letter-spacing:-0.01em;">${escapeHtml(heading)}</p>
+          <p style="margin:0 0 24px;color:#64748b;font-size:15px;line-height:1.6;">${escapeHtml(body)}</p>
+          ${amountHero}
+          ${bankCard}
+          <p style="margin:0;color:#94a3b8;font-size:12.5px;line-height:1.7;">Once you've paid, no further action is needed — ${business ? escapeHtml(business) : "your tradie"} will mark this invoice as settled.</p>
+        </td></tr>
+        <tr><td style="padding:22px 32px;border-top:1px solid #eef1f4;background-color:#fbfcfd;">
+          <p style="margin:0;color:#94a3b8;font-size:12px;line-height:1.6;">This invoice was sent to you through ConnecTradie${business ? ` on behalf of ${escapeHtml(business)}` : ""}. If you weren&rsquo;t expecting it, you can safely ignore this email.</p>
+        </td></tr>
+      </table>
+      <p style="margin:16px 0 0;color:#b6c0cc;font-size:11px;">ConnecTradie &middot; Australian tradie marketplace</p>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
 // A quote goes to an OFF-APP client with no ConnecTradie account, so it gets its
 // own warmer, account-free template (the generic "financial" one talks about
 // "your account" and "Settings", which would confuse the recipient).
@@ -465,6 +574,7 @@ const TEMPLATE_CATEGORY_MAP: Record<string, string> = {
   JOB_ACCEPTED: "lead_job",
   JOB_COMPLETED: "lead_job",
   INVOICE_RECEIVED: "invoice",
+  INVOICE_EXTERNAL: "invoice_external",
   QUOTE_RECEIVED: "quote",
   QUOTE_ACCEPTED: "quote_accepted",
   PAYMENT_RECEIVED: "financial",
@@ -494,6 +604,8 @@ function buildEmailHtml(
       return buildFinancialEmail(subject, body, meta, notificationType);
     case "invoice":
       return buildInvoiceEmail(subject, body, meta);
+    case "invoice_external":
+      return buildExternalInvoiceEmail(subject, body, meta);
     case "quote":
       return buildQuoteEmail(subject, body, meta);
     case "quote_accepted":

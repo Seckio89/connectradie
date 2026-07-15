@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState } from 'react';
-import { Loader2, User, Mail, Phone, StickyNote } from 'lucide-react';
+import { Loader2, User, Mail, Phone, StickyNote, Landmark, CreditCard } from 'lucide-react';
 import Modal from './Modal';
 import AddressAutocomplete from './AddressAutocomplete';
 import { supabase } from '../lib/supabase';
@@ -37,6 +37,9 @@ export default function ClientContactModal({
     state: editContact?.state ?? undefined,
   });
   const [notes, setNotes] = useState(editContact?.notes ?? '');
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'external'>(
+    editContact?.payment_method ?? 'external',
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -60,6 +63,7 @@ export default function ClientContactModal({
       latitude: coords?.lat ?? null,
       longitude: coords?.lng ?? null,
       notes: notes.trim() || null,
+      payment_method: paymentMethod,
     };
 
     try {
@@ -176,6 +180,46 @@ export default function ClientContactModal({
                 placeholder="Gate code, pets, preferences…"
                 className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
               />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">How does this client pay?</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {([
+                {
+                  value: 'external' as const,
+                  icon: Landmark,
+                  title: 'Bank transfer / cash',
+                  desc: 'You invoice them and mark it paid yourself.',
+                },
+                {
+                  value: 'stripe' as const,
+                  icon: CreditCard,
+                  title: 'Card pay link',
+                  desc: 'They pay by card through the app.',
+                },
+              ]).map(({ value, icon: Icon, title, desc }) => {
+                const active = paymentMethod === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setPaymentMethod(value)}
+                    className={`text-left p-3 rounded-xl border transition-colors ${
+                      active
+                        ? 'border-warm-500 bg-warm-50 ring-1 ring-warm-500'
+                        : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Icon className={`w-4 h-4 ${active ? 'text-warm-600' : 'text-gray-400'}`} />
+                      <span className={`text-sm font-medium ${active ? 'text-warm-700' : 'text-gray-700'}`}>{title}</span>
+                    </span>
+                    <span className="block mt-1 text-xs text-gray-500">{desc}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

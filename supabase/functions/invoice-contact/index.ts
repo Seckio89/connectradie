@@ -6,13 +6,15 @@ import { calculatePlatformFee, calculateProcessingFeeCents, resolveTradieTier } 
 /*
   invoice-contact — bill an OFF-APP client_contact for a recurring service.
 
-  The on-app generate-recurring-invoice keys everything on a homeowner profile +
-  sessions. Off-app contacts have neither, so this creates a Stripe Checkout
-  session (hosted — the contact needs no account) that routes to the tradie's
-  Connect account (destination charge, escrow-protected like the rest of the app),
-  records a recurring_invoices row against client_contact_id, and EMAILS the
-  contact the pay link. The existing stripe-webhook marks it paid by
-  stripe_checkout_session_id — no webhook change needed.
+  Two modes, chosen by the contact's payment_method:
+   • stripe   → hosted Stripe Checkout (destination charge to the tradie's Connect
+                account, escrow-protected). Contact gets an emailed pay link.
+   • external → record-only invoice (no Stripe). The tradie is paid off-platform
+                (bank transfer / cash) and marks it paid via mark-invoice-paid.
+                Contact gets an emailed tax invoice with the tradie's bank details.
+
+  Both record a recurring_invoices row against client_contact_id. The existing
+  stripe-webhook marks the STRIPE ones paid by stripe_checkout_session_id.
 
   Browser-called (token-gated), deploy WITHOUT gateway JWT:
     supabase functions deploy invoice-contact --no-verify-jwt
@@ -38,6 +40,10 @@ function corsFor(req: Request) {
     "Vary": "Origin",
   };
 }
+
+const fmtAud = (n: number) => `$${n.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`;
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 
 Deno.serve(async (req: Request) => {
   const cors = corsFor(req);
@@ -80,37 +86,112 @@ Deno.serve(async (req: Request) => {
     const perVisit = Number(job.agreed_price) || 0;
     const total = perVisit * count;
     if (total <= 0) return json({ error: "This service has no agreed price — set one first" }, 400);
+    const totalCents = Math.round(total * 100);
 
-    // 2. The off-app client (must have an email to receive the pay link).
+    // 2. The off-app client + how they pay.
     const { data: contact } = await supabase
       .from("client_contacts")
-      .select("full_name, email")
+      .select("full_name, email, payment_method")
       .eq("id", job.client_contact_id)
       .maybeSingle();
-    if (!contact?.email) return json({ error: "This client has no email on file — add one to send an invoice" }, 400);
-
-    // 3. Tradie must have a Connect account to receive the money.
-    const { data: tradieConnect } = await supabase
-      .from("profiles")
-      .select("stripe_connect_account_id, stripe_connect_onboarding_complete, full_name")
-      .eq("id", job.tradie_id)
-      .maybeSingle();
-    const destinationAccount = tradieConnect?.stripe_connect_onboarding_complete ? tradieConnect.stripe_connect_account_id : null;
-    if (!destinationAccount) {
-      return json({ error: "Finish your payment setup (Payouts → Stripe) before sending an invoice." }, 409);
+    if (!contact) return json({ error: "Client not found" }, 404);
+    const isExternal = (contact.payment_method || "external") === "external";
+    // A Stripe pay-link needs an email to send to. External (record-only) invoices
+    // can be generated without one — the tradie may just want it for their records.
+    if (!isExternal && !contact.email) {
+      return json({ error: "This client has no email on file — add one to send an invoice" }, 400);
     }
 
-    // 4. Fees (mirror generate-recurring-invoice).
-    const { data: tradieSub } = await supabase.from("tradie_details").select("subscription_tier").eq("profile_id", job.tradie_id).maybeSingle();
-    const tier = resolveTradieTier(tradieSub?.subscription_tier);
-    const platformFeeCents = Math.round(calculatePlatformFee(total, tier) * 100);
-    const totalCents = Math.round(total * 100);
-    const processingFee = calculateProcessingFeeCents(totalCents);
+    // 3. The tradie (business identity + Connect + bank details for external).
+    const { data: tradieProfile } = await supabase
+      .from("profiles")
+      .select("stripe_connect_account_id, stripe_connect_onboarding_complete, full_name, abn_number, is_gst_registered, bank_name, bank_bsb, bank_account_number, bank_account_name")
+      .eq("id", job.tradie_id)
+      .maybeSingle();
+    const { data: tradieDetails } = await supabase
+      .from("tradie_details")
+      .select("subscription_tier, business_name")
+      .eq("profile_id", job.tradie_id)
+      .maybeSingle();
 
     const tradeLabel = String(job.trade_category || "Service").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    const businessName = tradieDetails?.business_name || tradieProfile?.full_name || undefined;
     const today = new Date().toISOString().split("T")[0];
     const due = new Date(); due.setDate(due.getDate() + 7);
     const dueStr = due.toISOString().split("T")[0];
+    const amountStr = fmtAud(total);
+    const firstName = (contact.full_name || "there").split(" ")[0];
+
+    // ─── EXTERNAL (manual / bank-transfer) — record-only, no Stripe ─────────────
+    if (isExternal) {
+      const { data: invoice, error: insertErr } = await supabase
+        .from("recurring_invoices")
+        .insert({
+          recurring_job_id: recurringJobId,
+          client_contact_id: job.client_contact_id,
+          homeowner_id: null,
+          tradie_id: job.tradie_id,
+          billing_period_start: today,
+          billing_period_end: today,
+          regular_sessions_count: count,
+          subtotal: total,
+          total,
+          status: "sent",
+          payment_method: "external",
+          due_date: dueStr,
+        })
+        .select("id")
+        .single();
+      if (insertErr) { console.error("invoice-contact external insert failed", insertErr); return json({ error: "Failed to record the invoice" }, 500); }
+
+      await supabase.from("recurring_jobs").update({ last_invoiced_at: today }).eq("id", recurringJobId);
+
+      const reference = `INV-${String(invoice.id).slice(0, 8).toUpperCase()}`;
+      let emailed = false;
+      if (contact.email) {
+        const gstNote = tradieProfile?.is_gst_registered
+          ? `Total includes GST of ${fmtAud(total / 11)}`
+          : "";
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+            body: JSON.stringify({
+              to: contact.email,
+              subject: `Invoice from ${businessName || "your tradie"} — ${amountStr}`,
+              body: `Hi ${firstName}, here's your invoice for ${tradeLabel}${count > 1 ? ` (${count} visits)` : ""}${note ? `. ${note}` : ""}. Please pay by bank transfer using the details below.`,
+              notificationType: "INVOICE_EXTERNAL",
+              metadata: {
+                amount: amountStr,
+                service: tradeLabel,
+                businessName,
+                abn: tradieProfile?.abn_number || undefined,
+                gstNote,
+                bankName: tradieProfile?.bank_name || undefined,
+                bsb: tradieProfile?.bank_bsb || undefined,
+                accountName: tradieProfile?.bank_account_name || undefined,
+                accountNumber: tradieProfile?.bank_account_number || undefined,
+                reference,
+                dueDate: fmtDate(dueStr),
+              },
+            }),
+          });
+          emailed = true;
+        } catch (e) { console.error("invoice-contact: external email failed", e); }
+      }
+
+      return json({ invoiceId: invoice.id, total, external: true, emailed, reference });
+    }
+
+    // ─── STRIPE (card pay link) ─────────────────────────────────────────────────
+    const destinationAccount = tradieProfile?.stripe_connect_onboarding_complete ? tradieProfile.stripe_connect_account_id : null;
+    if (!destinationAccount) {
+      return json({ error: "Finish your payment setup (Payouts → Stripe) before sending a card invoice." }, 409);
+    }
+
+    const tier = resolveTradieTier(tradieDetails?.subscription_tier);
+    const platformFeeCents = Math.round(calculatePlatformFee(total, tier) * 100);
+    const processingFee = calculateProcessingFeeCents(totalCents);
 
     const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") || "";
     const siteUrl = Deno.env.get("SITE_URL") || (allowedOrigin && allowedOrigin !== "*" ? allowedOrigin : "https://connectradie.com");
@@ -132,7 +213,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const checkoutSession = await stripe.checkout.sessions.create({
-      customer_email: contact.email,
+      customer_email: contact.email!,
       line_items: lineItems,
       mode: "payment",
       success_url: `${siteUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
@@ -156,7 +237,6 @@ Deno.serve(async (req: Request) => {
       },
     });
 
-    // 5. Record the invoice.
     const { data: invoice, error: insertErr } = await supabase
       .from("recurring_invoices")
       .insert({
@@ -182,9 +262,6 @@ Deno.serve(async (req: Request) => {
 
     await supabase.from("recurring_jobs").update({ last_invoiced_at: today }).eq("id", recurringJobId);
 
-    // 6. Email the contact the pay link (best-effort).
-    const amountStr = `$${total.toLocaleString("en-AU", { minimumFractionDigits: 2 })}`;
-    const firstName = (contact.full_name || "there").split(" ")[0];
     try {
       await fetch(`${supabaseUrl}/functions/v1/send-email`, {
         method: "POST",
@@ -198,7 +275,7 @@ Deno.serve(async (req: Request) => {
             amount: amountStr,
             link: checkoutSession.url,
             service: tradeLabel,
-            businessName: tradieConnect?.full_name || undefined,
+            businessName,
           },
         }),
       });
