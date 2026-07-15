@@ -574,8 +574,9 @@ describe('paymentFlows', () => {
       expect(callEdgeFunction).toHaveBeenCalledWith('create-job-payment-checkout', expect.objectContaining({
         paymentId: 'pay-pending-1',
         idempotencyKey: expect.any(String),
-        successUrl: 'https://app.connectradie.com.au/payments?payment=success&payment_id=pay-pending-1',
-        cancelUrl: 'https://app.connectradie.com.au/payments?payment=cancelled&payment_id=pay-pending-1',
+        // Capacitor-safe return routes (see project_payment_redirect fix):
+        successUrl: 'https://app.connectradie.com.au/payment-success?session_id={CHECKOUT_SESSION_ID}&payment_id=pay-pending-1',
+        cancelUrl: 'https://app.connectradie.com.au/payment-cancelled',
       }));
       expect(result).toEqual({ url: 'https://checkout.stripe.com/cs_test_existing' });
     });

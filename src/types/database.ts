@@ -88,6 +88,8 @@ export type Profile = {
   terms_accepted_at: string | null;
   tos_version: string | null;
   external_pay_allowed: boolean;
+  // Grandfathered flat commission rate (bps); NULL = normal tier rates.
+  platform_fee_override_bps: number | null;
   created_at: string;
 }
 
@@ -163,6 +165,41 @@ export type ClientContact = {
   // How this client pays. 'external' (default) = manual bank transfer / cash,
   // record-only invoices; 'stripe' = emailed card pay link.
   payment_method: 'stripe' | 'external';
+  created_at: string;
+  updated_at: string;
+}
+
+/** The fee schedule as data (pricing rebuild). Public read; service-role writes only. */
+export type PricingTier = {
+  id: string; // 'free' | 'pro' | 'pm'
+  name: string;
+  monthly_price_cents: number;
+  annual_monthly_price_cents: number | null;
+  rate_bps: number;
+  reduced_rate_bps: number;
+  reduced_threshold_cents: number;
+  fee_cap_cents: number;
+  direct_pay_allowed: boolean;
+  stripe_price_id_monthly: string | null;
+  stripe_price_id_annual: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Tier membership — webhook-only writes; users can never set their own tier. */
+export type TradieSubscription = {
+  id: string;
+  profile_id: string;
+  tier_id: string;
+  status: 'active' | 'past_due' | 'canceled' | 'incomplete';
+  billing_cycle: 'monthly' | 'annual' | null;
+  stripe_subscription_id: string | null;
+  stripe_customer_id: string | null;
+  current_period_end: string | null;
+  grace_until: string | null;
+  canceled_at: string | null;
   created_at: string;
   updated_at: string;
 }

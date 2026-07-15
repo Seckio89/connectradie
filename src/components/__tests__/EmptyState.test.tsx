@@ -73,7 +73,7 @@ describe('EmptyState', () => {
     );
 
     const wrapper = container.firstChild as HTMLElement;
-    expect(wrapper.className).toContain('py-8');
+    expect(wrapper.className).toContain('py-2');
   });
 
   it('applies full styles when compact is false', () => {
