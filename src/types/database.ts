@@ -45,6 +45,8 @@ export type Profile = {
   documents_url: string[] | null;
   rejection_reason: string | null;
   onboarding_completed: boolean;
+  // Progressive onboarding stage: 1 welcome · 2 simplified · 3 almost-there · 4 full.
+  onboarding_stage: number;
   is_premium: boolean;
   subscription_expiry: string | null;
   push_enabled: boolean;

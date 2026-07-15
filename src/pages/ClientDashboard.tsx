@@ -2301,11 +2301,13 @@ export default function ClientDashboard() {
                 View Payment History
               </Link>
             </div>
-            <div data-tour="onboarding-checklist">
-              <SectionErrorBoundary fallbackTitle="Onboarding checklist failed to load">
-                <OnboardingChecklist />
-              </SectionErrorBoundary>
-            </div>
+            {(profile?.onboarding_stage ?? 4) < 4 && (
+              <div data-tour="onboarding-checklist">
+                <SectionErrorBoundary fallbackTitle="Onboarding checklist failed to load">
+                  <OnboardingChecklist />
+                </SectionErrorBoundary>
+              </div>
+            )}
           </div>
         </div>
       </div>

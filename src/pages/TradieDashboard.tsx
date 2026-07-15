@@ -898,12 +898,14 @@ export default function TradieDashboard() {
           </div>
         )}
 
-        {/* Onboarding Checklist */}
-        <div className="mb-3 sm:mb-6" data-tour="onboarding-checklist">
-          <SectionErrorBoundary fallbackTitle="Onboarding checklist failed to load">
-            <OnboardingChecklist />
-          </SectionErrorBoundary>
-        </div>
+        {/* Onboarding Checklist — the "getting started" card; gone once fully onboarded (stage 4) */}
+        {(profile?.onboarding_stage ?? 4) < 4 && (
+          <div className="mb-3 sm:mb-6" data-tour="onboarding-checklist">
+            <SectionErrorBoundary fallbackTitle="Onboarding checklist failed to load">
+              <OnboardingChecklist />
+            </SectionErrorBoundary>
+          </div>
+        )}
 
         {/* First-Time Guidance — shown when tradie has no jobs and no availability */}
         {jobs.length === 0 && slots.length === 0 && !slotsLoading && (
