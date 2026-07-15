@@ -5,12 +5,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState } from 'react';
-import { Loader2, Send, Copy, CheckCircle2, Check, Sparkles, FileText, Repeat } from 'lucide-react';
+import { Loader2, Send, Copy, CheckCircle2, Check, Sparkles, FileText, Repeat, Plus } from 'lucide-react';
 import Modal from './Modal';
 import QuoteEstimator from './QuoteEstimator';
 import { supabase } from '../lib/supabase';
 import { createRecurringJob, calculateNextDueDate, FREQ_WEEKLY, FREQ_FORTNIGHTLY } from '../lib/recurringJobs';
 import { proseInputProps } from '../lib/proseInput';
+import { composeDescription } from '../lib/jobDescription';
 import type { ClientContact } from '../types/database';
 
 const FREQUENCIES = [
@@ -18,6 +19,12 @@ const FREQUENCIES = [
   { key: 'fortnightly', label: 'Fortnightly', months: FREQ_FORTNIGHTLY },
   { key: 'monthly', label: 'Monthly', months: 1 },
   { key: 'quarterly', label: 'Quarterly', months: 3 },
+];
+
+// Common cleaning tasks — tick to add as scope bullets (cleaning jobs only).
+const CLEANING_TASKS = [
+  'Floor mopping', 'Vacuuming', 'Bathroom clean', 'Kitchen clean',
+  'Rubbish removal', 'Window cleaning', 'Dusting surfaces', 'Empty bins', 'Oven clean',
 ];
 
 // Lightweight trade categorisation for the recurring service record.
@@ -53,8 +60,23 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState('weekly');
   const [consumables, setConsumables] = useState<'client' | 'tradie_billed'>('client');
+  const [siteNotes, setSiteNotes] = useState('');
 
   const firstName = contact.full_name.split(' ')[0] || 'them';
+
+  // Cleaning jobs get a quick tick-list that composes the description into bullets.
+  const isCleaning = /clean/i.test(title);
+  const norm = (s: string) => s.replace(/^[••\-*]\s*/, '').trim().toLowerCase();
+  const taskActive = (task: string) =>
+    description.split('\n').some((l) => norm(l) === task.toLowerCase());
+  const toggleTask = (task: string) => {
+    setDescription((prev) => {
+      const lines = prev.split('\n').map((l) => l.trim()).filter(Boolean);
+      const idx = lines.findIndex((l) => norm(l) === task.toLowerCase());
+      if (idx >= 0) { lines.splice(idx, 1); return lines.join('\n'); }
+      return [...lines, task].join('\n');
+    });
+  };
 
   const handleSend = async () => {
     if (!title.trim()) { setError('Add a short job title.'); return; }
@@ -63,6 +85,10 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
 
     setSending(true);
     setError('');
+
+    // Compose the stored description: scope lines (one per line) + optional site notes.
+    const scopeSource = description.trim() || title.trim();
+    const finalDescription = composeDescription(scopeSource.split('\n'), siteNotes);
 
     let createdJobId: string | null = null;
     try {
@@ -73,7 +99,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
           tradie_id: tradieId,
           client_contact_id: contact.id,
           title: title.trim(),
-          description: description.trim() || title.trim(),
+          description: finalDescription,
           status: 'pending',
           location_address: contact.address,
           latitude: contact.latitude,
@@ -107,7 +133,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
           client_id: contact.linked_profile_id ?? undefined,
           tradie_id: tradieId,
           trade_category: deriveTrade(title),
-          description: title.trim(),
+          description: finalDescription,
           frequency_months: freq.months,
           next_due_date: calculateNextDueDate(new Date(), freq.months).toISOString().split('T')[0],
           reminder_days_before: 14,
@@ -243,11 +269,34 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                   {...proseInputProps}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  rows={3}
-                  placeholder="What the job involves…"
+                  rows={4}
+                  placeholder={'One task per line, e.g.\nCourt side clean\nRubbish removal\nBathrooms cleaned'}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                 />
-                <p className="mt-1 text-xs text-gray-500">List the specific tasks you&rsquo;ll complete.</p>
+                <p className="mt-1 text-xs text-gray-500">One task per line — these show as a bullet-point scope of work.</p>
+                {isCleaning && (
+                  <div className="mt-2.5">
+                    <p className="text-xs font-medium text-gray-500 mb-1.5">Quick add cleaning tasks</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {CLEANING_TASKS.map((task) => {
+                        const active = taskActive(task);
+                        return (
+                          <button
+                            key={task}
+                            type="button"
+                            onClick={() => toggleTask(task)}
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                              active ? 'bg-warm-50 border-warm-300 text-warm-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}
+                          >
+                            {active ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                            {task}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -299,6 +348,21 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                   placeholder="Anything you'd like them to know…"
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Site notes <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <textarea
+                  {...proseInputProps}
+                  value={siteNotes}
+                  onChange={(e) => setSiteNotes(e.target.value)}
+                  rows={2}
+                  placeholder="Conditions & access — parking, gate code, pets… (not duties)"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                />
+                <p className="mt-1 text-xs text-gray-500">Kept separate from the scope of work.</p>
               </div>
 
               {/* Recurring service — turns the quote into an ongoing service */}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { descriptionPreview } from '../lib/jobDescription';
 import {
   Zap,
   MapPin,
@@ -1511,8 +1512,13 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   </div>
                 </div>
 
-                {/* Description */}
-                <p className="text-sm text-gray-500 mb-3 line-clamp-2 leading-relaxed">{desc}</p>
+                {/* Description — short preview; full detail on the job page */}
+                {desc && (
+                  <p className="text-sm text-gray-500 mb-3 leading-relaxed">
+                    {descriptionPreview(desc, 60)}{' '}
+                    <span className="text-secondary-600 font-medium whitespace-nowrap">View details →</span>
+                  </p>
+                )}
 
                 {/* Details row */}
                 <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap text-xs text-gray-500">

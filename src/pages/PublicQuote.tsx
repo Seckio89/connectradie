@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Loader2, CheckCircle2, MapPin, ShieldCheck, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import JobDescription from '../components/JobDescription';
 
 interface QuoteView {
   status: string;
@@ -127,7 +128,7 @@ export default function PublicQuote() {
                   </p>
                 )}
                 {data.job.description && (
-                  <p className="mt-3 text-sm text-gray-600 whitespace-pre-line">{data.job.description}</p>
+                  <JobDescription text={data.job.description} className="mt-3" />
                 )}
               </div>
 

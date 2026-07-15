@@ -7,6 +7,7 @@ import { offlineAcceptJob } from '../lib/offlineSync';
 import { autoNameProject } from '../lib/projectAutoName';
 import { formatDate, checkLicenseExpired } from '../lib/utils';
 import { redactSensitiveInfo } from '../lib/redaction';
+import { descriptionPreview } from '../lib/jobDescription';
 import { sendNotification } from '../lib/notificationService';
 import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
 import { useToast } from '../hooks/useToast';
@@ -932,7 +933,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                                       </span>
                                     </div>
                                     <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-                                      {redactSensitiveInfo(job.description.replace(/^\[[^\]]+\]\s*/, '').split('\n')[0], true)}
+                                      {descriptionPreview(redactSensitiveInfo(job.description, true), 60)}
                                     </p>
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
                                       {(() => {
@@ -1055,7 +1056,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                     </div>
 
                     <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-                      {redactSensitiveInfo(job.description.replace(/^\[[^\]]+\]\s*/, '').split('\n')[0], true)}
+                      {descriptionPreview(redactSensitiveInfo(job.description, true), 60)}
                     </p>
 
                     {/* ── Metadata row ── */}
