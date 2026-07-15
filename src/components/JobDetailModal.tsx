@@ -636,27 +636,36 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
           <div className="bg-white border border-gray-200 rounded-xl p-4">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Scope of Work</p>
             {descriptionLines.length > 1 ? (
-              <ol className="list-decimal list-inside space-y-1.5">
+              <ul className="space-y-1.5">
                 {descriptionLines.map((line, i) => (
-                  <li key={i} className="text-sm text-gray-700 leading-relaxed">{line}</li>
+                  <li key={i} className="flex items-start gap-2 text-sm text-gray-700 leading-relaxed">
+                    <span className="mt-[0.5em] w-1.5 h-1.5 rounded-full bg-secondary-400 flex-shrink-0" />
+                    <span>{line}</span>
+                  </li>
                 ))}
-              </ol>
+              </ul>
             ) : (
               <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{description}</p>
             )}
           </div>
         )}
 
-        {/* ── Internal notes (tradie-only) — conditions, assumptions, pricing
-               rationale. Collapsed by default; never shown to the client
-               (public-quote doesn't return jobs.notes, and this is role-gated). ── */}
+        {/* ── Job notes & conditions (tradie-side: owner, employees, subcontractors) —
+               structured so a worker can read it at the job site. Never shown to the
+               client (public-quote doesn't return jobs.notes, and this is role-gated). ── */}
         {isTradie && job.notes && (
-          <details className="bg-white border border-gray-200 rounded-xl p-4">
-            <summary className="text-xs font-semibold text-gray-500 uppercase tracking-wide cursor-pointer select-none">
-              Internal notes · not shown to client
-            </summary>
-            <FormattedNotes text={job.notes} className="mt-2 space-y-1" />
-          </details>
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Job notes &amp; conditions <span className="font-normal normal-case text-gray-400">· not shown to client</span>
+            </p>
+            <FormattedNotes text={job.notes} className="space-y-1" />
+          </div>
+        )}
+        {isTradie && job.access_instructions && (
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Access</p>
+            <FormattedNotes text={job.access_instructions} className="space-y-1" />
+          </div>
         )}
 
         {/* ── Service Schedule (recurring only) ── */}
