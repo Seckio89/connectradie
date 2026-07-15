@@ -247,6 +247,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                   placeholder="What the job involves…"
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                 />
+                <p className="mt-1 text-xs text-gray-500">List the specific tasks you&rsquo;ll complete.</p>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -272,6 +273,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                     className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
+                <p className="mt-1 text-xs text-gray-500">Enter your total price including labour and materials.</p>
                 {showEstimator && (
                   <div className="mt-3">
                     <QuoteEstimator
@@ -314,6 +316,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${isRecurring ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
                 </div>
+                <p className="text-xs text-gray-500 mt-1">Turn on for regular clients you visit weekly or fortnightly.</p>
                 {isRecurring && (
                   <div className="mt-3 space-y-2">
                     <p className="text-xs text-gray-500">

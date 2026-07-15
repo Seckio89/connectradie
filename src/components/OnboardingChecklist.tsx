@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, User, MapPin, Search, Camera, FileText, Calendar, CreditCard, ChevronRight, X, Loader2, Shield, PartyPopper } from 'lucide-react';
+import { CheckCircle2, User, MapPin, Search, Camera, FileText, Calendar, CreditCard, ChevronRight, X, Loader2, Shield, PartyPopper, UserPlus, Briefcase } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,6 +18,8 @@ interface ChecklistStep {
 export default function OnboardingChecklist() {
   const [hasJobs, setHasJobs] = useState(false);
   const [hasAvailability, setHasAvailability] = useState(false);
+  const [hasClients, setHasClients] = useState(false);
+  const [hasTradieJobs, setHasTradieJobs] = useState(false);
   const [dismissed, setDismissed] = useState(() => {
     return localStorage.getItem('onboarding_checklist_dismissed') === 'true';
   });
@@ -96,12 +98,14 @@ export default function OnboardingChecklist() {
     }
 
     if (profile?.role === 'tradie') {
-      const { count } = await supabase
-        .from('availability_slots')
-        .select('id', { count: 'exact', head: true })
-        .eq('tradie_id', user.id)
-        .eq('status', 'available');
-      setHasAvailability((count ?? 0) > 0);
+      const [availRes, clientRes, jobRes] = await Promise.all([
+        supabase.from('availability_slots').select('id', { count: 'exact', head: true }).eq('tradie_id', user.id).eq('status', 'available'),
+        supabase.from('client_contacts').select('id', { count: 'exact', head: true }).eq('owner_id', user.id),
+        supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('tradie_id', user.id),
+      ]);
+      setHasAvailability((availRes.count ?? 0) > 0);
+      setHasClients((clientRes.count ?? 0) > 0);
+      setHasTradieJobs((jobRes.count ?? 0) > 0);
     }
 
     setLoading(false);
@@ -237,6 +241,22 @@ export default function OnboardingChecklist() {
           if (calEl) calEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
       },
+    },
+    {
+      id: 'first-client',
+      label: 'Add your first client',
+      description: hasClients ? 'Client added' : 'Save a client so you can quote them and track their jobs',
+      icon: UserPlus,
+      complete: hasClients,
+      action: () => navigate('/clients'),
+    },
+    {
+      id: 'first-job',
+      label: 'Create your first job',
+      description: hasTradieJobs ? 'Job created' : 'Quote a client or take on a job to get going',
+      icon: Briefcase,
+      complete: hasTradieJobs,
+      action: () => navigate('/clients'),
     },
     {
       id: 'payment',

@@ -43,6 +43,8 @@ import type { LucideIcon } from 'lucide-react';
 import type { Notification } from '../types/database';
 import SubscriptionModal from './SubscriptionModal';
 import PlatformUpdateBanner from './PlatformUpdateBanner';
+import HelpButton from './help/HelpButton';
+import PageHelpCard from './help/PageHelpCard';
 import { isPro } from '../lib/subscription';
 
 function relativeTime(dateStr: string): string {
@@ -809,6 +811,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex-1" />
 
             <div className="flex items-center gap-3">
+              <HelpButton />
               <div className="relative" ref={notificationRef} data-tour="notifications">
                 <button
                   onClick={() => {
@@ -1055,6 +1058,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         <main id="main-content" className="px-4 py-3 sm:p-6 lg:p-8 flex-1 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-8">
           <PlatformUpdateBanner />
+          <PageHelpCard />
           {children}
         </main>
 

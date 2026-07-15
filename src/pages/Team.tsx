@@ -778,12 +778,12 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
           ) : activeTab === 'active' ? (
             activeTeam.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                  <UserCheck className="w-8 h-8 text-gray-300" />
+                <div className="w-16 h-16 bg-secondary-50 rounded-2xl flex items-center justify-center mb-4">
+                  <UserCheck className="w-8 h-8 text-secondary-400" />
                 </div>
-                <h3 className="font-semibold text-gray-700 mb-1">No active team members yet</h3>
-                <p className="text-sm text-gray-400 max-w-xs">
-                  When you approve a team request, they'll appear here.
+                <h3 className="font-semibold text-gray-800 mb-1">Your team starts here</h3>
+                <p className="text-sm text-gray-500 max-w-xs">
+                  Approve a join request and your workers appear here, ready to be assigned to jobs.
                 </p>
               </div>
             ) : (
