@@ -1,5 +1,10 @@
 {
   "rewrites": [
+    {
+      "source": "/quote/:token",
+      "missing": [{ "type": "query", "key": "raw" }],
+      "destination": "/api/quote-og?token=:token"
+    },
     { "source": "/((?!.*\\.).*)", "destination": "/index.html" }
   ],
   "headers": [

@@ -20,7 +20,7 @@ interface QuoteView {
     proposedStartDate: string | null;
   };
   job: { title: string | null; description: string | null; address: string | null };
-  tradie: { name: string | null; business: string | null };
+  tradie: { name: string | null; business: string | null; avatarUrl?: string | null };
 }
 
 function formatPrice(q: QuoteView['quote']): string {
@@ -40,6 +40,7 @@ export default function PublicQuote() {
   const [error, setError] = useState('');
   const [accepting, setAccepting] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -84,13 +85,23 @@ export default function PublicQuote() {
   };
 
   const businessName = data?.tradie.business || data?.tradie.name || 'Your tradie';
+  const avatarUrl = data?.tradie.avatarUrl;
+  const showAvatar = !!avatarUrl && /^https?:\/\//.test(avatarUrl) && !avatarFailed;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white border-b border-gray-100">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 h-16 flex items-center">
-          <Link to="/" className="text-xl font-extrabold tracking-tight text-black">
-            Connec<span className="text-warm-500">Tradie</span>
+          <Link to="/" aria-label="ConnecTradie" className="flex items-center">
+            <img
+              src="/brand/connectradie-wordmark.png"
+              alt="ConnecTradie"
+              className="h-7 w-auto"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'inline'; }}
+            />
+            <span className="hidden text-xl font-extrabold tracking-tight text-black">
+              Connec<span className="text-warm-500">Tradie</span>
+            </span>
           </Link>
         </div>
       </header>
@@ -109,13 +120,20 @@ export default function PublicQuote() {
           </div>
         ) : data ? (
           <div className="space-y-5">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center flex-shrink-0">
-                <span className="text-lg font-bold text-secondary-800">{businessName.charAt(0).toUpperCase()}</span>
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">You’ve received a quote</p>
-                <h1 className="text-2xl font-bold text-gray-900 truncate">{businessName}</h1>
+            {/* Sender header — reads like the top of a document from the business */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center flex-shrink-0">
+                  {showAvatar ? (
+                    <img src={avatarUrl!} alt="" className="w-full h-full object-cover" onError={() => setAvatarFailed(true)} />
+                  ) : (
+                    <span className="text-xl font-bold text-secondary-800">{businessName.charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wide mb-0.5">You’ve received a quote from</p>
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight break-words">{businessName}</h1>
+                </div>
               </div>
             </div>
 
@@ -171,16 +189,27 @@ export default function PublicQuote() {
               </div>
             )}
 
-            <div className="flex items-start gap-2 text-xs text-gray-500 bg-white border border-gray-200 rounded-xl p-4">
-              <ShieldCheck className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-600" />
-              <span>
-                Want to track this job, message {businessName}, and pay securely?{' '}
-                <Link to="/register" className="text-emerald-600 font-medium hover:underline">
-                  Create a free ConnecTradie account
-                </Link>{' '}
-                — optional.
-              </span>
+            <div className="bg-white border border-gray-200 rounded-2xl p-5">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-900">Track &amp; pay securely — optional</p>
+                  <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                    Create a free account to message {businessName}, follow the job, and pay through
+                    protected Stripe escrow. No cost, no obligation.
+                  </p>
+                  <Link to="/register" className="inline-flex items-center gap-1 mt-2.5 text-sm font-semibold text-emerald-600 hover:text-emerald-700">
+                    Create a free account <span aria-hidden="true">→</span>
+                  </Link>
+                </div>
+              </div>
             </div>
+
+            <p className="text-center text-[11px] text-gray-400 pt-1">
+              Sent securely through <span className="font-semibold text-gray-500">ConnecTradie</span> · Australian tradie marketplace
+            </p>
           </div>
         ) : null}
       </main>

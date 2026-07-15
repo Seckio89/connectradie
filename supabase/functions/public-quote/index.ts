@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: tradie } = await supabase
       .from("profiles")
-      .select("full_name, email")
+      .select("full_name, email, avatar_url")
       .eq("id", quote.tradie_id)
       .maybeSingle();
 
@@ -164,6 +164,7 @@ Deno.serve(async (req: Request) => {
       tradie: {
         name: tradie?.full_name ?? null,
         business: td?.business_name ?? null,
+        avatarUrl: tradie?.avatar_url ?? null,
       },
     });
   } catch (err) {
