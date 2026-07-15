@@ -4,8 +4,9 @@ import {
   MapPin, User, Calendar, Phone, Mail, CheckCircle2,
   Send, ChevronDown, ChevronUp, Repeat, Image,
   Zap, Users, Key, Eye, EyeOff,
-  DollarSign, Shield, Camera, Plus, Check,
+  DollarSign, Shield, Camera, Plus, Check, Maximize2,
 } from 'lucide-react';
+import FormattedNotes from './FormattedNotes';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Job, Quote } from '../types/database';
@@ -165,6 +166,7 @@ export default function JobManagementModal({
   const [quote, setQuote] = useState<QuoteData | null>(null);
   const [payment, setPayment] = useState<PaymentData | null>(null);
   const [notes, setNotes] = useState('');
+  const [showNotesFull, setShowNotesFull] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [priority, setPriority] = useState('normal');
   const [isDelayed, setIsDelayed] = useState(false);
@@ -1282,15 +1284,58 @@ export default function JobManagementModal({
 
                 {/* ── Your Notes ── */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Your Notes</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Your Notes</label>
+                    {notes.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => setShowNotesFull(true)}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-secondary-600 hover:text-secondary-700"
+                      >
+                        <Maximize2 className="w-3.5 h-3.5" /> View full
+                      </button>
+                    )}
+                  </div>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Add private notes about this job..."
-                    rows={2}
+                    rows={3}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 resize-none"
                   />
+                  {notes.trim() && (
+                    <p className="mt-1 text-[11px] text-gray-400">Long notes? Tap “View full” to read them all.</p>
+                  )}
                 </div>
+
+                {/* Full-screen notes reader — long auto-generated notes (assumptions,
+                    pricing rationale) don't fit the small box, so open them large
+                    with bullets rendered from dashes. */}
+                {showNotesFull && (
+                  <div
+                    className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 sm:p-4"
+                    onClick={() => setShowNotesFull(false)}
+                  >
+                    <div
+                      className="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl h-[85vh] sm:h-auto sm:max-h-[85vh] flex flex-col"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
+                        <h3 className="text-base font-semibold text-gray-900">Your notes</h3>
+                        <button
+                          onClick={() => setShowNotesFull(false)}
+                          aria-label="Close notes"
+                          className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-50"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+                      <div className="flex-1 overflow-y-auto px-5 py-4">
+                        <FormattedNotes text={notes} className="space-y-1" />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* ── Preferences (collapsible) ── */}
                 <button

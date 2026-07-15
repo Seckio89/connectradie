@@ -28,6 +28,7 @@ import type { Job, JobMilestone, Quote } from '../types/database';
 import { insertNotification, type RecurringJob } from '../lib/recurringJobs';
 import { useSignedUrls } from '../hooks/useSignedUrl';
 import MilestoneEditor from './MilestoneEditor';
+import FormattedNotes from './FormattedNotes';
 import Modal from './Modal';
 import AvailabilityMiniCalendar from './AvailabilityMiniCalendar';
 
@@ -654,7 +655,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
             <summary className="text-xs font-semibold text-gray-500 uppercase tracking-wide cursor-pointer select-none">
               Internal notes · not shown to client
             </summary>
-            <p className="mt-2 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{job.notes}</p>
+            <FormattedNotes text={job.notes} className="mt-2 space-y-1" />
           </details>
         )}
 
