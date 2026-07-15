@@ -56,6 +56,34 @@ export default function Clients() {
     if (!toDelete) return;
     const target = toDelete;
     setToDelete(null);
+
+    // A contact's OFF-APP jobs block deletion: the FK would null
+    // client_contact_id, violating jobs_client_or_contact_check (a job must
+    // have some client). Dead quote-jobs get cleaned up first; real work
+    // history blocks removal with a clear reason instead of a generic error.
+    const { data: offAppJobs } = await supabase
+      .from('jobs')
+      .select('id, status')
+      .eq('client_contact_id', target.id)
+      .is('client_id', null);
+    const DEAD_STATUSES = ['pending', 'declined', 'cancelled', 'expired'];
+    const jobs = offAppJobs ?? [];
+    const activeJobs = jobs.filter((j) => !DEAD_STATUSES.includes(j.status));
+    if (activeJobs.length > 0) {
+      showToast(
+        `${target.full_name.split(' ')[0]} has ${activeJobs.length} active or completed job${activeJobs.length === 1 ? '' : 's'} — finish or cancel ${activeJobs.length === 1 ? 'it' : 'them'} before removing the client.`,
+        true,
+      );
+      return;
+    }
+    if (jobs.length > 0) {
+      const { error: jobsError } = await supabase.from('jobs').delete().in('id', jobs.map((j) => j.id));
+      if (jobsError) {
+        showToast('Could not remove this client’s old quotes. Please try again.', true);
+        return;
+      }
+    }
+
     const { error } = await supabase.from('client_contacts').delete().eq('id', target.id);
     if (error) {
       showToast('Could not remove client. Please try again.', true);
@@ -224,7 +252,7 @@ export default function Clients() {
         <ConfirmModal
           type="danger"
           title="Remove client"
-          message={`Remove ${toDelete.full_name} from your clients? This won’t affect any jobs already created.`}
+          message={`Remove ${toDelete.full_name} from your clients? Any old unaccepted quotes for them are removed too — completed work history is kept.`}
           confirmText="Remove"
           onConfirm={handleDelete}
           onCancel={() => setToDelete(null)}
