@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { formatDate, friendlyError } from '../lib/utils';
 import { supabase } from '../lib/supabase';
+import { sendJobPaymentLink } from '../lib/jobPaymentLink';
 import { useAuth } from '../contexts/AuthContext';
 import { isPro as checkIsPro } from '../lib/subscription';
 import { adjustQuotePrice } from '../lib/stripePayments';
@@ -258,6 +259,8 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
   }, [isOpen, job?.id, fetchMilestones]);
 
   const [statusError, setStatusError] = useState<string | null>(null);
+  // Off-app payment link (accepted one-off jobs for client contacts).
+  const [payLinkState, setPayLinkState] = useState<'idle' | 'sending' | 'sent'>('idle');
 
   const handleUpdateStatus = async (newStatus: Job['status']) => {
     if (!job || !user || statusLoading) return;
@@ -935,10 +938,37 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
         )}
 
         {isTradie && localStatus === 'accepted' && (
-          <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-700 font-medium rounded-xl border border-amber-200">
-            <Clock className="w-4 h-4" />
-            Awaiting Client Payment
-          </div>
+          job.client_contact_id && !job.client_id ? (
+            /* Off-app client — email them a Stripe payment link for the accepted amount. */
+            <button
+              onClick={async () => {
+                setPayLinkState('sending');
+                setStatusError(null);
+                const res = await sendJobPaymentLink(job.id);
+                if (res.ok) {
+                  setPayLinkState('sent');
+                } else {
+                  setPayLinkState('idle');
+                  setStatusError(res.error || 'Could not send the payment link.');
+                }
+              }}
+              disabled={payLinkState === 'sending'}
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+            >
+              {payLinkState === 'sending' ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
+              ) : payLinkState === 'sent' ? (
+                <><CheckCircle2 className="w-4 h-4" /> Payment link sent</>
+              ) : (
+                <><DollarSign className="w-4 h-4" /> Email Payment Link</>
+              )}
+            </button>
+          ) : (
+            <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-700 font-medium rounded-xl border border-amber-200">
+              <Clock className="w-4 h-4" />
+              Awaiting Client Payment
+            </div>
+          )
         )}
 
         {isTradie && localStatus === 'funded' && acceptedQuote?.requires_site_inspection && acceptedQuote.final_price == null && (

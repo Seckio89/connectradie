@@ -15,6 +15,7 @@ import SubmitQuoteModal from './SubmitQuoteModal';
 import ConfirmModal from './ConfirmModal';
 import TradieQuoteActions from './TradieQuoteActions';
 import { adjustQuotePrice, approvePriceReduction } from '../lib/stripePayments';
+import { sendJobPaymentLink } from '../lib/jobPaymentLink';
 import { useSignedUrls } from '../hooks/useSignedUrl';
 
 // ── Types ──
@@ -52,6 +53,8 @@ interface JobData {
   // 1 = legacy single-step flow, 2 = 3-stage estimate/visit/final/pay flow.
   // See docs/three-stage-quote-flow.md.
   flow_version: number;
+  // Off-app CRM contact (set with client_id null for email-only clients).
+  client_contact_id?: string | null;
   profiles?: { full_name: string; email: string; phone?: string } | null;
 }
 
@@ -166,6 +169,9 @@ export default function JobManagementModal({
   const [quote, setQuote] = useState<QuoteData | null>(null);
   const [payment, setPayment] = useState<PaymentData | null>(null);
   const [notes, setNotes] = useState('');
+  // Off-app payment link (accepted one-off jobs for client contacts).
+  const [payLinkState, setPayLinkState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [payLinkError, setPayLinkError] = useState('');
   const [showNotesFull, setShowNotesFull] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [priority, setPriority] = useState('normal');
@@ -709,7 +715,39 @@ export default function JobManagementModal({
                       </div>
                     </div>
                   )}
-                  {job.status === 'accepted' && (
+                  {job.status === 'accepted' && (job.client_contact_id && !job.client_id ? (
+                    /* Off-app client: they have no account to pay from — the tradie
+                       emails them a Stripe payment link for the accepted amount. */
+                    <div className="px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 space-y-2">
+                      <div className="flex items-center gap-3 text-emerald-800">
+                        <DollarSign className="w-4 h-4 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-semibold">Quote accepted — get paid</p>
+                          <p className="text-xs opacity-80">Email your client a secure card payment link for the quoted amount.</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          setPayLinkState('sending'); setPayLinkError('');
+                          const res = await sendJobPaymentLink(job.id);
+                          if (res.ok) setPayLinkState('sent');
+                          else { setPayLinkState('error'); setPayLinkError(res.error || 'Could not send the payment link.'); }
+                        }}
+                        disabled={payLinkState === 'sending'}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-lg text-sm font-semibold hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                      >
+                        {payLinkState === 'sending' ? (<><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>)
+                          : payLinkState === 'sent' ? (<><CheckCircle2 className="w-4 h-4" /> Payment link sent — resend</>)
+                          : (<><Send className="w-4 h-4" /> Email Payment Link</>)}
+                      </button>
+                      {payLinkState === 'sent' && (
+                        <p className="text-xs text-emerald-700">You'll be notified as soon as they pay — the job then starts automatically.</p>
+                      )}
+                      {payLinkState === 'error' && payLinkError && (
+                        <p className="text-xs text-red-600">{payLinkError}</p>
+                      )}
+                    </div>
+                  ) : (
                     <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 text-amber-700">
                       <Clock className="w-4 h-4 flex-shrink-0" />
                       <div>
@@ -717,7 +755,7 @@ export default function JobManagementModal({
                         <p className="text-xs opacity-80">Client accepted — waiting for Stripe payment</p>
                       </div>
                     </div>
-                  )}
+                  ))}
                   {job.status === 'funded' && (
                     <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50 text-green-700">
                       <CheckCircle2 className="w-4 h-4 flex-shrink-0" />

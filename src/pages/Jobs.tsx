@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Clock, Calendar, CheckCircle2, AlertCircle, Loader2, User, Star, Check, X as XIcon, ClipboardList, Zap, WifiOff, ShieldAlert, Settings, Users, MapPin, Repeat, ChevronDown } from 'lucide-react';
+import { Clock, Calendar, CheckCircle2, AlertCircle, Loader2, User, Star, Check, X as XIcon, ClipboardList, Zap, WifiOff, ShieldAlert, Settings, Users, MapPin, Repeat, ChevronDown, Send } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { offlineAcceptJob } from '../lib/offlineSync';
@@ -9,6 +9,7 @@ import { formatDate, checkLicenseExpired } from '../lib/utils';
 import { redactSensitiveInfo } from '../lib/redaction';
 import { descriptionPreview } from '../lib/jobDescription';
 import { sendNotification } from '../lib/notificationService';
+import { sendJobPaymentLink } from '../lib/jobPaymentLink';
 import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
 import { useToast } from '../hooks/useToast';
 import type { JobWithRelations, Quote } from '../types/database';
@@ -66,6 +67,22 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
   const [reviewedJobIds, setReviewedJobIds] = useState<string[]>([]);
   const [jobToDecline, setJobToDecline] = useState<JobWithRelations | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  // Off-app payment links: which job is sending, and which have been sent.
+  const [payLinkSending, setPayLinkSending] = useState<string | null>(null);
+  const [payLinkSent, setPayLinkSent] = useState<Set<string>>(new Set());
+
+  // Email an off-app client the Stripe payment link for their accepted job.
+  const handleSendPayLink = async (job: JobWithRelations) => {
+    setPayLinkSending(job.id);
+    const res = await sendJobPaymentLink(job.id);
+    setPayLinkSending(null);
+    if (res.ok) {
+      setPayLinkSent((prev) => new Set(prev).add(job.id));
+      showToast(`Payment link emailed${res.emailedTo ? ` to ${res.emailedTo}` : ''}`);
+    } else {
+      showToast(res.error || 'Could not send the payment link.', true);
+    }
+  };
   const [showVerificationGate, setShowVerificationGate] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState<string | null>(null);
   const [gateReason, setGateReason] = useState<'unverified' | 'expired'>('unverified');
@@ -1168,11 +1185,32 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                   )}
 
                   {isTradie && job.status === 'accepted' && (
-                    <div className="px-5 pb-4 pt-1 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-medium">
-                        <Clock className="w-3.5 h-3.5" />
-                        Awaiting client payment
-                      </span>
+                    <div className="px-5 pb-4 pt-1 flex items-center gap-2 flex-wrap border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                      {job.client_contact_id && !job.client_id ? (
+                        /* Off-app client — no account to pay from; email them a
+                           Stripe payment link for the accepted quote amount. */
+                        <>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleSendPayLink(job); }}
+                            disabled={payLinkSending === job.id}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 text-sm font-medium transition-colors"
+                          >
+                            {payLinkSending === job.id
+                              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sending…</>
+                              : payLinkSent.has(job.id)
+                                ? <><CheckCircle2 className="w-3.5 h-3.5" /> Resend payment link</>
+                                : <><Send className="w-3.5 h-3.5" /> Email payment link</>}
+                          </button>
+                          {payLinkSent.has(job.id) && (
+                            <span className="text-xs text-gray-500">Link sent — you'll be notified when they pay.</span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-medium">
+                          <Clock className="w-3.5 h-3.5" />
+                          Awaiting client payment
+                        </span>
+                      )}
                     </div>
                   )}
 

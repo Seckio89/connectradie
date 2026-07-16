@@ -4,17 +4,23 @@ import Stripe from "npm:stripe@14.21.0";
 import { calculatePlatformFee, calculateProcessingFeeCents, resolveTradieTier } from "../_shared/pricing.ts";
 
 /*
-  invoice-contact — bill an OFF-APP client_contact for a recurring service.
+  invoice-contact — bill an OFF-APP client_contact.
 
-  Two modes, chosen by the contact's payment_method:
+  RECURRING mode (body.recurringJobId) — bill visits on an ongoing service.
+  Two sub-modes, chosen by the contact's payment_method:
    • stripe   → hosted Stripe Checkout (destination charge to the tradie's Connect
                 account, escrow-protected). Contact gets an emailed pay link.
    • external → record-only invoice (no Stripe). The tradie is paid off-platform
                 (bank transfer / cash) and marks it paid via mark-invoice-paid.
                 Contact gets an emailed tax invoice with the tradie's bank details.
+  Records a recurring_invoices row; stripe-webhook marks Stripe ones paid by
+  stripe_checkout_session_id.
 
-  Both record a recurring_invoices row against client_contact_id. The existing
-  stripe-webhook marks the STRIPE ones paid by stripe_checkout_session_id.
+  ONE-OFF mode (body.jobId) — email a payment link for an accepted one-off job.
+  Off-app clients have no account, so they can't Accept & Pay in-app; this mints
+  a destination-charge Checkout for the accepted quote amount, records a
+  payments row (payment_type job_funding), and emails the link. The existing
+  stripe-webhook completes the payment and flips the job to in_progress.
 
   Browser-called (token-gated), deploy WITHOUT gateway JWT:
     supabase functions deploy invoice-contact --no-verify-jwt
@@ -65,12 +71,165 @@ Deno.serve(async (req: Request) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
     if (authError || !user) return json({ error: "Unauthorized" }, 401);
 
-    let body: { recurringJobId?: string; sessionsCount?: number; note?: string };
+    let body: { recurringJobId?: string; sessionsCount?: number; note?: string; jobId?: string };
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
 
-    const { recurringJobId, sessionsCount, note } = body;
-    if (!recurringJobId) return json({ error: "Missing recurringJobId" }, 400);
+    const { recurringJobId, sessionsCount, note, jobId } = body;
+    if (!recurringJobId && !jobId) return json({ error: "Missing recurringJobId or jobId" }, 400);
     const count = Math.max(1, Math.min(Number(sessionsCount) || 1, 60));
+
+    // ─── ONE-OFF JOB payment link ────────────────────────────────────────────
+    // The off-app client accepted a quote but has no account to Accept & Pay
+    // from. Mint a destination-charge Checkout for the accepted amount, record
+    // a payments row, and email the link. stripe-webhook (payment_type
+    // job_funding) completes the payment and flips the job to in_progress.
+    if (jobId && !recurringJobId) {
+      const { data: oneOff } = await supabase
+        .from("jobs")
+        .select("id, title, status, client_contact_id, tradie_id")
+        .eq("id", jobId)
+        .maybeSingle();
+      if (!oneOff) return json({ error: "Job not found" }, 404);
+      if (user.id !== oneOff.tradie_id) return json({ error: "Not your job" }, 403);
+      if (!oneOff.client_contact_id) {
+        return json({ error: "This is an on-app job — the client pays from their own account" }, 400);
+      }
+      if (!["accepted", "in_progress"].includes(oneOff.status)) {
+        return json({ error: "The client needs to accept the quote before you can send a payment link" }, 400);
+      }
+
+      // The amount is the accepted quote's price.
+      const { data: acceptedQuote } = await supabase
+        .from("quotes")
+        .select("firm_price, price_min")
+        .eq("job_id", oneOff.id)
+        .eq("status", "accepted")
+        .maybeSingle();
+      const jobTotal = Number(acceptedQuote?.firm_price ?? acceptedQuote?.price_min) || 0;
+      if (jobTotal <= 0) return json({ error: "No accepted quote with a price on this job" }, 400);
+      const jobTotalCents = Math.round(jobTotal * 100);
+
+      const { data: oneOffContact } = await supabase
+        .from("client_contacts")
+        .select("full_name, email, payment_method")
+        .eq("id", oneOff.client_contact_id)
+        .maybeSingle();
+      if (!oneOffContact) return json({ error: "Client not found" }, 404);
+      if ((oneOffContact.payment_method || "external") === "external") {
+        return json({ error: "This client pays outside the app — record the payment from Payouts, or switch them to Stripe on their client page" }, 400);
+      }
+      if (!oneOffContact.email) {
+        return json({ error: "This client has no email on file — add one to send a payment link" }, 400);
+      }
+
+      const { data: oneOffTradie } = await supabase
+        .from("profiles")
+        .select("stripe_connect_account_id, stripe_connect_onboarding_complete, full_name")
+        .eq("id", oneOff.tradie_id)
+        .maybeSingle();
+      const { data: oneOffDetails } = await supabase
+        .from("tradie_details")
+        .select("subscription_tier, business_name")
+        .eq("profile_id", oneOff.tradie_id)
+        .maybeSingle();
+      const oneOffDestination = oneOffTradie?.stripe_connect_onboarding_complete ? oneOffTradie.stripe_connect_account_id : null;
+      if (!oneOffDestination) {
+        return json({ error: "Finish your payment setup (Payouts → Stripe) before sending a payment link." }, 409);
+      }
+
+      const oneOffTier = resolveTradieTier(oneOffDetails?.subscription_tier);
+      const oneOffPlatformFee = Math.round(calculatePlatformFee(jobTotal, oneOffTier) * 100);
+      const oneOffProcessingFee = calculateProcessingFeeCents(jobTotalCents);
+      const oneOffLabel = (oneOff.title || "Job").trim();
+      const oneOffBusiness = oneOffDetails?.business_name || oneOffTradie?.full_name || "your tradie";
+      const oneOffFirstName = (oneOffContact.full_name || "there").split(" ")[0];
+
+      const allowedOriginOneOff = Deno.env.get("ALLOWED_ORIGIN") || "";
+      const siteUrlOneOff = Deno.env.get("SITE_URL") || (allowedOriginOneOff && allowedOriginOneOff !== "*" ? allowedOriginOneOff : "https://connectradie.com");
+      const stripeOneOff = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
+
+      const oneOffLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+        { price_data: { currency: "aud", product_data: { name: oneOffLabel }, unit_amount: jobTotalCents }, quantity: 1 },
+      ];
+      if (oneOffProcessingFee > 0) {
+        oneOffLineItems.push({ price_data: { currency: "aud", product_data: { name: "Secure Processing Fee" }, unit_amount: oneOffProcessingFee }, quantity: 1 });
+      }
+
+      const oneOffSession = await stripeOneOff.checkout.sessions.create({
+        customer_email: oneOffContact.email,
+        line_items: oneOffLineItems,
+        mode: "payment",
+        success_url: `${siteUrlOneOff}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${siteUrlOneOff}/payment-cancelled`,
+        payment_intent_data: {
+          application_fee_amount: oneOffPlatformFee + oneOffProcessingFee,
+          transfer_data: { destination: oneOffDestination },
+        },
+        metadata: {
+          type: "job_payment_link",
+          payment_type: "job_funding", // drives the webhook's job flip + tradie notification
+          routing: "destination",
+          job_id: oneOff.id,
+          client_contact_id: oneOff.client_contact_id,
+          tradie_id: oneOff.tradie_id ?? "",
+          platform_fee: String(oneOffPlatformFee),
+          processing_fee: String(oneOffProcessingFee),
+          tradie_tier: oneOffTier,
+        },
+      });
+
+      // The webhook completes this row by stripe_checkout_session_id. The payer
+      // has no profile (off-app), so the row anchors to the tradie.
+      const { error: payInsertErr } = await supabase.from("payments").insert({
+        profile_id: oneOff.tradie_id,
+        payment_type: "job_funding",
+        job_id: oneOff.id,
+        amount: jobTotalCents,
+        status: "pending",
+        stripe_checkout_session_id: oneOffSession.id,
+        processing_fee: oneOffProcessingFee,
+        platform_fee_cents: oneOffPlatformFee,
+        fee_tier: oneOffTier,
+        fee_calculated_at: new Date().toISOString(),
+        metadata: {
+          off_app: true,
+          routing: "destination",
+          client_contact_id: oneOff.client_contact_id,
+          payer_email: oneOffContact.email,
+          platform_fee: String(oneOffPlatformFee),
+        },
+      });
+      if (payInsertErr) {
+        console.error("invoice-contact one-off payments insert failed", payInsertErr);
+        return json({ error: "Failed to record the payment" }, 500);
+      }
+
+      let emailedOneOff = false;
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({
+            to: oneOffContact.email,
+            subject: `Payment for ${oneOffLabel} — ${fmtAud(jobTotal)}`,
+            body: `Hi ${oneOffFirstName}, ${oneOffBusiness} has sent you a secure payment link for "${oneOffLabel}" (${fmtAud(jobTotal)}). You can pay by card in a few seconds — no account needed.`,
+            notificationType: "INVOICE_RECEIVED",
+            metadata: {
+              amount: fmtAud(jobTotal),
+              link: oneOffSession.url,
+              service: oneOffLabel,
+              businessName: oneOffBusiness,
+            },
+          }),
+        });
+        emailedOneOff = true;
+      } catch (e) { console.error("invoice-contact: one-off email failed", e); }
+
+      return json({ total: jobTotal, stripePaymentUrl: oneOffSession.url, emailed: emailedOneOff, emailedTo: oneOffContact.email });
+    }
+
+    // ─── RECURRING service invoice (original mode) ─────────────────────────────
+    if (!recurringJobId) return json({ error: "Missing recurringJobId" }, 400);
 
     // 1. The off-app recurring service.
     const { data: job } = await supabase
