@@ -1111,7 +1111,19 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                     </div>
                   )}
 
-                  {isTradie && job.status === 'pending' && (
+                  {/* Off-app quote job (created BY this tradie for a client contact):
+                      acceptance belongs to the CLIENT via their emailed quote link —
+                      never show the tradie Accept/Decline on their own outgoing quote. */}
+                  {isTradie && job.status === 'pending' && job.client_contact_id && !job.client_id && (
+                    <div className="px-5 pb-4 pt-1 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-50 text-secondary-700 rounded-lg text-xs font-medium">
+                        <Clock className="w-3.5 h-3.5" />
+                        Waiting for your client to accept the quote
+                      </span>
+                    </div>
+                  )}
+
+                  {isTradie && job.status === 'pending' && !(job.client_contact_id && !job.client_id) && (
                     <div className="px-5 pb-4 pt-1 flex items-center gap-2 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
                       {job.budget_type === 'to_be_quoted' || job.budget_type === 'request_quote' ? (
                         myQuotes.has(job.id) ? (

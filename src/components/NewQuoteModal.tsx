@@ -162,6 +162,10 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
         .insert({
           tradie_id: tradieId,
           client_contact_id: contact.id,
+          // If this contact's email belongs to a registered account, deliver the
+          // job on-app too: it appears in THEIR dashboard where they can accept
+          // and pay through escrow. The emailed public-token link still works.
+          client_id: contact.linked_profile_id ?? null,
           title: title.trim(),
           description: finalDescription,
           notes: finalNotes || null,
