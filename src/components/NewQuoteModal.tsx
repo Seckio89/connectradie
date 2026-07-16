@@ -22,6 +22,29 @@ const FREQUENCIES = [
   { key: 'quarterly', label: 'Quarterly', months: 3 },
 ];
 
+// Per-cycle visit scheduling for recurring services (e.g. a weekly office
+// clean that needs Mon + Thu). Days map to JS getDay() numbers for day_of_week.
+const DAY_OPTS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAY_TO_DOW: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+const HOUR_OPTS = Array.from({ length: 13 }, (_, i) => i); // 0–12
+const MIN_OPTS = [0, 15, 30, 45];
+
+interface VisitSlot { day: string; hours: string; mins: string }
+
+// "3h" / "1h 30m" / "45m" / '' from a slot's hours+minutes.
+function slotDuration(s: VisitSlot): string {
+  const h = Number(s.hours) || 0, m = Number(s.mins) || 0;
+  if (!h && !m) return '';
+  return [h ? `${h}h` : '', m ? `${m}m` : ''].filter(Boolean).join(' ');
+}
+
+// "Mon (3h), Thu (1h 30m)" — a human summary of the visit slots.
+function scheduleSummary(slots: VisitSlot[]): string {
+  return slots.map((s) => { const d = slotDuration(s); return d ? `${s.day} (${d})` : s.day; }).join(', ');
+}
+
+const aud = (n: number) => `$${Math.round(n).toLocaleString('en-AU')}`;
+
 // Common cleaning tasks — tick to add as scope bullets (cleaning jobs only).
 const CLEANING_TASKS = [
   'Floor mopping', 'Vacuuming', 'Bathroom clean', 'Kitchen clean',
@@ -60,6 +83,9 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
   const [copied, setCopied] = useState(false);
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState('weekly');
+  const [visitsPerCycle, setVisitsPerCycle] = useState(1);
+  const [visitSlots, setVisitSlots] = useState<VisitSlot[]>([{ day: 'Mon', hours: '', mins: '' }]);
+  const [priceBasis, setPriceBasis] = useState<'per_visit' | 'per_cycle'>('per_visit');
   const [consumables, setConsumables] = useState<'client' | 'tradie_billed'>('client');
   // Tradie-only: site conditions, assumptions, pricing rationale. Stored on
   // jobs.notes — never in the description, never returned to the client.
@@ -67,6 +93,25 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
   const [emailFailReason, setEmailFailReason] = useState('');
 
   const firstName = contact.full_name.split(' ')[0] || 'them';
+
+  // Grow/shrink the per-visit rows to match the chosen visits-per-cycle count.
+  const setVisits = (n: number) => {
+    const count = Math.min(7, Math.max(1, n));
+    setVisitsPerCycle(count);
+    setVisitSlots((prev) => {
+      const next = [...prev];
+      while (next.length < count) next.push({ day: DAY_OPTS[next.length % 7], hours: '', mins: '' });
+      return next.slice(0, count);
+    });
+  };
+  const updateSlot = (i: number, patch: Partial<VisitSlot>) =>
+    setVisitSlots((prev) => prev.map((s, j) => (j === i ? { ...s, ...patch } : s)));
+
+  // Live per-visit / per-cycle figures derived from the entered price + basis.
+  const priceNum = parseFloat(price) || 0;
+  const freqLabel = FREQUENCIES.find((f) => f.key === frequency)?.label ?? 'Weekly';
+  const perVisitPrice = priceBasis === 'per_cycle' && visitsPerCycle > 0 ? priceNum / visitsPerCycle : priceNum;
+  const cyclePrice = priceBasis === 'per_visit' ? priceNum * visitsPerCycle : priceNum;
 
   // Cleaning jobs get a quick tick-list that composes the description into bullets.
   const isCleaning = /clean/i.test(title);
@@ -84,16 +129,30 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
 
   const handleSend = async () => {
     if (!title.trim()) { setError('Add a short job title.'); return; }
-    const priceNum = parseFloat(price);
-    if (!price || Number.isNaN(priceNum) || priceNum <= 0) { setError('Enter a valid price.'); return; }
+    if (!price || priceNum <= 0) { setError('Enter a valid price.'); return; }
 
     setSending(true);
     setError('');
 
-    // The stored description is the CLIENT-VISIBLE scope of work only.
-    // Internal notes go to jobs.notes (tradie-only).
-    const scopeSource = description.trim() || title.trim();
-    const finalDescription = composeDescription(scopeSource.split('\n'));
+    // The stored description is the CLIENT-VISIBLE scope of work only. For a
+    // recurring service the visit cadence + days are client-relevant, so they
+    // go here; the pricing basis / rationale stays in the tradie-only notes.
+    const scopeLines = (description.trim() || title.trim()).split('\n').map((l) => l.trim()).filter(Boolean);
+    if (isRecurring) {
+      scopeLines.push(`Recurring: ${freqLabel} · ${visitsPerCycle} visit${visitsPerCycle > 1 ? 's' : ''} per cycle`);
+      scopeLines.push(`Visit days: ${scheduleSummary(visitSlots)}`);
+    }
+    const finalDescription = composeDescription(scopeLines);
+
+    // Internal notes (tradie-only): fold in the recurring pricing basis + schedule.
+    let finalNotes = internalNotes.trim();
+    if (isRecurring) {
+      const basisLine = priceBasis === 'per_visit'
+        ? `Pricing: ${aud(perVisitPrice)}/visit × ${visitsPerCycle} = ${aud(cyclePrice)} per ${freqLabel.toLowerCase()} cycle`
+        : `Pricing: ${aud(cyclePrice)} per ${freqLabel.toLowerCase()} cycle (≈ ${aud(perVisitPrice)}/visit)`;
+      const block = `Recurring schedule: ${scheduleSummary(visitSlots)}\n${basisLine}`;
+      finalNotes = finalNotes ? `${finalNotes}\n\n${block}` : block;
+    }
 
     let createdJobId: string | null = null;
     try {
@@ -105,7 +164,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
           client_contact_id: contact.id,
           title: title.trim(),
           description: finalDescription,
-          notes: internalNotes.trim() || null,
+          notes: finalNotes || null,
           status: 'pending',
           location_address: contact.address,
           latitude: contact.latitude,
@@ -131,7 +190,9 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
       });
       if (quoteError) throw quoteError;
 
-      // 2b. Recurring: register an ongoing service (the price becomes per-visit).
+      // 2b. Recurring: register an ongoing service. agreed_price is stored
+      // per-visit (derived from the cycle total when priced per-cycle), and the
+      // first visit's weekday seeds day_of_week for scheduling.
       if (isRecurring) {
         const freq = FREQUENCIES.find((f) => f.key === frequency) ?? FREQUENCIES[0];
         await createRecurringJob({
@@ -146,7 +207,8 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
           is_active: true,
           original_job_id: createdJobId,
           location: contact.address ?? undefined,
-          agreed_price: priceNum,
+          agreed_price: Math.round(perVisitPrice),
+          day_of_week: DAY_TO_DOW[visitSlots[0]?.day] ?? undefined,
           consumables_provider: consumables,
         });
       }
@@ -417,18 +479,81 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Turn on for regular clients you visit weekly or fortnightly.</p>
                 {isRecurring && (
-                  <div className="mt-3 space-y-2">
-                    <p className="text-xs text-gray-500">
-                      The price above becomes the <span className="font-medium">per-visit</span> price. This creates an ongoing service you can track and re-bill.
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {FREQUENCIES.map((f) => (
-                        <button key={f.key} type="button" onClick={() => setFrequency(f.key)}
-                          className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                            frequency === f.key ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                          }`}>{f.label}</button>
+                  <div className="mt-3 space-y-3">
+                    {/* Frequency */}
+                    <div>
+                      <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Frequency</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {FREQUENCIES.map((f) => (
+                          <button key={f.key} type="button" onClick={() => setFrequency(f.key)}
+                            className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                              frequency === f.key ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}>{f.label}</button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Visits per cycle */}
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Visits per {freqLabel.toLowerCase()} cycle</p>
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={() => setVisits(visitsPerCycle - 1)} disabled={visitsPerCycle <= 1}
+                            aria-label="Fewer visits"
+                            className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40">−</button>
+                          <span className="w-6 text-center text-sm font-semibold text-gray-900 tabular-nums">{visitsPerCycle}</span>
+                          <button type="button" onClick={() => setVisits(visitsPerCycle + 1)} disabled={visitsPerCycle >= 7}
+                            aria-label="More visits"
+                            className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40">+</button>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-gray-400 mt-1">e.g. a weekly office clean with a full clean on Monday and a light one on Thursday.</p>
+                    </div>
+
+                    {/* Per-visit day + duration */}
+                    <div className="space-y-1.5">
+                      {visitSlots.map((s, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <span className="text-[11px] text-gray-500 w-12 flex-shrink-0">Visit {i + 1}</span>
+                          <select value={s.day} onChange={(e) => updateSlot(i, { day: e.target.value })} aria-label={`Visit ${i + 1} day`}
+                            className="flex-1 px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            {DAY_OPTS.map((d) => <option key={d} value={d}>{d}</option>)}
+                          </select>
+                          <select value={s.hours} onChange={(e) => updateSlot(i, { hours: e.target.value })} aria-label={`Visit ${i + 1} hours`}
+                            className="w-20 px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="">Hrs</option>
+                            {HOUR_OPTS.map((h) => <option key={h} value={h}>{h} h</option>)}
+                          </select>
+                          <select value={s.mins} onChange={(e) => updateSlot(i, { mins: e.target.value })} aria-label={`Visit ${i + 1} minutes`}
+                            className="w-20 px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="">Min</option>
+                            {MIN_OPTS.map((m) => <option key={m} value={m}>{m} m</option>)}
+                          </select>
+                        </div>
                       ))}
                     </div>
+
+                    {/* Price basis */}
+                    <div>
+                      <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">The price above is</p>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {([['per_visit', 'Per visit'], ['per_cycle', `Per ${freqLabel.toLowerCase()} cycle`]] as const).map(([key, label]) => (
+                          <button key={key} type="button" onClick={() => setPriceBasis(key)}
+                            className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                              priceBasis === key ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}>{label}</button>
+                        ))}
+                      </div>
+                      {priceNum > 0 && visitsPerCycle > 1 && (
+                        <p className="text-[11px] text-gray-500 mt-1.5">
+                          {priceBasis === 'per_visit'
+                            ? <>≈ <span className="font-medium text-gray-700">{aud(cyclePrice)}</span> per {freqLabel.toLowerCase()} cycle ({visitsPerCycle} × {aud(perVisitPrice)})</>
+                            : <>≈ <span className="font-medium text-gray-700">{aud(perVisitPrice)}</span> per visit ({aud(cyclePrice)} ÷ {visitsPerCycle})</>}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Consumables */}
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="text-[11px] text-gray-500">Consumables:</span>
                       {(['client', 'tradie_billed'] as const).map((c) => (
