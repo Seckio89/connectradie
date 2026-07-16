@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 
 /*
   estimate-quote (v2) — AI-assisted job pricing.
@@ -338,6 +338,33 @@ async function aiWork(req: EstimateRequest, apiKey: string): Promise<WorkEstimat
   };
 }
 
+// ── AI-estimate usage limiting ───────────────────────────────────────────────
+// First day of the current month at 00:00 UTC — the reset boundary. The client
+// counts against the SAME UTC boundary so its "N/10 remaining" matches this.
+function startOfMonthUTC(): string {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+}
+
+// Resolve the tradie's active tier ('free' | 'pro' | 'pm'). Paid tier holds
+// through the past-due grace window; anything else falls back to free.
+async function resolveTier(supabase: SupabaseClient, userId: string): Promise<"free" | "pro" | "pm"> {
+  const { data } = await supabase
+    .from("tradie_subscriptions")
+    .select("tier_id, status, grace_until")
+    .eq("profile_id", userId)
+    .neq("status", "canceled")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const row = data as { tier_id: string; status: string; grace_until: string | null } | null;
+  if (!row) return "free";
+  const tier = row.tier_id === "pro" || row.tier_id === "pm" ? row.tier_id : "free";
+  if (row.status === "active") return tier;
+  if (row.status === "past_due" && row.grace_until && new Date(row.grace_until).getTime() > Date.now()) return tier;
+  return "free";
+}
+
 Deno.serve(async (req: Request) => {
   const cors = corsFor(req);
   const json = (body: unknown, status = 200) =>
@@ -360,6 +387,42 @@ Deno.serve(async (req: Request) => {
     let body: EstimateRequest;
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
 
+    // ── Monthly AI-estimate cap (free tier) ───────────────────────────────────
+    // Authoritative check + record. Fail-open: if the usage tables aren't present
+    // yet or the lookup errors, don't block the estimate — the cap is a soft
+    // guardrail, not a hard paywall gate.
+    let usageLimit: number | null = null;
+    let usageUsed = 0;
+    try {
+      const tier = await resolveTier(supabase, user.id);
+      const { data: tierRow } = await supabase
+        .from("pricing_tiers")
+        .select("ai_estimates_monthly_limit")
+        .eq("id", tier)
+        .maybeSingle();
+      usageLimit = (tierRow as { ai_estimates_monthly_limit: number | null } | null)?.ai_estimates_monthly_limit ?? null;
+      if (usageLimit != null) {
+        const { count } = await supabase
+          .from("ai_estimate_usage")
+          .select("id", { count: "exact", head: true })
+          .eq("profile_id", user.id)
+          .gte("created_at", startOfMonthUTC());
+        usageUsed = count ?? 0;
+        if (usageUsed >= usageLimit) {
+          return json({
+            error: `You've used all ${usageLimit} free AI estimates this month. Upgrade to Pro for unlimited estimates, or enter your price manually.`,
+            limitReached: true,
+            limit: usageLimit,
+            used: usageUsed,
+            remaining: 0,
+          }, 429);
+        }
+      }
+    } catch (limitErr) {
+      console.warn("estimate-quote: usage-limit check skipped (failing open)", limitErr);
+      usageLimit = null;
+    }
+
     const e = econ(body.economics);
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
 
@@ -372,7 +435,23 @@ Deno.serve(async (req: Request) => {
       work = heuristicWork(body);
     }
 
-    return json(priceFrom(work, e, body, source));
+    const result = priceFrom(work, e, body, source);
+
+    // Record this run against the tradie's monthly allowance (best-effort).
+    try {
+      await supabase.from("ai_estimate_usage").insert({
+        profile_id: user.id,
+        used_photos: Array.isArray(body.images) && body.images.length > 0,
+      });
+    } catch (recErr) {
+      console.warn("estimate-quote: usage record failed", recErr);
+    }
+
+    const usage = usageLimit == null
+      ? { limit: null, used: null, remaining: null, unlimited: true }
+      : { limit: usageLimit, used: usageUsed + 1, remaining: Math.max(0, usageLimit - usageUsed - 1), unlimited: false };
+
+    return json({ ...result, usage });
   } catch (err) {
     console.error("estimate-quote error:", err);
     return json({ error: "An internal error occurred" }, 500);
