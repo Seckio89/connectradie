@@ -132,21 +132,27 @@ export default function Clients() {
             <span className="text-sm">Loading clients…</span>
           </div>
         ) : contacts.length === 0 ? (
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm px-6 py-12 sm:py-16 text-center">
-            <div className="w-14 h-14 rounded-full bg-secondary-50 flex items-center justify-center mx-auto mb-4">
-              <Users className="w-7 h-7 text-secondary-500" />
+          // Centre the empty-state card with flexbox so no global mobile margin
+          // rule (mobile-responsive.css) can shift it off to one side.
+          <div className="flex justify-center">
+            <div className="w-full max-w-md bg-white border border-gray-100 rounded-2xl shadow-sm px-6 py-12 sm:py-16 text-center">
+              <div className="w-14 h-14 rounded-full bg-secondary-50 flex items-center justify-center mx-auto mb-4">
+                <Users className="w-7 h-7 text-secondary-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Add your clients to start quoting</h3>
+              <p className="text-sm text-gray-600 mt-1.5">
+                Keep the people you already work with in one place, then send them professional
+                quotes by email and assign your team. Your clients don’t need a ConnecTradie account.
+              </p>
+              <div className="flex justify-center mt-6">
+                <button
+                  onClick={() => { setEditContact(null); setShowModal(true); }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 transition-colors"
+                >
+                  <Plus className="w-4 h-4" /> Add your first client
+                </button>
+              </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">Add your clients to start quoting</h3>
-            <p className="text-sm text-gray-600 max-w-md mx-auto mt-1.5">
-              Keep the people you already work with in one place, then send them professional
-              quotes by email and assign your team. Your clients don’t need a ConnecTradie account.
-            </p>
-            <button
-              onClick={() => { setEditContact(null); setShowModal(true); }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 mt-6 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 transition-colors"
-            >
-              <Plus className="w-4 h-4" /> Add your first client
-            </button>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12 text-sm text-gray-500">No clients match “{search}”.</div>
