@@ -767,6 +767,45 @@ async function handleEvent(event: Stripe.Event) {
     if (session.mode === 'payment' && session.payment_status === 'paid') {
       console.info(`Processing one-time payment checkout: session=${session.id}, payment_record=${session.metadata?.payment_record_id}`);
       try {
+        // ── AI Estimate Pack (one-time bonus credits) ──
+        // Grant the credits only now that payment succeeded. Idempotent on the
+        // payment_intent (unique) so a redelivered webhook can't double-grant.
+        if (session.metadata?.type === 'estimate_pack') {
+          const profileId = session.metadata.profile_id;
+          const credits = parseInt(session.metadata.credits || '20', 10) || 20;
+          const piId = typeof session.payment_intent === 'string' ? session.payment_intent : null;
+          if (profileId) {
+            const { data: inserted, error: packErr } = await supabase
+              .from('estimate_packs')
+              .upsert({
+                profile_id: profileId,
+                stripe_payment_intent_id: piId,
+                credits_purchased: credits,
+                credits_remaining: credits,
+                amount_cents: session.amount_total ?? 499,
+                status: 'active',
+                purchased_at: new Date().toISOString(),
+              }, { onConflict: 'stripe_payment_intent_id', ignoreDuplicates: true })
+              .select('id');
+
+            if (packErr) {
+              console.error('Error granting estimate pack:', packErr);
+            } else if (inserted && inserted.length > 0) {
+              console.info(`Estimate pack granted: ${credits} credits to ${profileId} (session ${session.id})`);
+              await supabase.from('notifications').insert({
+                user_id: profileId,
+                type: 'estimate_pack_purchased',
+                title: 'AI Estimate Pack added',
+                message: `${credits} bonus AI estimate credits have been added to your account. They don't expire.`,
+                read: false,
+              });
+            } else {
+              console.info(`Estimate pack already granted for PI ${piId}; skipping (idempotent).`);
+            }
+          }
+          return; // handled — skip the generic one-time-payment logic below
+        }
+
         // ── Site-visit call-out fee (3-stage flow) ──
         // The fee was routed to the tradie via the destination charge; here we just
         // flip the quote to site_visit_scheduled and notify both parties.

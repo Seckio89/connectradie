@@ -387,12 +387,14 @@ Deno.serve(async (req: Request) => {
     let body: EstimateRequest;
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
 
-    // ── Monthly AI-estimate cap (free tier) ───────────────────────────────────
-    // Authoritative check + record. Fail-open: if the usage tables aren't present
-    // yet or the lookup errors, don't block the estimate — the cap is a soft
-    // guardrail, not a hard paywall gate.
-    let usageLimit: number | null = null;
-    let usageUsed = 0;
+    // ── AI-estimate allowance: monthly free credits, then bought pack credits ──
+    // Order of spend: the month's free allowance first, then bonus pack credits
+    // (oldest pack first, consumed after a successful estimate). Fail-open: if
+    // the usage tables aren't present yet or a lookup errors, don't block.
+    let usageLimit: number | null = null;   // null = unlimited tier (Pro/PM)
+    let usageUsed = 0;                        // AI estimates already used this month
+    let packRemaining = 0;                    // bonus credits across active packs
+    let fundedBy: "monthly" | "pack" = "monthly";
     try {
       const tier = await resolveTier(supabase, user.id);
       const { data: tierRow } = await supabase
@@ -408,15 +410,28 @@ Deno.serve(async (req: Request) => {
           .eq("profile_id", user.id)
           .gte("created_at", startOfMonthUTC());
         usageUsed = count ?? 0;
-        if (usageUsed >= usageLimit) {
+
+        const { data: packs } = await supabase
+          .from("estimate_packs")
+          .select("credits_remaining")
+          .eq("profile_id", user.id)
+          .eq("status", "active");
+        packRemaining = (packs as { credits_remaining: number }[] | null ?? [])
+          .reduce((s, p) => s + (p.credits_remaining || 0), 0);
+
+        const monthlyLeft = usageLimit - usageUsed;
+        if (monthlyLeft <= 0 && packRemaining <= 0) {
+          // Out of both — steer to the pack purchase or a Pro upgrade.
           return json({
-            error: `You've used all ${usageLimit} free AI estimates this month. Upgrade to Pro for unlimited estimates, or enter your price manually.`,
+            error: "You're out of AI estimates this month.",
             limitReached: true,
+            outOfEstimates: true,
             limit: usageLimit,
-            used: usageUsed,
-            remaining: 0,
+            monthlyRemaining: 0,
+            packRemaining: 0,
           }, 429);
         }
+        fundedBy = monthlyLeft > 0 ? "monthly" : "pack";
       }
     } catch (limitErr) {
       console.warn("estimate-quote: usage-limit check skipped (failing open)", limitErr);
@@ -437,7 +452,8 @@ Deno.serve(async (req: Request) => {
 
     const result = priceFrom(work, e, body, source);
 
-    // Record this run against the tradie's monthly allowance (best-effort).
+    // Record this run in the audit ledger (best-effort). Every AI estimate is
+    // logged here regardless of funding source.
     try {
       await supabase.from("ai_estimate_usage").insert({
         profile_id: user.id,
@@ -447,9 +463,25 @@ Deno.serve(async (req: Request) => {
       console.warn("estimate-quote: usage record failed", recErr);
     }
 
+    // Only draw down a bonus pack credit once the estimate actually succeeded,
+    // and only when the month's free allowance is spent. Atomic + race-safe.
+    if (usageLimit != null && fundedBy === "pack") {
+      try {
+        const { data: consumed } = await supabase.rpc("consume_estimate_pack_credit", { p_profile_id: user.id });
+        if (consumed) packRemaining = Math.max(0, packRemaining - 1);
+      } catch (packErr) {
+        console.warn("estimate-quote: pack consume failed", packErr);
+      }
+    }
+
     const usage = usageLimit == null
-      ? { limit: null, used: null, remaining: null, unlimited: true }
-      : { limit: usageLimit, used: usageUsed + 1, remaining: Math.max(0, usageLimit - usageUsed - 1), unlimited: false };
+      ? { unlimited: true }
+      : {
+          unlimited: false,
+          limit: usageLimit,
+          monthlyRemaining: Math.max(0, usageLimit - (usageUsed + 1)),
+          packRemaining,
+        };
 
     return json({ ...result, usage });
   } catch (err) {

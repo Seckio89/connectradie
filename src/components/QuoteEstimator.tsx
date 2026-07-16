@@ -12,7 +12,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Loader2, Camera, X, AlertTriangle, Check, Info, ChevronDown, HelpCircle, Lock } from 'lucide-react';
+import { Sparkles, Loader2, Camera, X, AlertTriangle, Check, Info, ChevronDown, HelpCircle, Lock, Package } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { calculateDistance } from '../hooks/useGeolocation';
@@ -171,10 +171,11 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<WorkEstimate | null>(null);
-  // Monthly AI-estimate allowance. null limit = unlimited (Pro/PM); aiUsage null
-  // = not yet loaded / couldn't resolve (then no gating is shown — fail open).
-  const [aiUsage, setAiUsage] = useState<{ limit: number | null; used: number } | null>(null);
-  const [aiBlocked, setAiBlocked] = useState<string | null>(null);
+  // AI-estimate allowance: monthly free credits + non-expiring pack credits.
+  // limit null = unlimited (Pro/PM); aiUsage null = not resolved (fail open, no gate).
+  const [aiUsage, setAiUsage] = useState<{ limit: number | null; used: number; packRemaining: number } | null>(null);
+  const [aiBlocked, setAiBlocked] = useState(false);
+  const [buyingPack, setBuyingPack] = useState(false);
 
   // Prefill economics from the tradie's profile once loaded.
   useEffect(() => {
@@ -233,11 +234,13 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   const visits = multiVisit ? Math.min(60, Math.max(1, Number(visitCount) || 1)) : 1;
   const orderedDays = DAYS.filter((d) => preferredDays.has(d)); // keeps Mon→Sun order
 
-  // Remaining free AI estimates this month (null when unlimited or unknown).
-  const aiRemaining = aiUsage && aiUsage.limit != null ? Math.max(0, aiUsage.limit - aiUsage.used) : null;
-  const aiLimitReached = aiRemaining !== null && aiRemaining <= 0;
+  // Balance = monthly free remaining + non-expiring pack credits.
+  const aiMonthlyRemaining = aiUsage && aiUsage.limit != null ? Math.max(0, aiUsage.limit - aiUsage.used) : null;
+  const aiPackRemaining = aiUsage ? aiUsage.packRemaining : 0;
+  const aiTotalRemaining = aiMonthlyRemaining === null ? null : aiMonthlyRemaining + aiPackRemaining;
+  const aiLimitReached = aiTotalRemaining !== null && aiTotalRemaining <= 0;
 
-  // Resolve the tradie's tier + this month's AI-estimate usage for the counter.
+  // Resolve the tradie's tier + this month's usage + pack credits for the counter.
   // Mirrors the edge function: paid tier through grace, UTC month boundary.
   const loadAiUsage = useCallback(async () => {
     if (!user) return;
@@ -262,21 +265,44 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
         .eq('id', tier)
         .maybeSingle();
       const limit = (tierRow as { ai_estimates_monthly_limit: number | null } | null)?.ai_estimates_monthly_limit ?? null;
-      if (limit == null) { setAiUsage({ limit: null, used: 0 }); return; }
+      if (limit == null) { setAiUsage({ limit: null, used: 0, packRemaining: 0 }); return; }
       const now = new Date();
       const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
-      const { count } = await supabase
-        .from('ai_estimate_usage')
-        .select('id', { count: 'exact', head: true })
-        .eq('profile_id', user.id)
-        .gte('created_at', monthStart);
-      setAiUsage({ limit, used: count ?? 0 });
+      const [{ count }, { data: packs }] = await Promise.all([
+        supabase
+          .from('ai_estimate_usage')
+          .select('id', { count: 'exact', head: true })
+          .eq('profile_id', user.id)
+          .gte('created_at', monthStart),
+        supabase
+          .from('estimate_packs')
+          .select('credits_remaining')
+          .eq('profile_id', user.id)
+          .eq('status', 'active'),
+      ]);
+      const packRemaining = (packs as { credits_remaining: number }[] | null ?? [])
+        .reduce((sum, p) => sum + (p.credits_remaining || 0), 0);
+      setAiUsage({ limit, used: count ?? 0, packRemaining });
     } catch {
       setAiUsage(null); // fail open — show no counter / no gate if we can't resolve it
     }
   }, [user]);
 
   useEffect(() => { loadAiUsage(); }, [loadAiUsage]);
+
+  // Buy a 20-credit AI Estimate Pack via one-time Stripe Checkout.
+  const buyPack = async () => {
+    setBuyingPack(true);
+    try {
+      const back = `${window.location.origin}${window.location.pathname}`;
+      const { data, error: fnErr } = await supabase.functions.invoke('buy-estimate-pack', {
+        body: { successUrl: `${back}?pack=success`, cancelUrl: `${back}?pack=cancelled` },
+      });
+      if (!fnErr && data?.url) { window.location.href = data.url as string; return; }
+      setError('Could not start checkout. Please try again.');
+    } catch { setError('Could not start checkout. Please try again.'); }
+    setBuyingPack(false);
+  };
 
   const handlePhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []).slice(0, MAX_PHOTOS - photos.length);
@@ -287,12 +313,9 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   };
 
   const runEstimate = async () => {
-    // Pre-empt the round-trip when we already know the free cap is spent.
-    if (aiLimitReached) {
-      setAiBlocked(`You've used all ${aiUsage?.limit ?? 10} free AI estimates this month. Upgrade to Pro for unlimited estimates, or enter your price manually.`);
-      return;
-    }
-    setLoading(true); setError(''); setAiBlocked(null); setResult(null);
+    // Pre-empt the round-trip when we already know all credits are spent.
+    if (aiLimitReached) { setAiBlocked(true); return; }
+    setLoading(true); setError(''); setAiBlocked(false); setResult(null);
     try {
       const { data, error: fnError } = await supabase.functions.invoke('estimate-quote', {
         body: {
@@ -309,18 +332,16 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
         },
       });
       if (data?.limitReached) {
-        // Server says the cap is spent — surface the upgrade path, sync the counter.
-        setAiBlocked(data.error || 'You have reached your monthly AI estimate limit.');
-        if (typeof data.limit === 'number') setAiUsage({ limit: data.limit, used: data.used ?? data.limit });
+        // Server says everything's spent — surface the buy/upgrade options.
+        setAiBlocked(true);
+        loadAiUsage();
       } else if (fnError || data?.error) {
         setError(data?.error || 'Could not generate an estimate. Please try again.');
       } else {
         const est = data as WorkEstimate;
         setResult(est);
         setHoursEdit(String(est.hours));
-        // Sync the remaining counter from the server's authoritative echo.
-        const u = (data as { usage?: { limit: number | null; used: number | null } }).usage;
-        if (u) setAiUsage(u.limit == null ? { limit: null, used: 0 } : { limit: u.limit, used: u.used ?? 0 });
+        loadAiUsage(); // re-sync monthly + pack balance from the authoritative source
       }
     } catch { setError('Could not generate an estimate. Please try again.'); }
     setLoading(false);
@@ -541,17 +562,39 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           </div>
 
           {aiLimitReached || aiBlocked ? (
-            /* Free monthly AI-estimate cap reached — steer to upgrade or manual price. */
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
+            /* Out of estimates — Pro is the prominent option, the pack is secondary. */
+            <div className="rounded-xl border border-gray-200 bg-white p-3 space-y-3">
               <div className="flex items-start gap-2">
-                <Lock className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-600" />
-                <p className="text-xs text-amber-800">
-                  {aiBlocked || `You've used all ${aiUsage?.limit ?? 10} free AI estimates this month. Upgrade to Pro for unlimited estimates, or enter your price manually.`}
-                </p>
+                <Lock className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Out of free estimates this month</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Go Pro for unlimited, grab a top-up pack, or just enter your price manually below.</p>
+                </div>
               </div>
-              <Link to="/pricing" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-semibold rounded-lg hover:bg-emerald-600 transition-colors">
-                <Sparkles className="w-3.5 h-3.5" /> Upgrade to Pro
+
+              {/* Primary: Go Pro */}
+              <Link to="/pricing" className="block rounded-lg border-2 border-emerald-500 bg-emerald-50 p-3 hover:bg-emerald-100 transition-colors">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-bold text-emerald-800">Go Pro — unlimited estimates</span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-semibold uppercase tracking-wide">Best value</span>
+                    </div>
+                    <p className="text-xs text-emerald-700 mt-0.5">$49/mo · unlimited AI estimates + lower platform fees</p>
+                  </div>
+                  <span className="text-emerald-700 text-lg" aria-hidden="true">→</span>
+                </div>
               </Link>
+
+              {/* Secondary: buy a pack */}
+              <button type="button" onClick={buyPack} disabled={buyingPack}
+                className="w-full flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left hover:bg-gray-50 disabled:opacity-50 transition-colors">
+                <span className="text-sm font-medium text-gray-700">
+                  {buyingPack ? 'Starting checkout…' : 'Get 20 more — $4.99'}
+                  <span className="block text-[11px] text-gray-400 font-normal">One-time top-up · credits don’t expire</span>
+                </span>
+                {buyingPack ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : <Package className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+              </button>
             </div>
           ) : (
             <button type="button" onClick={runEstimate} disabled={loading}
@@ -559,9 +602,11 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Estimate
             </button>
           )}
-          {aiUsage && aiUsage.limit != null && !aiLimitReached && (
+          {aiUsage && aiUsage.limit != null && !aiLimitReached && aiTotalRemaining !== null && (
             <p className="text-[11px] text-gray-500 text-center">
-              {aiRemaining}/{aiUsage.limit} AI estimates remaining this month
+              {aiPackRemaining > 0
+                ? `${aiTotalRemaining} estimate${aiTotalRemaining === 1 ? '' : 's'} remaining (${aiMonthlyRemaining} monthly + ${aiPackRemaining} pack credit${aiPackRemaining === 1 ? '' : 's'})`
+                : `${aiMonthlyRemaining}/${aiUsage.limit} free estimates this month`}
             </p>
           )}
         </>
