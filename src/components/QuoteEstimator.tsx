@@ -75,6 +75,17 @@ function fieldsFor(trade: string, property: string): { key: string; label: strin
 const CONDITIONS = ['light', 'standard', 'heavy', 'complex'];
 const ACCESS = ['Stairs', 'Tight access', 'No parking', 'Multi-storey'];
 
+// Estimated-duration dropdown options + the day picker (Mon-first, AU convention).
+const HOUR_OPTS = Array.from({ length: 13 }, (_, i) => i); // 0–12
+const MIN_OPTS = [0, 15, 30, 45];
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+// "2h 30m" / "45m" / "2h" — compact human duration from hours + minutes.
+function durationLabel(h: number, m: number): string {
+  if (!h && !m) return '';
+  return [h ? `${h}h` : '', m ? `${m}m` : ''].filter(Boolean).join(' ');
+}
+
 const CONF_CHIP: Record<string, string> = {
   high: 'bg-emerald-100 text-emerald-700',
   medium: 'bg-secondary-100 text-secondary-700',
@@ -136,6 +147,12 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [condition, setCondition] = useState('');
   const [access, setAccess] = useState<Set<string>>(new Set());
+  const [durHours, setDurHours] = useState('');
+  const [durMins, setDurMins] = useState('');
+  const [preferredDays, setPreferredDays] = useState<Set<string>>(new Set());
+  const [multiVisit, setMultiVisit] = useState(false);
+  const [visitCount, setVisitCount] = useState('2');
+  const [visitSpan, setVisitSpan] = useState('weeks');
   const [clientSupplies, setClientSupplies] = useState(false);
   const [notes, setNotes] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
@@ -201,6 +218,16 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
     const next = new Set(prev); next.has(a) ? next.delete(a) : next.add(a); return next;
   });
 
+  const toggleDay = (d: string) => setPreferredDays((prev) => {
+    const next = new Set(prev); next.has(d) ? next.delete(d) : next.add(d); return next;
+  });
+
+  // Tradie-entered time on site overrides the AI's hour guess when set.
+  const enteredHours = (Number(durHours) || 0) + (Number(durMins) || 0) / 60;
+  // Repeat visits multiply the per-visit price. Clamp to something sane.
+  const visits = multiVisit ? Math.min(60, Math.max(1, Number(visitCount) || 1)) : 1;
+  const orderedDays = DAYS.filter((d) => preferredDays.has(d)); // keeps Mon→Sun order
+
   const handlePhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []).slice(0, MAX_PHOTOS - photos.length);
     for (const f of files) {
@@ -237,22 +264,35 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
     setLoading(false);
   };
 
-  // Live price from the (editable) hours + economics.
+  // Live price from the hours + economics. The tradie's entered time-on-site
+  // (if any) is the source of truth for hours; otherwise the editable field /
+  // AI guess is used. Repeat visits multiply the per-visit total.
   const priced = useMemo(() => {
     if (!result) return null;
-    const hours = Number(hoursEdit) || result.hours;
-    return computePrice(hours, result.materialsCost, economics, clientSupplies);
+    const hours = enteredHours > 0 ? enteredHours : (Number(hoursEdit) || result.hours);
+    const per = computePrice(hours, result.materialsCost, economics, clientSupplies);
+    return { ...per, perVisitTotal: per.total, total: per.total * visits, visits };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, hoursEdit, rate, workers, marginPct, markupPct, callOut, clientSupplies, travelKm, profile?.is_gst_registered]);
+  }, [result, hoursEdit, enteredHours, visits, rate, workers, marginPct, markupPct, callOut, clientSupplies, travelKm, profile?.is_gst_registered]);
 
   const applyResult = () => {
     if (!result || !priced) return;
-    // Hours + assumptions are pricing rationale — they stay tradie-only
-    // (internal notes), never the client-visible description.
+    const dur = durationLabel(Number(durHours) || 0, Number(durMins) || 0);
+
+    // Client-visible scope: availability is genuinely useful to the client;
+    // the rest (hours, price rationale, visit logistics) stays internal.
+    const scope: string[] = [];
+    if (orderedDays.length) scope.push(`Available to visit: ${orderedDays.join(', ')}`);
+
+    // Hours + assumptions + visit logistics are pricing rationale — they stay
+    // tradie-only (internal notes), never the client-visible description.
+    const hoursLabel = dur || `${hoursEdit || result.hours} h`;
     const internal =
-      `Estimated ${hoursEdit || result.hours} h · ${money(priced.total)}` +
+      `Estimated ${hoursLabel}${visits > 1 ? '/visit' : ''} · ${money(priced.total)}` +
+      (visits > 1 ? `\n${visits} visits${visitSpan ? ` over a few ${visitSpan}` : ''} · ${money(priced.perVisitTotal)}/visit` : '') +
+      (orderedDays.length ? `\nPreferred days: ${orderedDays.join(', ')}` : '') +
       (result.assumptions.length ? `\nAssumptions:\n${result.assumptions.map((a) => `- ${a}`).join('\n')}` : '');
-    onApply(Math.round(priced.total), { scope: [], internal });
+    onApply(Math.round(priced.total), { scope, internal });
   };
 
   const fields = trade ? fieldsFor(trade, property) : [];
@@ -321,6 +361,64 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
                   access.has(a) ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                 }`}>{a}</button>
             ))}
+          </div>
+
+          {/* Estimated time on site — feeds the pricing (hours × rate). */}
+          <div>
+            <label className="block text-[11px] text-gray-500 mb-1">Estimated time on site</label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <select value={durHours} onChange={(e) => setDurHours(e.target.value)} className={`w-full ${numInput}`} aria-label="Hours on site">
+                  <option value="">Hours</option>
+                  {HOUR_OPTS.map((h) => <option key={h} value={h}>{h} h</option>)}
+                </select>
+              </div>
+              <div className="flex-1">
+                <select value={durMins} onChange={(e) => setDurMins(e.target.value)} className={`w-full ${numInput}`} aria-label="Minutes on site">
+                  <option value="">Minutes</option>
+                  {MIN_OPTS.map((m) => <option key={m} value={m}>{m} min</option>)}
+                </select>
+              </div>
+            </div>
+            {enteredHours > 0 && (
+              <p className="text-[11px] text-gray-400 mt-1">Used for the estimate instead of the AI's hour guess.</p>
+            )}
+          </div>
+
+          {/* Preferred days — client-facing availability. */}
+          <div>
+            <label className="block text-[11px] text-gray-500 mb-1">Preferred days to visit</label>
+            <div className="flex flex-wrap gap-1.5">
+              {DAYS.map((d) => (
+                <button key={d} type="button" onClick={() => toggleDay(d)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    preferredDays.has(d) ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}>{d}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Multiple visits — multiplies the per-visit estimate. */}
+          <div>
+            <button type="button" onClick={() => setMultiVisit((v) => !v)}
+              className="flex items-center justify-between w-full text-left">
+              <span className="text-[11px] text-gray-500">This job needs multiple visits</span>
+              <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${multiVisit ? 'bg-secondary-500' : 'bg-gray-200'}`}>
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${multiVisit ? 'translate-x-4' : 'translate-x-0.5'}`} />
+              </span>
+            </button>
+            {multiVisit && (
+              <div className="flex items-center gap-2 mt-2">
+                <select value={visitCount} onChange={(e) => setVisitCount(e.target.value)} className={numInput} aria-label="Number of visits">
+                  {Array.from({ length: 11 }, (_, i) => i + 2).map((n) => <option key={n} value={n}>{n} visits</option>)}
+                </select>
+                <span className="text-xs text-gray-400">over a few</span>
+                <select value={visitSpan} onChange={(e) => setVisitSpan(e.target.value)} className={numInput} aria-label="Visit span">
+                  <option value="days">days</option>
+                  <option value="weeks">weeks</option>
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Materials */}
@@ -398,8 +496,12 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               <span className="text-[11px] text-gray-400">{result.source === 'ai' ? 'AI' : 'estimate'}</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-gray-500">
-              <span>Hours</span>
-              <input type="number" min="0" step="0.5" value={hoursEdit} onChange={(e) => setHoursEdit(e.target.value)} className="w-16 px-2 py-1 border border-gray-200 rounded text-sm" />
+              <span>Hours{visits > 1 ? '/visit' : ''}</span>
+              {enteredHours > 0 ? (
+                <span className="font-semibold text-gray-700 tabular-nums">{enteredHours % 1 === 0 ? enteredHours : enteredHours.toFixed(2)}</span>
+              ) : (
+                <input type="number" min="0" step="0.5" value={hoursEdit} onChange={(e) => setHoursEdit(e.target.value)} className="w-16 px-2 py-1 border border-gray-200 rounded text-sm" />
+              )}
             </div>
           </div>
 
@@ -423,8 +525,14 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
                 <span className="text-gray-500">GST 10%</span><span className="text-gray-700 tabular-nums">{money(priced.gst)}</span>
               </div>
             )}
+            {visits > 1 && (
+              <div className="flex items-center justify-between px-2.5 py-1.5 text-sm bg-secondary-50">
+                <span className="text-secondary-700">Per visit × {visits} visits</span>
+                <span className="text-secondary-700 tabular-nums">{money(priced.perVisitTotal)} × {visits}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between px-2.5 py-2 bg-gray-50">
-              <span className="font-semibold text-gray-900">Total</span>
+              <span className="font-semibold text-gray-900">Total{visits > 1 ? ` (${visits} visits)` : ''}</span>
               <span className="text-lg font-bold text-gray-900 tabular-nums">{money(priced.total)}</span>
             </div>
           </div>
