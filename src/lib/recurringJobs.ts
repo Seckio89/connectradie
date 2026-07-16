@@ -907,6 +907,11 @@ export async function createRecurringJob(
       typical_frequency: freqMap[data.frequency_months] || 'weekly',
       typical_time: data.preferred_time || null,
       status: 'active',
+      // Link the agreement to its originating job so cancelRecurringJob can end
+      // exactly THIS agreement. Essential for off-app services: the recurring
+      // job's client_id is null, but the agreement stores the tradie's id, so
+      // the client/tradie/category tuple can never match on cancel.
+      original_job_id: data.original_job_id ?? null,
     });
   } catch {
     // Non-critical
@@ -1341,6 +1346,14 @@ export async function cancelRecurringJob(
         .eq('recurring_job_id', id);
     } catch { /* Non-critical */ }
 
+    // Delete the linked agreement by its originating job (reliable regardless
+    // of how client_id/tradie_id were stored).
+    if (job?.original_job_id) {
+      try {
+        await supabase.from('service_agreements').delete().eq('original_job_id', job.original_job_id);
+      } catch { /* Non-critical */ }
+    }
+
     // Delete service agreements for this client + trade (no tradie)
     if (job?.client_id) {
       try {
@@ -1433,15 +1446,29 @@ export async function cancelRecurringJob(
       } catch { /* Non-critical */ }
     }
 
-    // End linked service agreements
+    // End linked service agreements. Prefer the originating-job link — it's the
+    // only key that works for off-app services (the recurring job's client_id is
+    // null, but the agreement stored the tradie's id, so the tuple match below
+    // silently ends nothing). Fall back to the client/tradie/category tuple for
+    // on-app agreements created before the link existed.
     try {
-      await supabase
-        .from('service_agreements')
-        .update({ status: 'ended', ended_at: new Date().toISOString() })
-        .eq('client_id', job.client_id)
-        .eq('tradie_id', job.tradie_id)
-        .eq('trade_category', job.trade_category)
-        .eq('status', 'active');
+      const endUpdate = { status: 'ended', ended_at: new Date().toISOString() };
+      if (job.original_job_id) {
+        await supabase
+          .from('service_agreements')
+          .update(endUpdate)
+          .eq('original_job_id', job.original_job_id)
+          .eq('status', 'active');
+      }
+      if (job.client_id) {
+        await supabase
+          .from('service_agreements')
+          .update(endUpdate)
+          .eq('client_id', job.client_id)
+          .eq('tradie_id', job.tradie_id)
+          .eq('trade_category', job.trade_category)
+          .eq('status', 'active');
+      }
     } catch { /* Non-critical */ }
 
     // Notify the other party
