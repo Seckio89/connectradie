@@ -389,6 +389,13 @@ verify_jwt = false
 [functions.google-calendar-oauth]
 verify_jwt = false
 
+# estimate-quote enforces auth in-function (reads the caller's JWT and calls
+# getUser). It was originally deployed --no-verify-jwt; pin it here so a plain
+# `supabase functions deploy estimate-quote` doesn't silently flip it to the
+# CLI default of true.
+[functions.estimate-quote]
+verify_jwt = false
+
 # Experimental features may be deprecated any time
 [experimental]
 # Configures Postgres storage engine to use OrioleDB (S3)
