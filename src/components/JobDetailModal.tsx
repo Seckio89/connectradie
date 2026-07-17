@@ -18,6 +18,7 @@ import {
   DollarSign,
   AlertCircle,
   Car,
+  Send,
 } from 'lucide-react';
 import { formatDate, friendlyError } from '../lib/utils';
 import { supabase } from '../lib/supabase';
@@ -960,7 +961,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
               ) : payLinkState === 'sent' ? (
                 <><CheckCircle2 className="w-4 h-4" /> Payment link sent</>
               ) : (
-                <><DollarSign className="w-4 h-4" /> Email Payment Link</>
+                <><Send className="w-4 h-4" /> Email Payment Link</>
               )}
             </button>
           ) : (
