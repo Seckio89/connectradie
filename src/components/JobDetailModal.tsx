@@ -102,6 +102,8 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
 
   // Final price adjustment state
   const [acceptedQuote, setAcceptedQuote] = useState<Quote | null>(null);
+  // True when a completed/released job_funding payment exists for this job.
+  const [jobPaid, setJobPaid] = useState(false);
   const [quoteLoaded, setQuoteLoaded] = useState(false);
   const [finalPriceInput, setFinalPriceInput] = useState('');
   const [finalPriceLoading, setFinalPriceLoading] = useState(false);
@@ -175,6 +177,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
     if (!isOpen || !job || !isTradie) {
       setAcceptedQuote(null);
       setQuoteLoaded(false);
+      setJobPaid(false);
       return;
     }
     let cancelled = false;
@@ -202,7 +205,23 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
       }
     };
 
+    // Has the client already paid? Only money that actually moved counts
+    // (completed = secured/routed, released = paid out) — a pending checkout
+    // link or a dead row is NOT payment. Drives "Mark Complete" vs
+    // "Mark Complete & Request Payment".
+    const fetchPaidState = async () => {
+      const { data } = await supabase
+        .from('payments')
+        .select('id')
+        .eq('job_id', job.id)
+        .eq('payment_type', 'job_funding')
+        .in('status', ['completed', 'released'])
+        .limit(1);
+      if (!cancelled) setJobPaid((data ?? []).length > 0);
+    };
+
     fetchAcceptedQuote();
+    fetchPaidState();
     return () => { cancelled = true; };
   }, [isOpen, job?.id, isTradie]);
 
@@ -990,7 +1009,8 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors"
           >
             <CheckCircle2 className="w-4 h-4" />
-            Mark Complete & Request Payment
+            {/* Paid job: money is already secured — nothing to request. */}
+            {jobPaid ? 'Mark Complete' : 'Mark Complete & Request Payment'}
           </button>
         )}
 

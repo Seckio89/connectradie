@@ -12,7 +12,7 @@
 
 import { Info } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { calculatePlatformFee, getCurrentTier } from '../lib/subscription';
+import { calculatePlatformFee, getChargedTier } from '../lib/subscription';
 
 interface QuoteFeeDisclosureProps {
   /** The quoted price in dollars (use the max of a range). */
@@ -27,8 +27,10 @@ export default function QuoteFeeDisclosure({ priceDollars, className }: QuoteFee
   const { profile, tradieDetails } = useAuth();
   if (!priceDollars || priceDollars <= 0 || profile?.role !== 'tradie') return null;
 
-  // Live fee model (legacy) — see cutover seam note above.
-  const tier = getCurrentTier(tradieDetails?.subscription_tier ?? undefined, profile?.is_premium ?? false);
+  // Live fee model (legacy) — see cutover seam note above. Uses getChargedTier
+  // (subscription_tier only, no is_premium fallback) so the number shown here
+  // can never disagree with what the edge functions actually charge.
+  const tier = getChargedTier(tradieDetails?.subscription_tier);
   const fee = calculatePlatformFee(priceDollars, tier);
   const receives = priceDollars - fee;
   const tierLabel = tier === 'free' ? 'Free' : tier === 'pro_plus' ? 'Pro+' : 'Pro';

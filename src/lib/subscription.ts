@@ -126,6 +126,22 @@ export function getCurrentTier(subscriptionTier?: string, isPremium?: boolean): 
   return 'free';
 }
 
+/**
+ * The tier the tradie is ACTUALLY CHARGED at. Mirrors the edge functions'
+ * resolveTradieTier (supabase/functions/_shared/pricing.ts), which reads ONLY
+ * tradie_details.subscription_tier — the single source of truth for money.
+ *
+ * Deliberately has NO profiles.is_premium fallback: is_premium is a UI perk
+ * flag and can drift (e.g. set manually or in test mode without a real
+ * subscription). Every fee shown to the tradie MUST use this, never
+ * getCurrentTier, or the disclosed fee can disagree with the charged fee.
+ */
+export function getChargedTier(subscriptionTier?: string | null): SubscriptionTier {
+  if (subscriptionTier === 'pro_plus') return 'pro_plus';
+  if (subscriptionTier === 'pro' || subscriptionTier === 'business') return 'pro';
+  return 'free';
+}
+
 export async function getMonthlyJobAccepts(userId: string): Promise<number> {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();

@@ -197,7 +197,6 @@ export default function JobManagementModal({
   const [finalPriceSuccess, setFinalPriceSuccess] = useState<string | null>(null);
   // For firm-price variations: tradie has to click "site visit completed" first
   // so we don't surface a price-change form by default on every funded job.
-  const [variationFormOpen, setVariationFormOpen] = useState(false);
 
   // In-app confirm modal (replaces native window.confirm for price adjustments)
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -243,8 +242,7 @@ export default function JobManagementModal({
         .eq('job_id', jobId)
         .eq('payment_type', 'job_funding')
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
+        .limit(5),
     ]);
 
     if (jobResult.data) {
@@ -260,8 +258,18 @@ export default function JobManagementModal({
     } else if (jobResult.data && (jobResult.data as unknown as JobData).status === 'pending') {
       setShowQuoteModal(true);
     }
-    if (paymentResult.data) {
-      setPayment(paymentResult.data as PaymentData);
+    {
+      // A job can carry several payment rows (e.g. an abandoned/expired checkout
+      // next to the paid one). Showing "latest" made a dead row mask a paid one
+      // ("failed" badge next to "Secured with Stripe"). Prefer money that
+      // actually moved: completed/released first, then a live pending link;
+      // dead rows (failed/refunded) are never shown as the job's payment state.
+      const rows = (paymentResult.data as PaymentData[] | null) ?? [];
+      const best =
+        rows.find((p) => p.status === 'completed' || p.status === 'released') ??
+        rows.find((p) => p.status === 'pending') ??
+        null;
+      setPayment(best);
     }
     setQuoteCount(quoteCountResult.count || 0);
 
@@ -357,10 +365,10 @@ export default function JobManagementModal({
     for (const file of files) {
       if (!file.type.startsWith('image/')) { setCompletionError('Only image files accepted.'); continue; }
       if (file.size > 10 * 1024 * 1024) { setCompletionError('Each image must be under 10MB.'); continue; }
-      if (completionPhotos.length >= 5) { setCompletionError('Maximum 5 photos.'); break; }
+      if (completionPhotos.length >= 15) { setCompletionError('Maximum 15 photos.'); break; }
       const reader = new FileReader();
       reader.onload = (ev) => {
-        setCompletionPhotos((prev) => prev.length >= 5 ? prev : [...prev, { file, preview: ev.target?.result as string }]);
+        setCompletionPhotos((prev) => prev.length >= 15 ? prev : [...prev, { file, preview: ev.target?.result as string }]);
       };
       reader.readAsDataURL(file);
     }
@@ -819,8 +827,11 @@ export default function JobManagementModal({
                   </div>
                 </div>
 
-                {/* ── Payment & Escrow Status ── */}
-                {payment && (() => {
+                {/* ── Payment & Escrow Status ──
+                    Only render for money that's actually secured (completed) or
+                    paid out (released) — a pending checkout link isn't "Secured
+                    with Stripe" and must not claim to be. */}
+                {payment && (payment.status === 'completed' || payment.status === 'released') && (() => {
                   const pendingInc = (payment.metadata as Record<string, unknown> | null)?.pending_increase as
                     | { diff_cents?: number; additional_gst?: number }
                     | undefined;
@@ -946,20 +957,23 @@ export default function JobManagementModal({
                   </div>
                 )}
 
-                {/* ── Site Visit / Price Variation ──
-                    Two paths to the same backend (adjustQuotePrice):
-                     1. Site-inspection quotes — price was always provisional, so
-                        the input shows immediately once funded.
-                     2. Firm-price quotes — price was supposed to be locked, so
-                        the tradie has to explicitly tap "Site visit completed"
-                        to acknowledge they're requesting a variation. Input
-                        only appears after that click. */}
-                {quote && payment && (job?.status === 'funded' || job?.status === 'in_progress') && (() => {
+                {/* ── Site-Visit Final Pricing ──
+                    ONLY site-inspection quotes may adjust the price after
+                    funding — their price was always provisional (3-stage flow).
+                    Firm-price quotes are LOCKED once the client pays: no
+                    "price variation" is offered on secured funds. A genuine
+                    mid-work scope change is a separate additional charge, not a
+                    rewrite of what the client already paid for. Requires the
+                    payment to actually be secured (completed) — never a pending
+                    or dead payment row. */}
+                {quote && payment && payment.status === 'completed'
+                  && (job?.status === 'funded' || job?.status === 'in_progress')
+                  && (quote.requires_site_inspection || quote.final_price != null) && (() => {
                   const isSiteInspect = !!quote.requires_site_inspection;
-                  const inputVisible = quote.final_price == null && (isSiteInspect || variationFormOpen);
+                  const inputVisible = quote.final_price == null && isSiteInspect;
                   const title = quote.final_price != null
                     ? (isSiteInspect ? 'Final Price Set' : 'Variation Submitted')
-                    : (isSiteInspect ? 'Set Final Price After Site Visit' : 'Need to adjust the price?');
+                    : 'Set Final Price After Site Visit';
                   const helper = quote.final_price != null
                     ? (() => {
                         const finalDollars = quote.final_price as number;
@@ -976,11 +990,7 @@ export default function JobManagementModal({
                         }
                         return `Final price: $${finalDollars.toFixed(2)} ${isGstRegistered ? '(ex. GST)' : ''} · originally paid $${paidDollars.toFixed(2)} (refund issued for the difference).`;
                       })()
-                    : (isSiteInspect
-                        ? `Enter your final ${isGstRegistered ? 'ex-GST' : ''} price. If higher than the amount paid, the client approves and pays the difference before work continues. If lower, the client gets a refund.`
-                        : variationFormOpen
-                          ? `Enter the new ${isGstRegistered ? 'ex-GST' : ''} price. The client will be asked to approve — if higher they pay the difference, if lower they get a refund.`
-                          : `Only use this if the job has changed since you quoted. The client must approve any price variation before work continues.`);
+                    : `Enter your final ${isGstRegistered ? 'ex-GST' : ''} price. If higher than the amount paid, the client approves and pays the difference before work continues. If lower, the client gets a refund.`;
 
                   return (
                   <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
@@ -994,21 +1004,12 @@ export default function JobManagementModal({
                       </div>
                     </div>
 
-                    {/* Firm-price gate: explicit opt-in reveals the variation input. */}
-                    {!isSiteInspect && quote.final_price == null && !variationFormOpen && (
-                      <button
-                        onClick={() => setVariationFormOpen(true)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors"
-                      >
-                        <DollarSign className="w-3.5 h-3.5" />
-                        Request a price variation
-                      </button>
-                    )}
-
                     {inputVisible && (
                       <>
-                        <div className="flex items-center gap-2 mt-3">
-                          <div className="relative flex-1">
+                        {/* Stacked on mobile so the input never gets squeezed to
+                            a sliver by the button ("$ Fin…"); row on ≥sm. */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-3">
+                          <div className="relative flex-1 w-full">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
                             <input
                               type="number"
@@ -1023,22 +1024,14 @@ export default function JobManagementModal({
                           <button
                             onClick={handleSetFinalPrice}
                             disabled={finalPriceLoading || !finalPriceInput}
-                            className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                            className={`w-full sm:w-auto px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
                               finalPriceLoading || !finalPriceInput
                                 ? 'bg-amber-300 text-amber-100 cursor-not-allowed'
                                 : 'bg-amber-500 text-white hover:bg-amber-600'
                             }`}
                           >
-                            {finalPriceLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : isSiteInspect ? 'Confirm' : 'Send for approval'}
+                            {finalPriceLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                           </button>
-                          {!isSiteInspect && (
-                            <button
-                              onClick={() => { setVariationFormOpen(false); setFinalPriceInput(''); setFinalPriceError(null); }}
-                              className="px-3 py-2.5 text-sm font-medium text-amber-700 hover:bg-amber-100 rounded-lg transition-colors"
-                            >
-                              Cancel
-                            </button>
-                          )}
                         </div>
                         {isGstRegistered && parseFloat(finalPriceInput) > 0 && (
                           <p className="mt-1.5 text-xs text-amber-700">
@@ -1266,7 +1259,7 @@ export default function JobManagementModal({
                         onClick={() => fileInputRef.current?.click()}
                         className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50"
                       >
-                        <Plus className="w-3 h-3" /> Add Photos ({completionPhotos.length}/5)
+                        <Plus className="w-3 h-3" /> Add Photos ({completionPhotos.length}/15)
                       </button>
                     </div>
 

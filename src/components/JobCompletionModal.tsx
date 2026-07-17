@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { Camera, Loader2, X, Plus, AlertCircle, Check, RefreshCw } from 'lucide-react';
 import Modal from './Modal';
 import { supabase } from '../lib/supabase';
@@ -252,6 +252,28 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Funded jobs (a completed/released job_funding payment exists) already hold
+  // the money — completing must NOT create a payment request on top of it.
+  // Drives the "Complete Job" vs "Request Payment" copy and the submit path.
+  const [alreadyPaid, setAlreadyPaid] = useState(false);
+  useEffect(() => {
+    if (!isOpen || !job?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('payments')
+          .select('id')
+          .eq('job_id', job.id)
+          .eq('payment_type', 'job_funding')
+          .in('status', ['completed', 'released'])
+          .limit(1);
+        if (!cancelled) setAlreadyPaid((data ?? []).length > 0);
+      } catch { /* default false — worst case we show the request-payment copy */ }
+    })();
+    return () => { cancelled = true; };
+  }, [isOpen, job?.id]);
+
   // Post-completion: offer ongoing service
   const [showOngoingOffer, setShowOngoingOffer] = useState(false);
   const [ongoingFrequency, setOngoingFrequency] = useState<number>(FREQ_WEEKLY);
@@ -291,15 +313,15 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
         setError('Each image must be under 10MB.');
         continue;
       }
-      if (photos.length >= 5) {
-        setError('Maximum 5 photos allowed.');
+      if (photos.length >= 15) {
+        setError('Maximum 15 photos allowed.');
         break;
       }
 
       const reader = new FileReader();
       reader.onload = (ev) => {
         setPhotos((prev) => {
-          if (prev.length >= 5) return prev;
+          if (prev.length >= 15) return prev;
           return [...prev, { file, preview: ev.target?.result as string }];
         });
       };
@@ -403,44 +425,51 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
 
       if (updateError) throw new Error('Failed to save completion details. Please try again.');
 
-      // Fetch accepted quote to create a payment record (non-blocking)
+      // Create a payment REQUEST only when the job isn't already funded —
+      // funded jobs hold the money already (escrow or destination charge), so
+      // requesting payment again would double-bill the client. (Non-blocking.)
       let paymentAmountDisplay = '';
-      try {
-        const { data: acceptedQuote } = await supabase
-          .from('quotes')
-          .select('firm_price, price_min, price_max')
-          .eq('job_id', job.id)
-          .eq('status', 'accepted')
-          .maybeSingle();
+      if (!alreadyPaid) {
+        try {
+          const { data: acceptedQuote } = await supabase
+            .from('quotes')
+            .select('firm_price, price_min, price_max')
+            .eq('job_id', job.id)
+            .eq('status', 'accepted')
+            .maybeSingle();
 
-        const quoteAmount = acceptedQuote?.firm_price || acceptedQuote?.price_max || acceptedQuote?.price_min || 0;
-        const amountCents = Math.round(quoteAmount * 100);
+          const quoteAmount = acceptedQuote?.firm_price || acceptedQuote?.price_max || acceptedQuote?.price_min || 0;
+          const amountCents = Math.round(quoteAmount * 100);
 
-        if (amountCents > 0 && job.client_id) {
-          const processingFee = Math.round(amountCents * 0.02); // 2% platform fee
-          await supabase.from('payments').insert({
-            profile_id: job.client_id,
-            job_id: job.id,
-            payment_type: 'job_funding',
-            amount: amountCents,
-            processing_fee: processingFee,
-            currency: 'aud',
-            status: 'pending',
-            metadata: { tradie_id: userId, requested_at: new Date().toISOString() },
-          });
-          paymentAmountDisplay = ` Amount: $${quoteAmount.toLocaleString('en-AU', { minimumFractionDigits: 2 })}.`;
+          if (amountCents > 0 && job.client_id) {
+            const processingFee = Math.round(amountCents * 0.02); // 2% platform fee
+            await supabase.from('payments').insert({
+              profile_id: job.client_id,
+              job_id: job.id,
+              payment_type: 'job_funding',
+              amount: amountCents,
+              processing_fee: processingFee,
+              currency: 'aud',
+              status: 'pending',
+              metadata: { tradie_id: userId, requested_at: new Date().toISOString() },
+            });
+            paymentAmountDisplay = ` Amount: $${quoteAmount.toLocaleString('en-AU', { minimumFractionDigits: 2 })}.`;
+          }
+        } catch {
+          // Non-blocking — don't let payment record failure prevent completion
         }
-      } catch {
-        // Non-blocking — don't let payment record failure prevent completion
       }
 
-      // Notify client about payment request (non-blocking)
+      // Notify the client (non-blocking). Funded job → review & release the
+      // held funds; unfunded job → a payment was requested.
       if (job.client_id) {
         try {
           await supabase.rpc('create_notification', {
             p_user_id: job.client_id,
-            p_title: 'Payment Requested',
-            p_message: `Your tradie has completed the job and requested payment.${paymentAmountDisplay} Please review and release payment.`,
+            p_title: alreadyPaid ? 'Job Completed' : 'Payment Requested',
+            p_message: alreadyPaid
+              ? 'Your tradie has marked the job complete. Review the work and release the secured payment when you are happy with it.'
+              : `Your tradie has completed the job and requested payment.${paymentAmountDisplay} Please review and release payment.`,
             p_type: 'payment',
             p_channel: 'in_app',
             p_read: false,
@@ -797,7 +826,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-bold text-gray-900">Request Payment</h2>
+            <h2 className="text-base font-bold text-gray-900">{alreadyPaid ? 'Complete Job' : 'Request Payment'}</h2>
             <p className="text-xs text-gray-400 mt-0.5">
               {jobCategory && <span className="text-secondary-600 font-medium">{jobCategory}</span>}
               {jobCategory && ' — '}{jobDesc}
@@ -876,10 +905,10 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 Photos
-                <span className="text-gray-400 font-normal normal-case ml-1">— up to 5</span>
+                <span className="text-gray-400 font-normal normal-case ml-1">— up to 15</span>
               </label>
               {photos.length > 0 && (
-                <span className="text-xs text-gray-400">{photos.length}/5</span>
+                <span className="text-xs text-gray-400">{photos.length}/15</span>
               )}
             </div>
 
@@ -904,7 +933,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
                 </div>
               ))}
 
-              {photos.length < 5 && (
+              {photos.length < 15 && (
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={submitting}
@@ -960,6 +989,8 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Submitting...
                 </>
+              ) : alreadyPaid ? (
+                'Complete Job'
               ) : (
                 'Request Payment'
               )}
