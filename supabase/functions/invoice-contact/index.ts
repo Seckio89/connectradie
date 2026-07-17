@@ -148,6 +148,37 @@ Deno.serve(async (req: Request) => {
       const siteUrlOneOff = Deno.env.get("SITE_URL") || (allowedOriginOneOff && allowedOriginOneOff !== "*" ? allowedOriginOneOff : "https://connectradie.com");
       const stripeOneOff = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
+      // ── Reuse an existing unpaid link instead of minting a second one ──
+      // Every click used to create a NEW checkout session, so a tradie who
+      // double-clicked (or re-sent) left multiple live links for the same job —
+      // if the client paid two of them they'd be charged twice. Re-send the
+      // still-open session instead; only mint a new one if there isn't one.
+      const { data: openPayments } = await supabase
+        .from("payments")
+        .select("id, stripe_checkout_session_id")
+        .eq("job_id", oneOff.id)
+        .eq("payment_type", "job_funding")
+        .eq("status", "pending")
+        .not("stripe_checkout_session_id", "is", null)
+        .order("created_at", { ascending: false });
+
+      let reusableUrl: string | null = null;
+      for (const row of (openPayments as { id: string; stripe_checkout_session_id: string }[] | null) ?? []) {
+        try {
+          const existing = await stripeOneOff.checkout.sessions.retrieve(row.stripe_checkout_session_id);
+          // 'open' = not paid and not expired; anything else is dead to us.
+          if (existing.status === "open" && existing.url && !reusableUrl) {
+            reusableUrl = existing.url;
+          } else if (existing.status === "expired") {
+            // payments.status has no 'expired' value — 'failed' is the terminal
+            // state for a link that can never be paid.
+            await supabase.from("payments").update({ status: "failed" }).eq("id", row.id);
+          }
+        } catch (e) {
+          console.warn("invoice-contact: could not retrieve session", row.stripe_checkout_session_id, e);
+        }
+      }
+
       const oneOffLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
         { price_data: { currency: "aud", product_data: { name: oneOffLabel }, unit_amount: jobTotalCents }, quantity: 1 },
       ];
@@ -155,53 +186,64 @@ Deno.serve(async (req: Request) => {
         oneOffLineItems.push({ price_data: { currency: "aud", product_data: { name: "Secure Processing Fee" }, unit_amount: oneOffProcessingFee }, quantity: 1 });
       }
 
-      const oneOffSession = await stripeOneOff.checkout.sessions.create({
-        customer_email: oneOffContact.email,
-        line_items: oneOffLineItems,
-        mode: "payment",
-        success_url: `${siteUrlOneOff}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${siteUrlOneOff}/payment-cancelled`,
-        payment_intent_data: {
-          application_fee_amount: oneOffPlatformFee + oneOffProcessingFee,
-          transfer_data: { destination: oneOffDestination },
-        },
-        metadata: {
-          type: "job_payment_link",
-          payment_type: "job_funding", // drives the webhook's job flip + tradie notification
-          routing: "destination",
-          job_id: oneOff.id,
-          client_contact_id: oneOff.client_contact_id,
-          tradie_id: oneOff.tradie_id ?? "",
-          platform_fee: String(oneOffPlatformFee),
-          processing_fee: String(oneOffProcessingFee),
-          tradie_tier: oneOffTier,
-        },
-      });
+      let payUrl = reusableUrl;
 
-      // The webhook completes this row by stripe_checkout_session_id. The payer
-      // has no profile (off-app), so the row anchors to the tradie.
-      const { error: payInsertErr } = await supabase.from("payments").insert({
-        profile_id: oneOff.tradie_id,
-        payment_type: "job_funding",
-        job_id: oneOff.id,
-        amount: jobTotalCents,
-        status: "pending",
-        stripe_checkout_session_id: oneOffSession.id,
-        processing_fee: oneOffProcessingFee,
-        platform_fee_cents: oneOffPlatformFee,
-        fee_tier: oneOffTier,
-        fee_calculated_at: new Date().toISOString(),
-        metadata: {
-          off_app: true,
-          routing: "destination",
-          client_contact_id: oneOff.client_contact_id,
-          payer_email: oneOffContact.email,
-          platform_fee: String(oneOffPlatformFee),
-        },
-      });
-      if (payInsertErr) {
-        console.error("invoice-contact one-off payments insert failed", payInsertErr);
-        return json({ error: "Failed to record the payment" }, 500);
+      if (!payUrl) {
+        const oneOffSession = await stripeOneOff.checkout.sessions.create({
+          customer_email: oneOffContact.email,
+          line_items: oneOffLineItems,
+          mode: "payment",
+          // CARD ONLY. Without this Stripe offers every method enabled on the
+          // account — including AU BECS Direct Debit, which takes 1-3 BUSINESS
+          // DAYS to clear and sits in "processing" meanwhile. A tradie sending a
+          // pay-now link expects a card. (The recurring card-fallback below
+          // pins this for the same reason.)
+          payment_method_types: ["card"],
+          success_url: `${siteUrlOneOff}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${siteUrlOneOff}/payment-cancelled`,
+          payment_intent_data: {
+            application_fee_amount: oneOffPlatformFee + oneOffProcessingFee,
+            transfer_data: { destination: oneOffDestination },
+          },
+          metadata: {
+            type: "job_payment_link",
+            payment_type: "job_funding", // drives the webhook's job flip + tradie notification
+            routing: "destination",
+            job_id: oneOff.id,
+            client_contact_id: oneOff.client_contact_id,
+            tradie_id: oneOff.tradie_id ?? "",
+            platform_fee: String(oneOffPlatformFee),
+            processing_fee: String(oneOffProcessingFee),
+            tradie_tier: oneOffTier,
+          },
+        });
+        payUrl = oneOffSession.url;
+
+        // The webhook completes this row by stripe_checkout_session_id. The payer
+        // has no profile (off-app), so the row anchors to the tradie.
+        const { error: payInsertErr } = await supabase.from("payments").insert({
+          profile_id: oneOff.tradie_id,
+          payment_type: "job_funding",
+          job_id: oneOff.id,
+          amount: jobTotalCents,
+          status: "pending",
+          stripe_checkout_session_id: oneOffSession.id,
+          processing_fee: oneOffProcessingFee,
+          platform_fee_cents: oneOffPlatformFee,
+          fee_tier: oneOffTier,
+          fee_calculated_at: new Date().toISOString(),
+          metadata: {
+            off_app: true,
+            routing: "destination",
+            client_contact_id: oneOff.client_contact_id,
+            payer_email: oneOffContact.email,
+            platform_fee: String(oneOffPlatformFee),
+          },
+        });
+        if (payInsertErr) {
+          console.error("invoice-contact one-off payments insert failed", payInsertErr);
+          return json({ error: "Failed to record the payment" }, 500);
+        }
       }
 
       let emailedOneOff = false;
@@ -216,7 +258,7 @@ Deno.serve(async (req: Request) => {
             notificationType: "INVOICE_RECEIVED",
             metadata: {
               amount: fmtAud(jobTotal),
-              link: oneOffSession.url,
+              link: payUrl,
               service: oneOffLabel,
               businessName: oneOffBusiness,
             },
@@ -225,7 +267,14 @@ Deno.serve(async (req: Request) => {
         emailedOneOff = true;
       } catch (e) { console.error("invoice-contact: one-off email failed", e); }
 
-      return json({ total: jobTotal, stripePaymentUrl: oneOffSession.url, emailed: emailedOneOff, emailedTo: oneOffContact.email });
+      return json({
+        total: jobTotal,
+        stripePaymentUrl: payUrl,
+        emailed: emailedOneOff,
+        emailedTo: oneOffContact.email,
+        // true = we re-sent the link the client already had, not a second one.
+        reused: !!reusableUrl,
+      });
     }
 
     // ─── RECURRING service invoice (original mode) ─────────────────────────────
