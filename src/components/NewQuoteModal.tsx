@@ -131,9 +131,6 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
     if (!title.trim()) { setError('Add a short job title.'); return; }
     if (!price || priceNum <= 0) { setError('Enter a valid price.'); return; }
 
-    setSending(true);
-    setError('');
-
     // The stored description is the CLIENT-VISIBLE scope of work only. For a
     // recurring service the visit cadence + days are client-relevant, so they
     // go here; the pricing basis / rationale stays in the tradie-only notes.
@@ -143,6 +140,17 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
       scopeLines.push(`Visit days: ${scheduleSummary(visitSlots)}`);
     }
     const finalDescription = composeDescription(scopeLines);
+
+    // DB constraint jobs_description_not_empty requires > 10 chars — catch it
+    // HERE with a useful message instead of a generic failure after submit.
+    // The scope is also what the client sees on their quote, so it's worth having.
+    if (finalDescription.trim().length <= 10) {
+      setError('Describe the work in a line or two — this is the scope your client sees on the quote (at least 11 characters).');
+      return;
+    }
+
+    setSending(true);
+    setError('');
 
     // Internal notes (tradie-only): fold in the recurring pricing basis + schedule.
     let finalNotes = internalNotes.trim();
@@ -253,12 +261,22 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
       }
 
       onSent();
-    } catch {
+    } catch (err) {
       // Roll back the orphaned job so a failed quote doesn't leave a stray job.
       if (createdJobId) {
         await supabase.from('jobs').delete().eq('id', createdJobId);
       }
-      setError('Could not send the quote. Please try again.');
+      // Surface the REAL reason for known failures instead of a generic shrug —
+      // a constraint name in the message tells us exactly what to say.
+      const msg = err instanceof Error ? err.message : String((err as { message?: string })?.message ?? '');
+      console.error('Quote send failed:', err);
+      if (msg.includes('jobs_description_not_empty')) {
+        setError('Describe the work in a line or two — this is the scope your client sees on the quote (at least 11 characters).');
+      } else if (msg.includes('jobs_budget_positive')) {
+        setError('Enter a price greater than zero.');
+      } else {
+        setError('Could not send the quote. Please try again.');
+      }
     }
     setSending(false);
   };
