@@ -1,5 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import Stripe from "npm:stripe@14.21.0";
+import { calculatePlatformFee, calculateProcessingFeeCents, resolveTradieTier } from "../_shared/pricing.ts";
 
 /*
   public-quote — token-gated public access to a quote sent to an OFF-APP client.
@@ -10,7 +12,13 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
     supabase functions deploy public-quote --no-verify-jwt
 
   POST body:
-    { "token": "<uuid>", "action": "view" | "accept" }
+    { "token": "<uuid>", "action": "view" | "accept" | "decline" | "release" }
+
+  Accepting a quote FUNDS the job through Stripe escrow (destination charge with
+  the platform + processing fee) when we can: a definite price, a Stripe-onboarded
+  tradie, and the escrow path. That's what makes the platform its fee — previously
+  acceptance took no payment. When a deposit can't be taken (a price range, tradie
+  not onboarded, or a genuine external-pay client) acceptance stays record-only.
   Only safe, client-facing fields are returned — no internal ids or CRM PII.
 */
 
@@ -75,15 +83,44 @@ Deno.serve(async (req: Request) => {
 
     const { data: tradie } = await supabase
       .from("profiles")
-      .select("full_name, email, avatar_url")
+      .select("full_name, email, avatar_url, stripe_connect_account_id, stripe_connect_onboarding_complete, external_pay_allowed")
       .eq("id", quote.tradie_id)
       .maybeSingle();
 
     const { data: td } = await supabase
       .from("tradie_details")
-      .select("business_name")
+      .select("business_name, subscription_tier")
       .eq("profile_id", quote.tradie_id)
       .maybeSingle();
+
+    // The off-app client (for their name in alerts, how they pay, and where to
+    // send the Stripe receipt). Fetched once and reused below.
+    const { data: clientContact } = job?.client_contact_id
+      ? await supabase
+          .from("client_contacts")
+          .select("full_name, email, payment_method")
+          .eq("id", job.client_contact_id)
+          .maybeSingle()
+      : { data: null };
+
+    // ── Escrow-deposit eligibility ────────────────────────────────────────────
+    // We can fund the job on acceptance only with a definite amount, an onboarded
+    // tradie to receive the destination charge, and the escrow path (not a genuine
+    // external-pay client). `payable` drives the client's "pay" button.
+    const chargeDollars =
+      quote.firm_price != null ? Number(quote.firm_price)
+      : (quote.price_min != null && quote.price_min === quote.price_max) ? Number(quote.price_min)
+      : null;
+    const contactIsExternal = (clientContact?.payment_method || "external") === "external";
+    const escrowRequired = !(contactIsExternal && tradie?.external_pay_allowed === true);
+    const destinationAccount =
+      tradie?.stripe_connect_onboarding_complete ? tradie?.stripe_connect_account_id : null;
+    // Whether a deposit *could* be taken (paid-state is combined in at the call
+    // site and in the response, since `paymentPaid` is computed just below).
+    const depositEligible =
+      !!chargeDollars && chargeDollars > 0 && escrowRequired && !!destinationAccount;
+    // Set when we mint (or reuse) a Stripe Checkout the client should be sent to.
+    let paymentUrl: string | null = null;
 
     // Escrow state for this job's funding payment — drives the client's
     // "Approve & release payment" button (shown only when paid, job completed,
@@ -122,15 +159,7 @@ Deno.serve(async (req: Request) => {
               ? (quote.price_min === quote.price_max ? money(quote.price_min) : `${money(quote.price_min)} – ${money(quote.price_max)}`)
               : quote.price_min != null ? money(quote.price_min) : "";
 
-        let clientFirst = "Your client";
-        if (job?.client_contact_id) {
-          const { data: contact } = await supabase
-            .from("client_contacts")
-            .select("full_name")
-            .eq("id", job.client_contact_id)
-            .maybeSingle();
-          if (contact?.full_name) clientFirst = contact.full_name.split(" ")[0];
-        }
+        const clientFirst = clientContact?.full_name ? clientContact.full_name.split(" ")[0] : "Your client";
 
         const jobTitle = job?.title || "the job";
 
@@ -161,6 +190,108 @@ Deno.serve(async (req: Request) => {
           } catch (e) {
             console.error("Failed to send quote-accepted email:", e);
           }
+        }
+      }
+
+      // ── Fund the job through Stripe escrow ──────────────────────────────────
+      // Runs whether or not this call was the one that flipped the quote to
+      // accepted (so a client who abandoned checkout can retry). No-ops cleanly
+      // if a deposit can't be taken or the job is already funded.
+      const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+      if (stripeSecretKey && depositEligible && !paymentPaid && chargeDollars) {
+        try {
+          const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
+          const chargeCents = Math.round(chargeDollars * 100);
+          const tier = resolveTradieTier(td?.subscription_tier);
+          const platformFeeCents = Math.round(calculatePlatformFee(chargeDollars, tier) * 100);
+          const processingFeeCents = calculateProcessingFeeCents(chargeCents);
+
+          // Reuse an existing OPEN checkout session instead of minting a second
+          // live pay link — a client who clicks twice must never be double-charged.
+          let reusableUrl: string | null = null;
+          const { data: openPays } = await supabase
+            .from("payments")
+            .select("id, stripe_checkout_session_id")
+            .eq("job_id", quote.job_id)
+            .eq("payment_type", "job_funding")
+            .eq("status", "pending")
+            .not("stripe_checkout_session_id", "is", null)
+            .order("created_at", { ascending: false });
+          for (const row of (openPays as { id: string; stripe_checkout_session_id: string }[] | null) ?? []) {
+            try {
+              const existing = await stripe.checkout.sessions.retrieve(row.stripe_checkout_session_id);
+              if (existing.status === "open" && existing.url && !reusableUrl) reusableUrl = existing.url;
+              else if (existing.status === "expired") {
+                await supabase.from("payments").update({ status: "failed" }).eq("id", row.id);
+              }
+            } catch (e) {
+              console.warn("public-quote: could not retrieve session", row.stripe_checkout_session_id, e);
+            }
+          }
+
+          if (reusableUrl) {
+            paymentUrl = reusableUrl;
+          } else {
+            const siteUrl = Deno.env.get("SITE_URL") || Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com";
+            const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+              { price_data: { currency: "aud", product_data: { name: job?.title || "Job" }, unit_amount: chargeCents }, quantity: 1 },
+            ];
+            if (processingFeeCents > 0) {
+              lineItems.push({ price_data: { currency: "aud", product_data: { name: "Secure Processing Fee" }, unit_amount: processingFeeCents }, quantity: 1 });
+            }
+            const checkoutSession = await stripe.checkout.sessions.create({
+              customer_email: clientContact?.email || undefined,
+              line_items: lineItems,
+              mode: "payment",
+              // Card only — BECS/other methods can take days to clear; the client
+              // is paying a deposit now to fund the job.
+              payment_method_types: ["card"],
+              success_url: `${siteUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+              cancel_url: `${siteUrl}/quote/${token}`,
+              payment_intent_data: {
+                application_fee_amount: platformFeeCents + processingFeeCents,
+                transfer_data: { destination: destinationAccount! },
+              },
+              metadata: {
+                type: "job_payment_link",
+                payment_type: "job_funding", // webhook flips the job + notifies the tradie
+                routing: "destination",
+                job_id: quote.job_id,
+                client_contact_id: job?.client_contact_id ?? "",
+                tradie_id: quote.tradie_id,
+                platform_fee: String(platformFeeCents),
+                processing_fee: String(processingFeeCents),
+                tradie_tier: tier,
+              },
+            });
+            paymentUrl = checkoutSession.url ?? null;
+
+            // The webhook completes this row by stripe_checkout_session_id. The
+            // payer is off-app (no profile), so the row anchors to the tradie.
+            const { error: payErr } = await supabase.from("payments").insert({
+              profile_id: quote.tradie_id,
+              payment_type: "job_funding",
+              job_id: quote.job_id,
+              amount: chargeCents,
+              status: "pending",
+              stripe_checkout_session_id: checkoutSession.id,
+              processing_fee: processingFeeCents,
+              platform_fee_cents: platformFeeCents,
+              fee_tier: tier,
+              fee_calculated_at: new Date().toISOString(),
+              metadata: {
+                off_app: true,
+                routing: "destination",
+                client_contact_id: job?.client_contact_id ?? null,
+                payer_email: clientContact?.email ?? null,
+                platform_fee: String(platformFeeCents),
+              },
+            });
+            if (payErr) console.error("public-quote: funding payment insert failed", payErr);
+          }
+        } catch (e) {
+          // Non-fatal: acceptance still succeeds; the tradie can send a pay link.
+          console.error("public-quote: escrow deposit creation failed", e);
         }
       }
     }
@@ -286,7 +417,14 @@ Deno.serve(async (req: Request) => {
         address: job?.location_address ?? null,
         status: job?.status ?? null,
       },
-      payment: { paid: paymentPaid, released: paymentReleased },
+      payment: {
+        paid: paymentPaid,
+        released: paymentReleased,
+        // A deposit can be taken now (client should be sent to pay).
+        payable: depositEligible && !paymentPaid,
+        // Present when this call minted/reused a Checkout to redirect the client to.
+        url: paymentUrl,
+      },
       tradie: {
         name: tradie?.full_name ?? null,
         business: td?.business_name ?? null,

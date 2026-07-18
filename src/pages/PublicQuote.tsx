@@ -21,7 +21,7 @@ interface QuoteView {
   };
   job: { title: string | null; description: string | null; address: string | null; status?: string | null };
   tradie: { name: string | null; business: string | null; avatarUrl?: string | null };
-  payment?: { paid: boolean; released: boolean };
+  payment?: { paid: boolean; released: boolean; payable?: boolean; url?: string | null };
 }
 
 function formatPrice(q: QuoteView['quote']): string {
@@ -86,6 +86,13 @@ export default function PublicQuote() {
       if (fnError || res?.error) {
         setError(res?.error || 'Could not accept the quote. Please try again.');
       } else {
+        // If a secure deposit is due, send the client straight to Stripe to fund
+        // the job into escrow. Otherwise acceptance is record-only.
+        const payUrl = (res as QuoteView)?.payment?.url;
+        if (payUrl) {
+          window.location.href = payUrl;
+          return; // keep the spinner while the browser navigates
+        }
         setAccepted(true);
       }
     } catch {
@@ -133,7 +140,9 @@ export default function PublicQuote() {
 
   const businessName = data?.tradie.business || data?.tradie.name || 'Your tradie';
   const noLongerAvailable = !!data && ['withdrawn', 'expired', 'cancelled'].includes(data.status);
-  const canRelease = !!data?.payment?.paid && data?.job.status === 'completed';
+  const paid = !!data?.payment?.paid;
+  const depositPayable = !!data?.payment?.payable;
+  const canRelease = paid && data?.job.status === 'completed';
   const avatarUrl = data?.tradie.avatarUrl;
   const showAvatar = !!avatarUrl && /^https?:\/\//.test(avatarUrl) && !avatarFailed;
 
@@ -246,6 +255,28 @@ export default function PublicQuote() {
                       Only release once the work is done to your satisfaction — this pays {businessName}.
                     </p>
                   </div>
+                ) : !paid && depositPayable ? (
+                  <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="text-center">
+                      <ShieldCheck className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+                      <h3 className="font-semibold text-gray-900">Secure the job with {businessName}</h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Pay securely into escrow to lock it in. Your money is held safely by Stripe and only
+                        released to {businessName} once the work is done.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleAccept}
+                      disabled={accepting}
+                      className="w-full mt-4 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                    >
+                      {accepting && <Loader2 className="w-4 h-4 animate-spin" />}
+                      Pay deposit securely
+                    </button>
+                    <p className="text-center text-xs text-gray-500 mt-2">
+                      Secured by Stripe. You release the payment yourself once the job is complete.
+                    </p>
+                  </div>
                 ) : (
                   <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center">
                     <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
@@ -280,10 +311,12 @@ export default function PublicQuote() {
                   className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                 >
                   {accepting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Accept quote
+                  {depositPayable ? 'Accept & pay securely' : 'Accept quote'}
                 </button>
                 <p className="text-center text-xs text-gray-500">
-                  No payment is taken now — accepting just lets {businessName} know you’d like to go ahead.
+                  {depositPayable
+                    ? `Your payment is held safely in Stripe escrow and only released to ${businessName} once the work is done.`
+                    : `No payment is taken now — accepting just lets ${businessName} know you’d like to go ahead.`}
                 </p>
 
                 {showDeclineForm ? (
