@@ -42,6 +42,7 @@ const FREE_FEATURES = [
   { text: 'Basic profile listing', icon: Users },
   { text: 'Reviews & ratings', icon: Star },
   { text: 'Verification badges', icon: Shield },
+  { text: 'Invoicing & tax invoices', icon: FileText },
   { text: 'No per-lead fees or lock-in', icon: Check },
 ];
 
@@ -51,7 +52,7 @@ const PRO_FEATURES = [
   { text: 'Business name shown to clients', icon: BadgeCheck, highlight: true },
   { text: 'Priority in search results', icon: TrendingUp, highlight: true },
   { text: 'Verified Pro badge', icon: BadgeCheck, highlight: true },
-  { text: 'Invoicing & payment collection', icon: FileText, highlight: false },
+  { text: 'Recurring services & auto-invoicing', icon: CalendarRange, highlight: false },
   { text: 'Project & milestone tracking', icon: Layers, highlight: false },
   { text: 'Google Calendar sync', icon: Calendar, highlight: false },
   { text: 'Bulk availability management', icon: CalendarRange, highlight: false },

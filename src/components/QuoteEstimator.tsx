@@ -18,6 +18,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { calculateDistance } from '../hooks/useGeolocation';
 import type { ClientContact } from '../types/database';
 import PropertyPreview from './PropertyPreview';
+import { TIER_PRICING } from '../lib/subscription';
 
 interface QuoteEstimatorProps {
   /** scope = client-visible duty lines; internal = tradie-only assumptions/hours. */
@@ -588,7 +589,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
                       <span className="text-sm font-bold text-emerald-800">Go Pro — unlimited estimates</span>
                       <span className="px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-semibold uppercase tracking-wide">Best value</span>
                     </div>
-                    <p className="text-xs text-emerald-700 mt-0.5">$49/mo · unlimited AI estimates + lower platform fees</p>
+                    <p className="text-xs text-emerald-700 mt-0.5">${TIER_PRICING.pro.monthly}/mo · unlimited AI estimates + lower platform fees</p>
                   </div>
                   <span className="text-emerald-700 text-lg" aria-hidden="true">→</span>
                 </div>

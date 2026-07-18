@@ -15,6 +15,7 @@ import { recordProfileView, getDailyViewCount, hasEngagement, getRemainingViews,
 import { useToast } from '../hooks/useToast';
 import { saveSearch, getSavedSearches, deleteSavedSearch, toggleSearchAlerts, type SavedSearch, type SearchFilters } from '../lib/savedSearches';
 import { TRADE_OPTIONS } from '../lib/tradeCategories';
+import { TIER_PRICING } from '../lib/subscription';
 import { calculateTradeScore, buildScoringFactors } from '../lib/searchRanking';
 
 const tradeCategories = [{ value: '', label: 'All Trades' }, ...TRADE_OPTIONS];
@@ -1121,7 +1122,7 @@ export default function Search() {
                   Free accounts can view {DAILY_VIEW_LIMIT_VALUE} tradie profiles per day. Upgrade to Pro for unlimited views, verified badge, and priority search.
                 </p>
                 <div className="flex items-center justify-center gap-4">
-                  <span className="text-2xl font-bold text-warm-600">$45/mo</span>
+                  <span className="text-2xl font-bold text-warm-600">${TIER_PRICING.pro.monthly}/mo</span>
                   <button onClick={() => setShowSubscriptionModal(true)} className="px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors shadow-sm">
                     Upgrade to Pro
                   </button>
