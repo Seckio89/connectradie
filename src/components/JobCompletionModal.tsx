@@ -452,13 +452,16 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
           const amountCents = Math.round(quoteAmount * 100);
 
           if (amountCents > 0 && job.client_id) {
-            const processingFee = Math.round(amountCents * 0.02); // 2% platform fee
+            // Platform + processing fees are computed authoritatively at payment
+            // time by the checkout edge function (correct tier + schedule). This
+            // pending request row must NOT pre-set a made-up fee — it's superseded
+            // at charge time and only skews reporting if wrong.
             await supabase.from('payments').insert({
               profile_id: job.client_id,
               job_id: job.id,
               payment_type: 'job_funding',
               amount: amountCents,
-              processing_fee: processingFee,
+              processing_fee: 0,
               currency: 'aud',
               status: 'pending',
               metadata: { tradie_id: userId, requested_at: new Date().toISOString() },
