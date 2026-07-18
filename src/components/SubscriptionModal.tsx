@@ -251,8 +251,8 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
   const annualSavingsPro = Math.round((TIER_PRICING.pro.monthly - TIER_PRICING.pro.annualMonthly) * 12);
 
   const tierLabel = (tier: SubscriptionTier) => {
-    if (tier === 'pro_plus') return 'Pro+';
-    if (tier === 'pro') return 'Pro';
+    // pro_plus is retired — any legacy account on it shows as "Pro".
+    if (tier === 'pro' || tier === 'pro_plus') return 'Pro';
     return 'Free';
   };
 

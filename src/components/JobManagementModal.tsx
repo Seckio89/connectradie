@@ -111,7 +111,7 @@ function parseJobInfo(job: JobData) {
 function getStatusConfig(status: string) {
   switch (status) {
     case 'pending': return { label: 'Pending', color: 'bg-amber-100 text-amber-800 border-amber-200', dot: 'bg-amber-500' };
-    case 'accepted': return { label: 'Accepted', color: 'bg-teal-100 text-teal-800 border-teal-200', dot: 'bg-teal-500' };
+    case 'accepted': return { label: 'Accepted', color: 'bg-secondary-100 text-secondary-800 border-secondary-200', dot: 'bg-secondary-500' };
     case 'funded': return { label: 'Funded', color: 'bg-green-100 text-green-800 border-green-200', dot: 'bg-green-500' };
     case 'in_progress': return { label: 'In Progress', color: 'bg-secondary-100 text-secondary-800 border-secondary-200', dot: 'bg-secondary-500' };
     case 'completed': return { label: 'Completed', color: 'bg-green-100 text-green-800 border-green-200', dot: 'bg-green-500' };

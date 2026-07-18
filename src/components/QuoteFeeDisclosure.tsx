@@ -31,7 +31,7 @@ export default function QuoteFeeDisclosure({ priceDollars, className }: QuoteFee
   const tier = getChargedTier(tradieDetails?.subscription_tier);
   const fee = calculatePlatformFee(priceDollars, tier);
   const receives = priceDollars - fee;
-  const tierLabel = tier === 'free' ? 'Free' : tier === 'pro_plus' ? 'Pro+' : 'Pro';
+  const tierLabel = tier === 'free' ? 'Free' : 'Pro'; // pro & the retired pro_plus both show as Pro
 
   return (
     <div className={`flex items-start gap-2 rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 ${className ?? ''}`}>

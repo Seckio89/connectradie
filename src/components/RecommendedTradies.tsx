@@ -199,7 +199,7 @@ export default function RecommendedTradies() {
       </h3>
       {!profile?.postcode && (
         <p className="text-xs text-gray-500 -mt-3 mb-4">
-          <Link to="/profile" className="text-primary-600 hover:underline">Add your postcode</Link> for nearby matches.
+          <Link to="/settings" className="text-primary-600 hover:underline">Add your postcode</Link> for nearby matches.
         </p>
       )}
 

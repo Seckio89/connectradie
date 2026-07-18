@@ -1067,7 +1067,7 @@ export default function TradieDashboard() {
                 {pendingConfirmations.length > 0 && (
                   <Link to="/schedule" className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors">
                     <div className="flex items-center gap-3">
-                      <RefreshCw className="w-4 h-4 text-purple-500" />
+                      <RefreshCw className="w-4 h-4 text-amber-600" />
                       <span className="text-sm text-gray-700">{pendingConfirmations.length} ongoing service session{pendingConfirmations.length !== 1 ? 's' : ''} need{pendingConfirmations.length === 1 ? 's' : ''} confirmation</span>
                     </div>
                     <span className="text-sm font-medium text-amber-700">Confirm &rarr;</span>

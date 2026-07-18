@@ -306,9 +306,8 @@ function SmartCalendar({
 }
 
 // Free urgent posts per calendar month for non-Pro clients. Pro is unlimited.
-// Beyond the cap, non-Pro clients can either upgrade or pay a per-post boost (Phase 2).
+// Beyond the cap, non-Pro clients upgrade to Pro (per-post boost checkout not built yet).
 const URGENT_FREE_LIMIT = 2;
-const URGENT_BOOST_PRICE = 9;
 
 export default function PostLead() {
   const { user, profile } = useAuth();
@@ -1036,13 +1035,6 @@ export default function PostLead() {
                         className="inline-flex items-center px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg"
                       >
                         Upgrade to Pro
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setError(`One-off urgent boost ($${URGENT_BOOST_PRICE}) — coming soon. Upgrade to Pro for unlimited urgent posts now.`)}
-                        className="inline-flex items-center px-4 py-2 border border-amber-300 text-amber-800 text-sm font-medium rounded-lg hover:bg-amber-100"
-                      >
-                        Pay ${URGENT_BOOST_PRICE} for this post
                       </button>
                       <button
                         type="button"
