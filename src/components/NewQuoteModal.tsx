@@ -4,8 +4,8 @@
 // accept it. If the contact has no email, the tradie can copy the link to share.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useState } from 'react';
-import { Loader2, Send, Copy, CheckCircle2, Check, Sparkles, FileText, Repeat, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Loader2, Send, Copy, CheckCircle2, Check, Sparkles, FileText, Repeat, Plus, Layers, BookmarkPlus, Trash2, ChevronDown } from 'lucide-react';
 import Modal from './Modal';
 import QuoteEstimator from './QuoteEstimator';
 import QuoteFeeDisclosure from './QuoteFeeDisclosure';
@@ -13,7 +13,8 @@ import { supabase } from '../lib/supabase';
 import { createRecurringJob, calculateNextDueDate, FREQ_WEEKLY, FREQ_FORTNIGHTLY } from '../lib/recurringJobs';
 import { proseInputProps } from '../lib/proseInput';
 import { composeDescription } from '../lib/jobDescription';
-import type { ClientContact } from '../types/database';
+import { listQuoteTemplates, saveQuoteTemplate, deleteQuoteTemplate } from '../lib/pricingHelper';
+import type { ClientContact, QuoteTemplate } from '../types/database';
 
 const FREQUENCIES = [
   { key: 'weekly', label: 'Weekly', months: FREQ_WEEKLY },
@@ -91,6 +92,61 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
   // jobs.notes — never in the description, never returned to the client.
   const [internalNotes, setInternalNotes] = useState('');
   const [emailFailReason, setEmailFailReason] = useState('');
+
+  // Estimator trade/property — tags the quote so it can feed anonymised area stats.
+  const [estTrade, setEstTrade] = useState<string | null>(null);
+  const [estProperty, setEstProperty] = useState<string | null>(null);
+
+  // Reusable quote templates.
+  const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [templateSaved, setTemplateSaved] = useState(false);
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    listQuoteTemplates(tradieId).then(setTemplates);
+  }, [isOpen, tradieId]);
+
+  const applyTemplate = (t: QuoteTemplate) => {
+    setTitle((t.title || t.name || '').trim());
+    if (t.scope) setDescription(t.scope);
+    if (t.price != null) setPrice(String(t.price));
+    if (t.internal_notes) setInternalNotes(t.internal_notes);
+    if (t.message) setMessage(t.message);
+    setEstTrade(t.trade_category ?? null);
+    setEstProperty(t.property_type ?? null);
+    setShowTemplates(false);
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!templateName.trim()) return;
+    setSavingTemplate(true);
+    const r = await saveQuoteTemplate(tradieId, {
+      name: templateName.trim(),
+      title: title.trim() || null,
+      scope: description.trim() || null,
+      internalNotes: internalNotes.trim() || null,
+      message: message.trim() || null,
+      price: parseFloat(price) || null,
+      propertyType: estProperty,
+      tradeCategory: estTrade,
+    });
+    setSavingTemplate(false);
+    if (r.ok) {
+      setTemplateSaved(true);
+      setShowSaveTemplate(false);
+      setTemplateName('');
+      listQuoteTemplates(tradieId).then(setTemplates);
+    }
+  };
+
+  const removeTemplate = async (id: string) => {
+    await deleteQuoteTemplate(id);
+    setTemplates((prev) => prev.filter((t) => t.id !== id));
+  };
 
   const firstName = contact.full_name.split(' ')[0] || 'them';
 
@@ -199,6 +255,9 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
         status: 'pending',
         public_token: token,
         sent_to_email: contact.email,
+        // Anonymised area stats source — populated only when the estimator ran.
+        trade_category: estTrade ? estTrade.toLowerCase() : null,
+        property_type: estProperty ? estProperty.toLowerCase() : null,
       });
       if (quoteError) throw quoteError;
 
@@ -341,6 +400,37 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
               </div>
             </div>
 
+            {/* Save this quote as a reusable template */}
+            {templateSaved ? (
+              <p className="text-xs text-emerald-600 flex items-center justify-center gap-1">
+                <Check className="w-3.5 h-3.5" /> Saved as a template — reuse it on your next quote.
+              </p>
+            ) : showSaveTemplate ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  placeholder="Template name, e.g. Standard office clean"
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <button
+                  onClick={handleSaveTemplate}
+                  disabled={savingTemplate || !templateName.trim()}
+                  className="px-3 py-2 rounded-lg bg-secondary-600 text-white text-sm font-medium hover:bg-secondary-700 disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+                >
+                  {savingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookmarkPlus className="w-4 h-4" />} Save
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setTemplateName(title.trim()); setShowSaveTemplate(true); }}
+                className="w-full flex items-center justify-center gap-1.5 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <BookmarkPlus className="w-4 h-4 text-secondary-600" /> Save as template
+              </button>
+            )}
+
             <button
               onClick={onClose}
               className="w-full py-3 bg-warm-500 text-white rounded-xl font-medium hover:bg-warm-600 transition-colors"
@@ -368,6 +458,41 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
             </div>
 
             <div className="space-y-4">
+              {/* Your saved quotes — reuse a template to pre-fill the form */}
+              {templates.length > 0 && (
+                <div className="border border-gray-200 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setShowTemplates((v) => !v)}
+                    className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium text-gray-700"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-secondary-600" /> Your saved quotes
+                      <span className="text-xs text-gray-400 font-normal">({templates.length})</span>
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showTemplates ? 'rotate-180' : ''}`} />
+                  </button>
+                  {showTemplates && (
+                    <div className="px-3 pb-3 space-y-1.5">
+                      {templates.map((t) => (
+                        <div key={t.id} className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-gray-800 truncate">{t.name}</p>
+                            <p className="text-xs text-gray-400 truncate">
+                              {[t.title, t.price != null ? aud(Number(t.price)) : null, t.property_type].filter(Boolean).join(' · ') || 'Saved quote'}
+                            </p>
+                          </div>
+                          <button type="button" onClick={() => applyTemplate(t)}
+                            className="flex-shrink-0 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-medium text-secondary-700 hover:bg-secondary-50">Use</button>
+                          <button type="button" onClick={() => removeTemplate(t.id)} aria-label="Delete template"
+                            className="flex-shrink-0 p-1.5 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Job title</label>
                 <input
@@ -446,6 +571,8 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                       contact={contact}
                       onApply={(suggested, extras) => {
                         setPrice(String(suggested));
+                        if (extras.trade) setEstTrade(extras.trade);
+                        if (extras.property) setEstProperty(extras.property);
                         // Duties → client-visible scope; assumptions/hours → internal notes.
                         if (extras.scope.length) {
                           setDescription((prev) => {

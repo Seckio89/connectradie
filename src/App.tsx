@@ -45,6 +45,7 @@ const AdminOverview = lazy(() => import('./pages/AdminOverview'));
 const AdminUsers = lazy(() => import('./pages/AdminUsers'));
 const AdminPayments = lazy(() => import('./pages/AdminPayments'));
 const AdminModeration = lazy(() => import('./pages/AdminModeration'));
+const AdminCustomTasks = lazy(() => import('./pages/AdminCustomTasks'));
 const AdminDisputes = lazy(() => import('./pages/AdminDisputes'));
 const AdminUpdates = lazy(() => import('./pages/AdminUpdates'));
 const AdminFinancials = lazy(() => import('./pages/AdminFinancials'));
@@ -351,6 +352,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute requireAdmin>
             <AdminModeration />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/custom-tasks"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminCustomTasks />
           </ProtectedRoute>
         }
       />

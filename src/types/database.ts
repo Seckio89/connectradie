@@ -892,8 +892,32 @@ export type QuoteTemplate = {
   id: string;
   tradie_id: string;
   name: string;
-  message: string;
+  message: string | null;
+  default_duration: string | null;
   includes_materials: boolean;
+  // Enriched fields for the off-app NewQuoteModal "save as template" flow.
+  title: string | null;
+  scope: string | null;
+  internal_notes: string | null;
+  price: number | null;
+  property_type: string | null;
+  trade_category: string | null;
+  conditions: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CustomTaskSuggestion = {
+  id: string;
+  submitted_by: string | null;
+  task_name: string;
+  task_name_normalized: string;
+  trade_context: string | null;
+  times_submitted: number;
+  status: 'pending' | 'approved' | 'rejected';
+  approved_as_category: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -1446,6 +1470,12 @@ export type Database = {
         Row: QuoteTemplate;
         Insert: Partial<Omit<QuoteTemplate, 'id' | 'created_at' | 'updated_at'>>;
         Update: Partial<Omit<QuoteTemplate, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      custom_task_suggestions: {
+        Row: CustomTaskSuggestion;
+        Insert: Partial<Omit<CustomTaskSuggestion, 'id' | 'created_at' | 'updated_at'>>;
+        Update: Partial<Omit<CustomTaskSuggestion, 'id' | 'created_at'>>;
         Relationships: [];
       };
       time_entries: {

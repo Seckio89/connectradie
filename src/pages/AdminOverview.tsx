@@ -11,6 +11,7 @@ import {
   UserPlus,
   FileText,
   Receipt,
+  Lightbulb,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -378,6 +379,13 @@ export default function AdminOverview() {
             >
               <BarChart3 className="w-4 h-4 text-gray-600" />
               <span className="text-sm font-medium text-gray-700">Moderation</span>
+            </Link>
+            <Link
+              to="/admin/custom-tasks"
+              className="flex items-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
+            >
+              <Lightbulb className="w-4 h-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">Task Requests</span>
             </Link>
           </div>
         </div>

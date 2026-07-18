@@ -12,17 +12,21 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Loader2, Camera, X, AlertTriangle, Check, Info, ChevronDown, HelpCircle, Lock, Package } from 'lucide-react';
+import { Sparkles, Loader2, Camera, X, AlertTriangle, Check, Info, ChevronDown, HelpCircle, Lock, Package, BarChart3, Plus, Send } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { calculateDistance } from '../hooks/useGeolocation';
 import type { ClientContact } from '../types/database';
 import PropertyPreview from './PropertyPreview';
 import { TIER_PRICING } from '../lib/subscription';
+import { submitCustomTask, getApprovedCustomTasks, getAreaPriceRange, type AreaPriceRange } from '../lib/pricingHelper';
 
 interface QuoteEstimatorProps {
-  /** scope = client-visible duty lines; internal = tradie-only assumptions/hours. */
-  onApply: (price: number, extras: { scope: string[]; internal: string }) => void;
+  /**
+   * scope = client-visible duty lines; internal = tradie-only assumptions/hours.
+   * trade/property tag the resulting quote so it can feed anonymised area stats.
+   */
+  onApply: (price: number, extras: { scope: string[]; internal: string; trade?: string; property?: string }) => void;
   contact: ClientContact;
 }
 
@@ -168,8 +172,17 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   const [markupPct, setMarkupPct] = useState('20');
   const [callOut, setCallOut] = useState('');
 
-  const [history, setHistory] = useState<{ price: number; title: string }[]>([]);
+  const [history, setHistory] = useState<{ price: number; title: string; date: string | null }[]>([]);
   const [hoursEdit, setHoursEdit] = useState('');
+
+  // "Other" trade: free-text task + the approved-suggestion quick-add chips.
+  const [customTask, setCustomTask] = useState('');
+  const [taskSubmitting, setTaskSubmitting] = useState(false);
+  const [taskSubmitted, setTaskSubmitted] = useState(false);
+  const [approvedTasks, setApprovedTasks] = useState<string[]>([]);
+
+  // Anonymised area market range (Pro/PM only; needs ≥5 comparable quotes).
+  const [areaRange, setAreaRange] = useState<AreaPriceRange | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<WorkEstimate | null>(null);
@@ -200,14 +213,14 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
     (async () => {
       const { data } = await supabase
         .from('quotes')
-        .select('firm_price, price_min, jobs(title)')
+        .select('firm_price, price_min, created_at, jobs(title)')
         .eq('tradie_id', user.id)
         .eq('status', 'accepted')
         .order('created_at', { ascending: false })
         .limit(6);
-      const rows = (data as unknown as { firm_price: number | null; price_min: number | null; jobs: { title: string | null } | null }[]) ?? [];
+      const rows = (data as unknown as { firm_price: number | null; price_min: number | null; created_at: string | null; jobs: { title: string | null } | null }[]) ?? [];
       setHistory(rows
-        .map((r) => ({ price: r.firm_price ?? r.price_min ?? 0, title: r.jobs?.title ?? 'Job' }))
+        .map((r) => ({ price: r.firm_price ?? r.price_min ?? 0, title: r.jobs?.title ?? 'Job', date: r.created_at }))
         .filter((h) => h.price > 0));
     })();
   }, [user]);
@@ -292,6 +305,39 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
   useEffect(() => { loadAiUsage(); }, [loadAiUsage]);
 
+  // Unlimited AI estimates ⟹ Pro/PM. Market data is a paid-tier perk.
+  const isPaidTier = aiUsage != null && aiUsage.limit === null;
+
+  // Load approved custom tasks as quick-add chips when "Other" is chosen.
+  useEffect(() => {
+    if (trade !== 'Other') { setApprovedTasks([]); return; }
+    let cancelled = false;
+    getApprovedCustomTasks().then((t) => { if (!cancelled) setApprovedTasks(t); });
+    return () => { cancelled = true; };
+  }, [trade]);
+
+  // Anonymised area market range. Fetched for all tiers (the numbers are only
+  // shown to Pro/PM; free tier sees a teaser when data exists). The RPC only
+  // ever returns aggregates over ≥5 comparable quotes — never individual rows.
+  useEffect(() => {
+    if (!trade || trade === 'Other') { setAreaRange(null); return; }
+    let cancelled = false;
+    getAreaPriceRange(trade.toLowerCase(), property.toLowerCase(), contact.latitude ?? null, contact.longitude ?? null)
+      .then((r) => { if (!cancelled) setAreaRange(r); });
+    return () => { cancelled = true; };
+  }, [trade, property, contact.latitude, contact.longitude]);
+
+  const shortDate = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '';
+
+  const submitTask = async () => {
+    if (customTask.trim().length < 2) return;
+    setTaskSubmitting(true);
+    const r = await submitCustomTask(customTask, 'Other');
+    setTaskSubmitting(false);
+    if (r.ok) { setTaskSubmitted(true); setTimeout(() => setTaskSubmitted(false), 4000); }
+  };
+
   // Buy a 20-credit AI Estimate Pack via one-time Stripe Checkout.
   const buyPack = async () => {
     setBuyingPack(true);
@@ -327,7 +373,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           condition: condition || undefined,
           access: [...access],
           materialsSuppliedBy: clientSupplies ? 'client' : 'tradie',
-          notes: notes.trim() || undefined,
+          notes: [trade === 'Other' ? customTask.trim() : '', notes.trim()].filter(Boolean).join(' — ') || undefined,
           economics,
           history,
           images: photos,
@@ -377,7 +423,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
       (visits > 1 ? `\n${visits} visits${visitSpan ? ` over a few ${visitSpan}` : ''} · ${money(priced.perVisitTotal)}/visit` : '') +
       (orderedDays.length ? `\nPreferred days: ${orderedDays.join(', ')}` : '') +
       (result.assumptions.length ? `\nAssumptions:\n${result.assumptions.map((a) => `- ${a}`).join('\n')}` : '');
-    onApply(Math.round(priced.total), { scope, internal });
+    onApply(Math.round(priced.total), { scope, internal, trade, property });
   };
 
   const fields = trade ? fieldsFor(trade, property) : [];
@@ -410,6 +456,36 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
       {trade && (
         <>
+          {/* "Other" trade — capture the task in words + feed the review pipeline */}
+          {trade === 'Other' && (
+            <div className="rounded-lg border border-secondary-100 bg-white p-3 space-y-2">
+              <label className="block text-xs font-medium text-gray-600">What type of work? Describe the task</label>
+              <div className="flex items-center gap-2">
+                <input type="text" value={customTask}
+                  onChange={(e) => { setCustomTask(e.target.value); setTaskSubmitted(false); }}
+                  placeholder="e.g. Pressure washing, gutter vac, solar panel clean…"
+                  className={`flex-1 ${numInput}`} />
+                <button type="button" onClick={submitTask} disabled={taskSubmitting || customTask.trim().length < 2}
+                  className="inline-flex items-center gap-1 px-2.5 py-2 rounded-lg bg-secondary-600 text-white text-xs font-medium hover:bg-secondary-700 disabled:opacity-50">
+                  {taskSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Suggest
+                </button>
+              </div>
+              {taskSubmitted
+                ? <p className="text-[11px] text-emerald-600 flex items-center gap-1"><Check className="w-3 h-3" /> Thanks — we’ll review this and may add it as a category.</p>
+                : <p className="text-[11px] text-gray-400">Can’t see your trade? Tell us and we’ll add popular requests. Your description also sharpens the estimate.</p>}
+              {approvedTasks.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {approvedTasks.map((t) => (
+                    <button key={t} type="button" onClick={() => setCustomTask(t)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border bg-white border-gray-200 text-gray-600 hover:bg-gray-50">
+                      <Plus className="w-3 h-3" /> {t}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Property type — reshapes the quantity questions (office/warehouse ≠ rooms) */}
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[11px] text-gray-500">Property:</span>
@@ -545,11 +621,40 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             </div>
           </div>
 
-          {/* History anchors */}
+          {/* Anonymised area market range — Pro/PM see the numbers; free tier a
+              subtle teaser, and only when there's enough data (≥5 quotes). */}
+          {areaRange && areaRange.low != null && areaRange.high != null && (
+            isPaidTier ? (
+              <div className="flex items-start gap-2 rounded-lg bg-secondary-50 border border-secondary-100 px-3 py-2">
+                <BarChart3 className="w-4 h-4 mt-0.5 flex-shrink-0 text-secondary-600" />
+                <p className="text-xs text-secondary-800">
+                  Market range for {property.toLowerCase()} {trade.toLowerCase()} in this area:{' '}
+                  <span className="font-semibold">{money(areaRange.low)}–{money(areaRange.high)}</span>
+                  {areaRange.mid != null && <span className="text-secondary-600"> · typically {money(areaRange.mid)}</span>}
+                  <span className="block text-[11px] text-secondary-600/80 mt-0.5">Anonymised from {areaRange.sampleSize} nearby quotes — a guide, not a target.</span>
+                </p>
+              </div>
+            ) : (
+              <Link to="/pricing" className="flex items-center gap-2 rounded-lg border border-dashed border-gray-200 bg-white px-3 py-2 hover:bg-gray-50 transition-colors">
+                <BarChart3 className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                <span className="text-[11px] text-gray-500"><span className="font-medium text-gray-700">See what {trade.toLowerCase()}s charge in this area</span> — market price ranges are a Pro feature.</span>
+              </Link>
+            )
+          )}
+
+          {/* History anchors — your own recent accepted quotes, with context */}
           {history.length > 0 && (
-            <p className="text-[11px] text-gray-500">
-              Anchored to your recent quotes: {history.slice(0, 4).map((h) => money(h.price)).join(' · ')}
-            </p>
+            <div className="text-[11px] text-gray-500">
+              <span className="text-gray-400">Anchored to your recent quotes</span>
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                {history.slice(0, 4).map((h, i) => (
+                  <span key={i} className="tabular-nums">
+                    <span className="font-medium text-gray-700">{money(h.price)}</span>
+                    <span className="text-gray-400"> · {h.title}{h.date ? ` · ${shortDate(h.date)}` : ''}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
 
           {/* Economics (collapsible) */}
