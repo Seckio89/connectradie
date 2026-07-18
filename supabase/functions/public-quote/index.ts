@@ -41,7 +41,7 @@ Deno.serve(async (req: Request) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!supabaseUrl || !serviceKey) return json({ error: "Server configuration error" }, 500);
 
-    let payload: { token?: string; action?: string };
+    let payload: { token?: string; action?: string; reason?: string };
     try {
       payload = await req.json();
     } catch {
@@ -49,7 +49,11 @@ Deno.serve(async (req: Request) => {
     }
 
     const token = typeof payload.token === "string" ? payload.token.trim() : "";
-    const action = payload.action === "accept" ? "accept" : "view";
+    const action =
+      payload.action === "accept" ? "accept"
+      : payload.action === "decline" ? "decline"
+      : "view";
+    const declineReason = typeof payload.reason === "string" ? payload.reason.trim().slice(0, 1000) : "";
     if (!UUID_RE.test(token)) return json({ error: "Invalid quote link" }, 400);
 
     const supabase = createClient(supabaseUrl, serviceKey);
@@ -145,7 +149,70 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const finalStatus = action === "accept" ? "accepted" : quote.status;
+    if (action === "decline") {
+      // Only a still-open quote can be declined; declining an already-terminal
+      // quote is a no-op success (idempotent).
+      const terminal = ["accepted", "declined", "withdrawn", "expired"];
+      if (!terminal.includes(quote.status)) {
+        const nowIso = new Date().toISOString();
+        await supabase
+          .from("quotes")
+          .update({ status: "declined", declined_at: nowIso, decline_reason: declineReason || null, updated_at: nowIso })
+          .eq("id", quote.id);
+        // Mirror onto the off-app job so the tradie's list reflects it and the
+        // existing declined-job UI can show the reason.
+        await supabase
+          .from("jobs")
+          .update({ status: "declined", decline_reason: declineReason || null, declined_at: nowIso })
+          .eq("id", quote.job_id);
+
+        let clientFirst = "Your client";
+        if (job?.client_contact_id) {
+          const { data: contact } = await supabase
+            .from("client_contacts")
+            .select("full_name")
+            .eq("id", job.client_contact_id)
+            .maybeSingle();
+          if (contact?.full_name) clientFirst = contact.full_name.split(" ")[0];
+        }
+        const jobTitle = job?.title || "the job";
+        const reasonLine = declineReason ? ` Reason: "${declineReason}"` : "";
+
+        // In-app notification for the tradie.
+        await supabase.from("notifications").insert({
+          user_id: quote.tradie_id,
+          type: "quote_declined",
+          title: "Quote declined",
+          message: `${clientFirst} declined your quote for ${jobTitle}.${reasonLine}`,
+          job_id: quote.job_id,
+          read: false,
+        });
+
+        // Email the tradie too.
+        if (tradie?.email) {
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+              body: JSON.stringify({
+                to: tradie.email,
+                subject: `Quote declined — ${jobTitle}`,
+                body: `${clientFirst} declined your quote for "${jobTitle}".${reasonLine} No further action is needed.`,
+                notificationType: "QUOTE_DECLINED",
+                metadata: { link: "https://connectradie.com/work" },
+              }),
+            });
+          } catch (e) {
+            console.error("Failed to send quote-declined email:", e);
+          }
+        }
+      }
+    }
+
+    const finalStatus =
+      action === "accept" ? "accepted"
+      : action === "decline" ? "declined"
+      : quote.status;
 
     return json({
       status: finalStatus,

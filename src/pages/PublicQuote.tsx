@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Loader2, CheckCircle2, MapPin, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, MapPin, ShieldCheck, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import JobDescription from '../components/JobDescription';
 
@@ -40,6 +40,10 @@ export default function PublicQuote() {
   const [error, setError] = useState('');
   const [accepting, setAccepting] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const [declined, setDeclined] = useState(false);
+  const [declining, setDeclining] = useState(false);
+  const [showDeclineForm, setShowDeclineForm] = useState(false);
+  const [declineReason, setDeclineReason] = useState('');
   const [avatarFailed, setAvatarFailed] = useState(false);
 
   useEffect(() => {
@@ -54,8 +58,10 @@ export default function PublicQuote() {
         if (fnError || res?.error) {
           setError(res?.error || 'This quote link is not valid or has expired.');
         } else {
-          setData(res as QuoteView);
-          if ((res as QuoteView).status === 'accepted') setAccepted(true);
+          const view = res as QuoteView;
+          setData(view);
+          if (view.status === 'accepted') setAccepted(true);
+          if (view.status === 'declined') setDeclined(true);
         }
       } catch {
         if (!cancelled) setError('Something went wrong loading this quote.');
@@ -84,7 +90,27 @@ export default function PublicQuote() {
     setAccepting(false);
   };
 
+  const handleDecline = async () => {
+    if (!token) return;
+    setDeclining(true);
+    try {
+      const { data: res, error: fnError } = await supabase.functions.invoke('public-quote', {
+        body: { token, action: 'decline', reason: declineReason.trim() },
+      });
+      if (fnError || res?.error) {
+        setError(res?.error || 'Could not submit your response. Please try again.');
+      } else {
+        setDeclined(true);
+        setShowDeclineForm(false);
+      }
+    } catch {
+      setError('Could not submit your response. Please try again.');
+    }
+    setDeclining(false);
+  };
+
   const businessName = data?.tradie.business || data?.tradie.name || 'Your tradie';
+  const noLongerAvailable = !!data && ['withdrawn', 'expired', 'cancelled'].includes(data.status);
   const avatarUrl = data?.tradie.avatarUrl;
   const showAvatar = !!avatarUrl && /^https?:\/\//.test(avatarUrl) && !avatarFailed;
 
@@ -173,11 +199,27 @@ export default function PublicQuote() {
                   {businessName} has been notified and will be in touch to arrange the work.
                 </p>
               </div>
+            ) : declined ? (
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center">
+                <XCircle className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                <h3 className="font-semibold text-gray-800">Quote declined</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  You’ve let {businessName} know this quote isn’t going ahead. Thanks for letting them know.
+                </p>
+              </div>
+            ) : noLongerAvailable ? (
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center">
+                <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                <h3 className="font-semibold text-gray-800">This quote is no longer available</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  {businessName} has withdrawn this quote. Please contact them directly if you have questions.
+                </p>
+              </div>
             ) : (
               <div className="space-y-2.5">
                 <button
                   onClick={handleAccept}
-                  disabled={accepting}
+                  disabled={accepting || declining}
                   className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                 >
                   {accepting && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -186,6 +228,45 @@ export default function PublicQuote() {
                 <p className="text-center text-xs text-gray-500">
                   No payment is taken now — accepting just lets {businessName} know you’d like to go ahead.
                 </p>
+
+                {showDeclineForm ? (
+                  <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4 space-y-3 text-left">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Let {businessName} know why <span className="font-normal text-gray-400">(optional)</span>
+                    </label>
+                    <textarea
+                      value={declineReason}
+                      onChange={(e) => setDeclineReason(e.target.value)}
+                      rows={3}
+                      maxLength={1000}
+                      placeholder="e.g. Went with someone else, timing doesn’t suit, price is above budget…"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500 resize-none"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setShowDeclineForm(false); setDeclineReason(''); }}
+                        className="flex-1 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleDecline}
+                        disabled={declining}
+                        className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {declining && <Loader2 className="w-4 h-4 animate-spin" />}
+                        Decline quote
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowDeclineForm(true)}
+                    className="w-full text-center text-sm font-medium text-gray-500 hover:text-gray-700 py-1"
+                  >
+                    Not going ahead? Decline this quote
+                  </button>
+                )}
               </div>
             )}
 

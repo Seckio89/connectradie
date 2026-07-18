@@ -88,6 +88,32 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
   const [gateReason, setGateReason] = useState<'unverified' | 'expired'>('unverified');
   const [completionJob, setCompletionJob] = useState<JobWithRelations | null>(null);
   const [quoteJob, setQuoteJob] = useState<JobWithRelations | null>(null);
+  const [withdrawJob, setWithdrawJob] = useState<JobWithRelations | null>(null);
+  const [withdrawing, setWithdrawing] = useState(false);
+
+  // Tradie withdraws their own outgoing quote to an off-app client. Marks the
+  // quote 'withdrawn' and cancels the placeholder job so it leaves the pending
+  // list; the client's quote link then shows "no longer available".
+  const handleWithdraw = async (job: JobWithRelations) => {
+    if (!user) return;
+    setWithdrawing(true);
+    try {
+      const nowIso = new Date().toISOString();
+      const { error: qErr } = await supabase
+        .from('quotes')
+        .update({ status: 'withdrawn', withdrawn_at: nowIso, updated_at: nowIso })
+        .eq('job_id', job.id)
+        .eq('tradie_id', user.id);
+      if (qErr) throw qErr;
+      await supabase.from('jobs').update({ status: 'cancelled' }).eq('id', job.id);
+      showToast('Quote withdrawn');
+      setWithdrawJob(null);
+      await fetchJobs();
+    } catch {
+      showToast('Could not withdraw the quote. Please try again.', true);
+    }
+    setWithdrawing(false);
+  };
   // Pending off-site job start awaiting the worker's "start anyway" confirmation.
   const [offSiteStart, setOffSiteStart] = useState<
     { job: JobWithRelations; distanceM: number; pos: { lat: number; lng: number } } | null
@@ -1132,11 +1158,17 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                       acceptance belongs to the CLIENT via their emailed quote link —
                       never show the tradie Accept/Decline on their own outgoing quote. */}
                   {isTradie && job.status === 'pending' && job.client_contact_id && !job.client_id && (
-                    <div className="px-5 pb-4 pt-1 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                    <div className="px-5 pb-4 pt-1 border-t border-gray-100 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-50 text-secondary-700 rounded-lg text-xs font-medium">
                         <Clock className="w-3.5 h-3.5" />
                         Waiting for your client to accept the quote
                       </span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setWithdrawJob(job); }}
+                        className="text-xs font-medium text-red-600 hover:text-red-700 whitespace-nowrap"
+                      >
+                        Withdraw
+                      </button>
                     </div>
                   )}
 
@@ -1395,6 +1427,18 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
             proceedStartJob(s.job, { distanceM: s.distanceM, pos: s.pos });
           }}
           onCancel={() => setOffSiteStart(null)}
+        />
+      )}
+
+      {withdrawJob && (
+        <ConfirmModal
+          type="danger"
+          title="Withdraw this quote?"
+          message={`This withdraws your quote for "${withdrawJob.title || 'this job'}". Your client's quote link will show it's no longer available. You can send a new quote later if you need to.`}
+          confirmText={withdrawing ? 'Withdrawing…' : 'Withdraw quote'}
+          cancelText="Keep it"
+          onConfirm={() => handleWithdraw(withdrawJob)}
+          onCancel={() => setWithdrawJob(null)}
         />
       )}
 
