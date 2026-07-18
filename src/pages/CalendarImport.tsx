@@ -90,7 +90,16 @@ export default function CalendarImport() {
         setError(data?.error || 'Could not list calendars. Reconnect Google and grant calendar access.');
         return;
       }
-      const cals = (data.calendars as GCalendar[]) ?? [];
+      // Dedup: Google can return the same calendar more than once (e.g.
+      // "Holidays in Australia" from multiple accounts). Collapse by name
+      // (case-insensitive), keeping the first — same-named entries are noise.
+      const seen = new Set<string>();
+      const cals = ((data.calendars as GCalendar[]) ?? []).filter((c) => {
+        const key = (c.summary?.trim().toLowerCase()) || c.id;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
       setCalendars(cals);
       // Nothing is selected by default — this is a SELECTIVE import. The user
       // ticks only the specific calendars they want (e.g. employee calendars),
@@ -162,8 +171,8 @@ export default function CalendarImport() {
         <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Calendars</h2>
-            <button onClick={loadCalendars} disabled={busy === 'calendars'} className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 disabled:opacity-60">
-              {busy === 'calendars' ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Load my calendars
+            <button onClick={loadCalendars} disabled={busy === 'calendars'} className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60">
+              {busy === 'calendars' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />} {calendars.length ? 'Reload' : 'Load my calendars'}
             </button>
           </div>
 
@@ -174,21 +183,24 @@ export default function CalendarImport() {
               <p className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
                 Tick only the calendars you want to import (e.g. your employee calendars). Everything is unticked by default — personal calendars and other accounts are left out unless you tick them.
               </p>
+              {/* Compact single-line rows — clean settings list, no wrapping:
+                  checkbox + colour dot + name on the left, member dropdown on the
+                  right. ~46px tall so all calendars fit without scrolling. */}
               <div className="divide-y divide-gray-100 mt-2">
               {calendars.map((c) => {
                 const row = map[c.id];
                 if (!row) return null;
                 return (
-                  <div key={c.id} className="flex items-center gap-3 py-3 flex-wrap">
+                  <div key={c.id} className="flex items-center gap-2.5 py-2.5">
                     <input type="checkbox" checked={row.selected} onChange={(e) => setRow(c.id, { selected: e.target.checked })}
-                      className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
-                    <span className="w-4 h-4 rounded-full flex-shrink-0 border border-black/5" style={{ background: row.color }} />
-                    <span className="flex-1 min-w-0 text-sm font-medium text-gray-900 truncate">{c.summary}{c.primary && <span className="text-xs text-gray-400 font-normal"> · primary</span>}</span>
+                      className="w-4 h-4 flex-shrink-0 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 border border-black/5" style={{ background: row.color }} />
+                    <span className="flex-1 min-w-0 text-sm text-gray-800 truncate">{c.summary}{c.primary && <span className="text-xs text-gray-400"> · primary</span>}</span>
                     <select
                       value={row.teamMemberId ?? ''}
                       onChange={(e) => setRow(c.id, { teamMemberId: e.target.value || null })}
                       disabled={!row.selected}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white disabled:opacity-50 max-w-[180px]"
+                      className="flex-shrink-0 w-32 px-2 py-1 border border-gray-200 rounded-md text-xs bg-white text-gray-700 disabled:opacity-50 disabled:bg-gray-50"
                     >
                       <option value="">Unassigned</option>
                       {team.map((m) => <option key={m.id} value={m.id}>{m.invite_name}</option>)}
