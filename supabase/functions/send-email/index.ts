@@ -56,82 +56,64 @@ function safeHref(raw: string): string {
   }
 }
 
-function buildHtmlEmail(subject: string, body: string, notificationType?: string): string {
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(subject)}</title>
-</head>
-<body style="margin:0;padding:0;background-color:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:32px 16px;">
-    <tr>
-      <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-          <tr>
-            <td style="background-color:#1e40af;padding:24px 32px;">
-              <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">ConnecTradie</h1>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:32px;">
-              <h2 style="margin:0 0 16px;color:#111827;font-size:18px;font-weight:600;">${escapeHtml(subject)}</h2>
-              <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.6;">${escapeHtml(body)}</p>
-              <a href="https://connectradie.com/dashboard" style="display:inline-block;background-color:#1e40af;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;">View in App</a>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:24px 32px;border-top:1px solid #e5e7eb;">
-              <p style="margin:0;color:#9ca3af;font-size:12px;line-height:1.5;">
-                You received this email because of activity on your ConnecTradie account.
-                To manage your notification preferences, visit your Settings page.
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+// Generic notification email. Delegates to the shared, branded shell so every
+// message — even ones without a specific template — carries the logo and styling.
+function buildHtmlEmail(subject: string, body: string, _notificationType?: string): string {
+  const accent = BRAND_GREEN;
+  const inner = `<h1 style="margin:0 0 14px;color:#0f172a;font-size:20px;font-weight:700;line-height:1.35;letter-spacing:-0.01em;">${escapeHtml(subject)}</h1>
+              <p style="margin:0 0 28px;color:#475569;font-size:15px;line-height:1.65;">${escapeHtml(body)}</p>
+              ${ctaButton("View in App", "https://connectradie.com/dashboard", accent)}`;
+  return emailShell(accent, inner, subject);
 }
 
 // --- Advanced template system ---
 
+// Brand tokens. The logo is served from the production site (public/brand/…),
+// so it resolves in any email client that loads images.
+const BRAND_GREEN = "#06D6A0";
+const LOGO_URL = "https://connectradie.com/brand/connectradie-wordmark.png";
+
+// Shared, branded email shell: a slim accent rule, the logo on white, the
+// message body, and a quiet footer. `accentColor` tints the top rule and the
+// primary button so category emails (leads = green, payments = blue) stay
+// distinct without a heavy coloured banner.
 function emailShell(accentColor: string, innerHtml: string, subject: string, footerHtml?: string): string {
-  const footer = footerHtml ?? `You received this email because of activity on your ConnecTradie account.
-                To manage your notification preferences, visit your Settings page.`;
+  const accent = accentColor || BRAND_GREEN;
+  const footer = footerHtml ?? `You're receiving this because of activity on your ConnecTradie account. Manage your notifications any time in Settings.`;
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
   <title>${escapeHtml(subject)}</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:32px 16px;">
+<body style="margin:0;padding:0;background-color:#eef2f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(subject)}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef2f6;padding:32px 14px;">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e6eaef;">
           <tr>
-            <td style="background-color:${accentColor};padding:24px 32px;">
-              <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">ConnecTradie</h1>
+            <td style="height:4px;line-height:4px;font-size:0;background-color:${accent};">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:26px 32px 20px;">
+              <img src="${LOGO_URL}" alt="ConnecTradie" height="26" style="display:block;height:26px;width:auto;border:0;outline:none;text-decoration:none;">
             </td>
           </tr>
           <tr>
-            <td style="padding:32px;">
+            <td style="padding:0 32px 34px;">
               ${innerHtml}
             </td>
           </tr>
           <tr>
-            <td style="padding:24px 32px;border-top:1px solid #e5e7eb;">
-              <p style="margin:0;color:#9ca3af;font-size:12px;line-height:1.5;">
-                ${footer}
-              </p>
+            <td style="padding:22px 32px;background-color:#f8fafc;border-top:1px solid #eef2f6;">
+              <p style="margin:0;color:#94a3b8;font-size:12px;line-height:1.6;">${footer}</p>
             </td>
           </tr>
         </table>
+        <p style="margin:14px 0 0;color:#b6c0cc;font-size:11px;line-height:1.5;">© ConnecTradie · Australia&rsquo;s tradie marketplace &nbsp;·&nbsp; Quoting is free — you only pay when you get paid.</p>
       </td>
     </tr>
   </table>
@@ -139,8 +121,14 @@ function emailShell(accentColor: string, innerHtml: string, subject: string, foo
 </html>`;
 }
 
+// Bulletproof-ish CTA: table-wrapped so the full pill renders in Outlook too.
 function ctaButton(label: string, href: string, color: string): string {
-  return `<a href="${escapeHtml(safeHref(href))}" style="display:inline-block;background-color:${color};color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;">${escapeHtml(label)}</a>`;
+  const safe = escapeHtml(safeHref(href));
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:2px 0 0;"><tr>
+                <td align="center" style="border-radius:10px;background-color:${color};">
+                  <a href="${safe}" style="display:inline-block;padding:13px 28px;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;line-height:1;border-radius:10px;">${escapeHtml(label)}</a>
+                </td>
+              </tr></table>`;
 }
 
 function buildLeadJobEmail(
