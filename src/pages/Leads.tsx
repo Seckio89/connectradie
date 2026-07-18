@@ -1406,6 +1406,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
   const tradieFilters: { key: LeadFilter; label: string }[] = [
     { key: 'all', label: 'All Leads' },
+    { key: 'quoted', label: 'My Quotes' },
     { key: 'urgent', label: 'Urgent' },
     { key: 'scheduled', label: 'Scheduled' },
     { key: 'boosted', label: 'Flash Deals' },
