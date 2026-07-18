@@ -691,10 +691,12 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                         placeholder="e.g., Gate code is 1234, key under mat..."
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       />
-                      <p className="mt-1 text-[11px] text-gray-500 flex items-start gap-1">
-                        <Lock className="w-3 h-3 mt-0.5 flex-shrink-0 text-gray-400" />
-                        Kept private and only shown to your assigned tradie after they enter their security PIN. Share gate codes, key locations, or alarm details safely.
-                      </p>
+                      <div className="mt-1.5 flex items-start gap-2 rounded-lg bg-secondary-50 border border-secondary-100 px-3 py-2">
+                        <Lock className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-secondary-500" />
+                        <p className="text-[11px] text-secondary-800 leading-relaxed">
+                          <span className="font-medium">For entry details only</span> — gate or alarm codes, where the key is, parking or lockbox info. Kept private and shown to your assigned tradie <span className="font-medium">only after they enter their security PIN</span>.
+                        </p>
+                      </div>
                     </div>
                   </div>
 

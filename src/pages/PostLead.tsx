@@ -19,6 +19,7 @@ import {
   X,
   Briefcase,
   RefreshCw,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -690,38 +691,47 @@ export default function PostLead() {
     return (
       <DashboardLayout>
         <div className="max-w-xl mx-auto py-8">
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-secondary-500 flex items-center justify-center shadow-sm">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
             <h1 className="text-2xl font-bold text-gray-900">Post a Job</h1>
-            <p className="text-sm text-gray-600 mt-1">What type of work do you need?</p>
+            <p className="text-sm text-gray-600 mt-1">Tell us what you need and we’ll connect you with the right tradie.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* One-off Job */}
             <button
               onClick={() => setJobType('oneoff')}
-              className="bg-white rounded-xl border border-gray-200 p-6 text-left hover:border-emerald-300 hover:shadow-sm transition-all group"
+              className="group relative flex sm:flex-col items-start gap-4 text-left rounded-2xl border border-secondary-100 border-l-4 border-l-secondary-500 bg-gradient-to-br from-secondary-50 to-white p-5 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]"
             >
-              <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center mb-4 group-hover:bg-emerald-100 transition-colors">
-                <Briefcase className="w-5 h-5 text-emerald-600" />
+              <ChevronRight className="absolute top-4 right-4 w-5 h-5 text-secondary-400 transition-transform group-hover:translate-x-0.5" />
+              <div className="w-14 h-14 rounded-2xl bg-secondary-500 flex items-center justify-center shadow-sm flex-shrink-0">
+                <Briefcase className="w-7 h-7 text-white" />
               </div>
-              <h2 className="text-base font-semibold text-gray-900 mb-1">One-off Job</h2>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                A single job — fix a leak, paint a room, build a deck. Get quotes and pick a tradie.
-              </p>
+              <div className="min-w-0 pr-6 sm:pr-0">
+                <h2 className="text-base font-semibold text-gray-900">One-off Job</h2>
+                <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                  A one-time job — an end-of-lease or deep clean, a repair, or a small project. Describe it and get quotes from local tradies.
+                </p>
+              </div>
             </button>
 
             {/* Ongoing Work */}
             <button
               onClick={() => navigate('/leads?tab=services', { state: { openScheduleForm: true } })}
-              className="bg-white rounded-xl border border-gray-200 p-6 text-left hover:border-emerald-300 hover:shadow-sm transition-all group"
+              className="group relative flex sm:flex-col items-start gap-4 text-left rounded-2xl border border-emerald-100 border-l-4 border-l-emerald-500 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]"
             >
-              <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center mb-4 group-hover:bg-amber-100 transition-colors">
-                <RefreshCw className="w-5 h-5 text-amber-600" />
+              <ChevronRight className="absolute top-4 right-4 w-5 h-5 text-emerald-400 transition-transform group-hover:translate-x-0.5" />
+              <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-sm flex-shrink-0">
+                <RefreshCw className="w-7 h-7 text-white" />
               </div>
-              <h2 className="text-base font-semibold text-gray-900 mb-1">Ongoing Work</h2>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                Regular services — weekly cleaning, lawn mowing, pool maintenance. Set a schedule that repeats.
-              </p>
+              <div className="min-w-0 pr-6 sm:pr-0">
+                <h2 className="text-base font-semibold text-gray-900">Ongoing Work</h2>
+                <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                  Regular work — weekly, fortnightly, or monthly cleaning or maintenance. Set it up once and it repeats automatically.
+                </p>
+              </div>
             </button>
           </div>
         </div>
