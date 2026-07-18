@@ -51,9 +51,9 @@ export interface PlatformFeeConfig {
 
 export const TIER_PRICING: Record<Exclude<SubscriptionTier, 'free'>, TierPricing> = {
   pro: {
-    monthly: 29,
-    annual: 249,
-    annualMonthly: 20.75,
+    monthly: 49,
+    annual: 420,
+    annualMonthly: 35,
   },
   pro_plus: {
     monthly: 59,
