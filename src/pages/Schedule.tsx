@@ -88,12 +88,17 @@ export default function Schedule() {
                 );
               })}
             </div>
-            <Link
-              to="/calendar-import"
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 whitespace-nowrap"
-            >
-              <CalendarDays className="w-4 h-4 text-secondary-600" /> Import from Google Calendar
-            </Link>
+            {/* HIDDEN until the Google Calendar import issue is fixed. The
+                /calendar-import route still works for direct testing — just
+                restore this Link to re-expose the entry point. */}
+            {false && (
+              <Link
+                to="/calendar-import"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 whitespace-nowrap"
+              >
+                <CalendarDays className="w-4 h-4 text-secondary-600" /> Import from Google Calendar
+              </Link>
+            )}
           </div>
         )}
 
