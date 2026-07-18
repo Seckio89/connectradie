@@ -6,6 +6,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, Loader2, CheckCircle2, RefreshCw, Users } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 import DashboardLayout from '../components/DashboardLayout';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -41,6 +43,15 @@ export default function CalendarImport() {
     })();
   }, [user]);
 
+  // Re-read the Google connection status (used after the consent flow returns).
+  const refreshConnected = async () => {
+    if (!user) return;
+    const { data: integ } = await supabase
+      .from('calendar_integrations')
+      .select('id').eq('tradie_id', user.id).eq('provider', 'google').maybeSingle();
+    setConnected(!!integ);
+  };
+
   // Reuse google-calendar-oauth's initiate flow (query-param API → direct fetch).
   const connect = async () => {
     setError('');
@@ -50,8 +61,24 @@ export default function CalendarImport() {
         headers: { Authorization: `Bearer ${session?.access_token}`, apikey: ANON },
       });
       const data = await res.json();
-      if (data.authUrl) window.location.href = data.authUrl;
-      else setError(data.error || 'Could not start Google sign-in.');
+      if (!data.authUrl) { setError(data.error || 'Could not start Google sign-in.'); return; }
+
+      // On the native app the WebView is an embedded user agent, which Google
+      // blocks for OAuth (Error 403: disallowed_useragent). Open Google's consent
+      // page in the system browser (Chrome Custom Tab / SFSafariViewController),
+      // which Google accepts. The callback binds the tokens server-side via the
+      // signed state, so we don't need the redirect to re-enter the app — the
+      // user just returns and taps "Load my calendars". Re-check the connection
+      // when the in-app browser closes so the status flips to "connected".
+      if (Capacitor.isNativePlatform()) {
+        const sub = await Browser.addListener('browserFinished', async () => {
+          await sub.remove();
+          await refreshConnected();
+        });
+        await Browser.open({ url: data.authUrl });
+      } else {
+        window.location.href = data.authUrl;
+      }
     } catch { setError('Could not start Google sign-in.'); }
   };
 

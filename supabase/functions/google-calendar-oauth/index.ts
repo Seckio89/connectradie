@@ -15,6 +15,51 @@ interface TokenResponse {
   token_type: string;
 }
 
+// Branded, self-contained result page for the OAuth callback. The consent flow
+// now runs in the system browser (Chrome Custom Tab / SFSafariViewController on
+// the native app), so the user lands here rather than seeing raw JSON. Kept
+// dependency-free (inline CSS) so it renders anywhere.
+function resultPage(opts: { ok: boolean; title: string; message: string }): Response {
+  const { ok, title, message } = opts;
+  const accent = ok ? "#06D6A0" : "#E11D48";
+  const icon = ok ? "&#10003;" : "!";
+  const html = `<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${title}</title>
+<style>
+  *{box-sizing:border-box} html,body{margin:0;height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       background:#0F1B2D;color:#0f172a;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:#fff;border-radius:20px;max-width:380px;width:100%;padding:32px 28px;text-align:center;
+        box-shadow:0 12px 40px rgba(0,0,0,.25)}
+  .badge{width:64px;height:64px;border-radius:50%;background:${accent}1a;color:${accent};
+         font-size:32px;line-height:64px;margin:0 auto 18px;font-weight:700}
+  h1{font-size:20px;margin:0 0 8px;color:#0f172a}
+  p{font-size:14px;line-height:1.55;color:#475569;margin:0 0 22px}
+  .hint{font-size:13px;color:#94a3b8;margin:0}
+  .btn{display:inline-block;background:${accent};color:#fff;text-decoration:none;font-weight:600;
+       font-size:14px;padding:11px 22px;border-radius:12px;border:0;cursor:pointer}
+  .brand{margin-top:22px;font-size:12px;color:#94a3b8;letter-spacing:.02em}
+  .brand b{color:#0F1B2D}.brand b span{color:${accent}}
+</style></head>
+<body>
+  <div class="card">
+    <div class="badge">${icon}</div>
+    <h1>${title}</h1>
+    <p>${message}</p>
+    <button class="btn" onclick="window.close()">Close</button>
+    <p class="hint" style="margin-top:14px">If this doesn't close, just return to the ConnecTradie app.</p>
+    <div class="brand"><b>Connec<span>Tradie</span></b></div>
+  </div>
+</body></html>`;
+  return new Response(html, {
+    status: ok ? 200 : 400,
+    headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" },
+  });
+}
+
 // ── Signed OAuth state ───────────────────────────────────────────────────────
 // The callback arrives from Google with NO auth header, so the state param is
 // the only claim of user identity. A bare user ID is forgeable (anyone could
@@ -89,10 +134,11 @@ Deno.serve(async (req: Request) => {
       // otherwise anyone could bind their Google account to another tradie.
       callbackUserId = await verifyState(state);
       if (!callbackUserId) {
-        return new Response(
-          JSON.stringify({ error: "Invalid or expired sign-in state. Please reconnect Google Calendar from Settings." }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return resultPage({
+          ok: false,
+          title: "Sign-in expired",
+          message: "This Google sign-in link has expired. Please return to ConnecTradie and tap Connect again.",
+        });
       }
     } else {
       // All other requests (initiation, disconnect) require auth
@@ -219,14 +265,11 @@ Deno.serve(async (req: Request) => {
     });
 
     if (!tokenResponse.ok) {
-      const error = await tokenResponse.text();
-      return new Response(
-        JSON.stringify({ error: "Failed to exchange code for tokens", details: error }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return resultPage({
+        ok: false,
+        title: "Couldn't connect Google",
+        message: "Google declined the connection. Please return to ConnecTradie and try Connect again.",
+      });
     }
 
     const tokens: TokenResponse = await tokenResponse.json();
@@ -257,25 +300,18 @@ Deno.serve(async (req: Request) => {
       });
 
     if (dbError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to save integration", details: dbError.message }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return resultPage({
+        ok: false,
+        title: "Couldn't save the connection",
+        message: "We connected to Google but couldn't finish saving it. Please return to ConnecTradie and try again.",
+      });
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Google Calendar connected successfully",
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return resultPage({
+      ok: true,
+      title: "Google Calendar connected",
+      message: "You're all set. Return to the ConnecTradie app and tap “Load my calendars” to import your jobs.",
+    });
   } catch (error) {
     return new Response(
       JSON.stringify({
