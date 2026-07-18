@@ -3,11 +3,10 @@
 // fee on this job will be and what they'll receive. Never rendered to clients
 // (clients are never charged a platform fee and never see one).
 //
-// IMPORTANT — cutover seam: this must always mirror what the tradie is ACTUALLY
-// charged. Today that's the legacy live fee model (src/lib/subscription.ts,
-// matching supabase/functions/_shared/pricing.ts legacy calculators). When the
-// Phase-3 fee cutover lands (V2: 10%/7%/3% marginal, GST-inclusive), swap the
-// `liveFee` implementation below to calculatePlatformFeeCentsV2 — one place.
+// This mirrors what the tradie is ACTUALLY charged. calculatePlatformFee
+// (src/lib/subscription.ts) now delegates to the V2 engine — the same schedule
+// the edge functions charge (supabase/functions/_shared/pricing.ts): Free 10% /
+// cap $900, Pro 7% / cap $630, 3.5%/5% on the part above $3,000, GST-inclusive.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Info } from 'lucide-react';
@@ -27,9 +26,8 @@ export default function QuoteFeeDisclosure({ priceDollars, className }: QuoteFee
   const { profile, tradieDetails } = useAuth();
   if (!priceDollars || priceDollars <= 0 || profile?.role !== 'tradie') return null;
 
-  // Live fee model (legacy) — see cutover seam note above. Uses getChargedTier
-  // (subscription_tier only, no is_premium fallback) so the number shown here
-  // can never disagree with what the edge functions actually charge.
+  // Uses getChargedTier (subscription_tier only, no is_premium fallback) so the
+  // number shown here can never disagree with what the edge functions charge.
   const tier = getChargedTier(tradieDetails?.subscription_tier);
   const fee = calculatePlatformFee(priceDollars, tier);
   const receives = priceDollars - fee;

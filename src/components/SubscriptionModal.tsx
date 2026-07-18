@@ -240,13 +240,9 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
 
   const feeDescription = (tier: SubscriptionTier) => {
     const config = PLATFORM_FEES[tier];
-    if (config.type === 'flat') {
-      return `${(config.rate ?? 0) * 100}% flat fee`;
-    }
-    const tiers = config.tiers ?? [];
-    const highest = Math.round(tiers[0]?.rate * 100);
-    const lowest = Math.round(tiers[tiers.length - 1]?.rate * 100);
-    return `${highest}%–${lowest}% sliding fee`;
+    const headline = config.type === 'flat' ? (config.rate ?? 0) : (config.tiers?.[0]?.rate ?? 0);
+    const headlinePct = (headline * 100).toLocaleString('en-AU', { maximumFractionDigits: 1 });
+    return `${headlinePct}% fee, capped at $${config.cap}`;
   };
 
   return (

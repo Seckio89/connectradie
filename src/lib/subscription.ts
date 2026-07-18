@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { calculatePlatformFeeCentsV2, TIER_SCHEDULES } from '../../supabase/functions/_shared/pricing';
 
 export const FREE_LIMITS = {
   MAX_TRADE_CATEGORIES: 1,
@@ -62,46 +63,46 @@ export const TIER_PRICING: Record<Exclude<SubscriptionTier, 'free'>, TierPricing
   },
 };
 
+// The advertised V2 schedule (see /pricing): full rate on the first $3,000, the
+// reduced rate on the part above, capped per job. These numbers mirror the money
+// path (supabase/functions/_shared/pricing.ts) so what a tradie is shown here is
+// exactly what they'll be charged. pro_plus (retired, unadvertised) = Pro.
 export const PLATFORM_FEES: Record<SubscriptionTier, PlatformFeeConfig> = {
   free: {
     type: 'sliding',
     tiers: [
-      { maxJobValue: 150, rate: 0.10 },
-      { maxJobValue: 500, rate: 0.08 },
-      { maxJobValue: 1000, rate: 0.06 },
-      { maxJobValue: 5000, rate: 0.05 },
-      { maxJobValue: Infinity, rate: 0.04 },
+      { maxJobValue: 3000, rate: 0.10 },
+      { maxJobValue: Infinity, rate: 0.05 },
     ],
-    cap: 400,
+    cap: 900,
   },
   pro: {
     type: 'sliding',
     tiers: [
-      { maxJobValue: 500, rate: 0.05 },
-      { maxJobValue: 2500, rate: 0.04 },
-      { maxJobValue: Infinity, rate: 0.03 },
+      { maxJobValue: 3000, rate: 0.07 },
+      { maxJobValue: Infinity, rate: 0.035 },
     ],
-    cap: 250,
+    cap: 630,
   },
   pro_plus: {
-    type: 'flat',
-    rate: 0.025,
-    cap: 200,
+    type: 'sliding',
+    tiers: [
+      { maxJobValue: 3000, rate: 0.07 },
+      { maxJobValue: Infinity, rate: 0.035 },
+    ],
+    cap: 630,
   },
 };
 
-/** Calculate the platform fee for a given job value and tier */
+/**
+ * Calculate the platform fee for a given job value and tier.
+ * Delegates to the single V2 fee engine so this can never disagree with the
+ * amount the edge functions actually charge on the destination charge.
+ */
 export function calculatePlatformFee(jobValue: number, tier: SubscriptionTier): number {
-  const config = PLATFORM_FEES[tier];
-  let fee: number;
-  if (config.type === 'flat') {
-    fee = jobValue * (config.rate ?? 0);
-  } else {
-    const tiers = config.tiers ?? [];
-    const matchedTier = tiers.find(t => jobValue <= t.maxJobValue) ?? tiers[tiers.length - 1];
-    fee = jobValue * (matchedTier?.rate ?? 0.10);
-  }
-  return Math.min(fee, config.cap);
+  const schedule = tier === 'free' ? TIER_SCHEDULES.free : TIER_SCHEDULES.pro; // pro + pro_plus
+  const cents = Math.round(Math.max(0, jobValue) * 100);
+  return calculatePlatformFeeCentsV2(cents, schedule).feeCents / 100;
 }
 
 /** Get a human-readable fee summary for a tier */
@@ -174,7 +175,7 @@ export function getFeatureLabel(feature: ProFeature): string {
   const labels: Record<ProFeature, string> = {
     [PRO_FEATURES.VERIFIED_BADGE]: 'Verified Pro Badge',
     [PRO_FEATURES.PRIORITY_SEARCH]: 'Priority Search Ranking',
-    [PRO_FEATURES.REDUCED_FEES]: '5% Platform Fee (save 50%)',
+    [PRO_FEATURES.REDUCED_FEES]: '7% Platform Fee (capped $630)',
     [PRO_FEATURES.GOOGLE_CALENDAR_SYNC]: 'Google Calendar Sync',
     [PRO_FEATURES.INVOICE_CREATION]: 'Invoice Creation',
     [PRO_FEATURES.PROJECT_MILESTONES]: 'Project & Milestone Tracking',
@@ -193,7 +194,7 @@ export function getFeatureDescription(feature: ProFeature): string {
   const descriptions: Record<ProFeature, string> = {
     [PRO_FEATURES.VERIFIED_BADGE]: 'Build trust with a verified badge on your profile',
     [PRO_FEATURES.PRIORITY_SEARCH]: 'Appear at the top of search results',
-    [PRO_FEATURES.REDUCED_FEES]: 'Half the platform fee — keep 95% of every job',
+    [PRO_FEATURES.REDUCED_FEES]: 'Pay 7% instead of 10% — and just 3.5% on the part of a job above $3,000',
     [PRO_FEATURES.GOOGLE_CALENDAR_SYNC]: 'Sync your schedule with Google Calendar',
     [PRO_FEATURES.INVOICE_CREATION]: 'Create and send professional invoices',
     [PRO_FEATURES.PROJECT_MILESTONES]: 'Manage complex projects with milestones',

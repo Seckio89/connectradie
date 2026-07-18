@@ -54,7 +54,7 @@ export const PRICING_CONFIG = {
   },
 } as const;
 
-export type TradieTier = "free" | "pro" | "pro_plus";
+export type TradieTier = "free" | "pro" | "pro_plus" | "pm";
 export type PMTier = "pm_starter" | "pm_pro" | "pm_enterprise";
 
 export interface FeeBreakdown {
@@ -72,6 +72,12 @@ export interface FeeBreakdown {
 export function resolveTradieTier(subscriptionTier: string | null | undefined): TradieTier {
   if (subscriptionTier === "pro" || subscriptionTier === "business") return "pro";
   if (subscriptionTier === "pro_plus") return "pro_plus";
+  // Property-Manager tiers charge the single advertised PM schedule (3% / 1.5%
+  // above $3k, cap $270). Previously these fell through to "free", so PM jobs
+  // routed through escrow were billed the Free rate — fixed here.
+  if (subscriptionTier === "pm_starter" || subscriptionTier === "pm_pro" || subscriptionTier === "pm_enterprise") {
+    return "pm";
+  }
   return "free";
 }
 
@@ -79,24 +85,18 @@ export function resolveTradieTier(subscriptionTier: string | null | undefined): 
 // Platform fee calculation
 // ---------------------------------------------------------------------------
 export function calculatePlatformFee(jobValueDollars: number, tier: TradieTier): number {
-  const config = PRICING_CONFIG.tradie[tier].platformFee;
-  let fee: number;
-
-  if (config.type === "flat") {
-    fee = jobValueDollars * (config as { type: "flat"; rate: number; cap: number }).rate;
-  } else {
-    const slidingConfig = config as {
-      type: "sliding";
-      tiers: { maxJobValue: number; rate: number }[];
-      cap: number;
-    };
-    const applicableTier =
-      slidingConfig.tiers.find((t) => jobValueDollars <= t.maxJobValue) ??
-      slidingConfig.tiers[slidingConfig.tiers.length - 1];
-    fee = jobValueDollars * applicableTier.rate;
-  }
-
-  return Math.min(fee, config.cap);
+  // Live money path now charges the ADVERTISED V2 schedule (see /pricing and
+  // TIER_SCHEDULES below): Free 10% / cap $900, Pro 7% / cap $630, PM 3% / cap
+  // $270 — with the reduced marginal rate on the part of a job above $3,000.
+  // This replaces the legacy sliding brackets so what a tradie is charged equals
+  // what the pricing page promises. pro_plus (retired, unadvertised) settles at
+  // the Pro schedule.
+  const schedule =
+    tier === "pm" ? TIER_SCHEDULES.pm :
+    tier === "free" ? TIER_SCHEDULES.free :
+    TIER_SCHEDULES.pro; // pro + pro_plus
+  const cents = Math.round(Math.max(0, jobValueDollars) * 100);
+  return calculatePlatformFeeCentsV2(cents, schedule).feeCents / 100;
 }
 
 // ---------------------------------------------------------------------------
@@ -251,16 +251,19 @@ export function calculatePlatformFeeCentsV2(
   return { feeCents, gstOnFeeCents, effectiveRateBps, capped };
 }
 
-export function calculatePMFees(jobValue: number, tier: PMTier): FeeBreakdown {
-  const tierConfig = PRICING_CONFIG.propertyManager[tier];
-  const platformFee = jobValue * tierConfig.platformFeeRate;
+export function calculatePMFees(jobValue: number, _tier: PMTier): FeeBreakdown {
+  // All PM tiers now settle at the single advertised PM schedule (3% / 1.5%
+  // above $3k, cap $270) — matching /pricing and the live charge. The old
+  // per-subtier flat rates (4% / 3% / 2%) are retired.
+  const platformFee =
+    calculatePlatformFeeCentsV2(Math.round(Math.max(0, jobValue) * 100), TIER_SCHEDULES.pm).feeCents / 100;
   const processingFee = calculateProcessingFee(jobValue);
   const totalFees = platformFee + processingFee;
 
   return {
     jobValue,
     platformFee: Math.round(platformFee * 100) / 100,
-    platformFeePercentage: tierConfig.platformFeeRate * 100,
+    platformFeePercentage: jobValue > 0 ? (platformFee / jobValue) * 100 : 0,
     processingFee: Math.round(processingFee * 100) / 100,
     totalFees: Math.round(totalFees * 100) / 100,
     tradieReceives: Math.round((jobValue - totalFees) * 100) / 100,

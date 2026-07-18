@@ -3,6 +3,7 @@ import {
   getCurrentTier,
   getFeatureLabel,
   getFeatureDescription,
+  calculatePlatformFee,
   FREE_LIMITS,
   PRO_FEATURES,
   TIER_PRICING,
@@ -15,9 +16,9 @@ describe('subscription', () => {
     });
 
     it('has correct pro pricing', () => {
-      expect(TIER_PRICING.pro.monthly).toBe(29);
-      expect(TIER_PRICING.pro.annual).toBe(249);
-      expect(TIER_PRICING.pro.annualMonthly).toBe(20.75);
+      expect(TIER_PRICING.pro.monthly).toBe(49);
+      expect(TIER_PRICING.pro.annual).toBe(420);
+      expect(TIER_PRICING.pro.annualMonthly).toBe(35);
     });
   });
 
@@ -62,10 +63,31 @@ describe('subscription', () => {
     });
   });
 
+  describe('calculatePlatformFee — matches the advertised V2 schedule', () => {
+    it('Free: 10% on the first $3k (a $400 job → $40)', () => {
+      expect(calculatePlatformFee(400, 'free')).toBe(40);
+    });
+    it('Pro: 7% on the first $3k (a $400 job → $28)', () => {
+      expect(calculatePlatformFee(400, 'pro')).toBe(28);
+    });
+    it('Free: 5% reduced rate above $3k (a $5,000 job → $300 + $100 = $400)', () => {
+      expect(calculatePlatformFee(5000, 'free')).toBe(400);
+    });
+    it('Pro: 3.5% reduced rate above $3k (a $10,000 job → $210 + $245 = $455)', () => {
+      expect(calculatePlatformFee(10000, 'pro')).toBe(455);
+    });
+    it('Free fee is capped at $900', () => {
+      expect(calculatePlatformFee(50000, 'free')).toBe(900);
+    });
+    it('Pro fee is capped at $630', () => {
+      expect(calculatePlatformFee(50000, 'pro')).toBe(630);
+    });
+  });
+
   describe('getFeatureLabel', () => {
     it('returns correct labels for all features', () => {
       expect(getFeatureLabel(PRO_FEATURES.VERIFIED_BADGE)).toBe('Verified Pro Badge');
-      expect(getFeatureLabel(PRO_FEATURES.REDUCED_FEES)).toBe('5% Platform Fee (save 50%)');
+      expect(getFeatureLabel(PRO_FEATURES.REDUCED_FEES)).toBe('7% Platform Fee (capped $630)');
       expect(getFeatureLabel(PRO_FEATURES.GOOGLE_CALENDAR_SYNC)).toBe('Google Calendar Sync');
       expect(getFeatureLabel(PRO_FEATURES.TEAM_MANAGEMENT)).toBe('Team Management');
     });
@@ -74,7 +96,7 @@ describe('subscription', () => {
   describe('getFeatureDescription', () => {
     it('returns correct descriptions', () => {
       expect(getFeatureDescription(PRO_FEATURES.VERIFIED_BADGE)).toContain('verified badge');
-      expect(getFeatureDescription(PRO_FEATURES.REDUCED_FEES)).toContain('95%');
+      expect(getFeatureDescription(PRO_FEATURES.REDUCED_FEES)).toContain('7%');
     });
   });
 });
