@@ -270,10 +270,18 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
       // a constraint name in the message tells us exactly what to say.
       const msg = err instanceof Error ? err.message : String((err as { message?: string })?.message ?? '');
       console.error('Quote send failed:', err);
+      // A dropped/timed-out request (patchy mobile signal) throws a fetch/network
+      // error, not a DB rejection — tell the tradie it's their connection, not a
+      // broken quote, so a signal blip doesn't read as an app failure.
+      const isNetworkError =
+        (typeof navigator !== 'undefined' && navigator.onLine === false) ||
+        /failed to fetch|network ?error|network request failed|load failed|time?d? ?out/i.test(msg);
       if (msg.includes('jobs_description_not_empty')) {
         setError('Describe the work in a line or two — this is the scope your client sees on the quote (at least 11 characters).');
       } else if (msg.includes('jobs_budget_positive')) {
         setError('Enter a price greater than zero.');
+      } else if (isNetworkError) {
+        setError('Couldn’t reach the server — check your connection and try again. Your quote wasn’t sent.');
       } else {
         setError('Could not send the quote. Please try again.');
       }
