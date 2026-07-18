@@ -395,7 +395,6 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
         address={contact.address ?? null}
         lat={contact.latitude ?? null}
         lng={contact.longitude ?? null}
-        onUseArea={(sqm) => setQuantities((q) => ({ ...q, sqm: String(sqm) }))}
       />
 
       {/* Trade */}
