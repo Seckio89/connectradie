@@ -393,6 +393,8 @@ export type Conversation = {
   title: string | null;
   is_group: boolean;
   created_by: string | null;
+  job_id: string | null;
+  recurring_job_id: string | null;
   created_at: string;
   updated_at: string;
 }

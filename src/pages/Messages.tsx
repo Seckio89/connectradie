@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageSquare, Send, Loader2, Paperclip, Calendar, X, Lock, Image as ImageIcon, FileText, Mic, Settings, Archive, Search as SearchIcon, RotateCcw, AlertTriangle, CheckCheck, ArrowLeft } from 'lucide-react';
+import { MessageSquare, Send, Loader2, Paperclip, Calendar, X, Lock, Image as ImageIcon, FileText, Mic, Settings, Archive, Search as SearchIcon, RotateCcw, AlertTriangle, CheckCheck, ArrowLeft, Users, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { proseInputProps } from '../lib/proseInput';
@@ -8,6 +8,7 @@ import type { Message, Conversation, ConversationParticipant, Profile } from '..
 import DashboardLayout from '../components/DashboardLayout';
 import UnlockLeadModal from '../components/UnlockLeadModal';
 import ConversationSettingsModal from '../components/ConversationSettingsModal';
+import NewGroupModal from '../components/NewGroupModal';
 import BookingRequestModal from '../components/BookingRequestModal';
 import { redactContactInfo, shouldAllowContactSharing, detectCrossMessageDigitBypass } from '../lib/redaction';
 import EmptyState from '../components/EmptyState';
@@ -36,6 +37,7 @@ export default function Messages() {
   const [unlockedClientIds, setUnlockedClientIds] = useState<string[]>([]);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showNewGroupModal, setShowNewGroupModal] = useState(false);
   const [showArchivedFilter, setShowArchivedFilter] = useState(false);
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const [showBookingRequestModal, setShowBookingRequestModal] = useState(false);
@@ -53,6 +55,7 @@ export default function Messages() {
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const pendingSelectTradieRef = useRef<string | null>(null);
+  const pendingSelectConvRef = useRef<string | null>(null);
 
   const isTradie = profile?.role === 'tradie';
 
@@ -284,6 +287,18 @@ export default function Messages() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversations, searchParams, user?.id, loading]);
 
+  // Auto-select a just-created group conversation
+  useEffect(() => {
+    if (!pendingSelectConvRef.current || conversations.length === 0) return;
+    const convId = pendingSelectConvRef.current;
+    const newConv = conversations.find(c => c.id === convId);
+    if (newConv) {
+      handleConversationClick(newConv);
+      pendingSelectConvRef.current = null;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversations]);
+
   // Auto-select newly created conversation
   useEffect(() => {
     if (!pendingSelectTradieRef.current || conversations.length === 0) return;
@@ -506,19 +521,23 @@ export default function Messages() {
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       setTypingStatus(selectedConversation.id, false);
 
-      // Notify recipient
+      // Notify recipients — every other participant for a group, else the one.
+      const recipients = selectedConversation.is_group
+        ? selectedConversation.participants.filter(p => p.user_id !== user.id).map(p => p.user_id)
+        : [receiverId];
+      const senderFirst = profile?.full_name?.split(' ')[0] || 'Someone';
       try {
-        await supabase.rpc('create_notification', {
-          p_user_id: receiverId,
-          p_title: 'New Message',
-          p_message: messageContent.slice(0, 80),
+        await Promise.all(recipients.map(rid => supabase.rpc('create_notification', {
+          p_user_id: rid,
+          p_title: selectedConversation.is_group ? (getConversationTitle(selectedConversation) || 'New group message') : 'New Message',
+          p_message: (selectedConversation.is_group ? `${senderFirst}: ` : '') + messageContent.slice(0, 80),
           p_type: 'new_message',
           p_channel: 'in_app',
           p_read: false,
           p_link: null,
           p_job_id: null,
           p_metadata: { conversation_id: selectedConversation.id, sender_id: user.id },
-        });
+        })));
       } catch {
         // Non-critical
       }
@@ -780,17 +799,26 @@ export default function Messages() {
       <div className="max-w-[1600px] mx-auto">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-          <button
-            onClick={() => setShowArchivedFilter(!showArchivedFilter)}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] ${
-              showArchivedFilter
-                ? 'bg-warm-100 text-warm-700'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            <Archive className="w-4 h-4" />
-            {showArchivedFilter ? 'Show Active' : 'Archived'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowNewGroupModal(true)}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium bg-secondary-600 text-white hover:bg-secondary-700 transition-colors min-h-[40px]"
+            >
+              <Plus className="w-4 h-4" />
+              New Group
+            </button>
+            <button
+              onClick={() => setShowArchivedFilter(!showArchivedFilter)}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] ${
+                showArchivedFilter
+                  ? 'bg-warm-100 text-warm-700'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Archive className="w-4 h-4" />
+              {showArchivedFilter ? 'Show Active' : 'Archived'}
+            </button>
+          </div>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -853,14 +881,18 @@ export default function Messages() {
                           <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
                             isSelected ? 'bg-primary-600 text-white' : 'bg-primary-100 text-primary-600'
                           }`}>
-                            <span className="text-sm font-bold">
-                              {getConversationInitial(conv)}
-                            </span>
+                            {conv.is_group ? (
+                              <Users className="w-5 h-5" />
+                            ) : (
+                              <span className="text-sm font-bold">
+                                {getConversationInitial(conv)}
+                              </span>
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
                               <h3 className={`text-sm truncate ${hasUnread ? 'font-bold text-gray-900' : 'font-medium text-gray-900'}`}>
-                                {getOtherParticipantName(conv)}
+                                {getConversationTitle(conv)}
                               </h3>
                               <span className={`text-xs flex-shrink-0 ml-2 ${hasUnread ? 'text-warm-600 font-semibold' : 'text-gray-400'}`}>
                                 {conv.lastMessage ? formatRelativeTime(conv.lastMessage.created_at) : ''}
@@ -869,7 +901,11 @@ export default function Messages() {
                             <div className="flex items-center justify-between mt-0.5">
                               <p className={`text-xs truncate pr-2 ${hasUnread ? 'text-gray-700 font-medium' : 'text-gray-500'}`}>
                                 {conv.lastMessage
-                                  ? (conv.lastMessage.sender_id === user?.id ? 'You: ' : '') + maybeRedact(conv.lastMessage.content, conv)
+                                  ? (conv.lastMessage.sender_id === user?.id
+                                      ? 'You: '
+                                      : conv.is_group
+                                        ? `${conv.lastMessage.sender_profile?.full_name?.split(' ')[0] || 'Someone'}: `
+                                        : '') + maybeRedact(conv.lastMessage.content, conv)
                                   : 'No messages yet'}
                               </p>
                               {hasUnread && (
@@ -900,13 +936,17 @@ export default function Messages() {
                         <ArrowLeft className="w-5 h-5" />
                       </button>
                       <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-bold text-white">
-                          {getConversationInitial(selectedConversation)}
-                        </span>
+                        {selectedConversation.is_group ? (
+                          <Users className="w-5 h-5 text-white" />
+                        ) : (
+                          <span className="text-sm font-bold text-white">
+                            {getConversationInitial(selectedConversation)}
+                          </span>
+                        )}
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-900 text-sm">
-                          {getOtherParticipantName(selectedConversation)}
+                          {getConversationTitle(selectedConversation)}
                         </h3>
                         <p className="text-xs text-gray-500">
                           {selectedConversation.is_group
@@ -974,6 +1014,11 @@ export default function Messages() {
                                 : ''
                             }`}
                           >
+                            {selectedConversation.is_group && !isOwn && (
+                              <p className="text-[11px] font-semibold text-secondary-600 mb-0.5">
+                                {message.sender_profile?.full_name?.split(' ')[0] || 'Unknown'}
+                              </p>
+                            )}
                             {message.is_booking_request && (
                               <div
                                 className={`flex items-center gap-1 text-xs mb-1 ${
@@ -1228,6 +1273,16 @@ export default function Messages() {
           }}
         />
       )}
+
+      <NewGroupModal
+        isOpen={showNewGroupModal}
+        onClose={() => setShowNewGroupModal(false)}
+        currentUserId={user?.id || ''}
+        onCreated={(conversationId) => {
+          pendingSelectConvRef.current = conversationId;
+          fetchConversations();
+        }}
+      />
 
       {selectedBookingMessageId && selectedConversation && (
         <BookingRequestModal

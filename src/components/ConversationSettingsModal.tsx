@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Archive, Trash2, UserPlus, UserMinus, Shield, Users, Phone, Mail, MapPin, Loader2, Pencil, Check } from 'lucide-react';
+import { X, Archive, Trash2, UserPlus, UserMinus, Shield, Users, Phone, Mail, MapPin, Loader2, Pencil, Check, LogOut } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { ConversationParticipant, ConversationPermission, Profile } from '../types/database';
 
@@ -38,6 +38,8 @@ export default function ConversationSettingsModal({
   const [savingTitle, setSavingTitle] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [isGroup, setIsGroup] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -49,13 +51,28 @@ export default function ConversationSettingsModal({
   const loadConversationTitle = async () => {
     const { data } = await supabase
       .from('conversations')
-      .select('title')
+      .select('title, is_group')
       .eq('id', conversationId)
       .maybeSingle();
 
     if (data) {
       setConversationTitle(data.title || '');
+      setIsGroup(!!data.is_group);
     }
+  };
+
+  // Leave a group non-destructively — only marks the current user as left, the
+  // thread and its messages stay intact for everyone else.
+  const handleLeaveGroup = async () => {
+    setLeaving(true);
+    await supabase
+      .from('conversation_participants')
+      .update({ left_at: new Date().toISOString() })
+      .eq('conversation_id', conversationId)
+      .eq('user_id', currentUserId);
+    setLeaving(false);
+    onConversationUpdated();
+    onClose();
   };
 
   const handleSaveTitle = async () => {
@@ -582,6 +599,16 @@ export default function ConversationSettingsModal({
 
         <div className="p-6 border-t border-gray-200 bg-gray-50">
           <div className="flex gap-3">
+            {isGroup && (
+              <button
+                onClick={handleLeaveGroup}
+                disabled={leaving}
+                className="flex items-center justify-center gap-2 px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+              >
+                {leaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+                Leave Group
+              </button>
+            )}
             {isArchived ? (
               <button
                 onClick={handleUnarchiveConversation}
