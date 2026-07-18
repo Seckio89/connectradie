@@ -20,6 +20,7 @@ import {
   Star,
   AlertCircle,
   FlaskConical,
+  Sparkles,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -46,10 +47,11 @@ const FREE_FEATURES = [
 
 const PRO_FEATURES = [
   { text: 'Everything in Free, plus:', icon: Check, highlight: false },
+  { text: 'Unlimited AI quote estimates', icon: Sparkles, highlight: true },
   { text: 'Business name shown to clients', icon: BadgeCheck, highlight: true },
   { text: 'Priority in search results', icon: TrendingUp, highlight: true },
   { text: 'Verified Pro badge', icon: BadgeCheck, highlight: true },
-  { text: 'Invoicing tools', icon: FileText, highlight: false },
+  { text: 'Invoicing & payment collection', icon: FileText, highlight: false },
   { text: 'Project & milestone tracking', icon: Layers, highlight: false },
   { text: 'Google Calendar sync', icon: Calendar, highlight: false },
   { text: 'Bulk availability management', icon: CalendarRange, highlight: false },

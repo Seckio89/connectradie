@@ -57,6 +57,7 @@ const TIER_FEATURES: Record<string, string[]> = {
   ],
   pro: [
     'Everything in Free',
+    'Unlimited AI quote estimates',
     '7% platform fee (3.5% above $3k)',
     'Fee capped at $630 per job',
     'Priority in search results',
