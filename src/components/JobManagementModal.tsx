@@ -16,6 +16,7 @@ import ConfirmModal from './ConfirmModal';
 import TradieQuoteActions from './TradieQuoteActions';
 import { adjustQuotePrice, approvePriceReduction } from '../lib/stripePayments';
 import { sendJobPaymentLink } from '../lib/jobPaymentLink';
+import { emailOffAppClientOnCompletion } from '../lib/offAppCompletionEmail';
 import { useSignedUrls } from '../hooks/useSignedUrl';
 
 // ── Types ──
@@ -416,6 +417,10 @@ export default function JobManagementModal({
 
       const { error: updateError } = await supabase.from('jobs').update(updateData).eq('id', job.id);
       if (updateError) throw new Error('Failed to save completion details.');
+
+      // Off-app client: email them the quote link so they can approve & release
+      // (best-effort; no-ops for on-app jobs).
+      void emailOffAppClientOnCompletion(job.id);
 
       // Notify client
       if (job.client_id) {

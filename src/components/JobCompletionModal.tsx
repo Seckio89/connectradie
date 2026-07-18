@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import type { JobWithRelations } from '../types/database';
 import { calculateNextDueDate, createRecurringJob, FREQ_WEEKLY, FREQ_FORTNIGHTLY, insertNotification } from '../lib/recurringJobs';
 import { getFilteredCompletionPrompts } from '../lib/hintToCompletionMap';
+import { emailOffAppClientOnCompletion } from '../lib/offAppCompletionEmail';
 import { useAuth } from '../contexts/AuthContext';
 
 // ── Quick-text prompts per trade category ──
@@ -424,6 +425,10 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
         .eq('id', job.id);
 
       if (updateError) throw new Error('Failed to save completion details. Please try again.');
+
+      // Off-app client: email them the quote link so they can approve & release
+      // (best-effort; no-ops for on-app jobs).
+      void emailOffAppClientOnCompletion(job.id);
 
       // Create a payment REQUEST only when the job isn't already funded —
       // funded jobs hold the money already (escrow or destination charge), so
