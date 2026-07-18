@@ -254,9 +254,9 @@ export default function ConversationSettingsModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-5 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">Conversation Settings</h2>
+            <h2 className="text-xl font-bold text-gray-900">Conversation Settings</h2>
             <button
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
@@ -265,44 +265,29 @@ export default function ConversationSettingsModal({
             </button>
           </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => setActiveTab('general')}
-              className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeTab === 'general'
-                  ? 'bg-warm-100 text-warm-700'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <Pencil className="w-4 h-4 inline mr-2" />
-              General
-            </button>
-            <button
-              onClick={() => setActiveTab('participants')}
-              className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeTab === 'participants'
-                  ? 'bg-warm-100 text-warm-700'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <Users className="w-4 h-4 inline mr-2" />
-              Participants
-            </button>
-            <button
-              onClick={() => setActiveTab('permissions')}
-              className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeTab === 'permissions'
-                  ? 'bg-warm-100 text-warm-700'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <Shield className="w-4 h-4 inline mr-2" />
-              Permissions
-            </button>
+          <div className="grid grid-cols-3 gap-1.5">
+            {([
+              ['general', 'General', Pencil],
+              ['participants', 'Participants', Users],
+              ['permissions', 'Permissions', Shield],
+            ] as const).map(([key, label, Icon]) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                  activeTab === key
+                    ? 'bg-emerald-500 text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                <span>{label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-5">
           {activeTab === 'general' && (
             <div className="space-y-6">
               <div>
@@ -445,7 +430,7 @@ export default function ConversationSettingsModal({
               )}
 
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Current Participants</h3>
+                <h3 className="text-sm font-bold text-gray-900 mb-3">Current Participants</h3>
                 {loading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
@@ -455,31 +440,38 @@ export default function ConversationSettingsModal({
                     {participants.map((participant) => (
                       <div
                         key={participant.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        className="flex items-center justify-between gap-2 p-3 bg-primary-50 border border-primary-100 rounded-xl"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-bold text-primary-600">
-                              {participant.profile?.full_name?.charAt(0) || '?'}
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-11 h-11 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-base font-bold text-primary-600">
+                              {participant.profile?.full_name?.charAt(0)?.toUpperCase() || '?'}
                             </span>
                           </div>
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              {participant.profile?.full_name}
-                              {participant.user_id === currentUserId && (
-                                <span className="ml-2 text-xs text-gray-500">(You)</span>
-                              )}
-                            </p>
-                            <p className="text-sm text-gray-500">{participant.profile?.email}</p>
-                            {participant.is_admin && (
-                              <span className="text-xs text-primary-600 font-medium">Admin</span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="font-semibold text-gray-900 break-words">
+                                {participant.profile?.full_name || 'Unknown'}
+                                {participant.user_id === currentUserId && (
+                                  <span className="ml-1.5 text-xs font-normal text-gray-500">(You)</span>
+                                )}
+                              </p>
+                              <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                                participant.is_admin ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {participant.is_admin ? 'Owner' : 'Member'}
+                              </span>
+                            </div>
+                            {participant.profile?.email && (
+                              <p className="text-sm text-gray-500 break-all">{participant.profile.email}</p>
                             )}
                           </div>
                         </div>
                         {isAdmin && participant.user_id !== currentUserId && (
                           <button
                             onClick={() => handleRemoveParticipant(participant.id, participant.user_id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            aria-label={`Remove ${participant.profile?.full_name || 'participant'}`}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
                           >
                             <UserMinus className="w-4 h-4" />
                           </button>
@@ -597,13 +589,22 @@ export default function ConversationSettingsModal({
           )}
         </div>
 
-        <div className="p-6 border-t border-gray-200 bg-gray-50">
-          <div className="flex gap-3">
+        <div className="p-5 border-t border-gray-200 bg-gray-50 space-y-2.5">
+          {isAdmin && (
+            <button
+              onClick={() => setActiveTab('participants')}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600 transition-colors"
+            >
+              <UserPlus className="w-4 h-4" />
+              Add Participant
+            </button>
+          )}
+          <div className="flex gap-2.5">
             {isGroup && (
               <button
                 onClick={handleLeaveGroup}
                 disabled={leaving}
-                className="flex items-center justify-center gap-2 px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-red-200 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors disabled:opacity-50"
               >
                 {leaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
                 Leave Group
@@ -612,18 +613,18 @@ export default function ConversationSettingsModal({
             {isArchived ? (
               <button
                 onClick={handleUnarchiveConversation}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-warm-500 text-white rounded-lg hover:bg-warm-600 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-amber-300 text-amber-700 rounded-lg font-medium hover:bg-amber-50 transition-colors"
               >
                 <Archive className="w-4 h-4" />
-                Unarchive Conversation
+                Unarchive
               </button>
             ) : (
               <button
                 onClick={handleArchiveConversation}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-amber-300 text-amber-700 rounded-lg font-medium hover:bg-amber-50 transition-colors"
               >
                 <Archive className="w-4 h-4" />
-                Archive Conversation
+                Archive
               </button>
             )}
           </div>
