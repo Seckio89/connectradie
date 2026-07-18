@@ -1,67 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
 // ---------------------------------------------------------------------------
-// Fee Calculator (stripePayments)
-// ---------------------------------------------------------------------------
-
-import {
-  calculateFees,
-  PLATFORM_FEE_RATE_FREE,
-  PLATFORM_FEE_RATE_PRO,
-  PROCESSING_FEE_RATE,
-  STRIPE_FEE_RATE,
-  STRIPE_FEE_FIXED_CENTS,
-} from '../lib/stripePayments';
-
-describe('Fee Calculator', () => {
-  it('calculates platformFee at 10% for free tier', () => {
-    const result = calculateFees(10000, false);
-    expect(result.platformFee).toBe(Math.round(10000 * PLATFORM_FEE_RATE_FREE));
-    expect(result.platformFee).toBe(1000);
-  });
-
-  it('calculates platformFee at 5% for pro tier', () => {
-    const result = calculateFees(10000, true);
-    expect(result.platformFee).toBe(Math.round(10000 * PLATFORM_FEE_RATE_PRO));
-    expect(result.platformFee).toBe(500);
-  });
-
-  it('calculates processing fee at 3.5%', () => {
-    const result = calculateFees(10000, false);
-    expect(result.processingFee).toBe(Math.round(10000 * PROCESSING_FEE_RATE));
-    expect(result.processingFee).toBe(350);
-  });
-
-  it('calculates stripe fee as 1.75% + 30c', () => {
-    const result = calculateFees(10000, false);
-    const expectedStripeFee = Math.round(10000 * STRIPE_FEE_RATE) + STRIPE_FEE_FIXED_CENTS;
-    expect(result.stripeFee).toBe(expectedStripeFee);
-    expect(result.stripeFee).toBe(205); // 175 + 30
-  });
-
-  it('handles zero amount correctly', () => {
-    const result = calculateFees(0, false);
-    expect(result.baseCents).toBe(0);
-    expect(result.processingFee).toBe(0);
-    expect(result.platformFee).toBe(0);
-    expect(result.stripeFee).toBe(STRIPE_FEE_FIXED_CENTS); // only fixed fee
-    expect(result.totalCharge).toBe(STRIPE_FEE_FIXED_CENTS);
-    expect(result.tradiePayout).toBe(0);
-  });
-
-  it('handles large amount correctly', () => {
-    const amount = 1_000_000; // $10,000 in cents
-    const result = calculateFees(amount, false);
-    expect(result.baseCents).toBe(amount);
-    expect(result.processingFee).toBe(Math.round(amount * PROCESSING_FEE_RATE));
-    expect(result.platformFee).toBe(Math.round(amount * PLATFORM_FEE_RATE_FREE));
-    expect(result.stripeFee).toBe(Math.round(amount * STRIPE_FEE_RATE) + STRIPE_FEE_FIXED_CENTS);
-    expect(result.totalCharge).toBe(amount + result.processingFee + result.stripeFee);
-    expect(result.tradiePayout).toBe(amount - result.platformFee);
-  });
-});
-
-// ---------------------------------------------------------------------------
 // ABN Validation (identityVerification)
 // ---------------------------------------------------------------------------
 

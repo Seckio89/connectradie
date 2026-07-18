@@ -1,14 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
-  calculateFees,
   createJobDeposit,
   payMilestone,
   releaseEscrow,
   processRefund,
   getPaymentHistory,
   getPaymentById,
-  PLATFORM_FEE_RATE_FREE,
-  PLATFORM_FEE_RATE_PRO,
   PROCESSING_FEE_RATE,
   STRIPE_FEE_RATE,
   STRIPE_FEE_FIXED_CENTS,
@@ -100,14 +97,6 @@ describe('stripePayments', () => {
   // =========================================================================
 
   describe('fee constants', () => {
-    it('has correct platform fee rate for free tier (10%)', () => {
-      expect(PLATFORM_FEE_RATE_FREE).toBe(0.10);
-    });
-
-    it('has reduced platform fee for pro tier (5%)', () => {
-      expect(PLATFORM_FEE_RATE_PRO).toBe(0.05);
-    });
-
     it('has correct processing fee rate (3.5% = 1.75% Stripe + 1.75% platform margin)', () => {
       expect(PROCESSING_FEE_RATE).toBe(0.035);
     });
@@ -118,85 +107,6 @@ describe('stripePayments', () => {
 
     it('has correct Stripe fixed fee (30c)', () => {
       expect(STRIPE_FEE_FIXED_CENTS).toBe(30);
-    });
-  });
-
-  // =========================================================================
-  // calculateFees
-  // =========================================================================
-
-  describe('calculateFees', () => {
-    it('calculates fees correctly for free-tier tradie', () => {
-      // $100.00 = 10000 cents
-      const result = calculateFees(10000, false);
-
-      expect(result.baseCents).toBe(10000);
-      expect(result.processingFee).toBe(350);           // 3.5%
-      expect(result.platformFee).toBe(1000);             // 10%
-      expect(result.stripeFee).toBe(175 + 30);           // 1.75% + 30c = 205
-      expect(result.totalCharge).toBe(10000 + 350 + 205); // 10555
-      expect(result.tradiePayout).toBe(10000 - 1000);    // 9000
-    });
-
-    it('calculates fees correctly for pro-tier tradie (5% platform fee)', () => {
-      const result = calculateFees(10000, true);
-
-      expect(result.baseCents).toBe(10000);
-      expect(result.processingFee).toBe(350);              // 3.5%
-      expect(result.platformFee).toBe(500);               // Pro = 5%
-      expect(result.stripeFee).toBe(205);
-      expect(result.totalCharge).toBe(10000 + 350 + 205); // 10555
-      expect(result.tradiePayout).toBe(10000 - 500);      // 9500
-    });
-
-    it('rounds fractional cents correctly', () => {
-      // $33.33 = 3333 cents
-      const result = calculateFees(3333, false);
-
-      const expectedProcessingFee = Math.round(3333 * PROCESSING_FEE_RATE);  // 117
-      const expectedPlatformFee = Math.round(3333 * 0.10);                   // 333
-      const expectedStripeFee = Math.round(3333 * 0.0175) + 30;              // 58 + 30 = 88
-
-      expect(result.baseCents).toBe(3333);
-      expect(result.processingFee).toBe(expectedProcessingFee);
-      expect(result.platformFee).toBe(expectedPlatformFee);
-      expect(result.stripeFee).toBe(expectedStripeFee);
-      expect(result.totalCharge).toBe(3333 + expectedProcessingFee + expectedStripeFee);
-      expect(result.tradiePayout).toBe(3333 - expectedPlatformFee);
-    });
-
-    it('handles zero amount', () => {
-      const result = calculateFees(0, false);
-
-      expect(result.baseCents).toBe(0);
-      expect(result.processingFee).toBe(0);
-      expect(result.platformFee).toBe(0);
-      expect(result.stripeFee).toBe(30);                 // Fixed fee still applies
-      expect(result.totalCharge).toBe(30);
-      expect(result.tradiePayout).toBe(0);
-    });
-
-    it('handles very large amounts', () => {
-      // $50,000.00 = 5_000_000 cents
-      const result = calculateFees(5_000_000, false);
-
-      const expectedProcessingFee = Math.round(5_000_000 * PROCESSING_FEE_RATE); // 175_000
-      expect(result.baseCents).toBe(5_000_000);
-      expect(result.processingFee).toBe(expectedProcessingFee);
-      expect(result.platformFee).toBe(500_000);
-      expect(result.stripeFee).toBe(Math.round(5_000_000 * 0.0175) + 30);
-      expect(result.totalCharge).toBe(5_000_000 + expectedProcessingFee + result.stripeFee);
-      expect(result.tradiePayout).toBe(4_500_000);
-    });
-
-    it('returns all required FeeBreakdown fields', () => {
-      const result = calculateFees(5000, false);
-      expect(result).toHaveProperty('baseCents');
-      expect(result).toHaveProperty('processingFee');
-      expect(result).toHaveProperty('platformFee');
-      expect(result).toHaveProperty('stripeFee');
-      expect(result).toHaveProperty('totalCharge');
-      expect(result).toHaveProperty('tradiePayout');
     });
   });
 

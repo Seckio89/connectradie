@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
-  calculateFees,
   createJobDeposit,
   releaseEscrow,
   processRefund,
@@ -14,11 +13,6 @@ import {
   approvePriceReduction,
   adjustQuotePrice,
   humanizePaymentError,
-  PLATFORM_FEE_RATE_FREE,
-  PLATFORM_FEE_RATE_PRO,
-  PROCESSING_FEE_RATE,
-  STRIPE_FEE_RATE,
-  STRIPE_FEE_FIXED_CENTS,
 } from '../stripePayments';
 
 // ---------------------------------------------------------------------------
@@ -468,94 +462,6 @@ describe('paymentFlows', () => {
       await expect(verifyPayment('pay-verify-err')).rejects.toThrow(
         'Edge function "verify-payment" failed (500)',
       );
-    });
-  });
-
-  // =========================================================================
-  // 7. Fee calculation edge cases
-  // =========================================================================
-
-  describe('fee calculation edge cases', () => {
-    it('GST-registered tradie on free tier gets correct calculations', () => {
-      // $1,000.00 = 100_000 cents, free tier
-      const result = calculateFees(100_000, false);
-
-      expect(result.baseCents).toBe(100_000);
-      expect(result.processingFee).toBe(Math.round(100_000 * PROCESSING_FEE_RATE));
-      expect(result.platformFee).toBe(Math.round(100_000 * PLATFORM_FEE_RATE_FREE));
-      expect(result.stripeFee).toBe(Math.round(100_000 * STRIPE_FEE_RATE) + STRIPE_FEE_FIXED_CENTS);
-      expect(result.tradiePayout).toBe(100_000 - result.platformFee);
-    });
-
-    it('GST-registered tradie on pro tier gets reduced platform fee', () => {
-      const result = calculateFees(100_000, true);
-
-      expect(result.platformFee).toBe(Math.round(100_000 * PLATFORM_FEE_RATE_PRO));
-      expect(result.tradiePayout).toBe(100_000 - result.platformFee);
-      // Pro tradie keeps more than free tradie
-      const freeResult = calculateFees(100_000, false);
-      expect(result.tradiePayout).toBeGreaterThan(freeResult.tradiePayout);
-    });
-
-    it('handles very small amount under $1 (50 cents)', () => {
-      const result = calculateFees(50, false);
-
-      expect(result.baseCents).toBe(50);
-      expect(result.processingFee).toBe(Math.round(50 * PROCESSING_FEE_RATE));
-      expect(result.platformFee).toBe(Math.round(50 * PLATFORM_FEE_RATE_FREE));
-      expect(result.stripeFee).toBe(Math.round(50 * STRIPE_FEE_RATE) + STRIPE_FEE_FIXED_CENTS);
-      // Fixed 30c portion dwarfs the percentage portion for tiny amounts
-      expect(STRIPE_FEE_FIXED_CENTS).toBeGreaterThan(Math.round(50 * STRIPE_FEE_RATE));
-    });
-
-    it('handles maximum reasonable amount ($100,000 = 10_000_000 cents)', () => {
-      const result = calculateFees(10_000_000, false);
-
-      expect(result.baseCents).toBe(10_000_000);
-      expect(result.processingFee).toBe(Math.round(10_000_000 * PROCESSING_FEE_RATE));
-      expect(result.platformFee).toBe(Math.round(10_000_000 * PLATFORM_FEE_RATE_FREE));
-      expect(result.stripeFee).toBe(Math.round(10_000_000 * STRIPE_FEE_RATE) + STRIPE_FEE_FIXED_CENTS);
-      expect(result.totalCharge).toBe(result.baseCents + result.processingFee + result.stripeFee);
-      expect(result.tradiePayout).toBe(result.baseCents - result.platformFee);
-    });
-
-    it('fractional cent rounding: $7.77 free tier', () => {
-      // $7.77 = 777 cents - causes fractional cents in all fee tiers
-      const result = calculateFees(777, false);
-
-      expect(result.baseCents).toBe(777);
-      expect(result.processingFee).toBe(Math.round(777 * PROCESSING_FEE_RATE));
-      expect(result.platformFee).toBe(Math.round(777 * PLATFORM_FEE_RATE_FREE));
-      expect(result.stripeFee).toBe(Math.round(777 * STRIPE_FEE_RATE) + STRIPE_FEE_FIXED_CENTS);
-      // All values must be whole integers (no fractional cents)
-      expect(Number.isInteger(result.processingFee)).toBe(true);
-      expect(Number.isInteger(result.platformFee)).toBe(true);
-      expect(Number.isInteger(result.stripeFee)).toBe(true);
-      expect(Number.isInteger(result.totalCharge)).toBe(true);
-      expect(Number.isInteger(result.tradiePayout)).toBe(true);
-    });
-
-    it('fractional cent rounding: $33.33 pro tier', () => {
-      const result = calculateFees(3333, true);
-
-      expect(Number.isInteger(result.processingFee)).toBe(true);
-      expect(Number.isInteger(result.platformFee)).toBe(true);
-      expect(Number.isInteger(result.stripeFee)).toBe(true);
-      expect(Number.isInteger(result.totalCharge)).toBe(true);
-      expect(Number.isInteger(result.tradiePayout)).toBe(true);
-      // totalCharge = base + processing + stripe
-      expect(result.totalCharge).toBe(result.baseCents + result.processingFee + result.stripeFee);
-    });
-
-    it('1 cent amount: minimum possible payment', () => {
-      const result = calculateFees(1, false);
-
-      expect(result.baseCents).toBe(1);
-      expect(result.processingFee).toBe(Math.round(1 * PROCESSING_FEE_RATE));
-      expect(result.platformFee).toBe(Math.round(1 * PLATFORM_FEE_RATE_FREE));
-      // Fixed stripe fee dominates
-      expect(result.stripeFee).toBe(Math.round(1 * STRIPE_FEE_RATE) + STRIPE_FEE_FIXED_CENTS);
-      expect(result.totalCharge).toBeGreaterThan(result.baseCents);
     });
   });
 

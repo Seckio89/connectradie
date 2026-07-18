@@ -14,15 +14,6 @@ function generateIdempotencyKey(): string {
 // Types
 // ---------------------------------------------------------------------------
 
-export interface FeeBreakdown {
-  baseCents: number;
-  processingFee: number;
-  platformFee: number;
-  stripeFee: number;
-  totalCharge: number;
-  tradiePayout: number;
-}
-
 export interface PaymentRecord {
   id: string;
   profile_id: string;
@@ -52,12 +43,6 @@ export interface PaymentHistoryItem extends PaymentRecord {
 // Fee constants (AUD, amounts in cents)
 // ---------------------------------------------------------------------------
 
-/** Platform fee rate for free-tier tradies — first sliding-scale tier (10%). */
-export const PLATFORM_FEE_RATE_FREE = PRICING_CONFIG.tradie.free.platformFee.tiers[0].rate;
-
-/** Platform fee rate for pro-tier tradies — first sliding-scale tier (5%). */
-export const PLATFORM_FEE_RATE_PRO = PRICING_CONFIG.tradie.pro.platformFee.tiers[0].rate;
-
 /** ConnecTradie processing fee (Stripe + platform margin). Derived from PRICING_CONFIG. */
 export const PROCESSING_FEE_RATE =
   PRICING_CONFIG.processing.stripePercentage +
@@ -66,36 +51,6 @@ export const PROCESSING_FEE_RATE =
 /** Stripe processing fee: 1.75% + 30c per transaction (domestic AU cards). */
 export const STRIPE_FEE_RATE = PRICING_CONFIG.processing.stripePercentage;
 export const STRIPE_FEE_FIXED_CENTS = PRICING_CONFIG.processing.stripeFixed * 100;
-
-// ---------------------------------------------------------------------------
-// Fee calculation
-// ---------------------------------------------------------------------------
-
-/**
- * Calculate the full fee breakdown for a payment amount.
- *
- * @param amountCents  The base job amount in cents (AUD).
- * @param isPro        Whether the tradie is on the Pro subscription.
- * @returns            A complete {@link FeeBreakdown}.
- */
-export function calculateFees(amountCents: number, isPro: boolean): FeeBreakdown {
-  const baseCents = Math.round(amountCents);
-  const processingFee = Math.round(baseCents * PROCESSING_FEE_RATE);
-  const platformFeeRate = isPro ? PLATFORM_FEE_RATE_PRO : PLATFORM_FEE_RATE_FREE;
-  const platformFee = Math.round(baseCents * platformFeeRate);
-  const stripeFee = Math.round(baseCents * STRIPE_FEE_RATE) + STRIPE_FEE_FIXED_CENTS;
-  const totalCharge = baseCents + processingFee + stripeFee;
-  const tradiePayout = baseCents - platformFee;
-
-  return {
-    baseCents,
-    processingFee,
-    platformFee,
-    stripeFee,
-    totalCharge,
-    tradiePayout,
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Edge-function helpers
