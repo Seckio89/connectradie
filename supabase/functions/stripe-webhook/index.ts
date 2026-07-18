@@ -424,6 +424,63 @@ async function handleEvent(event: Stripe.Event) {
     return;
   }
 
+  // Handle customer.subscription.trial_will_end — Pro free-trial reminder.
+  // Stripe fires this ~3 days before a trial converts. We email the tradie so
+  // there's no surprise charge: it states the conversion price and date and how
+  // to cancel — the compliant free-trial pattern under Australian Consumer Law.
+  if (event.type === 'customer.subscription.trial_will_end') {
+    const subscription = event.data.object as Stripe.Subscription;
+    const customerId = typeof subscription.customer === 'string' ? subscription.customer : null;
+    if (customerId) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .eq('stripe_customer_id', customerId)
+        .maybeSingle();
+
+      if (profile) {
+        const price = subscription.items.data[0]?.price;
+        const amount = (price?.unit_amount ?? 0) / 100;
+        const interval = price?.recurring?.interval === 'year' ? 'yr' : 'mo';
+        const priceLabel = `$${amount % 1 === 0 ? amount.toFixed(0) : amount.toFixed(2)}/${interval}`;
+        const trialEndDate = subscription.trial_end
+          ? new Date(subscription.trial_end * 1000).toLocaleDateString('en-AU', {
+              day: 'numeric', month: 'long', year: 'numeric',
+            })
+          : 'soon';
+        const firstName = (profile.full_name || 'there').split(' ')[0];
+
+        // In-app notification.
+        await supabase.from('notifications').insert({
+          user_id: profile.id,
+          type: 'TRIAL_ENDING',
+          title: 'Your Pro trial ends soon',
+          message: `Your free trial ends on ${trialEndDate}. You'll move to Pro at ${priceLabel} unless you cancel before then. Manage your plan in Settings.`,
+        });
+
+        // Reminder email.
+        if (profile.email) {
+          const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+          const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+          await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+            body: JSON.stringify({
+              to: profile.email,
+              subject: `Your ConnecTradie Pro trial ends on ${trialEndDate}`,
+              body: `Hi ${firstName},\n\nYour free ConnecTradie Pro trial ends on ${trialEndDate}. After that your plan continues at ${priceLabel} and we'll charge the card you added when you started the trial.\n\nHappy to keep going? There's nothing to do — Pro carries on. If Pro isn't for you, cancel anytime before ${trialEndDate} from Settings → Subscription and you won't be charged a cent.\n\nThanks for trying Pro.`,
+              notificationType: 'TRIAL_ENDING',
+              metadata: { price: priceLabel, trialEnd: trialEndDate },
+            }),
+          }).catch((e) => console.error('Failed to send trial-ending email:', e));
+        }
+
+        console.info(`Trial-will-end reminder sent for customer ${customerId}, user ${profile.id}`);
+      }
+    }
+    return;
+  }
+
   // Handle charge.dispute.created — dispute notification to admin
   if (event.type === 'charge.dispute.created') {
     const dispute = event.data.object as Stripe.Dispute;

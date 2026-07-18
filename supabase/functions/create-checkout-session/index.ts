@@ -129,12 +129,40 @@ Deno.serve(async (req: Request) => {
     let customerId: string | undefined;
     const { data: existingSubscription } = await adminClient
       .from("stripe_subscriptions")
-      .select("stripe_customer_id")
+      .select("stripe_customer_id, stripe_subscription_id, status")
       .eq("profile_id", user.id)
       .maybeSingle();
 
     if (existingSubscription?.stripe_customer_id) {
       customerId = existingSubscription.stripe_customer_id;
+    }
+
+    // ── Free trial eligibility ────────────────────────────────────────────────
+    // A 14-day free trial is offered to FIRST-TIME subscribers only. Anyone who
+    // has ever held a real subscription (a genuine subscription id, past the
+    // "not_started" placeholder) is not eligible again — this prevents a tradie
+    // cancelling and re-subscribing on a fresh free trial each month.
+    const TRIAL_DAYS = 14;
+    const priorSubId = existingSubscription?.stripe_subscription_id ?? "";
+    const hasSubscribedBefore =
+      !!priorSubId &&
+      !priorSubId.startsWith("none_") &&
+      existingSubscription?.status !== "not_started";
+    const trialEligible = !hasSubscribedBefore;
+
+    // subscription_data carries the trial. payment_method_collection: "always"
+    // forces the card to be captured up front so the plan auto-converts to paid
+    // Pro when the trial ends (unless the tradie cancels first). Stripe also
+    // fires `customer.subscription.trial_will_end` ~3 days out, which the webhook
+    // turns into a reminder email — the compliant "no surprise charge" pattern.
+    const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
+      metadata: { user_id: user.id },
+    };
+    if (trialEligible) {
+      subscriptionData.trial_period_days = TRIAL_DAYS;
+      subscriptionData.trial_settings = {
+        end_behavior: { missing_payment_method: "cancel" },
+      };
     }
 
     const session = await stripe.checkout.sessions.create(
@@ -145,13 +173,16 @@ Deno.serve(async (req: Request) => {
         mode: "subscription",
         success_url: successUrl,
         cancel_url: cancelUrl,
+        // Always capture a card, even for a $0-today trial, so the trial can
+        // auto-convert to paid Pro at the end of the trial period.
+        payment_method_collection: "always",
         metadata: { user_id: user.id },
-        subscription_data: { metadata: { user_id: user.id } },
+        subscription_data: subscriptionData,
       },
       idempotencyKey ? { idempotencyKey } : undefined,
     );
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    return new Response(JSON.stringify({ url: session.url, trial: trialEligible, trialDays: TRIAL_DAYS }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -56,6 +56,7 @@ const TIER_FEATURES: Record<string, string[]> = {
     'Fee capped at $900 per job',
   ],
   pro: [
+    '14-day free trial — cancel anytime, no charge',
     'Everything in Free',
     'Unlimited AI quote estimates',
     'Recurring services & auto-invoicing',

@@ -67,10 +67,21 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
   const [modalState, setModalState] = useState<ModalState>('pricing');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [stripeSubscription, setStripeSubscription] = useState<Record<string, unknown> | null>(null);
+  const [hasSubscribedBefore, setHasSubscribedBefore] = useState(false);
   const [trainingModeEnabled, setTrainingModeEnabled] = useState(false);
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
 
   const currentTier = getCurrentTier(tradieDetails?.subscription_tier, profile?.is_premium);
+
+  // A first-time subscriber gets a 14-day free trial; the checkout function is
+  // the source of truth on eligibility, this just keeps the CTA honest.
+  const trialEligible = currentTier === 'free' && !hasSubscribedBefore;
+  const isTrialing = (stripeSubscription?.status as string | undefined) === 'trialing';
+  const trialConvertsOn = stripeSubscription?.current_period_end
+    ? new Date(stripeSubscription.current_period_end as string).toLocaleDateString('en-AU', {
+        day: 'numeric', month: 'long', year: 'numeric',
+      })
+    : null;
 
   useEffect(() => {
     if (isOpen && user) {
@@ -127,10 +138,17 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
       .from('stripe_subscriptions')
       .select('*')
       .eq('profile_id', user.id)
-      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
-    setStripeSubscription(data);
+    // Has this tradie ever held a real subscription? If so, no repeat free trial.
+    const subId = typeof data?.stripe_subscription_id === 'string' ? data.stripe_subscription_id : '';
+    setHasSubscribedBefore(!!subId && !subId.startsWith('none_') && data?.status !== 'not_started');
+
+    // Keep the record for the cancel / trial UI only while it's live (active or trialing).
+    const live = data && ['active', 'trialing'].includes(data.status as string);
+    setStripeSubscription(live ? data : null);
   };
 
   const loadTrainingMode = async () => {
@@ -517,16 +535,39 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
 
                 {currentTier === 'pro' ? (
                   <div className="mt-6 space-y-2.5">
-                    <div className="py-2.5 bg-green-100 text-green-700 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
-                      <Check className="w-4 h-4" />
-                      Active Plan
-                    </div>
-                    <button
-                      onClick={handleCancel}
-                      className="w-full py-2 text-xs text-gray-500 hover:text-red-600 font-medium rounded-xl hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors"
-                    >
-                      Cancel Subscription
-                    </button>
+                    {isTrialing ? (
+                      <>
+                        <div className="py-2.5 bg-secondary-100 text-secondary-700 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
+                          <Sparkles className="w-4 h-4" />
+                          Free trial active
+                        </div>
+                        {trialConvertsOn && (
+                          <p className="text-[11px] text-gray-500 text-center leading-relaxed">
+                            Your card is charged on <span className="font-semibold text-gray-700">{trialConvertsOn}</span> to
+                            continue Pro. Cancel any time before then and you won&rsquo;t be charged.
+                          </p>
+                        )}
+                        <button
+                          onClick={handleCancel}
+                          className="w-full py-2 text-xs text-gray-500 hover:text-red-600 font-medium rounded-xl hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors"
+                        >
+                          Cancel trial — no charge
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="py-2.5 bg-green-100 text-green-700 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
+                          <Check className="w-4 h-4" />
+                          Active Plan
+                        </div>
+                        <button
+                          onClick={handleCancel}
+                          className="w-full py-2 text-xs text-gray-500 hover:text-red-600 font-medium rounded-xl hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors"
+                        >
+                          Cancel Subscription
+                        </button>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="mt-6 space-y-2">
@@ -539,13 +580,34 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                         Activate Pro (Test)
                       </button>
                     ) : (
-                      <button
-                        onClick={handleUpgrade}
-                        className="w-full py-2.5 bg-gradient-to-r from-warm-500 to-warm-600 text-white text-sm font-semibold rounded-xl hover:from-warm-600 hover:to-warm-700 transition-all shadow-md hover:shadow-lg"
-                      >
-                        Get Pro
-                        {billingCycle === 'annual' && <span className="ml-1 text-xs opacity-80">— billed ${TIER_PRICING.pro.annual}/yr</span>}
-                      </button>
+                      <>
+                        <button
+                          onClick={handleUpgrade}
+                          className="w-full py-2.5 bg-gradient-to-r from-warm-500 to-warm-600 text-white text-sm font-semibold rounded-xl hover:from-warm-600 hover:to-warm-700 transition-all shadow-md hover:shadow-lg"
+                        >
+                          {trialEligible ? 'Start 14-day free trial' : 'Get Pro'}
+                          {!trialEligible && billingCycle === 'annual' && (
+                            <span className="ml-1 text-xs opacity-80">— billed ${TIER_PRICING.pro.annual}/yr</span>
+                          )}
+                        </button>
+                        {trialEligible ? (
+                          <p className="text-[11px] text-gray-500 text-center leading-relaxed">
+                            Free for 14 days, then{' '}
+                            <span className="font-semibold text-gray-700">
+                              {billingCycle === 'annual'
+                                ? `$${TIER_PRICING.pro.annual}/yr`
+                                : `$${TIER_PRICING.pro.monthly}/mo`}
+                            </span>
+                            . We&rsquo;ll email you before it ends — cancel any time during the trial and you won&rsquo;t be charged.
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-gray-400 text-center">
+                            {billingCycle === 'annual'
+                              ? `Billed $${TIER_PRICING.pro.annual}/yr. Cancel anytime.`
+                              : `Billed $${TIER_PRICING.pro.monthly}/mo. Cancel anytime.`}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
