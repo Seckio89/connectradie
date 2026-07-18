@@ -83,7 +83,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: tradie } = await supabase
       .from("profiles")
-      .select("full_name, email, avatar_url, stripe_connect_account_id, stripe_connect_onboarding_complete, external_pay_allowed, abn_number, abn_verified, abn_entity_name, license_number, license_state, license_class, license_verified, is_gst_registered, is_identity_verified, insurance_policy, created_at")
+      .select("full_name, email, avatar_url, phone, stripe_connect_account_id, stripe_connect_onboarding_complete, external_pay_allowed, abn_number, abn_verified, abn_entity_name, license_number, license_state, license_class, license_verified, is_gst_registered, is_identity_verified, insurance_policy, created_at")
       .eq("id", quote.tradie_id)
       .maybeSingle();
 
@@ -449,9 +449,9 @@ Deno.serve(async (req: Request) => {
         avatarUrl: tradie?.avatar_url ?? null,
         trade: tradeLabel,
         memberSince: tradie?.created_at ?? null,
+        // Direct contact — the tradie chose to show their phone on the quote.
+        phone: tradie?.phone ?? null,
         // Trust credentials — verification flags a client wants to see on a quote.
-        // Deliberately NOT the tradie's phone/email: keeping direct contact off the
-        // pre-payment quote protects the escrow flow.
         abn: tradie?.abn_number ?? null,
         abnVerified: tradie?.abn_verified === true,
         entityName: tradie?.abn_entity_name ?? null,

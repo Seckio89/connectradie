@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   Loader2, CheckCircle2, XCircle, MapPin, ShieldCheck, AlertCircle,
-  BadgeCheck, Calendar, Clock, Package, DollarSign, Search, type LucideIcon,
+  BadgeCheck, Calendar, Clock, Package, DollarSign, Search, Phone, type LucideIcon,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import JobDescription from '../components/JobDescription';
@@ -38,6 +38,7 @@ interface QuoteView {
     avatarUrl?: string | null;
     trade?: string | null;
     memberSince?: string | null;
+    phone?: string | null;
     abn?: string | null;
     abnVerified?: boolean;
     entityName?: string | null;
@@ -245,6 +246,14 @@ export default function PublicQuote() {
                       {data.tradie.trade && data.tradie.memberSince ? ' · ' : ''}
                       {data.tradie.memberSince ? `On ConnecTradie since ${new Date(data.tradie.memberSince).getFullYear()}` : ''}
                     </p>
+                  )}
+                  {data.tradie.phone && (
+                    <a
+                      href={`tel:${data.tradie.phone.replace(/[^\d+]/g, '')}`}
+                      className="inline-flex items-center gap-1.5 mt-1.5 text-sm font-medium text-emerald-700 hover:text-emerald-800"
+                    >
+                      <Phone className="w-3.5 h-3.5" /> {data.tradie.phone}
+                    </a>
                   )}
                 </div>
               </div>
