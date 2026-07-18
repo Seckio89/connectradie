@@ -94,7 +94,9 @@ Deno.serve(async (req: Request) => {
       if (!oneOff.client_contact_id) {
         return json({ error: "This is an on-app job — the client pays from their own account" }, 400);
       }
-      if (!["accepted", "in_progress"].includes(oneOff.status)) {
+      // Off-app clients pay AFTER the work too, so 'completed' is valid — that's
+      // the "Send Invoice by Email" step on a finished job.
+      if (!["accepted", "in_progress", "completed"].includes(oneOff.status)) {
         return json({ error: "The client needs to accept the quote before you can send a payment link" }, 400);
       }
 

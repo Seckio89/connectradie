@@ -253,10 +253,15 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Off-app client (CRM contact, no ConnecTradie account): no in-app payment
+  // request — they pay via an emailed link after the job's done.
+  const isOffApp = !job.client_id && !!job.client_contact_id;
   // Funded jobs (a completed/released job_funding payment exists) already hold
   // the money — completing must NOT create a payment request on top of it.
-  // Drives the "Complete Job" vs "Request Payment" copy and the submit path.
+  // Off-app jobs never create an in-app request either. Together these drive the
+  // "Complete Job" vs "Request Payment" copy and whether a request row is made.
   const [alreadyPaid, setAlreadyPaid] = useState(false);
+  const noPaymentRequest = alreadyPaid || isOffApp;
   useEffect(() => {
     if (!isOpen || !job?.id) return;
     let cancelled = false;
@@ -434,7 +439,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
       // funded jobs hold the money already (escrow or destination charge), so
       // requesting payment again would double-bill the client. (Non-blocking.)
       let paymentAmountDisplay = '';
-      if (!alreadyPaid) {
+      if (!noPaymentRequest) {
         try {
           const { data: acceptedQuote } = await supabase
             .from('quotes')
@@ -831,7 +836,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-bold text-gray-900">{alreadyPaid ? 'Complete Job' : 'Request Payment'}</h2>
+            <h2 className="text-base font-bold text-gray-900">{noPaymentRequest ? 'Complete Job' : 'Request Payment'}</h2>
             <p className="text-xs text-gray-400 mt-0.5">
               {jobCategory && <span className="text-secondary-600 font-medium">{jobCategory}</span>}
               {jobCategory && ' — '}{jobDesc}
@@ -994,7 +999,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Submitting...
                 </>
-              ) : alreadyPaid ? (
+              ) : noPaymentRequest ? (
                 'Complete Job'
               ) : (
                 'Request Payment'

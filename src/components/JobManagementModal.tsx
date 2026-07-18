@@ -610,6 +610,10 @@ export default function JobManagementModal({
 
   const isFinished = ['completed', 'cancelled', 'declined'].includes(job?.status || '');
   const isArchived = !!job?.archived_at;
+  // Off-app client (CRM contact, no account): paid via an emailed link after the
+  // job, never an in-app request. jobPaid = escrow/link already settled.
+  const isOffApp = !!job?.client_contact_id && !job?.client_id;
+  const jobPaid = payment?.status === 'completed' || payment?.status === 'released';
   const canSeeContact = ['funded', 'in_progress', 'completed'].includes(job?.status || '');
   const isRecurring = !!(job?.title && /ongoing|recurring/i.test(job.title));
   // Treat 'funded' as 'in_progress' for the progress bar (auto-start)
@@ -1294,8 +1298,13 @@ export default function JobManagementModal({
                       className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50"
                     >
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                      Mark Complete & Request Payout
+                      {/* Off-app clients pay by emailed link after completion, and
+                          funded jobs already hold the money — no request either way. */}
+                      {(isOffApp || jobPaid) ? 'Mark Complete' : 'Mark Complete & Request Payout'}
                     </button>
+                    {isOffApp && (
+                      <p className="mt-2 text-xs text-gray-500 text-center">You'll email {job.profiles?.full_name ? job.profiles.full_name.split(' ')[0] : 'the client'} a payment link once the job is marked complete.</p>
+                    )}
                   </div>
                 )}
 
@@ -1314,6 +1323,34 @@ export default function JobManagementModal({
                       <p className="text-xs text-gray-400 mt-2">
                         Completed {new Date(job.completed_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Off-app + completed + unpaid → get paid: email a card link. */}
+                {job.status === 'completed' && isOffApp && !jobPaid && (
+                  <div className="border border-emerald-200 rounded-xl p-4 bg-emerald-50/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <DollarSign className="w-4 h-4 text-emerald-600" />
+                      <h3 className="text-sm font-bold text-gray-900">Get paid</h3>
+                    </div>
+                    <p className="text-xs text-gray-600 mb-3">Email your client a secure card payment link for this job.</p>
+                    <button
+                      onClick={async () => {
+                        setPayLinkState('sending'); setPayLinkError('');
+                        const res = await sendJobPaymentLink(job.id);
+                        if (res.ok) setPayLinkState('sent');
+                        else { setPayLinkState('error'); setPayLinkError(res.error || 'Could not send the invoice.'); }
+                      }}
+                      disabled={payLinkState === 'sending'}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-lg text-sm font-semibold hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                    >
+                      {payLinkState === 'sending' ? (<><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>)
+                        : payLinkState === 'sent' ? (<><CheckCircle2 className="w-4 h-4" /> Invoice sent — resend</>)
+                        : (<><Send className="w-4 h-4" /> Send Invoice by Email</>)}
+                    </button>
+                    {payLinkState === 'error' && payLinkError && (
+                      <p className="mt-2 text-xs text-red-600">{payLinkError}</p>
                     )}
                   </div>
                 )}

@@ -104,6 +104,11 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
   const [acceptedQuote, setAcceptedQuote] = useState<Quote | null>(null);
   // True when a completed/released job_funding payment exists for this job.
   const [jobPaid, setJobPaid] = useState(false);
+  // Off-app client (billed via a CRM contact, no ConnecTradie account): there's
+  // no in-app escrow to "request", so payment happens by an emailed link AFTER
+  // the work is done, not a mid-job request. (payLinkState is declared above and
+  // shared with the accepted-state link — the two states never render together.)
+  const isOffApp = !!job?.client_contact_id && !job?.client_id;
   const [quoteLoaded, setQuoteLoaded] = useState(false);
   const [finalPriceInput, setFinalPriceInput] = useState('');
   const [finalPriceLoading, setFinalPriceLoading] = useState(false);
@@ -1009,8 +1014,10 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors"
           >
             <CheckCircle2 className="w-4 h-4" />
-            {/* Paid job: money is already secured — nothing to request. */}
-            {jobPaid ? 'Mark Complete' : 'Mark Complete & Request Payment'}
+            {/* "Request Payment" only makes sense for an ON-APP, not-yet-funded
+                job. Off-app clients pay by an emailed link after completion, and
+                already-paid jobs have nothing to request. */}
+            {(jobPaid || isOffApp) ? 'Mark Complete' : 'Mark Complete & Request Payment'}
           </button>
         )}
 
@@ -1024,7 +1031,30 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
           </button>
         )}
 
-        {isTradie && localStatus === 'completed' && (
+        {/* Off-app, completed, not yet paid → this is where the tradie gets
+            paid: email the client a secure card payment link (reuses the same
+            destination-charge flow as the accepted-state link). */}
+        {isTradie && localStatus === 'completed' && isOffApp && !jobPaid && (
+          <button
+            onClick={async () => {
+              setPayLinkState('sending');
+              setStatusError(null);
+              const res = await sendJobPaymentLink(job.id);
+              if (res.ok) setPayLinkState('sent');
+              else { setPayLinkState('idle'); setStatusError(res.error || 'Could not send the invoice.'); }
+            }}
+            disabled={payLinkState === 'sending'}
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+          >
+            {payLinkState === 'sending'
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
+              : payLinkState === 'sent'
+                ? <><CheckCircle2 className="w-4 h-4" /> Invoice sent — resend</>
+                : <><Send className="w-4 h-4" /> Send Invoice by Email</>}
+          </button>
+        )}
+
+        {isTradie && localStatus === 'completed' && !(isOffApp && !jobPaid) && (
           <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 font-semibold rounded-xl border border-green-200">
             <CheckCircle2 className="w-4 h-4" />
             Job Complete
