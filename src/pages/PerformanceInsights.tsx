@@ -21,7 +21,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { extractSuburb } from '../lib/contactGating';
 import DashboardLayout from '../components/DashboardLayout';
 import SubscriptionModal from '../components/SubscriptionModal';
-import { isPro } from '../lib/subscription';
+import { isPro, TIER_PRICING } from '../lib/subscription';
 import ProBadge from '../components/ProBadge';
 
 interface HealthStats {
@@ -332,7 +332,7 @@ export default function PerformanceInsights() {
               className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl shadow-sm transition-colors text-sm"
             >
               <TrendingUp className="w-4 h-4" />
-              Upgrade to Pro — $29/mo
+              {`Upgrade to Pro — $${TIER_PRICING.pro.monthly}/mo`}
             </button>
             <p className="mt-3 text-xs text-gray-500">Pro also gives you priority placement in client search and lower platform fees.</p>
           </div>

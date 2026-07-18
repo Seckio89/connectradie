@@ -155,9 +155,9 @@ export default function AdminFinancials() {
 
   // Revenue lines
   const freeCommission = freeJobs * avgJobValueSlider * 0.10;
-  const proCommission = proJobs * avgJobValueSlider * 0.05;
+  const proCommission = proJobs * avgJobValueSlider * 0.07;
   const stripeSurcharge = totalGmvProjected * 0.0175;
-  const subscriptionRevenue = proTradies * 4.99;
+  const subscriptionRevenue = proTradies * 49;
   const monthlyRevenue = freeCommission + proCommission + stripeSurcharge + subscriptionRevenue;
 
   // Costs
@@ -446,7 +446,7 @@ export default function AdminFinancials() {
                   <span className="font-medium text-gray-900">{formatCurrencyDollars(freeCommission)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Pro tradie commission (5%)</span>
+                  <span className="text-gray-600">Pro tradie commission (7%)</span>
                   <span className="font-medium text-gray-900">{formatCurrencyDollars(proCommission)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -454,7 +454,7 @@ export default function AdminFinancials() {
                   <span className="font-medium text-gray-900">{formatCurrencyDollars(stripeSurcharge)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Pro subscriptions ({proTradies} x $4.99)</span>
+                  <span className="text-gray-600">Pro subscriptions ({proTradies} x $49)</span>
                   <span className="font-medium text-gray-900">{formatCurrencyDollars(subscriptionRevenue)}</span>
                 </div>
                 <div className="border-t border-gray-200 pt-3 flex justify-between text-sm font-semibold">

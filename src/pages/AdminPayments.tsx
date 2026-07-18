@@ -642,7 +642,7 @@ export default function AdminPayments() {
               <>
                 <div className="p-4 border-b border-gray-100">
                   <p className="text-xs text-gray-500">
-                    Pro subscribers pay lower platform fees (3–5% sliding scale vs 4–10% for free tier). They keep more of each payment.
+                    Pro subscribers pay a lower platform fee (7%, and 3.5% on the part of a job above $3k) vs 10% for the free tier. They keep more of each payment.
                   </p>
                 </div>
                 <div className="divide-y divide-gray-100">

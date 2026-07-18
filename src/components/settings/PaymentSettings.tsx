@@ -12,9 +12,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 
 // Bank details printed on invoices to clients who pay by bank transfer (the
-// "external" payment method). Separate from the Stripe payout bank account —
-// this is what the tradie's off-app clients transfer to directly. Always shown,
-// so a tradie who only invoices externally (no Stripe) can still set it.
+// "external" payment method) — separate from the Stripe payout bank account.
+//
+// Only shown to tradies who are actually allowed to settle off-platform
+// (external_pay_allowed — e.g. Property Manager tiers). For everyone else,
+// escrow is forced (the anti-circumvention gate routes their clients to Stripe),
+// so a bank-transfer invoice can never happen and this section would be both
+// dead and a circumvention temptation — hence hidden.
 function ExternalBankDetails() {
   const { user, profile, refreshProfile } = useAuth();
   const { showToast } = useToast();
@@ -59,6 +63,10 @@ function ExternalBankDetails() {
 
   const inputCls =
     'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500';
+
+  // Escrow is forced for everyone except external-pay-allowed tradies (PM tiers),
+  // so this off-platform bank-transfer section is hidden for the rest.
+  if (profile?.external_pay_allowed !== true) return null;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
