@@ -37,6 +37,14 @@ export default function Payouts() {
   const [connectLoading, setConnectLoading] = useState(false);
   const [escrowHeld, setEscrowHeld] = useState(0);
   const [escrowCount, setEscrowCount] = useState(0);
+  // Soonest completed_at (ms epoch) among unreleased completed jobs, for the
+  // live auto-release countdown. null when nothing is inside the 48h window.
+  const [escrowReleaseAt, setEscrowReleaseAt] = useState<number | null>(null);
+  const [nowTs, setNowTs] = useState<number>(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowTs(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   const [onboardingWarning, setOnboardingWarning] = useState(false);
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
@@ -78,7 +86,7 @@ export default function Payouts() {
       // Fetch unreleased escrow payments (completed job_funding with no transfer_id)
       const { data: escrowData } = await supabase
         .from('payments')
-        .select('amount, metadata, jobs!inner(tradie_id, status)')
+        .select('amount, metadata, jobs!inner(tradie_id, status, completed_at)')
         .eq('jobs.tradie_id', user.id)
         .eq('status', 'completed')
         .eq('payment_type', 'job_funding')
@@ -89,6 +97,14 @@ export default function Payouts() {
       );
       setEscrowHeld(unreleased.reduce((s, r) => s + (r.amount || 0), 0));
       setEscrowCount(unreleased.length);
+
+      // Only COMPLETED jobs are inside the 48h review window; the soonest
+      // completed_at drives the next auto-release countdown.
+      const completedTimes = unreleased
+        .map((p) => p.jobs as unknown as { status: string; completed_at: string | null })
+        .filter((j) => j.status === 'completed' && j.completed_at)
+        .map((j) => new Date(j.completed_at as string).getTime());
+      setEscrowReleaseAt(completedTimes.length ? Math.min(...completedTimes) : null);
 
       // Externally-received payments: paid invoices marked settled off-platform.
       const { data: extInv } = await supabase
@@ -692,6 +708,19 @@ export default function Payouts() {
     return (accountDetails?.payouts || []).reduce((s, p) => s + p.amount, 0);
   }, [accountDetails?.payouts]);
   const escrowAmount = escrowHeld;
+  const RELEASE_WINDOW_MS = 48 * 60 * 60 * 1000;
+  const autoReleaseLabel = (() => {
+    if (!escrowReleaseAt) return 'Auto-releases after 48 hours';
+    const ms = escrowReleaseAt + RELEASE_WINDOW_MS - nowTs;
+    if (ms <= 0) return 'Auto-releasing now…';
+    const mins = Math.floor(ms / 60000);
+    const d = Math.floor(mins / 1440);
+    const h = Math.floor((mins % 1440) / 60);
+    const m = mins % 60;
+    if (d > 0) return `Auto-releases in ${d}d ${h}h`;
+    if (h > 0) return `Auto-releases in ${h}h ${m}m`;
+    return `Auto-releases in ${m}m`;
+  })();
   const onItsWay = (accountDetails?.balance?.available ?? 0) + (accountDetails?.balance?.pending ?? 0);
   const externalTotal = useMemo(() => externalPayments.reduce((s, p) => s + p.amount, 0), [externalPayments]);
   const computedTotalEarned = escrowAmount + onItsWay + totalPaidOut + externalTotal;
@@ -915,7 +944,7 @@ export default function Payouts() {
                     </div>
                     <p className="text-xl font-bold text-amber-900">{formatCurrency(escrowAmount)}</p>
                     <p className="text-xs text-amber-600 mt-1">
-                      {escrowCount} job{escrowCount !== 1 ? 's' : ''} · Auto-releases after 48 hours
+                      {escrowCount} job{escrowCount !== 1 ? 's' : ''} · {autoReleaseLabel}
                     </p>
                   </div>
                 )}
