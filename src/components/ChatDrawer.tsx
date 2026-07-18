@@ -858,6 +858,10 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                       placeholder="e.g., Gate code is 1234, key under mat..."
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-warm-500 focus:border-transparent"
                     />
+                    <p className="mt-1 text-[11px] text-gray-500 flex items-start gap-1">
+                      <Key className="w-3 h-3 mt-0.5 flex-shrink-0 text-gray-400" />
+                      Kept private and only shown to your assigned tradie after they enter their security PIN. Share gate codes, key locations, or alarm details safely.
+                    </p>
                   </div>
                 </div>
 

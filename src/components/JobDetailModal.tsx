@@ -7,7 +7,6 @@ import {
   User,
   Phone,
   Mail,
-  Key,
   Image as ImageIcon,
   CheckCircle2,
   Play,
@@ -31,6 +30,7 @@ import { insertNotification, type RecurringJob } from '../lib/recurringJobs';
 import { useSignedUrls } from '../hooks/useSignedUrl';
 import MilestoneEditor from './MilestoneEditor';
 import FormattedNotes from './FormattedNotes';
+import AccessInstructions from './AccessInstructions';
 import Modal from './Modal';
 import AvailabilityMiniCalendar from './AvailabilityMiniCalendar';
 
@@ -689,12 +689,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
             <FormattedNotes text={job.notes} className="space-y-1" />
           </div>
         )}
-        {isTradie && job.access_instructions && (
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Access</p>
-            <FormattedNotes text={job.access_instructions} className="space-y-1" />
-          </div>
-        )}
+        {isTradie && <AccessInstructions jobId={job.id} />}
 
         {/* ── Service Schedule (recurring only) ── */}
         {isRecurring && recurringJob && (
@@ -838,16 +833,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
           )}
         </div>
 
-        {/* ── Access Instructions ── */}
-        {job.access_instructions && isUnlocked && (
-          <div className="flex items-start gap-2.5 bg-warm-50 border border-warm-100 rounded-xl p-3">
-            <Key className="w-4 h-4 text-warm-500 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-xs font-semibold text-warm-700 mb-0.5">Access Instructions</p>
-              <p className="text-sm text-warm-900">{job.access_instructions}</p>
-            </div>
-          </div>
-        )}
+        {/* Access instructions render once (PIN-gated) via the isTradie block above. */}
 
         {/* ── Photos ── */}
         {job.images_url && job.images_url.length > 0 && (

@@ -3,7 +3,7 @@ import {
   X, Loader2, AlertTriangle, Clock, FileText, Archive, ArchiveRestore,
   MapPin, User, Calendar, Phone, Mail, CheckCircle2,
   Send, ChevronDown, ChevronUp, Repeat, Image,
-  Zap, Users, Key, Eye, EyeOff,
+  Zap, Users, Eye, EyeOff,
   DollarSign, Shield, Camera, Plus, Check, Maximize2,
 } from 'lucide-react';
 import FormattedNotes from './FormattedNotes';
@@ -16,6 +16,7 @@ import ConfirmModal from './ConfirmModal';
 import TradieQuoteActions from './TradieQuoteActions';
 import { adjustQuotePrice, approvePriceReduction } from '../lib/stripePayments';
 import { sendJobPaymentLink } from '../lib/jobPaymentLink';
+import AccessInstructions from './AccessInstructions';
 import { emailOffAppClientOnCompletion } from '../lib/offAppCompletionEmail';
 import { useSignedUrls } from '../hooks/useSignedUrl';
 
@@ -1183,13 +1184,8 @@ export default function JobManagementModal({
                   </div>
                 </div>
 
-                {/* ── Access Instructions ── */}
-                {job.access_instructions && (
-                  <div className="border border-gray-200 rounded-xl px-3 py-2.5">
-                    <p className="text-xs text-gray-400 mb-1 flex items-center gap-1"><Key className="w-3 h-3" /> Access Instructions</p>
-                    <p className="text-sm text-gray-800">{job.access_instructions}</p>
-                  </div>
-                )}
+                {/* ── Access Instructions (PIN-gated) ── */}
+                <AccessInstructions jobId={job.id} />
 
                 {/* ── Photos ── */}
                 {job.images_url && job.images_url.length > 0 && (

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Loader2, CheckCircle2, Lock, Key, Trash2, AlertTriangle, Shield, Smartphone, Download } from 'lucide-react';
+import { Loader2, CheckCircle2, Lock, Key, Trash2, AlertTriangle, Shield, Smartphone, Download, KeyRound } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { friendlyError } from '../../lib/utils';
+import { getPinStatus } from '../../lib/accessPin';
+import AccessPinModal from '../AccessPinModal';
 
 interface SecurityTabProps {
   isTradie: boolean;
@@ -26,10 +28,18 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
   const [mfaError, setMfaError] = useState('');
   const [mfaSuccess, setMfaSuccess] = useState('');
   const [exportLoading, setExportLoading] = useState(false);
+  const [accessPinSet, setAccessPinSet] = useState<boolean | null>(null);
+  const [pinModalOpen, setPinModalOpen] = useState(false);
 
   useEffect(() => {
     checkMfaStatus();
+    if (isTradie) refreshPinStatus();
   }, []);
+
+  const refreshPinStatus = async () => {
+    const r = await getPinStatus();
+    setAccessPinSet(r.ok ? !!r.data?.hasPin : false);
+  };
 
   const checkMfaStatus = async () => {
     try {
@@ -309,6 +319,57 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
           </button>
         )}
       </div>
+
+      {/* Access Instructions PIN (tradies only) */}
+      {isTradie && (
+        <div className="border-t border-gray-200 p-6 md:p-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-secondary-50 rounded-lg">
+              <KeyRound className="w-5 h-5 text-secondary-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Access Instructions PIN</h3>
+              <p className="text-sm text-gray-500">A 4-digit PIN that unlocks client gate codes, key locations, and alarm details on your jobs.</p>
+            </div>
+          </div>
+
+          {accessPinSet === null ? (
+            <div className="flex items-center gap-2 text-sm text-gray-400"><Loader2 className="w-4 h-4 animate-spin" /> Checking…</div>
+          ) : accessPinSet ? (
+            <div className="flex items-center justify-between p-4 bg-secondary-50 border border-secondary-100 rounded-xl">
+              <div className="flex items-center gap-3">
+                <Lock className="w-5 h-5 text-secondary-600" />
+                <div>
+                  <p className="text-sm font-medium text-secondary-800">Your access PIN is set</p>
+                  <p className="text-xs text-secondary-600">You’ll enter it whenever you view protected access details.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPinModalOpen(true)}
+                className="px-4 py-2 text-sm font-medium text-secondary-700 bg-white border border-secondary-200 rounded-lg hover:bg-secondary-50 transition-colors"
+              >
+                Change PIN
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setPinModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors hover:opacity-90"
+              style={{ backgroundColor: '#2E86DE', color: 'white' }}
+            >
+              <KeyRound className="w-4 h-4" />
+              Set up Access PIN
+            </button>
+          )}
+
+          <AccessPinModal
+            isOpen={pinModalOpen}
+            onClose={() => setPinModalOpen(false)}
+            initialMode={accessPinSet ? 'change' : 'auto'}
+            onChanged={refreshPinStatus}
+          />
+        </div>
+      )}
 
       {/* Export My Data */}
       <div className="border-t border-gray-200 p-6 md:p-8">

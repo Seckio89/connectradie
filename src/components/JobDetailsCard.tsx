@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { Calendar, MapPin, Clock, User, Mail, Phone, FileText, Image as ImageIcon, DollarSign, AlertTriangle, Key, Zap, Plus, CheckCircle, XCircle, CreditCard, Package, Info, Upload, X, Receipt, Building2, Trash2, Eye, PenLine, Crown, WifiOff, Lock, Circle, Loader2, Car } from 'lucide-react';
+import { Calendar, MapPin, Clock, User, Mail, Phone, FileText, Image as ImageIcon, DollarSign, AlertTriangle, Zap, Plus, CheckCircle, XCircle, CreditCard, Package, Info, Upload, X, Receipt, Building2, Trash2, Eye, PenLine, Crown, WifiOff, Lock, Circle, Loader2, Car } from 'lucide-react';
+import AccessInstructions from './AccessInstructions';
 import type { Job, Profile, Project } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { getAuthHeaders } from '../lib/edgeFn';
@@ -561,15 +562,9 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
             </div>
           )}
 
-          {job.access_instructions && canSeeContactDetails && (
-            <div className="flex items-start gap-2 bg-warm-50 border border-warm-100 rounded-lg p-3">
-              <Key className="w-4 h-4 text-warm-500 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-xs font-medium text-warm-700 mb-0.5">Access Instructions</p>
-                <p className="text-sm text-warm-900">{job.access_instructions}</p>
-              </div>
-            </div>
-          )}
+          {/* Access instructions are PIN-gated + server-withheld. The component
+              shows nothing to viewers who aren't the assigned tradie/team. */}
+          {canSeeContactDetails && <AccessInstructions jobId={job.id} />}
 
           {job.images_url && job.images_url.length > 0 && (
             <div>
