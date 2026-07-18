@@ -69,7 +69,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: quote, error } = await supabase
       .from("quotes")
-      .select("id, job_id, tradie_id, price_min, price_max, firm_price, message, status, accepted_at, proposed_start_date")
+      .select("id, job_id, tradie_id, price_min, price_max, firm_price, message, status, accepted_at, proposed_start_date, created_at, estimated_duration, includes_materials, requires_site_inspection, final_valid_until, call_out_fee_cents")
       .eq("public_token", token)
       .maybeSingle();
 
@@ -83,13 +83,13 @@ Deno.serve(async (req: Request) => {
 
     const { data: tradie } = await supabase
       .from("profiles")
-      .select("full_name, email, avatar_url, stripe_connect_account_id, stripe_connect_onboarding_complete, external_pay_allowed")
+      .select("full_name, email, avatar_url, stripe_connect_account_id, stripe_connect_onboarding_complete, external_pay_allowed, abn_number, abn_verified, abn_entity_name, license_number, license_state, license_class, license_verified, is_gst_registered, is_identity_verified, insurance_policy, created_at")
       .eq("id", quote.tradie_id)
       .maybeSingle();
 
     const { data: td } = await supabase
       .from("tradie_details")
-      .select("business_name, subscription_tier")
+      .select("business_name, subscription_tier, trade_category, is_insured, is_licensed, insurance_provider")
       .eq("profile_id", quote.tradie_id)
       .maybeSingle();
 
@@ -98,7 +98,7 @@ Deno.serve(async (req: Request) => {
     const { data: clientContact } = job?.client_contact_id
       ? await supabase
           .from("client_contacts")
-          .select("full_name, email, payment_method")
+          .select("full_name, email, payment_method, suburb, state")
           .eq("id", job.client_contact_id)
           .maybeSingle()
       : { data: null };
@@ -402,20 +402,38 @@ Deno.serve(async (req: Request) => {
       : action === "decline" ? "declined"
       : quote.status;
 
+    // A human quote reference from the id, e.g. "Q-1A2B3C4D".
+    const reference = `Q-${String(quote.id).replace(/-/g, "").slice(0, 8).toUpperCase()}`;
+    const tradeLabel = td?.trade_category
+      ? String(td.trade_category).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+      : null;
+
     return json({
       status: finalStatus,
+      reference,
+      issuedDate: quote.created_at ?? null,
+      validUntil: quote.final_valid_until ?? null,
       quote: {
         priceMin: quote.price_min,
         priceMax: quote.price_max,
         firmPrice: quote.firm_price,
         message: quote.message,
         proposedStartDate: quote.proposed_start_date,
+        estimatedDuration: quote.estimated_duration ?? null,
+        includesMaterials: quote.includes_materials ?? null,
+        requiresSiteInspection: quote.requires_site_inspection ?? null,
+        callOutFee: quote.call_out_fee_cents ? Number(quote.call_out_fee_cents) / 100 : null,
+        gstRegistered: tradie?.is_gst_registered === true,
       },
       job: {
         title: job?.title ?? null,
         description: job?.description ?? null,
         address: job?.location_address ?? null,
         status: job?.status ?? null,
+      },
+      client: {
+        name: clientContact?.full_name ?? null,
+        location: [clientContact?.suburb, clientContact?.state].filter(Boolean).join(", ") || null,
       },
       payment: {
         paid: paymentPaid,
@@ -429,6 +447,25 @@ Deno.serve(async (req: Request) => {
         name: tradie?.full_name ?? null,
         business: td?.business_name ?? null,
         avatarUrl: tradie?.avatar_url ?? null,
+        trade: tradeLabel,
+        memberSince: tradie?.created_at ?? null,
+        // Trust credentials — verification flags a client wants to see on a quote.
+        // Deliberately NOT the tradie's phone/email: keeping direct contact off the
+        // pre-payment quote protects the escrow flow.
+        abn: tradie?.abn_number ?? null,
+        abnVerified: tradie?.abn_verified === true,
+        entityName: tradie?.abn_entity_name ?? null,
+        license: (tradie?.license_number || td?.is_licensed)
+          ? {
+              number: tradie?.license_number ?? null,
+              state: tradie?.license_state ?? null,
+              cls: tradie?.license_class ?? null,
+              verified: tradie?.license_verified === true,
+            }
+          : null,
+        insured: td?.is_insured === true || tradie?.insurance_policy === true,
+        insurer: td?.insurance_provider ?? null,
+        identityVerified: tradie?.is_identity_verified === true,
       },
     });
   } catch (err) {

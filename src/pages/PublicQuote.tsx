@@ -6,21 +6,46 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Loader2, CheckCircle2, XCircle, MapPin, ShieldCheck, AlertCircle } from 'lucide-react';
+import {
+  Loader2, CheckCircle2, XCircle, MapPin, ShieldCheck, AlertCircle,
+  BadgeCheck, Calendar, Clock, Package, DollarSign, Search, type LucideIcon,
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import JobDescription from '../components/JobDescription';
 
 interface QuoteView {
   status: string;
+  reference?: string;
+  issuedDate?: string | null;
+  validUntil?: string | null;
   quote: {
     priceMin: number | null;
     priceMax: number | null;
     firmPrice: number | null;
     message: string | null;
     proposedStartDate: string | null;
+    estimatedDuration?: string | null;
+    includesMaterials?: boolean | null;
+    requiresSiteInspection?: boolean | null;
+    callOutFee?: number | null;
+    gstRegistered?: boolean;
   };
   job: { title: string | null; description: string | null; address: string | null; status?: string | null };
-  tradie: { name: string | null; business: string | null; avatarUrl?: string | null };
+  client?: { name: string | null; location: string | null };
+  tradie: {
+    name: string | null;
+    business: string | null;
+    avatarUrl?: string | null;
+    trade?: string | null;
+    memberSince?: string | null;
+    abn?: string | null;
+    abnVerified?: boolean;
+    entityName?: string | null;
+    license?: { number: string | null; state: string | null; cls: string | null; verified: boolean } | null;
+    insured?: boolean;
+    insurer?: string | null;
+    identityVerified?: boolean;
+  };
   payment?: { paid: boolean; released: boolean; payable?: boolean; url?: string | null };
 }
 
@@ -32,6 +57,28 @@ function formatPrice(q: QuoteView['quote']): string {
   }
   if (q.priceMin != null) return fmt(q.priceMin);
   return 'On request';
+}
+
+/** The single definite dollar amount, when the quote isn't a range (used for GST). */
+function definitePrice(q: QuoteView['quote']): number | null {
+  if (q.firmPrice != null) return q.firmPrice;
+  if (q.priceMin != null && q.priceMin === q.priceMax) return q.priceMin;
+  return null;
+}
+
+const fmtDate = (iso?: string | null): string | null =>
+  iso ? new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+
+function Detail({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-2">
+      <Icon className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+      <div className="min-w-0">
+        <p className="text-[11px] text-gray-500 uppercase tracking-wide">{label}</p>
+        <p className="text-sm font-medium text-gray-800 break-words">{value}</p>
+      </div>
+    </div>
+  );
 }
 
 export default function PublicQuote() {
@@ -178,45 +225,125 @@ export default function PublicQuote() {
           </div>
         ) : data ? (
           <div className="space-y-5">
-            {/* Sender header — reads like the top of a document from the business */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center flex-shrink-0">
+            {/* Quote document */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              {/* Business identity */}
+              <div className="p-5 sm:p-6 flex items-start gap-4 border-b border-gray-100">
+                <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center flex-shrink-0">
                   {showAvatar ? (
                     <img src={avatarUrl!} alt="" className="w-full h-full object-cover" onError={() => setAvatarFailed(true)} />
                   ) : (
-                    <span className="text-xl font-bold text-secondary-800">{businessName.charAt(0).toUpperCase()}</span>
+                    <span className="text-xl font-bold text-emerald-800">{businessName.charAt(0).toUpperCase()}</span>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wide mb-0.5">You’ve received a quote from</p>
+                  <p className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wide mb-0.5">Quote from</p>
                   <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight break-words">{businessName}</h1>
+                  {(data.tradie.trade || data.tradie.memberSince) && (
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {data.tradie.trade}
+                      {data.tradie.trade && data.tradie.memberSince ? ' · ' : ''}
+                      {data.tradie.memberSince ? `On ConnecTradie since ${new Date(data.tradie.memberSince).getFullYear()}` : ''}
+                    </p>
+                  )}
                 </div>
               </div>
-            </div>
 
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-gray-100">
+              {/* Reference + dates */}
+              <div className="px-5 sm:px-6 py-3 bg-gray-50 border-b border-gray-100 flex flex-wrap items-center gap-x-6 gap-y-1 text-xs">
+                {data.reference && <span className="text-gray-500">Quote <span className="font-semibold text-gray-800">{data.reference}</span></span>}
+                {fmtDate(data.issuedDate) && <span className="text-gray-500">Issued <span className="font-medium text-gray-700">{fmtDate(data.issuedDate)}</span></span>}
+                {fmtDate(data.validUntil) && <span className="text-gray-500">Valid until <span className="font-medium text-gray-700">{fmtDate(data.validUntil)}</span></span>}
+              </div>
+
+              {/* Trust credentials */}
+              {(data.tradie.abn || data.tradie.license || data.tradie.insured || data.tradie.identityVerified) && (
+                <div className="px-5 sm:px-6 py-3.5 border-b border-gray-100 flex flex-wrap gap-2">
+                  {data.tradie.abn && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 text-gray-700">
+                      {data.tradie.abnVerified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" />}
+                      ABN {data.tradie.abn}
+                    </span>
+                  )}
+                  {data.tradie.license && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 text-gray-700">
+                      {data.tradie.license.verified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" />}
+                      Licensed{data.tradie.license.state ? ` (${data.tradie.license.state})` : ''}
+                    </span>
+                  )}
+                  {data.tradie.insured && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 text-gray-700">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Insured
+                    </span>
+                  )}
+                  {data.tradie.identityVerified && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 text-gray-700">
+                      <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" /> ID verified
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Prepared for */}
+              {data.client?.name && (
+                <div className="px-5 sm:px-6 py-3 border-b border-gray-100 text-xs">
+                  <span className="text-gray-500">Prepared for </span>
+                  <span className="font-semibold text-gray-800">{data.client.name}</span>
+                  {data.client.location && <span className="text-gray-500"> · {data.client.location}</span>}
+                </div>
+              )}
+
+              {/* Scope of work */}
+              <div className="p-5 sm:p-6 border-b border-gray-100">
+                <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Scope of work</p>
                 <h2 className="text-lg font-semibold text-gray-900">{data.job.title || 'Your job'}</h2>
                 {data.job.address && (
                   <p className="mt-1 flex items-center gap-1.5 text-sm text-gray-500">
                     <MapPin className="w-4 h-4" /> {data.job.address}
                   </p>
                 )}
-                {/* Client-facing: scope of work only — internal assumptions/conditions
-                    and hour estimates are the tradie's pricing rationale, not scope. */}
                 {data.job.description && (
                   <JobDescription text={data.job.description} className="mt-3" hideNotes />
                 )}
               </div>
 
-              <div className="p-6 bg-gray-50 flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Quoted price</span>
-                <span className="text-2xl font-bold text-gray-900">{formatPrice(data.quote)}</span>
+              {/* Price + GST */}
+              <div className="px-5 sm:px-6 py-5 bg-gray-50 border-b border-gray-100">
+                <div className="flex items-end justify-between gap-4">
+                  <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Quoted price</span>
+                  <span className="text-3xl font-bold text-gray-900">{formatPrice(data.quote)}</span>
+                </div>
+                {data.quote.gstRegistered && definitePrice(data.quote) != null && (
+                  <p className="text-right text-xs text-gray-500 mt-1">
+                    Includes GST of ${(definitePrice(data.quote)! / 11).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                )}
               </div>
 
+              {/* Details grid */}
+              {(data.quote.proposedStartDate || data.quote.estimatedDuration || data.quote.includesMaterials != null || data.quote.callOutFee || data.quote.requiresSiteInspection) && (
+                <div className="px-5 sm:px-6 py-4 border-b border-gray-100 grid grid-cols-2 gap-4">
+                  {data.quote.proposedStartDate && (
+                    <Detail icon={Calendar} label="Proposed start" value={fmtDate(data.quote.proposedStartDate) || '—'} />
+                  )}
+                  {data.quote.estimatedDuration && (
+                    <Detail icon={Clock} label="Estimated time" value={data.quote.estimatedDuration} />
+                  )}
+                  {data.quote.includesMaterials != null && (
+                    <Detail icon={Package} label="Materials" value={data.quote.includesMaterials ? 'Included' : 'Not included'} />
+                  )}
+                  {data.quote.callOutFee ? (
+                    <Detail icon={DollarSign} label="Call-out fee" value={`$${data.quote.callOutFee.toLocaleString('en-AU')}`} />
+                  ) : null}
+                  {data.quote.requiresSiteInspection && (
+                    <Detail icon={Search} label="Site inspection" value="Required first" />
+                  )}
+                </div>
+              )}
+
+              {/* Note from tradie */}
               {data.quote.message && (
-                <div className="p-6 border-t border-gray-100">
+                <div className="p-5 sm:p-6">
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Note from {businessName}</p>
                   <p className="text-sm text-gray-700 whitespace-pre-line">{data.quote.message}</p>
                 </div>
