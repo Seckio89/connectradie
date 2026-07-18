@@ -232,6 +232,8 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
   // Service-area filter: hide available leads beyond the tradie's service radius.
   // On by default; tradies can flip it off to see everything.
   const [radiusFilterOn, setRadiusFilterOn] = useState(true);
+  // Tradie-selected view radius; null falls back to their saved service_radius_km.
+  const [radiusChoiceKm, setRadiusChoiceKm] = useState<number | null>(null);
 
   // Sync filter when URL params change (e.g. notification navigating to ?tab=services)
   useEffect(() => {
@@ -918,7 +920,20 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     }
   };
 
-  const serviceRadiusKm = profile?.service_radius_km ?? 20;
+  const RADIUS_OPTIONS = [5, 10, 20, 50, 100];
+  const serviceRadiusKm = radiusChoiceKm ?? (profile?.service_radius_km ?? 20);
+  // Change how far out the tradie sees leads. Persists the numeric choice to
+  // their profile so it sticks; "all" just drops the filter for this session.
+  const handleRadiusChange = (val: string) => {
+    if (val === 'all') { setRadiusFilterOn(false); return; }
+    const km = parseInt(val, 10);
+    if (!Number.isFinite(km)) return;
+    setRadiusChoiceKm(km);
+    setRadiusFilterOn(true);
+    if (profile?.id) {
+      supabase.from('profiles').update({ service_radius_km: km }).eq('id', profile.id).then(() => {}, () => {});
+    }
+  };
   const hasBaseCoords = profile?.base_latitude != null && profile?.base_longitude != null;
 
   const { urgentLeads, scheduledGroups, otherLeads, hiddenByRadius } = useMemo(() => {
@@ -2057,34 +2072,27 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 </Link>{' '}
                 to filter jobs by distance.
               </p>
-            ) : radiusFilterOn ? (
-              <>
-                <p className="text-sm text-gray-700">
-                  Showing jobs within{' '}
-                  <span className="font-semibold text-gray-900">{serviceRadiusKm} km</span> of your base
-                  {hiddenByRadius > 0 && (
-                    <span className="text-gray-500"> · {hiddenByRadius} further away hidden</span>
-                  )}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setRadiusFilterOn(false)}
-                  className="ml-auto text-sm font-medium text-secondary-600 hover:text-secondary-700"
-                >
-                  Show all
-                </button>
-              </>
             ) : (
-              <>
-                <p className="text-sm text-gray-700">Showing jobs everywhere</p>
-                <button
-                  type="button"
-                  onClick={() => setRadiusFilterOn(true)}
-                  className="ml-auto text-sm font-medium text-secondary-600 hover:text-secondary-700"
+              <div className="flex items-center gap-2 flex-wrap w-full">
+                <span className="text-sm text-gray-700">Showing leads</span>
+                <select
+                  value={radiusFilterOn ? String(serviceRadiusKm) : 'all'}
+                  onChange={(e) => handleRadiusChange(e.target.value)}
+                  aria-label="Distance from your base"
+                  className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-secondary-500"
                 >
-                  Within {serviceRadiusKm} km
-                </button>
-              </>
+                  {Array.from(new Set([...RADIUS_OPTIONS, serviceRadiusKm]))
+                    .sort((a, b) => a - b)
+                    .map((km) => (
+                      <option key={km} value={String(km)}>within {km} km</option>
+                    ))}
+                  <option value="all">everywhere</option>
+                </select>
+                <span className="text-sm text-gray-500">of your base</span>
+                {radiusFilterOn && hiddenByRadius > 0 && (
+                  <span className="ml-auto text-xs text-gray-500">{hiddenByRadius} further away hidden</span>
+                )}
+              </div>
             )}
           </div>
         )}
