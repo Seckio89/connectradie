@@ -17,6 +17,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { calculateDistance } from '../hooks/useGeolocation';
 import type { ClientContact } from '../types/database';
+import PropertyPreview from './PropertyPreview';
 
 interface QuoteEstimatorProps {
   /** scope = client-visible duty lines; internal = tradie-only assumptions/hours. */
@@ -388,6 +389,14 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
         <span className="text-sm font-semibold text-gray-900">Pricing helper</span>
         <span className="text-[11px] text-gray-500">suggests — you decide</span>
       </div>
+
+      {/* Property preview — auto Street View from the client's stored address */}
+      <PropertyPreview
+        address={contact.address ?? null}
+        lat={contact.latitude ?? null}
+        lng={contact.longitude ?? null}
+        onUseArea={(sqm) => setQuantities((q) => ({ ...q, sqm: String(sqm) }))}
+      />
 
       {/* Trade */}
       <div className="flex flex-wrap gap-1.5">
