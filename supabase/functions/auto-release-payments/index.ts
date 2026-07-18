@@ -64,16 +64,32 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
-    // Find jobs completed 48+ hours ago
-    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    // Optional single-job EARLY release: a client clicked "Approve & release" on
+    // their quote link before the 48h window elapsed. When a jobId is provided we
+    // release just that job immediately (skipping the 48h cutoff); otherwise this
+    // is the scheduled cron run that sweeps everything completed 48+ hours ago.
+    // Everything downstream (dispute exclusion, idempotency keys, transfer/payout
+    // logic, notifications) is identical either way — the ONLY difference is which
+    // jobs are selected.
+    let requestedJobId: string | undefined;
+    try {
+      const body = await req.json();
+      if (body && typeof body.jobId === "string") requestedJobId = body.jobId;
+    } catch {
+      // No/empty body — scheduled cron run.
+    }
 
-    const { data: completedJobs, error: jobsError } = await supabase
+    const baseQuery = supabase
       .from("jobs")
       .select("id, title, client_id, tradie_id, completed_at")
       .eq("status", "completed")
       .not("tradie_id", "is", null)
-      .not("completed_at", "is", null)
-      .lte("completed_at", cutoff);
+      .not("completed_at", "is", null);
+
+    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    const { data: completedJobs, error: jobsError } = requestedJobId
+      ? await baseQuery.eq("id", requestedJobId)
+      : await baseQuery.lte("completed_at", cutoff);
 
     if (jobsError) {
       console.error("Failed to fetch completed jobs:", jobsError);

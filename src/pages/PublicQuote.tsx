@@ -19,8 +19,9 @@ interface QuoteView {
     message: string | null;
     proposedStartDate: string | null;
   };
-  job: { title: string | null; description: string | null; address: string | null };
+  job: { title: string | null; description: string | null; address: string | null; status?: string | null };
   tradie: { name: string | null; business: string | null; avatarUrl?: string | null };
+  payment?: { paid: boolean; released: boolean };
 }
 
 function formatPrice(q: QuoteView['quote']): string {
@@ -44,6 +45,8 @@ export default function PublicQuote() {
   const [declining, setDeclining] = useState(false);
   const [showDeclineForm, setShowDeclineForm] = useState(false);
   const [declineReason, setDeclineReason] = useState('');
+  const [released, setReleased] = useState(false);
+  const [releasing, setReleasing] = useState(false);
   const [avatarFailed, setAvatarFailed] = useState(false);
 
   useEffect(() => {
@@ -62,6 +65,7 @@ export default function PublicQuote() {
           setData(view);
           if (view.status === 'accepted') setAccepted(true);
           if (view.status === 'declined') setDeclined(true);
+          if (view.payment?.released) setReleased(true);
         }
       } catch {
         if (!cancelled) setError('Something went wrong loading this quote.');
@@ -109,8 +113,27 @@ export default function PublicQuote() {
     setDeclining(false);
   };
 
+  const handleRelease = async () => {
+    if (!token) return;
+    setReleasing(true);
+    try {
+      const { data: res, error: fnError } = await supabase.functions.invoke('public-quote', {
+        body: { token, action: 'release' },
+      });
+      if (fnError || res?.error) {
+        setError(res?.error || 'Could not release the payment. Please try again.');
+      } else {
+        setReleased(true);
+      }
+    } catch {
+      setError('Could not release the payment. Please try again.');
+    }
+    setReleasing(false);
+  };
+
   const businessName = data?.tradie.business || data?.tradie.name || 'Your tradie';
   const noLongerAvailable = !!data && ['withdrawn', 'expired', 'cancelled'].includes(data.status);
+  const canRelease = !!data?.payment?.paid && data?.job.status === 'completed';
   const avatarUrl = data?.tradie.avatarUrl;
   const showAvatar = !!avatarUrl && /^https?:\/\//.test(avatarUrl) && !avatarFailed;
 
@@ -192,12 +215,46 @@ export default function PublicQuote() {
             </div>
 
             {accepted ? (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center">
-                <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
-                <h3 className="font-semibold text-emerald-800">Quote accepted</h3>
-                <p className="text-sm text-emerald-700 mt-1">
-                  {businessName} has been notified and will be in touch to arrange the work.
-                </p>
+              <div className="space-y-2.5">
+                {released ? (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center">
+                    <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+                    <h3 className="font-semibold text-emerald-800">Payment released</h3>
+                    <p className="text-sm text-emerald-700 mt-1">
+                      Thanks! The payment is on its way to {businessName}. This job is all wrapped up.
+                    </p>
+                  </div>
+                ) : canRelease ? (
+                  <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                    <div className="text-center">
+                      <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+                      <h3 className="font-semibold text-gray-900">{businessName} marked this job complete</h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Happy with the work? Approve to release the payment now. If you don’t, it releases
+                        automatically 48 hours after completion.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleRelease}
+                      disabled={releasing}
+                      className="w-full mt-4 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                    >
+                      {releasing && <Loader2 className="w-4 h-4 animate-spin" />}
+                      Approve &amp; release payment
+                    </button>
+                    <p className="text-center text-xs text-gray-500 mt-2">
+                      Only release once the work is done to your satisfaction — this pays {businessName}.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center">
+                    <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+                    <h3 className="font-semibold text-emerald-800">Quote accepted</h3>
+                    <p className="text-sm text-emerald-700 mt-1">
+                      {businessName} has been notified and will be in touch to arrange the work.
+                    </p>
+                  </div>
+                )}
               </div>
             ) : declined ? (
               <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center">

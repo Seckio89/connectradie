@@ -52,6 +52,7 @@ Deno.serve(async (req: Request) => {
     const action =
       payload.action === "accept" ? "accept"
       : payload.action === "decline" ? "decline"
+      : payload.action === "release" ? "release"
       : "view";
     const declineReason = typeof payload.reason === "string" ? payload.reason.trim().slice(0, 1000) : "";
     if (!UUID_RE.test(token)) return json({ error: "Invalid quote link" }, 400);
@@ -83,6 +84,21 @@ Deno.serve(async (req: Request) => {
       .select("business_name")
       .eq("profile_id", quote.tradie_id)
       .maybeSingle();
+
+    // Escrow state for this job's funding payment — drives the client's
+    // "Approve & release payment" button (shown only when paid, job completed,
+    // and not yet released).
+    const { data: fpRows } = await supabase
+      .from("payments")
+      .select("status, metadata")
+      .eq("job_id", quote.job_id)
+      .eq("payment_type", "job_funding")
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const fundingPayment = fpRows?.[0];
+    const fpMeta = (fundingPayment?.metadata || {}) as Record<string, unknown>;
+    const paymentReleased = !!fpMeta.transfer_id || !!fpMeta.payout_id || fundingPayment?.status === "released";
+    const paymentPaid = !!fundingPayment && (fundingPayment.status === "completed" || fundingPayment.status === "released");
 
     if (action === "accept") {
       // Idempotent: accepting an already-accepted quote is a no-op success.
@@ -209,6 +225,47 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    if (action === "release") {
+      // Client approves early payout. Only a completed, paid, not-yet-released
+      // job can be released; delegate to the tested release engine (idempotent,
+      // excludes disputes) so no Stripe logic is duplicated here.
+      if (job?.status !== "completed") {
+        return json({ error: "This job isn’t marked complete yet." }, 400);
+      }
+      if (!paymentReleased) {
+        try {
+          const rel = await fetch(`${supabaseUrl}/functions/v1/auto-release-payments`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+            body: JSON.stringify({ jobId: quote.job_id }),
+          });
+          if (!rel.ok) {
+            console.error("release delegate failed:", await rel.text());
+            return json({ error: "Could not release the payment. Please try again." }, 502);
+          }
+        } catch (e) {
+          console.error("release delegate error:", e);
+          return json({ error: "Could not release the payment. Please try again." }, 502);
+        }
+        // Defensive: confirm the funds ACTUALLY released before reporting success,
+        // so a no-op (e.g. dispute open, or release engine not yet updated) can
+        // never show the client a false "payment released".
+        const { data: after } = await supabase
+          .from("payments")
+          .select("status, metadata")
+          .eq("job_id", quote.job_id)
+          .eq("payment_type", "job_funding")
+          .order("created_at", { ascending: false })
+          .limit(1);
+        const aMeta = (after?.[0]?.metadata || {}) as Record<string, unknown>;
+        const nowReleased = !!aMeta.transfer_id || !!aMeta.payout_id || after?.[0]?.status === "released";
+        if (!nowReleased) {
+          return json({ error: "Couldn’t release the payment just now — it will release automatically within 48 hours of completion." }, 409);
+        }
+      }
+      return json({ status: quote.status, jobStatus: "completed", payment: { paid: true, released: true } });
+    }
+
     const finalStatus =
       action === "accept" ? "accepted"
       : action === "decline" ? "declined"
@@ -227,7 +284,9 @@ Deno.serve(async (req: Request) => {
         title: job?.title ?? null,
         description: job?.description ?? null,
         address: job?.location_address ?? null,
+        status: job?.status ?? null,
       },
+      payment: { paid: paymentPaid, released: paymentReleased },
       tradie: {
         name: tradie?.full_name ?? null,
         business: td?.business_name ?? null,
