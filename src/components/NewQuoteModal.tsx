@@ -5,14 +5,17 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState, useEffect } from 'react';
-import { Loader2, Send, Copy, CheckCircle2, Check, Sparkles, FileText, Repeat, Plus, Layers, BookmarkPlus, Trash2, ChevronDown } from 'lucide-react';
+import { Loader2, Send, Copy, CheckCircle2, Check, Sparkles, FileText, Repeat, Plus, Layers, BookmarkPlus, Trash2, ChevronDown, Zap } from 'lucide-react';
 import Modal from './Modal';
 import QuoteEstimator from './QuoteEstimator';
 import QuoteFeeDisclosure from './QuoteFeeDisclosure';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { createRecurringJob, calculateNextDueDate, FREQ_WEEKLY, FREQ_FORTNIGHTLY } from '../lib/recurringJobs';
 import { proseInputProps } from '../lib/proseInput';
 import { composeDescription } from '../lib/jobDescription';
+import { getJobHints } from '../lib/jobDescriptionHints';
+import { getQuickQuotePresets } from '../lib/quoteQuickAdd';
 import { listQuoteTemplates, saveQuoteTemplate, deleteQuoteTemplate } from '../lib/pricingHelper';
 import type { ClientContact, QuoteTemplate } from '../types/database';
 
@@ -46,12 +49,6 @@ function scheduleSummary(slots: VisitSlot[]): string {
 
 const aud = (n: number) => `$${Math.round(n).toLocaleString('en-AU')}`;
 
-// Common cleaning tasks — tick to add as scope bullets (cleaning jobs only).
-const CLEANING_TASKS = [
-  'Floor mopping', 'Vacuuming', 'Bathroom clean', 'Kitchen clean',
-  'Rubbish removal', 'Window cleaning', 'Dusting surfaces', 'Empty bins', 'Oven clean',
-];
-
 // Lightweight trade categorisation for the recurring service record.
 function deriveTrade(title: string): string {
   const t = title.toLowerCase();
@@ -72,6 +69,11 @@ interface NewQuoteModalProps {
 }
 
 export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, contact }: NewQuoteModalProps) {
+  const { tradieDetails } = useAuth();
+  const tradeCategory = tradieDetails?.trade_category ?? null;
+  const quickAddTasks = getJobHints(tradeCategory);
+  const quickQuotePresets = getQuickQuotePresets(tradeCategory);
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -169,8 +171,8 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
   const perVisitPrice = priceBasis === 'per_cycle' && visitsPerCycle > 0 ? priceNum / visitsPerCycle : priceNum;
   const cyclePrice = priceBasis === 'per_visit' ? priceNum * visitsPerCycle : priceNum;
 
-  // Cleaning jobs get a quick tick-list that composes the description into bullets.
-  const isCleaning = /clean/i.test(title);
+  // Trade-based quick-add: tap a chip to add the task as a description line,
+  // tap again to remove it. Same task lists the client-side booking form uses.
   const norm = (s: string) => s.replace(/^[••\-*]\s*/, '').trim().toLowerCase();
   const taskActive = (task: string) =>
     description.split('\n').some((l) => norm(l) === task.toLowerCase());
@@ -181,6 +183,13 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
       if (idx >= 0) { lines.splice(idx, 1); return lines.join('\n'); }
       return [...lines, task].join('\n');
     });
+  };
+
+  // Quick Quote — one tap pre-fills title, scope and a ballpark price.
+  const applyQuickQuote = (p: { title: string; tasks: string[]; price: number }) => {
+    setTitle(p.title);
+    setDescription(p.tasks.join('\n'));
+    setPrice(String(p.price));
   };
 
   const handleSend = async () => {
@@ -458,6 +467,27 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
             </div>
 
             <div className="space-y-4">
+              {/* Quick Quote — one tap pre-fills a common job (adjust price & send) */}
+              {quickQuotePresets.length > 0 && (
+                <div className="rounded-xl border border-secondary-100 bg-secondary-50/60 p-3">
+                  <p className="flex items-center gap-1.5 text-xs font-semibold text-secondary-800 mb-2">
+                    <Zap className="w-3.5 h-3.5 text-secondary-600" /> Quick Quote — one tap, then adjust the price
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {quickQuotePresets.map((p) => (
+                      <button
+                        key={p.label}
+                        type="button"
+                        onClick={() => applyQuickQuote(p)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-secondary-200 text-xs font-medium text-secondary-700 hover:bg-secondary-50 transition-colors"
+                      >
+                        {p.label} <span className="text-secondary-400">· ${p.price}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Your saved quotes — reuse a template to pre-fill the form */}
               {templates.length > 0 && (
                 <div className="border border-gray-200 rounded-xl">
@@ -514,11 +544,11 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                 />
                 <p className="mt-1 text-xs text-gray-500">One task per line — these show as a bullet-point scope of work.</p>
-                {isCleaning && (
+                {quickAddTasks.length > 0 && (
                   <div className="mt-2.5">
-                    <p className="text-xs font-medium text-gray-500 mb-1.5">Quick add cleaning tasks</p>
+                    <p className="text-xs font-medium text-gray-500 mb-1.5">Quick-add tasks — tap to add, tap again to remove</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {CLEANING_TASKS.map((task) => {
+                      {quickAddTasks.map((task) => {
                         const active = taskActive(task);
                         return (
                           <button
@@ -526,7 +556,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                             type="button"
                             onClick={() => toggleTask(task)}
                             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                              active ? 'bg-warm-50 border-warm-300 text-warm-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                              active ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                             }`}
                           >
                             {active ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
