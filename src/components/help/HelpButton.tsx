@@ -62,18 +62,21 @@ export default function HelpButton() {
             <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
               {content ? (
                 <>
-                  {/* Tips */}
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Quick tips</p>
-                    <ul className="space-y-2.5">
-                      {content.tips.map((tip, i) => (
-                        <li key={i} className="flex items-start gap-2.5">
-                          <Lightbulb className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                          <span className="text-sm text-gray-700 leading-relaxed">{tip}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  {/* Tips — only when there's at least one, so the label never
+                      shows above an empty list. */}
+                  {content.tips.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Quick tips</p>
+                      <ul className="space-y-2.5">
+                        {content.tips.map((tip, i) => (
+                          <li key={i} className="flex items-start gap-2.5">
+                            <Lightbulb className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700 leading-relaxed">{tip}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {/* FAQ */}
                   {content.faqs.length > 0 && (
