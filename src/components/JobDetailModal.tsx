@@ -31,6 +31,7 @@ import { useSignedUrls } from '../hooks/useSignedUrl';
 import MilestoneEditor from './MilestoneEditor';
 import FormattedNotes from './FormattedNotes';
 import AccessInstructions from './AccessInstructions';
+import ViewTrackingButton from './ViewTrackingButton';
 import Modal from './Modal';
 import AvailabilityMiniCalendar from './AvailabilityMiniCalendar';
 
@@ -690,6 +691,8 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
           </div>
         )}
         {isTradie && <AccessInstructions jobId={job.id} />}
+
+        <div><ViewTrackingButton jobId={job.id} /></div>
 
         {/* ── Service Schedule (recurring only) ── */}
         {isRecurring && recurringJob && (

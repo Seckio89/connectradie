@@ -341,6 +341,12 @@ export default function Notifications() {
 
     const jobId = notification.job_id || notification.metadata?.job_id;
 
+    // Geo/site-tracking notifications deep-link to the job's tracking screen.
+    if (jobId && ['site_arrival', 'site_departure', 'geofence', 'site_tracking'].includes(notification.type)) {
+      navigate(`/tracking/${jobId}`);
+      return;
+    }
+
     // Un-dismiss job from leads list when clicking job-related notifications
     if (jobId && ['new_lead', 'new_job', 'quote_reminder'].includes(notification.type)) {
       try {

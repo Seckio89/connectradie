@@ -487,6 +487,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     await markAsRead(notification.id);
     const jobId = notification.job_id || notification.metadata?.job_id;
 
+    // Geo/site-tracking notifications deep-link to the job's tracking screen.
+    if (jobId && ['site_arrival', 'site_departure', 'geofence', 'site_tracking'].includes(notification.type)) {
+      navigate(`/tracking/${jobId}`);
+      setNotificationsOpen(false);
+      return;
+    }
+
     // Jobs past the lead stage (accepted / funded / in-progress / completed-awaiting-release) —
     // tradie lands on WorkHub "My Jobs" tab, client lands on Leads "Active" filter
     // (which now includes accepted / funded / in-progress / awaiting-release).

@@ -59,6 +59,7 @@ const PerformanceInsights = lazy(() => import('./pages/PerformanceInsights'));
 const Payouts = lazy(() => import('./pages/Payouts'));
 const PublicTradieProfile = lazy(() => import('./pages/PublicTradieProfile'));
 const MyProfile = lazy(() => import('./pages/MyProfile'));
+const JobTracking = lazy(() => import('./pages/JobTracking'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const Contact = lazy(() => import('./pages/Contact'));
@@ -384,6 +385,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute requireTradie>
             <MyProfile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tracking/:jobId"
+        element={
+          <ProtectedRoute>
+            <JobTracking />
           </ProtectedRoute>
         }
       />

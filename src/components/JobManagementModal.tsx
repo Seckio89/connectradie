@@ -17,6 +17,7 @@ import TradieQuoteActions from './TradieQuoteActions';
 import { adjustQuotePrice, approvePriceReduction } from '../lib/stripePayments';
 import { sendJobPaymentLink } from '../lib/jobPaymentLink';
 import AccessInstructions from './AccessInstructions';
+import ViewTrackingButton from './ViewTrackingButton';
 import { emailOffAppClientOnCompletion } from '../lib/offAppCompletionEmail';
 import { useSignedUrls } from '../hooks/useSignedUrl';
 
@@ -1186,6 +1187,8 @@ export default function JobManagementModal({
 
                 {/* ── Access Instructions (PIN-gated) ── */}
                 <AccessInstructions jobId={job.id} />
+
+                <div><ViewTrackingButton jobId={job.id} /></div>
 
                 {/* ── Photos ── */}
                 {job.images_url && job.images_url.length > 0 && (
