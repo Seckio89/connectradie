@@ -43,9 +43,9 @@ export default function PageHelpCard() {
         <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
           <Sparkles className="w-4 h-4 text-secondary-600" />
         </div>
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-gray-900">{content.title}</p>
-          <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">{content.intro}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-gray-900 break-words">{content.title}</p>
+          <p className="text-sm text-gray-600 mt-0.5 leading-relaxed break-words">{content.intro}</p>
         </div>
       </div>
       <button

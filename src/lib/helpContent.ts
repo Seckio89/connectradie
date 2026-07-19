@@ -163,6 +163,22 @@ const HELP_CONTENT: Record<string, Partial<Record<HelpRole, HelpContent>>> = {
       ],
     },
   },
+  '/my-profile': {
+    tradie: {
+      title: 'Your public profile',
+      intro: 'This is exactly how clients see you. Tap any section — cover photo, bio, rates or gallery — to edit it in place.',
+      tips: [
+        'A clear cover photo and a friendly bio win more work.',
+        'Add photos of past jobs to your gallery to build trust.',
+        'Keep your hourly rate and services up to date.',
+        'Tap "View as Client" to preview your live profile.',
+      ],
+      faqs: [
+        { q: 'Who can see this profile?', a: 'Any client browsing ConnecTradie can view it — it\'s your shopfront, so keep it polished.' },
+        { q: 'How do I edit a section?', a: 'Hover (or tap on mobile) a section and use the edit control that appears.' },
+      ],
+    },
+  },
   '/payments': {
     tradie: {
       title: 'Invoices & payments',

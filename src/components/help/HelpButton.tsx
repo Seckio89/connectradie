@@ -95,9 +95,11 @@ export default function HelpButton() {
                   )}
                 </>
               ) : (
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  Looking for help with this page? Browse the full help centre below, or get in touch and we&rsquo;ll point you in the right direction.
-                </p>
+                <div className="rounded-xl bg-secondary-50 border border-secondary-100 p-4">
+                  <p className="text-sm text-gray-700 leading-relaxed break-words">
+                    Looking for help with this page? Browse the full help centre below, or get in touch and we&rsquo;ll point you in the right direction.
+                  </p>
+                </div>
               )}
 
               {/* Actions */}
