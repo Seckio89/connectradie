@@ -9,6 +9,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Mail, Phone, MapPin, UserCheck, FileText, Loader2, Copy, Check, Plus, RefreshCw, Send, Receipt, Banknote, CheckCircle2 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import NewQuoteModal from '../components/NewQuoteModal';
+import ClientSitesSection from '../components/ClientSitesSection';
 import Modal from '../components/Modal';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -415,6 +416,9 @@ export default function ClientDetail() {
                 <p className="mt-4 text-sm text-gray-500 bg-gray-50 rounded-lg px-3 py-2.5">{contact.notes}</p>
               )}
             </div>
+
+            {/* Locations — one client, many sites (home / office / rental) */}
+            <ClientSitesSection contactId={contact.id} />
 
             {/* Quotes */}
             <div>

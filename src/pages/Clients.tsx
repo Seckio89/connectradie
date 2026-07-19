@@ -26,6 +26,8 @@ export default function Clients() {
   const [toDelete, setToDelete] = useState<ClientContact | null>(null);
   const [quoteContact, setQuoteContact] = useState<ClientContact | null>(null);
 
+  const [siteCounts, setSiteCounts] = useState<Record<string, number>>({});
+
   const fetchContacts = async () => {
     if (!user) return;
     setLoading(true);
@@ -34,8 +36,22 @@ export default function Clients() {
       .select('*')
       .eq('owner_id', user.id)
       .order('full_name');
-    setContacts((data as ClientContact[]) ?? []);
+    const rows = (data as ClientContact[]) ?? [];
+    setContacts(rows);
     setLoading(false);
+
+    // Locations badge — one query for all contacts' site counts (RLS-scoped).
+    if (rows.length) {
+      const { data: sites } = await supabase
+        .from('client_sites')
+        .select('client_contact_id')
+        .in('client_contact_id', rows.map((c) => c.id));
+      const counts: Record<string, number> = {};
+      for (const s of (sites as { client_contact_id: string }[] | null) ?? []) {
+        counts[s.client_contact_id] = (counts[s.client_contact_id] ?? 0) + 1;
+      }
+      setSiteCounts(counts);
+    }
   };
 
   useEffect(() => {
@@ -174,6 +190,12 @@ export default function Clients() {
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
                             <UserCheck className="w-3 h-3" />
                             On app
+                          </span>
+                        )}
+                        {(siteCounts[c.id] ?? 0) > 1 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-secondary-100 text-secondary-700">
+                            <MapPin className="w-3 h-3" />
+                            {siteCounts[c.id]} locations
                           </span>
                         )}
                       </div>

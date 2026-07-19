@@ -714,7 +714,19 @@ Deno.serve(async (req: Request) => {
         .eq("owner_id", callerUserId)
         .ilike("email", esc)
         .limit(1);
-      if (!owned || owned.length === 0) {
+      let allowedRecipient = !!(owned && owned.length > 0);
+      if (!allowedRecipient) {
+        // Also allow a site-specific email on one of the caller's clients
+        // (client_sites.contact_email — e.g. a work email for the office site).
+        const { data: siteOwned } = await adminClient
+          .from("client_sites")
+          .select("id, client_contacts!inner(owner_id)")
+          .eq("client_contacts.owner_id", callerUserId)
+          .ilike("contact_email", esc)
+          .limit(1);
+        allowedRecipient = !!(siteOwned && siteOwned.length > 0);
+      }
+      if (!allowedRecipient) {
         return new Response(
           JSON.stringify({ error: "You can only email your own saved clients. Add them to your client list first." }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }

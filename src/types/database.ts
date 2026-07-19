@@ -909,6 +909,22 @@ export type QuoteTemplate = {
   updated_at: string;
 }
 
+export type ClientSite = {
+  id: string;
+  client_contact_id: string;
+  site_name: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  access_instructions: string | null;
+  notes: string | null;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export type CustomTaskSuggestion = {
   id: string;
   submitted_by: string | null;
@@ -1478,6 +1494,12 @@ export type Database = {
         Row: CustomTaskSuggestion;
         Insert: Partial<Omit<CustomTaskSuggestion, 'id' | 'created_at' | 'updated_at'>>;
         Update: Partial<Omit<CustomTaskSuggestion, 'id' | 'created_at'>>;
+        Relationships: [];
+      };
+      client_sites: {
+        Row: ClientSite;
+        Insert: Partial<Omit<ClientSite, 'id' | 'created_at' | 'updated_at'>>;
+        Update: Partial<Omit<ClientSite, 'id' | 'created_at'>>;
         Relationships: [];
       };
       time_entries: {

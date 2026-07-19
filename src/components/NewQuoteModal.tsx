@@ -17,7 +17,8 @@ import { composeDescription } from '../lib/jobDescription';
 import { getJobHints } from '../lib/jobDescriptionHints';
 import { getQuickQuotePresets } from '../lib/quoteQuickAdd';
 import { listQuoteTemplates, saveQuoteTemplate, deleteQuoteTemplate } from '../lib/pricingHelper';
-import type { ClientContact, QuoteTemplate } from '../types/database';
+import { listClientSites, createClientSite } from '../lib/clientSites';
+import type { ClientContact, ClientSite, QuoteTemplate } from '../types/database';
 
 const FREQUENCIES = [
   { key: 'weekly', label: 'Weekly', months: FREQ_WEEKLY },
@@ -98,6 +99,43 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
   // Estimator trade/property — tags the quote so it can feed anonymised area stats.
   const [estTrade, setEstTrade] = useState<string | null>(null);
   const [estProperty, setEstProperty] = useState<string | null>(null);
+
+  // Client sites — one client, many locations. The selected site drives the
+  // job's address/coords, the quote's recipient email, and seeds the job's
+  // (PIN-protected) access instructions.
+  const [sites, setSites] = useState<ClientSite[]>([]);
+  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
+  const [addingSite, setAddingSite] = useState(false);
+  const [newSiteName, setNewSiteName] = useState('');
+  const [newSiteAddress, setNewSiteAddress] = useState('');
+  const [savingSite, setSavingSite] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    listClientSites(contact.id).then((s) => {
+      setSites(s);
+      setSelectedSiteId((prev) => prev ?? (s.find((x) => x.is_default)?.id ?? s[0]?.id ?? null));
+    });
+  }, [isOpen, contact.id]);
+
+  const selectedSite = sites.find((s) => s.id === selectedSiteId) ?? null;
+  // Effective delivery details: site-specific first, then the client's main.
+  const effectiveEmail = selectedSite?.contact_email || contact.email;
+  const effectiveAddress = selectedSite?.address || contact.address;
+
+  const quickAddSite = async () => {
+    if (!newSiteName.trim()) return;
+    setSavingSite(true);
+    const r = await createClientSite(contact.id, { siteName: newSiteName, address: newSiteAddress });
+    setSavingSite(false);
+    if (r.ok && r.site) {
+      setSites((prev) => [...prev, r.site!]);
+      setSelectedSiteId(r.site.id);
+      setAddingSite(false);
+      setNewSiteName('');
+      setNewSiteAddress('');
+    }
+  };
 
   // Reusable quote templates.
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
@@ -243,9 +281,13 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
           description: finalDescription,
           notes: finalNotes || null,
           status: 'pending',
-          location_address: contact.address,
-          latitude: contact.latitude,
-          longitude: contact.longitude,
+          // Site-first: the chosen location's address/coords, else the client's main.
+          location_address: effectiveAddress,
+          latitude: selectedSite?.latitude ?? contact.latitude,
+          longitude: selectedSite?.longitude ?? contact.longitude,
+          // Site access notes seed the job's access instructions — the DB trigger
+          // relocates them into the PIN-gated job_access_details table.
+          access_instructions: selectedSite?.access_instructions ?? null,
         })
         .select('id')
         .single();
@@ -263,7 +305,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
         message: message.trim(), // column is NOT NULL — empty string, never null
         status: 'pending',
         public_token: token,
-        sent_to_email: contact.email,
+        sent_to_email: effectiveEmail,
         // Anonymised area stats source — populated only when the estimator ran.
         trade_category: estTrade ? estTrade.toLowerCase() : null,
         property_type: estProperty ? estProperty.toLowerCase() : null,
@@ -298,10 +340,10 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
 
       // 3. Email the client the accept link (best-effort — the link still works
       //    even if the email fails, and can be copied manually).
-      if (contact.email) {
+      if (effectiveEmail) {
         const { error: emailError } = await supabase.functions.invoke('send-email', {
           body: {
-            to: contact.email,
+            to: effectiveEmail,
             subject: `Your quote for ${title.trim()}`,
             body: `Hi ${contact.full_name.split(' ')[0]}, here's your quote for ${title.trim()}. Tap below to view the details and accept.`,
             notificationType: 'QUOTE_RECEIVED',
@@ -322,7 +364,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
             body: {
               recipientUserId: tradieId,
               subject: `Quote sent to ${contact.full_name} — ${title.trim()}`,
-              body: `Your quote "${title.trim()}" ($${priceNum.toLocaleString('en-AU')}) was emailed to ${contact.full_name} at ${contact.email}. You'll be notified when they accept.`,
+              body: `Your quote "${title.trim()}" ($${priceNum.toLocaleString('en-AU')}) was emailed to ${contact.full_name} at ${effectiveEmail}. You'll be notified when they accept.`,
             },
           }).catch(() => { /* best-effort */ });
         }
@@ -378,8 +420,8 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
               <h2 className="text-lg font-semibold text-gray-900">Quote sent</h2>
               <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
                 {emailed
-                  ? `Emailed to ${contact.email}. `
-                  : contact.email
+                  ? `Emailed to ${effectiveEmail}. `
+                  : effectiveEmail
                     ? `We couldn’t email it automatically${emailFailReason ? ` (${emailFailReason})` : ''} — share the link below. `
                     : 'No email on file — share the link below. '}
                 We’ll notify you as soon as {firstName} accepts.
@@ -467,6 +509,71 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
             </div>
 
             <div className="space-y-4">
+              {/* Which location is this job for? — sites drive address + email */}
+              {sites.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Which location is this job for?</label>
+                  <div className="space-y-1.5">
+                    {sites.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setSelectedSiteId(s.id)}
+                        className={`w-full flex items-start gap-2.5 text-left rounded-xl border px-3 py-2.5 transition-colors ${
+                          selectedSiteId === s.id ? 'border-secondary-300 bg-secondary-50' : 'border-gray-200 bg-white hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${
+                          selectedSiteId === s.id ? 'border-secondary-500' : 'border-gray-300'
+                        }`}>
+                          {selectedSiteId === s.id && <span className="w-2 h-2 rounded-full bg-secondary-500" />}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="text-sm font-medium text-gray-900">{s.site_name}</span>
+                          {s.address && <span className="block text-xs text-gray-500 truncate">{s.address}</span>}
+                          {s.contact_email && <span className="block text-[11px] text-gray-400 truncate">Quote emails go to {s.contact_email}</span>}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  {addingSite ? (
+                    <div className="mt-2 rounded-xl border border-gray-200 p-3 space-y-2">
+                      <input
+                        type="text"
+                        value={newSiteName}
+                        onChange={(e) => setNewSiteName(e.target.value)}
+                        placeholder="Location name, e.g. Office"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                      <input
+                        type="text"
+                        value={newSiteAddress}
+                        onChange={(e) => setNewSiteAddress(e.target.value)}
+                        placeholder="Address"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => setAddingSite(false)}
+                          className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
+                        <button type="button" onClick={quickAddSite} disabled={savingSite || !newSiteName.trim()}
+                          className="flex-1 px-3 py-1.5 bg-secondary-600 text-white rounded-lg text-xs font-medium hover:bg-secondary-700 disabled:opacity-50 flex items-center justify-center gap-1">
+                          {savingSite && <Loader2 className="w-3 h-3 animate-spin" />} Save location
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-gray-400">Add full details (site email, access notes) later on the client page.</p>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setAddingSite(true)}
+                      className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-secondary-600 hover:text-secondary-700"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add new location
+                    </button>
+                  )}
+                </div>
+              )}
+
               {/* Quick Quote — one tap pre-fills a common job (adjust price & send) */}
               {quickQuotePresets.length > 0 && (
                 <div className="rounded-xl border border-secondary-100 bg-secondary-50/60 p-3">
