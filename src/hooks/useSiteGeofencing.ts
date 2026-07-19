@@ -15,6 +15,7 @@ import {
   isNativeApp,
   initSiteGeofencing,
   syncSiteGeofences,
+  notifyGeofenceActiveOnce,
   type GeofenceSite,
 } from '../lib/siteGeofence';
 
@@ -71,6 +72,9 @@ export function useSiteGeofencing(hasConsent: boolean): void {
       }
 
       await syncSiteGeofences(sites);
+
+      // First time a real geofence goes live → one-time reassurance toast.
+      if (sites.length > 0) notifyGeofenceActiveOnce();
     })();
 
     return () => {

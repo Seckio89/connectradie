@@ -38,6 +38,7 @@ import { supabase } from '../lib/supabase';
 import { useSiteGeofencing } from '../hooks/useSiteGeofencing';
 import { hasGeofenceConsent, GEOFENCE_CONSENT_EVENT } from '../lib/siteGeofence';
 import SiteGeofenceConsent from './SiteGeofenceConsent';
+import GeofenceActiveToast from './GeofenceActiveToast';
 import { markNotificationRead, markAllNotificationsRead } from '../lib/notificationService';
 import type { LucideIcon } from 'lucide-react';
 import type { Notification } from '../types/database';
@@ -624,6 +625,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="min-h-screen bg-navy-900 flex flex-col max-w-[100vw]">
       {/* Native background-location disclosure — no-op on web / for non-tradies. */}
       <SiteGeofenceConsent />
+      {/* One-time reassurance when geofencing first goes live for a job. */}
+      <GeofenceActiveToast />
 
       <div
         className={`fixed inset-0 bg-black/30 z-40 lg:hidden transition-opacity ${

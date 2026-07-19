@@ -94,6 +94,25 @@ export function revokeGeofenceConsent(): void {
   writeConsent('revoked');
 }
 
+// ── First-active reassurance toast ───────────────────────────────────────────
+// The very first time geofencing actually goes live for a job, we reassure the
+// tradie (once) that tracking is active + private. Broadcast → GeofenceActiveToast.
+export const GEOFENCE_ACTIVE_EVENT = 'geofence-active-first';
+const FIRST_ACTIVE_KEY = 'connectradie_geofence_first_active';
+
+/** Fire the one-time "location tracking active" toast the first time it applies. */
+export function notifyGeofenceActiveOnce(): void {
+  try {
+    if (localStorage.getItem(FIRST_ACTIVE_KEY)) return; // already shown on this device
+    localStorage.setItem(FIRST_ACTIVE_KEY, String(Date.now()));
+  } catch {
+    return; // storage unavailable — skip rather than risk repeating every sync
+  }
+  try {
+    window.dispatchEvent(new Event(GEOFENCE_ACTIVE_EVENT));
+  } catch { /* no window — ignore */ }
+}
+
 /**
  * Get (or lazily create) this device's opaque geofence token, bound to the
  * current tradie. The token authenticates background POSTs to the edge function
