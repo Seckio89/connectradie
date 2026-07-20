@@ -99,10 +99,12 @@ export const PLATFORM_FEES: Record<SubscriptionTier, PlatformFeeConfig> = {
  * Delegates to the single V2 fee engine so this can never disagree with the
  * amount the edge functions actually charge on the destination charge.
  */
-export function calculatePlatformFee(jobValue: number, tier: SubscriptionTier): number {
+export function calculatePlatformFee(jobValue: number, tier: SubscriptionTier, overrideBps?: number | null): number {
   const schedule = tier === 'free' ? TIER_SCHEDULES.free : TIER_SCHEDULES.pro; // pro + pro_plus
   const cents = Math.round(Math.max(0, jobValue) * 100);
-  return calculatePlatformFeeCentsV2(cents, schedule).feeCents / 100;
+  // overrideBps (profiles.platform_fee_override_bps) mirrors the money path: a flat
+  // rate on the whole amount, still capped. 0 → zero fee (e.g. the platform owner).
+  return calculatePlatformFeeCentsV2(cents, schedule, overrideBps).feeCents / 100;
 }
 
 /** Get a human-readable fee summary for a tier */

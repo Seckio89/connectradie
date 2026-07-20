@@ -28,10 +28,26 @@ export default function QuoteFeeDisclosure({ priceDollars, className }: QuoteFee
 
   // Uses getChargedTier (subscription_tier only, no is_premium fallback) so the
   // number shown here can never disagree with what the edge functions charge.
+  // The per-profile fee override (0 for the platform owner) is threaded in too so
+  // the disclosure matches the actual 0% commission they're charged.
   const tier = getChargedTier(tradieDetails?.subscription_tier);
-  const fee = calculatePlatformFee(priceDollars, tier);
+  const fee = calculatePlatformFee(priceDollars, tier, profile?.platform_fee_override_bps);
   const receives = priceDollars - fee;
   const tierLabel = tier === 'free' ? 'Free' : 'Pro'; // pro & the retired pro_plus both show as Pro
+
+  // Fee-exempt (e.g. the platform owner): show a clean "no fee" message rather than
+  // "$0.00 platform fee", which reads oddly.
+  if (fee <= 0) {
+    return (
+      <div className={`flex items-start gap-2 rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2 ${className ?? ''}`}>
+        <Info className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
+        <p className="text-xs text-emerald-800 leading-relaxed">
+          No platform fee on this job — you receive the full{' '}
+          <span className="font-semibold">{money(priceDollars)}</span>.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex items-start gap-2 rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 ${className ?? ''}`}>
