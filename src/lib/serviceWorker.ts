@@ -1,5 +1,28 @@
+import { Capacitor } from '@capacitor/core';
+
 export async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return null;
+
+  // Native Capacitor app: never use a service worker. The app loads the live
+  // remote URL directly, so a SW adds no benefit — it only layers a cache in the
+  // WebView that is a known cause of "stuck on the loading spinner after a
+  // deploy" (a wedged SW serving a stale/broken bundle, which the WebView's less
+  // predictable update cycle can't clear). Actively remove any SW a previous
+  // build registered and purge its caches so the WebView always boots the live
+  // bundle. Push/offline features use native plugins, not this web SW.
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((r) => r.unregister()));
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    } catch {
+      // Best-effort cleanup — nothing to register on native regardless.
+    }
+    return null;
+  }
 
   // Don't register service workers in development — they intercept Vite's
   // module requests and break hot-module reloading.

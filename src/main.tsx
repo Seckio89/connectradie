@@ -55,8 +55,10 @@ async function recoverFromStaleBundle() {
 // Vite emits this when a preloaded/lazy chunk fails to load.
 window.addEventListener('vite:preloadError', (e) => { e.preventDefault(); recoverFromStaleBundle(); });
 window.addEventListener('unhandledrejection', (e) => { if (isChunkLoadError(e.reason)) recoverFromStaleBundle(); });
-// A successful boot clears the guard so future deploys can recover again.
-window.addEventListener('load', () => { setTimeout(() => sessionStorage.removeItem('ct-stale-bundle-reload'), 4000); });
+// NOTE: the guard is intentionally NOT auto-cleared on `load`. It caps recovery
+// at one hard-reload per app launch (sessionStorage clears when the tab/WebView
+// is next launched), so a bundle that keeps failing can never spin us in a
+// reload loop — critical in the Capacitor WebView.
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
