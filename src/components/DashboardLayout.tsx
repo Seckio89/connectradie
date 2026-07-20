@@ -47,7 +47,7 @@ import SubscriptionModal from './SubscriptionModal';
 import PlatformUpdateBanner from './PlatformUpdateBanner';
 import HelpButton from './help/HelpButton';
 import PageHelpCard from './help/PageHelpCard';
-import { isPro } from '../lib/subscription';
+import { isPro, isPlatformAdmin } from '../lib/subscription';
 
 function relativeTime(dateStr: string): string {
   const now = Date.now();
@@ -622,7 +622,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   ];
 
   const isAdmin = profile?.role === 'admin';
-  const navItems = isAdmin ? adminNavItems : isTradie ? tradieNavItems : clientNavItems;
+  // A platform owner/admin who keeps a normal (tradie/client) role: they use their
+  // own dashboard by default, but can enter the admin panels on demand. Show the
+  // admin nav only while they're actually in the /admin area; elsewhere keep their
+  // normal nav plus an "Admin" entry point.
+  const isOwnerAdmin = isPlatformAdmin(profile) && !isAdmin;
+  const inAdminArea = location.pathname.startsWith('/admin');
+  const showAdminNav = isAdmin || (isOwnerAdmin && inAdminArea);
+  const baseNav = showAdminNav ? adminNavItems : isTradie ? tradieNavItems : clientNavItems;
+  const navItems: NavItem[] = isOwnerAdmin
+    ? showAdminNav
+      ? [{ name: 'Back to app', href: '/dashboard', icon: Home }, ...adminNavItems]
+      : [...baseNav, { name: 'Admin', href: '/admin/overview', icon: ShieldCheck }]
+    : baseNav;
 
   const handleSignOut = async () => {
     await signOut();

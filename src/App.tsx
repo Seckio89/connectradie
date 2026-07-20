@@ -8,6 +8,7 @@ import { trackPageView } from './lib/analytics';
 import { Loader2 } from 'lucide-react';
 import OfflineBanner from './components/OfflineBanner';
 import ErrorBoundary from './components/ErrorBoundary';
+import { isPlatformAdmin } from './lib/subscription';
 
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({
@@ -108,7 +109,9 @@ function ProtectedRoute({ children, requireAdmin, requireTradie, requireClient, 
     return <Navigate to="/onboarding" />;
   }
 
-  if (requireAdmin && profile?.role !== 'admin') {
+  // Platform admins (role='admin' OR the is_admin entitlement flag) may enter the
+  // admin panels — this lets the owner keep a tradie account yet still administer.
+  if (requireAdmin && !isPlatformAdmin(profile)) {
     return <Navigate to="/dashboard" />;
   }
 

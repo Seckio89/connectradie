@@ -18,6 +18,7 @@ import AdminToolsTab from '../components/settings/AdminToolsTab';
 import PaymentSettings from '../components/settings/PaymentSettings';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import { calculateProfileCompletion, getProfileCompletionTasks, friendlyError } from '../lib/utils';
+import { isPlatformAdmin } from '../lib/subscription';
 import { requestPushPermission, subscribeToPush, savePushPreferences, saveSmsPreference, getPushPermissionStatus } from '../lib/notifications';
 
 type TabType = 'profile' | 'professional' | 'security' | 'verification' | 'notifications' | 'payments' | 'admin';
@@ -71,7 +72,10 @@ export default function Settings() {
   const [subscribedUsersCount, setSubscribedUsersCount] = useState(0);
 
   const isTradie = profile?.role === 'tradie';
-  const isAdmin = profile?.role === 'admin';
+  // Platform admins (role='admin' OR the is_admin entitlement flag) get the Admin
+  // Tools tab. isAdmin only ever REVEALS admin surfaces here — it never hides the
+  // tradie ones — so the owner (role='tradie' + is_admin) keeps everything.
+  const isAdmin = isPlatformAdmin(profile);
   const showTradieFeatures = isTradie || isAdmin;
   const normalizedProfile = profile
     ? {
