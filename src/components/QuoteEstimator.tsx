@@ -48,8 +48,13 @@ interface Economics {
 const TRADES = ['Cleaning', 'Painting', 'Plumbing', 'Electrical', 'Flooring / Tiling', 'Fencing', 'Landscaping', 'Carpentry', 'Handyman', 'Other'];
 
 // Property type reshapes the quantity questions — commercial pricing runs on
-// workstations/toilets/area, not "rooms and bathrooms".
-const PROPERTY_TYPES = ['Residential', 'Office', 'Retail', 'Warehouse', 'Strata / common areas'];
+// workstations/toilets/area, not "rooms and bathrooms". End of lease gets its
+// own category (one of the most common cleaning jobs in Australia) with
+// bedrooms/bathrooms + inclusion toggles rather than generic residential fields.
+const PROPERTY_TYPES = ['Residential', 'End of lease', 'Office', 'Retail', 'Warehouse', 'Strata / common areas'];
+
+// End-of-lease inclusions — yes/no toggles that sharpen the estimate.
+const EOL_EXTRAS = ['Kitchen', 'Garage', 'Oven clean', 'Carpet steam clean', 'Window clean', 'Balcony / outdoor area'];
 
 const TRADE_FIELDS: Record<string, { key: string; label: string }[]> = {
   Cleaning: [{ key: 'rooms', label: 'Rooms' }, { key: 'bathrooms', label: 'Bathrooms' }, { key: 'sqm', label: 'Area m²' }],
@@ -67,6 +72,7 @@ const TRADE_FIELDS: Record<string, { key: string; label: string }[]> = {
 // Commercial overrides (keyed `trade|property`); anything not listed falls back
 // to the trade defaults — most trades are already area/count based.
 const COMMERCIAL_FIELDS: Record<string, { key: string; label: string }[]> = {
+  'Cleaning|End of lease': [{ key: 'bedrooms', label: 'Bedrooms' }, { key: 'bathrooms', label: 'Bathrooms' }, { key: 'sqm', label: 'Area m²' }],
   'Cleaning|Office': [{ key: 'workstations', label: 'Workstations' }, { key: 'toilets', label: 'Toilets' }, { key: 'sqm', label: 'Area m²' }],
   'Cleaning|Retail': [{ key: 'sqm', label: 'Floor m²' }, { key: 'toilets', label: 'Toilets' }],
   'Cleaning|Warehouse': [{ key: 'sqm', label: 'Floor m²' }, { key: 'toilets', label: 'Toilets' }, { key: 'mezzanines', label: 'Mezzanines' }],
@@ -154,6 +160,8 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [condition, setCondition] = useState('');
   const [access, setAccess] = useState<Set<string>>(new Set());
+  // End-of-lease inclusion toggles (only shown/used when property = End of lease).
+  const [eolExtras, setEolExtras] = useState<Set<string>>(new Set());
   const [durHours, setDurHours] = useState('');
   const [durMins, setDurMins] = useState('');
   const [preferredDays, setPreferredDays] = useState<Set<string>>(new Set());
@@ -237,6 +245,10 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
   const toggleAccess = (a: string) => setAccess((prev) => {
     const next = new Set(prev); next.has(a) ? next.delete(a) : next.add(a); return next;
+  });
+
+  const toggleEolExtra = (x: string) => setEolExtras((prev) => {
+    const next = new Set(prev); next.has(x) ? next.delete(x) : next.add(x); return next;
   });
 
   const toggleDay = (d: string) => setPreferredDays((prev) => {
@@ -373,7 +385,11 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           condition: condition || undefined,
           access: [...access],
           materialsSuppliedBy: clientSupplies ? 'client' : 'tradie',
-          notes: [trade === 'Other' ? customTask.trim() : '', notes.trim()].filter(Boolean).join(' — ') || undefined,
+          notes: [
+            trade === 'Other' ? customTask.trim() : '',
+            property === 'End of lease' && eolExtras.size > 0 ? `End of lease inclusions: ${[...eolExtras].join(', ')}` : '',
+            notes.trim(),
+          ].filter(Boolean).join(' — ') || undefined,
           economics,
           history,
           images: photos,
@@ -508,6 +524,21 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               </div>
             ))}
           </div>
+
+          {/* End-of-lease inclusions — yes/no toggles per bond-clean staple */}
+          {property === 'End of lease' && (
+            <div>
+              <span className="block text-[11px] text-gray-500 mb-1">Included in this clean:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {EOL_EXTRAS.map((x) => (
+                  <button key={x} type="button" onClick={() => toggleEolExtra(x)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                      eolExtras.has(x) ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}>{x}</button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Condition */}
           <div className="flex flex-wrap items-center gap-1.5">
