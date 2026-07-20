@@ -14,8 +14,11 @@ import Stripe from "npm:stripe@14.21.0";
     supabase functions deploy buy-estimate-pack
 */
 
-const PACK_CREDITS = 20;
-const PACK_AMOUNT_CENTS = 499;
+// Overridable via env so a price change doesn't require a redeploy — set
+// ESTIMATE_PACK_CREDITS / ESTIMATE_PACK_AMOUNT_CENTS as function secrets.
+// Defaults preserve the launch offer: 20 credits for $4.99.
+const PACK_CREDITS = Number(Deno.env.get("ESTIMATE_PACK_CREDITS")) || 20;
+const PACK_AMOUNT_CENTS = Number(Deno.env.get("ESTIMATE_PACK_AMOUNT_CENTS")) || 499;
 
 // CORS allow-list — echo the caller's origin when it's prod or a localhost dev
 // server, else fall back to prod. Matches the estimate-quote fleet pattern.
