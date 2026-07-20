@@ -478,7 +478,7 @@ export default function FindTradies() {
                 </li>
                 <li className="flex gap-3">
                   <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold flex-shrink-0 mt-0.5">3</span>
-                  <span>You approve — funds release. Auto-release in 48 hours if you go silent.</span>
+                  <span>You approve — funds release. Auto-release in 5 hours if you go silent.</span>
                 </li>
               </ol>
             </div>

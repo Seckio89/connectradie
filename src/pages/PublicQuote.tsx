@@ -47,7 +47,7 @@ interface QuoteView {
     insurer?: string | null;
     identityVerified?: boolean;
   };
-  payment?: { paid: boolean; released: boolean; payable?: boolean; url?: string | null };
+  payment?: { paid: boolean; released: boolean; approved?: boolean; payable?: boolean; url?: string | null };
 }
 
 function formatPrice(q: QuoteView['quote']): string {
@@ -86,7 +86,11 @@ export default function PublicQuote() {
   const { token } = useParams<{ token: string }>();
   const [data, setData] = useState<QuoteView | null>(null);
   const [loading, setLoading] = useState(true);
+  // Load error = the quote itself couldn't be shown (invalid/expired link).
+  // Action error = accept/decline/release failed — shown INLINE so the quote
+  // stays visible (a failed release must never render as "Quote unavailable").
   const [error, setError] = useState('');
+  const [actionError, setActionError] = useState('');
   const [accepting, setAccepting] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const [declined, setDeclined] = useState(false);
@@ -94,6 +98,9 @@ export default function PublicQuote() {
   const [showDeclineForm, setShowDeclineForm] = useState(false);
   const [declineReason, setDeclineReason] = useState('');
   const [released, setReleased] = useState(false);
+  // Approved but the payout can't be made until the card charge settles — the
+  // approval is recorded and the payout completes automatically.
+  const [approvedPending, setApprovedPending] = useState(false);
   const [releasing, setReleasing] = useState(false);
   const [avatarFailed, setAvatarFailed] = useState(false);
 
@@ -114,6 +121,7 @@ export default function PublicQuote() {
           if (view.status === 'accepted') setAccepted(true);
           if (view.status === 'declined') setDeclined(true);
           if (view.payment?.released) setReleased(true);
+          else if (view.payment?.approved) setApprovedPending(true);
         }
       } catch {
         if (!cancelled) setError('Something went wrong loading this quote.');
@@ -127,12 +135,13 @@ export default function PublicQuote() {
   const handleAccept = async () => {
     if (!token) return;
     setAccepting(true);
+    setActionError('');
     try {
       const { data: res, error: fnError } = await supabase.functions.invoke('public-quote', {
         body: { token, action: 'accept' },
       });
       if (fnError || res?.error) {
-        setError(res?.error || 'Could not accept the quote. Please try again.');
+        setActionError(res?.error || 'Could not accept the quote. Please try again.');
       } else {
         // If a secure deposit is due, send the client straight to Stripe to fund
         // the job into escrow. Otherwise acceptance is record-only.
@@ -144,7 +153,7 @@ export default function PublicQuote() {
         setAccepted(true);
       }
     } catch {
-      setError('Could not accept the quote. Please try again.');
+      setActionError('Could not accept the quote. Please try again.');
     }
     setAccepting(false);
   };
@@ -152,18 +161,19 @@ export default function PublicQuote() {
   const handleDecline = async () => {
     if (!token) return;
     setDeclining(true);
+    setActionError('');
     try {
       const { data: res, error: fnError } = await supabase.functions.invoke('public-quote', {
         body: { token, action: 'decline', reason: declineReason.trim() },
       });
       if (fnError || res?.error) {
-        setError(res?.error || 'Could not submit your response. Please try again.');
+        setActionError(res?.error || 'Could not submit your response. Please try again.');
       } else {
         setDeclined(true);
         setShowDeclineForm(false);
       }
     } catch {
-      setError('Could not submit your response. Please try again.');
+      setActionError('Could not submit your response. Please try again.');
     }
     setDeclining(false);
   };
@@ -171,17 +181,25 @@ export default function PublicQuote() {
   const handleRelease = async () => {
     if (!token) return;
     setReleasing(true);
+    setActionError('');
     try {
       const { data: res, error: fnError } = await supabase.functions.invoke('public-quote', {
         body: { token, action: 'release' },
       });
       if (fnError || res?.error) {
-        setError(res?.error || 'Could not release the payment. Please try again.');
+        // Non-2xx bodies come through error.context — surface the real reason.
+        let msg = (res as { error?: string } | null)?.error;
+        if (!msg && fnError) {
+          try { msg = (await (fnError as { context?: Response }).context?.json())?.error; } catch { /* opaque */ }
+        }
+        setActionError(msg || 'Could not release the payment. Please try again.');
       } else {
-        setReleased(true);
+        const pay = (res as QuoteView)?.payment;
+        if (pay?.released) setReleased(true);
+        else setApprovedPending(true); // approval recorded — payout follows settlement
       }
     } catch {
-      setError('Could not release the payment. Please try again.');
+      setActionError('Could not release the payment. Please try again.');
     }
     setReleasing(false);
   };
@@ -359,6 +377,13 @@ export default function PublicQuote() {
               )}
             </div>
 
+            {actionError && (
+              <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-2xl p-4">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-700">{actionError}</p>
+              </div>
+            )}
+
             {accepted ? (
               <div className="space-y-2.5">
                 {released ? (
@@ -369,6 +394,15 @@ export default function PublicQuote() {
                       Thanks! The payment is on its way to {businessName}. This job is all wrapped up.
                     </p>
                   </div>
+                ) : approvedPending ? (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center">
+                    <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+                    <h3 className="font-semibold text-emerald-800">Payment approved</h3>
+                    <p className="text-sm text-emerald-700 mt-1">
+                      Thanks! Your approval is recorded — the payment will reach {businessName} automatically
+                      as soon as the funds finish clearing (usually 1–2 business days). Nothing more to do.
+                    </p>
+                  </div>
                 ) : canRelease ? (
                   <div className="bg-white border border-gray-200 rounded-2xl p-6">
                     <div className="text-center">
@@ -376,7 +410,7 @@ export default function PublicQuote() {
                       <h3 className="font-semibold text-gray-900">{businessName} marked this job complete</h3>
                       <p className="text-sm text-gray-600 mt-1">
                         Happy with the work? Approve to release the payment now. If you don’t, it releases
-                        automatically 48 hours after completion.
+                        automatically 5 hours after completion.
                       </p>
                     </div>
                     <button

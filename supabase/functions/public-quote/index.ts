@@ -127,7 +127,7 @@ Deno.serve(async (req: Request) => {
     // and not yet released).
     const { data: fpRows } = await supabase
       .from("payments")
-      .select("status, metadata")
+      .select("id, status, metadata")
       .eq("job_id", quote.job_id)
       .eq("payment_type", "job_funding")
       .order("created_at", { ascending: false })
@@ -136,6 +136,9 @@ Deno.serve(async (req: Request) => {
     const fpMeta = (fundingPayment?.metadata || {}) as Record<string, unknown>;
     const paymentReleased = !!fpMeta.transfer_id || !!fpMeta.payout_id || fundingPayment?.status === "released";
     const paymentPaid = !!fundingPayment && (fundingPayment.status === "completed" || fundingPayment.status === "released");
+    // Client already approved but the payout couldn't be made yet (e.g. the card
+    // charge hadn't settled) — approval is recorded, cron completes the payout.
+    const paymentApproved = paymentReleased || !!fpMeta.client_approved_at;
 
     if (action === "accept") {
       // Idempotent: accepting an already-accepted quote is a no-op success.
@@ -374,6 +377,10 @@ Deno.serve(async (req: Request) => {
             console.error("release delegate failed:", await rel.text());
             return json({ error: "Could not release the payment. Please try again." }, 502);
           }
+          // Surface the engine's per-job errors in our logs — a 200 with an
+          // errors[] (e.g. Stripe "insufficient available balance") otherwise
+          // fails silently and the client just sees the 409 below.
+          try { console.error("release engine result:", await rel.text()); } catch { /* opaque */ }
         } catch (e) {
           console.error("release delegate error:", e);
           return json({ error: "Could not release the payment. Please try again." }, 502);
@@ -383,7 +390,7 @@ Deno.serve(async (req: Request) => {
         // never show the client a false "payment released".
         const { data: after } = await supabase
           .from("payments")
-          .select("status, metadata")
+          .select("id, status, metadata")
           .eq("job_id", quote.job_id)
           .eq("payment_type", "job_funding")
           .order("created_at", { ascending: false })
@@ -391,7 +398,21 @@ Deno.serve(async (req: Request) => {
         const aMeta = (after?.[0]?.metadata || {}) as Record<string, unknown>;
         const nowReleased = !!aMeta.transfer_id || !!aMeta.payout_id || after?.[0]?.status === "released";
         if (!nowReleased) {
-          return json({ error: "Couldn’t release the payment just now — it will release automatically within 48 hours of completion." }, 409);
+          // Most common cause: the card charge hasn't SETTLED in Stripe yet, so
+          // the payout can't draw on the balance. The client's approval is real
+          // either way — record it and report success; the release engine's cron
+          // completes the payout as soon as the funds become available.
+          if (after?.[0]?.id) {
+            await supabase
+              .from("payments")
+              .update({ metadata: { ...aMeta, client_approved_at: new Date().toISOString() } })
+              .eq("id", after[0].id);
+          }
+          return json({
+            status: quote.status,
+            jobStatus: "completed",
+            payment: { paid: true, released: false, approved: true },
+          });
         }
       }
       return json({ status: quote.status, jobStatus: "completed", payment: { paid: true, released: true } });
@@ -438,6 +459,7 @@ Deno.serve(async (req: Request) => {
       payment: {
         paid: paymentPaid,
         released: paymentReleased,
+        approved: paymentApproved,
         // A deposit can be taken now (client should be sent to pay).
         payable: depositEligible && !paymentPaid,
         // Present when this call minted/reused a Checkout to redirect the client to.

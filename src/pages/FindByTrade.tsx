@@ -106,7 +106,7 @@ export default function FindByTrade() {
           </h1>
 
           <p className="mt-6 text-base text-gray-700 leading-relaxed max-w-3xl">
-            Find verified {label.toLowerCase()}s in every major Australian city. Every tradie on ConnecTradie is ABN-verified and (where the law requires it) state licence-checked before they can quote on your job. Your payment sits in Stripe-held escrow until you approve the work — funds release only when you sign off, with a 48-hour auto-release so the tradie isn&apos;t left chasing.
+            Find verified {label.toLowerCase()}s in every major Australian city. Every tradie on ConnecTradie is ABN-verified and (where the law requires it) state licence-checked before they can quote on your job. Your payment sits in Stripe-held escrow until you approve the work — funds release only when you sign off, with a 5-hour auto-release so the tradie isn&apos;t left chasing.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-3">

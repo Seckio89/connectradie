@@ -2,7 +2,7 @@
 // emailOffAppClientOnCompletion — when a tradie marks a job complete, an OFF-APP
 // client (no ConnecTradie account) has no dashboard notification to tell them to
 // approve. This emails them the quote link so they can tap "Approve & release
-// payment" — otherwise the payment just sits until the 48h auto-release.
+// payment" — otherwise the payment just sits until the 5h auto-release.
 //
 // Safe to call after ANY completion path: it self-checks that the job is off-app
 // (has a client_contact_id but no linked client_id) and no-ops otherwise. Fully
@@ -52,7 +52,7 @@ export async function emailOffAppClientOnCompletion(jobId: string): Promise<void
         body:
           `Hi ${firstName},\n\n"${jobTitle}" has been marked complete. If you're happy with the work, ` +
           `tap below to approve and release the payment.\n\n` +
-          `If you don't respond, the payment releases automatically 48 hours after completion.\n\n${link}`,
+          `If you don't respond, the payment releases automatically 5 hours after completion.\n\n${link}`,
         notificationType: 'QUOTE_RECEIVED',
         metadata: { link },
       },

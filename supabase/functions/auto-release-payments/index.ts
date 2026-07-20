@@ -51,23 +51,35 @@ Deno.serve(async (req: Request) => {
       return errorJson("Server configuration error", 500);
     }
 
-    // Caller has already passed Supabase JWT verification (verify_jwt=true).
-    // Defence-in-depth: require the bearer be a JWT (starts with 'ey').
-    // We deliberately do NOT byte-compare against env var — the auto-injected
-    // SUPABASE_SERVICE_ROLE_KEY can drift from the vault-stored secret used by
-    // pg_cron after key rotations, and that mismatch silently 401'd everything.
+    // Auth: the caller must hold a SERVICE-ROLE-capable key. We verify by
+    // capability, not by shape or byte-compare: attempt an admin-API call with
+    // the PRESENTED key. Works for legacy JWT service keys AND new sb_secret_*
+    // keys (which broke the old `startsWith("Bearer ey")` check and 401'd the
+    // public-quote release delegate), and rejects anon/user JWTs — which the
+    // old check wrongly let through.
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ey")) {
+    if (!authHeader?.startsWith("Bearer ")) {
+      return errorJson("Unauthorized", 401);
+    }
+    try {
+      const probe = createClient(supabaseUrl, authHeader.slice(7));
+      const { error: probeErr } = await probe.auth.admin.listUsers({ page: 1, perPage: 1 });
+      if (probeErr) return errorJson("Unauthorized", 401);
+    } catch {
       return errorJson("Unauthorized", 401);
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
+    // Client review window: completed jobs auto-release after this many hours
+    // if the client takes no action. Keep in sync with src/lib/releaseWindow.ts.
+    const RELEASE_WINDOW_HOURS = 5;
+
     // Optional single-job EARLY release: a client clicked "Approve & release" on
-    // their quote link before the 48h window elapsed. When a jobId is provided we
-    // release just that job immediately (skipping the 48h cutoff); otherwise this
-    // is the scheduled cron run that sweeps everything completed 48+ hours ago.
+    // their quote link before the review window elapsed. When a jobId is provided
+    // we release just that job immediately (skipping the cutoff); otherwise this
+    // is the scheduled cron run that sweeps everything past the window.
     // Everything downstream (dispute exclusion, idempotency keys, transfer/payout
     // logic, notifications) is identical either way — the ONLY difference is which
     // jobs are selected.
@@ -86,7 +98,7 @@ Deno.serve(async (req: Request) => {
       .not("tradie_id", "is", null)
       .not("completed_at", "is", null);
 
-    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    const cutoff = new Date(Date.now() - RELEASE_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
     const { data: completedJobs, error: jobsError } = requestedJobId
       ? await baseQuery.eq("id", requestedJobId)
       : await baseQuery.lte("completed_at", cutoff);
@@ -151,8 +163,14 @@ Deno.serve(async (req: Request) => {
         continue;
       }
 
-      // Determine payment flow: destination charges (new) vs custodial escrow (legacy)
-      const isDestinationCharge = payment.metadata?.flow === "destination";
+      // Determine payment flow: destination charges (new) vs custodial escrow
+      // (legacy). Writers are inconsistent — accept-and-pay et al. stamp
+      // metadata.flow, while invoice-contact / approve-invoice / BECS stamp
+      // metadata.routing. Either means the funds already moved to the tradie's
+      // Connect account at charge time, so the LEGACY transfer path must not run.
+      const isDestinationCharge =
+        payment.metadata?.flow === "destination" ||
+        payment.metadata?.routing === "destination";
 
       if (!payment.stripe_payment_intent_id) {
         errors.push(`Job ${job.id}: payment has no Stripe payment intent`);
@@ -295,7 +313,7 @@ Deno.serve(async (req: Request) => {
             await supabase.from("notifications").insert({
               user_id: job.client_id,
               title: "Payment Auto-Released",
-              message: `Payment of ${amountDollars} for ${jobTitle} (${invoiceNumber}) was automatically released to your tradie after 48 hours.`,
+              message: `Payment of ${amountDollars} for ${jobTitle} (${invoiceNumber}) was automatically released to your tradie after the review window.`,
               type: "payment_auto_released",
               read: false,
               metadata: {
@@ -331,7 +349,7 @@ Deno.serve(async (req: Request) => {
                 body: JSON.stringify({
                   to: homeowner.email,
                   subject: `Payment of ${amountDollars} Released to Your Tradie (${invoiceNumber})`,
-                  body: `Hi ${homeowner.full_name || "there"},\n\nYour payment of ${amountDollars} for "${jobTitle}" (Invoice: ${invoiceNumber}) has been automatically released to your tradie after the 48-hour review window.\n\nIf you have any concerns, please contact our support team.\n\nThank you for using ConnecTradie.`,
+                  body: `Hi ${homeowner.full_name || "there"},\n\nYour payment of ${amountDollars} for "${jobTitle}" (Invoice: ${invoiceNumber}) has been automatically released to your tradie after the 5-hour review window.\n\nIf you have any concerns, please contact our support team.\n\nThank you for using ConnecTradie.`,
                   notificationType: "PAYMENT_AUTO_RELEASED",
                   metadata: { amount: amountDollars, job_id: job.id },
                 }),
@@ -523,7 +541,7 @@ Deno.serve(async (req: Request) => {
           await supabase.from("notifications").insert({
             user_id: job.client_id,
             title: "Payment Auto-Released",
-            message: `Payment of ${amountDollars} for ${jobTitle} (${invoiceNumber}) was automatically released to your tradie after 48 hours.`,
+            message: `Payment of ${amountDollars} for ${jobTitle} (${invoiceNumber}) was automatically released to your tradie after the review window.`,
             type: "payment_auto_released",
             read: false,
             metadata: {
@@ -559,7 +577,7 @@ Deno.serve(async (req: Request) => {
               body: JSON.stringify({
                 to: homeowner.email,
                 subject: `Payment of ${amountDollars} Released to Your Tradie (${invoiceNumber})`,
-                body: `Hi ${homeowner.full_name || "there"},\n\nYour payment of ${amountDollars} for "${jobTitle}" (Invoice: ${invoiceNumber}) has been automatically released to your tradie after the 48-hour review window.\n\nIf you have any concerns, please contact our support team.\n\nThank you for using ConnecTradie.`,
+                body: `Hi ${homeowner.full_name || "there"},\n\nYour payment of ${amountDollars} for "${jobTitle}" (Invoice: ${invoiceNumber}) has been automatically released to your tradie after the 5-hour review window.\n\nIf you have any concerns, please contact our support team.\n\nThank you for using ConnecTradie.`,
                 notificationType: "PAYMENT_AUTO_RELEASED",
                 metadata: { amount: amountDollars, job_id: job.id },
               }),

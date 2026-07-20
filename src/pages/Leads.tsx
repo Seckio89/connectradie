@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { descriptionPreview } from '../lib/jobDescription';
+import { COMPANY_ABN } from '../config/company';
+import { RELEASE_WINDOW_MS } from '../lib/releaseWindow';
 import {
   Zap,
   MapPin,
@@ -100,7 +102,7 @@ function AutoReleaseCountdown({ completedAt, jobTitle, invoiceNumber }: { comple
   const [cronTimeLeft, setCronTimeLeft] = useState('');
 
   useEffect(() => {
-    const releaseTime = new Date(completedAt).getTime() + 48 * 60 * 60 * 1000;
+    const releaseTime = new Date(completedAt).getTime() + RELEASE_WINDOW_MS;
     // Cron runs every 6 hours at 00:00, 06:00, 12:00, 18:00 UTC
     const getNextCronRun = () => {
       const now = new Date();
@@ -881,7 +883,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 @media print{body{padding:20px;margin:0}}
 </style></head><body>
 <div class="header">
-  <div class="brand"><h1>ConnecTradie</h1><p>ABN: XX XXX XXX XXX</p></div>
+  <div class="brand"><h1>ConnecTradie</h1><p>ABN: ${COMPANY_ABN}</p></div>
   <div class="invoice-meta">
     <div class="label">Payment Statement</div>
     <div class="value">${invoiceNumber}</div>
@@ -2408,7 +2410,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 const now = Date.now();
                 const expiredJobs = unreleased.filter(l => {
                   const completedAt = (l as Record<string, unknown>).completed_at as string;
-                  return now - new Date(completedAt).getTime() > 48 * 60 * 60 * 1000;
+                  return now - new Date(completedAt).getTime() > RELEASE_WINDOW_MS;
                 });
                 if (expiredJobs.length === 0) return null;
                 return (
@@ -3328,7 +3330,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 @media print{body{padding:20px;margin:0}}
 </style></head><body>
 <div class="header">
-  <div class="brand"><h1>ConnecTradie</h1><p>ABN: XX XXX XXX XXX</p></div>
+  <div class="brand"><h1>ConnecTradie</h1><p>ABN: ${COMPANY_ABN}</p></div>
   <div class="invoice-meta">
     <div class="label">Tax Invoice</div>
     <div class="value">${escapeHtml(invoiceNum)}</div>

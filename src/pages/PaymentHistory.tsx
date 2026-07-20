@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { COMPANY_ABN } from '../config/company';
 import {
   DollarSign,
   Download,
@@ -511,7 +512,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 @media print{body{padding:20px;margin:0}}
 </style></head><body>
 <div class="header">
-  <div class="brand"><h1>ConnecTradie</h1><p>ABN: XX XXX XXX XXX</p></div>
+  <div class="brand"><h1>ConnecTradie</h1><p>ABN: ${COMPANY_ABN}</p></div>
   <div class="invoice-meta">
     <div class="label">Tax Invoice</div>
     <div class="value">${escapeHtml(invoiceNum)}</div>
@@ -571,7 +572,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
   //   1. "Action needed — release these"  → completed escrow waiting for client release
   //   2. "Pending"                        → status='pending' (BECS in flight, checkout open, etc.)
   //   3. Month groups                     → everything settled, newest month first
-  // Within tier 1 we sort oldest-first (closest to the 48h auto-release deadline);
+  // Within tier 1 we sort oldest-first (closest to the 5h auto-release deadline);
   // within Pending we sort newest-first; month groups stay date-ordered.
   const monthGroups = useMemo(() => {
     const groups: { key: string; label: string; payments: PaymentRow[]; total: number }[] = [];
@@ -1247,7 +1248,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-lg font-bold text-primary-700">ConnecTradie</h2>
-              <p className="text-xs text-navy-300 mt-0.5">ABN: XX XXX XXX XXX</p>
+              <p className="text-xs text-navy-300 mt-0.5">ABN: {COMPANY_ABN}</p>
             </div>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-100 -mt-1 -mr-1 transition-colors">
               <X className="w-5 h-5 text-navy-300" />
@@ -1395,7 +1396,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
             </div>
           )}
 
-          {/* Escrow — auto-releases after 48h, client can release early */}
+          {/* Escrow — auto-releases after 5h, client can release early */}
           {!isTradie && isCompletedWithStripe && !transferDone && !hasPendingIncrease && !hasPendingReduction && (
             <div className="bg-warm-50 border border-warm-200 rounded-lg p-4">
               <div className="flex items-start gap-3 mb-3">
@@ -1403,7 +1404,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
                 <div>
                   <p className="text-sm font-semibold text-warm-800">Payment Secured with Stripe</p>
                   <p className="text-xs text-warm-700 mt-0.5">
-                    Funds will be automatically released to your tradie within 48 hours. You can release early if you're happy with the work.
+                    Funds will be automatically released to your tradie within 5 hours. You can release early if you're happy with the work.
                   </p>
                 </div>
               </div>

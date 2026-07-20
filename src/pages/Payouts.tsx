@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { COMPANY_ABN } from '../config/company';
+import { RELEASE_WINDOW_MS, RELEASE_WINDOW_LABEL } from '../lib/releaseWindow';
 import {
   Wallet,
   DollarSign,
@@ -534,7 +536,7 @@ export default function Payouts() {
               <div style="background: #004d40; color: white; padding: 8px 16px; border-radius: 6px; display: inline-block; font-size: 18px; font-weight: 700; letter-spacing: 0.5px;">
                 Connec<span style="color: #06D6A0;">Tradie</span>
               </div>
-              <p style="font-size: 11px; color: #888; margin: 8px 0 0;">ABN: XX XXX XXX XXX</p>
+              <p style="font-size: 11px; color: #888; margin: 8px 0 0;">ABN: ${COMPANY_ABN}</p>
               <p style="font-size: 11px; color: #888; margin: 2px 0 0;">Australian Tradie Marketplace</p>
             </td>
             <td style="vertical-align: top; text-align: right; width: 50%;">
@@ -708,9 +710,8 @@ export default function Payouts() {
     return (accountDetails?.payouts || []).reduce((s, p) => s + p.amount, 0);
   }, [accountDetails?.payouts]);
   const escrowAmount = escrowHeld;
-  const RELEASE_WINDOW_MS = 48 * 60 * 60 * 1000;
   const autoReleaseLabel = (() => {
-    if (!escrowReleaseAt) return 'Auto-releases after 48 hours';
+    if (!escrowReleaseAt) return `Auto-releases after ${RELEASE_WINDOW_LABEL}`;
     const ms = escrowReleaseAt + RELEASE_WINDOW_MS - nowTs;
     if (ms <= 0) return 'Auto-releasing now…';
     const mins = Math.floor(ms / 60000);
