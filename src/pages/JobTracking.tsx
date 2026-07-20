@@ -6,11 +6,13 @@
 // Reached from job detail ("View Tracking") and site-arrival notifications.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Loader2, CheckCircle2, Clock, ImageOff, Download, AlertTriangle, User } from 'lucide-react';
+import { ArrowLeft, MapPin, Loader2, CheckCircle2, Clock, ImageOff, Download, AlertTriangle, User, LogIn, LogOut } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import { GEOFENCE_CROSSING_EVENT } from '../lib/siteGeofence';
 import { fetchJobTracking, staticMapUrl, type JobTracking, type TrackVisit, type TrackWorker } from '../lib/jobTracking';
 import { formatDuration, formatTime, formatDayLabel } from '../lib/siteActivity';
 import { escapeHtml } from '../lib/escapeHtml';
@@ -30,19 +32,35 @@ export default function JobTracking() {
   const [notFound, setNotFound] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [checkError, setCheckError] = useState('');
+  // Ticks every second while someone is on site — drives the live timer.
+  const [nowTs, setNowTs] = useState(Date.now());
 
-  useEffect(() => {
+  const reload = useCallback(async (initial = false) => {
     if (!jobId) return;
-    let cancelled = false;
-    setLoading(true);
-    fetchJobTracking(jobId).then((d) => {
-      if (cancelled) return;
-      if (!d) setNotFound(true);
-      setData(d);
-      setLoading(false);
-    });
-    return () => { cancelled = true; };
+    if (initial) setLoading(true);
+    const d = await fetchJobTracking(jobId);
+    if (!d && initial) setNotFound(true);
+    if (d) setData(d);
+    if (initial) setLoading(false);
   }, [jobId]);
+
+  useEffect(() => { reload(true); }, [reload]);
+
+  // Instant refresh when the device crosses a geofence while this screen is up.
+  useEffect(() => {
+    const onCrossing = () => reload();
+    window.addEventListener(GEOFENCE_CROSSING_EVENT, onCrossing);
+    return () => window.removeEventListener(GEOFENCE_CROSSING_EVENT, onCrossing);
+  }, [reload]);
+
+  // Live timer while on site.
+  useEffect(() => {
+    if (!data?.onSiteNow) return;
+    const t = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [data?.onSiteNow]);
 
   const isClient = profile?.role === 'client';
   const isOwner = !isClient && !!data && !!user && data.meta.ownerId === user.id;
@@ -57,6 +75,37 @@ export default function JobTracking() {
   // Average on-site time across completed visits.
   const completed = (data?.visits ?? []).filter((v) => v.durationMs != null);
   const avgMs = completed.length ? Math.round(completed.reduce((s, v) => s + (v.durationMs ?? 0), 0) / completed.length) : null;
+
+  // Manual check-in/out fallback for unreliable GPS (indoors, basements).
+  // Writes the same ENTER/EXIT rows the geofence would, with the current
+  // position when the browser can supply one.
+  const manualCheck = async (action: 'ENTER' | 'EXIT') => {
+    if (!jobId || !user) return;
+    setChecking(true); setCheckError('');
+    try {
+      const coords = await new Promise<{ lat: number | null; lng: number | null }>((resolve) => {
+        if (!navigator.geolocation) { resolve({ lat: null, lng: null }); return; }
+        navigator.geolocation.getCurrentPosition(
+          (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+          () => resolve({ lat: null, lng: null }),
+          { timeout: 8000, maximumAge: 30000 },
+        );
+      });
+      const { error } = await supabase.from('site_visit_events').insert({
+        tradie_id: user.id,
+        job_id: jobId,
+        action,
+        occurred_at: new Date().toISOString(),
+        latitude: coords.lat,
+        longitude: coords.lng,
+      });
+      if (error) setCheckError('Could not record it — please try again.');
+      else await reload();
+    } catch {
+      setCheckError('Could not record it — please try again.');
+    }
+    setChecking(false);
+  };
 
   const exportReport = async () => {
     if (!data) return;
@@ -185,7 +234,11 @@ export default function JobTracking() {
                 </div>
                 <div className="rounded-xl bg-emerald-50 p-3">
                   <p className="text-[11px] text-emerald-600 uppercase tracking-wide">On site</p>
-                  <p className="text-base font-bold text-emerald-700 mt-0.5 tabular-nums">{formatDuration(latest.durationMs)}</p>
+                  <p className="text-base font-bold text-emerald-700 mt-0.5 tabular-nums">
+                    {latest.leftAt
+                      ? formatDuration(latest.durationMs)
+                      : formatDuration(Math.max(0, nowTs - new Date(latest.arrivedAt).getTime()))}
+                  </p>
                 </div>
               </div>
 
@@ -204,6 +257,36 @@ export default function JobTracking() {
             </>
           ) : (
             <p className="text-sm text-gray-500">No check-ins recorded yet. This updates automatically when the tradie arrives on site.</p>
+          )}
+
+          {/* Manual fallback — GPS can be unreliable indoors. Same rows the
+              geofence writes, so history and reports stay consistent. */}
+          {!isClient && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              {data.onSiteNow ? (
+                <button
+                  onClick={() => manualCheck('EXIT')}
+                  disabled={checking}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                >
+                  {checking ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4 text-gray-500" />}
+                  Check out now
+                </button>
+              ) : (
+                <button
+                  onClick={() => manualCheck('ENTER')}
+                  disabled={checking}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                >
+                  {checking ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+                  Check in now
+                </button>
+              )}
+              <p className="mt-1.5 text-[11px] text-gray-400 text-center">
+                Check-in is automatic when you cross the site boundary — use this if GPS is unreliable indoors.
+              </p>
+              {checkError && <p className="mt-1 text-xs text-red-600 text-center">{checkError}</p>}
+            </div>
           )}
         </div>
 

@@ -30,7 +30,11 @@ export interface GeofenceSite {
 
 const TOKEN_CACHE_KEY = 'connectradie_geofence_token';
 const CONSENT_KEY = 'connectradie_geofence_consent';
-const DEFAULT_RADIUS_M = 150;
+const DEFAULT_RADIUS_M = 100;
+
+/** Fired (window CustomEvent) on a foreground geofence crossing so the UI can
+ * react instantly — detail: { action: 'ENTER'|'EXIT', jobId?: string }. */
+export const GEOFENCE_CROSSING_EVENT = 'geofence-crossing';
 // After a "Not now", wait this long before showing the disclosure again.
 const DISMISS_SNOOZE_MS = 3 * 24 * 60 * 60 * 1000;
 
@@ -194,6 +198,20 @@ export async function initSiteGeofencing(tradieId: string): Promise<boolean> {
     // ready() is the real initialisation signal — mark it done now so geofence
     // sync can proceed even if the startGeofences() call below no-ops.
     initialised = true;
+
+    // Foreground crossings: surface immediately in the UI (toast + live screens)
+    // without waiting for the server round-trip. Background crossings still go
+    // native → edge function as before.
+    try {
+      BackgroundGeolocation.onGeofence((event: { action?: string; extras?: { job_id?: string } }) => {
+        if (event.action !== 'ENTER' && event.action !== 'EXIT') return;
+        try {
+          window.dispatchEvent(new CustomEvent(GEOFENCE_CROSSING_EVENT, {
+            detail: { action: event.action, jobId: event.extras?.job_id },
+          }));
+        } catch { /* no window */ }
+      });
+    } catch { /* listener is best-effort */ }
 
     // Geofence-only mode: the SDK sleeps until a boundary is crossed. Because
     // stopOnTerminate:false persists the started state, ready() often restores

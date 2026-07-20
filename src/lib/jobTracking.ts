@@ -58,7 +58,12 @@ export interface JobTracking {
   hasAnyVisit: boolean;
 }
 
-/** Pair one worker's chronological crossings into visits (handles orphans). */
+/** A brief hop outside the fence (to the car / bins) shouldn't split a visit —
+ * exits followed by a re-entry within this window are merged away. */
+const EXIT_MERGE_GAP_MS = 5 * 60 * 1000;
+
+/** Pair one worker's chronological crossings into visits (handles orphans),
+ * merging visits separated by less than the 5-minute grace gap. */
 function pairWorker(rows: RawCrossing[]): TrackVisit[] {
   const visits: TrackVisit[] = [];
   let open: RawCrossing | null = null;
@@ -72,7 +77,26 @@ function pairWorker(rows: RawCrossing[]): TrackVisit[] {
     }
   }
   if (open) visits.push(makeVisit(open, null));
-  return visits;
+
+  // Merge: exit → re-enter within 5 min = one continuous visit.
+  const merged: TrackVisit[] = [];
+  for (const v of visits) {
+    const prev = merged[merged.length - 1];
+    if (
+      prev && prev.leftAt &&
+      new Date(v.arrivedAt).getTime() - new Date(prev.leftAt).getTime() < EXIT_MERGE_GAP_MS
+    ) {
+      prev.leftAt = v.leftAt;
+      prev.outLat = v.outLat;
+      prev.outLng = v.outLng;
+      prev.durationMs = prev.leftAt
+        ? new Date(prev.leftAt).getTime() - new Date(prev.arrivedAt).getTime()
+        : null;
+    } else {
+      merged.push({ ...v });
+    }
+  }
+  return merged;
 }
 
 function makeVisit(enter: RawCrossing, exit: RawCrossing | null): TrackVisit {

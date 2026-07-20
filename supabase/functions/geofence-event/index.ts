@@ -95,7 +95,10 @@ Deno.serve(async (req: Request) => {
       if (action !== "ENTER" && action !== "EXIT") continue; // ignore DWELL
 
       const jobId = gf.extras?.job_id;
-      const quoteId = gf.extras?.quote_id ?? gf.identifier;
+      // quote_id is a uuid column; job-based geofences (active jobs, no quote)
+      // have no quote — never fall back to the identifier blindly.
+      const rawQuote = gf.extras?.quote_id ?? gf.identifier;
+      const quoteId = rawQuote && /^[0-9a-f-]{36}$/i.test(rawQuote) && rawQuote !== jobId ? rawQuote : null;
       if (!jobId) continue; // can't attribute without a job
 
       // Guard against STALE geofences: if a job has ended/cancelled but its
@@ -149,6 +152,22 @@ Deno.serve(async (req: Request) => {
 
           // count includes the row we just inserted; >1 means a recent prior ENTER.
           if ((count ?? 1) <= 1) {
+            // Tell the WORKER they've been checked in (their own device crossed).
+            const inTime = new Date(occurredAt).toLocaleTimeString("en-AU", {
+              hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Australia/Sydney",
+            });
+            const arrivedTitle = job.title
+              || job.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, " ")
+              || "your job site";
+            await supabase.from("notifications").insert({
+              user_id: tradieId,
+              type: "site_arrival",
+              title: "Checked in",
+              message: `✅ You've arrived at ${arrivedTitle}. Checked in at ${inTime}.`,
+              job_id: jobId,
+              metadata: { quote_id: quoteId, self: true },
+              read: false,
+            }).then(() => {}, (e: unknown) => console.warn("worker check-in notify failed", e));
             const { data: worker } = await supabase
               .from("profiles")
               .select("full_name, employer_id, employer_status")
@@ -194,6 +213,47 @@ Deno.serve(async (req: Request) => {
           }
         } catch (notifyErr) {
           console.warn("geofence-event: arrival notify failed", notifyErr);
+        }
+      }
+
+      // On departure, tell the worker they're checked out with their time on
+      // site. Brief exits (<5 min on site) are treated as GPS bounces — no
+      // notification; the tracking screen also merges sub-5-minute gaps.
+      if (action === "EXIT") {
+        try {
+          const { data: lastEnter } = await supabase
+            .from("site_visit_events")
+            .select("occurred_at")
+            .eq("job_id", jobId)
+            .eq("tradie_id", tradieId)
+            .eq("action", "ENTER")
+            .lt("occurred_at", occurredAt)
+            .order("occurred_at", { ascending: false })
+            .limit(1);
+          const enteredAt = lastEnter?.[0]?.occurred_at as string | undefined;
+          if (enteredAt) {
+            const ms = new Date(occurredAt).getTime() - new Date(enteredAt).getTime();
+            const mins = Math.round(ms / 60000);
+            if (mins >= 5) {
+              const h = Math.floor(mins / 60);
+              const m = mins % 60;
+              const dur = h > 0 ? `${h}h ${m}m` : `${m}m`;
+              const exitTitle = job.title
+                || job.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, " ")
+                || "the job site";
+              await supabase.from("notifications").insert({
+                user_id: tradieId,
+                type: "site_departure",
+                title: "Checked out",
+                message: `Checked out of ${exitTitle}. Time on site: ${dur}.`,
+                job_id: jobId,
+                metadata: { quote_id: quoteId, minutes_on_site: mins, self: true },
+                read: false,
+              });
+            }
+          }
+        } catch (exitErr) {
+          console.warn("geofence-event: departure notify failed", exitErr);
         }
       }
     }

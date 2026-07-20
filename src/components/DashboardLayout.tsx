@@ -39,6 +39,7 @@ import { useSiteGeofencing } from '../hooks/useSiteGeofencing';
 import { hasGeofenceConsent, GEOFENCE_CONSENT_EVENT } from '../lib/siteGeofence';
 import SiteGeofenceConsent from './SiteGeofenceConsent';
 import GeofenceActiveToast from './GeofenceActiveToast';
+import GeofenceCrossingToast from './GeofenceCrossingToast';
 import { markNotificationRead, markAllNotificationsRead } from '../lib/notificationService';
 import type { LucideIcon } from 'lucide-react';
 import type { Notification } from '../types/database';
@@ -634,6 +635,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <SiteGeofenceConsent />
       {/* One-time reassurance when geofencing first goes live for a job. */}
       <GeofenceActiveToast />
+      {/* Instant check-in/out feedback on foreground geofence crossings. */}
+      <GeofenceCrossingToast />
 
       <div
         className={`fixed inset-0 bg-black/30 z-40 lg:hidden transition-opacity ${
