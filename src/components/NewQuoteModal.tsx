@@ -50,6 +50,10 @@ function scheduleSummary(slots: VisitSlot[]): string {
 
 const aud = (n: number) => `$${Math.round(n).toLocaleString('en-AU')}`;
 
+// Feature flag: the one-tap Quick Quote preset row. Hidden for now — flip to
+// true to re-enable (presets live in src/lib/quoteQuickAdd.ts).
+const SHOW_QUICK_QUOTE = false;
+
 // Lightweight trade categorisation for the recurring service record.
 function deriveTrade(title: string): string {
   const t = title.toLowerCase();
@@ -574,8 +578,9 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                 </div>
               )}
 
-              {/* Quick Quote — one tap pre-fills a common job (adjust price & send) */}
-              {quickQuotePresets.length > 0 && (
+              {/* Quick Quote — one tap pre-fills a common job (adjust price & send).
+                  Behind SHOW_QUICK_QUOTE; hidden for now, flip the flag to restore. */}
+              {SHOW_QUICK_QUOTE && quickQuotePresets.length > 0 && (
                 <div className="rounded-xl border border-secondary-100 bg-secondary-50/60 p-3">
                   <p className="flex items-center gap-1.5 text-xs font-semibold text-secondary-800 mb-2">
                     <Zap className="w-3.5 h-3.5 text-secondary-600" /> Quick Quote — one tap, then adjust the price
