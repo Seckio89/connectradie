@@ -41,7 +41,9 @@ export default function Payouts() {
   // ── Instant payout (opt-in; standard stays free + default) ────────────────
   const [instantStatus, setInstantStatus] = useState<{
     eligible: boolean; reason: string | null; instantAvailable: number;
+    availableCents?: number; pendingCents?: number;
     feeCents: number; netCents: number; cardLast4: string | null;
+    destinationLabel?: string | null;
   } | null>(null);
   const [instantBusy, setInstantBusy] = useState(false);
   const [instantDone, setInstantDone] = useState<string | null>(null);
@@ -1031,7 +1033,7 @@ export default function Payouts() {
                         Payout: <span className="font-semibold">{formatCurrency(instantStatus.instantAvailable)}</span>
                         {' — '}Instant fee: <span className="font-semibold">{formatCurrency(instantStatus.feeCents)}</span>
                         {' — '}You receive: <span className="font-semibold text-gray-900">{formatCurrency(instantStatus.netCents)}</span>
-                        {' — '}arrives in minutes{instantStatus.cardLast4 ? ` on ••••${instantStatus.cardLast4}` : ''}
+                        {' — '}arrives in minutes{instantStatus.destinationLabel ? ` on ${instantStatus.destinationLabel}` : ''}
                       </p>
                       <button
                         onClick={runInstantPayout}
@@ -1042,9 +1044,13 @@ export default function Payouts() {
                       </button>
                       {instantError && <p className="mt-1.5 text-xs text-red-600">{instantError}</p>}
                     </div>
-                  ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'no_debit_card' && onItsWay > 0 && payoutPref !== 'standard' ? (
+                  ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'funds_pending' ? (
                     <p className="mt-2.5 text-[11px] text-gray-500">
-                      Instant payouts require a Visa or Mastercard debit card — add one in Bank Settings to enable them.
+                      Instant payout available once funds clear (usually next business day).
+                    </p>
+                  ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'no_instant_method' && onItsWay > 0 && payoutPref !== 'standard' ? (
+                    <p className="mt-2.5 text-[11px] text-gray-500">
+                      This payout account can’t receive instant payouts — add an instant-eligible debit card or bank in Bank Settings.
                     </p>
                   ) : null}
                 </div>
