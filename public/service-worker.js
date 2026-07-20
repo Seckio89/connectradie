@@ -1,5 +1,8 @@
-const CACHE_NAME = 'connecttradie-v3';
-const API_CACHE_NAME = 'connecttradie-api-v3';
+// Bump on any deploy that must invalidate stale caches. The `activate` handler
+// deletes every cache not in the keep-list, so raising the version purges old
+// hashed assets that could otherwise pin an installed app to a broken bundle.
+const CACHE_NAME = 'connecttradie-v4';
+const API_CACHE_NAME = 'connecttradie-api-v4';
 const API_CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 const APP_SHELL = [
   '/',

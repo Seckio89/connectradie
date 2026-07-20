@@ -25,6 +25,39 @@ if (sentryDsn) {
 
 initAnalytics();
 
+// ── Stale-bundle recovery ────────────────────────────────────────────────────
+// After a deploy, an installed app can hold a cached index.html or lazy chunk
+// that references content-hashed files no longer on the CDN. The failed dynamic
+// import leaves the app hung on the Suspense spinner. Detect that failure and
+// self-heal: clear caches + the service worker once, then hard-reload to pull
+// the fresh bundle. A sessionStorage guard prevents a reload loop.
+function isChunkLoadError(reason: unknown): boolean {
+  const msg = String((reason as { message?: string } | undefined)?.message ?? reason ?? '');
+  return /dynamically imported module|Importing a module script failed|Loading chunk|ChunkLoadError|Failed to fetch dynamically/i.test(msg);
+}
+let recovering = false;
+async function recoverFromStaleBundle() {
+  if (recovering) return;
+  recovering = true;
+  const KEY = 'ct-stale-bundle-reload';
+  if (sessionStorage.getItem(KEY)) return; // already tried once — avoid a loop
+  sessionStorage.setItem(KEY, String(Date.now()));
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+    const regs = (await navigator.serviceWorker?.getRegistrations?.()) ?? [];
+    await Promise.all(regs.map((r) => r.unregister()));
+  } catch { /* best-effort — reload regardless */ }
+  window.location.reload();
+}
+// Vite emits this when a preloaded/lazy chunk fails to load.
+window.addEventListener('vite:preloadError', (e) => { e.preventDefault(); recoverFromStaleBundle(); });
+window.addEventListener('unhandledrejection', (e) => { if (isChunkLoadError(e.reason)) recoverFromStaleBundle(); });
+// A successful boot clears the guard so future deploys can recover again.
+window.addEventListener('load', () => { setTimeout(() => sessionStorage.removeItem('ct-stale-bundle-reload'), 4000); });
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>

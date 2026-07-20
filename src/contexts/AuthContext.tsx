@@ -85,6 +85,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    // Boot watchdog: never let the app hang on the loading spinner. If getSession
+    // or the profile fetch stalls (flaky mobile network, a wedged request), flip
+    // loading off after 12s so the app renders (login/dashboard) instead of
+    // spinning forever. Normal boots resolve in well under a second.
+    const bootWatchdog = setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, 12000);
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
 
@@ -145,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
+      clearTimeout(bootWatchdog);
       subscription.unsubscribe();
     };
   }, []);
