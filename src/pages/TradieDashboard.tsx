@@ -2147,59 +2147,29 @@ export default function TradieDashboard() {
           defaultOpen={true}
           icon={<div className="w-7 h-7 bg-primary-100 rounded-lg flex items-center justify-center"><Clock className="w-4 h-4 text-primary-600" /></div>}
         >
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md transition-shadow">
-              <div className="flex flex-col items-center gap-2 text-center">
-                <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-primary-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-navy-500 font-medium">Available Hours</p>
-                  <p className="text-3xl font-bold text-navy-900">{totalAvailableHours.toFixed(0)}</p>
-                </div>
-              </div>
+          {/* Compact one-row stat strip: small icon on top, prominent number,
+              tiny label. One subtle background, no per-card borders — the whole
+              section stays ~100px instead of four stacked full-width cards. */}
+          <div className="grid grid-cols-4 gap-2 bg-gray-50 rounded-xl px-2 py-3">
+            <div className="flex flex-col items-center gap-1 text-center p-1">
+              <Clock className="w-5 h-5 text-primary-500" />
+              <p className="text-2xl sm:text-[28px] font-bold text-navy-900 leading-tight tabular-nums">{totalAvailableHours.toFixed(0)}</p>
+              <p className="text-[11px] text-gray-500 leading-tight">Available<br className="sm:hidden" /> Hours</p>
             </div>
-
-            <div className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md transition-shadow">
-              <div className="flex flex-col items-center gap-2 text-center">
-                <div className="w-12 h-12 bg-secondary-100 rounded-xl flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-secondary-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-navy-500 font-medium">Booked Slots</p>
-                  <p className="text-3xl font-bold text-navy-900">{bookedSlots}</p>
-                </div>
-              </div>
+            <div className="flex flex-col items-center gap-1 text-center p-1">
+              <Calendar className="w-5 h-5 text-secondary-500" />
+              <p className="text-2xl sm:text-[28px] font-bold text-navy-900 leading-tight tabular-nums">{bookedSlots}</p>
+              <p className="text-[11px] text-gray-500 leading-tight">Booked<br className="sm:hidden" /> Slots</p>
             </div>
-
-            <Link to="/work?tab=active" className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md hover:border-primary-300 transition-all cursor-pointer">
-              <div className="flex flex-col items-center gap-2 text-center">
-                <div className="w-12 h-12 bg-secondary-50 rounded-xl flex items-center justify-center">
-                  <Users className="w-6 h-6 text-secondary-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-navy-500 font-medium">Active Jobs</p>
-                  <p className="text-3xl font-bold text-navy-900">{activeJobCount}</p>
-                </div>
-              </div>
+            <Link to="/work?tab=active" className="flex flex-col items-center gap-1 text-center p-1 rounded-lg hover:bg-white transition-colors">
+              <Users className="w-5 h-5 text-secondary-500" />
+              <p className="text-2xl sm:text-[28px] font-bold text-navy-900 leading-tight tabular-nums">{activeJobCount}</p>
+              <p className="text-[11px] text-gray-500 leading-tight">Active<br className="sm:hidden" /> Jobs</p>
             </Link>
-
-            <button
-              onClick={() => setShowSubscriptionModal(true)}
-              className="bg-white rounded-2xl border border-primary-200 shadow-sm p-6 hover:shadow-md transition-all cursor-pointer text-center"
-            >
-              <div className="flex flex-col items-center gap-2">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isProUser ? 'bg-secondary-100' : 'bg-gray-100'}`}>
-                  <Crown className={`w-6 h-6 ${isProUser ? 'text-secondary-600' : 'text-gray-500'}`} />
-                </div>
-                <div>
-                  <p className="text-sm text-navy-500 font-medium">Your Plan</p>
-                  <p className="text-xl font-bold text-navy-900">
-                    {isProUser ? 'Pro' : 'Free'}
-                  </p>
-                  {!isProUser && <p className="text-xs text-primary-600 font-medium mt-1">Upgrade for more</p>}
-                </div>
-              </div>
+            <button onClick={() => setShowSubscriptionModal(true)} className="flex flex-col items-center gap-1 text-center p-1 rounded-lg hover:bg-white transition-colors">
+              <Crown className={`w-5 h-5 ${isProUser ? 'text-secondary-500' : 'text-gray-400'}`} />
+              <p className="text-2xl sm:text-[28px] font-bold text-navy-900 leading-tight">{isProUser ? 'Pro' : 'Free'}</p>
+              <p className="text-[11px] text-gray-500 leading-tight">Your<br className="sm:hidden" /> Plan</p>
             </button>
           </div>
         </CollapsibleSection>

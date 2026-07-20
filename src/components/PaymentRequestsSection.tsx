@@ -227,8 +227,10 @@ export default function PaymentRequestsSection() {
     setMarkingId(null);
   };
 
-  // Nothing to show for solo tradies with no requests billed to them.
-  if (!loading && !isEmployedWorker && receivedRequests.length === 0) return null;
+  // Render nothing while loading (no page-top spinner flash), and nothing at
+  // all for solo tradies with no requests billed to them.
+  if (loading) return null;
+  if (!isEmployedWorker && receivedRequests.length === 0) return null;
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
@@ -239,7 +241,7 @@ export default function PaymentRequestsSection() {
           </div>
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-gray-900">Payment requests</h2>
-            <p className="text-xs text-gray-500 truncate">
+            <p className="text-xs text-gray-500">
               Paid outside the platform by bank transfer — recorded here for both sides.
             </p>
           </div>

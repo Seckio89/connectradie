@@ -456,6 +456,12 @@ body {
     padding-top: max(env(safe-area-inset-top, 0px), 12px) !important;
   }
 
+  /* Sticky top header (Payouts etc.): keep the hamburger/logo BELOW the phone's
+     status bar — env() alone resolves to 0 in some Android WebViews. */
+  header[class*="sticky"][class*="top-0"] {
+    padding-top: max(env(safe-area-inset-top, 0px), 12px) !important;
+  }
+
   /* Sidebar nav: ensure it scrolls and items are compact */
   aside[class*="fixed"][class*="z-50"] nav {
     overflow-y: auto !important;

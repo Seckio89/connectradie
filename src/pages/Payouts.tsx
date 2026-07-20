@@ -37,6 +37,55 @@ export default function Payouts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [connectLoading, setConnectLoading] = useState(false);
+
+  // ── Instant payout (opt-in; standard stays free + default) ────────────────
+  const [instantStatus, setInstantStatus] = useState<{
+    eligible: boolean; reason: string | null; instantAvailable: number;
+    feeCents: number; netCents: number; cardLast4: string | null;
+  } | null>(null);
+  const [instantBusy, setInstantBusy] = useState(false);
+  const [instantDone, setInstantDone] = useState<string | null>(null);
+  const [instantError, setInstantError] = useState('');
+  const [payoutPref, setPayoutPref] = useState<'standard' | 'instant' | 'ask'>('standard');
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [{ data: st }, { data: td }] = await Promise.all([
+          supabase.functions.invoke('instant-payout', { body: { action: 'status' } }),
+          supabase.from('tradie_details').select('payout_speed_preference').eq('profile_id', user?.id ?? '').maybeSingle(),
+        ]);
+        if (cancelled) return;
+        if (st && !st.error) setInstantStatus(st);
+        const pref = (td as { payout_speed_preference?: string } | null)?.payout_speed_preference;
+        if (pref === 'standard' || pref === 'instant' || pref === 'ask') setPayoutPref(pref);
+      } catch { /* instant stays hidden */ }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  const runInstantPayout = async () => {
+    setInstantBusy(true); setInstantError('');
+    try {
+      const { data: res, error } = await supabase.functions.invoke('instant-payout', { body: { action: 'payout' } });
+      if (error || res?.error) {
+        let msg = res?.error as string | undefined;
+        if (!msg && error) { try { msg = (await (error as { context?: Response }).context?.json())?.error; } catch { /* opaque */ } }
+        setInstantError(msg || 'Could not send the instant payout.');
+      } else {
+        setInstantDone(`$${(res.amountCents / 100).toFixed(2)} sent to your card${res.cardLast4 ? ` ••••${res.cardLast4}` : ''} — arrives within minutes.`);
+        setInstantStatus(null); // balance changed — hide until next load
+      }
+    } catch { setInstantError('Could not send the instant payout.'); }
+    setInstantBusy(false);
+  };
+
+  const savePayoutPref = async (value: 'standard' | 'instant' | 'ask') => {
+    setPayoutPref(value);
+    try { await supabase.functions.invoke('instant-payout', { body: { action: 'preference', value } }); } catch { /* keep local */ }
+  };
   const [escrowHeld, setEscrowHeld] = useState(0);
   const [escrowCount, setEscrowCount] = useState(0);
   // Soonest completed_at (ms epoch) among unreleased completed jobs, for the
@@ -723,6 +772,16 @@ export default function Payouts() {
     return `Auto-releases in ${m}m`;
   })();
   const onItsWay = (accountDetails?.balance?.available ?? 0) + (accountDetails?.balance?.pending ?? 0);
+  // A concrete arrival estimate beats "2–3 days": ~3 business days from today.
+  const bankArrivalLabel = (() => {
+    const d = new Date();
+    let added = 0;
+    while (added < 3) {
+      d.setDate(d.getDate() + 1);
+      if (d.getDay() !== 0 && d.getDay() !== 6) added++;
+    }
+    return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+  })();
   const externalTotal = useMemo(() => externalPayments.reduce((s, p) => s + p.amount, 0), [externalPayments]);
   const computedTotalEarned = escrowAmount + onItsWay + totalPaidOut + externalTotal;
   const methodLabel = (m: string | null) =>
@@ -928,44 +987,75 @@ export default function Payouts() {
               </div>
             ) : null}
 
-            {/* Summary */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
-              <div className="flex items-baseline justify-between mb-5">
-                <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Earned</p>
-                  <p className="text-3xl font-bold text-gray-900">{formatCurrency(computedTotalEarned)}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {escrowAmount > 0 && (
-                  <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Clock className="w-3.5 h-3.5 text-amber-500" />
-                      <span className="text-xs font-medium text-amber-700">Waiting for Client</span>
-                    </div>
-                    <p className="text-xl font-bold text-amber-900">{formatCurrency(escrowAmount)}</p>
-                    <p className="text-xs text-amber-600 mt-1">
-                      {escrowCount} job{escrowCount !== 1 ? 's' : ''} · {autoReleaseLabel}
+            {/* Summary — one big number + three plain-language status rows.
+                Deliberately simple: a tradie should know in 3 seconds how much
+                they've earned, where the money is, and when it arrives. */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
+              <p className="text-sm text-gray-500">You’ve earned</p>
+              <p className="text-4xl font-bold text-gray-900 mt-0.5 tabular-nums">{formatCurrency(computedTotalEarned)}</p>
+
+              <div className="mt-5 space-y-2">
+                {/* 🟡 Pending client review */}
+                <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-100 px-4 py-3">
+                  <Clock className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-amber-900 tabular-nums">{formatCurrency(escrowAmount)} — Pending</p>
+                    <p className="text-xs text-amber-700">
+                      {escrowAmount > 0 ? autoReleaseLabel : 'Nothing waiting on a client'}
                     </p>
                   </div>
-                )}
-                {onItsWay > 0 && (
-                  <div className="rounded-xl bg-secondary-50 border border-secondary-200 p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Clock className="w-3.5 h-3.5 text-secondary-500" />
-                      <span className="text-xs font-medium text-secondary-700">On Its Way</span>
+                </div>
+
+                {/* 🔵 Heading to the bank */}
+                <div className="rounded-xl bg-secondary-50 border border-secondary-100 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <ExternalLink className="w-5 h-5 text-secondary-500 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-secondary-900 tabular-nums">{formatCurrency(onItsWay)} — Heading to your bank</p>
+                      <p className="text-xs text-secondary-700">
+                        {onItsWay > 0 ? `Should arrive by ${bankArrivalLabel}` : 'Nothing in transit'}
+                      </p>
                     </div>
-                    <p className="text-xl font-bold text-secondary-900">{formatCurrency(onItsWay)}</p>
-                    <p className="text-xs text-secondary-600 mt-1">Transferring to your bank (2–3 days)</p>
                   </div>
-                )}
-                <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Banknote className="w-3.5 h-3.5 text-emerald-500" />
-                    <span className="text-xs font-medium text-emerald-700">Paid to Bank</span>
+
+                  {/* ⚡ Opt-in instant payout — shown only when Stripe says the
+                      account is eligible AND there's an instant-available balance.
+                      Standard (free) stays the default; this is a per-payout choice. */}
+                  {instantDone ? (
+                    <p className="mt-2.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+                      💰 {instantDone}
+                    </p>
+                  ) : instantStatus?.eligible && instantStatus.netCents > 0 ? (
+                    <div className="mt-2.5 rounded-lg bg-white border border-secondary-200 px-3 py-2.5">
+                      <p className="text-xs text-gray-600">
+                        Payout: <span className="font-semibold">{formatCurrency(instantStatus.instantAvailable)}</span>
+                        {' — '}Instant fee: <span className="font-semibold">{formatCurrency(instantStatus.feeCents)}</span>
+                        {' — '}You receive: <span className="font-semibold text-gray-900">{formatCurrency(instantStatus.netCents)}</span>
+                        {' — '}arrives in minutes{instantStatus.cardLast4 ? ` on ••••${instantStatus.cardLast4}` : ''}
+                      </p>
+                      <button
+                        onClick={runInstantPayout}
+                        disabled={instantBusy}
+                        className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-600 text-white text-xs font-semibold rounded-lg hover:bg-secondary-700 disabled:opacity-50 transition-colors"
+                      >
+                        {instantBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '⚡'} Get it now — instant payout
+                      </button>
+                      {instantError && <p className="mt-1.5 text-xs text-red-600">{instantError}</p>}
+                    </div>
+                  ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'no_debit_card' && onItsWay > 0 && payoutPref !== 'standard' ? (
+                    <p className="mt-2.5 text-[11px] text-gray-500">
+                      Instant payouts require a Visa or Mastercard debit card — add one in Bank Settings to enable them.
+                    </p>
+                  ) : null}
+                </div>
+
+                {/* 🟢 In the account */}
+                <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-emerald-900 tabular-nums">{formatCurrency(totalPaidOut)} — In your account</p>
+                    <p className="text-xs text-emerald-700">{totalPaidOut > 0 ? '✓ Received' : 'Payouts land here once they clear'}</p>
                   </div>
-                  <p className="text-xl font-bold text-emerald-900">{formatCurrency(totalPaidOut)}</p>
-                  <p className="text-xs text-emerald-600 mt-1">{totalPayoutCount} transfer{totalPayoutCount !== 1 ? 's' : ''}</p>
                 </div>
               </div>
             </div>
@@ -994,16 +1084,16 @@ export default function Payouts() {
               </div>
             )}
 
-            {/* Stripe Dashboard link */}
+            {/* Bank settings + payout speed preference */}
             {accountDetails.dashboardUrl && (
-              <div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 {onboardingComplete === false ? (
                   <button
                     onClick={() => setOnboardingWarning(true)}
                     className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    Manage Bank Details & Payout Schedule
+                    Bank Settings
                   </button>
                 ) : (
                   <a
@@ -1013,9 +1103,21 @@ export default function Payouts() {
                     className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    Manage Bank Details & Payout Schedule
+                    Bank Settings
                   </a>
                 )}
+                <label className="flex items-center gap-2 text-xs text-gray-500">
+                  Payout speed:
+                  <select
+                    value={payoutPref}
+                    onChange={(e) => savePayoutPref(e.target.value as 'standard' | 'instant' | 'ask')}
+                    className="px-2.5 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="standard">Standard — free (2–3 business days)</option>
+                    <option value="instant">Instant — 1.5% fee, min $2 (minutes)</option>
+                    <option value="ask">Ask me each time</option>
+                  </select>
+                </label>
               </div>
             )}
 
