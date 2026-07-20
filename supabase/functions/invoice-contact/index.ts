@@ -126,7 +126,7 @@ Deno.serve(async (req: Request) => {
 
       const { data: oneOffTradie } = await supabase
         .from("profiles")
-        .select("stripe_connect_account_id, stripe_connect_onboarding_complete, full_name")
+        .select("stripe_connect_account_id, stripe_connect_onboarding_complete, full_name, platform_fee_override_bps")
         .eq("id", oneOff.tradie_id)
         .maybeSingle();
       const { data: oneOffDetails } = await supabase
@@ -140,7 +140,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const oneOffTier = resolveTradieTier(oneOffDetails?.subscription_tier);
-      const oneOffPlatformFee = Math.round(calculatePlatformFee(jobTotal, oneOffTier) * 100);
+      const oneOffPlatformFee = Math.round(calculatePlatformFee(jobTotal, oneOffTier, oneOffTradie?.platform_fee_override_bps ?? null) * 100);
       const oneOffProcessingFee = calculateProcessingFeeCents(jobTotalCents);
       const oneOffLabel = (oneOff.title || "Job").trim();
       const oneOffBusiness = oneOffDetails?.business_name || oneOffTradie?.full_name || "your tradie";
@@ -315,7 +315,7 @@ Deno.serve(async (req: Request) => {
     // 3. The tradie (business identity + Connect + bank details for external).
     const { data: tradieProfile } = await supabase
       .from("profiles")
-      .select("stripe_connect_account_id, stripe_connect_onboarding_complete, full_name, abn_number, is_gst_registered, bank_name, bank_bsb, bank_account_number, bank_account_name")
+      .select("stripe_connect_account_id, stripe_connect_onboarding_complete, full_name, abn_number, is_gst_registered, bank_name, bank_bsb, bank_account_number, bank_account_name, platform_fee_override_bps")
       .eq("id", job.tradie_id)
       .maybeSingle();
     const { data: tradieDetails } = await supabase
@@ -400,7 +400,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const tier = resolveTradieTier(tradieDetails?.subscription_tier);
-    const platformFeeCents = Math.round(calculatePlatformFee(total, tier) * 100);
+    const platformFeeCents = Math.round(calculatePlatformFee(total, tier, tradieProfile?.platform_fee_override_bps ?? null) * 100);
     const processingFee = calculateProcessingFeeCents(totalCents);
 
     const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") || "";

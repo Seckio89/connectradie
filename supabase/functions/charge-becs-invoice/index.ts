@@ -92,7 +92,13 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     const tier = resolveTradieTier(tradieDetails?.subscription_tier);
-    const platformFeeCents = Math.round(calculatePlatformFee(Number(invoice.total), tier) * 100);
+    const { data: feeOverrideRow } = await supabase
+      .from("profiles")
+      .select("platform_fee_override_bps")
+      .eq("id", invoice.tradie_id)
+      .maybeSingle();
+    const overrideBps = feeOverrideRow?.platform_fee_override_bps ?? null;
+    const platformFeeCents = Math.round(calculatePlatformFee(Number(invoice.total), tier, overrideBps) * 100);
     const processingFeeCents = calculateBecsProcessingFeeCents(totalCents);
     const chargeAmount = totalCents + processingFeeCents;
 

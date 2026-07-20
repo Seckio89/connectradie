@@ -392,7 +392,7 @@ Deno.serve(async (req: Request) => {
     if (awaitingErr) {
       console.error("Failed to fetch awaiting-bank-payout invoices:", awaitingErr);
     } else {
-      const tradieCache = new Map<string, { connectId: string | null; onboarded: boolean; tier: ReturnType<typeof resolveTradieTier> }>();
+      const tradieCache = new Map<string, { connectId: string | null; onboarded: boolean; tier: ReturnType<typeof resolveTradieTier>; overrideBps: number | null }>();
       for (const inv of awaiting || []) {
         if (!inv.tradie_id) { bankPayouts.push({ invoice_id: inv.id, outcome: "skipped", reason: "no tradie_id" }); continue; }
 
@@ -400,7 +400,7 @@ Deno.serve(async (req: Request) => {
         if (!meta) {
           const { data: prof } = await supabase
             .from("profiles")
-            .select("stripe_connect_account_id, stripe_connect_onboarding_complete")
+            .select("stripe_connect_account_id, stripe_connect_onboarding_complete, platform_fee_override_bps")
             .eq("id", inv.tradie_id)
             .maybeSingle();
           const { data: td } = await supabase
@@ -412,6 +412,7 @@ Deno.serve(async (req: Request) => {
             connectId: prof?.stripe_connect_account_id ?? null,
             onboarded: !!prof?.stripe_connect_onboarding_complete,
             tier: resolveTradieTier(td?.subscription_tier),
+            overrideBps: prof?.platform_fee_override_bps ?? null,
           };
           tradieCache.set(inv.tradie_id, meta);
         }
@@ -435,7 +436,7 @@ Deno.serve(async (req: Request) => {
           }
         } catch { /* fall back to tier-based compute below */ }
         if (platformFeeCents === null || Number.isNaN(platformFeeCents)) {
-          platformFeeCents = Math.round(calculatePlatformFee(totalDollars, meta.tier) * 100);
+          platformFeeCents = Math.round(calculatePlatformFee(totalDollars, meta.tier, meta.overrideBps) * 100);
         }
         const netCents = Math.round(totalDollars * 100) - platformFeeCents;
         if (netCents <= 0) { bankPayouts.push({ invoice_id: inv.id, outcome: "skipped", reason: "non-positive net" }); continue; }

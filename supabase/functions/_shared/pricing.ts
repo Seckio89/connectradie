@@ -84,19 +84,28 @@ export function resolveTradieTier(subscriptionTier: string | null | undefined): 
 // ---------------------------------------------------------------------------
 // Platform fee calculation
 // ---------------------------------------------------------------------------
-export function calculatePlatformFee(jobValueDollars: number, tier: TradieTier): number {
+export function calculatePlatformFee(
+  jobValueDollars: number,
+  tier: TradieTier,
+  overrideBps?: number | null,
+): number {
   // Live money path now charges the ADVERTISED V2 schedule (see /pricing and
   // TIER_SCHEDULES below): Free 10% / cap $900, Pro 7% / cap $630, PM 3% / cap
   // $270 — with the reduced marginal rate on the part of a job above $3,000.
   // This replaces the legacy sliding brackets so what a tradie is charged equals
   // what the pricing page promises. pro_plus (retired, unadvertised) settles at
   // the Pro schedule.
+  //
+  // overrideBps (profiles.platform_fee_override_bps) forces a flat rate on the
+  // whole amount, still subject to the tier cap. Used for grandfathering and for
+  // the platform owner's 0% commission (override 0 → zero fee; V2 treats 0 as a
+  // real rate, not "no override").
   const schedule =
     tier === "pm" ? TIER_SCHEDULES.pm :
     tier === "free" ? TIER_SCHEDULES.free :
     TIER_SCHEDULES.pro; // pro + pro_plus
   const cents = Math.round(Math.max(0, jobValueDollars) * 100);
-  return calculatePlatformFeeCentsV2(cents, schedule).feeCents / 100;
+  return calculatePlatformFeeCentsV2(cents, schedule, overrideBps).feeCents / 100;
 }
 
 // ---------------------------------------------------------------------------

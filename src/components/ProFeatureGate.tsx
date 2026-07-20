@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Crown, Lock } from 'lucide-react';
-import { type ProFeature, getFeatureLabel, getFeatureDescription } from '../lib/subscription';
+import { type ProFeature, getFeatureLabel, getFeatureDescription, isPlatformAdmin } from '../lib/subscription';
+import { useAuth } from '../contexts/AuthContext';
 import SubscriptionModal from './SubscriptionModal';
 
 interface ProFeatureGateProps {
@@ -11,9 +12,11 @@ interface ProFeatureGateProps {
 }
 
 export default function ProFeatureGate({ feature, isProUser, children, className = '' }: ProFeatureGateProps) {
+  const { profile } = useAuth();
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
-  if (isProUser) {
+  // The platform owner/admin passes every gate regardless of the caller's prop.
+  if (isProUser || isPlatformAdmin(profile)) {
     return <>{children}</>;
   }
 

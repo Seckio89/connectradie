@@ -180,10 +180,11 @@ Deno.serve(async (req: Request) => {
     // Amounts stored in `payments.amount` are always ex-GST — GST is a Stripe line item.
     const { data: tradieProfile } = await supabase
       .from("profiles")
-      .select("is_gst_registered")
+      .select("is_gst_registered, platform_fee_override_bps")
       .eq("id", quote.tradie_id)
       .maybeSingle();
     const tradieIsGstRegistered = tradieProfile?.is_gst_registered === true;
+    const tradieFeeOverrideBps = tradieProfile?.platform_fee_override_bps ?? null;
 
     // -----------------------------------------------------------------------
     // CASE C — No change
@@ -377,7 +378,8 @@ Deno.serve(async (req: Request) => {
     const tradieTier = resolveTradieTier(tradieSubRecord?.subscription_tier);
     const additionalPlatformFeeDollars = calculatePlatformFee(
       diffCents / 100,
-      tradieTier
+      tradieTier,
+      tradieFeeOverrideBps
     );
     const additionalPlatformFeeCents = Math.round(
       additionalPlatformFeeDollars * 100

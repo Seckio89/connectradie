@@ -396,13 +396,25 @@ Deno.serve(async (req: Request) => {
     let packRemaining = 0;                    // bonus credits across active packs
     let fundedBy: "monthly" | "pack" = "monthly";
     try {
+      // Platform owner / admin: unlimited AI estimates, never metered.
+      const { data: adminRow } = await supabase
+        .from("profiles")
+        .select("is_admin, role")
+        .eq("id", user.id)
+        .maybeSingle();
+      const isPlatformAdmin =
+        (adminRow as { is_admin?: boolean | null; role?: string | null } | null)?.is_admin === true ||
+        (adminRow as { is_admin?: boolean | null; role?: string | null } | null)?.role === "admin";
+
       const tier = await resolveTier(supabase, user.id);
       const { data: tierRow } = await supabase
         .from("pricing_tiers")
         .select("ai_estimates_monthly_limit")
         .eq("id", tier)
         .maybeSingle();
-      usageLimit = (tierRow as { ai_estimates_monthly_limit: number | null } | null)?.ai_estimates_monthly_limit ?? null;
+      usageLimit = isPlatformAdmin
+        ? null
+        : (tierRow as { ai_estimates_monthly_limit: number | null } | null)?.ai_estimates_monthly_limit ?? null;
       if (usageLimit != null) {
         const { count } = await supabase
           .from("ai_estimate_usage")

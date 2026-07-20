@@ -553,19 +553,19 @@ async function handleEvent(event: Stripe.Event) {
               .maybeSingle();
             const fallbackTier = resolveTradieTier(tradieDetails?.subscription_tier);
             const fallbackProcessingFee = calculateProcessingFeeCents(totalCents);
-            const fallbackPlatformFee = Math.round(calculatePlatformFee(Number(invoice.total), fallbackTier) * 100);
 
             // Route the card fallback directly to the tradie when their Connect account
             // is ready. If not, fall back to a legacy (platform-collected) session so the
             // client can still pay — the checkout.session.completed handler then transfers.
             const { data: fbConnect } = await supabase
               .from('profiles')
-              .select('stripe_connect_account_id, stripe_connect_onboarding_complete')
+              .select('stripe_connect_account_id, stripe_connect_onboarding_complete, platform_fee_override_bps')
               .eq('id', invoice.tradie_id)
               .maybeSingle();
             const fbDestination = fbConnect?.stripe_connect_onboarding_complete
               ? fbConnect.stripe_connect_account_id
               : null;
+            const fallbackPlatformFee = Math.round(calculatePlatformFee(Number(invoice.total), fallbackTier, fbConnect?.platform_fee_override_bps ?? null) * 100);
 
             const fallbackLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
               { price_data: { currency: 'aud', unit_amount: totalCents, product_data: { name: 'Recurring Service Invoice (Card Fallback)' } }, quantity: 1 },

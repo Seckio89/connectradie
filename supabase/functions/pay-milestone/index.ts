@@ -153,7 +153,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: tradieProfile } = await supabase
       .from("profiles")
-      .select("is_gst_registered, stripe_connect_account_id, stripe_connect_onboarding_complete")
+      .select("is_gst_registered, stripe_connect_account_id, stripe_connect_onboarding_complete, platform_fee_override_bps")
       .eq("id", job.tradie_id)
       .maybeSingle();
     const tradieIsGstRegistered = tradieProfile?.is_gst_registered === true;
@@ -173,7 +173,7 @@ Deno.serve(async (req: Request) => {
     const processingFee = calculateProcessingFeeCents(baseAmount);
 
     // Calculate platform fee based on tradie's subscription tier
-    const platformFeeDollars = calculatePlatformFee(milestoneDollars, tradieSubscriptionTier);
+    const platformFeeDollars = calculatePlatformFee(milestoneDollars, tradieSubscriptionTier, tradieProfile?.platform_fee_override_bps ?? null);
     const platformFeeCents = Math.round(platformFeeDollars * 100);
 
     // application_fee_amount is what the platform retains from the destination charge.

@@ -270,11 +270,11 @@ Deno.serve(async (req: Request) => {
       // Pre-fetched to avoid N+1 queries — bulk-fetch homeowner profiles
       const { data: allHomeowners } = await supabase
         .from("profiles")
-        .select("id, email, full_name, stripe_connect_onboarding_complete")
+        .select("id, email, full_name, stripe_connect_onboarding_complete, platform_fee_override_bps")
         .in("id", [...new Set([...eligibleClientIds, ...eligibleTradieIds])]);
 
-      const profileMap = new Map<string, { id: string; email: string; full_name: string; stripe_connect_onboarding_complete: boolean }>(
-        (allHomeowners ?? []).map((p: { id: string; email: string; full_name: string; stripe_connect_onboarding_complete: boolean }) =>
+      const profileMap = new Map<string, { id: string; email: string; full_name: string; stripe_connect_onboarding_complete: boolean; platform_fee_override_bps: number | null }>(
+        (allHomeowners ?? []).map((p: { id: string; email: string; full_name: string; stripe_connect_onboarding_complete: boolean; platform_fee_override_bps: number | null }) =>
           [p.id, p]
         )
       );
@@ -356,8 +356,9 @@ Deno.serve(async (req: Request) => {
 
         // Look up tradie subscription tier (O(1) lookup)
         const tradieSubscriptionTier = resolveTradieTier(tradieDetailMap.get(job.tradie_id as string) ?? undefined);
+        const tradieFeeOverrideBps = profileMap.get(job.tradie_id as string)?.platform_fee_override_bps ?? null;
 
-        const platformFeeDollars = calculatePlatformFee(total, tradieSubscriptionTier);
+        const platformFeeDollars = calculatePlatformFee(total, tradieSubscriptionTier, tradieFeeOverrideBps);
         const platformFeeCents = Math.round(platformFeeDollars * 100);
         const totalCents = Math.round(total * 100);
         const processingFee = calculateProcessingFeeCents(totalCents);

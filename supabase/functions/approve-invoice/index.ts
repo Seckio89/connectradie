@@ -149,9 +149,11 @@ Deno.serve(async (req: Request) => {
     // can pay, so fail early with a clear, client-facing message.
     const { data: tradieConnect } = await supabase
       .from("profiles")
-      .select("stripe_connect_account_id, stripe_connect_onboarding_complete")
+      .select("stripe_connect_account_id, stripe_connect_onboarding_complete, platform_fee_override_bps")
       .eq("id", recurringJob?.tradie_id)
       .maybeSingle();
+
+    const overrideBps = tradieConnect?.platform_fee_override_bps ?? null;
 
     const destinationAccount = tradieConnect?.stripe_connect_onboarding_complete
       ? tradieConnect.stripe_connect_account_id
@@ -178,7 +180,7 @@ Deno.serve(async (req: Request) => {
           const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
           const totalCents = Math.round(Number(invoice.total) * 100);
           const processingFeeCents = calculateBecsProcessingFeeCents(totalCents);
-          const platformFeeCents = Math.round(calculatePlatformFee(Number(invoice.total), tier) * 100);
+          const platformFeeCents = Math.round(calculatePlatformFee(Number(invoice.total), tier, overrideBps) * 100);
           const chargeAmount = totalCents + processingFeeCents;
 
           const pi = await stripe.paymentIntents.create({
@@ -228,7 +230,7 @@ Deno.serve(async (req: Request) => {
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
     const totalCents = Math.round(Number(invoice.total) * 100);
     const processingFeeCents = calculateProcessingFeeCents(totalCents);
-    const platformFeeCents = Math.round(calculatePlatformFee(Number(invoice.total), tier) * 100);
+    const platformFeeCents = Math.round(calculatePlatformFee(Number(invoice.total), tier, overrideBps) * 100);
 
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [{
       price_data: {

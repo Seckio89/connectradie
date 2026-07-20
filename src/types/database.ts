@@ -48,6 +48,10 @@ export type Profile = {
   // Progressive onboarding stage: 1 welcome · 2 simplified · 3 almost-there · 4 full.
   onboarding_stage: number;
   is_premium: boolean;
+  // Platform-owner/admin entitlement flag — grants full feature access + fee
+  // exemption independently of `role` (which drives the user's experience and
+  // public appearance). See isPlatformAdmin() in lib/subscription.ts.
+  is_admin: boolean;
   subscription_expiry: string | null;
   push_enabled: boolean;
   sms_alerts_enabled: boolean;

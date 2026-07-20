@@ -83,7 +83,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: tradie } = await supabase
       .from("profiles")
-      .select("full_name, email, avatar_url, phone, stripe_connect_account_id, stripe_connect_onboarding_complete, external_pay_allowed, abn_number, abn_verified, abn_entity_name, license_number, license_state, license_class, license_verified, is_gst_registered, is_identity_verified, insurance_policy, created_at")
+      .select("full_name, email, avatar_url, phone, stripe_connect_account_id, stripe_connect_onboarding_complete, external_pay_allowed, abn_number, abn_verified, abn_entity_name, license_number, license_state, license_class, license_verified, is_gst_registered, is_identity_verified, insurance_policy, created_at, platform_fee_override_bps")
       .eq("id", quote.tradie_id)
       .maybeSingle();
 
@@ -206,7 +206,7 @@ Deno.serve(async (req: Request) => {
           const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
           const chargeCents = Math.round(chargeDollars * 100);
           const tier = resolveTradieTier(td?.subscription_tier);
-          const platformFeeCents = Math.round(calculatePlatformFee(chargeDollars, tier) * 100);
+          const platformFeeCents = Math.round(calculatePlatformFee(chargeDollars, tier, tradie?.platform_fee_override_bps ?? null) * 100);
           const processingFeeCents = calculateProcessingFeeCents(chargeCents);
 
           // Reuse an existing OPEN checkout session instead of minting a second

@@ -117,11 +117,25 @@ export function getFeeSummary(tier: SubscriptionTier): string {
   return `${highest * 100}%–${lowest * 100}% sliding (capped at $${config.cap})`;
 }
 
-export function isPro(subscriptionTier?: string, isPremium?: boolean): boolean {
-  return subscriptionTier === 'pro' || subscriptionTier === 'pro_plus' || subscriptionTier === 'business' || isPremium === true;
+/**
+ * Platform-owner / admin entitlement check. The owner (and any admin) gets full
+ * Pro/PM access, no commission, and unlimited limits — independently of their
+ * `role` (which stays 'tradie'/'client' so they still look and behave like a
+ * normal user to clients). Accepts anything with the two flags so it works with
+ * a full Profile or a lightweight `{ is_admin, role }`.
+ */
+export function isPlatformAdmin(
+  profile?: { is_admin?: boolean | null; role?: string | null } | null,
+): boolean {
+  return profile?.is_admin === true || profile?.role === 'admin';
 }
 
-export function getCurrentTier(subscriptionTier?: string, isPremium?: boolean): SubscriptionTier {
+export function isPro(subscriptionTier?: string, isPremium?: boolean, isAdmin?: boolean): boolean {
+  return isAdmin === true || subscriptionTier === 'pro' || subscriptionTier === 'pro_plus' || subscriptionTier === 'business' || isPremium === true;
+}
+
+export function getCurrentTier(subscriptionTier?: string, isPremium?: boolean, isAdmin?: boolean): SubscriptionTier {
+  if (isAdmin === true) return 'pro';
   if (subscriptionTier === 'pro_plus') return 'pro_plus';
   if (subscriptionTier === 'pro' || subscriptionTier === 'business' || isPremium === true) return 'pro';
   return 'free';

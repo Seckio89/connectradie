@@ -165,7 +165,7 @@ Deno.serve(async (req: Request) => {
         tradieId = job.tradie_id;
         const { data: tradieProfile } = await supabase
           .from("profiles")
-          .select("is_gst_registered, stripe_connect_account_id, stripe_connect_onboarding_complete")
+          .select("is_gst_registered, stripe_connect_account_id, stripe_connect_onboarding_complete, platform_fee_override_bps")
           .eq("id", job.tradie_id)
           .maybeSingle();
         tradieIsGstRegistered = tradieProfile?.is_gst_registered === true;
@@ -186,7 +186,7 @@ Deno.serve(async (req: Request) => {
           .maybeSingle();
 
         const tradieSubscriptionTier = resolveTradieTier(tradieSubRecord?.subscription_tier);
-        const platformFeeDollars = calculatePlatformFee(payment.amount / 100, tradieSubscriptionTier);
+        const platformFeeDollars = calculatePlatformFee(payment.amount / 100, tradieSubscriptionTier, tradieProfile?.platform_fee_override_bps ?? null);
         platformFeeCents = Math.round(platformFeeDollars * 100);
       }
     }

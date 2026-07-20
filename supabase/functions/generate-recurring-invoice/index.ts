@@ -195,17 +195,17 @@ Deno.serve(async (req: Request) => {
 
     const tradieSubscriptionTier = resolveTradieTier(tradieSubRecord?.subscription_tier);
 
-    const platformFeeDollars = calculatePlatformFee(total, tradieSubscriptionTier);
-    const platformFeeCents = Math.round(platformFeeDollars * 100);
-
     // Resolve the tradie's Connect account — payments route directly to it (destination
     // charge). If onboarding isn't complete, neither BECS nor card can route funds, so
     // fail early rather than creating an invoice that can't be charged.
     const { data: tradieConnect } = await supabase
       .from("profiles")
-      .select("stripe_connect_account_id, stripe_connect_onboarding_complete")
+      .select("stripe_connect_account_id, stripe_connect_onboarding_complete, platform_fee_override_bps")
       .eq("id", job.tradie_id)
       .maybeSingle();
+
+    const platformFeeDollars = calculatePlatformFee(total, tradieSubscriptionTier, tradieConnect?.platform_fee_override_bps ?? null);
+    const platformFeeCents = Math.round(platformFeeDollars * 100);
 
     const destinationAccount = tradieConnect?.stripe_connect_onboarding_complete
       ? tradieConnect.stripe_connect_account_id
