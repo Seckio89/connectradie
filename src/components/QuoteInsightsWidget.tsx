@@ -109,13 +109,13 @@ export default function QuoteInsightsWidget() {
   }
 
   return (
-    <div className="bg-white rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-gray-200 px-4 sm:px-6 py-4 sm:py-6">
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
-            <BarChart3 className="w-5 h-5 text-secondary-600" />
+    <div className="bg-white rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-gray-200 px-4 sm:px-5 py-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-secondary-100 rounded-lg flex items-center justify-center">
+            <BarChart3 className="w-4 h-4 text-secondary-600" />
           </div>
-          <h3 className="font-semibold text-gray-900">Quote Insights</h3>
+          <h3 className="text-base font-semibold text-gray-900">Quote Insights</h3>
         </div>
         <Link
           to="/leads?filter=quoted"
@@ -125,25 +125,26 @@ export default function QuoteInsightsWidget() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-0 sm:gap-3 divide-x sm:divide-x-0 divide-gray-200 mb-5">
-        <div className="p-3 bg-secondary-50 rounded-none sm:rounded-xl border-0 sm:border border-secondary-100 pr-3 sm:pr-3">
-          <div className="flex items-center gap-2 mb-1">
+      {/* Two equal stat cards, tinted to differentiate at a glance. */}
+      <div className="grid grid-cols-2 gap-2.5 mb-4">
+        <div className="p-3 bg-secondary-50 rounded-xl border border-secondary-100">
+          <div className="flex items-center gap-1.5 mb-1">
             <Target className="w-4 h-4 text-secondary-600" />
-            <span className="text-xs text-secondary-600 font-medium">Win Rate</span>
+            <span className="text-xs text-secondary-700 font-medium">Win Rate</span>
           </div>
-          <p className="text-2xl font-bold text-secondary-800">{stats.winRate}%</p>
+          <p className="text-2xl font-bold text-secondary-800 tabular-nums">{stats.winRate}%</p>
         </div>
-        <div className="p-3 bg-white rounded-none sm:rounded-xl border-0 sm:border border-gray-200 pl-3 sm:pl-3">
-          <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="w-4 h-4 text-secondary-600" />
-            <span className="text-xs text-gray-500 font-medium">Quoted Earnings</span>
+        <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+          <div className="flex items-center gap-1.5 mb-1">
+            <DollarSign className="w-4 h-4 text-emerald-600" />
+            <span className="text-xs text-emerald-700 font-medium">Quoted Earnings</span>
           </div>
-          <p className="text-2xl font-bold text-gray-800">${stats.totalEarned.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-emerald-800 tabular-nums">${stats.totalEarned.toLocaleString()}</p>
         </div>
       </div>
 
       <div className="space-y-0 sm:space-y-3 divide-y sm:divide-y-0 divide-gray-100">
-        <div className="flex items-center justify-between text-sm py-3 sm:py-0">
+        <div className="flex items-center justify-between text-sm py-2 sm:py-0">
           <span className="flex items-center gap-2 text-gray-600">
             <span className="w-2 h-2 rounded-full bg-warm-500 sm:hidden" />
             <Clock className="w-4 h-4 text-warm-500 hidden sm:block" />
@@ -151,7 +152,7 @@ export default function QuoteInsightsWidget() {
           </span>
           <span className="font-semibold text-gray-900">{stats.pendingQuotes}</span>
         </div>
-        <div className="flex items-center justify-between text-sm py-3 sm:py-0">
+        <div className="flex items-center justify-between text-sm py-2 sm:py-0">
           <span className="flex items-center gap-2 text-gray-600">
             <span className="w-2 h-2 rounded-full bg-green-500 sm:hidden" />
             <CheckCircle2 className="w-4 h-4 text-green-500 hidden sm:block" />
@@ -159,7 +160,7 @@ export default function QuoteInsightsWidget() {
           </span>
           <span className="font-semibold text-green-700">{stats.wonQuotes}</span>
         </div>
-        <div className="flex items-center justify-between text-sm py-3 sm:py-0">
+        <div className="flex items-center justify-between text-sm py-2 sm:py-0">
           <span className="flex items-center gap-2 text-gray-600">
             <span className="w-2 h-2 rounded-full bg-red-400 sm:hidden" />
             <XCircle className="w-4 h-4 text-red-400 hidden sm:block" />
@@ -169,7 +170,7 @@ export default function QuoteInsightsWidget() {
         </div>
       </div>
 
-      <div className="mt-5 pt-4 border-t border-gray-100">
+      <div className="mt-4 pt-3 border-t border-gray-100">
         <div className="flex items-center justify-between text-sm">
           <span className="text-gray-500">This Month</span>
           <span className="font-semibold text-gray-900">

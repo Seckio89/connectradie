@@ -2212,58 +2212,56 @@ export default function TradieDashboard() {
         </div>
         )}
 
-        {/* Recent Reviews */}
+        {/* Recent Reviews — compact rows: avatar + name + stars + date on one
+            line, with a one-line comment preview only when there's text. */}
         {recentReviews.length > 0 && (
-        <>
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-4 mb-2 sm:hidden mt-8 sm:mt-6">Recent reviews</p>
-          <div className="bg-white rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-gray-200 px-4 sm:px-5 py-4 sm:py-5 mx-0">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-50 rounded-lg">
-                  <Star className="w-5 h-5 text-yellow-500 fill-yellow-400" />
+          <div className="mt-5 bg-white rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-gray-200 px-4 sm:px-5 py-4 mx-0">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-yellow-50 rounded-lg">
+                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Recent Reviews</h3>
+                <h3 className="text-base font-semibold text-gray-900">Recent Reviews</h3>
               </div>
               <Link to="/my-profile" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
                 View All
               </Link>
             </div>
-            <div className="space-y-0 sm:space-y-3 divide-y sm:divide-y-0 divide-gray-100">
+            <div className="divide-y divide-gray-50">
               {recentReviews.map((review) => (
-                <div key={review.id} className="flex items-start gap-3 rounded-none sm:rounded-lg border-x-0 sm:border-x border-b border-surface-200 sm:border last:border-b-0 sm:last:border-b bg-transparent sm:bg-surface-50 px-0 sm:px-3 py-3">
-                  <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
-                    <Users className="w-4 h-4 text-primary-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-sm font-semibold text-gray-900">{review.client_name || 'Client'}</span>
-                      <div className="flex items-center gap-0.5">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-3 h-3 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                          />
-                        ))}
-                      </div>
+                <div key={review.id} className="py-2">
+                  <div className="flex items-center gap-2.5 min-h-[32px]">
+                    <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-[11px] font-bold text-primary-600">
+                        {(review.client_name || 'C').charAt(0).toUpperCase()}
+                      </span>
                     </div>
-                    {review.comment && (
-                      <p className="text-xs text-gray-600 line-clamp-2">{review.comment.replace(/\[Tags:.*?\]/, '').trim()}</p>
-                    )}
-                    <p className="text-xs text-gray-400 mt-1">
-                      {new Date(review.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </p>
+                    <span className="text-sm font-medium text-gray-900 truncate">{review.client_name || 'Client'}</span>
+                    <div className="flex items-center gap-px flex-shrink-0">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-3 h-3 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'}`}
+                        />
+                      ))}
+                    </div>
+                    <span className="ml-auto text-[11px] text-gray-400 flex-shrink-0 tabular-nums">
+                      {new Date(review.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                    </span>
                   </div>
+                  {review.comment && review.comment.replace(/\[Tags:.*?\]/, '').trim() && (
+                    <p className="mt-0.5 pl-[38px] text-xs text-gray-500 line-clamp-1">
+                      {review.comment.replace(/\[Tags:.*?\]/, '').trim()}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
           </div>
-        </>
         )}
 
-
         <SectionErrorBoundary fallbackTitle="Quote insights failed to load">
-          <div className="mt-8 sm:mt-6" data-tour="quote-insights">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-4 mb-2 sm:hidden">Quote insights</p>
+          <div className="mt-5" data-tour="quote-insights">
             <QuoteInsightsWidget />
           </div>
         </SectionErrorBoundary>
