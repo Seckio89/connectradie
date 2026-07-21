@@ -243,6 +243,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
   const [history, setHistory] = useState<{ price: number; title: string; date: string | null }[]>([]);
   const [hoursEdit, setHoursEdit] = useState('');
+  const [materialsEdit, setMaterialsEdit] = useState('');
 
   // "Other" trade: free-text task + the approved-suggestion quick-add chips.
   const [customTask, setCustomTask] = useState('');
@@ -482,6 +483,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
         const est = data as WorkEstimate;
         setResult(est);
         setHoursEdit(String(est.hours));
+        setMaterialsEdit(String(est.materialsCost));
         loadAiUsage(); // re-sync monthly + pack balance from the authoritative source
       }
     } catch { setError('Could not generate an estimate. Please try again.'); }
@@ -494,13 +496,15 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   const priced = useMemo(() => {
     if (!result) return null;
     const hours = enteredHours > 0 ? enteredHours : (Number(hoursEdit) || result.hours);
+    // Tradie can override the AI's materials figure; blank falls back to the AI's.
+    const mats = materialsEdit !== '' ? (Number(materialsEdit) || 0) : result.materialsCost;
     // 'combined' = the crew shares the entered hours, so don't multiply labour
     // by headcount; 'perCleaner' keeps the full hours × crew (each on site).
     const labourEconomics = hoursMode === 'combined' ? { ...economics, workers: 1 } : economics;
-    const per = computePrice(hours, result.materialsCost, labourEconomics, clientSupplies);
+    const per = computePrice(hours, mats, labourEconomics, clientSupplies);
     return { ...per, perVisitTotal: per.total, total: per.total * visits, visits };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, hoursEdit, enteredHours, visits, rate, workers, hoursMode, marginPct, markupPct, callOut, clientSupplies, travelKm, profile?.is_gst_registered]);
+  }, [result, hoursEdit, materialsEdit, enteredHours, visits, rate, workers, hoursMode, marginPct, markupPct, callOut, clientSupplies, travelKm, profile?.is_gst_registered]);
 
   const applyResult = () => {
     if (!result || !priced) return;
@@ -823,6 +827,18 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             )}
           </div>
 
+          {/* Extra details — free text fed to the AI. Answer the sharpening
+              questions here, then Estimate again to tighten the quote. */}
+          <div>
+            <label className="block text-[11px] text-gray-500 mb-1">Add details to sharpen the estimate (optional)</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
+              placeholder="e.g. one-off deep clean, no carpets, after-hours access only, before a health inspection"
+              className={`w-full ${numInput} resize-none`} />
+            {result && result.sharpeningQuestions.length > 0 && (
+              <p className="text-[11px] text-gray-400 mt-1">Answer the questions below here, then tap Estimate again.</p>
+            )}
+          </div>
+
           {aiLimitReached || aiBlocked ? (
             /* Out of estimates — Pro is the prominent option, the pack is secondary. */
             <div className="rounded-xl border border-gray-200 bg-white p-3 space-y-3">
@@ -893,6 +909,15 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               )}
             </div>
           </div>
+
+          {!clientSupplies && (
+            <div className="flex items-center justify-end gap-1.5 text-xs text-gray-500">
+              <span>Materials $</span>
+              <input type="number" min="0" value={materialsEdit} onChange={(e) => setMaterialsEdit(e.target.value)}
+                className="w-20 px-2 py-1 border border-gray-200 rounded text-sm" aria-label="Materials cost" />
+              <span className="text-[11px] text-gray-400">edit if it’s off</span>
+            </div>
+          )}
 
           {result.needsSiteVisit && (
             <div className="flex items-start gap-1.5 text-xs bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 text-amber-800">
