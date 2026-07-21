@@ -1181,6 +1181,10 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
   const days = view === 'week' ? getWeekDays() : [];
   const monthDays = view === 'month' ? getMonthDays() : [];
 
+  // At-a-glance week summary: how many days are open vs how many jobs are on.
+  const weekAvailableDays = days.filter(d => getAvailabilityForDate(d).some(s => s.status === 'available')).length;
+  const weekJobCount = days.reduce((n, d) => n + getJobsForDate(d).length, 0);
+
   const content = (
     <>
       <div className="space-y-5 max-w-[1600px] mx-auto">
@@ -1253,6 +1257,30 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
             </div>
           ) : view === 'week' ? (
             <>
+            {/* Week summary — availability & bookings at a glance (flat, palette-only) */}
+            <div className="px-4 md:px-5 py-3 border-b border-gray-100">
+              <div className="flex items-center bg-emerald-50 border border-emerald-100 rounded-2xl">
+                {isTradie && (
+                  <>
+                    <div className="flex-1 px-5 py-3.5">
+                      <p className="text-2xl font-bold text-gray-900 tabular-nums leading-none">{weekAvailableDays}</p>
+                      <p className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 mt-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        day{weekAvailableDays === 1 ? '' : 's'} available
+                      </p>
+                    </div>
+                    <div className="w-px self-stretch bg-emerald-200/80 my-3" />
+                  </>
+                )}
+                <div className="flex-1 px-5 py-3.5">
+                  <p className="text-2xl font-bold text-gray-900 tabular-nums leading-none">{weekJobCount}</p>
+                  <p className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 mt-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-secondary-500" />
+                    job{weekJobCount === 1 ? '' : 's'} booked
+                  </p>
+                </div>
+              </div>
+            </div>
             <div className="hidden md:grid md:grid-cols-7 md:divide-x divide-gray-100 min-h-[500px]">
               {days.map((day, i) => {
                 const entries = getJobsForDate(day);
@@ -1282,8 +1310,14 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                     </div>
                     <div className="flex-1 p-1.5 space-y-1.5 overflow-y-auto max-h-[600px]">
                       {entries.length === 0 ? (
-                        <div className="h-full flex items-center justify-center">
-                          <p className="text-xs text-gray-300 py-4">{hasAvailable ? 'Available' : 'No jobs'}</p>
+                        <div className="h-full flex items-center justify-center py-4">
+                          {hasAvailable ? (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Available
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-300">No jobs</span>
+                          )}
                         </div>
                       ) : (
                         entries.map(({ job, assignments: jobAssignments, conflictWarning, conflictsWith }) => {
@@ -1439,139 +1473,167 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
               })}
             </div>
 
-            {/* Mobile week list view */}
-            <div className="md:hidden divide-y divide-gray-100" style={{ borderColor: '#eee' }}>
+            {/* Mobile week list — day cards */}
+            <div className="md:hidden p-3 space-y-2.5 bg-gray-50/40">
               {days.map((day, i) => {
                 const entries = getJobsForDate(day);
                 const today = isToday(day);
                 const daySlots = getAvailabilityForDate(day);
                 const hasAvailable = daySlots.some(s => s.status === 'available');
                 const isPastDay = day < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+                const jobCount = entries.length;
 
                 return (
-                  <div key={i} className={isPastDay ? 'opacity-60' : ''}>
-                    {/* Day header */}
-                    <div className={`pl-5 pr-4 py-2 flex items-center justify-between ${today ? 'bg-emerald-50' : 'bg-gray-50'}`} style={{ paddingLeft: '1.25rem' }}>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[11px] font-bold uppercase tracking-wider ${today ? 'text-emerald-700' : 'text-gray-500'}`}>
-                          {day.toLocaleDateString('en-AU', { weekday: 'short' })} {day.getDate()}
-                        </span>
-                        {today && <span className="text-[10px] font-medium text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">Today</span>}
+                  <div
+                    key={i}
+                    className={`flex items-stretch gap-3.5 bg-white border rounded-2xl p-3.5 ${
+                      today ? 'border-emerald-200 ring-2 ring-emerald-100' : 'border-gray-200'
+                    } ${isPastDay ? 'opacity-60' : ''}`}
+                  >
+                    {/* Date badge */}
+                    <div className="text-center min-w-[46px] flex flex-col justify-center">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                        {day.toLocaleDateString('en-AU', { weekday: 'short' })}
+                      </p>
+                      <p className={`text-2xl font-extrabold leading-tight ${today ? 'text-emerald-600' : isPastDay ? 'text-gray-400' : 'text-gray-900'}`}>
+                        {day.getDate()}
+                      </p>
+                    </div>
+
+                    <div className="w-px self-stretch bg-gray-100" />
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      {/* Status line */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {jobCount > 0 ? (
+                          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-secondary-700">
+                            <span className="w-2 h-2 rounded-full bg-secondary-500 flex-shrink-0" />
+                            {jobCount} job{jobCount === 1 ? '' : 's'} booked
+                          </span>
+                        ) : hasAvailable ? (
+                          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                            Available
+                          </span>
+                        ) : isTradie ? (
+                          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-400">
+                            <span className="w-2 h-2 rounded-full bg-gray-300 flex-shrink-0" />
+                            Unavailable
+                          </span>
+                        ) : (
+                          <span className="text-sm font-medium text-gray-400">No jobs</span>
+                        )}
+                        {today && <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">Today</span>}
                       </div>
-                      {daySlots.length > 0 && (
-                        <div className="flex items-center gap-1">
-                          {daySlots.map(slot => (
-                            <span
-                              key={slot.id}
-                              className={`w-1.5 h-1.5 rounded-full ${slot.status === 'available' ? 'bg-green-500' : 'bg-red-400'}`}
-                            />
-                          ))}
+
+                      {jobCount === 0 ? (
+                        <p className="text-xs text-gray-400 mt-1">No jobs booked</p>
+                      ) : (
+                        <div className="mt-2 space-y-1.5">
+                          {entries.map(({ job, assignments: jobAssignments, conflictWarning }) => {
+                            const { category, title } = parseJobDescription(job.description);
+                            const jobTime = job.start_time
+                              ? formatJobTime(job.start_time)
+                              : job.preferred_time_slot
+                              ? (TIME_SLOT_LABELS[job.preferred_time_slot] || job.preferred_time_slot)
+                              : null;
+                            const isUrgent = job.is_emergency || !!conflictWarning;
+
+                            return (
+                              <button
+                                key={job.id}
+                                onClick={() => setSelectedJob(job)}
+                                className={`w-full flex items-center gap-2 text-left rounded-xl border px-3 py-2 transition-colors ${
+                                  isUrgent
+                                    ? 'bg-red-50 border-red-200 active:bg-red-100'
+                                    : 'bg-secondary-50 border-secondary-100 active:bg-secondary-100'
+                                }`}
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className={`text-xs font-semibold truncate ${isUrgent ? 'text-red-700' : 'text-secondary-800'}`}>
+                                      {category ? (title ? `${category} — ${title}` : category) : title}
+                                    </span>
+                                    {job.is_emergency && <span className="text-[9px] font-bold text-red-600 flex-shrink-0">URGENT</span>}
+                                  </div>
+                                  {(jobTime || job.location_address) && (
+                                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-gray-500 min-w-0">
+                                      {jobTime && (
+                                        <span className="inline-flex items-center gap-1 flex-shrink-0">
+                                          <Clock className="w-3 h-3" />{jobTime}
+                                        </span>
+                                      )}
+                                      {job.location_address && (
+                                        <span className="inline-flex items-center gap-1 truncate">
+                                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                                          <span className="truncate">{job.location_address.split(',')[0]}</span>
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {conflictWarning && (
+                                    <span className="inline-flex items-center gap-1 mt-0.5 text-[10px] font-medium text-red-600">
+                                      <AlertCircle className="w-3 h-3" />Time conflict
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Team initials */}
+                                {jobAssignments.length > 0 && (
+                                  <div className="flex -space-x-1 flex-shrink-0">
+                                    {jobAssignments.slice(0, 3).map(a => (
+                                      <div
+                                        key={a.id}
+                                        title={a.member?.invite_name}
+                                        className="w-6 h-6 rounded-full bg-emerald-100 border-2 border-white flex items-center justify-center"
+                                      >
+                                        <span className="text-[10px] font-bold text-emerald-700">{a.member?.invite_name.charAt(0)}</span>
+                                      </div>
+                                    ))}
+                                    {jobAssignments.length > 3 && (
+                                      <div className="w-6 h-6 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center">
+                                        <span className="text-[10px] font-bold text-gray-600">+{jobAssignments.length - 3}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Status badge */}
+                                <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0 ${
+                                  job.status === 'completed' ? 'bg-gray-100 text-gray-500' :
+                                  job.status === 'in_progress' ? 'bg-emerald-100 text-emerald-700' :
+                                  job.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-amber-100 text-amber-700'
+                                }`}>
+                                  {job.status.replace('_', ' ')}
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
-
-                    {/* Jobs list */}
-                    {entries.length === 0 ? (
-                      <div className="pl-5 pr-4 py-3 text-xs text-gray-400" style={{ paddingLeft: '1.25rem' }}>
-                        {hasAvailable ? 'Available — no jobs booked' : 'No jobs'}
-                      </div>
-                    ) : (
-                      <div>
-                        {entries.map(({ job, assignments: jobAssignments, conflictWarning }) => {
-                          const { category, title } = parseJobDescription(job.description);
-                          const accentColor = job.is_emergency || conflictWarning
-                            ? 'border-l-red-500'
-                            : job.status === 'completed'
-                            ? 'border-l-gray-300'
-                            : job.status === 'in_progress'
-                            ? 'border-l-emerald-500'
-                            : job.status === 'accepted'
-                            ? 'border-l-blue-400'
-                            : 'border-l-amber-400';
-
-                          return (
-                            <div
-                              key={job.id}
-                              onClick={() => setSelectedJob(job)}
-                              className={`flex items-center gap-3 pl-5 pr-4 py-3 border-l-4 ${accentColor} cursor-pointer active:bg-gray-50 transition-colors`}
-                              style={{ borderBottom: '0.5px solid #eee', paddingLeft: '1.25rem' }}
-                            >
-                              {/* Job info */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5 mb-0.5">
-                                  {category && (
-                                    <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">{category}</span>
-                                  )}
-                                  {!category && (
-                                    <span className="text-sm font-medium text-gray-900 truncate">{title}</span>
-                                  )}
-                                  {job.is_emergency && (
-                                    <span className="text-[10px] font-semibold text-red-600">URGENT</span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                  {(job.start_time || job.preferred_time_slot) && (
-                                    <span className="flex items-center gap-1">
-                                      <Clock className="w-3 h-3" />
-                                      {job.start_time
-                                        ? formatJobTime(job.start_time)
-                                        : (TIME_SLOT_LABELS[job.preferred_time_slot || ''] || job.preferred_time_slot)}
-                                    </span>
-                                  )}
-                                  {job.location_address && (
-                                    <span className="flex items-center gap-1 truncate">
-                                      <MapPin className="w-3 h-3" />
-                                      <span className="truncate">{job.location_address.split(',')[0]}</span>
-                                    </span>
-                                  )}
-                                </div>
-                                {conflictWarning && (
-                                  <div className="flex items-center gap-1 mt-1 text-[10px] text-red-600 font-medium">
-                                    <AlertCircle className="w-3 h-3" />
-                                    Time conflict
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Team initials on the right */}
-                              {jobAssignments.length > 0 && (
-                                <div className="flex -space-x-1 flex-shrink-0">
-                                  {jobAssignments.slice(0, 3).map(a => (
-                                    <div
-                                      key={a.id}
-                                      title={a.member?.invite_name}
-                                      className="w-7 h-7 rounded-full bg-emerald-100 border-2 border-white flex items-center justify-center"
-                                    >
-                                      <span className="text-[10px] font-bold text-emerald-700">
-                                        {a.member?.invite_name.charAt(0)}
-                                      </span>
-                                    </div>
-                                  ))}
-                                  {jobAssignments.length > 3 && (
-                                    <div className="w-7 h-7 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center">
-                                      <span className="text-[10px] font-bold text-gray-600">+{jobAssignments.length - 3}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Status badge - small */}
-                              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
-                                job.status === 'completed' ? 'bg-gray-100 text-gray-500' :
-                                job.status === 'in_progress' ? 'bg-emerald-100 text-emerald-700' :
-                                job.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
-                                'bg-amber-100 text-amber-700'
-                              }`}>
-                                {job.status.replace('_', ' ')}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
                   </div>
                 );
               })}
+
+              {/* Legend + edit availability (tradie only) */}
+              {isTradie && (
+                <div className="bg-white border border-gray-200 rounded-2xl p-4 mt-1">
+                  <div className="flex items-center gap-5 text-xs text-gray-500">
+                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />Available</span>
+                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-secondary-500" />Scheduled job</span>
+                  </div>
+                  <Link
+                    to="/dashboard"
+                    className="flex items-center justify-between mt-3.5 pt-3.5 border-t border-gray-100 text-sm font-semibold text-emerald-700 active:opacity-70"
+                  >
+                    <span>Edit availability on Dashboard</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              )}
             </div>
             </>
           ) : (
