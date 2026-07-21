@@ -1,0 +1,131 @@
+diff --git a/src/components/QuoteEstimator.tsx b/src/components/QuoteEstimator.tsx
+index 0f5df4b..3b41ec7 100644
+--- a/src/components/QuoteEstimator.tsx
++++ b/src/components/QuoteEstimator.tsx
+@@ -12,7 +12,7 @@
+ 
+ import { useState, useEffect, useMemo, useCallback } from 'react';
+ import { Link } from 'react-router-dom';
+-import { Sparkles, Loader2, Camera, X, AlertTriangle, Check, Info, ChevronDown, HelpCircle, Lock, Package, BarChart3, Plus, Send } from 'lucide-react';
++import { Sparkles, Loader2, Camera, X, AlertTriangle, Check, Info, ChevronDown, HelpCircle, Lock, Package, BarChart3, Plus, Send, Video } from 'lucide-react';
+ import { supabase } from '../lib/supabase';
+ import { useAuth } from '../contexts/AuthContext';
+ import { calculateDistance } from '../hooks/useGeolocation';
+@@ -132,6 +132,61 @@ function fileToDataUrl(file: File): Promise<string> {
+   });
+ }
+ 
++// Pull evenly-spaced still frames from a video entirely on-device, so a tradie
++// can film a quick walk-around instead of lining up many photos. Only the
++// resulting frames (resized JPEGs, same shape as photos) are ever uploaded —
++// the video file itself never leaves the phone.
++function videoToFrames(file: File, count = 6): Promise<string[]> {
++  return new Promise((resolve) => {
++    const video = document.createElement('video');
++    video.muted = true;
++    video.playsInline = true;
++    video.preload = 'auto';
++    const url = URL.createObjectURL(file);
++    const frames: string[] = [];
++    const cleanup = () => URL.revokeObjectURL(url);
++
++    const grab = (time: number) => new Promise<void>((res) => {
++      const onSeeked = () => {
++        video.removeEventListener('seeked', onSeeked);
++        const maxDim = 1280;
++        const w = video.videoWidth || 1280;
++        const h = video.videoHeight || 720;
++        const scale = Math.min(1, maxDim / Math.max(w, h));
++        const canvas = document.createElement('canvas');
++        canvas.width = Math.round(w * scale);
++        canvas.height = Math.round(h * scale);
++        const ctx = canvas.getContext('2d');
++        if (ctx) {
++          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
++          try { frames.push(canvas.toDataURL('image/jpeg', 0.8)); } catch { /* skip frame */ }
++        }
++        res();
++      };
++      video.addEventListener('seeked', onSeeked);
++      video.currentTime = time;
++    });
++
++    video.onloadedmetadata = async () => {
++      const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
++      if (!duration) { cleanup(); resolve([]); return; }
++      // Sample between ~5% and ~95% of the clip to skip black start/end frames.
++      const start = duration * 0.05;
++      const span = duration * 0.9;
++      const n = Math.max(1, count);
++      for (let i = 0; i < n; i++) {
++        const t = n === 1 ? duration / 2 : start + (span * i) / (n - 1);
++        // eslint-disable-next-line no-await-in-loop
++        await grab(Math.min(duration - 0.01, Math.max(0, t)));
++      }
++      cleanup();
++      resolve(frames);
++    };
++    video.onerror = () => { cleanup(); resolve([]); };
++    video.src = url;
++  });
++}
++
+ // Mirror of the backend money math so edits recompute live.
+ function computePrice(hours: number, materialsCost: number, e: Economics, clientSupplies: boolean) {
+   const labour = hours * e.hourlyRate * e.workers;
+@@ -172,6 +227,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
+   const [clientSupplies, setClientSupplies] = useState(false);
+   const [notes, setNotes] = useState('');
+   const [photos, setPhotos] = useState<string[]>([]);
++  const [videoProcessing, setVideoProcessing] = useState(false);
+   const MAX_PHOTOS = 15;
+ 
+   const [econOpen, setEconOpen] = useState(false);
+@@ -373,6 +429,22 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
+     e.target.value = '';
+   };
+ 
++  // Video → still frames, extracted on-device, then added to the photo set so
++  // they feed the estimate exactly like photos. The clip is never uploaded.
++  const handleVideo = async (e: React.ChangeEvent<HTMLInputElement>) => {
++    const file = e.target.files?.[0];
++    e.target.value = '';
++    if (!file) return;
++    const slots = MAX_PHOTOS - photos.length;
++    if (slots <= 0) return;
++    setVideoProcessing(true);
++    try {
++      const frames = await videoToFrames(file, Math.min(6, slots));
++      if (frames.length) setPhotos((prev) => [...prev, ...frames].slice(0, MAX_PHOTOS));
++    } catch { /* skip */ }
++    setVideoProcessing(false);
++  };
++
+   const runEstimate = async () => {
+     // Pre-empt the round-trip when we already know all credits are spent.
+     if (aiLimitReached) { setAiBlocked(true); return; }
+@@ -632,7 +704,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
+           {/* Site photos — wrap across rows; count shows remaining capacity */}
+           <div>
+             <div className="flex items-center justify-between mb-1.5">
+-              <span className="text-xs font-medium text-gray-500">Site photos</span>
++              <span className="text-xs font-medium text-gray-500">Site photos or video</span>
+               <span className="text-xs text-gray-400 tabular-nums">{photos.length}/{MAX_PHOTOS} photos</span>
+             </div>
+             <div className="flex flex-wrap gap-2">
+@@ -650,7 +722,15 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
+                   <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotos} />
+                 </label>
+               )}
++              {photos.length < MAX_PHOTOS && (
++                <label className={`flex flex-col items-center justify-center gap-0.5 w-14 h-14 border border-dashed border-gray-300 rounded-lg text-[10px] text-gray-500 cursor-pointer hover:bg-gray-50 ${videoProcessing ? 'opacity-60 pointer-events-none' : ''}`}>
++                  {videoProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
++                  {videoProcessing ? 'Frames…' : 'Video'}
++                  <input type="file" accept="video/*" className="hidden" onChange={handleVideo} disabled={videoProcessing} />
++                </label>
++              )}
+             </div>
++            <p className="text-[11px] text-gray-400 mt-1.5">Add a short walk-around video — we’ll pull the key frames on your device to help estimate. The video isn’t uploaded.</p>
+           </div>
+ 
+           {/* Anonymised area market range — Pro/PM see the numbers; free tier a
