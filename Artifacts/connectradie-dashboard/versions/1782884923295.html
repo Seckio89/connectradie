@@ -1,0 +1,247 @@
+<!doctype html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Connectradie Dashboard",
+  "schemaVersion": 1,
+  "description": "Live ConnecTradie business dashboard. Pulls platform KPIs (jobs, users, payments, reviews, quotes, notifications) live from Supabase via execute_sql, recent unread email from Gmail, and the week-ahead from Google Calendar. Refreshes from source each time it's opened.",
+  "mcpTools": [
+    "mcp__70128e3c-00a3-4c6b-aa45-a7eb7a3d1895__execute_sql",
+    "mcp__56164275-de74-481e-a103-dd14a483a6d3__search_threads",
+    "mcp__df0f65ac-8837-4f3f-9b42-9cb4025228a9__list_events"
+  ],
+  "mcpServerNames": [
+    "Supabase",
+    "Gmail",
+    "Google Calendar"
+  ]
+}
+</script>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ConnecTradie — Live Business Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root{ color-scheme: light; }
+*{ box-sizing:border-box; }
+body{ margin:0; background:#f6f7f9; color:#1a1d21; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+.wrap{ max-width:1080px; margin:0 auto; padding:20px; }
+header.top{ display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:4px; }
+h1{ font-size:20px; margin:0; }
+.sub{ color:#6b7280; font-size:13px; }
+.updated{ color:#6b7280; font-size:12px; }
+.grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:16px 0; }
+.card{ background:#fff; border:1px solid #e6e8eb; border-radius:12px; padding:14px 16px; }
+.card .label{ font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:.03em; }
+.card .value{ font-size:26px; font-weight:650; margin-top:6px; line-height:1.1; }
+.card .foot{ font-size:12px; color:#8a9099; margin-top:4px; }
+.card .foot.pos{ color:#16a34a; }
+.panels{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media(max-width:820px){ .panels{ grid-template-columns:1fr; } }
+.panel{ background:#fff; border:1px solid #e6e8eb; border-radius:12px; padding:16px; }
+.panel h2{ font-size:14px; margin:0 0 12px; display:flex; align-items:center; gap:8px; }
+.chartbox{ position:relative; height:240px; }
+ul.list{ list-style:none; margin:0; padding:0; }
+ul.list li{ padding:9px 0; border-top:1px solid #eef0f2; font-size:13px; }
+ul.list li:first-child{ border-top:none; }
+.li-top{ display:flex; justify-content:space-between; gap:10px; }
+.li-title{ font-weight:600; color:#1a1d21; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.li-meta{ color:#9aa0a6; font-size:12px; white-space:nowrap; }
+.li-snip{ color:#6b7280; font-size:12px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pill{ display:inline-block; font-size:11px; padding:1px 8px; border-radius:999px; background:#eef2ff; color:#4338ca; }
+.muted{ color:#9aa0a6; font-size:13px; }
+.err{ color:#b91c1c; font-size:12px; }
+.section-title{ font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:#8a9099; margin:22px 0 2px; }
+.skel{ color:#c0c4c9; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>ConnecTradie — Live Business Dashboard</h1>
+      <div class="sub">Platform KPIs · inbox · week ahead</div>
+    </div>
+    <div class="updated" id="updated">Loading…</div>
+  </header>
+
+  <div class="section-title">Platform KPIs (Supabase)</div>
+  <div class="grid" id="kpis">
+    <div class="card"><div class="label">Loading</div><div class="value skel">—</div></div>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <h2>Jobs by status</h2>
+      <div class="chartbox"><canvas id="jobsChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>Revenue snapshot</h2>
+      <div class="chartbox"><canvas id="revChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panels" style="margin-top:12px;">
+    <div class="panel">
+      <h2>📥 Recent unread email <span class="pill" id="mailCount"></span></h2>
+      <ul class="list" id="mailList"><li class="muted">Loading…</li></ul>
+    </div>
+    <div class="panel">
+      <h2>📅 Week ahead <span class="pill" id="calCount"></span></h2>
+      <ul class="list" id="calList"><li class="muted">Loading…</li></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_PROJECT = "uoqygmizupdpanplpvor";
+const KPI_SQL = `SELECT json_build_object(
+  'total_users', (SELECT count(*) FROM profiles),
+  'tradies', (SELECT count(*) FROM profiles WHERE role='tradie'),
+  'clients', (SELECT count(*) FROM profiles WHERE role='client'),
+  'new_users_7d', (SELECT count(*) FROM profiles WHERE created_at >= now() - interval '7 days'),
+  'total_jobs', (SELECT count(*) FROM jobs),
+  'jobs_open', (SELECT count(*) FROM jobs WHERE status IN ('open','posted','pending')),
+  'jobs_in_progress', (SELECT count(*) FROM jobs WHERE status IN ('accepted','funded','in_progress')),
+  'jobs_completed', (SELECT count(*) FROM jobs WHERE status='completed'),
+  'jobs_new_7d', (SELECT count(*) FROM jobs WHERE created_at >= now() - interval '7 days'),
+  'payments_count', (SELECT count(*) FROM payments),
+  'payments_total', (SELECT COALESCE(sum(amount),0) FROM payments),
+  'payments_7d_total', (SELECT COALESCE(sum(amount),0) FROM payments WHERE created_at >= now() - interval '7 days'),
+  'reviews_count', (SELECT count(*) FROM reviews),
+  'avg_rating', (SELECT round(avg(rating)::numeric,2) FROM reviews),
+  'quotes_count', (SELECT count(*) FROM quotes),
+  'unread_notifications', (SELECT count(*) FROM notifications WHERE read_at IS NULL),
+  'active_conversations', (SELECT count(*) FROM conversations)
+) AS kpis;`;
+
+// ---- helpers ----------------------------------------------------
+async function callTool(name, args){
+  const r = await window.cowork.callMcpTool(name, args);
+  if(r && r.isError) throw new Error("tool error: "+name);
+  let data = (r && r.structuredContent != null) ? r.structuredContent : null;
+  if(data == null && r && r.content && r.content[0] && r.content[0].text != null){
+    data = r.content[0].text;
+  }
+  return data;
+}
+// execute_sql returns its data as a JSON string like {"result":"...prose...[{...}]..."}
+// where the inner array is escaped. Unwrap the outer JSON first, then extract the array.
+function parseSqlRows(payload){
+  let s;
+  if(typeof payload === "string"){
+    try{ const o = JSON.parse(payload); s = (o && typeof o.result === "string") ? o.result : payload; }
+    catch(e){ s = payload; }
+  } else if(payload && typeof payload.result === "string"){
+    s = payload.result;
+  } else {
+    s = JSON.stringify(payload);
+  }
+  const m = s.match(/\[[\s\S]*\]/);
+  if(!m) throw new Error("no rows in sql payload");
+  return JSON.parse(m[0]);
+}
+function asObj(payload){
+  if(payload == null) return {};
+  if(typeof payload === "object") return payload;
+  try { return JSON.parse(payload); }
+  catch(e){ const m = String(payload).match(/\{[\s\S]*\}/); return m ? JSON.parse(m[0]) : {}; }
+}
+const money = c => "$" + (Number(c||0)/100).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function fromEmail(s){ if(!s) return ""; const m = s.match(/^\s*"?([^"<]+?)"?\s*<?/); const n=(m&&m[1]||"").trim(); return n && !n.includes("@") ? n : (s.split("<")[0].trim()||s); }
+
+// ---- renderers --------------------------------------------------
+function card(label, value, foot, pos){
+  return `<div class="card"><div class="label">${esc(label)}</div><div class="value">${value}</div>${foot?`<div class="foot ${pos?'pos':''}">${foot}</div>`:""}</div>`;
+}
+function renderKpis(k){
+  const el = document.getElementById("kpis");
+  el.innerHTML = [
+    card("Total jobs", k.total_jobs, `${k.jobs_completed} completed`),
+    card("Active jobs", (Number(k.jobs_open)+Number(k.jobs_in_progress)), `${k.jobs_open} open · ${k.jobs_in_progress} in progress`),
+    card("Payments total", money(k.payments_total), `${k.payments_count} payments`),
+    card("Avg rating", (k.avg_rating==null?"—":Number(k.avg_rating).toFixed(1)+"★"), `${k.reviews_count} reviews`),
+    card("Users", k.total_users, `${k.tradies} tradies · ${k.clients} clients`),
+    card("Quotes", k.quotes_count, "submitted"),
+    card("Unread notifs", k.unread_notifications, "in-app"),
+    card("New (7d)", (Number(k.jobs_new_7d)+Number(k.new_users_7d)), `${k.jobs_new_7d} jobs · ${k.new_users_7d} users`, true),
+  ].join("");
+}
+let jobsChart, revChart;
+function renderCharts(k){
+  const jc = document.getElementById("jobsChart").getContext("2d");
+  if(jobsChart) jobsChart.destroy();
+  jobsChart = new Chart(jc,{ type:"doughnut",
+    data:{ labels:["Completed","Open","In progress"],
+      datasets:[{ data:[k.jobs_completed,k.jobs_open,k.jobs_in_progress], backgroundColor:["#16a34a","#3b82f6","#f59e0b"], borderWidth:0 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:"bottom" } }, cutout:"62%" }});
+  const rc = document.getElementById("revChart").getContext("2d");
+  if(revChart) revChart.destroy();
+  revChart = new Chart(rc,{ type:"bar",
+    data:{ labels:["All-time","Last 7 days"],
+      datasets:[{ label:"Revenue (AUD)", data:[Number(k.payments_total)/100, Number(k.payments_7d_total)/100], backgroundColor:["#4338ca","#818cf8"], borderRadius:6 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
+      scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>"$"+v.toLocaleString() } } } }});
+}
+function renderMail(obj){
+  const threads = (obj.threads)||[];
+  document.getElementById("mailCount").textContent = obj.resultCountEstimate ? (obj.resultCountEstimate+" total") : (threads.length);
+  const el = document.getElementById("mailList");
+  if(!threads.length){ el.innerHTML = `<li class="muted">No unread email in the last 14 days.</li>`; return; }
+  el.innerHTML = threads.map(t=>{
+    const m = (t.messages && t.messages[0]) || {};
+    const when = m.date ? new Date(m.date).toLocaleDateString(undefined,{month:"short",day:"numeric"}) : "";
+    return `<li><div class="li-top"><span class="li-title">${esc(m.subject||"(no subject)")}</span><span class="li-meta">${esc(when)}</span></div>
+      <div class="li-snip">${esc(fromEmail(m.sender))} — ${esc((m.snippet||"").slice(0,90))}</div></li>`;
+  }).join("");
+}
+function renderCal(obj){
+  const events = (obj.events)||[];
+  document.getElementById("calCount").textContent = events.length ? events.length : "";
+  const el = document.getElementById("calList");
+  if(!events.length){ el.innerHTML = `<li class="muted">Nothing scheduled in the next 7 days.</li>`; return; }
+  el.innerHTML = events.map(ev=>{
+    const s = ev.start && (ev.start.dateTime || ev.start.date);
+    const d = s ? new Date(s) : null;
+    const allDay = ev.start && ev.start.date && !ev.start.dateTime;
+    const when = d ? d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}) + (allDay?"":" · "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})) : "";
+    return `<li><div class="li-top"><span class="li-title">${esc(ev.summary||"(untitled)")}</span><span class="li-meta">${esc(when)}</span></div>
+      ${ev.location?`<div class="li-snip">📍 ${esc(ev.location)}</div>`:""}</li>`;
+  }).join("");
+}
+
+// ---- load -------------------------------------------------------
+async function load(){
+  document.getElementById("updated").textContent = "Refreshing…";
+  // Supabase KPIs
+  try{
+    const rows = parseSqlRows(await callTool("mcp__70128e3c-00a3-4c6b-aa45-a7eb7a3d1895__execute_sql",
+      { project_id: SUPABASE_PROJECT, query: KPI_SQL }));
+    const k = rows[0].kpis;
+    renderKpis(k); renderCharts(k);
+  }catch(e){ document.getElementById("kpis").innerHTML = `<div class="card"><div class="label">Supabase</div><div class="err">Could not load KPIs: ${esc(e.message)}</div></div>`; }
+
+  // Gmail
+  try{
+    const obj = asObj(await callTool("mcp__56164275-de74-481e-a103-dd14a483a6d3__search_threads",
+      { query:"in:inbox is:unread newer_than:14d", pageSize:6 }));
+    renderMail(obj);
+  }catch(e){ document.getElementById("mailList").innerHTML = `<li class="err">Gmail error: ${esc(e.message)}</li>`; }
+
+  // Calendar (next 7 days)
+  try{
+    const now = new Date();
+    const later = new Date(now.getTime()+7*86400000);
+    const obj = asObj(await callTool("mcp__df0f65ac-8837-4f3f-9b42-9cb4025228a9__list_events",
+      { startTime: now.toISOString(), endTime: later.toISOString(), pageSize:8, orderBy:"startTime" }));
+    renderCal(obj);
+  }catch(e){ document.getElementById("calList").innerHTML = `<li class="err">Calendar error: ${esc(e.message)}</li>`; }
+
+  document.getElementById("updated").textContent = "Updated " + new Date().toLocaleString(undefined,{hour:"numeric",minute:"2-digit",month:"short",day:"numeric"});
+}
+load();
+</script>
+</body>
+</html>
