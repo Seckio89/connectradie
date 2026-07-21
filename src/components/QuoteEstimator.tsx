@@ -831,9 +831,9 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               questions here, then Estimate again to tighten the quote. */}
           <div>
             <label className="block text-[11px] text-gray-500 mb-1">Add details to sharpen the estimate (optional)</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={5}
               placeholder="e.g. one-off deep clean, no carpets, after-hours access only, before a health inspection"
-              className={`w-full ${numInput} resize-none`} />
+              className={`w-full ${numInput} resize-y min-h-[120px] leading-relaxed`} />
             {result && result.sharpeningQuestions.length > 0 && (
               <p className="text-[11px] text-gray-400 mt-1">Answer the questions below here, then tap Estimate again.</p>
             )}
