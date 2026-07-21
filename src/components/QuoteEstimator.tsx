@@ -831,7 +831,13 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               questions here, then Estimate again to tighten the quote. */}
           <div>
             <label className="block text-[11px] text-gray-500 mb-1">Add details to sharpen the estimate (optional)</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={5}
+            <textarea value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              onInput={(e) => { const t = e.currentTarget; t.style.height = 'auto'; t.style.height = `${Math.max(t.scrollHeight, 120)}px`; }}
+              rows={5}
+              spellCheck={true}
+              autoCorrect="on"
+              autoCapitalize="sentences"
               placeholder="e.g. one-off deep clean, no carpets, after-hours access only, before a health inspection"
               className={`w-full ${numInput} resize-y min-h-[120px] leading-relaxed`} />
             {result && result.sharpeningQuestions.length > 0 && (
