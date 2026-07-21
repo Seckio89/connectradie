@@ -233,6 +233,10 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   const [econOpen, setEconOpen] = useState(false);
   const [rate, setRate] = useState('');
   const [workers, setWorkers] = useState('1');
+  // How the on-site hours are counted when there's a crew: 'perCleaner' bills
+  // each worker for the full time (hours × crew); 'combined' bills the crew's
+  // shared total (hours only, not multiplied). Tradie picks per quote.
+  const [hoursMode, setHoursMode] = useState<'perCleaner' | 'combined'>('perCleaner');
   const [marginPct, setMarginPct] = useState('15');
   const [markupPct, setMarkupPct] = useState('20');
   const [callOut, setCallOut] = useState('');
@@ -490,10 +494,13 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   const priced = useMemo(() => {
     if (!result) return null;
     const hours = enteredHours > 0 ? enteredHours : (Number(hoursEdit) || result.hours);
-    const per = computePrice(hours, result.materialsCost, economics, clientSupplies);
+    // 'combined' = the crew shares the entered hours, so don't multiply labour
+    // by headcount; 'perCleaner' keeps the full hours × crew (each on site).
+    const labourEconomics = hoursMode === 'combined' ? { ...economics, workers: 1 } : economics;
+    const per = computePrice(hours, result.materialsCost, labourEconomics, clientSupplies);
     return { ...per, perVisitTotal: per.total, total: per.total * visits, visits };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, hoursEdit, enteredHours, visits, rate, workers, marginPct, markupPct, callOut, clientSupplies, travelKm, profile?.is_gst_registered]);
+  }, [result, hoursEdit, enteredHours, visits, rate, workers, hoursMode, marginPct, markupPct, callOut, clientSupplies, travelKm, profile?.is_gst_registered]);
 
   const applyResult = () => {
     if (!result || !priced) return;
@@ -654,6 +661,35 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             </div>
             {enteredHours > 0 && (
               <p className="text-[11px] text-gray-400 mt-1">Used for the estimate instead of the AI's hour guess.</p>
+            )}
+          </div>
+
+          {/* Crew size + how the on-site hours are counted (per-cleaner vs combined) */}
+          <div>
+            <label className="block text-[11px] text-gray-500 mb-1">Cleaners on site</label>
+            <div className="flex items-center gap-2 flex-wrap">
+              <input type="number" min="1" value={workers}
+                onChange={(e) => setWorkers(e.target.value)}
+                className={`w-20 ${numInput}`} aria-label="Number of cleaners on site" />
+              {Number(workers) > 1 && (
+                <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+                  <button type="button" onClick={() => setHoursMode('perCleaner')}
+                    className={`px-2.5 py-2 font-medium transition-colors ${hoursMode === 'perCleaner' ? 'bg-secondary-100 text-secondary-700' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+                    Hours each
+                  </button>
+                  <button type="button" onClick={() => setHoursMode('combined')}
+                    className={`px-2.5 py-2 font-medium border-l border-gray-200 transition-colors ${hoursMode === 'combined' ? 'bg-secondary-100 text-secondary-700' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+                    Combined total
+                  </button>
+                </div>
+              )}
+            </div>
+            {Number(workers) > 1 && (
+              <p className="text-[11px] text-gray-400 mt-1">
+                {hoursMode === 'combined'
+                  ? `${workers} cleaners share the hours — labour billed as the combined time, not multiplied.`
+                  : `Each of the ${workers} cleaners is on site for the full time — labour = hours × ${workers}.`}
+              </p>
             )}
           </div>
 
