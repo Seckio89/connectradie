@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Eye, EyeOff, Loader2, Shield, Sparkles, Lightbulb, Wrench, AlertTriangle, CheckCircle2, Users, Calendar } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -391,7 +392,7 @@ export default function AdminUpdates() {
               {/* Content */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Content</label>
-                <textarea
+                <textarea {...proseInputProps}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="Describe the update in detail..."

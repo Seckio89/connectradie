@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { RefreshCw, User, Clock, MapPin, Loader2, Pause, AlertTriangle, X, Briefcase, MoreVertical, Plus, CheckCircle2, CheckCheck, FileText as FileTextIcon, Handshake, ChevronDown, RotateCcw, MessageCircle, Building2, Send, Package, Trash2, CreditCard, Camera, Eye, ShieldCheck } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -785,7 +786,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
-                <textarea
+                <textarea {...proseInputProps}
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   placeholder="Describe the job in detail — size, materials, access, timeline... (no need to include contact info — tradies will message you through the platform)"

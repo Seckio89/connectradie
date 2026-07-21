@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { friendlyError } from '../lib/utils';
 import { ChevronLeft, ChevronRight, Clock, X, Loader2, Calendar as CalendarIcon, Upload, User, MapPin, Key } from 'lucide-react';
@@ -576,7 +577,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Describe your project
                     </label>
-                    <textarea
+                    <textarea {...proseInputProps}
                       value={bookingDescription}
                       onChange={(e) => setBookingDescription(e.target.value)}
                       placeholder="Tell the tradie about your project..."

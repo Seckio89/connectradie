@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect, useMemo } from 'react';
 import { X, Calendar, Loader2, AlertCircle, Clock, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -277,7 +278,7 @@ export default function BookingRequestModal({
 
                   <div className="border-t border-gray-200 pt-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-3">Send a Message</h3>
-                    <textarea
+                    <textarea {...proseInputProps}
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
                       placeholder={

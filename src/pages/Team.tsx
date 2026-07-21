@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Mail, Phone, Briefcase, MoreVertical, Pencil, Trash2, UserCheck, UserPlus, Star, HardHat, Wrench, X, Check, AlertCircle, Clock, Shield, Calendar, ChevronLeft, ChevronRight, Lock, Timer, CheckCircle2, XCircle, MapPin, LogIn, LogOut, Navigation } from 'lucide-react';
 import SiteActivityTab from '../components/team/SiteActivityTab';
@@ -246,7 +247,7 @@ function AddMemberModal({ onClose, onSave, editMember }: AddMemberModalProps) {
 
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
-              <textarea
+              <textarea {...proseInputProps}
                 value={form.notes}
                 onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                 rows={3}

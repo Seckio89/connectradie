@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState } from 'react';
 import { X, AlertCircle, Send, GraduationCap, Award, Briefcase } from 'lucide-react';
 import Modal from './Modal';
@@ -97,7 +98,7 @@ export default function ApplicationModal({ isOpen, onClose, vacancy, onSubmit }:
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Cover Letter / Message *
           </label>
-          <textarea
+          <textarea {...proseInputProps}
             value={coverLetter}
             onChange={e => setCoverLetter(e.target.value)}
             rows={6}

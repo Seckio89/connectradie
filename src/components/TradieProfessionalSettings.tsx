@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect, useMemo } from 'react';
 import {
   FileText,
@@ -704,7 +705,7 @@ export default function TradieProfessionalSettings() {
                 {bio.length}/140
               </span>
             </div>
-            <textarea
+            <textarea {...proseInputProps}
               value={bio}
               onChange={(e) => {
                 if (e.target.value.length <= 140) setBio(e.target.value);

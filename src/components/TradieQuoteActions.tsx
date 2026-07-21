@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 // ─────────────────────────────────────────────────────────────────────────────
 // TradieQuoteActions — tradie-side UI surface for a v2 (3-stage) quote.
 //
@@ -169,7 +170,7 @@ function CompleteVisitModal({ isOpen, quote, tradeCategory, onClose, onDone }: C
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
           Notes from the visit <span className="text-gray-400 font-normal">(optional, visible to the client)</span>
         </label>
-        <textarea
+        <textarea {...proseInputProps}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
@@ -347,7 +348,7 @@ function SubmitFinalQuoteModal({ isOpen, quote, onClose, onDone }: SubmitFinalQu
         <label className="block text-sm font-medium text-gray-700 mb-1.5 mt-4">
           Message to the client {messageRequired ? <span className="text-red-500">*</span> : <span className="text-gray-400 font-normal">(optional)</span>}
         </label>
-        <textarea
+        <textarea {...proseInputProps}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={4}

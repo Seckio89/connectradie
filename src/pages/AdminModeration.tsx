@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect } from 'react';
 import {
   Search,
@@ -427,7 +428,7 @@ export default function AdminModeration() {
 
                           {report.status === 'pending' && (
                             <div className="space-y-3">
-                              <textarea
+                              <textarea {...proseInputProps}
                                 value={adminNotes[report.id] || ''}
                                 onChange={e => setAdminNotes(prev => ({ ...prev, [report.id]: e.target.value }))}
                                 placeholder="Add admin notes (optional)..."

@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { Camera, Loader2, X, Plus, AlertCircle, Check, RefreshCw } from 'lucide-react';
 import Modal from './Modal';
@@ -903,7 +904,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
               Additional notes <span className="text-gray-400 font-normal normal-case">(optional)</span>
             </label>
-            <textarea
+            <textarea {...proseInputProps}
               value={customNotes}
               onChange={(e) => setCustomNotes(e.target.value)}
               rows={2}

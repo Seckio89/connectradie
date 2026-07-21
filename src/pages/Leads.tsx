@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { descriptionPreview } from '../lib/jobDescription';
@@ -3027,7 +3028,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   <FileText className="w-3.5 h-3.5" />
                   Description
                 </label>
-                <textarea
+                <textarea {...proseInputProps}
                   value={editDesc}
                   onChange={(e) => setEditDesc(e.target.value)}
                   rows={3}

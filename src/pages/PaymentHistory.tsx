@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { COMPANY_ABN } from '../config/company';
@@ -1634,7 +1635,7 @@ function ReductionRequestSection({
             Refund amount: <span className="font-semibold">${refundAmount.toFixed(2)}</span>
           </p>
         )}
-        <textarea
+        <textarea {...proseInputProps}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Optional: explain what happened (e.g. accidentally entered $310 instead of $190)"
@@ -1700,7 +1701,7 @@ function RefundSection({ paymentId, onSuccess, onError }: { paymentId: string; o
           <p className="text-xs text-red-600 mt-0.5">Please explain why. Our team will review within 2–3 business days.</p>
         </div>
       </div>
-      <textarea value={reason} onChange={e => setReason(e.target.value)}
+      <textarea {...proseInputProps} value={reason} onChange={e => setReason(e.target.value)}
         placeholder="Describe the reason for your refund..." rows={3}
         className="w-full px-3 py-2 border border-red-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-400 bg-white mb-3 resize-none" />
       <div className="flex gap-2">

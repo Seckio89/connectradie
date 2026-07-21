@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState } from 'react';
 import { X, Calendar, FileText } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -90,7 +91,7 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Description
             </label>
-            <textarea
+            <textarea {...proseInputProps}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of this job group..."

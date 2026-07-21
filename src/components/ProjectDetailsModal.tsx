@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect, useMemo } from 'react';
 import { X, Calendar, Plus, Trash2, Clock, Package, ChevronRight, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -833,7 +834,7 @@ export default function ProjectDetailsModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Reason</label>
-                <textarea
+                <textarea {...proseInputProps}
                   value={endOngoingReason}
                   onChange={(e) => setEndOngoingReason(e.target.value)}
                   placeholder={endOngoingStatus === 'completed'
@@ -896,7 +897,7 @@ export default function ProjectDetailsModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Reason</label>
-                <textarea
+                <textarea {...proseInputProps}
                   value={requestReason}
                   onChange={(e) => setRequestReason(e.target.value)}
                   placeholder="Explain why you need to change this date..."

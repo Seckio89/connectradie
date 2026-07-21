@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState } from 'react';
 import { X, FileText, Camera, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -219,7 +220,7 @@ export default function RequestVariationModal({
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Additional details {reasonCategory !== 'other' && <span className="text-gray-400 font-normal">(optional)</span>}
               </label>
-              <textarea
+              <textarea {...proseInputProps}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder={

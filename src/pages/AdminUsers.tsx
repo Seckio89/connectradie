@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect } from 'react';
 import { friendlyError } from '../lib/utils';
 import {
@@ -103,7 +104,7 @@ function RemoveUserModal({ userName, userEmail, loading, onConfirm, onCancel }: 
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Additional message to user {selectedReason !== 'Other (please specify below)' && <span className="font-normal text-gray-400">(optional)</span>}
             </label>
-            <textarea
+            <textarea {...proseInputProps}
               value={customMessage}
               onChange={(e) => setCustomMessage(e.target.value)}
               rows={3}

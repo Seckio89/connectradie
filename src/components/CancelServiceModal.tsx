@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useEffect, useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import type { CancellationCategory } from '../lib/recurringJobs';
@@ -128,7 +129,7 @@ export default function CancelServiceModal({
           <label htmlFor="cancel-reason" className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-2">
             Anything else <span className="lowercase text-gray-400 normal-case font-normal">(optional)</span>
           </label>
-          <textarea
+          <textarea {...proseInputProps}
             id="cancel-reason"
             rows={3}
             value={reason}

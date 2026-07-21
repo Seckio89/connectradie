@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, FileText, Calculator } from 'lucide-react';
 import Modal from './Modal';
@@ -501,7 +502,7 @@ export default function CreateInvoiceModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-            <textarea
+            <textarea {...proseInputProps}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Additional notes, payment terms, bank details..."
