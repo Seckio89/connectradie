@@ -664,13 +664,13 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             )}
           </div>
 
-          {/* Crew size + how the on-site hours are counted (per-cleaner vs combined) */}
+          {/* Crew size + how the on-site hours are counted (per-worker vs combined) */}
           <div>
-            <label className="block text-[11px] text-gray-500 mb-1">Cleaners on site</label>
+            <label className="block text-[11px] text-gray-500 mb-1">Workers on site</label>
             <div className="flex items-center gap-2 flex-wrap">
               <input type="number" min="1" value={workers}
                 onChange={(e) => setWorkers(e.target.value)}
-                className={`w-20 ${numInput}`} aria-label="Number of cleaners on site" />
+                className={`w-20 ${numInput}`} aria-label="Number of workers on site" />
               {Number(workers) > 1 && (
                 <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-xs">
                   <button type="button" onClick={() => setHoursMode('perCleaner')}
@@ -687,8 +687,8 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             {Number(workers) > 1 && (
               <p className="text-[11px] text-gray-400 mt-1">
                 {hoursMode === 'combined'
-                  ? `${workers} cleaners share the hours — labour billed as the combined time, not multiplied.`
-                  : `Each of the ${workers} cleaners is on site for the full time — labour = hours × ${workers}.`}
+                  ? `${workers} workers share the hours — labour billed as the combined time, not multiplied.`
+                  : `Each of the ${workers} workers is on site for the full time — labour = hours × ${workers}.`}
               </p>
             )}
           </div>
