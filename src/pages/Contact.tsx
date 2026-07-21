@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Mail, MapPin, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -124,7 +125,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <label htmlFor="contact-message" className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-                  <textarea
+                  <textarea {...proseInputProps}
                     id="contact-message"
                     required
                     rows={5}

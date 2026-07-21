@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect } from 'react';
 import {
   AlertTriangle,
@@ -393,7 +394,7 @@ export default function AdminDisputes() {
                             >
                               Admin Notes / Resolution
                             </label>
-                            <textarea
+                            <textarea {...proseInputProps}
                               id={`notes-${dispute.id}`}
                               value={adminNotes[dispute.id] || ''}
                               onChange={(e) =>

@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState } from 'react';
 import { X, AlertCircle, Check, Sparkles, FileText } from 'lucide-react';
 import Modal from './Modal';
@@ -356,7 +357,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
               Insert template
             </button>
           </div>
-          <textarea
+          <textarea {...proseInputProps}
             value={form.description}
             onChange={e => set('description', e.target.value)}
             rows={7}

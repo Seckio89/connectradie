@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState } from 'react';
 import { FileText, ExternalLink, ChevronDown, ChevronUp, CheckCircle2, XCircle, Loader2, AlertTriangle, MessageSquare, ArrowUpCircle } from 'lucide-react';
 
@@ -284,7 +285,7 @@ export default function RecurringInvoiceCard({ invoice, userRole, paymentMethod 
             {userRole === 'tradie' && !invoice.tradie_response && onRespondToDispute && (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
                 <p className="text-xs font-medium text-amber-800">Respond to this dispute</p>
-                <textarea
+                <textarea {...proseInputProps}
                   value={tradieResponseText}
                   onChange={e => setTradieResponseText(e.target.value)}
                   placeholder="Explain the charges or propose a resolution..."

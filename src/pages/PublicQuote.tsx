@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 // ─────────────────────────────────────────────────────────────────────────────
 // PublicQuote — the page an off-app client lands on from a quote email. No login
 // required; access is via the unguessable token in the URL. Reads + accepts the
@@ -494,7 +495,7 @@ export default function PublicQuote() {
                     <label className="block text-sm font-medium text-gray-700">
                       Let {businessName} know why <span className="font-normal text-gray-400">(optional)</span>
                     </label>
-                    <textarea
+                    <textarea {...proseInputProps}
                       value={declineReason}
                       onChange={(e) => setDeclineReason(e.target.value)}
                       rows={3}

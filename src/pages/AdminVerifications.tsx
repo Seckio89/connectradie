@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect } from 'react';
 import {
   Shield,
@@ -490,7 +491,7 @@ export default function AdminVerifications() {
 
                               {showRejectInput === user.id ? (
                                 <div className="flex-1 space-y-2">
-                                  <textarea
+                                  <textarea {...proseInputProps}
                                     value={rejectReason[user.id] || ''}
                                     onChange={(e) =>
                                       setRejectReason((prev) => ({ ...prev, [user.id]: e.target.value }))

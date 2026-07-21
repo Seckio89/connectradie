@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 // ─────────────────────────────────────────────────────────────────────────────
 // ClientContactModal — add / edit a tradie's CRM client contact (on- or off-app).
 // Captures name, email, phone, a geocoded address (for service-area + geofencing)
@@ -180,7 +181,7 @@ export default function ClientContactModal({
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
             <div className="relative">
               <StickyNote className="absolute left-4 top-3 w-5 h-5 text-gray-400" />
-              <textarea
+              <textarea {...proseInputProps}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}

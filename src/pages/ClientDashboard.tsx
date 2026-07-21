@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Bell, Plus, Loader2, MapPin, ArrowRight, Crown, RefreshCw, Repeat, Trash2, CalendarClock, DollarSign, Briefcase, Clock, Eye, CheckCircle2, Archive, ArchiveRestore, Pencil, X, Check, Send, Play, ExternalLink, Pause, FileText, Star, ChevronDown, Gift, AlertCircle, CreditCard } from 'lucide-react';
@@ -2365,7 +2366,7 @@ export default function ClientDashboard() {
               ))}
             </div>
             {cancelReason === 'Other' && (
-              <textarea
+              <textarea {...proseInputProps}
                 value={cancelReason === 'Other' ? '' : cancelReason}
                 onChange={(e) => setCancelReason(e.target.value || 'Other')}
                 placeholder="Please describe the reason..."
@@ -2819,7 +2820,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
             <div className="relative">
-              <textarea
+              <textarea {...proseInputProps}
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 placeholder="What needs to be done..."

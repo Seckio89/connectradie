@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   X, Loader2, AlertTriangle, Clock, FileText, Archive, ArchiveRestore,
@@ -1245,7 +1246,7 @@ export default function JobManagementModal({
                     </div>
 
                     {/* Additional notes */}
-                    <textarea
+                    <textarea {...proseInputProps}
                       value={completionCustomNotes}
                       onChange={(e) => setCompletionCustomNotes(e.target.value)}
                       placeholder="Add any additional notes..."
@@ -1368,7 +1369,7 @@ export default function JobManagementModal({
                       </button>
                     )}
                   </div>
-                  <textarea
+                  <textarea {...proseInputProps}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Add private notes about this job..."

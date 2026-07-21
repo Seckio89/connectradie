@@ -1,3 +1,4 @@
+import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect } from 'react';
 import { X, Loader2, XCircle } from 'lucide-react';
 
@@ -87,7 +88,7 @@ export default function DeclineJobModal({ isOpen, onClose, onDecline, jobDescrip
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Reason for declining <span className="text-red-500">*</span>
             </label>
-            <textarea
+            <textarea {...proseInputProps}
               value={reason}
               onChange={(e) => {
                 setReason(e.target.value);
