@@ -51,7 +51,7 @@ const TRADES = ['Cleaning', 'Painting', 'Plumbing', 'Electrical', 'Flooring / Ti
 // workstations/toilets/area, not "rooms and bathrooms". End of lease gets its
 // own category (one of the most common cleaning jobs in Australia) with
 // bedrooms/bathrooms + inclusion toggles rather than generic residential fields.
-const PROPERTY_TYPES = ['Residential', 'End of lease', 'Office', 'Retail', 'Warehouse', 'Strata / common areas'];
+const PROPERTY_TYPES = ['Residential', 'End of lease', 'Office', 'Retail', 'Childcare', 'Warehouse', 'Strata / common areas'];
 
 // End-of-lease inclusions — yes/no toggles that sharpen the estimate.
 const EOL_EXTRAS = ['Kitchen', 'Garage', 'Oven clean', 'Carpet steam clean', 'Window clean', 'Balcony / outdoor area'];
@@ -75,6 +75,7 @@ const COMMERCIAL_FIELDS: Record<string, { key: string; label: string }[]> = {
   'Cleaning|End of lease': [{ key: 'bedrooms', label: 'Bedrooms' }, { key: 'bathrooms', label: 'Bathrooms' }, { key: 'sqm', label: 'Area m²' }],
   'Cleaning|Office': [{ key: 'workstations', label: 'Workstations' }, { key: 'toilets', label: 'Toilets' }, { key: 'sqm', label: 'Area m²' }],
   'Cleaning|Retail': [{ key: 'sqm', label: 'Floor m²' }, { key: 'toilets', label: 'Toilets' }],
+  'Cleaning|Childcare': [{ key: 'rooms', label: 'Activity rooms' }, { key: 'toilets', label: 'Toilets' }, { key: 'sqm', label: 'Floor m²' }],
   'Cleaning|Warehouse': [{ key: 'sqm', label: 'Floor m²' }, { key: 'toilets', label: 'Toilets' }, { key: 'mezzanines', label: 'Mezzanines' }],
   'Cleaning|Strata / common areas': [{ key: 'levels', label: 'Levels' }, { key: 'toilets', label: 'Shared toilets' }, { key: 'sqm', label: 'Common m²' }],
   'Painting|Office': [{ key: 'sqm', label: 'Wall m²' }, { key: 'coats', label: 'Coats' }],
