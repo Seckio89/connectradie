@@ -58,6 +58,29 @@ export interface ResolvedChargeFee {
 }
 
 /**
+ * Reads a frozen money value (cents) out of payment/PI metadata.
+ *
+ * SHARED deliberately: release-escrow and auto-release-payments both compute the
+ * payout amount and share a Stripe idempotency key, so if they ever disagree by
+ * a cent the racing retry is rejected. They must read frozen fees identically.
+ *
+ * This replaces a bare `typeof x === "number"` check that was a live foot-gun:
+ * several charge paths wrote platform_fee as a STRING and those were silently
+ * read as 0 — releasing the FULL amount to the tradie even though Stripe had
+ * already taken the application fee at charge time. Rather than trust every
+ * writer, the reader is tolerant: number or numeric string, and only genuinely
+ * missing/unparseable values become 0.
+ */
+export function frozenCents(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) return Math.round(value);
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return Math.round(parsed);
+  }
+  return 0;
+}
+
+/**
  * Reads the at-cost materials processing rate. Falls back to the launch default
  * if the row is missing so a config blip can never zero the pass-through (which
  * would silently make materials-heavy jobs unprofitable).

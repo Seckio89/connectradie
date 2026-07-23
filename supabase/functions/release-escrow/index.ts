@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
+import { frozenCents } from "../_shared/feeContext.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -16,6 +17,7 @@ function errorJson(message: string, status: number) {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
+
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -178,9 +180,13 @@ Deno.serve(async (req: Request) => {
       .eq("payment_type", "price_adjustment");
 
     let totalBase = payment.amount;
-    let totalPlatformFee = typeof existingMetadata.platform_fee === "number"
-      ? existingMetadata.platform_fee
-      : 0;
+    // Pricing v2.1: platform_fee is the TOTAL the platform retained =
+    // commission + at-cost materials processing. Commission and materials
+    // processing are also tracked separately so the payout breakdown can show
+    // them as distinct line items and never blend them into one opaque number.
+    let totalPlatformFee = frozenCents(existingMetadata.platform_fee);
+    let totalCommission = frozenCents(existingMetadata.commission);
+    let totalMaterialsProcessing = frozenCents(existingMetadata.materials_processing);
     // GST (stored as a string in metadata.gst, cents) was charged on top of the base
     // and, on destination charges, routed to the tradie's Stripe balance. It must be
     // included in the payout or it strands in their balance and never reaches the bank.
@@ -188,11 +194,16 @@ Deno.serve(async (req: Request) => {
 
     for (const addl of (additionalPayments || [])) {
       totalBase += addl.amount;
-      const addlPlatformFee = typeof addl.metadata?.platform_fee === "number"
-        ? addl.metadata.platform_fee
-        : 0;
-      totalPlatformFee += addlPlatformFee;
+      totalPlatformFee += frozenCents(addl.metadata?.platform_fee);
+      totalCommission += frozenCents(addl.metadata?.commission);
+      totalMaterialsProcessing += frozenCents(addl.metadata?.materials_processing);
       totalGst += Number(addl.metadata?.gst) || 0;
+    }
+
+    // Pre-v2.1 rows carry only platform_fee. Attribute the whole of it to
+    // commission so the breakdown still reconciles rather than showing $0.
+    if (totalCommission === 0 && totalMaterialsProcessing === 0 && totalPlatformFee > 0) {
+      totalCommission = totalPlatformFee;
     }
 
     // Calculate transfer/payout amount: total base minus total platform fees
@@ -278,6 +289,11 @@ Deno.serve(async (req: Request) => {
               ? { payout_id: payoutId, payout_amount: payoutAmount, released_at: releasedAt }
               : { payout_pending: true, payout_last_error: payoutError }),
             platform_fee_deducted: platformFeeCents,
+            // v2.1: keep the two components visible on the released record so a
+            // tradie's payout breakdown can show "our fee" and "card processing
+            // on materials — at cost" as separate lines, matching the explainer.
+            commission_deducted: totalCommission,
+            materials_processing_deducted: totalMaterialsProcessing,
             release_approved_at: releasedAt,
             released_by: user.id,
             flow: "destination",
@@ -411,6 +427,9 @@ Deno.serve(async (req: Request) => {
           transfer_id: transfer.id,
           transfer_amount: transfer.amount,
           platform_fee_deducted: platformFeeCents,
+          // v2.1 split — see the destination-charge path above.
+          commission_deducted: totalCommission,
+          materials_processing_deducted: totalMaterialsProcessing,
           released_at: new Date().toISOString(),
           released_by: user.id,
         },
