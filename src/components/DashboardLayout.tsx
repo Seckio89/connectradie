@@ -48,6 +48,7 @@ import PlatformUpdateBanner from './PlatformUpdateBanner';
 import HelpButton from './help/HelpButton';
 import PageHelpCard from './help/PageHelpCard';
 import { isPro, isPlatformAdmin } from '../lib/subscription';
+import { isReleaseActioned } from '../lib/paymentRelease';
 
 function relativeTime(dateStr: string): string {
   const now = Date.now();
@@ -287,9 +288,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         const releasedIds = new Set<string>();
         for (const p of payments || []) {
-          // status = 'released' means it's done. Also check metadata for legacy releases.
-          const meta = p.metadata as Record<string, unknown> | null;
-          if (p.status === 'released' || meta?.transfer_id || meta?.released_at) {
+          // Shared predicate — must match the dashboard's attention panel exactly,
+          // or the sidebar dot keeps glowing for jobs the client already released.
+          if (isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null })) {
             releasedIds.add(p.job_id);
           }
         }

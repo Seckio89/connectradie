@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Bell, Plus, Loader2, MapPin, ArrowRight, Crown, RefreshCw, Repeat, Trash2, CalendarClock, DollarSign, Briefcase, Clock, Eye, CheckCircle2, Archive, ArchiveRestore, Pencil, X, Check, Send, Play, ExternalLink, Pause, FileText, Star, ChevronDown, Gift, AlertCircle, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { isReleaseActioned } from '../lib/paymentRelease';
 import { useAuth } from '../contexts/AuthContext';
 import type { TradieWithDetails, AvailabilitySlot, Job } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
@@ -234,20 +235,10 @@ export default function ClientDashboard() {
           if (payments) {
             const jobsWithPayments = new Set(payments.map(p => p.job_id));
             for (const p of payments) {
-              const meta = p.metadata as Record<string, unknown> | null;
-              // "Released" here means THE CLIENT'S PART IS DONE — stop asking them to
-              // release. Whether the money has finished moving is a platform-side
-              // concern and must NOT keep nagging the client:
-              //   • transfer_id / payout_id / released_at → funds have moved.
-              //   • release_approved_at (+ payout_pending) → the client approved, but the
-              //     payout is still settling (destination charge not yet available in the
-              //     tradie's Stripe balance). auto-release-payments completes it later.
-              // `status === 'completed'` alone only means the client paid INTO escrow.
-              if (
-                meta?.transfer_id || meta?.payout_id || meta?.released_at ||
-                meta?.release_approved_at || meta?.client_approved_at ||
-                meta?.payout_pending || p.status === 'released'
-              ) {
+              // Shared predicate (lib/paymentRelease) — "the CLIENT'S part is done",
+              // not "the money finished moving". `status === 'completed'` alone only
+              // means they paid INTO escrow. Must match the sidebar dot exactly.
+              if (isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null })) {
                 released.add(p.job_id);
               }
             }
@@ -370,10 +361,7 @@ export default function ClientDashboard() {
         const meta = payment.metadata as Record<string, unknown> | null;
         // Already released OR already approved (payout still settling) — don't call
         // release-escrow again, just take them to the review.
-        if (
-          meta?.transfer_id || meta?.payout_id || meta?.released_at ||
-          meta?.release_approved_at || meta?.client_approved_at || meta?.payout_pending
-        ) {
+        if (isReleaseActioned({ metadata: meta })) {
           setReleasedJobIds(prev => new Set(prev).add(jobId));
         } else if (meta?.pending_increase) {
           showToast('A price adjustment needs to be paid first. Opening that now…', true);
