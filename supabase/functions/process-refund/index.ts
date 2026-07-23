@@ -115,7 +115,7 @@ Deno.serve(async (req: Request) => {
     // Verify user is the client on the associated job, or an admin
     const { data: job, error: jobError } = await supabase
       .from("jobs")
-      .select("id, client_id, tradie_id")
+      .select("id, client_id, tradie_id, status")
       .eq("id", payment.job_id)
       .maybeSingle();
 
@@ -126,18 +126,58 @@ Deno.serve(async (req: Request) => {
     // Check if user is the client or an admin
     const { data: userProfile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, is_admin")
       .eq("id", user.id)
       .maybeSingle();
 
     const isClient = job.client_id === user.id;
-    const isAdmin = userProfile?.role === "admin";
+    // Matches the is_admin() SQL helper: the platform owner holds the is_admin
+    // entitlement while keeping role='tradie'.
+    const isAdmin = userProfile?.role === "admin" || userProfile?.is_admin === true;
 
     if (!isClient && !isAdmin) {
       return errorJson(
         "Only the client on this job or an admin can process refunds",
         403
       );
+    }
+
+    // ── Client self-refund guard ─────────────────────────────────────────
+    // A client must NOT be able to unilaterally claw back money for work that
+    // was delivered, with no human review. The only previous protection was
+    // `status !== 'completed'`, but a payment only reaches status='released'
+    // once the Stripe payout SETTLES (~2 days on cards) — so for the whole
+    // settlement window after EVERY job, the client could self-serve a full
+    // refund. That is not theoretical: on job ffe86659 the client approved the
+    // release at 09:50:30 and refunded the entire payment at 10:15:59 with no
+    // review, after the work was done and after leaving a review.
+    //
+    // Once the client has approved release, or the tradie has delivered the work
+    // (job completed), a reversal is a DISPUTE and needs human review. This does
+    // not remove the client's right to their money back — it routes them to the
+    // dispute process instead of an instant unilateral clawback. Admins keep
+    // full refund power, and genuine pre-delivery cancellations (job not
+    // completed, no release approved) remain self-service.
+    if (!isAdmin) {
+      const meta = (payment.metadata ?? {}) as Record<string, unknown>;
+      const releaseActioned = !!(
+        meta.transfer_id || meta.payout_id || meta.released_at ||
+        meta.release_approved_at || meta.client_approved_at || meta.payout_pending
+      );
+
+      if (releaseActioned) {
+        return errorJson(
+          "You've already approved this payment for release, so it can't be refunded here. If there's a problem with the work, raise a dispute and our team will review it.",
+          409
+        );
+      }
+
+      if (job.status === "completed") {
+        return errorJson(
+          "This job has been marked complete, so a refund needs to be reviewed. Please raise a dispute and our team will look into it.",
+          409
+        );
+      }
     }
 
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
