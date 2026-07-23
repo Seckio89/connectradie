@@ -169,16 +169,47 @@ Deno.serve(async (req: Request) => {
         }
 
         // Claim the charges. Guarded on invoice_id IS NULL so two concurrent runs
-        // can never attach the same charge to two invoices.
-        const { error: claimErr } = await supabase
+        // can never attach the same charge to two invoices. We MUST inspect how
+        // many rows the claim actually stamped: if a concurrent/overlapping run
+        // already grabbed some or all of them, the invoice we just inserted would
+        // otherwise stand as a phantom tax document — a duplicate invoice number
+        // with totals that no longer match its attached charges. Its totals were
+        // computed from the charges we saw, so anything other than a full claim
+        // means the document is wrong and must be voided.
+        const { data: claimed, error: claimErr } = await supabase
           .from("platform_fee_charges")
           .update({ invoice_id: invoice.id })
           .in("id", group.map((c) => c.id))
-          .is("invoice_id", null);
+          .is("invoice_id", null)
+          .select("id");
 
         if (claimErr) {
           console.error("[issue-fee-invoices] claim failed; invoice left unattached", invoice.id, claimErr);
           results.push({ tradieId, invoice_number: invoice.invoice_number, error: "claim failed" });
+          continue;
+        }
+
+        if ((claimed?.length ?? 0) !== group.length) {
+          // A concurrent run beat us to some/all of these charges. Roll back the
+          // partial claim and delete the invoice document so we don't emit a
+          // duplicate/mismatched tax invoice. No email is sent.
+          console.error(
+            "[issue-fee-invoices] claim raced; voiding phantom invoice",
+            invoice.id,
+            `claimed ${claimed?.length ?? 0}/${group.length}`,
+          );
+          if ((claimed?.length ?? 0) > 0) {
+            await supabase
+              .from("platform_fee_charges")
+              .update({ invoice_id: null })
+              .eq("invoice_id", invoice.id);
+          }
+          await supabase.from("platform_fee_invoices").delete().eq("id", invoice.id);
+          results.push({
+            tradieId,
+            invoice_number: invoice.invoice_number,
+            error: "claim raced; invoice voided",
+          });
           continue;
         }
 
