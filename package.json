@@ -20,7 +20,11 @@
     "cap:sync": "npm run build && npx cap sync",
     "cap:open:ios": "npx cap open ios",
     "cap:open:android": "npx cap open android",
-    "app:build": "npm run build && npx cap sync && echo 'Ready — open in Xcode or Android Studio'"
+    "app:build": "npm run build && npx cap sync && echo 'Ready — open in Xcode or Android Studio'",
+    "typecheck:ratchet": "node scripts/typecheck-ratchet.mjs",
+    "typecheck:baseline": "node scripts/typecheck-ratchet.mjs --update",
+    "typecheck:edge": "node scripts/typecheck-edge.mjs",
+    "typecheck:edge:baseline": "node scripts/typecheck-edge.mjs --update"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",

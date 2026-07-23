@@ -8,7 +8,7 @@ on:
 
 jobs:
   type-check:
-    name: Type Check
+    name: Type Check (ratchet)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,11 +17,49 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx tsc --noEmit --skipLibCheck
+      # NOT `npx tsc --noEmit`: the root tsconfig.json is solution-style
+      # ("files": [] + project references), so that command checks NOTHING and
+      # always exits 0. It passed for as long as this workflow has existed while
+      # real type errors — including undefined identifiers that crash at
+      # runtime — accumulated unnoticed.
+      #
+      # The ratchet targets tsconfig.app.json and fails only on NEW errors, so
+      # the pre-existing backlog doesn't block every commit while still
+      # preventing regressions. Baseline: .typecheck-baseline.json
+      - run: npm run typecheck:ratchet
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # --no-file-parallelism: the suite is flaky under parallel workers
+      # (files intermittently report "No test suite found"). Serial is reliable.
+      - run: npx vitest run --no-file-parallelism
+
+  edge-functions:
+    name: Edge Functions (Deno ratchet)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      # Edge functions are Deno and are NOT covered by the TypeScript job above.
+      # They had never been type-checked anywhere; 8 of 65 currently fail, so
+      # this ratchets on a known-failing allowlist rather than blocking every
+      # commit. Baseline: .edge-typecheck-baseline.json
+      - run: node scripts/typecheck-edge.mjs
 
   build:
     name: Build
-    needs: type-check
+    needs: [type-check, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
