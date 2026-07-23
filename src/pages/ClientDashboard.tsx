@@ -235,9 +235,19 @@ export default function ClientDashboard() {
             const jobsWithPayments = new Set(payments.map(p => p.job_id));
             for (const p of payments) {
               const meta = p.metadata as Record<string, unknown> | null;
-              // `status === 'completed'` means the client paid into escrow, NOT that funds were released to the tradie.
-              // Only a transfer_id (or explicit 'released' status) means the money has actually moved.
-              if (meta?.transfer_id || meta?.released_at || p.status === 'released') {
+              // "Released" here means THE CLIENT'S PART IS DONE — stop asking them to
+              // release. Whether the money has finished moving is a platform-side
+              // concern and must NOT keep nagging the client:
+              //   • transfer_id / payout_id / released_at → funds have moved.
+              //   • release_approved_at (+ payout_pending) → the client approved, but the
+              //     payout is still settling (destination charge not yet available in the
+              //     tradie's Stripe balance). auto-release-payments completes it later.
+              // `status === 'completed'` alone only means the client paid INTO escrow.
+              if (
+                meta?.transfer_id || meta?.payout_id || meta?.released_at ||
+                meta?.release_approved_at || meta?.client_approved_at ||
+                meta?.payout_pending || p.status === 'released'
+              ) {
                 released.add(p.job_id);
               }
             }
@@ -358,7 +368,12 @@ export default function ClientDashboard() {
         setReleasedJobIds(prev => new Set(prev).add(jobId));
       } else {
         const meta = payment.metadata as Record<string, unknown> | null;
-        if (meta?.transfer_id || meta?.released_at) {
+        // Already released OR already approved (payout still settling) — don't call
+        // release-escrow again, just take them to the review.
+        if (
+          meta?.transfer_id || meta?.payout_id || meta?.released_at ||
+          meta?.release_approved_at || meta?.client_approved_at || meta?.payout_pending
+        ) {
           setReleasedJobIds(prev => new Set(prev).add(jobId));
         } else if (meta?.pending_increase) {
           showToast('A price adjustment needs to be paid first. Opening that now…', true);
@@ -872,98 +887,6 @@ export default function ClientDashboard() {
             </button>
           </div>
         )}
-
-        {(() => {
-          const awaitingRelease = recentJobs.filter(j => !j.archived_at && j.status === 'completed' && !releasedJobIds.has(j.id));
-          if (awaitingRelease.length === 0) return null;
-
-          // Auto-scroll the release banner into view when the dashboard loads
-          const releaseBannerRef = (el: HTMLDivElement | null) => {
-            if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 300);
-          };
-
-          // Single job — keep the original compact banner
-          if (awaitingRelease.length === 1) {
-            const first = awaitingRelease[0];
-            const category = first.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
-            const label = (first.title || category || 'a job').toString();
-            return (
-              <div ref={releaseBannerRef} className="mb-8 p-4 bg-gradient-to-r from-warm-50 to-emerald-50 border-2 border-amber-300 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300 shadow-[0_0_0_3px_rgba(251,191,36,0.15)]">
-                <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-warm-900 flex items-center gap-2">
-                    <span className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                    </span>
-                    Ready to release payment
-                  </p>
-                  <p className="text-sm text-warm-800 mt-0.5 truncate">Your tradie has completed {label}. Release payment & leave a review.</p>
-                </div>
-                <button
-                  onClick={() => handleReleasePayment(first.id)}
-                  disabled={releasingJobId === first.id}
-                  className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors"
-                >
-                  {releasingJobId === first.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                  Release & Review
-                </button>
-              </div>
-            );
-          }
-
-          // Multiple — list every job with its own Release & Review button so
-          // none of them get buried under the Accepted tab.
-          return (
-            <div ref={releaseBannerRef} className="mb-8 bg-gradient-to-r from-warm-50 to-emerald-50 border-2 border-amber-300 rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 shadow-[0_0_0_3px_rgba(251,191,36,0.15)]">
-              <div className="p-4 flex items-center gap-3 border-b border-warm-200">
-                <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-warm-900 flex items-center gap-2">
-                    <span className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                    </span>
-                    {awaitingRelease.length} jobs waiting for payment release
-                  </p>
-                  <p className="text-sm text-warm-800 mt-0.5">Review each one below — payment stays secured with Stripe until you release.</p>
-                </div>
-              </div>
-              <div className="divide-y divide-warm-200">
-                {awaitingRelease.map(job => {
-                  const category = job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
-                  const label = (job.title || category || 'Job').toString();
-                  const desc = job.description.replace(/^\[[^\]]+\]\s*/, '');
-                  return (
-                    <div key={job.id} className="px-4 py-3 flex items-center gap-3 hover:bg-warm-50/40 transition-colors">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-warm-900 capitalize truncate">{label}</p>
-                        <p className="text-xs text-warm-700/80 mt-0.5 truncate">{desc}</p>
-                      </div>
-                      {job.budget_amount ? (
-                        <span className="text-sm font-bold text-emerald-700 tabular-nums flex-shrink-0">
-                          ${job.budget_amount.toLocaleString()}
-                        </span>
-                      ) : null}
-                      <button
-                        onClick={() => handleReleasePayment(job.id)}
-                        disabled={releasingJobId === job.id}
-                        className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-semibold rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors"
-                      >
-                        {releasingJobId === job.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                        Release & Review
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
 
         <div className="grid lg:grid-cols-4 gap-8">
           <div className="lg:col-span-3 space-y-8">
