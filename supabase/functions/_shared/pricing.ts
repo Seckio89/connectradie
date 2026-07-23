@@ -278,3 +278,125 @@ export function calculatePMFees(jobValue: number, _tier: PMTier): FeeBreakdown {
     tradieReceives: Math.round((jobValue - totalFees) * 100) / 100,
   };
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// FEE MODEL V2.1 — "one fee, one side, one moment: the tradie, on LABOUR, at
+// completion, capped, and cheaper the longer you stay." (pricing-system-spec v2.1)
+//
+// This is the NEW engine. It is NOT yet wired into any charge path — the live
+// money flow still calls calculatePlatformFeeCentsV2 above (full-value, threshold
+// sliding). Phase 3 cuts the charge path and the DB rates over to this model in
+// one deliberate step. Until then this exists so its full test suite is green and
+// the numbers are locked before any real payment touches it.
+//
+// What changes from V2 → V2.1:
+//   • Commission on LABOUR only. Materials pass through escrow untouched.
+//   • Flat rate per tier (no $3k threshold), plus a cheaper REPEAT-CLIENT rate.
+//   • A 2.5%-of-labour floor under the cap, so the cap can never go underwater
+//     (V2's cap lost money on very large jobs).
+//   • Card processing on the MATERIALS portion passed through AT COST
+//     (materials_processing_bps, platform config — 193 at launch), never marked
+//     up, never inside the commission cap.
+//   • GST-inclusive; gstComponentCents = 1/11 of commission (reporting only).
+// ═════════════════════════════════════════════════════════════════════════════
+
+export interface TierScheduleV21 {
+  /** Standard commission on labour, basis points. */
+  rateBps: number;
+  /** Repeat-client commission on labour (2nd job onward for the pair), bps. */
+  repeatRateBps: number;
+  /** Absolute cap on commission per job (cents). */
+  feeCapCents: number;
+  /** Floor under the cap: commission never below this % of labour (bps). */
+  capFloorBps: number;
+  /** Minimum commission (cents), itself clamped so it never exceeds labour. */
+  minFeeCents: number;
+}
+
+/**
+ * Mirrors the pricing_tiers V2.1 columns (rate_bps / repeat_rate_bps /
+ * cap_floor_bps / min_fee_cents / fee_cap_cents). Used when the DB row isn't at
+ * hand. NOTE: the DB rows still carry the LIVE V2 values until the Phase 3
+ * cutover — these constants are the V2.1 targets and are the source of truth for
+ * this engine's tests.
+ */
+export const TIER_SCHEDULES_V21: Record<"free" | "pro" | "pm", TierScheduleV21> = {
+  free: { rateBps: 800, repeatRateBps: 500, feeCapCents: 50_000, capFloorBps: 250, minFeeCents: 500 },
+  pro:  { rateBps: 500, repeatRateBps: 400, feeCapCents: 40_000, capFloorBps: 250, minFeeCents: 500 },
+  pm:   { rateBps: 300, repeatRateBps: 300, feeCapCents: 27_000, capFloorBps: 250, minFeeCents: 500 },
+};
+
+/** Stripe's effective inc-GST card rate, passed through on materials at cost. */
+export const DEFAULT_MATERIALS_PROCESSING_BPS = 193;
+
+export interface FeeInputV21 {
+  labourCents: number;
+  materialsCents: number;
+  tier: TierScheduleV21;
+  isRepeatClient: boolean;
+  /** Platform config, NOT per-tier. Stripe's effective inc-GST rate in bps. */
+  materialsProcessingBps: number;
+}
+
+export interface FeeBreakdownV21 {
+  /** Platform's earnings (GST-inclusive), integer cents. */
+  commissionCents: number;
+  /** GST component of the commission (1/11) — for the tax invoice, not an extra charge. */
+  gstComponentCents: number;
+  /** At-cost card processing on materials; NOT platform revenue. */
+  materialsProcessingCents: number;
+  /** commission + materialsProcessing — this is Stripe's application_fee_amount. */
+  totalDeductionCents: number;
+  /** Rate actually used (standard or repeat), basis points. */
+  rateApplied: number;
+  rateType: "standard" | "repeat_client";
+  wasCapped: boolean;
+  /** True if the 2.5% floor overrode the cap. */
+  floorApplied: boolean;
+  labourCents: number;
+  materialsCents: number;
+  /** labour + materials − totalDeduction. */
+  netToTradieCents: number;
+}
+
+/**
+ * V2.1 platform fee. Commission is charged on LABOUR only; materials pass through
+ * with just at-cost card processing deducted. Integer cents in, integer cents out.
+ * Throws on non-integer / negative inputs — money must never be a float here.
+ */
+export function calculateFeeV21(input: FeeInputV21): FeeBreakdownV21 {
+  const { labourCents, materialsCents, tier, isRepeatClient, materialsProcessingBps } = input;
+
+  if (!Number.isInteger(labourCents) || labourCents < 0) throw new Error("INVALID_LABOUR");
+  if (!Number.isInteger(materialsCents) || materialsCents < 0) throw new Error("INVALID_MATERIALS");
+
+  const rateBps = isRepeatClient ? tier.repeatRateBps : tier.rateBps;
+  const raw = Math.round((labourCents * rateBps) / 10_000);
+
+  // Cap, but never below the floor (2.5% of labour) — the cap can't go underwater.
+  const floorCents = Math.round((labourCents * tier.capFloorBps) / 10_000);
+  const capped = Math.min(raw, Math.max(tier.feeCapCents, floorCents));
+
+  // Min fee, itself never more than the labour (so a $3 job pays $3, not $5).
+  const minFee = Math.min(tier.minFeeCents, labourCents);
+  const commissionCents = Math.max(capped, minFee);
+
+  // At-cost card processing on the materials portion. Excluded from the cap.
+  const materialsProcessingCents = Math.round((materialsCents * materialsProcessingBps) / 10_000);
+
+  const totalDeductionCents = commissionCents + materialsProcessingCents;
+
+  return {
+    commissionCents,
+    gstComponentCents: Math.round(commissionCents / 11),
+    materialsProcessingCents,
+    totalDeductionCents,
+    rateApplied: rateBps,
+    rateType: isRepeatClient ? "repeat_client" : "standard",
+    wasCapped: capped < raw,
+    floorApplied: floorCents > tier.feeCapCents && capped === floorCents,
+    labourCents,
+    materialsCents,
+    netToTradieCents: labourCents + materialsCents - totalDeductionCents,
+  };
+}

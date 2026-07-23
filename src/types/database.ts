@@ -183,12 +183,27 @@ export type PricingTier = {
   reduced_rate_bps: number;
   reduced_threshold_cents: number;
   fee_cap_cents: number;
+  // v2.1 columns (see migration 20260723120000). Not yet read by the live engine;
+  // activated at the Phase 3 cutover alongside the labour-only fee model.
+  repeat_rate_bps: number;
+  cap_floor_bps: number;
+  min_fee_cents: number;
+  instant_payout_bps: number;
+  instant_payout_min_cents: number;
+  team_seats: number | null;
   direct_pay_allowed: boolean;
   stripe_price_id_monthly: string | null;
   stripe_price_id_annual: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
+  updated_at: string;
+}
+
+/** Platform-level tunables (pricing rebuild v2.1). Public read; service-role writes only. */
+export type PlatformConfig = {
+  key: string; // e.g. 'materials_processing_bps'
+  value_int: number | null;
   updated_at: string;
 }
 
