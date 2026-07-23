@@ -60,6 +60,36 @@ Deno.serve(async (req: Request) => {
 
   const supabase = createClient(supabaseUrl, serviceKey);
 
+  // ── Authorization: cron/service-role or a platform admin ONLY ──────────────
+  // verify_jwt alone is not enough here: it proves the caller is *some* signed-in
+  // user, and issuing tax invoices across every tradie is not a user action.
+  //
+  // The service-role JWT is identified by its `role` claim, NOT by byte-comparing
+  // the key — a comparison like that silently breaks the moment the key is
+  // rotated, and this must keep working unattended.
+  const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  const jwtRole = (t: string): string | null => {
+    try {
+      return JSON.parse(atob(t.split(".")[1] ?? "")).role ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  let authorized = jwtRole(token) === "service_role";
+  if (!authorized && token) {
+    const { data: caller } = await supabase.auth.getUser(token);
+    if (caller?.user) {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", caller.user.id)
+        .maybeSingle();
+      authorized = (prof as { is_admin?: boolean } | null)?.is_admin === true;
+    }
+  }
+  if (!authorized) return json({ error: "Forbidden" }, 403);
+
   try {
     const body = await req.json().catch(() => ({}));
     const onlyTradie: string | undefined = body?.tradieProfileId;
