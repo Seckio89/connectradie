@@ -1,5 +1,9 @@
 import { supabase } from './supabase';
-import { calculatePlatformFeeCentsV2, TIER_SCHEDULES } from '../../supabase/functions/_shared/pricing';
+import {
+  calculateFeeV21,
+  TIER_SCHEDULES_V21,
+  DEFAULT_MATERIALS_PROCESSING_BPS,
+} from '../../supabase/functions/_shared/pricing';
 
 export const FREE_LIMITS = {
   MAX_TRADE_CATEGORIES: 1,
@@ -52,7 +56,9 @@ export interface PlatformFeeConfig {
 
 export const TIER_PRICING: Record<Exclude<SubscriptionTier, 'free'>, TierPricing> = {
   pro: {
-    monthly: 49,
+    // v2.1: $49 → $39. The gap Pro bridges shrank (8→5 instead of 10→7), so the
+    // price drops with it. Breakeven ~$1,300/mo of labour.
+    monthly: 39,
     annual: 420,
     annualMonthly: 35,
   },
@@ -63,60 +69,77 @@ export const TIER_PRICING: Record<Exclude<SubscriptionTier, 'free'>, TierPricing
   },
 };
 
-// The advertised V2 schedule (see /pricing): full rate on the first $3,000, the
-// reduced rate on the part above, capped per job. These numbers mirror the money
-// path (supabase/functions/_shared/pricing.ts) so what a tradie is shown here is
-// exactly what they'll be charged. pro_plus (retired, unadvertised) = Pro.
+// The advertised v2.1 schedule (see /pricing): a FLAT rate on the tradie's
+// LABOUR only, capped per job, with a cheaper repeat-client rate. Materials are
+// passed through untouched. These numbers mirror the money path
+// (supabase/functions/_shared/pricing.ts → TIER_SCHEDULES_V21) so what a tradie
+// is shown here is exactly what they'll be charged.
+// pro_plus (retired, unadvertised) = Pro.
 export const PLATFORM_FEES: Record<SubscriptionTier, PlatformFeeConfig> = {
-  free: {
-    type: 'sliding',
-    tiers: [
-      { maxJobValue: 3000, rate: 0.10 },
-      { maxJobValue: Infinity, rate: 0.05 },
-    ],
-    cap: 900,
-  },
-  pro: {
-    type: 'sliding',
-    tiers: [
-      { maxJobValue: 3000, rate: 0.07 },
-      { maxJobValue: Infinity, rate: 0.035 },
-    ],
-    cap: 630,
-  },
-  pro_plus: {
-    type: 'sliding',
-    tiers: [
-      { maxJobValue: 3000, rate: 0.07 },
-      { maxJobValue: Infinity, rate: 0.035 },
-    ],
-    cap: 630,
-  },
+  free: { type: 'flat', rate: 0.08, cap: 500 },
+  pro: { type: 'flat', rate: 0.05, cap: 400 },
+  pro_plus: { type: 'flat', rate: 0.05, cap: 400 },
+};
+
+/** The cheaper rate a (tradie, client) pair gets from their 2nd job onward. */
+export const REPEAT_CLIENT_FEES: Record<SubscriptionTier, number> = {
+  free: 0.05,
+  pro: 0.04,
+  pro_plus: 0.04,
 };
 
 /**
- * Calculate the platform fee for a given job value and tier.
- * Delegates to the single V2 fee engine so this can never disagree with the
- * amount the edge functions actually charge on the destination charge.
+ * Platform commission for a job, v2.1.
+ *
+ * IMPORTANT: `labourValue` is the tradie's LABOUR, not the job total. Commission
+ * is never charged on materials. Callers holding only a total must subtract
+ * materials first, or they will overstate the fee.
+ *
+ * Delegates to the single v2.1 engine so this can never disagree with what the
+ * edge functions actually charge.
  */
-export function calculatePlatformFee(jobValue: number, tier: SubscriptionTier, overrideBps?: number | null): number {
-  const schedule = tier === 'free' ? TIER_SCHEDULES.free : TIER_SCHEDULES.pro; // pro + pro_plus
-  const cents = Math.round(Math.max(0, jobValue) * 100);
-  // overrideBps (profiles.platform_fee_override_bps) mirrors the money path: a flat
-  // rate on the whole amount, still capped. 0 → zero fee (e.g. the platform owner).
-  return calculatePlatformFeeCentsV2(cents, schedule, overrideBps).feeCents / 100;
+export function calculatePlatformFee(
+  labourValue: number,
+  tier: SubscriptionTier,
+  overrideBps?: number | null,
+  isRepeatClient = false,
+): number {
+  const schedule = tier === 'free' ? TIER_SCHEDULES_V21.free : TIER_SCHEDULES_V21.pro; // pro + pro_plus
+  const labourCents = Math.round(Math.max(0, labourValue) * 100);
+  return calculateFeeV21({
+    labourCents,
+    materialsCents: 0,
+    tier: schedule,
+    isRepeatClient,
+    materialsProcessingBps: DEFAULT_MATERIALS_PROCESSING_BPS,
+    // overrideBps (profiles.platform_fee_override_bps) mirrors the money path: a
+    // flat rate on labour, still capped, bypassing the floor and min fee.
+    // 0 → zero fee (e.g. the platform owner).
+    overrideBps,
+  }).commissionCents / 100;
 }
 
-/** Get a human-readable fee summary for a tier */
+/**
+ * At-cost card processing on the materials portion. Not platform revenue — it is
+ * Stripe's cost passed through without markup, shown as its own line so tradies
+ * can see there is no margin hidden in it.
+ */
+export function calculateMaterialsProcessing(materialsValue: number): number {
+  const materialsCents = Math.round(Math.max(0, materialsValue) * 100);
+  return calculateFeeV21({
+    labourCents: 0,
+    materialsCents,
+    tier: TIER_SCHEDULES_V21.free, // commission is 0 here regardless of tier
+    isRepeatClient: false,
+    materialsProcessingBps: DEFAULT_MATERIALS_PROCESSING_BPS,
+  }).materialsProcessingCents / 100;
+}
+
+/** Get a human-readable fee summary for a tier (v2.1: flat, on labour only). */
 export function getFeeSummary(tier: SubscriptionTier): string {
   const config = PLATFORM_FEES[tier];
-  if (config.type === 'flat') {
-    return `${(config.rate ?? 0) * 100}% flat (capped at $${config.cap})`;
-  }
-  const tiers = config.tiers ?? [];
-  const highest = tiers[0]?.rate ?? 0;
-  const lowest = tiers[tiers.length - 1]?.rate ?? 0;
-  return `${highest * 100}%–${lowest * 100}% sliding (capped at $${config.cap})`;
+  const repeat = REPEAT_CLIENT_FEES[tier];
+  return `${(config.rate ?? 0) * 100}% of your labour (capped at $${config.cap}) — ${repeat * 100}% for repeat clients`;
 }
 
 /**
@@ -191,7 +214,7 @@ export function getFeatureLabel(feature: ProFeature): string {
   const labels: Record<ProFeature, string> = {
     [PRO_FEATURES.VERIFIED_BADGE]: 'Verified Pro Badge',
     [PRO_FEATURES.PRIORITY_SEARCH]: 'Priority Search Ranking',
-    [PRO_FEATURES.REDUCED_FEES]: '7% Platform Fee (capped $630)',
+    [PRO_FEATURES.REDUCED_FEES]: '5% on your labour (capped $400)',
     [PRO_FEATURES.GOOGLE_CALENDAR_SYNC]: 'Google Calendar Sync',
     [PRO_FEATURES.INVOICE_CREATION]: 'Invoice Creation',
     [PRO_FEATURES.PROJECT_MILESTONES]: 'Project & Milestone Tracking',
@@ -210,7 +233,7 @@ export function getFeatureDescription(feature: ProFeature): string {
   const descriptions: Record<ProFeature, string> = {
     [PRO_FEATURES.VERIFIED_BADGE]: 'Build trust with a verified badge on your profile',
     [PRO_FEATURES.PRIORITY_SEARCH]: 'Appear at the top of search results',
-    [PRO_FEATURES.REDUCED_FEES]: 'Pay 7% instead of 10% — and just 3.5% on the part of a job above $3,000',
+    [PRO_FEATURES.REDUCED_FEES]: 'Pay 5% on your labour instead of 8% — and just 4% on repeat clients. Never anything on materials.',
     [PRO_FEATURES.GOOGLE_CALENDAR_SYNC]: 'Sync your schedule with Google Calendar',
     [PRO_FEATURES.INVOICE_CREATION]: 'Create and send professional invoices',
     [PRO_FEATURES.PROJECT_MILESTONES]: 'Manage complex projects with milestones',

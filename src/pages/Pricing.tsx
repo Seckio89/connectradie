@@ -1,11 +1,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Pricing — public, no gating, no email wall.
 //
-// The model: ONE fee, one side, one moment — the tradie, on completion, capped.
+// The model (v2.1): ONE fee, one side, one moment — the tradie, on LABOUR, at
+// completion, capped, and cheaper the longer you stay.
+//   • Commission is charged on the tradie's LABOUR only — never on materials.
 //   • Clients never pay a platform fee.  • Quoting is always free.
 //   • Subscriptions buy a LOWER RATE, never access.
+//   • Repeat clients cost less, forever — staying on-platform beats leaving it.
 // Tiers load from pricing_tiers (public read) with a static fallback that
-// mirrors the seed. The calculator runs the real V2 fee engine and is honest:
+// mirrors the seed. The calculator runs the real v2.1 fee engine and is honest:
 // it recommends Free whenever Free is cheaper.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -17,23 +20,27 @@ import {
 import SEO from '../components/SEO';
 import { supabase } from '../lib/supabase';
 import {
-  calculatePlatformFeeCentsV2,
-  type TierFeeSchedule,
+  calculateFeeV21,
+  DEFAULT_MATERIALS_PROCESSING_BPS,
+  type TierScheduleV21,
 } from '../../supabase/functions/_shared/pricing';
 import type { PricingTier } from '../types/database';
 
-// Static mirror of the pricing_tiers seed — used until/if the fetch resolves.
+// Static mirror of the pricing_tiers seed (v2.1) — used until/if the fetch
+// resolves. MUST match TIER_SCHEDULES_V21 in _shared/pricing.ts, or this page
+// advertises a rate the money path does not charge.
 const FALLBACK_TIERS: PricingTier[] = [
-  { id: 'free', name: 'Free', monthly_price_cents: 0, annual_monthly_price_cents: null, rate_bps: 1000, reduced_rate_bps: 500, reduced_threshold_cents: 300_000, fee_cap_cents: 90_000, direct_pay_allowed: false, stripe_price_id_monthly: null, stripe_price_id_annual: null, is_active: true, sort_order: 1, created_at: '', updated_at: '' },
-  { id: 'pro', name: 'Pro', monthly_price_cents: 4900, annual_monthly_price_cents: null, rate_bps: 700, reduced_rate_bps: 350, reduced_threshold_cents: 300_000, fee_cap_cents: 63_000, direct_pay_allowed: false, stripe_price_id_monthly: null, stripe_price_id_annual: null, is_active: true, sort_order: 2, created_at: '', updated_at: '' },
-  { id: 'pm', name: 'Property Manager', monthly_price_cents: 14900, annual_monthly_price_cents: 11900, rate_bps: 300, reduced_rate_bps: 150, reduced_threshold_cents: 300_000, fee_cap_cents: 27_000, direct_pay_allowed: true, stripe_price_id_monthly: null, stripe_price_id_annual: null, is_active: true, sort_order: 3, created_at: '', updated_at: '' },
+  { id: 'free', name: 'Free', monthly_price_cents: 0, annual_monthly_price_cents: null, rate_bps: 800, reduced_rate_bps: 800, reduced_threshold_cents: 300_000, fee_cap_cents: 50_000, repeat_rate_bps: 500, cap_floor_bps: 250, min_fee_cents: 500, instant_payout_bps: 150, instant_payout_min_cents: 200, team_seats: null, direct_pay_allowed: false, stripe_price_id_monthly: null, stripe_price_id_annual: null, is_active: true, sort_order: 1, created_at: '', updated_at: '' },
+  { id: 'pro', name: 'Pro', monthly_price_cents: 3900, annual_monthly_price_cents: null, rate_bps: 500, reduced_rate_bps: 500, reduced_threshold_cents: 300_000, fee_cap_cents: 40_000, repeat_rate_bps: 400, cap_floor_bps: 250, min_fee_cents: 500, instant_payout_bps: 150, instant_payout_min_cents: 200, team_seats: null, direct_pay_allowed: false, stripe_price_id_monthly: null, stripe_price_id_annual: null, is_active: true, sort_order: 2, created_at: '', updated_at: '' },
+  { id: 'pm', name: 'Property Manager', monthly_price_cents: 14900, annual_monthly_price_cents: 11900, rate_bps: 300, reduced_rate_bps: 300, reduced_threshold_cents: 300_000, fee_cap_cents: 27_000, repeat_rate_bps: 300, cap_floor_bps: 250, min_fee_cents: 500, instant_payout_bps: 150, instant_payout_min_cents: 200, team_seats: 10, direct_pay_allowed: true, stripe_price_id_monthly: null, stripe_price_id_annual: null, is_active: true, sort_order: 3, created_at: '', updated_at: '' },
 ];
 
-const scheduleOf = (t: PricingTier): TierFeeSchedule => ({
+const scheduleOf = (t: PricingTier): TierScheduleV21 => ({
   rateBps: t.rate_bps,
-  reducedRateBps: t.reduced_rate_bps,
-  reducedThresholdCents: t.reduced_threshold_cents,
+  repeatRateBps: t.repeat_rate_bps ?? t.rate_bps,
   feeCapCents: t.fee_cap_cents,
+  capFloorBps: t.cap_floor_bps ?? 250,
+  minFeeCents: t.min_fee_cents ?? 500,
 });
 
 const dollars = (cents: number, dp = 0) =>
@@ -50,24 +57,25 @@ const TIER_BLURB: Record<string, string> = {
 const TIER_FEATURES: Record<string, string[]> = {
   free: [
     'Unlimited quoting — always free',
+    'Nothing charged on materials, ever',
+    '5% on repeat clients — forever',
     'Full job, team & schedule tools',
     'Escrow payment protection',
-    'Invoicing & payment tracking',
-    'Fee capped at $900 per job',
+    'Fee capped at $500 per job',
   ],
   pro: [
     '14-day free trial — cancel anytime, no charge',
     'Everything in Free',
+    '5% of your labour (4% on repeat clients)',
     'Unlimited AI quote estimates',
     'Recurring services & auto-invoicing',
-    '7% platform fee (3.5% above $3k)',
-    'Fee capped at $630 per job',
+    'Fee capped at $400 per job',
     'Priority in search results',
     'Pro badge on your profile',
   ],
   pm: [
     'Everything in Pro',
-    '3% platform fee (1.5% above $3k)',
+    '3% of your labour — repeat clients too',
     'Fee capped at $270 per job',
     'Direct payment allowed (no escrow requirement)',
     'Volume reporting',
@@ -76,7 +84,7 @@ const TIER_FEATURES: Record<string, string[]> = {
 
 // Publicly listed competitor pricing (checked July 2026 — see footnote).
 const COMPETITORS = [
-  { name: 'ConnecTradie Free', model: '$0/month · 10% only when a job completes, capped at $900', quoting: 'Free', escrow: 'Yes', highlight: true },
+  { name: 'ConnecTradie Free', model: '$0/month · 8% of your labour when a job completes (5% for repeat clients), capped at $500 — nothing on materials', quoting: 'Free', escrow: 'Yes', highlight: true },
   { name: 'hipages', model: 'From ~$129/month on a 12-month contract + lead credits', quoting: 'Costs credits per lead', escrow: 'No', highlight: false },
   { name: 'Airtasker', model: '~15–20% service fee on each task', quoting: 'Free to offer', escrow: 'Payment held', highlight: false },
   { name: 'Oneflare', model: 'Pay-per-lead credits (roughly $5–$60 a lead), win or lose', quoting: 'Costs credits per quote', escrow: 'No', highlight: false },
@@ -103,20 +111,43 @@ export default function Pricing() {
   // ── Calculator state ──
   const [avgJob, setAvgJob] = useState('400');
   const [jobsPerMonth, setJobsPerMonth] = useState('8');
+  // v2.1 inputs: the materials share matters because we never charge on it, and
+  // the repeat share matters because those jobs are cheaper.
+  const [materialsPct, setMaterialsPct] = useState('0');
+  const [repeatPct, setRepeatPct] = useState('0');
 
   const calc = useMemo(() => {
     const jobCents = Math.max(0, Math.round((parseFloat(avgJob) || 0) * 100));
     const jobs = Math.max(0, Math.min(200, Math.round(parseFloat(jobsPerMonth) || 0)));
     if (jobCents === 0 || jobs === 0) return null;
+
+    const matShare = Math.min(100, Math.max(0, parseFloat(materialsPct) || 0)) / 100;
+    const repeatShare = Math.min(100, Math.max(0, parseFloat(repeatPct) || 0)) / 100;
+    const materialsCents = Math.round(jobCents * matShare);
+    const labourCents = jobCents - materialsCents;
+
     const rows = tiers.map((t) => {
-      const feePerJob = calculatePlatformFeeCentsV2(jobCents, scheduleOf(t)).feeCents;
-      const monthlyFees = feePerJob * jobs;
+      const schedule = scheduleOf(t);
+      const common = {
+        labourCents,
+        materialsCents,
+        tier: schedule,
+        materialsProcessingBps: DEFAULT_MATERIALS_PROCESSING_BPS,
+      };
+      const standard = calculateFeeV21({ ...common, isRepeatClient: false });
+      const repeat = calculateFeeV21({ ...common, isRepeatClient: true });
+      // Blend by how many of their jobs are with returning clients.
+      const repeatJobs = Math.round(jobs * repeatShare);
+      const standardJobs = jobs - repeatJobs;
+      const monthlyFees =
+        standard.totalDeductionCents * standardJobs + repeat.totalDeductionCents * repeatJobs;
+      const feePerJob = jobs > 0 ? Math.round(monthlyFees / jobs) : 0;
       const total = monthlyFees + t.monthly_price_cents;
-      return { tier: t, feePerJob, monthlyFees, total };
+      return { tier: t, feePerJob, monthlyFees, total, standard, repeat };
     });
     const cheapest = rows.reduce((a, b) => (b.total < a.total ? b : a), rows[0]);
-    return { rows, cheapest, jobs };
-  }, [tiers, avgJob, jobsPerMonth]);
+    return { rows, cheapest, jobs, labourCents, materialsCents };
+  }, [tiers, avgJob, jobsPerMonth, materialsPct, repeatPct]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -184,10 +215,13 @@ export default function Pricing() {
                 </p>
                 <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3 mb-5">
                   <p className="text-sm font-semibold text-gray-900">
-                    {pct(t.rate_bps)} per completed job
+                    {pct(t.rate_bps)} of your labour
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {pct(t.reduced_rate_bps)} on the part above {dollars(t.reduced_threshold_cents)} · capped at {dollars(t.fee_cap_cents)}
+                    {(t.repeat_rate_bps ?? t.rate_bps) < t.rate_bps
+                      ? `${pct(t.repeat_rate_bps ?? t.rate_bps)} for repeat clients · `
+                      : ''}
+                    capped at {dollars(t.fee_cap_cents)} · nothing on materials
                   </p>
                 </div>
                 <ul className="space-y-2.5 mb-7">
@@ -223,7 +257,7 @@ export default function Pricing() {
             Honest answer — including when Free is your best deal.
           </p>
           <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
-            <div className="grid grid-cols-2 gap-4 mb-6 max-w-md mx-auto">
+            <div className="grid grid-cols-2 gap-4 mb-4 max-w-md mx-auto">
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Average job value ($)</label>
                 <input
@@ -240,7 +274,35 @@ export default function Pricing() {
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-warm-400 tabular-nums"
                 />
               </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Materials (% of job)</label>
+                <input
+                  type="number" min="0" max="100" step="5" value={materialsPct}
+                  onChange={(e) => setMaterialsPct(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-warm-400 tabular-nums"
+                />
+                <p className="mt-1 text-[11px] text-gray-400">We charge nothing on this part.</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Repeat clients (%)</label>
+                <input
+                  type="number" min="0" max="100" step="5" value={repeatPct}
+                  onChange={(e) => setRepeatPct(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-warm-400 tabular-nums"
+                />
+                <p className="mt-1 text-[11px] text-gray-400">Returning clients cost you less.</p>
+              </div>
             </div>
+
+            {calc && calc.materialsCents > 0 && (
+              <p className="text-xs text-gray-500 text-center mb-4">
+                Of each {dollars(calc.labourCents + calc.materialsCents, 2)} job:{' '}
+                <span className="font-medium text-gray-700">{dollars(calc.labourCents, 2)}</span> labour
+                {' '}(what we charge on) +{' '}
+                <span className="font-medium text-gray-700">{dollars(calc.materialsCents, 2)}</span> materials
+                {' '}(we take nothing)
+              </p>
+            )}
 
             {calc ? (
               <>
