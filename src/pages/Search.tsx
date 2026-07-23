@@ -604,9 +604,12 @@ export default function Search() {
                 onChange={(value, coordinates, details) => {
                   setPostcodeFilter(value);
                   setPostcodeQuery(details?.postcode || value.replace(/\D/g, '').slice(0, 4) || value);
-                  if (coordinates) {
-                    setLocationCoords(coordinates);
-                  }
+                  // Clear (don't keep) coords when the address is typed by hand —
+                  // only a picked suggestion carries them. Currently inert (the
+                  // value is never read), but this stops the next person who
+                  // consumes it from inheriting stale coordinates. Same guard as
+                  // PostLead / ClientSitesSection.
+                  setLocationCoords(coordinates ?? null);
                 }}
                 placeholder="Enter your address or postcode (e.g., 2000, Sydney)"
                 searchTypes={['geocode']}
