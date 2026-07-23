@@ -71,7 +71,13 @@ export default function Projects() {
     try {
       setLoading(true);
 
-      await supabase.rpc('auto_complete_ended_projects');
+      // NOTE: we deliberately do NOT call the auto_complete_ended_projects RPC
+      // here. It's a SECURITY DEFINER maintenance function that sweeps projects
+      // platform-wide, so EXECUTE is restricted to service_role
+      // (20260528210000_security_critical_revokes) — a signed-in user must not be
+      // able to trigger it. The call therefore 403'd on every Projects load and
+      // did nothing but log an error. The `auto-complete-ended-projects` cron
+      // (daily, 00:00) performs the sweep server-side.
 
       if (!user?.id) {
         setLoading(false);
