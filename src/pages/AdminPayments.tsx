@@ -34,10 +34,8 @@ interface SubscriptionRow {
   id: string;
   profile_id: string;
   subscription_tier: string;
-  subscription_started_at: string | null;
-  stripe_subscription_id: string | null;
   created_at: string;
-  profiles: { full_name: string } | null;
+  profiles: { full_name: string; subscription_started_at: string | null } | null;
 }
 
 type TabKey = 'client' | 'tradie' | 'revenue' | 'subscriptions';
@@ -76,7 +74,13 @@ export default function AdminPayments() {
         .range((page - 1) * pageSize, page * pageSize - 1),
       supabase
         .from('tradie_details')
-        .select('id, profile_id, subscription_tier, subscription_started_at, stripe_subscription_id, created_at, profiles:profiles!tradie_details_profile_id_fkey(full_name)')
+        // subscription_started_at lives on PROFILES, not tradie_details, and
+        // stripe_subscription_id doesn't exist on either — selecting them here
+        // made PostgREST reject the whole query with
+        // 42703 "column tradie_details.subscription_started_at does not exist",
+        // so the Subscriptions tab silently rendered empty. Pull the start date
+        // through the profiles embed this query already has.
+        .select('id, profile_id, subscription_tier, created_at, profiles:profiles!tradie_details_profile_id_fkey(full_name, subscription_started_at)')
         .eq('subscription_tier', 'pro')
         .order('created_at', { ascending: false }),
     ]);
@@ -651,8 +655,8 @@ export default function AdminPayments() {
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-gray-900">{sub.profiles?.full_name || 'Unknown'}</p>
                         <p className="text-xs text-gray-500 mt-0.5">
-                          {sub.subscription_started_at
-                            ? `Pro since ${formatDate(sub.subscription_started_at)}`
+                          {sub.profiles?.subscription_started_at
+                            ? `Pro since ${formatDate(sub.profiles.subscription_started_at)}`
                             : 'Pro subscriber'}
                         </p>
                       </div>
