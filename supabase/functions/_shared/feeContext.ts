@@ -109,6 +109,38 @@ export function splitAmount(
 }
 
 /**
+ * Pulls the labour/materials split from a job's accepted quote.
+ *
+ * Deposits, milestones and staged payments all charge a PORTION of the job, so
+ * the split is returned whole and `splitAmount` pro-rates it to whatever is
+ * actually being collected. Returns nulls when there is no accepted quote (the
+ * caller then falls back to all-labour).
+ */
+export async function getJobQuoteSplit(
+  supabase: SupabaseLike,
+  jobId: string | null | undefined,
+): Promise<{ labourCents: number | null; materialsCents: number | null }> {
+  if (!jobId) return { labourCents: null, materialsCents: null };
+  try {
+    const { data, error } = await supabase
+      .from("quotes")
+      .select("labour_cents, materials_cents")
+      .eq("job_id", jobId)
+      .eq("status", "accepted")
+      .maybeSingle();
+    if (error || !data || data.labour_cents == null) {
+      return { labourCents: null, materialsCents: null };
+    }
+    return {
+      labourCents: Number(data.labour_cents),
+      materialsCents: Number(data.materials_cents ?? 0),
+    };
+  } catch {
+    return { labourCents: null, materialsCents: null };
+  }
+}
+
+/**
  * Resolve the platform's take for a charge. Always await this at charge time —
  * the repeat-client rate is a live server-side lookup and must not be cached
  * across jobs.
