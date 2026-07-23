@@ -2620,6 +2620,146 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_fee_charges: {
+        Row: {
+          charged_at: string
+          commission_cents: number
+          created_at: string
+          ex_gst_cents: number
+          fee_rate_bps: number | null
+          fee_rate_type: string | null
+          gst_cents: number
+          id: string
+          invoice_id: string | null
+          job_id: string | null
+          materials_processing_cents: number
+          payment_id: string
+          tradie_profile_id: string
+        }
+        Insert: {
+          charged_at?: string
+          commission_cents: number
+          created_at?: string
+          ex_gst_cents: number
+          fee_rate_bps?: number | null
+          fee_rate_type?: string | null
+          gst_cents: number
+          id?: string
+          invoice_id?: string | null
+          job_id?: string | null
+          materials_processing_cents?: number
+          payment_id: string
+          tradie_profile_id: string
+        }
+        Update: {
+          charged_at?: string
+          commission_cents?: number
+          created_at?: string
+          ex_gst_cents?: number
+          fee_rate_bps?: number | null
+          fee_rate_type?: string | null
+          gst_cents?: number
+          id?: string
+          invoice_id?: string | null
+          job_id?: string | null
+          materials_processing_cents?: number
+          payment_id?: string
+          tradie_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_fee_charges_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "platform_fee_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_fee_charges_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_fee_charges_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_fee_charges_tradie_profile_id_fkey"
+            columns: ["tradie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_fee_invoices: {
+        Row: {
+          adjusts_invoice_id: string | null
+          created_at: string
+          emailed_at: string | null
+          gst_cents: number
+          id: string
+          invoice_number: number
+          issued_at: string
+          kind: string
+          period_end: string
+          period_start: string
+          subtotal_ex_gst_cents: number
+          total_cents: number
+          tradie_profile_id: string
+        }
+        Insert: {
+          adjusts_invoice_id?: string | null
+          created_at?: string
+          emailed_at?: string | null
+          gst_cents: number
+          id?: string
+          invoice_number?: number
+          issued_at?: string
+          kind?: string
+          period_end: string
+          period_start: string
+          subtotal_ex_gst_cents: number
+          total_cents: number
+          tradie_profile_id: string
+        }
+        Update: {
+          adjusts_invoice_id?: string | null
+          created_at?: string
+          emailed_at?: string | null
+          gst_cents?: number
+          id?: string
+          invoice_number?: number
+          issued_at?: string
+          kind?: string
+          period_end?: string
+          period_start?: string
+          subtotal_ex_gst_cents?: number
+          total_cents?: number
+          tradie_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_fee_invoices_adjusts_invoice_id_fkey"
+            columns: ["adjusts_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "platform_fee_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_fee_invoices_tradie_profile_id_fkey"
+            columns: ["tradie_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_recommendations: {
         Row: {
           action_url: string | null
@@ -2883,6 +3023,7 @@ export type Database = {
           employer_status: string
           employment_type: string
           external_pay_allowed: boolean
+          fee_invoice_frequency: string
           full_name: string
           id: string
           insurance_policy: boolean | null
@@ -2956,6 +3097,7 @@ export type Database = {
           employer_status?: string
           employment_type?: string
           external_pay_allowed?: boolean
+          fee_invoice_frequency?: string
           full_name?: string
           id: string
           insurance_policy?: boolean | null
@@ -3029,6 +3171,7 @@ export type Database = {
           employer_status?: string
           employment_type?: string
           external_pay_allowed?: boolean
+          fee_invoice_frequency?: string
           full_name?: string
           id?: string
           insurance_policy?: boolean | null

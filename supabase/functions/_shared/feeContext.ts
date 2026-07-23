@@ -132,6 +132,56 @@ export function splitAmount(
 }
 
 /**
+ * Records an immutable ledger row for commission actually charged (spec §7A).
+ *
+ * Deliberately BEST-EFFORT: it swallows and logs every error. Issuing a tax
+ * invoice must never be able to fail a payout — the money moving is what
+ * matters, and a missing ledger row can be reconciled later from the payment.
+ *
+ * Idempotent via the UNIQUE constraint on payment_id, so a retried release can
+ * never bill the same commission twice.
+ *
+ * commission is GST-INCLUSIVE: gst = round(commission / 11), ex = commission − gst.
+ * materialsProcessing is stored for the accountant but is NOT invoiced — it is
+ * Stripe's cost at cost, not platform revenue.
+ */
+export async function recordFeeCharge(
+  supabase: SupabaseLike,
+  input: {
+    tradieProfileId: string | null | undefined;
+    paymentId: string;
+    jobId?: string | null;
+    commissionCents: number;
+    materialsProcessingCents?: number;
+    feeRateBps?: number | null;
+    feeRateType?: string | null;
+  },
+): Promise<void> {
+  try {
+    if (!input.tradieProfileId || !(input.commissionCents > 0)) return; // nothing billable
+    const commission = Math.round(input.commissionCents);
+    const gst = Math.round(commission / 11);
+    const { error } = await supabase.from("platform_fee_charges").insert({
+      tradie_profile_id: input.tradieProfileId,
+      payment_id: input.paymentId,
+      job_id: input.jobId ?? null,
+      commission_cents: commission,
+      gst_cents: gst,
+      ex_gst_cents: commission - gst,
+      materials_processing_cents: Math.round(input.materialsProcessingCents ?? 0),
+      fee_rate_bps: input.feeRateBps ?? null,
+      fee_rate_type: input.feeRateType === "repeat_client" ? "repeat_client" : "standard",
+    });
+    // 23505 = already recorded for this payment; that's the idempotent path.
+    if (error && (error as { code?: string }).code !== "23505") {
+      console.error("[recordFeeCharge] failed (payout unaffected)", input.paymentId, error);
+    }
+  } catch (err) {
+    console.error("[recordFeeCharge] threw (payout unaffected)", err);
+  }
+}
+
+/**
  * Pulls the labour/materials split from a job's accepted quote.
  *
  * Deposits, milestones and staged payments all charge a PORTION of the job, so

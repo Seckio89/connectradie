@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
-import { frozenCents } from "../_shared/feeContext.ts";
+import { frozenCents, recordFeeCharge } from "../_shared/feeContext.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -309,6 +309,21 @@ Deno.serve(async (req: Request) => {
         );
       }
 
+      // §7A: record the commission for tax-invoicing. Best-effort by design —
+      // recordFeeCharge never throws, so this cannot fail a payout that has
+      // already moved money.
+      await recordFeeCharge(supabase, {
+        tradieProfileId: job.tradie_id,
+        paymentId,
+        jobId: payment.job_id,
+        commissionCents: totalCommission,
+        materialsProcessingCents: totalMaterialsProcessing,
+        feeRateBps: frozenCents(existingMetadata.fee_rate_bps) || null,
+        feeRateType: typeof existingMetadata.fee_rate_type === "string"
+          ? existingMetadata.fee_rate_type
+          : null,
+      });
+
       // Mark the summed child price_adjustment rows released too (only once the
       // payout landed) so reconciliation/reporting stays consistent.
       if (payoutId) {
@@ -433,6 +448,7 @@ Deno.serve(async (req: Request) => {
           released_at: new Date().toISOString(),
           released_by: user.id,
         },
+
       })
       .eq("id", paymentId);
 
@@ -446,6 +462,19 @@ Deno.serve(async (req: Request) => {
         metaUpdateError
       );
     }
+
+    // §7A: same commission ledger write as the destination path. Best-effort.
+    await recordFeeCharge(supabase, {
+      tradieProfileId: job.tradie_id,
+      paymentId,
+      jobId: payment.job_id,
+      commissionCents: totalCommission,
+      materialsProcessingCents: totalMaterialsProcessing,
+      feeRateBps: frozenCents(existingMetadata.fee_rate_bps) || null,
+      feeRateType: typeof existingMetadata.fee_rate_type === "string"
+        ? existingMetadata.fee_rate_type
+        : null,
+    });
 
     return new Response(
       JSON.stringify({

@@ -38,3 +38,6 @@ public/sitemap-hubs.xml
 connectradie.zip
 connectradie.tar.gz
 src.zip
+
+# E2E test config (test-project keys only)
+.env.e2e

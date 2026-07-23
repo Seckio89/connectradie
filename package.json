@@ -24,7 +24,12 @@
     "typecheck:ratchet": "node scripts/typecheck-ratchet.mjs",
     "typecheck:baseline": "node scripts/typecheck-ratchet.mjs --update",
     "typecheck:edge": "node scripts/typecheck-edge.mjs",
-    "typecheck:edge:baseline": "node scripts/typecheck-edge.mjs --update"
+    "typecheck:edge:baseline": "node scripts/typecheck-edge.mjs --update",
+    "e2e:doctor": "node scripts/e2e-doctor.mjs",
+    "e2e:bootstrap": "node scripts/e2e-seed.mjs --bootstrap",
+    "e2e:quote": "node scripts/e2e-seed.mjs --quote",
+    "e2e:reset": "node scripts/e2e-seed.mjs --reset",
+    "e2e:run": "node connectradie-e2e.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",

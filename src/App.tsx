@@ -67,6 +67,7 @@ const Contact = lazy(() => import('./pages/Contact'));
 const HelpFAQ = lazy(() => import('./pages/HelpFAQ'));
 const Pricing = lazy(() => import('./pages/Pricing'));
 const HowFeesWork = lazy(() => import('./pages/HowFeesWork'));
+const TaxInvoice = lazy(() => import('./pages/TaxInvoice'));
 const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
 const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
@@ -169,6 +170,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/help': 'Help & FAQ | ConnecTradie',
   '/pricing': 'Pricing | ConnecTradie',
   '/how-fees-work': 'How fees work | ConnecTradie',
+  '/tax-invoice': 'Tax Invoice | ConnecTradie',
   '/terms': 'Terms of Service | ConnecTradie',
   '/privacy': 'Privacy Policy | ConnecTradie',
   '/analytics': 'Analytics | ConnecTradie',
@@ -264,6 +266,9 @@ function AppRoutes() {
       <Route path="/payment-success" element={<PaymentSuccess />} />
       <Route path="/payment-cancelled" element={<PaymentCancelled />} />
       <Route path="/invoice/:paymentId" element={<Invoice />} />
+      {/* ConnecTradie → tradie tax invoice for platform commission (§7A).
+          Distinct from /invoice/:paymentId, which is the tradie → client receipt. */}
+      <Route path="/tax-invoice/:invoiceId" element={<TaxInvoice />} />
       <Route
         path="/my-trades"
         element={
