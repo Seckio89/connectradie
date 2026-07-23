@@ -89,6 +89,35 @@ interface ProjectJob {
   } | null;
 }
 
+/**
+ * Full-screen image lightbox. Extracted so JobDetailsCard and VariationsHistory
+ * can each own their own lightbox state — the markup used to live only inside
+ * VariationsHistory while the state lived in JobDetailsCard, which meant the
+ * parent's lightbox never opened and the child threw a ReferenceError.
+ */
+function ImageLightbox({ url, onClose }: { url: string | null; onClose: () => void }) {
+  if (!url) return null;
+  return (
+    <div
+      className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <img
+        src={url}
+        alt="Attachment"
+        className="max-w-full max-h-[90vh] rounded-lg object-contain"
+        onClick={(e) => e.stopPropagation()}
+      />
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+      >
+        <X className="w-5 h-5" />
+      </button>
+    </div>
+  );
+}
+
 export default function JobDetailsCard({ job, client, isUnlocked = false, showClientDetails = false, onInvoiceModalChange }: JobDetailsCardProps) {
   const { profile, tradieDetails } = useAuth();
   const isProUser = isPro(tradieDetails?.subscription_tier, profile?.is_premium);
@@ -923,6 +952,11 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
           </div>
         </div>
       )}
+
+      {/* Lightbox for job attachment photos. This markup was previously stranded
+          inside VariationsHistory, so clicking an attachment set state that
+          nothing rendered — the lightbox simply never opened. */}
+      <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
     </div>
   );
 }
@@ -1323,6 +1357,9 @@ interface VariationsHistoryProps {
 }
 
 function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: VariationsHistoryProps) {
+  // Own lightbox state. Previously this component referenced JobDetailsCard's
+  // state, which is out of scope here and threw on every render.
+  const [variationLightboxUrl, setVariationLightboxUrl] = useState<string | null>(null);
   const resolved = variations.filter(v => v.status !== 'pending');
   const pending = variations.filter(v => v.status === 'pending');
   const approved = variations.filter(v => v.status === 'approved');
@@ -1422,7 +1459,7 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
                           <div key={pIdx} className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
                             <img src={url} alt={`Evidence ${pIdx + 1}`} loading="lazy" decoding="async"
                               className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
-                              onClick={() => setLightboxUrl(url)} />
+                              onClick={() => setVariationLightboxUrl(url)} />
                           </div>
                         ))}
                       </div>
@@ -1434,26 +1471,8 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
         </div>
       </div>
 
-      {/* Image Lightbox */}
-      {lightboxUrl && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
-          onClick={() => setLightboxUrl(null)}
-        >
-          <img
-            src={lightboxUrl}
-            alt="Attachment"
-            className="max-w-full max-h-[90vh] rounded-lg object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <button
-            onClick={() => setLightboxUrl(null)}
-            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      )}
+      {/* Lightbox for variation evidence photos — owned by THIS component. */}
+      <ImageLightbox url={variationLightboxUrl} onClose={() => setVariationLightboxUrl(null)} />
     </div>
   );
 }
