@@ -161,7 +161,7 @@ export default function PaymentHistory() {
       // Outstanding first
       const { data: outstanding } = await supabase
         .from('recurring_invoices')
-        .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, service_subtype, agreed_price, description, location), tradie:profiles!recurring_invoices_tradie_id_fkey(full_name, business_name)')
+        .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, service_subtype, agreed_price, description, location), tradie:profiles!recurring_invoices_tradie_id_fkey(full_name)')
         .eq('homeowner_id', user.id)
         .in('status', ['sent', 'overdue', 'draft'])
         .order('created_at', { ascending: false });
@@ -169,7 +169,7 @@ export default function PaymentHistory() {
       // Then paid/cancelled
       const { data: completed } = await supabase
         .from('recurring_invoices')
-        .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, service_subtype, agreed_price, description, location), tradie:profiles!recurring_invoices_tradie_id_fkey(full_name, business_name)')
+        .select('*, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category, service_subtype, agreed_price, description, location), tradie:profiles!recurring_invoices_tradie_id_fkey(full_name)')
         .eq('homeowner_id', user.id)
         .in('status', ['paid', 'cancelled'])
         .order('paid_at', { ascending: false });
