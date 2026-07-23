@@ -100,6 +100,44 @@ describe('input validation — money is never a float', () => {
     expect(() => calculateFeeV21(fee(100_000, -1))).toThrow('INVALID_MATERIALS'));
 });
 
+describe('per-profile override (platform owner 0% + grandfathered rates)', () => {
+  const withOverride = (labour: number, materials: number, overrideBps: number | null, tier = free) =>
+    calculateFeeV21({ ...fee(labour, materials, tier), overrideBps });
+
+  it('0 bps → zero commission, and the $5 min fee does NOT resurrect it', () => {
+    const r = withOverride(100_000, 0, 0);
+    expect(r.commissionCents).toBe(0);
+    expect(r.gstComponentCents).toBe(0);
+  });
+  it('0 bps on a tiny job → still zero (min fee bypassed)', () =>
+    expect(withOverride(5_000, 0, 0).commissionCents).toBe(0));
+  it('2.5% override on $10,000 labour → $250 flat', () =>
+    expect(withOverride(1_000_000, 0, 250).commissionCents).toBe(25_000));
+  it('override is still bounded by the tier cap', () =>
+    expect(withOverride(5_000_000, 0, 2_000).commissionCents).toBe(50_000));
+  it('override BYPASSES the 2.5% floor (1% on $25k → $250, not the $625 floor)', () => {
+    const r = withOverride(2_500_000, 0, 100);
+    expect(r.commissionCents).toBe(25_000);
+    expect(r.floorApplied).toBe(false);
+  });
+  it('override still pays at-cost materials processing (not platform revenue)', () => {
+    const r = withOverride(100_000, 160_000, 0);
+    expect(r.commissionCents).toBe(0);
+    expect(r.materialsProcessingCents).toBe(3_088);
+    expect(r.totalDeductionCents).toBe(3_088);
+  });
+  it('rateApplied reports the override rate', () =>
+    expect(withOverride(100_000, 0, 250).rateApplied).toBe(250));
+  it('null override → normal tier schedule', () =>
+    expect(withOverride(100_000, 0, null).commissionCents).toBe(8_000));
+  it('undefined override → normal tier schedule', () =>
+    expect(calculateFeeV21(fee(100_000, 0)).commissionCents).toBe(8_000));
+  it('override wins over the repeat rate', () => {
+    const r = calculateFeeV21({ ...fee(100_000, 0, free, true), overrideBps: 0 });
+    expect(r.commissionCents).toBe(0);
+  });
+});
+
 describe('property invariants across a labour × materials grid', () => {
   const labours = [0, 300, 5_000, 100_000, 625_000, 2_500_000, 5_000_000];
   const materials = [0, 50_000, 160_000, 1_000_000];

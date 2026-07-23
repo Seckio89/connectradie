@@ -336,6 +336,14 @@ export interface FeeInputV21 {
   isRepeatClient: boolean;
   /** Platform config, NOT per-tier. Stripe's effective inc-GST rate in bps. */
   materialsProcessingBps: number;
+  /**
+   * profiles.platform_fee_override_bps — a flat commission rate on LABOUR for
+   * grandfathered accounts and the platform owner (0 → zero commission). When
+   * set it replaces the tier rate AND bypasses the floor and the min fee (an
+   * owner on 0% must be charged nothing, not the $5 minimum). Still capped.
+   * 0 is a real rate, not "no override" — only null/undefined means unset.
+   */
+  overrideBps?: number | null;
 }
 
 export interface FeeBreakdownV21 {
@@ -365,21 +373,33 @@ export interface FeeBreakdownV21 {
  * Throws on non-integer / negative inputs — money must never be a float here.
  */
 export function calculateFeeV21(input: FeeInputV21): FeeBreakdownV21 {
-  const { labourCents, materialsCents, tier, isRepeatClient, materialsProcessingBps } = input;
+  const { labourCents, materialsCents, tier, isRepeatClient, materialsProcessingBps, overrideBps } = input;
 
   if (!Number.isInteger(labourCents) || labourCents < 0) throw new Error("INVALID_LABOUR");
   if (!Number.isInteger(materialsCents) || materialsCents < 0) throw new Error("INVALID_MATERIALS");
 
-  const rateBps = isRepeatClient ? tier.repeatRateBps : tier.rateBps;
+  const hasOverride = overrideBps != null && overrideBps >= 0;
+  const rateBps = hasOverride
+    ? (overrideBps as number)
+    : (isRepeatClient ? tier.repeatRateBps : tier.rateBps);
   const raw = Math.round((labourCents * rateBps) / 10_000);
 
   // Cap, but never below the floor (2.5% of labour) — the cap can't go underwater.
   const floorCents = Math.round((labourCents * tier.capFloorBps) / 10_000);
-  const capped = Math.min(raw, Math.max(tier.feeCapCents, floorCents));
 
-  // Min fee, itself never more than the labour (so a $3 job pays $3, not $5).
-  const minFee = Math.min(tier.minFeeCents, labourCents);
-  const commissionCents = Math.max(capped, minFee);
+  let commissionCents: number;
+  let capped: number;
+  if (hasOverride) {
+    // Grandfathered / owner rate: flat on labour, capped, but NO floor and NO
+    // min fee — a 0 bps override must yield exactly zero commission.
+    capped = Math.min(raw, tier.feeCapCents);
+    commissionCents = capped;
+  } else {
+    capped = Math.min(raw, Math.max(tier.feeCapCents, floorCents));
+    // Min fee, itself never more than the labour (so a $3 job pays $3, not $5).
+    const minFee = Math.min(tier.minFeeCents, labourCents);
+    commissionCents = Math.max(capped, minFee);
+  }
 
   // At-cost card processing on the materials portion. Excluded from the cap.
   const materialsProcessingCents = Math.round((materialsCents * materialsProcessingBps) / 10_000);
@@ -394,9 +414,20 @@ export function calculateFeeV21(input: FeeInputV21): FeeBreakdownV21 {
     rateApplied: rateBps,
     rateType: isRepeatClient ? "repeat_client" : "standard",
     wasCapped: capped < raw,
-    floorApplied: floorCents > tier.feeCapCents && capped === floorCents,
+    // An override bypasses the floor entirely, so it can never be "floor applied".
+    floorApplied: !hasOverride && floorCents > tier.feeCapCents && capped === floorCents,
     labourCents,
     materialsCents,
     netToTradieCents: labourCents + materialsCents - totalDeductionCents,
   };
+}
+
+/**
+ * Maps the resolved tradie tier to its V2.1 schedule. pro_plus (retired) and any
+ * unknown tier settle at Pro, matching resolveTradieTier's existing behaviour.
+ */
+export function resolveTierScheduleV21(tier: TradieTier): TierScheduleV21 {
+  if (tier === "pm") return TIER_SCHEDULES_V21.pm;
+  if (tier === "free") return TIER_SCHEDULES_V21.free;
+  return TIER_SCHEDULES_V21.pro; // pro + pro_plus
 }
