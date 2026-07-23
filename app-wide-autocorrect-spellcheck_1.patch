@@ -1,0 +1,549 @@
+diff --git a/src/components/ApplicationModal.tsx b/src/components/ApplicationModal.tsx
+index 89a7cc1..412f02c 100644
+--- a/src/components/ApplicationModal.tsx
++++ b/src/components/ApplicationModal.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState } from 'react';
+ import { X, AlertCircle, Send, GraduationCap, Award, Briefcase } from 'lucide-react';
+ import Modal from './Modal';
+@@ -97,7 +98,7 @@ export default function ApplicationModal({ isOpen, onClose, vacancy, onSubmit }:
+           <label className="block text-sm font-medium text-gray-700 mb-1.5">
+             Cover Letter / Message *
+           </label>
+-          <textarea
++          <textarea {...proseInputProps}
+             value={coverLetter}
+             onChange={e => setCoverLetter(e.target.value)}
+             rows={6}
+diff --git a/src/components/AvailabilityCalendar.tsx b/src/components/AvailabilityCalendar.tsx
+index 877bd65..1896cd3 100644
+--- a/src/components/AvailabilityCalendar.tsx
++++ b/src/components/AvailabilityCalendar.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+ import { friendlyError } from '../lib/utils';
+ import { ChevronLeft, ChevronRight, Clock, X, Loader2, Calendar as CalendarIcon, Upload, User, MapPin, Key } from 'lucide-react';
+@@ -576,7 +577,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
+                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                       Describe your project
+                     </label>
+-                    <textarea
++                    <textarea {...proseInputProps}
+                       value={bookingDescription}
+                       onChange={(e) => setBookingDescription(e.target.value)}
+                       placeholder="Tell the tradie about your project..."
+diff --git a/src/components/BookingRequestModal.tsx b/src/components/BookingRequestModal.tsx
+index e6d5ae6..f89f3d8 100644
+--- a/src/components/BookingRequestModal.tsx
++++ b/src/components/BookingRequestModal.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useEffect, useMemo } from 'react';
+ import { X, Calendar, Loader2, AlertCircle, Clock, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+ import { supabase } from '../lib/supabase';
+@@ -277,7 +278,7 @@ export default function BookingRequestModal({
+ 
+                   <div className="border-t border-gray-200 pt-6">
+                     <h3 className="text-sm font-medium text-gray-600 mb-3">Send a Message</h3>
+-                    <textarea
++                    <textarea {...proseInputProps}
+                       value={replyText}
+                       onChange={(e) => setReplyText(e.target.value)}
+                       placeholder={
+diff --git a/src/components/CancelServiceModal.tsx b/src/components/CancelServiceModal.tsx
+index be5e2c2..51083ac 100644
+--- a/src/components/CancelServiceModal.tsx
++++ b/src/components/CancelServiceModal.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useEffect, useState } from 'react';
+ import { AlertTriangle, X } from 'lucide-react';
+ import type { CancellationCategory } from '../lib/recurringJobs';
+@@ -128,7 +129,7 @@ export default function CancelServiceModal({
+           <label htmlFor="cancel-reason" className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-2">
+             Anything else <span className="lowercase text-gray-400 normal-case font-normal">(optional)</span>
+           </label>
+-          <textarea
++          <textarea {...proseInputProps}
+             id="cancel-reason"
+             rows={3}
+             value={reason}
+diff --git a/src/components/ClientContactModal.tsx b/src/components/ClientContactModal.tsx
+index 740bad2..2877d0a 100644
+--- a/src/components/ClientContactModal.tsx
++++ b/src/components/ClientContactModal.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ // ─────────────────────────────────────────────────────────────────────────────
+ // ClientContactModal — add / edit a tradie's CRM client contact (on- or off-app).
+ // Captures name, email, phone, a geocoded address (for service-area + geofencing)
+@@ -180,7 +181,7 @@ export default function ClientContactModal({
+             <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
+             <div className="relative">
+               <StickyNote className="absolute left-4 top-3 w-5 h-5 text-gray-400" />
+-              <textarea
++              <textarea {...proseInputProps}
+                 value={notes}
+                 onChange={(e) => setNotes(e.target.value)}
+                 rows={3}
+diff --git a/src/components/ClientServicesTab.tsx b/src/components/ClientServicesTab.tsx
+index b5e66ab..0ea6921 100644
+--- a/src/components/ClientServicesTab.tsx
++++ b/src/components/ClientServicesTab.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useEffect, useCallback, useRef } from 'react';
+ import { RefreshCw, User, Clock, MapPin, Loader2, Pause, AlertTriangle, X, Briefcase, MoreVertical, Plus, CheckCircle2, CheckCheck, FileText as FileTextIcon, Handshake, ChevronDown, RotateCcw, MessageCircle, Building2, Send, Package, Trash2, CreditCard, Camera, Eye, ShieldCheck } from 'lucide-react';
+ import { Link, useNavigate, useLocation } from 'react-router-dom';
+@@ -785,7 +786,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
+             <>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+-                <textarea
++                <textarea {...proseInputProps}
+                   value={description}
+                   onChange={e => setDescription(e.target.value)}
+                   placeholder="Describe the job in detail — size, materials, access, timeline... (no need to include contact info — tradies will message you through the platform)"
+diff --git a/src/components/CreateInvoiceModal.tsx b/src/components/CreateInvoiceModal.tsx
+index 9033861..ab680da 100644
+--- a/src/components/CreateInvoiceModal.tsx
++++ b/src/components/CreateInvoiceModal.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useEffect } from 'react';
+ import { X, Plus, Trash2, FileText, Calculator } from 'lucide-react';
+ import Modal from './Modal';
+@@ -501,7 +502,7 @@ export default function CreateInvoiceModal({
+ 
+           <div>
+             <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+-            <textarea
++            <textarea {...proseInputProps}
+               value={notes}
+               onChange={(e) => setNotes(e.target.value)}
+               placeholder="Additional notes, payment terms, bank details..."
+diff --git a/src/components/CreateProjectModal.tsx b/src/components/CreateProjectModal.tsx
+index 72d6f0f..0d6ea6d 100644
+--- a/src/components/CreateProjectModal.tsx
++++ b/src/components/CreateProjectModal.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState } from 'react';
+ import { X, Calendar, FileText } from 'lucide-react';
+ import { supabase } from '../lib/supabase';
+@@ -90,7 +91,7 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
+             <label className="block text-sm font-medium text-gray-700 mb-2">
+               Description
+             </label>
+-            <textarea
++            <textarea {...proseInputProps}
+               value={description}
+               onChange={(e) => setDescription(e.target.value)}
+               placeholder="Brief description of this job group..."
+diff --git a/src/components/DeclineJobModal.tsx b/src/components/DeclineJobModal.tsx
+index 5a2cbe4..6cc4c2d 100644
+--- a/src/components/DeclineJobModal.tsx
++++ b/src/components/DeclineJobModal.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useEffect } from 'react';
+ import { X, Loader2, XCircle } from 'lucide-react';
+ 
+@@ -87,7 +88,7 @@ export default function DeclineJobModal({ isOpen, onClose, onDecline, jobDescrip
+             <label className="block text-sm font-medium text-gray-700 mb-2">
+               Reason for declining <span className="text-red-500">*</span>
+             </label>
+-            <textarea
++            <textarea {...proseInputProps}
+               value={reason}
+               onChange={(e) => {
+                 setReason(e.target.value);
+diff --git a/src/components/JobCompletionModal.tsx b/src/components/JobCompletionModal.tsx
+index 66c9869..284f840 100644
+--- a/src/components/JobCompletionModal.tsx
++++ b/src/components/JobCompletionModal.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useRef, useMemo, useEffect } from 'react';
+ import { Camera, Loader2, X, Plus, AlertCircle, Check, RefreshCw } from 'lucide-react';
+ import Modal from './Modal';
+@@ -903,7 +904,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
+             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+               Additional notes <span className="text-gray-400 font-normal normal-case">(optional)</span>
+             </label>
+-            <textarea
++            <textarea {...proseInputProps}
+               value={customNotes}
+               onChange={(e) => setCustomNotes(e.target.value)}
+               rows={2}
+diff --git a/src/components/JobManagementModal.tsx b/src/components/JobManagementModal.tsx
+index ae00198..17f059c 100644
+--- a/src/components/JobManagementModal.tsx
++++ b/src/components/JobManagementModal.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useEffect, useRef, useMemo } from 'react';
+ import {
+   X, Loader2, AlertTriangle, Clock, FileText, Archive, ArchiveRestore,
+@@ -1245,7 +1246,7 @@ export default function JobManagementModal({
+                     </div>
+ 
+                     {/* Additional notes */}
+-                    <textarea
++                    <textarea {...proseInputProps}
+                       value={completionCustomNotes}
+                       onChange={(e) => setCompletionCustomNotes(e.target.value)}
+                       placeholder="Add any additional notes..."
+@@ -1368,7 +1369,7 @@ export default function JobManagementModal({
+                       </button>
+                     )}
+                   </div>
+-                  <textarea
++                  <textarea {...proseInputProps}
+                     value={notes}
+                     onChange={(e) => setNotes(e.target.value)}
+                     placeholder="Add private notes about this job..."
+diff --git a/src/components/PostVacancyModal.tsx b/src/components/PostVacancyModal.tsx
+index aab8e28..b00e065 100644
+--- a/src/components/PostVacancyModal.tsx
++++ b/src/components/PostVacancyModal.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState } from 'react';
+ import { X, AlertCircle, Check, Sparkles, FileText } from 'lucide-react';
+ import Modal from './Modal';
+@@ -356,7 +357,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
+               Insert template
+             </button>
+           </div>
+-          <textarea
++          <textarea {...proseInputProps}
+             value={form.description}
+             onChange={e => set('description', e.target.value)}
+             rows={7}
+diff --git a/src/components/ProjectDetailsModal.tsx b/src/components/ProjectDetailsModal.tsx
+index 7c01689..83481ae 100644
+--- a/src/components/ProjectDetailsModal.tsx
++++ b/src/components/ProjectDetailsModal.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useEffect, useMemo } from 'react';
+ import { X, Calendar, Plus, Trash2, Clock, Package, ChevronRight, ArrowLeft } from 'lucide-react';
+ import { supabase } from '../lib/supabase';
+@@ -833,7 +834,7 @@ export default function ProjectDetailsModal({
+ 
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Reason</label>
+-                <textarea
++                <textarea {...proseInputProps}
+                   value={endOngoingReason}
+                   onChange={(e) => setEndOngoingReason(e.target.value)}
+                   placeholder={endOngoingStatus === 'completed'
+@@ -896,7 +897,7 @@ export default function ProjectDetailsModal({
+ 
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Reason</label>
+-                <textarea
++                <textarea {...proseInputProps}
+                   value={requestReason}
+                   onChange={(e) => setRequestReason(e.target.value)}
+                   placeholder="Explain why you need to change this date..."
+diff --git a/src/components/RecurringInvoiceCard.tsx b/src/components/RecurringInvoiceCard.tsx
+index cb4b7dd..392bdf3 100644
+--- a/src/components/RecurringInvoiceCard.tsx
++++ b/src/components/RecurringInvoiceCard.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState } from 'react';
+ import { FileText, ExternalLink, ChevronDown, ChevronUp, CheckCircle2, XCircle, Loader2, AlertTriangle, MessageSquare, ArrowUpCircle } from 'lucide-react';
+ 
+@@ -284,7 +285,7 @@ export default function RecurringInvoiceCard({ invoice, userRole, paymentMethod
+             {userRole === 'tradie' && !invoice.tradie_response && onRespondToDispute && (
+               <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+                 <p className="text-xs font-medium text-amber-800">Respond to this dispute</p>
+-                <textarea
++                <textarea {...proseInputProps}
+                   value={tradieResponseText}
+                   onChange={e => setTradieResponseText(e.target.value)}
+                   placeholder="Explain the charges or propose a resolution..."
+diff --git a/src/components/RequestVariationModal.tsx b/src/components/RequestVariationModal.tsx
+index 1b70259..ed49db9 100644
+--- a/src/components/RequestVariationModal.tsx
++++ b/src/components/RequestVariationModal.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState } from 'react';
+ import { X, FileText, Camera, Loader2 } from 'lucide-react';
+ import { supabase } from '../lib/supabase';
+@@ -219,7 +220,7 @@ export default function RequestVariationModal({
+               <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                 Additional details {reasonCategory !== 'other' && <span className="text-gray-400 font-normal">(optional)</span>}
+               </label>
+-              <textarea
++              <textarea {...proseInputProps}
+                 value={description}
+                 onChange={(e) => setDescription(e.target.value)}
+                 placeholder={
+diff --git a/src/components/TradieProfessionalSettings.tsx b/src/components/TradieProfessionalSettings.tsx
+index 78e3fb7..f243ce3 100644
+--- a/src/components/TradieProfessionalSettings.tsx
++++ b/src/components/TradieProfessionalSettings.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useEffect, useMemo } from 'react';
+ import {
+   FileText,
+@@ -704,7 +705,7 @@ export default function TradieProfessionalSettings() {
+                 {bio.length}/140
+               </span>
+             </div>
+-            <textarea
++            <textarea {...proseInputProps}
+               value={bio}
+               onChange={(e) => {
+                 if (e.target.value.length <= 140) setBio(e.target.value);
+diff --git a/src/components/TradieQuoteActions.tsx b/src/components/TradieQuoteActions.tsx
+index f12a5df..cb0a7d1 100644
+--- a/src/components/TradieQuoteActions.tsx
++++ b/src/components/TradieQuoteActions.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ // ─────────────────────────────────────────────────────────────────────────────
+ // TradieQuoteActions — tradie-side UI surface for a v2 (3-stage) quote.
+ //
+@@ -169,7 +170,7 @@ function CompleteVisitModal({ isOpen, quote, tradeCategory, onClose, onDone }: C
+         <label className="block text-sm font-medium text-gray-700 mb-1.5">
+           Notes from the visit <span className="text-gray-400 font-normal">(optional, visible to the client)</span>
+         </label>
+-        <textarea
++        <textarea {...proseInputProps}
+           value={notes}
+           onChange={(e) => setNotes(e.target.value)}
+           rows={3}
+@@ -347,7 +348,7 @@ function SubmitFinalQuoteModal({ isOpen, quote, onClose, onDone }: SubmitFinalQu
+         <label className="block text-sm font-medium text-gray-700 mb-1.5 mt-4">
+           Message to the client {messageRequired ? <span className="text-red-500">*</span> : <span className="text-gray-400 font-normal">(optional)</span>}
+         </label>
+-        <textarea
++        <textarea {...proseInputProps}
+           value={message}
+           onChange={(e) => setMessage(e.target.value)}
+           rows={4}
+diff --git a/src/pages/AdminDisputes.tsx b/src/pages/AdminDisputes.tsx
+index 2d1c60d..8e48e0c 100644
+--- a/src/pages/AdminDisputes.tsx
++++ b/src/pages/AdminDisputes.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useEffect } from 'react';
+ import {
+   AlertTriangle,
+@@ -393,7 +394,7 @@ export default function AdminDisputes() {
+                             >
+                               Admin Notes / Resolution
+                             </label>
+-                            <textarea
++                            <textarea {...proseInputProps}
+                               id={`notes-${dispute.id}`}
+                               value={adminNotes[dispute.id] || ''}
+                               onChange={(e) =>
+diff --git a/src/pages/AdminModeration.tsx b/src/pages/AdminModeration.tsx
+index 8b60b52..4dbb52f 100644
+--- a/src/pages/AdminModeration.tsx
++++ b/src/pages/AdminModeration.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useEffect } from 'react';
+ import {
+   Search,
+@@ -427,7 +428,7 @@ export default function AdminModeration() {
+ 
+                           {report.status === 'pending' && (
+                             <div className="space-y-3">
+-                              <textarea
++                              <textarea {...proseInputProps}
+                                 value={adminNotes[report.id] || ''}
+                                 onChange={e => setAdminNotes(prev => ({ ...prev, [report.id]: e.target.value }))}
+                                 placeholder="Add admin notes (optional)..."
+diff --git a/src/pages/AdminUpdates.tsx b/src/pages/AdminUpdates.tsx
+index 600fb3a..bd12902 100644
+--- a/src/pages/AdminUpdates.tsx
++++ b/src/pages/AdminUpdates.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useEffect } from 'react';
+ import { Plus, Pencil, Trash2, Eye, EyeOff, Loader2, Shield, Sparkles, Lightbulb, Wrench, AlertTriangle, CheckCircle2, Users, Calendar } from 'lucide-react';
+ import { supabase } from '../lib/supabase';
+@@ -391,7 +392,7 @@ export default function AdminUpdates() {
+               {/* Content */}
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Content</label>
+-                <textarea
++                <textarea {...proseInputProps}
+                   value={content}
+                   onChange={(e) => setContent(e.target.value)}
+                   placeholder="Describe the update in detail..."
+diff --git a/src/pages/AdminUsers.tsx b/src/pages/AdminUsers.tsx
+index b4746d7..4af59ac 100644
+--- a/src/pages/AdminUsers.tsx
++++ b/src/pages/AdminUsers.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useEffect } from 'react';
+ import { friendlyError } from '../lib/utils';
+ import {
+@@ -103,7 +104,7 @@ function RemoveUserModal({ userName, userEmail, loading, onConfirm, onCancel }:
+             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+               Additional message to user {selectedReason !== 'Other (please specify below)' && <span className="font-normal text-gray-400">(optional)</span>}
+             </label>
+-            <textarea
++            <textarea {...proseInputProps}
+               value={customMessage}
+               onChange={(e) => setCustomMessage(e.target.value)}
+               rows={3}
+diff --git a/src/pages/AdminVerifications.tsx b/src/pages/AdminVerifications.tsx
+index c0a3cd5..3953a94 100644
+--- a/src/pages/AdminVerifications.tsx
++++ b/src/pages/AdminVerifications.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useEffect } from 'react';
+ import {
+   Shield,
+@@ -490,7 +491,7 @@ export default function AdminVerifications() {
+ 
+                               {showRejectInput === user.id ? (
+                                 <div className="flex-1 space-y-2">
+-                                  <textarea
++                                  <textarea {...proseInputProps}
+                                     value={rejectReason[user.id] || ''}
+                                     onChange={(e) =>
+                                       setRejectReason((prev) => ({ ...prev, [user.id]: e.target.value }))
+diff --git a/src/pages/ClientDashboard.tsx b/src/pages/ClientDashboard.tsx
+index 9e381d7..7c93ef8 100644
+--- a/src/pages/ClientDashboard.tsx
++++ b/src/pages/ClientDashboard.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import React, { useState, useEffect, useCallback } from 'react';
+ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+ import { Bell, Plus, Loader2, MapPin, ArrowRight, Crown, RefreshCw, Repeat, Trash2, CalendarClock, DollarSign, Briefcase, Clock, Eye, CheckCircle2, Archive, ArchiveRestore, Pencil, X, Check, Send, Play, ExternalLink, Pause, FileText, Star, ChevronDown, Gift, AlertCircle, CreditCard } from 'lucide-react';
+@@ -2365,7 +2366,7 @@ export default function ClientDashboard() {
+               ))}
+             </div>
+             {cancelReason === 'Other' && (
+-              <textarea
++              <textarea {...proseInputProps}
+                 value={cancelReason === 'Other' ? '' : cancelReason}
+                 onChange={(e) => setCancelReason(e.target.value || 'Other')}
+                 placeholder="Please describe the reason..."
+@@ -2819,7 +2820,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies
+           <div>
+             <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+             <div className="relative">
+-              <textarea
++              <textarea {...proseInputProps}
+                 value={description}
+                 onChange={e => setDescription(e.target.value)}
+                 placeholder="What needs to be done..."
+diff --git a/src/pages/Contact.tsx b/src/pages/Contact.tsx
+index ec438e6..baabcdd 100644
+--- a/src/pages/Contact.tsx
++++ b/src/pages/Contact.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState } from 'react';
+ import { Link } from 'react-router-dom';
+ import { ArrowLeft, Mail, MapPin, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+@@ -124,7 +125,7 @@ export default function Contact() {
+                 </div>
+                 <div>
+                   <label htmlFor="contact-message" className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+-                  <textarea
++                  <textarea {...proseInputProps}
+                     id="contact-message"
+                     required
+                     rows={5}
+diff --git a/src/pages/Leads.tsx b/src/pages/Leads.tsx
+index f591fff..ad2d1fc 100644
+--- a/src/pages/Leads.tsx
++++ b/src/pages/Leads.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+ import { descriptionPreview } from '../lib/jobDescription';
+@@ -3027,7 +3028,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
+                   <FileText className="w-3.5 h-3.5" />
+                   Description
+                 </label>
+-                <textarea
++                <textarea {...proseInputProps}
+                   value={editDesc}
+                   onChange={(e) => setEditDesc(e.target.value)}
+                   rows={3}
+diff --git a/src/pages/PaymentHistory.tsx b/src/pages/PaymentHistory.tsx
+index 72bd8e9..b628e98 100644
+--- a/src/pages/PaymentHistory.tsx
++++ b/src/pages/PaymentHistory.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+ import { COMPANY_ABN } from '../config/company';
+@@ -1634,7 +1635,7 @@ function ReductionRequestSection({
+             Refund amount: <span className="font-semibold">${refundAmount.toFixed(2)}</span>
+           </p>
+         )}
+-        <textarea
++        <textarea {...proseInputProps}
+           value={reason}
+           onChange={(e) => setReason(e.target.value)}
+           placeholder="Optional: explain what happened (e.g. accidentally entered $310 instead of $190)"
+@@ -1700,7 +1701,7 @@ function RefundSection({ paymentId, onSuccess, onError }: { paymentId: string; o
+           <p className="text-xs text-red-600 mt-0.5">Please explain why. Our team will review within 2–3 business days.</p>
+         </div>
+       </div>
+-      <textarea value={reason} onChange={e => setReason(e.target.value)}
++      <textarea {...proseInputProps} value={reason} onChange={e => setReason(e.target.value)}
+         placeholder="Describe the reason for your refund..." rows={3}
+         className="w-full px-3 py-2 border border-red-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-400 bg-white mb-3 resize-none" />
+       <div className="flex gap-2">
+diff --git a/src/pages/PublicQuote.tsx b/src/pages/PublicQuote.tsx
+index f85c501..12056e7 100644
+--- a/src/pages/PublicQuote.tsx
++++ b/src/pages/PublicQuote.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ // ─────────────────────────────────────────────────────────────────────────────
+ // PublicQuote — the page an off-app client lands on from a quote email. No login
+ // required; access is via the unguessable token in the URL. Reads + accepts the
+@@ -494,7 +495,7 @@ export default function PublicQuote() {
+                     <label className="block text-sm font-medium text-gray-700">
+                       Let {businessName} know why <span className="font-normal text-gray-400">(optional)</span>
+                     </label>
+-                    <textarea
++                    <textarea {...proseInputProps}
+                       value={declineReason}
+                       onChange={(e) => setDeclineReason(e.target.value)}
+                       rows={3}
+diff --git a/src/pages/Team.tsx b/src/pages/Team.tsx
+index 2f74be1..3ef237d 100644
+--- a/src/pages/Team.tsx
++++ b/src/pages/Team.tsx
+@@ -1,3 +1,4 @@
++import { proseInputProps } from '../lib/proseInput';
+ import React, { useState, useEffect } from 'react';
+ import { Users, Plus, Mail, Phone, Briefcase, MoreVertical, Pencil, Trash2, UserCheck, UserPlus, Star, HardHat, Wrench, X, Check, AlertCircle, Clock, Shield, Calendar, ChevronLeft, ChevronRight, Lock, Timer, CheckCircle2, XCircle, MapPin, LogIn, LogOut, Navigation } from 'lucide-react';
+ import SiteActivityTab from '../components/team/SiteActivityTab';
+@@ -246,7 +247,7 @@ function AddMemberModal({ onClose, onSave, editMember }: AddMemberModalProps) {
+ 
+             <div className="sm:col-span-2">
+               <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
+-              <textarea
++              <textarea {...proseInputProps}
+                 value={form.notes}
+                 onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                 rows={3}

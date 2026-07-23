@@ -120,6 +120,12 @@ export default function SubmitQuoteModal({
       ? `${durationValue} ${durationUnit}`
       : '';
   const [includesMaterials, setIncludesMaterials] = useState(false);
+  // Pricing v2.1 labour/materials split. The price fields above stay the
+  // CLIENT-FACING TOTAL (unchanged semantics — nothing downstream breaks); this
+  // records how much of that total is materials at cost, so labour = total −
+  // materials. Commission is charged on the labour portion only.
+  const [materialsAmount, setMaterialsAmount] = useState('');
+  const [materialsDescription, setMaterialsDescription] = useState('');
   const [error, setError] = useState('');
   const [modalState, setModalState] = useState<ModalState>('form');
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
@@ -192,6 +198,17 @@ export default function SubmitQuoteModal({
   const slotsRemaining = job.max_quotes - job.quote_count;
   const isRecurring = !!(job.title && /ongoing|recurring/i.test(job.title));
   const businessName = tradieDetails?.business_name || profile?.full_name || 'our team';
+
+  // ── Pricing v2.1: labour / materials split ────────────────────────────────
+  // Total is what the client pays (firm price, or the top of an estimated range).
+  // Materials are at cost and carry NO commission — labour is the remainder.
+  const quoteTotalDollars = useFirmPrice ? parseFloat(firmPrice) || 0 : parseFloat(priceMax) || 0;
+  const materialsDollars = Math.max(0, parseFloat(materialsAmount) || 0);
+  const labourDollars = Math.max(0, quoteTotalDollars - materialsDollars);
+  const materialsExceedTotal = quoteTotalDollars > 0 && materialsDollars > quoteTotalDollars;
+  // Light-touch abuse guard (spec §1.1): soft confirm above 75%, never a block.
+  const materialsRatioHigh =
+    quoteTotalDollars > 0 && materialsDollars / quoteTotalDollars > 0.75 && !materialsExceedTotal;
 
   // Prefill the call-out fee from the tradie's saved default, if they have one.
   useEffect(() => {
@@ -312,6 +329,16 @@ export default function SubmitQuoteModal({
       }
     }
 
+    // Materials are part of the quoted total, so they can never exceed it.
+    if (materialsExceedTotal) {
+      setError("Materials can't be more than your total price.");
+      return;
+    }
+    if (materialsDollars > 0 && !materialsDescription.trim()) {
+      setError('Please add a one-line description of the materials (e.g. "Rheem 250L electric HWS").');
+      return;
+    }
+
     if (!message.trim()) {
       setError('Please include a brief message to the client.');
       return;
@@ -359,6 +386,11 @@ export default function SubmitQuoteModal({
       proposed_start_date: effectiveStartDate || null,
       requires_site_inspection: durationTBD,
       call_out_fee_cents: callOutFeeCents,
+      // Pricing v2.1: commission applies to labour_cents only; materials pass
+      // through at cost. Derived from the quoted total so the two always reconcile.
+      materials_cents: Math.round(materialsDollars * 100),
+      labour_cents: Math.round(max * 100) - Math.round(materialsDollars * 100),
+      materials_description: materialsDescription.trim() || null,
       status: 'pending',
     });
 
@@ -795,6 +827,68 @@ export default function SubmitQuoteModal({
                     Typical range for similar jobs: ${priceHint.min.toLocaleString()} – ${priceHint.max.toLocaleString()}
                   </p>
                 )}
+                {/* Pricing v2.1 — materials at cost carry no commission. Part of the
+                    quoted total above; labour is the remainder. */}
+                <div className="mt-3 px-3 py-3 bg-white border border-gray-200 rounded-lg space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Package className="w-4 h-4 text-gray-500" />
+                    <label className="text-sm font-medium text-gray-700">
+                      Materials at cost <span className="font-normal text-gray-400">(optional)</span>
+                    </label>
+                  </div>
+                  <div className="relative max-w-[160px]">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step={10}
+                      value={materialsAmount}
+                      onChange={(e) => setMaterialsAmount(e.target.value)}
+                      placeholder="0"
+                      className="w-full pl-7 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
+                    />
+                  </div>
+
+                  {materialsDollars > 0 && (
+                    <input
+                      type="text"
+                      value={materialsDescription}
+                      onChange={(e) => setMaterialsDescription(e.target.value)}
+                      placeholder="e.g. Rheem 250L electric HWS"
+                      maxLength={120}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
+                    />
+                  )}
+
+                  <p className="text-xs text-gray-500">
+                    We take nothing on materials — just card processing at cost (~1.93%).
+                  </p>
+
+                  {materialsExceedTotal ? (
+                    <p className="text-xs text-red-600">
+                      Materials (${materialsDollars.toFixed(2)}) can't be more than your total price
+                      (${quoteTotalDollars.toFixed(2)}).
+                    </p>
+                  ) : quoteTotalDollars > 0 && (
+                    <p className="text-xs text-gray-600">
+                      Of your <span className="font-medium">${quoteTotalDollars.toFixed(2)}</span> total:{' '}
+                      <span className="font-medium text-gray-800">${labourDollars.toFixed(2)}</span> labour
+                      {materialsDollars > 0 && (
+                        <> + <span className="font-medium text-gray-800">${materialsDollars.toFixed(2)}</span> materials</>
+                      )}
+                    </p>
+                  )}
+
+                  {materialsRatioHigh && (
+                    <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                      <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-amber-700">
+                        Materials are more than 75% of this quote — just checking that's right.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 {/* Fee transparency for the tradie (never shown to clients) */}
                 <QuoteFeeDisclosure
                   priceDollars={useFirmPrice ? parseFloat(firmPrice) || 0 : parseFloat(priceMax) || 0}
