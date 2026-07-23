@@ -20,9 +20,11 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { chromium } from "playwright";
 
-// Load .env if present (no dependency). Real env vars always win.
-if (existsSync(".env")) {
-  for (const line of readFileSync(".env", "utf8").split(/\r?\n/)) {
+// Config comes from .env.e2e (preferred) then .env. No dependency; real env vars
+// always win, so any single value can be overridden inline.
+for (const file of [".env.e2e", ".env"]) {
+  if (!existsSync(file)) continue;
+  for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
     const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
     if (m && process.env[m[1]] === undefined) {
       process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");

@@ -1,75 +1,65 @@
-# E2E Verification Runbook
+# E2E Verification — Step by Step
 
-How to prove the Pricing v2.1 money path actually works, end to end, against real
-Stripe — without touching production.
+Proves the Pricing v2.1 money path actually works against real Stripe, without
+touching production.
 
-**Why this exists:** every check so far (types, unit tests, code review) is
-static. Not one real payment has ever run through the v2.1 fee model. This is the
-only thing that proves it.
-
----
-
-## What a green run proves
-
-| Assertion | Why it matters |
-|---|---|
-| `fee_model === "v2.1"` | You're testing the **deployed cutover**, not stale code. Without this the whole run can pass green against the old V2 functions. |
-| commission + materials processing = total | The split reconciles |
-| materials processing ≤ ~1.93% of materials | The "at cost, no markup" promise is **published** — a markup would be a trust and compliance problem |
-| `platform_fee` stored as a **number** | A string there is silently read as `0` by release-escrow, paying out the **full amount undeducted** |
-| Hot-water case nets **$2,305.12** | The flagship worked example in the spec |
-| Duplicate release → `409` | The double-transfer guard (§8.3) |
-| Refund writes `status='refunded'` | The refund-DB-failure bug (§8.3) |
+**Why bother:** every check so far is static — types, unit tests, code review.
+Not one real payment has ever run through the v2.1 fee model. This is the only
+thing that proves it.
 
 ---
 
-## Prerequisites
-
-- A **separate** Supabase project (free tier is fine). The harness **refuses to
-  run against production** — prod uses live Stripe keys, so a run there would
-  create real charges, payouts and refunds.
-- Stripe **test-mode** keys (`sk_test_…`).
-- `psql`, to load the schema dump.
-  *Not installed?* Either install the PostgreSQL client tools, or paste the dump
-  into the Supabase dashboard **SQL Editor** instead (Database → SQL Editor).
-
----
-
-# Part A — one-time setup
-
-## 1. Create the test project
-
-Supabase dashboard → New project. Then from **Project Settings**, collect:
-
-- Project ref (e.g. `abcdefghijklmnop`)
-- Project URL → `https://<ref>.supabase.co`
-- **anon** key and **service_role** key (Settings → API)
-- Database connection string (Settings → Database)
-
-## 2. Load the schema — ⚠️ do NOT use `supabase db push`
-
-**This is the step that will bite you.** Production has dozens of migrations that
-exist in the database but have **no local file** (schema was changed outside the
-migration flow over months). Your local migrations alone will **not** reproduce
-production, so a project built from them is missing columns and the E2E fails for
-reasons that have nothing to do with pricing.
-
-Dump production's real schema and load that:
+## The short version
 
 ```bash
-# Dump prod (this repo is already linked to prod)
-npx supabase db dump --linked -f prod-schema.sql --schema public
+cp .env.e2e.example .env.e2e     # fill it in
+npm run e2e:doctor               # tells you the next thing to do — repeat until green
+npm run e2e:run
+```
 
-# Load into the TEST project
+**`npm run e2e:doctor` is the whole guide.** It checks everything in order and
+prints the single next action. If you only remember one command, remember that
+one. The steps below are what it will walk you through.
+
+---
+
+## Setup — do these once
+
+### ☐ 1. Create a test Supabase project
+
+Free tier is fine. From **Project Settings → API**, copy the project URL, the
+**anon** key and the **service_role** key.
+
+> Production is on live Stripe keys, so a run there would create real charges,
+> payouts and refunds. Every script here refuses to run against it.
+
+### ☐ 2. Fill in the config
+
+```bash
+cp .env.e2e.example .env.e2e
+```
+
+Open `.env.e2e` and paste in the values from step 1 plus a Stripe **test** key
+(`sk_test_…`, from Stripe → toggle **Test mode** → Developers → API keys).
+
+`.env.e2e` is gitignored. You never need to `export` anything — every script
+reads this file.
+
+### ☐ 3. Load the schema
+
+```bash
+npx supabase db dump --linked -f prod-schema.sql --schema public
 psql "<TEST_DB_CONNECTION_STRING>" -f prod-schema.sql
 ```
 
-No `psql`? Open `prod-schema.sql`, paste into the test project's SQL Editor and
-run it. Split into chunks if it times out.
+> ⚠️ **Do not use `supabase db push`.** Production has migrations that exist in
+> the database with no local file, so local migrations will not reproduce it —
+> you'd get missing columns and failures that have nothing to do with pricing.
+>
+> No `psql`? Paste `prod-schema.sql` into the test project's **SQL Editor**.
+> The dump is schema-only: no production rows.
 
-> The dump is schema-only — it contains no production rows.
-
-## 3. Set the test project's secrets
+### ☐ 4. Set the test project's secrets
 
 ```bash
 npx supabase secrets set --project-ref <TEST_REF> \
@@ -78,80 +68,57 @@ npx supabase secrets set --project-ref <TEST_REF> \
   ALLOWED_ORIGIN=http://localhost:5173
 ```
 
-`STRIPE_WEBHOOK_SECRET` gets its real value in step 5.
-
-## 4. Deploy the edge functions to the test project
+### ☐ 5. Deploy the functions there
 
 ```bash
 npx supabase functions deploy --project-ref <TEST_REF>
 ```
 
-Deploying everything is simplest; the v2.1 charge paths are what matter.
+### ☐ 6. Add a Stripe test webhook
 
-## 5. Point a Stripe **test-mode** webhook at it
+Stripe (**test mode**) → Developers → Webhooks → Add endpoint:
 
-Stripe dashboard (**test mode**) → Developers → Webhooks → Add endpoint:
+- **URL:** `https://<TEST_REF>.functions.supabase.co/stripe-webhook`
+- **Events:** `checkout.session.completed`, `payment_intent.succeeded`
 
-- URL: `https://<TEST_REF>.functions.supabase.co/stripe-webhook`
-- Events: `checkout.session.completed`, `payment_intent.succeeded`
+Copy the signing secret and re-run step 4 with the real `whsec_…`.
 
-Copy the signing secret (`whsec_…`) and re-run step 3 with the real value.
+> Skip this and the run hangs at *"never reached status='completed'"* — the
+> webhook is what flips the payment.
 
-**Skip this and the harness hangs** at `payment … never reached status='completed'`
-— the webhook is what flips the payment.
-
-## 6. Bootstrap the test data
+### ☐ 7. Create the test accounts
 
 ```bash
-export E2E_SUPABASE_URL=https://<TEST_REF>.supabase.co
-export E2E_SUPABASE_SERVICE_KEY=<test service_role key>
-export E2E_STRIPE_SECRET_KEY=sk_test_...
-
-node scripts/e2e-seed.mjs --bootstrap
+npm run e2e:bootstrap
 ```
 
-Creates the client auth user, the tradie (profile + `tradie_details`), and a
-Stripe **test** Connect account with `onboarding_complete` set.
+Creates the client, the tradie, and a Stripe **test** Connect account.
 
-> **Likely one-time hiccup:** the Connect account may need **transfers enabled**
-> in the Stripe test dashboard before a destination charge will settle. If the run
-> later fails at release with a capability error, that's the cause — enable it
-> once and carry on.
+> If a later run fails at release with a *capability* error, enable **transfers**
+> on that Connect account in the Stripe test dashboard. One-time click.
+> `e2e:doctor` warns you about this before you hit it.
 
 ---
 
-# Part B — every run
+## Every run
 
-## 7. Mint a fresh quote (~2 seconds)
+### ☐ 8. Mint a fresh quote
 
 ```bash
-node scripts/e2e-seed.mjs --quote
+npm run e2e:quote
 ```
 
-**Required every time.** The E2E *consumes* its quote — by the end it's accepted,
-funded, released and refunded — and the harness derives its Stripe idempotency
-keys from the quote id, so reusing one returns the original, long-expired
-Checkout session instead of a new one.
+Copy the printed id into `.env.e2e` as `E2E_QUOTE_ID`.
 
-It prints the `E2E_QUOTE_ID` to export.
+> Needed **every time**. The run consumes its quote — by the end it's accepted,
+> funded, released and refunded — and Stripe idempotency keys are derived from
+> the quote id, so reusing one returns the original expired checkout session.
 
-## 8. Run it
-
-```bash
-export E2E_SUPABASE_ANON_KEY=<test anon key>
-export E2E_FUNCTIONS_BASE=https://<TEST_REF>.functions.supabase.co
-export E2E_CLIENT_EMAIL=e2e-client@test.local
-export E2E_CLIENT_PASSWORD=e2e-password-123
-export E2E_QUOTE_ID=<printed in step 7>
-export E2E_ASSERT_HOTWATER=1
-
-node connectradie-e2e.mjs
-```
-
-### Steady state, after setup
+### ☐ 9. Run it
 
 ```bash
-node scripts/e2e-seed.mjs --quote && node connectradie-e2e.mjs
+npm run e2e:doctor   # confirm green
+npm run e2e:run
 ```
 
 ---
@@ -172,42 +139,54 @@ node scripts/e2e-seed.mjs --quote && node connectradie-e2e.mjs
 ✅ E2E green.
 ```
 
+### What each line is actually protecting you from
+
+| Check | The failure it catches |
+|---|---|
+| `fee_model=v2.1` | Testing stale code. Without it the whole run passes green against the old V2 functions and proves nothing. |
+| commission + processing reconcile | A split that doesn't add up |
+| processing ≤ ~1.93% | A markup on materials — "at cost" is a **published** promise |
+| `platform_fee` is a number | A string is read as `0`, paying out the **full amount undeducted** |
+| nets $2,305.12 | The spec's flagship worked example |
+| duplicate release → 409 | The double-transfer bug (§8.3) |
+| refund → `status='refunded'` | The refund-DB-failure bug (§8.3) |
+
 ---
 
-## Troubleshooting
+## Commands
+
+| Command | What it does |
+|---|---|
+| `npm run e2e:doctor` | Checks setup, names the next action |
+| `npm run e2e:bootstrap` | One-time: client, tradie, Connect account |
+| `npm run e2e:quote` | Fresh quote — before every run |
+| `npm run e2e:run` | The E2E itself |
+| `npm run e2e:reset` | Clears accumulated test rows (optional) |
+
+---
+
+## If something breaks
+
+`npm run e2e:doctor` diagnoses most of it. Otherwise:
 
 | Symptom | Cause |
 |---|---|
-| `REFUSING TO RUN … PRODUCTION project` | Working as designed. Use the test ref. |
-| `REFUSING TO RUN … not a test key` | `sk_live` in `E2E_STRIPE_SECRET_KEY`. |
-| `fee_model is '(absent)'` | Functions on the test project **predate the cutover** — redo step 4. This is the check earning its keep. |
-| `never reached status='completed'` | Webhook not configured or wrong `whsec` — step 5. |
-| Capability / `transfers` error at release | Enable transfers on the test Connect account (see step 6). |
-| `column … does not exist` | Schema didn't reproduce — you used `db push` instead of the dump (step 2). |
-| `Invalid supabaseUrl` | An `E2E_*` var is unset. |
+| `REFUSING TO RUN … PRODUCTION` | Working as designed — use the test ref |
+| `REFUSING TO RUN … not a test key` | `sk_live` in `E2E_STRIPE_SECRET_KEY` |
+| `fee_model is '(absent)'` | Test project's functions predate the cutover — redo step 5 |
+| `never reached status='completed'` | Webhook missing or wrong `whsec` — step 6 |
+| capability / `transfers` error | Enable transfers on the Connect account — step 7 |
+| `column … does not exist` | Schema didn't reproduce — you used `db push` instead of the dump (step 3) |
+| quote `status="accepted"` | Already used — `npm run e2e:quote` again |
 
 ---
 
-## Known gap this run will expose
+## One known gap it will expose
 
 The refund step leaves a `platform_fee_charges` row with **no offsetting
 adjustment note**, because `process-refund` doesn't emit one yet. The schema
-supports it (`kind='adjustment'`, `adjusts_invoice_id`) but nothing writes it.
+supports it (`kind='adjustment'`, `adjusts_invoice_id`); nothing writes it.
 
 That's the test doing its job — a real gap surfacing rather than a false green.
 Under AU rules an issued tax invoice can't be edited or deleted, so a refunded
 commission must be offset by an adjustment note.
-
----
-
-## Housekeeping
-
-```bash
-node scripts/e2e-seed.mjs --reset
-```
-
-Clears accumulated test jobs/quotes/payments/fee rows. Optional — leftovers are
-harmless (test project, Stripe test mode, no cost) but they pile up.
-
-Stripe test-mode objects are deliberately left alone: they cost nothing and
-preserve the audit trail.
