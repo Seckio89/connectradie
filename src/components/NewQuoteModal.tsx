@@ -706,7 +706,10 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                 </div>
                 <p className="mt-1 text-xs text-gray-500">Enter your total price including labour and materials.</p>
                 {/* Fee transparency for the tradie (never shown to the client) */}
-                <QuoteFeeDisclosure priceDollars={parseFloat(price) || 0} className="mt-2" />
+                {/* This form has no materials field, so the whole price is
+                    treated as labour — the same all-labour fallback the charge
+                    path uses when no split is recorded. */}
+                <QuoteFeeDisclosure labourDollars={parseFloat(price) || 0} className="mt-2" />
                 {showEstimator && (
                   <div className="mt-3">
                     <QuoteEstimator

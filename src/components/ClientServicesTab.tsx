@@ -487,6 +487,9 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
   onCancel: () => void;
   prefill?: { category?: string; subtype?: string; description?: string; location?: string; frequency?: number; budget?: string };
 }) {
+  // The error handler below calls showToast; without this it threw a
+  // ReferenceError instead of surfacing the failure — masking the real error.
+  const { showToast } = useToast();
   const [category, setCategory] = useState(prefill?.category || '');
   const [serviceSubtype, setServiceSubtype] = useState(prefill?.subtype || '');
   const [customSubtype, setCustomSubtype] = useState('');

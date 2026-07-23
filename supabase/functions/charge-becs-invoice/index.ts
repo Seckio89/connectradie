@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@14.21.0";
-import { calculateBecsProcessingFeeCents, calculatePlatformFee, resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveChargeFee } from "../_shared/feeContext.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -98,9 +99,18 @@ Deno.serve(async (req: Request) => {
       .eq("id", invoice.tradie_id)
       .maybeSingle();
     const overrideBps = feeOverrideRow?.platform_fee_override_bps ?? null;
-    const platformFeeCents = Math.round(calculatePlatformFee(Number(invoice.total), tier, overrideBps) * 100);
-    const processingFeeCents = calculateBecsProcessingFeeCents(totalCents);
-    const chargeAmount = totalCents + processingFeeCents;
+    // Pricing v2.1: an invoice carries no labour/materials split, so the whole
+    // total is treated as labour. The repeat-client rate still applies if this
+    // tradie/client pair has a prior completed + released job.
+    const fee = await resolveChargeFee(supabase, {
+      amountCents: totalCents,
+      tier,
+      overrideBps,
+      tradieId: invoice.tradie_id,
+      clientId: invoice.homeowner_id,
+    });
+    // v2.1: the client is charged the invoice total and nothing more.
+    const chargeAmount = totalCents;
 
     // Resolve the tradie's Connect account — the charge routes funds directly to it.
     // If onboarding isn't complete, Stripe would reject a destination charge, so fail
@@ -122,9 +132,9 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Platform keeps the platform fee + processing fee; the remainder is transferred
-    // to the tradie automatically as part of the charge (destination charge).
-    const applicationFeeCents = platformFeeCents + processingFeeCents;
+    // Platform keeps the commission + at-cost materials processing; the remainder
+    // transfers to the tradie automatically as part of the destination charge.
+    const applicationFeeCents = fee.applicationFeeAmount;
 
     // Create off-session destination charge — funds settle to the tradie in one step.
     const paymentIntentParams: Stripe.PaymentIntentCreateParams = {
@@ -147,8 +157,8 @@ Deno.serve(async (req: Request) => {
         recurring_job_id: recurringJobId,
         homeowner_id: invoice.homeowner_id,
         tradie_id: invoice.tradie_id,
-        platform_fee: String(platformFeeCents),
-        processing_fee: String(processingFeeCents),
+        processing_fee: "0",
+        ...fee.metadata,
         tradie_tier: tier,
       },
     };

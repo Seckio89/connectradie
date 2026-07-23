@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { calculatePlatformFee, calculateProcessingFeeCents, calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveChargeFee, getJobQuoteSplit } from "../_shared/feeContext.ts";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
@@ -170,18 +171,26 @@ Deno.serve(async (req: Request) => {
     const milestoneDollars = Number(milestone.amount);
     const baseAmount = Math.round(milestoneDollars * 100);
     const gst = tradieIsGstRegistered ? calculateGstCents(baseAmount) : 0;
-    const processingFee = calculateProcessingFeeCents(baseAmount);
-
-    // Calculate platform fee based on tradie's subscription tier
-    const platformFeeDollars = calculatePlatformFee(milestoneDollars, tradieSubscriptionTier, tradieProfile?.platform_fee_override_bps ?? null);
-    const platformFeeCents = Math.round(platformFeeDollars * 100);
-
-    // application_fee_amount is what the platform retains from the destination charge.
-    const applicationFeeAmount = platformFeeCents + processingFee;
 
     if (baseAmount <= 0) {
       return errorJson("Milestone amount must be positive", 400);
     }
+
+    // Pricing v2.1: commission on labour only. A milestone is a PORTION of the
+    // job, so the accepted quote's whole split is pro-rated down to this
+    // milestone's amount by resolveChargeFee.
+    const split = await getJobQuoteSplit(supabase, milestone.job_id);
+    const fee = await resolveChargeFee(supabase, {
+      amountCents: baseAmount,
+      labourCents: split.labourCents,
+      materialsCents: split.materialsCents,
+      tier: tradieSubscriptionTier,
+      overrideBps: tradieProfile?.platform_fee_override_bps ?? null,
+      tradieId: job.tradie_id,
+      clientId: job.client_id,
+      jobId: milestone.job_id,
+    });
+    const applicationFeeAmount = fee.applicationFeeAmount;
 
     // Create payment record
     const { data: paymentRecord, error: insertError } = await supabase
@@ -191,9 +200,10 @@ Deno.serve(async (req: Request) => {
         payment_type: "job_funding",
         job_id: milestone.job_id,
         amount: baseAmount,
-        processing_fee: processingFee,
+        processing_fee: 0,
         currency: "aud",
         status: "pending",
+        ...fee.paymentColumns,
         metadata: {
           milestone_id: milestoneId,
           milestone_title: milestone.title,
@@ -201,7 +211,12 @@ Deno.serve(async (req: Request) => {
           tradie_id: job.tradie_id,
           tradie_stripe_account: tradieProfile.stripe_connect_account_id,
           gst: String(gst),
-          platform_fee: platformFeeCents,
+          // NUMBER, not string — release-escrow guards on typeof === "number".
+          platform_fee: fee.breakdown.totalDeductionCents,
+          commission: fee.breakdown.commissionCents,
+          materials_processing: fee.breakdown.materialsProcessingCents,
+          fee_rate_type: fee.breakdown.rateType,
+          fee_model: "v2.1",
           tradie_tier: tradieSubscriptionTier,
         },
       })
@@ -238,16 +253,8 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    if (processingFee > 0) {
-      lineItems.push({
-        price_data: {
-          currency: "aud",
-          product_data: { name: "Secure Processing Fee" },
-          unit_amount: processingFee,
-        },
-        quantity: 1,
-      });
-    }
+    // Pricing v2.1: no client-side processing surcharge — the client pays the
+    // milestone amount (plus GST where applicable) and nothing more.
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create(
@@ -280,9 +287,9 @@ Deno.serve(async (req: Request) => {
           milestone_id: milestoneId,
           payment_record_id: paymentRecord.id,
           base_amount: String(baseAmount),
-          processing_fee: String(processingFee),
-          platform_fee: String(platformFeeCents),
+          processing_fee: "0",
           tradie_tier: tradieSubscriptionTier,
+          ...fee.metadata,
         },
       },
       idempotencyKey ? { idempotencyKey } : undefined,

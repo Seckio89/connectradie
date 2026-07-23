@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { COMPANY_ABN } from '../config/company';
 import { RELEASE_WINDOW_MS, RELEASE_WINDOW_LABEL } from '../lib/releaseWindow';
 import {
@@ -1064,6 +1065,15 @@ export default function Payouts() {
                   </div>
                 </div>
               </div>
+
+              {/* The payout breakdown and the explainer use the same wording, so a
+                  tradie can reconcile what they read with what they were paid. */}
+              <p className="mt-3 text-xs text-gray-400 text-center">
+                Our fee applies to your labour only — never your materials.{' '}
+                <Link to="/how-fees-work" className="text-secondary-600 hover:text-secondary-700 font-medium">
+                  How fees work
+                </Link>
+              </p>
             </div>
 
             {/* Stripe Connect onboarding warning */}

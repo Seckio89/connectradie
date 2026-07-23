@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { calculateProcessingFeeCents, calculatePlatformFee, calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveChargeFee, getJobQuoteSplit, type ResolvedChargeFee } from "../_shared/feeContext.ts";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
@@ -103,7 +104,7 @@ Deno.serve(async (req: Request) => {
     // Look up the existing payment record
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
-      .select("id, profile_id, job_id, amount, status, payment_type, stripe_checkout_session_id")
+      .select("id, profile_id, job_id, amount, status, payment_type, stripe_checkout_session_id, metadata")
       .eq("id", paymentId)
       .maybeSingle();
 
@@ -150,12 +151,12 @@ Deno.serve(async (req: Request) => {
     let tradieIsGstRegistered = false;
     let tradieConnectAccountId: string | null = null;
     let tradieId: string | null = null;
-    let platformFeeCents = 0;
+    let resolvedFee: ResolvedChargeFee | null = null;
 
     if (payment.job_id) {
       const { data: job } = await supabase
         .from("jobs")
-        .select("description, tradie_id")
+        .select("description, tradie_id, client_id")
         .eq("id", payment.job_id)
         .maybeSingle();
       if (job?.description) {
@@ -186,8 +187,19 @@ Deno.serve(async (req: Request) => {
           .maybeSingle();
 
         const tradieSubscriptionTier = resolveTradieTier(tradieSubRecord?.subscription_tier);
-        const platformFeeDollars = calculatePlatformFee(payment.amount / 100, tradieSubscriptionTier, tradieProfile?.platform_fee_override_bps ?? null);
-        platformFeeCents = Math.round(platformFeeDollars * 100);
+        // Pricing v2.1: commission on labour only, split pro-rated to the amount
+        // actually being collected.
+        const split = await getJobQuoteSplit(supabase, payment.job_id);
+        resolvedFee = await resolveChargeFee(supabase, {
+          amountCents: payment.amount,
+          labourCents: split.labourCents,
+          materialsCents: split.materialsCents,
+          tier: tradieSubscriptionTier,
+          overrideBps: tradieProfile?.platform_fee_override_bps ?? null,
+          tradieId: job.tradie_id,
+          clientId: job.client_id,
+          jobId: payment.job_id,
+        });
       }
     }
 
@@ -222,10 +234,10 @@ Deno.serve(async (req: Request) => {
 
     const baseAmount = payment.amount;
     const gst = tradieIsGstRegistered ? calculateGstCents(baseAmount) : 0;
-    const processingFee = calculateProcessingFeeCents(baseAmount);
 
     // application_fee_amount is what the platform retains from the destination charge.
-    const applicationFeeAmount = platformFeeCents + processingFee;
+    // v2.1: commission + at-cost materials processing, no client surcharge.
+    const applicationFeeAmount = resolvedFee?.applicationFeeAmount ?? 0;
 
     // Build line items
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
@@ -250,16 +262,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    if (processingFee > 0) {
-      lineItems.push({
-        price_data: {
-          currency: "aud",
-          product_data: { name: "Processing Fee" },
-          unit_amount: processingFee,
-        },
-        quantity: 1,
-      });
-    }
+    // Pricing v2.1: no client-side processing surcharge.
 
     // Create Stripe Checkout session
     const session = await stripe.checkout.sessions.create(
@@ -291,18 +294,35 @@ Deno.serve(async (req: Request) => {
           payment_record_id: paymentId,
           base_amount: String(baseAmount),
           gst: String(gst),
-          processing_fee: String(processingFee),
+          processing_fee: "0",
+          ...(resolvedFee?.metadata ?? {}),
         },
       },
       idempotencyKey ? { idempotencyKey } : undefined
     );
 
-    // Update payment record with checkout session ID and processing fee
+    // Update payment record with checkout session ID and the frozen v2.1 fee split.
     await supabase
       .from("payments")
       .update({
         stripe_checkout_session_id: session.id,
-        processing_fee: processingFee,
+        processing_fee: 0,
+        ...(resolvedFee?.paymentColumns ?? {}),
+        // Merge the frozen fee into metadata. platform_fee MUST be a NUMBER —
+        // release-escrow guards with `typeof === "number"` and would otherwise
+        // deduct nothing and pay out the full amount.
+        metadata: {
+          ...((payment.metadata as Record<string, unknown>) ?? {}),
+          ...(resolvedFee
+            ? {
+              platform_fee: resolvedFee.breakdown.totalDeductionCents,
+              commission: resolvedFee.breakdown.commissionCents,
+              materials_processing: resolvedFee.breakdown.materialsProcessingCents,
+              fee_rate_type: resolvedFee.breakdown.rateType,
+              fee_model: "v2.1",
+            }
+            : {}),
+        },
       })
       .eq("id", paymentId);
 

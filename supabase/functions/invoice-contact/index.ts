@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { calculatePlatformFee, calculateProcessingFeeCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveChargeFee } from "../_shared/feeContext.ts";
 
 /*
   invoice-contact — bill an OFF-APP client_contact.
@@ -140,8 +141,18 @@ Deno.serve(async (req: Request) => {
       }
 
       const oneOffTier = resolveTradieTier(oneOffDetails?.subscription_tier);
-      const oneOffPlatformFee = Math.round(calculatePlatformFee(jobTotal, oneOffTier, oneOffTradie?.platform_fee_override_bps ?? null) * 100);
-      const oneOffProcessingFee = calculateProcessingFeeCents(jobTotalCents);
+      // Pricing v2.1: no labour/materials split on an ad-hoc invoice, so the
+      // whole total is treated as labour. The payer is an off-app client_contact
+      // (no profile), so there is no pair the repeat rate could match.
+      const oneOffFee = await resolveChargeFee(supabase, {
+        amountCents: jobTotalCents,
+        tier: oneOffTier,
+        overrideBps: oneOffTradie?.platform_fee_override_bps ?? null,
+        tradieId: oneOff.tradie_id,
+        skipRepeatCheck: true,
+      });
+      const oneOffPlatformFee = oneOffFee.applicationFeeAmount;
+      const oneOffProcessingFee = 0;
       const oneOffLabel = (oneOff.title || "Job").trim();
       const oneOffBusiness = oneOffDetails?.business_name || oneOffTradie?.full_name || "your tradie";
       const oneOffFirstName = (oneOffContact.full_name || "there").split(" ")[0];
@@ -230,16 +241,20 @@ Deno.serve(async (req: Request) => {
           amount: jobTotalCents,
           status: "pending",
           stripe_checkout_session_id: oneOffSession.id,
-          processing_fee: oneOffProcessingFee,
-          platform_fee_cents: oneOffPlatformFee,
+          processing_fee: 0,
           fee_tier: oneOffTier,
-          fee_calculated_at: new Date().toISOString(),
+          ...oneOffFee.paymentColumns,
           metadata: {
             off_app: true,
             routing: "destination",
             client_contact_id: oneOff.client_contact_id,
             payer_email: oneOffContact.email,
-            platform_fee: String(oneOffPlatformFee),
+            // NUMBER, not a string. Stored as a string previously, which
+            // release-escrow's `typeof === "number"` guard read as 0.
+            platform_fee: oneOffFee.breakdown.totalDeductionCents,
+            commission: oneOffFee.breakdown.commissionCents,
+            materials_processing: oneOffFee.breakdown.materialsProcessingCents,
+            fee_model: "v2.1",
           },
         });
         if (payInsertErr) {
@@ -400,8 +415,17 @@ Deno.serve(async (req: Request) => {
     }
 
     const tier = resolveTradieTier(tradieDetails?.subscription_tier);
-    const platformFeeCents = Math.round(calculatePlatformFee(total, tier, tradieProfile?.platform_fee_override_bps ?? null) * 100);
-    const processingFee = calculateProcessingFeeCents(totalCents);
+    // Pricing v2.1 — see the one-off branch above for why this is all-labour and
+    // skips the repeat lookup (off-app client_contact, not a profile).
+    const fee = await resolveChargeFee(supabase, {
+      amountCents: totalCents,
+      tier,
+      overrideBps: tradieProfile?.platform_fee_override_bps ?? null,
+      tradieId: job.tradie_id,
+      skipRepeatCheck: true,
+    });
+    const platformFeeCents = fee.applicationFeeAmount;
+    const processingFee = 0;
 
     const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") || "";
     const siteUrl = Deno.env.get("SITE_URL") || (allowedOrigin && allowedOrigin !== "*" ? allowedOrigin : "https://connectradie.com");

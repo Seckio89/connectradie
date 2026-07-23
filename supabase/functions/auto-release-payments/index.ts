@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@14.21.0";
+import { frozenCents } from "../_shared/feeContext.ts";
 
 function requireEnv(key: string): string {
   const val = Deno.env.get(key);
@@ -187,20 +188,17 @@ Deno.serve(async (req: Request) => {
 
       const childTotal = (childPayments || []).reduce((s, p) => s + (p.amount || 0), 0);
 
-      // Deduct platform fees (same logic as release-escrow)
-      let totalPlatformFee = typeof existingMetadata.platform_fee === "number"
-        ? existingMetadata.platform_fee
-        : 0;
+      // Deduct platform fees (same logic as release-escrow — and it MUST stay
+      // identical: the two share an idempotency key, so any divergence in the
+      // computed amount makes Stripe reject the racing retry).
+      let totalPlatformFee = frozenCents(existingMetadata.platform_fee);
       // GST (metadata.gst, cents string) was routed to the tradie's balance on
       // destination charges — include it in the payout so it reaches their bank.
       let totalGst = Number(existingMetadata.gst) || 0;
 
       for (const child of (childPayments || [])) {
         const childMeta = (child.metadata || {}) as Record<string, unknown>;
-        const childFee = typeof childMeta.platform_fee === "number"
-          ? childMeta.platform_fee
-          : 0;
-        totalPlatformFee += childFee;
+        totalPlatformFee += frozenCents(childMeta.platform_fee);
         totalGst += Number(childMeta.gst) || 0;
       }
 

@@ -26,7 +26,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@14.21.0";
-import { calculatePlatformFee, resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveChargeFee } from "../_shared/feeContext.ts";
 
 // Invoices paid at/after this instant get an automatic BANK PAYOUT (Stripe
 // balance → bank) once their funds settle. Tradie accounts are on MANUAL payouts
@@ -436,7 +437,19 @@ Deno.serve(async (req: Request) => {
           }
         } catch { /* fall back to tier-based compute below */ }
         if (platformFeeCents === null || Number.isNaN(platformFeeCents)) {
-          platformFeeCents = Math.round(calculatePlatformFee(totalDollars, meta.tier, meta.overrideBps) * 100);
+          // Pricing v2.1 fallback — only reached when the frozen fee is missing
+          // from Stripe metadata. An invoice has no labour/materials split, so
+          // all-labour. skipRepeatCheck: recomputing here can only approximate
+          // what was charged, and quietly applying the cheaper repeat rate to a
+          // payout would pay out MORE than the platform actually retained.
+          const fallback = await resolveChargeFee(supabase, {
+            amountCents: Math.round(totalDollars * 100),
+            tier: meta.tier,
+            overrideBps: meta.overrideBps,
+            tradieId: inv.tradie_id,
+            skipRepeatCheck: true,
+          });
+          platformFeeCents = fallback.applicationFeeAmount;
         }
         const netCents = Math.round(totalDollars * 100) - platformFeeCents;
         if (netCents <= 0) { bankPayouts.push({ invoice_id: inv.id, outcome: "skipped", reason: "non-positive net" }); continue; }

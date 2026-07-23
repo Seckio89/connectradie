@@ -4,6 +4,7 @@ import {
   getFeatureLabel,
   getFeatureDescription,
   calculatePlatformFee,
+  calculateMaterialsProcessing,
   FREE_LIMITS,
   PRO_FEATURES,
   TIER_PRICING,
@@ -15,8 +16,8 @@ describe('subscription', () => {
       expect(FREE_LIMITS.MAX_TRADE_CATEGORIES).toBe(1);
     });
 
-    it('has correct pro pricing', () => {
-      expect(TIER_PRICING.pro.monthly).toBe(49);
+    it('has correct pro pricing (v2.1: $49 → $39)', () => {
+      expect(TIER_PRICING.pro.monthly).toBe(39);
       expect(TIER_PRICING.pro.annual).toBe(420);
       expect(TIER_PRICING.pro.annualMonthly).toBe(35);
     });
@@ -63,31 +64,63 @@ describe('subscription', () => {
     });
   });
 
-  describe('calculatePlatformFee — matches the advertised V2 schedule', () => {
-    it('Free: 10% on the first $3k (a $400 job → $40)', () => {
-      expect(calculatePlatformFee(400, 'free')).toBe(40);
+  // v2.1: a FLAT rate on the tradie's LABOUR only (never the job total), with a
+  // cheaper repeat-client rate, capped — but never below a 2.5%-of-labour floor,
+  // so the cap can't go underwater on very large jobs.
+  describe('calculatePlatformFee — matches the advertised v2.1 schedule', () => {
+    it('Free: 8% of labour ($400 labour → $32)', () => {
+      expect(calculatePlatformFee(400, 'free')).toBe(32);
     });
-    it('Pro: 7% on the first $3k (a $400 job → $28)', () => {
-      expect(calculatePlatformFee(400, 'pro')).toBe(28);
+    it('Pro: 5% of labour ($400 labour → $20)', () => {
+      expect(calculatePlatformFee(400, 'pro')).toBe(20);
     });
-    it('Free: 5% reduced rate above $3k (a $5,000 job → $300 + $100 = $400)', () => {
+    it('flat — no $3k threshold discount ($5,000 labour → 8% = $400)', () => {
       expect(calculatePlatformFee(5000, 'free')).toBe(400);
     });
-    it('Pro: 3.5% reduced rate above $3k (a $10,000 job → $210 + $245 = $455)', () => {
-      expect(calculatePlatformFee(10000, 'pro')).toBe(455);
+    it('Free cap binds at $500 ($10,000 labour → $500, not $800)', () => {
+      expect(calculatePlatformFee(10000, 'free')).toBe(500);
     });
-    it('Free fee is capped at $900', () => {
-      expect(calculatePlatformFee(50000, 'free')).toBe(900);
+    it('Pro cap binds at $400 ($10,000 labour → $400, not $500)', () => {
+      expect(calculatePlatformFee(10000, 'pro')).toBe(400);
     });
-    it('Pro fee is capped at $630', () => {
-      expect(calculatePlatformFee(50000, 'pro')).toBe(630);
+    it('the 2.5% floor overrides the cap on big jobs ($50,000 labour → $1,250)', () => {
+      // 2.5% of $50k = $1,250 > the $500 cap. v1/V2 lost money here; v2.1 cannot.
+      expect(calculatePlatformFee(50000, 'free')).toBe(1250);
+      expect(calculatePlatformFee(50000, 'pro')).toBe(1250);
+    });
+
+    it('repeat clients pay less, every tier', () => {
+      expect(calculatePlatformFee(400, 'free', null, true)).toBe(20); // 5%
+      expect(calculatePlatformFee(400, 'pro', null, true)).toBe(16);  // 4%
+    });
+
+    it('a 0 bps override means zero commission (platform owner)', () => {
+      expect(calculatePlatformFee(1000, 'free', 0)).toBe(0);
+    });
+
+    it('commission is on LABOUR only — materials never enter it', () => {
+      // The hot-water case: $800 labour + $1,600 materials, free tier.
+      // Old model would have charged 10% of $2,400 = $240.
+      expect(calculatePlatformFee(800, 'free')).toBe(64);
+    });
+  });
+
+  describe('calculateMaterialsProcessing — at cost, no markup', () => {
+    it('$1,600 of materials → $30.88 (1.93%)', () => {
+      expect(calculateMaterialsProcessing(1600)).toBe(30.88);
+    });
+    it('no materials → nothing', () => {
+      expect(calculateMaterialsProcessing(0)).toBe(0);
+    });
+    it('never exceeds the materials themselves', () => {
+      expect(calculateMaterialsProcessing(100)).toBeLessThan(100);
     });
   });
 
   describe('getFeatureLabel', () => {
     it('returns correct labels for all features', () => {
       expect(getFeatureLabel(PRO_FEATURES.VERIFIED_BADGE)).toBe('Verified Pro Badge');
-      expect(getFeatureLabel(PRO_FEATURES.REDUCED_FEES)).toBe('7% Platform Fee (capped $630)');
+      expect(getFeatureLabel(PRO_FEATURES.REDUCED_FEES)).toBe('5% on your labour (capped $400)');
       expect(getFeatureLabel(PRO_FEATURES.GOOGLE_CALENDAR_SYNC)).toBe('Google Calendar Sync');
       expect(getFeatureLabel(PRO_FEATURES.TEAM_MANAGEMENT)).toBe('Team Management');
     });
@@ -96,7 +129,7 @@ describe('subscription', () => {
   describe('getFeatureDescription', () => {
     it('returns correct descriptions', () => {
       expect(getFeatureDescription(PRO_FEATURES.VERIFIED_BADGE)).toContain('verified badge');
-      expect(getFeatureDescription(PRO_FEATURES.REDUCED_FEES)).toContain('7%');
+      expect(getFeatureDescription(PRO_FEATURES.REDUCED_FEES)).toContain('5%');
     });
   });
 });

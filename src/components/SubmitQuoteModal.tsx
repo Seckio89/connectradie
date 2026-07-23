@@ -891,7 +891,8 @@ export default function SubmitQuoteModal({
 
                 {/* Fee transparency for the tradie (never shown to clients) */}
                 <QuoteFeeDisclosure
-                  priceDollars={useFirmPrice ? parseFloat(firmPrice) || 0 : parseFloat(priceMax) || 0}
+                  labourDollars={labourDollars}
+                  materialsDollars={materialsDollars}
                   className="mt-2"
                 />
               </div>

@@ -30,13 +30,25 @@ verify-abn · verify-license
 ## Commands
 ```bash
 npm run dev                        # dev server
-npm run build                      # production build
-npx tsc --noEmit --skipLibCheck    # type check — run after every change
+npm run build                      # production build (vite does NOT type-check)
+npm run typecheck                  # type check — run after every change
+npm run test:run                   # vitest (add --no-file-parallelism if flaky)
 supabase functions serve           # local edge function test
 supabase functions deploy <name>   # deploy single function
-supabase gen types typescript      # regenerate DB types
 supabase db push                   # apply migrations
+
+# Regenerate DB types after any migration (writes src/types/supabase.ts):
+npx supabase gen types typescript --project-id uoqygmizupdpanplpvor --schema public > src/types/supabase.ts
+
+# Edge functions are Deno, NOT covered by npm run typecheck. Deno isn't installed
+# locally; check them without installing it:
+npx deno@2 check --node-modules-dir=auto supabase/functions/<name>/index.ts
 ```
+
+⚠️ Do NOT use `npx tsc --noEmit` — the root tsconfig.json is solution-style
+(`"files": []` + project references), so it checks NOTHING and exits 0. It has
+silently passed while real bugs shipped. Always use `npm run typecheck`, which
+targets tsconfig.app.json.
 
 ## Hard Rules
 - Never commit .env or expose API keys
