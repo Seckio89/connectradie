@@ -66,6 +66,7 @@ const Privacy = lazy(() => import('./pages/Privacy'));
 const Contact = lazy(() => import('./pages/Contact'));
 const HelpFAQ = lazy(() => import('./pages/HelpFAQ'));
 const Pricing = lazy(() => import('./pages/Pricing'));
+const HowFeesWork = lazy(() => import('./pages/HowFeesWork'));
 const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
 const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
@@ -167,6 +168,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/contact': 'Contact | ConnecTradie',
   '/help': 'Help & FAQ | ConnecTradie',
   '/pricing': 'Pricing | ConnecTradie',
+  '/how-fees-work': 'How fees work | ConnecTradie',
   '/terms': 'Terms of Service | ConnecTradie',
   '/privacy': 'Privacy Policy | ConnecTradie',
   '/analytics': 'Analytics | ConnecTradie',
@@ -258,6 +260,7 @@ function AppRoutes() {
       <Route path="/contact" element={<Contact />} />
       <Route path="/help" element={<HelpFAQ />} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/how-fees-work" element={<HowFeesWork />} />
       <Route path="/payment-success" element={<PaymentSuccess />} />
       <Route path="/payment-cancelled" element={<PaymentCancelled />} />
       <Route path="/invoice/:paymentId" element={<Invoice />} />

@@ -399,7 +399,12 @@ export default function Pricing() {
           <div className="bg-gray-50 rounded-xl border border-gray-200 p-5 text-center">
             <Percent className="w-6 h-6 text-warm-500 mx-auto mb-2" />
             <h3 className="font-semibold text-gray-900 mb-1 text-sm">One fee, capped</h3>
-            <p className="text-xs text-gray-600">Charged once, on completion, never more than the cap.</p>
+            <p className="text-xs text-gray-600">
+              On your labour only, once, on completion.{' '}
+              <Link to="/how-fees-work" className="text-secondary-600 hover:text-secondary-700 font-medium">
+                How fees work
+              </Link>
+            </p>
           </div>
           <div className="bg-gray-50 rounded-xl border border-gray-200 p-5 text-center">
             <Shield className="w-6 h-6 text-warm-500 mx-auto mb-2" />

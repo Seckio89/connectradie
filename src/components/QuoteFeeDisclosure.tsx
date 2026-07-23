@@ -19,6 +19,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Info } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   calculatePlatformFee,
@@ -101,7 +102,15 @@ export default function QuoteFeeDisclosure({
             {materials > 0
               ? 'We take nothing on your materials. '
               : ''}
-            Quoting is always free; the fee only applies when the job completes.
+            Quoting is always free; the fee only applies when the job completes.{' '}
+            <Link
+              to="/how-fees-work"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-secondary-600 hover:text-secondary-700 font-medium"
+            >
+              How fees work
+            </Link>
           </p>
         </div>
       </div>
