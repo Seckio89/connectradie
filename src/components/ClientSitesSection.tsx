@@ -87,7 +87,13 @@ function SiteModal({
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Address</label>
           <AddressAutocomplete
             value={address}
-            onChange={(value, coordinates) => { setAddress(value); if (coordinates) setCoords(coordinates); }}
+            // Only a picked suggestion carries coordinates. Typing by hand must
+            // CLEAR them, otherwise the site keeps the previously-picked lat/lng
+            // while showing a different address — and that stale coordinate is
+            // what the site geofence (auto check-in/out) is built from.
+            // latitude/longitude are saved as `?? null`, so clearing is safe:
+            // a null coord can be geocoded later, a wrong one silently misfires.
+            onChange={(value, coordinates) => { setAddress(value); setCoords(coordinates ?? null); }}
             placeholder="Site address"
           />
         </div>
