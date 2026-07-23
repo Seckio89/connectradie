@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Clock, Calendar, CheckCircle2, AlertCircle, Loader2, User, Star, Check, X as XIcon, ClipboardList, Zap, WifiOff, ShieldAlert, Settings, Users, MapPin, Repeat, ChevronDown, Send } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { isReleaseActioned } from '../lib/paymentRelease';
 import { offlineAcceptJob } from '../lib/offlineSync';
 import { autoNameProject } from '../lib/projectAutoName';
 import { formatDate, checkLicenseExpired } from '../lib/utils';
@@ -340,8 +341,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
             if (payments) {
               const paid = new Set<string>();
               for (const p of payments) {
-                const meta = p.metadata as Record<string, unknown> | null;
-                if (meta?.transfer_id || meta?.released_at) {
+                if (isReleaseActioned({ metadata: p.metadata as Record<string, unknown> | null })) {
                   paid.add(p.job_id);
                 }
               }

@@ -27,6 +27,7 @@ import {
   Gift,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { isReleaseActioned } from '../lib/paymentRelease';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/useToast';
 import { friendlyError } from '../lib/utils';
@@ -563,8 +564,9 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
       if (p.payment_type === 'bonus') return false;
       if (p.status !== 'completed') return false;
       if (!p.stripe_payment_intent_id) return false;
-      const meta = p.metadata as Record<string, unknown> | null;
-      if (meta?.transfer_id || meta?.released_at) return false; // already released
+      // Already released, or approved with the payout still settling — the client
+      // has nothing left to do, so this must not show as "Action needed".
+      if (isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null })) return false;
       return true; // either Awaiting Release or has pending_increase
     };
   }, [isTradie]);
@@ -982,7 +984,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                     <td className="px-5 py-3.5 text-center w-72">
                                       <div className="flex flex-col items-center justify-center gap-1.5">
                                         {/* Bonus payments are destination charges — no escrow, never "Awaiting Release" */}
-                                        {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !(p.metadata as Record<string, unknown> | null)?.transfer_id && !(p.metadata as Record<string, unknown> | null)?.released_at && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
+                                        {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null }) && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
                                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
                                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                                             Awaiting Release
@@ -990,7 +992,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                         ) : (
                                           getStatusBadge(p.status)
                                         )}
-                                        {!isTradie && (p.metadata as Record<string, unknown> | null)?.pending_increase && !(p.metadata as Record<string, unknown> | null)?.transfer_id && !(p.metadata as Record<string, unknown> | null)?.released_at && (() => {
+                                        {!isTradie && (p.metadata as Record<string, unknown> | null)?.pending_increase && !isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null }) && (() => {
                                           const inc = (p.metadata as Record<string, unknown>).pending_increase as Record<string, unknown> | undefined;
                                           const diffCents = Number(inc?.diff_cents || 0);
                                           const diffLabel = diffCents > 0 ? ` $${(diffCents / 100).toFixed(2)}` : '';
@@ -1052,7 +1054,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                   <p className="text-sm font-semibold text-navy-900 tabular-nums">{formatCurrency(p.amount)}</p>
                                   <div className="mt-1 flex items-center gap-1.5 justify-end">
                                     {/* Bonus payments are destination charges — no escrow, never "Awaiting Release" */}
-                                    {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !(p.metadata as Record<string, unknown> | null)?.transfer_id && !(p.metadata as Record<string, unknown> | null)?.released_at && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
+                                    {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null }) && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
                                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
                                         <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                                         Awaiting Release
@@ -1234,7 +1236,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
 
   const isPendingJobPayment = payment.status === 'pending' && payment.payment_type === 'job_payment';
   const isCompletedWithStripe = payment.status === 'completed' && !!payment.stripe_payment_intent_id;
-  const transferDone = !!(payment.metadata as Record<string, unknown>)?.transfer_id;
+  const transferDone = isReleaseActioned({ status: payment.status, metadata: payment.metadata as Record<string, unknown> | null });
   const hasPendingIncrease = !!(payment.metadata as Record<string, unknown>)?.pending_increase;
   const pendingReduction = (payment.metadata as Record<string, unknown>)?.pending_reduction as
     | { proposed_amount_cents?: number; original_amount_cents?: number; diff_cents?: number; reason?: string | null }

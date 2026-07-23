@@ -116,7 +116,7 @@ export default function LeaveReview() {
           .maybeSingle();
         if (payment) {
           const meta = payment.metadata as Record<string, unknown> | null;
-          if (meta?.transfer_id || meta?.released_at) {
+          if (isReleaseActioned({ metadata: meta })) {
             setAlreadyReleased(true);
           }
         }
@@ -175,7 +175,10 @@ export default function LeaveReview() {
           .maybeSingle();
         if (payment) {
           const meta = payment.metadata as Record<string, unknown> | null;
-          if (!meta?.transfer_id && !meta?.released_at) {
+          // Only release if the client hasn't already actioned it. Without this,
+          // submitting a review on an approved-but-still-settling payout called
+          // release-escrow a SECOND time.
+          if (!isReleaseActioned({ metadata: meta })) {
             await releaseEscrow(payment.id);
             setPaymentReleased(true);
           }

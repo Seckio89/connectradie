@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { isReleaseActioned } from '../lib/paymentRelease';
 import type { Job, Quote } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
 import EmptyState from '../components/EmptyState';
@@ -658,8 +659,10 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
               invoiceNumMap.set(p.job_id, (p as Record<string, unknown>).invoice_ref as string | null);
               paymentDataMap.set(p.job_id, { id: p.id, amount: p.amount, metadata: p.metadata as Record<string, unknown> | null, created_at: p.created_at });
             }
-            const meta = p.metadata as Record<string, unknown> | null;
-            if (meta?.transfer_id || meta?.released_at || p.status === 'released') {
+            // Shared predicate (lib/paymentRelease) — treats an approved-but-still-
+            // settling payout as done, so My Jobs stops showing "Ready to Release"
+            // for a job the client already released. Must match the dashboard.
+            if (isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null })) {
               releasedSet.add(p.job_id);
             }
           }
@@ -1109,8 +1112,9 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         setReleasedJobIds(prev => new Set(prev).add(jobId));
       } else {
         const meta = payment.metadata as Record<string, unknown> | null;
-        if (meta?.transfer_id || meta?.released_at) {
-          // Already released — skip calling release-escrow again
+        if (isReleaseActioned({ metadata: meta })) {
+          // Already released, or approved with the payout still settling — don't
+          // call release-escrow again.
           setReleasedJobIds(prev => new Set(prev).add(jobId));
         } else if (meta?.pending_increase && !paidIncreaseJobIds.has(jobId)) {
           // Price increase pending — redirect to pay the difference
