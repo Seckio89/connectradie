@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { calculatePlatformFee, calculateProcessingFeeCents, calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveChargeFee } from "../_shared/feeContext.ts";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
@@ -106,7 +107,7 @@ Deno.serve(async (req: Request) => {
     // Look up the quote with tradie details
     const { data: quote, error: quoteError } = await supabase
       .from("quotes")
-      .select("id, job_id, tradie_id, firm_price, price_min, price_max, status, final_price, final_valid_until, call_out_fee_cents, site_visit_fee_status")
+      .select("id, job_id, tradie_id, firm_price, price_min, price_max, status, final_price, final_valid_until, call_out_fee_cents, site_visit_fee_status, labour_cents, materials_cents")
       .eq("id", quoteId)
       .maybeSingle();
 
@@ -309,14 +310,27 @@ Deno.serve(async (req: Request) => {
     const baseAmountCents = Math.round(chargeDollars * 100);
     const tradieIsGstRegistered = tradieProfile?.is_gst_registered === true;
     const gst = tradieIsGstRegistered ? calculateGstCents(baseAmountCents) : 0;
-    const processingFee = calculateProcessingFeeCents(baseAmountCents);
 
-    // Calculate platform fee based on tradie's subscription tier
-    const platformFeeDollars = calculatePlatformFee(chargeDollars, tradieSubscriptionTier, tradieProfile?.platform_fee_override_bps ?? null);
-    const platformFeeCents = Math.round(platformFeeDollars * 100);
+    // Pricing v2.1: commission on the tradie's LABOUR only; materials pass through
+    // with card processing deducted at cost. The client is charged the quoted price
+    // and nothing else — the old 2% "Secure Processing Fee" surcharge is gone
+    // (spec §0A: "no platform fee, no surcharge — clients never pay us anything").
+    // resolveChargeFee also applies the repeat-client rate (server-side lookup) and
+    // any per-profile override, and pro-rates the split to the amount actually
+    // collected so a deposit can never be charged commission on uncollected money.
+    const fee = await resolveChargeFee(supabase, {
+      amountCents: baseAmountCents,
+      labourCents: quote.labour_cents,
+      materialsCents: quote.materials_cents,
+      tier: tradieSubscriptionTier,
+      overrideBps: tradieProfile?.platform_fee_override_bps ?? null,
+      tradieId: quote.tradie_id,
+      clientId: job.client_id,
+      jobId: quote.job_id,
+    });
 
     // application_fee_amount is what the platform retains from the destination charge.
-    const applicationFeeAmount = platformFeeCents + processingFee;
+    const applicationFeeAmount = fee.applicationFeeAmount;
 
     // Capture pre-mutation state so the payment-record failure path can revert
     // both the chosen quote and any cascaded siblings cleanly. (Previously the
@@ -480,9 +494,12 @@ Deno.serve(async (req: Request) => {
         payment_type: "job_funding",
         job_id: quote.job_id,
         amount: baseAmountCents,
-        processing_fee: processingFee,
+        // v2.1: no client processing surcharge is collected.
+        processing_fee: 0,
         currency: "aud",
         status: "pending",
+        // First-class v2.1 fee audit columns.
+        ...fee.paymentColumns,
         metadata: {
           deposit_type: "escrow",
           flow: "destination",
@@ -492,7 +509,14 @@ Deno.serve(async (req: Request) => {
           tradie_stripe_account: tradieProfile.stripe_connect_account_id,
           job_description: job.description,
           gst: String(gst),
-          platform_fee: platformFeeCents,
+          // MUST stay a NUMBER — release-escrow reads this with a
+          // `typeof === "number"` guard and would otherwise treat the fee as 0
+          // and pay out the full amount undeducted.
+          platform_fee: fee.breakdown.totalDeductionCents,
+          commission: fee.breakdown.commissionCents,
+          materials_processing: fee.breakdown.materialsProcessingCents,
+          fee_rate_type: fee.breakdown.rateType,
+          fee_model: "v2.1",
           tradie_tier: tradieSubscriptionTier,
         },
       })
@@ -558,16 +582,8 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    if (processingFee > 0) {
-      lineItems.push({
-        price_data: {
-          currency: "aud",
-          product_data: { name: "Secure Processing Fee (2%)" },
-          unit_amount: processingFee,
-        },
-        quantity: 1,
-      });
-    }
+    // Pricing v2.1: no client-side processing surcharge. The client pays the
+    // quoted price (plus GST where the tradie is registered) and nothing more.
 
     // Create Stripe Checkout session
     const session = await stripe.checkout.sessions.create(
@@ -600,9 +616,11 @@ Deno.serve(async (req: Request) => {
           payment_record_id: paymentRecord.id,
           base_amount: String(baseAmountCents),
           gst: String(gst),
-          processing_fee: String(processingFee),
-          platform_fee: String(platformFeeCents),
+          processing_fee: "0",
           tradie_tier: tradieSubscriptionTier,
+          // Frozen v2.1 breakdown (includes platform_fee = total deduction, which
+          // release-escrow and the webhook read).
+          ...fee.metadata,
         },
       },
       idempotencyKey ? { idempotencyKey } : undefined,
