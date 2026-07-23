@@ -23,6 +23,7 @@ import JobManagementModal from '../components/JobManagementModal';
 import PaymentRequestsSection from '../components/PaymentRequestsSection';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { isReleaseActioned } from '../lib/paymentRelease';
 import { Capacitor } from '@capacitor/core';
 import { getConnectAccountDetails, createConnectOnboardingSession } from '../lib/stripe';
 import type { ConnectAccountDetails } from '../lib/stripe';
@@ -91,6 +92,10 @@ export default function Payouts() {
   };
   const [escrowHeld, setEscrowHeld] = useState(0);
   const [escrowCount, setEscrowCount] = useState(0);
+  // Portion of the held escrow the client has ALREADY approved — it isn't waiting
+  // on anyone, just on the card payment settling. Shown differently to the tradie
+  // so we never imply their client still has to act.
+  const [escrowClearing, setEscrowClearing] = useState(0);
   // Soonest completed_at (ms epoch) among unreleased completed jobs, for the
   // live auto-release countdown. null when nothing is inside the 48h window.
   const [escrowReleaseAt, setEscrowReleaseAt] = useState<number | null>(null);
@@ -152,9 +157,19 @@ export default function Payouts() {
       setEscrowHeld(unreleased.reduce((s, r) => s + (r.amount || 0), 0));
       setEscrowCount(unreleased.length);
 
-      // Only COMPLETED jobs are inside the 48h review window; the soonest
-      // completed_at drives the next auto-release countdown.
+      // Split the held escrow: the client has already approved some of it (the
+      // payout just hasn't settled yet). Those aren't "pending client review" and
+      // must not drive an auto-release countdown that has already been overtaken.
+      const isActioned = (p: { metadata: unknown }) =>
+        isReleaseActioned({ metadata: p.metadata as Record<string, unknown> | null });
+      setEscrowClearing(
+        unreleased.filter(isActioned).reduce((s, r) => s + (r.amount || 0), 0),
+      );
+
+      // Only COMPLETED jobs STILL AWAITING THE CLIENT are inside the review
+      // window; the soonest completed_at drives the next auto-release countdown.
       const completedTimes = unreleased
+        .filter((p) => !isActioned(p))
         .map((p) => p.jobs as unknown as { status: string; completed_at: string | null })
         .filter((j) => j.status === 'completed' && j.completed_at)
         .map((j) => new Date(j.completed_at as string).getTime());
@@ -998,16 +1013,35 @@ export default function Payouts() {
               <p className="text-4xl font-bold text-gray-900 mt-0.5 tabular-nums">{formatCurrency(computedTotalEarned)}</p>
 
               <div className="mt-5 space-y-2">
-                {/* 🟡 Pending client review */}
-                <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-100 px-4 py-3">
-                  <Clock className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-amber-900 tabular-nums">{formatCurrency(escrowAmount)} — Pending</p>
-                    <p className="text-xs text-amber-700">
-                      {escrowAmount > 0 ? autoReleaseLabel : 'Nothing waiting on a client'}
-                    </p>
-                  </div>
-                </div>
+                {/* 🟡 Pending client review — or already approved and just clearing */}
+                {(() => {
+                  // Money the client has approved isn't "pending review": it's on its
+                  // way and only waiting for the card payment to settle. Saying
+                  // "Auto-releases in 4h" there is wrong — that deadline has passed
+                  // its purpose the moment the client released.
+                  const clearing = escrowClearing;
+                  const awaitingClient = Math.max(0, escrowAmount - clearing);
+                  const allClearing = escrowAmount > 0 && awaitingClient === 0;
+                  return (
+                    <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-100 px-4 py-3">
+                      <Clock className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-amber-900 tabular-nums">
+                          {formatCurrency(escrowAmount)} — {allClearing ? 'Released, clearing' : 'Pending'}
+                        </p>
+                        <p className="text-xs text-amber-700">
+                          {escrowAmount === 0
+                            ? 'Nothing waiting on a client'
+                            : allClearing
+                              ? 'Your client approved this — it moves once the card payment clears.'
+                              : clearing > 0
+                                ? `${formatCurrency(clearing)} approved & clearing · ${autoReleaseLabel}`
+                                : autoReleaseLabel}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* 🔵 Heading to the bank */}
                 <div className="rounded-xl bg-secondary-50 border border-secondary-100 px-4 py-3">
