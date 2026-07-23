@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { calculatePlatformFee, calculateProcessingFeeCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveChargeFee } from "../_shared/feeContext.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -358,10 +359,19 @@ Deno.serve(async (req: Request) => {
         const tradieSubscriptionTier = resolveTradieTier(tradieDetailMap.get(job.tradie_id as string) ?? undefined);
         const tradieFeeOverrideBps = profileMap.get(job.tradie_id as string)?.platform_fee_override_bps ?? null;
 
-        const platformFeeDollars = calculatePlatformFee(total, tradieSubscriptionTier, tradieFeeOverrideBps);
-        const platformFeeCents = Math.round(platformFeeDollars * 100);
         const totalCents = Math.round(total * 100);
-        const processingFee = calculateProcessingFeeCents(totalCents);
+        // Pricing v2.1: an invoice has no labour/materials split, so the whole
+        // total is treated as labour. Repeat-client rate still applies to a
+        // genuine pair.
+        const fee = await resolveChargeFee(supabase, {
+          amountCents: totalCents,
+          tier: tradieSubscriptionTier,
+          overrideBps: tradieFeeOverrideBps,
+          tradieId: job.tradie_id as string,
+          clientId: job.client_id as string,
+        });
+        const platformFeeCents = fee.applicationFeeAmount;
+        const processingFee = 0;
 
         // Get homeowner info for Stripe (O(1) lookup)
         const homeowner = profileMap.get(job.client_id as string);

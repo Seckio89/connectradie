@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@14.21.0";
-import { calculateBecsProcessingFeeCents, calculateProcessingFeeCents, calculatePlatformFee, resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveChargeFee } from "../_shared/feeContext.ts";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
@@ -179,9 +180,19 @@ Deno.serve(async (req: Request) => {
         try {
           const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
           const totalCents = Math.round(Number(invoice.total) * 100);
-          const processingFeeCents = calculateBecsProcessingFeeCents(totalCents);
-          const platformFeeCents = Math.round(calculatePlatformFee(Number(invoice.total), tier, overrideBps) * 100);
-          const chargeAmount = totalCents + processingFeeCents;
+          // Pricing v2.1: an invoice carries no labour/materials split, so the
+          // whole total is treated as labour (commission on everything, as
+          // before, just at the v2.1 rate). The repeat-client rate still applies
+          // if this tradie/client pair has a prior completed + released job.
+          const becsFee = await resolveChargeFee(supabase, {
+            amountCents: totalCents,
+            tier,
+            overrideBps,
+            tradieId: recurringJob?.tradie_id,
+            clientId: user.id,
+          });
+          // v2.1: the client is charged the invoice total and nothing more.
+          const chargeAmount = totalCents;
 
           const pi = await stripe.paymentIntents.create({
             amount: chargeAmount,
@@ -192,7 +203,7 @@ Deno.serve(async (req: Request) => {
             mandate: savedMethod.stripe_mandate_id || undefined,
             off_session: true,
             confirm: true,
-            application_fee_amount: platformFeeCents + processingFeeCents,
+            application_fee_amount: becsFee.applicationFeeAmount,
             transfer_data: { destination: destinationAccount },
             // No on_behalf_of — au_becs_debit needs that capability on the destination
             // account; transfer_data alone still routes funds to the tradie in one step.
@@ -203,9 +214,9 @@ Deno.serve(async (req: Request) => {
               recurring_job_id: invoice.recurring_job_id,
               homeowner_id: user.id,
               tradie_id: recurringJob?.tradie_id || "",
-              platform_fee: String(platformFeeCents),
-              processing_fee: String(processingFeeCents),
+              processing_fee: "0",
               tradie_tier: tier,
+              ...becsFee.metadata,
             },
           });
 
@@ -229,8 +240,14 @@ Deno.serve(async (req: Request) => {
     // ─── Stripe Checkout ───
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
     const totalCents = Math.round(Number(invoice.total) * 100);
-    const processingFeeCents = calculateProcessingFeeCents(totalCents);
-    const platformFeeCents = Math.round(calculatePlatformFee(Number(invoice.total), tier, overrideBps) * 100);
+    // Pricing v2.1 — see the BECS branch above for why this is all-labour.
+    const fee = await resolveChargeFee(supabase, {
+      amountCents: totalCents,
+      tier,
+      overrideBps,
+      tradieId: recurringJob?.tradie_id,
+      clientId: user.id,
+    });
 
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [{
       price_data: {
@@ -244,16 +261,7 @@ Deno.serve(async (req: Request) => {
       quantity: 1,
     }];
 
-    if (processingFeeCents > 0) {
-      lineItems.push({
-        price_data: {
-          currency: "aud",
-          product_data: { name: "Secure Processing Fee" },
-          unit_amount: processingFeeCents,
-        },
-        quantity: 1,
-      });
-    }
+    // Pricing v2.1: no client-side processing surcharge.
 
     const session = await stripe.checkout.sessions.create({
       line_items: lineItems,
@@ -261,7 +269,7 @@ Deno.serve(async (req: Request) => {
       success_url: `${siteUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/payment-cancelled`,
       payment_intent_data: {
-        application_fee_amount: platformFeeCents + processingFeeCents,
+        application_fee_amount: fee.applicationFeeAmount,
         transfer_data: { destination: destinationAccount },
       },
       metadata: {
@@ -271,9 +279,9 @@ Deno.serve(async (req: Request) => {
         recurring_job_id: invoice.recurring_job_id,
         homeowner_id: user.id,
         tradie_id: recurringJob?.tradie_id || "",
-        platform_fee: String(platformFeeCents),
-        processing_fee: String(processingFeeCents),
+        processing_fee: "0",
         tradie_tier: tier,
+        ...fee.metadata,
       },
     });
 

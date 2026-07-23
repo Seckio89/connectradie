@@ -2,11 +2,10 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import {
-  calculateProcessingFeeCents,
-  calculatePlatformFee,
   resolveTradieTier,
   calculateGstCents,
 } from "../_shared/pricing.ts";
+import { resolveChargeFee } from "../_shared/feeContext.ts";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
@@ -361,7 +360,8 @@ Deno.serve(async (req: Request) => {
     // CASE B — Price INCREASE → request additional payment from client
     // -----------------------------------------------------------------------
     const diffCents = finalPriceCents - originalAmountCents;
-    const additionalProcessingFee = calculateProcessingFeeCents(diffCents);
+    // v2.1: no client-side processing surcharge on the increase either.
+    const additionalProcessingFee = 0;
     // GST on the increase — client must pay GST on the delta base if the tradie is GST-registered.
     // Pay-price-increase Stripe session consumes this from pending_increase.additional_gst.
     const additionalGstCents = tradieIsGstRegistered
@@ -376,14 +376,18 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     const tradieTier = resolveTradieTier(tradieSubRecord?.subscription_tier);
-    const additionalPlatformFeeDollars = calculatePlatformFee(
-      diffCents / 100,
-      tradieTier,
-      tradieFeeOverrideBps
-    );
-    const additionalPlatformFeeCents = Math.round(
-      additionalPlatformFeeDollars * 100
-    );
+    // Pricing v2.1: a price increase is additional work, i.e. labour — a variation
+    // does not retroactively add materials to the original quote. Charged at the
+    // same rate the original job resolved to (repeat lookup still applies).
+    const additionalFee = await resolveChargeFee(supabase, {
+      amountCents: diffCents,
+      tier: tradieTier,
+      overrideBps: tradieFeeOverrideBps,
+      tradieId: quote.tradie_id,
+      clientId: job?.client_id ?? null,
+      jobId: quote.job_id,
+    });
+    const additionalPlatformFeeCents = additionalFee.applicationFeeAmount;
 
     // Update quote with final price
     const { error: quoteUpdateError } = await supabase

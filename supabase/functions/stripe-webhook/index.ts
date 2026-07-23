@@ -1,7 +1,8 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@14.21.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
-import { calculateProcessingFeeCents, calculatePlatformFee, resolveTradieTier } from '../_shared/pricing.ts';
+import { resolveTradieTier } from '../_shared/pricing.ts';
+import { resolveChargeFee } from '../_shared/feeContext.ts';
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
@@ -552,7 +553,8 @@ async function handleEvent(event: Stripe.Event) {
               .eq('profile_id', invoice.tradie_id)
               .maybeSingle();
             const fallbackTier = resolveTradieTier(tradieDetails?.subscription_tier);
-            const fallbackProcessingFee = calculateProcessingFeeCents(totalCents);
+            // v2.1: no client-side processing surcharge on the card fallback.
+            const fallbackProcessingFee = 0;
 
             // Route the card fallback directly to the tradie when their Connect account
             // is ready. If not, fall back to a legacy (platform-collected) session so the
@@ -565,7 +567,15 @@ async function handleEvent(event: Stripe.Event) {
             const fbDestination = fbConnect?.stripe_connect_onboarding_complete
               ? fbConnect.stripe_connect_account_id
               : null;
-            const fallbackPlatformFee = Math.round(calculatePlatformFee(Number(invoice.total), fallbackTier, fbConnect?.platform_fee_override_bps ?? null) * 100);
+            // Pricing v2.1: invoice has no labour/materials split, so all-labour.
+            const fallbackFee = await resolveChargeFee(supabase, {
+              amountCents: totalCents,
+              tier: fallbackTier,
+              overrideBps: fbConnect?.platform_fee_override_bps ?? null,
+              tradieId: invoice.tradie_id,
+              clientId: invoice.homeowner_id ?? null,
+            });
+            const fallbackPlatformFee = fallbackFee.applicationFeeAmount;
 
             const fallbackLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
               { price_data: { currency: 'aud', unit_amount: totalCents, product_data: { name: 'Recurring Service Invoice (Card Fallback)' } }, quantity: 1 },

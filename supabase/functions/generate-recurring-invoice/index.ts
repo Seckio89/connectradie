@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { calculatePlatformFee, calculateProcessingFeeCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveChargeFee } from "../_shared/feeContext.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -204,9 +205,6 @@ Deno.serve(async (req: Request) => {
       .eq("id", job.tradie_id)
       .maybeSingle();
 
-    const platformFeeDollars = calculatePlatformFee(total, tradieSubscriptionTier, tradieConnect?.platform_fee_override_bps ?? null);
-    const platformFeeCents = Math.round(platformFeeDollars * 100);
-
     const destinationAccount = tradieConnect?.stripe_connect_onboarding_complete
       ? tradieConnect.stripe_connect_account_id
       : null;
@@ -219,7 +217,17 @@ Deno.serve(async (req: Request) => {
     }
 
     const totalCents = Math.round(total * 100);
-    const processingFee = calculateProcessingFeeCents(totalCents);
+    // Pricing v2.1: an invoice has no labour/materials split, so the whole total
+    // is treated as labour. Repeat-client rate still applies to a genuine pair.
+    const fee = await resolveChargeFee(supabase, {
+      amountCents: totalCents,
+      tier: tradieSubscriptionTier,
+      overrideBps: tradieConnect?.platform_fee_override_bps ?? null,
+      tradieId: job.tradie_id,
+      clientId: job.client_id,
+    });
+    const platformFeeCents = fee.applicationFeeAmount;
+    const processingFee = 0;
 
     // Build month label for invoice
     const periodStart = new Date(billingPeriodStart + "T00:00:00");
@@ -372,8 +380,8 @@ Deno.serve(async (req: Request) => {
             billing_period_end: billingPeriodEnd,
             homeowner_id: job.client_id,
             tradie_id: job.tradie_id ?? "",
-            platform_fee: String(platformFeeCents),
-            processing_fee: String(processingFee),
+            processing_fee: "0",
+            ...fee.metadata,
             tradie_tier: tradieSubscriptionTier,
           },
         });
@@ -412,8 +420,8 @@ Deno.serve(async (req: Request) => {
           billing_period_end: billingPeriodEnd,
           homeowner_id: job.client_id,
           tradie_id: job.tradie_id ?? "",
-          platform_fee: String(platformFeeCents),
-          processing_fee: String(processingFee),
+          processing_fee: "0",
+          ...fee.metadata,
           tradie_tier: tradieSubscriptionTier,
         },
       });

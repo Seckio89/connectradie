@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { calculatePlatformFee, calculateProcessingFeeCents, resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveTradieTier } from "../_shared/pricing.ts";
+import { resolveChargeFee, getJobQuoteSplit } from "../_shared/feeContext.ts";
 
 /*
   public-quote — token-gated public access to a quote sent to an OFF-APP client.
@@ -206,8 +207,21 @@ Deno.serve(async (req: Request) => {
           const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
           const chargeCents = Math.round(chargeDollars * 100);
           const tier = resolveTradieTier(td?.subscription_tier);
-          const platformFeeCents = Math.round(calculatePlatformFee(chargeDollars, tier, tradie?.platform_fee_override_bps ?? null) * 100);
-          const processingFeeCents = calculateProcessingFeeCents(chargeCents);
+          // Pricing v2.1: commission on labour only. Off-app client (a
+          // client_contact, not a profile), so there is no pair to check for the
+          // repeat rate — skip the lookup rather than pay for a query that can
+          // only return false.
+          const split = await getJobQuoteSplit(supabase, quote.job_id);
+          const fee = await resolveChargeFee(supabase, {
+            amountCents: chargeCents,
+            labourCents: split.labourCents,
+            materialsCents: split.materialsCents,
+            tier,
+            overrideBps: tradie?.platform_fee_override_bps ?? null,
+            tradieId: quote.tradie_id,
+            jobId: quote.job_id,
+            skipRepeatCheck: true,
+          });
 
           // Reuse an existing OPEN checkout session instead of minting a second
           // live pay link — a client who clicks twice must never be double-charged.
@@ -239,9 +253,7 @@ Deno.serve(async (req: Request) => {
             const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
               { price_data: { currency: "aud", product_data: { name: job?.title || "Job" }, unit_amount: chargeCents }, quantity: 1 },
             ];
-            if (processingFeeCents > 0) {
-              lineItems.push({ price_data: { currency: "aud", product_data: { name: "Secure Processing Fee" }, unit_amount: processingFeeCents }, quantity: 1 });
-            }
+            // Pricing v2.1: no client-side processing surcharge.
             const checkoutSession = await stripe.checkout.sessions.create({
               customer_email: clientContact?.email || undefined,
               line_items: lineItems,
@@ -252,7 +264,7 @@ Deno.serve(async (req: Request) => {
               success_url: `${siteUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
               cancel_url: `${siteUrl}/quote/${token}`,
               payment_intent_data: {
-                application_fee_amount: platformFeeCents + processingFeeCents,
+                application_fee_amount: fee.applicationFeeAmount,
                 transfer_data: { destination: destinationAccount! },
               },
               metadata: {
@@ -262,9 +274,9 @@ Deno.serve(async (req: Request) => {
                 job_id: quote.job_id,
                 client_contact_id: job?.client_contact_id ?? "",
                 tradie_id: quote.tradie_id,
-                platform_fee: String(platformFeeCents),
-                processing_fee: String(processingFeeCents),
+                processing_fee: "0",
                 tradie_tier: tier,
+                ...fee.metadata,
               },
             });
             paymentUrl = checkoutSession.url ?? null;
@@ -278,16 +290,23 @@ Deno.serve(async (req: Request) => {
               amount: chargeCents,
               status: "pending",
               stripe_checkout_session_id: checkoutSession.id,
-              processing_fee: processingFeeCents,
-              platform_fee_cents: platformFeeCents,
+              processing_fee: 0,
               fee_tier: tier,
-              fee_calculated_at: new Date().toISOString(),
+              ...fee.paymentColumns,
               metadata: {
                 off_app: true,
                 routing: "destination",
                 client_contact_id: job?.client_contact_id ?? null,
                 payer_email: clientContact?.email ?? null,
-                platform_fee: String(platformFeeCents),
+                // NUMBER, not a string. This row previously stored the fee as a
+                // string, which release-escrow's `typeof === "number"` guard read
+                // as 0 — it would then try to pay out the full base even though
+                // Stripe had already taken the application fee at charge time.
+                platform_fee: fee.breakdown.totalDeductionCents,
+                commission: fee.breakdown.commissionCents,
+                materials_processing: fee.breakdown.materialsProcessingCents,
+                fee_rate_type: fee.breakdown.rateType,
+                fee_model: "v2.1",
               },
             });
             if (payErr) console.error("public-quote: funding payment insert failed", payErr);
