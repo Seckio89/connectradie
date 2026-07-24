@@ -790,15 +790,65 @@ export default function Payouts() {
     return `Auto-releases in ${m}m`;
   })();
   const onItsWay = (accountDetails?.balance?.available ?? 0) + (accountDetails?.balance?.pending ?? 0);
-  // A concrete arrival estimate beats "2–3 days": ~3 business days from today.
-  const bankArrivalLabel = (() => {
-    const d = new Date();
-    let added = 0;
-    while (added < 3) {
-      d.setDate(d.getDate() + 1);
-      if (d.getDay() !== 0 && d.getDay() !== 6) added++;
+
+  // Money that is genuinely in flight = Stripe payout objects that haven't landed
+  // yet. Stripe deducts a payout from the Connect balance the moment it's created,
+  // so these never double-count against `available`/`pending` below.
+  const inFlightPayouts = (accountDetails?.payouts || []).filter(
+    (p) => p.status === 'pending' || p.status === 'in_transit'
+  );
+  const inFlightTotal = inFlightPayouts.reduce((s, p) => s + p.amount, 0);
+  // Earliest date Stripe itself has committed to. Never a guess.
+  const inFlightArrival = inFlightPayouts.length
+    ? Math.min(...inFlightPayouts.map((p) => p.arrival_date).filter(Boolean))
+    : null;
+
+  const availableCents = accountDetails?.balance?.available ?? 0;
+  const clearingCents = accountDetails?.balance?.pending ?? 0;
+  const isManualSchedule = accountDetails?.payoutSchedule?.interval === 'manual';
+
+  // These are three genuinely different states. They used to be collapsed into a
+  // single "Heading to your bank" line paired with a rolling `today + 3 business
+  // days` estimate — which recomputed on every render, so the date appeared to
+  // slide forward one business day every day regardless of what the payout was
+  // actually doing. It carried no information about the payout at all.
+  //
+  //   in flight  -> a real payout exists; show Stripe's own arrival_date
+  //   available  -> settled, but tradie accounts default to a MANUAL payout
+  //                 schedule (see stripe-connect-onboarding), so this sits in
+  //                 the Stripe balance until a release creates a payout
+  //   clearing   -> still settling inside Stripe; no arrival date exists yet
+  const transitState: { amount: number; title: string; detail: string } = (() => {
+    if (inFlightTotal > 0) {
+      return {
+        amount: inFlightTotal,
+        title: 'Heading to your bank',
+        detail: inFlightArrival
+          ? `Should arrive by ${new Date(inFlightArrival * 1000).toLocaleDateString('en-AU', {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+            })}`
+          : 'Arrival date pending from Stripe',
+      };
     }
-    return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+    if (availableCents > 0) {
+      return {
+        amount: availableCents,
+        title: isManualSchedule ? 'Ready to pay out' : 'Scheduled for your next payout',
+        detail: isManualSchedule
+          ? 'Cleared and waiting — not sent to your bank yet'
+          : 'Will be sent on your next scheduled payout',
+      };
+    }
+    if (clearingCents > 0) {
+      return {
+        amount: clearingCents,
+        title: 'Clearing with Stripe',
+        detail: 'Still settling — no bank date yet',
+      };
+    }
+    return { amount: 0, title: 'Heading to your bank', detail: 'Nothing in transit' };
   })();
   const externalTotal = useMemo(() => externalPayments.reduce((s, p) => s + p.amount, 0), [externalPayments]);
   const computedTotalEarned = escrowAmount + onItsWay + totalPaidOut + externalTotal;
@@ -1048,10 +1098,8 @@ export default function Payouts() {
                   <div className="flex items-center gap-3">
                     <ExternalLink className="w-5 h-5 text-secondary-500 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-secondary-900 tabular-nums">{formatCurrency(onItsWay)} — Heading to your bank</p>
-                      <p className="text-xs text-secondary-700">
-                        {onItsWay > 0 ? `Should arrive by ${bankArrivalLabel}` : 'Nothing in transit'}
-                      </p>
+                      <p className="text-sm font-semibold text-secondary-900 tabular-nums">{formatCurrency(transitState.amount)} — {transitState.title}</p>
+                      <p className="text-xs text-secondary-700">{transitState.detail}</p>
                     </div>
                   </div>
 

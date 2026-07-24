@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { proseInputProps } from '../lib/proseInput';
 import { useAuth } from '../contexts/AuthContext';
 import { releaseEscrow } from '../lib/stripePayments';
+import { isReleaseActioned } from '../lib/paymentRelease';
 import DashboardLayout from '../components/DashboardLayout';
 
 const REVIEW_TAGS = [
