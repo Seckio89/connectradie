@@ -182,6 +182,67 @@ export async function recordFeeCharge(
 }
 
 /**
+ * Reverses a commission charge after a refund (spec §7A).
+ *
+ * Two cases, and the difference matters legally:
+ *
+ *   • The charge was never invoiced — no tax document exists, so the ledger row
+ *     is simply removed. Nothing to offset.
+ *   • The charge IS on an issued invoice — under AU rules that invoice cannot be
+ *     edited or deleted. It must be offset by an ADJUSTMENT NOTE: a second
+ *     document with negative amounts pointing at the original.
+ *
+ * Best-effort like recordFeeCharge: the refund itself has already happened at
+ * Stripe, and failing to write paperwork must never make the caller think the
+ * refund failed. Errors are logged loudly instead.
+ */
+export async function recordFeeRefund(
+  supabase: SupabaseLike,
+  paymentId: string,
+): Promise<void> {
+  try {
+    const { data: charge, error } = await supabase
+      .from("platform_fee_charges")
+      .select("id, tradie_profile_id, commission_cents, gst_cents, ex_gst_cents, invoice_id")
+      .eq("payment_id", paymentId)
+      .maybeSingle();
+
+    if (error || !charge) return; // nothing was ever billed for this payment
+
+    // Not yet invoiced → no tax document references it. Drop the ledger row so
+    // the next invoicing run doesn't bill a commission that was refunded.
+    if (!charge.invoice_id) {
+      const { error: delErr } = await supabase
+        .from("platform_fee_charges")
+        .delete()
+        .eq("id", charge.id)
+        .is("invoice_id", null); // guard: never delete something since invoiced
+      if (delErr) console.error("[recordFeeRefund] could not drop uninvoiced charge", paymentId, delErr);
+      return;
+    }
+
+    // Already invoiced → issue an adjustment note offsetting it.
+    const today = new Date().toISOString().slice(0, 10);
+    const { error: adjErr } = await supabase.from("platform_fee_invoices").insert({
+      tradie_profile_id: charge.tradie_profile_id,
+      period_start: today,
+      period_end: today,
+      subtotal_ex_gst_cents: -charge.ex_gst_cents,
+      gst_cents: -charge.gst_cents,
+      total_cents: -charge.commission_cents,
+      kind: "adjustment",
+      adjusts_invoice_id: charge.invoice_id,
+    });
+    if (adjErr) {
+      console.error("[recordFeeRefund] ADJUSTMENT NOTE FAILED — invoice", charge.invoice_id,
+        "still stands against a refunded payment", paymentId, adjErr);
+    }
+  } catch (err) {
+    console.error("[recordFeeRefund] threw (refund itself unaffected)", paymentId, err);
+  }
+}
+
+/**
  * Pulls the labour/materials split from a job's accepted quote.
  *
  * Deposits, milestones and staged payments all charge a PORTION of the job, so

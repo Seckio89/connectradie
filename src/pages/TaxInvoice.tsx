@@ -40,8 +40,15 @@ type FeeCharge = {
   charged_at: string;
 };
 
-const money = (cents: number) =>
-  `$${(cents / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// Adjustment notes carry negative amounts. Render them as −$5.00, not $-5.00 —
+// this is a tax document and the sign belongs in front of the currency.
+const money = (cents: number) => {
+  const abs = Math.abs(cents / 100).toLocaleString('en-AU', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${cents < 0 ? '−' : ''}$${abs}`;
+};
 
 const shortDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });

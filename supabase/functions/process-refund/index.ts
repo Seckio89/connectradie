@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
+import { recordFeeRefund } from "../_shared/feeContext.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -70,7 +71,9 @@ Deno.serve(async (req: Request) => {
       return errorJson("Invalid JSON body", 400);
     }
 
-    const { paymentId, reason, idempotencyKey } = body as {
+    // idempotencyKey is still accepted for compatibility but IGNORED — the
+    // Stripe call derives its own from paymentId. Do not reinstate.
+    const { paymentId, reason } = body as {
       paymentId?: string;
       reason?: string;
       idempotencyKey?: string;
@@ -218,7 +221,11 @@ Deno.serve(async (req: Request) => {
           flow: isDestinationCharge ? "destination" : "custodial",
         },
       },
-      idempotencyKey ? { idempotencyKey } : undefined,
+      // DERIVED, not caller-supplied — same reasoning as release-escrow. A key
+      // the client controls is not idempotency: omit it and a retry issues a
+      // SECOND refund, vary it and Stripe treats it as a new request. Refunds
+      // are full-amount here, so one payment can only ever have one.
+      { idempotencyKey: `refund_${paymentId}` },
     );
 
     // Update payment status to refunded
@@ -240,6 +247,12 @@ Deno.serve(async (req: Request) => {
         },
       })
       .eq("id", paymentId);
+
+    // §7A: the commission was refunded too (refund_application_fee), so any tax
+    // invoice raised for it must be offset by an adjustment note. Best-effort —
+    // the money has already moved; paperwork failing must not report the refund
+    // as failed.
+    await recordFeeRefund(supabase, paymentId);
 
     return new Response(
       JSON.stringify({
