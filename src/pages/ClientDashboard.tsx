@@ -780,7 +780,7 @@ export default function ClientDashboard() {
                         disabled={releasingJobId === job.id}
                         className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors min-h-[44px]"
                       >
-                        {releasingJobId === job.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <DollarSign className="w-3.5 h-3.5" />}
+                        {releasingJobId === job.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                         Release & Review
                       </button>
                     </div>
