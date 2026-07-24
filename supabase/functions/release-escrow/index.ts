@@ -82,7 +82,11 @@ Deno.serve(async (req: Request) => {
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
       .select(
-        "id, profile_id, job_id, amount, status, stripe_payment_intent_id, metadata"
+        // fee_rate_bps/fee_rate_type come from the first-class COLUMNS, not from
+        // metadata: the charge functions write the rate to the column but only
+        // put it in the Stripe *session* metadata, so reading metadata here left
+        // the tax-invoice ledger with a null rate.
+        "id, profile_id, job_id, amount, status, stripe_payment_intent_id, metadata, fee_rate_bps, fee_rate_type"
       )
       .eq("id", paymentId)
       .maybeSingle();
@@ -318,10 +322,10 @@ Deno.serve(async (req: Request) => {
         jobId: payment.job_id,
         commissionCents: totalCommission,
         materialsProcessingCents: totalMaterialsProcessing,
-        feeRateBps: frozenCents(existingMetadata.fee_rate_bps) || null,
-        feeRateType: typeof existingMetadata.fee_rate_type === "string"
-          ? existingMetadata.fee_rate_type
-          : null,
+        // Prefer the first-class columns; fall back to metadata for older rows.
+        feeRateBps: (payment.fee_rate_bps as number | null) ?? (frozenCents(existingMetadata.fee_rate_bps) || null),
+        feeRateType: (payment.fee_rate_type as string | null)
+          ?? (typeof existingMetadata.fee_rate_type === "string" ? existingMetadata.fee_rate_type : null),
       });
 
       // Mark the summed child price_adjustment rows released too (only once the
@@ -470,10 +474,10 @@ Deno.serve(async (req: Request) => {
       jobId: payment.job_id,
       commissionCents: totalCommission,
       materialsProcessingCents: totalMaterialsProcessing,
-      feeRateBps: frozenCents(existingMetadata.fee_rate_bps) || null,
-      feeRateType: typeof existingMetadata.fee_rate_type === "string"
-        ? existingMetadata.fee_rate_type
-        : null,
+      // Prefer the first-class columns; fall back to metadata for older rows.
+      feeRateBps: (payment.fee_rate_bps as number | null) ?? (frozenCents(existingMetadata.fee_rate_bps) || null),
+      feeRateType: (payment.fee_rate_type as string | null)
+        ?? (typeof existingMetadata.fee_rate_type === "string" ? existingMetadata.fee_rate_type : null),
     });
 
     return new Response(

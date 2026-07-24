@@ -91,6 +91,11 @@ export default function Payouts() {
     try { await supabase.functions.invoke('instant-payout', { body: { action: 'preference', value } }); } catch { /* keep local */ }
   };
   const [escrowHeld, setEscrowHeld] = useState(0);
+  // The portion of escrowHeld that Stripe has ALREADY moved into the tradie's
+  // Connect balance. Destination charges route funds at payment time, not at
+  // release, so that money is simultaneously "held in escrow" here and sitting
+  // in the Stripe balance — it must not be counted twice in total earnings.
+  const [escrowInTradieBalance, setEscrowInTradieBalance] = useState(0);
   const [escrowCount, setEscrowCount] = useState(0);
   // Portion of the held escrow the client has ALREADY approved — it isn't waiting
   // on anyone, just on the card payment settling. Shown differently to the tradie
@@ -156,6 +161,14 @@ export default function Payouts() {
       );
       setEscrowHeld(unreleased.reduce((s, r) => s + (r.amount || 0), 0));
       setEscrowCount(unreleased.length);
+      // Destination-charge rows are already reflected in the Connect balance.
+      // Legacy (platform-custodial) rows are not — those funds really are still
+      // held by us, so they still belong in the earnings total.
+      setEscrowInTradieBalance(
+        unreleased
+          .filter((p) => (p.metadata as Record<string, unknown>)?.flow === 'destination')
+          .reduce((s, r) => s + (r.amount || 0), 0),
+      );
 
       // Split the held escrow: the client has already approved some of it (the
       // payout just hasn't settled yet). Those aren't "pending client review" and
@@ -851,7 +864,13 @@ export default function Payouts() {
     return { amount: 0, title: 'Heading to your bank', detail: 'Nothing in transit' };
   })();
   const externalTotal = useMemo(() => externalPayments.reduce((s, p) => s + p.amount, 0), [externalPayments]);
-  const computedTotalEarned = escrowAmount + onItsWay + totalPaidOut + externalTotal;
+  // Destination charges put the money in the tradie's Stripe balance at PAYMENT
+  // time, so a funded-but-unreleased job appears in BOTH escrowAmount (gross,
+  // from the payments table) and onItsWay (net, from the Stripe balance). Adding
+  // both double-counted every live job — a $70 job read as ~$135 of earnings.
+  // Only escrow we genuinely still hold (legacy custodial flow) is added here.
+  const escrowNotYetInBalance = Math.max(0, escrowAmount - escrowInTradieBalance);
+  const computedTotalEarned = escrowNotYetInBalance + onItsWay + totalPaidOut + externalTotal;
   const methodLabel = (m: string | null) =>
     m ? (({ bank_transfer: 'Bank transfer', cash: 'Cash', cheque: 'Cheque', accountant: 'Accountant' } as Record<string, string>)[m] ?? m) : '';
 
@@ -1065,28 +1084,22 @@ export default function Payouts() {
               <div className="mt-5 space-y-2">
                 {/* 🟡 Pending client review — or already approved and just clearing */}
                 {(() => {
-                  // Money the client has approved isn't "pending review": it's on its
-                  // way and only waiting for the card payment to settle. Saying
-                  // "Auto-releases in 4h" there is wrong — that deadline has passed
-                  // its purpose the moment the client released.
-                  const clearing = escrowClearing;
-                  const awaitingClient = Math.max(0, escrowAmount - clearing);
-                  const allClearing = escrowAmount > 0 && awaitingClient === 0;
+                  // This row is ONLY money still waiting on the client to approve.
+                  // Once they've released it, it belongs to the transit row below —
+                  // showing it in both places made a single $70 job read as $70
+                  // "pending" AND $64.90 "clearing", i.e. the same money twice.
+                  const awaitingClient = Math.max(0, escrowAmount - escrowClearing);
                   return (
                     <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-100 px-4 py-3">
                       <Clock className="w-5 h-5 text-amber-500 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-amber-900 tabular-nums">
-                          {formatCurrency(escrowAmount)} — {allClearing ? 'Released, clearing' : 'Pending'}
+                          {formatCurrency(awaitingClient)} — Secured, awaiting approval
                         </p>
                         <p className="text-xs text-amber-700">
-                          {escrowAmount === 0
+                          {awaitingClient === 0
                             ? 'Nothing waiting on a client'
-                            : allClearing
-                              ? 'Your client approved this — it moves once the card payment clears.'
-                              : clearing > 0
-                                ? `${formatCurrency(clearing)} approved & clearing · ${autoReleaseLabel}`
-                                : autoReleaseLabel}
+                            : `Held safely — released to you when your client approves · ${autoReleaseLabel}`}
                         </p>
                       </div>
                     </div>
