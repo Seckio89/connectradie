@@ -484,7 +484,10 @@ Deno.serve(async (req: Request) => {
             source_charge: sourceChargeId ?? "",
           },
         }, {
-          idempotencyKey: `auto_release_${payment.id}`,
+          // MUST match release-escrow's key exactly. These two paths can both
+          // transfer the same payment, and a differing key means Stripe treats
+          // them as separate requests and creates TWO transfers.
+          idempotencyKey: `release_transfer_${payment.id}`,
         });
 
         // Update main payment metadata with transfer info. Drop pending_increase
