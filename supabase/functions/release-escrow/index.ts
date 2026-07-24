@@ -72,7 +72,11 @@ Deno.serve(async (req: Request) => {
       return errorJson("Invalid JSON body", 400);
     }
 
-    const { paymentId, idempotencyKey } = body as { paymentId?: string; idempotencyKey?: string };
+    // A caller-supplied idempotencyKey is accepted for backwards compatibility
+    // but deliberately IGNORED: both Stripe calls below derive their key from
+    // paymentId instead. A key the client controls is not idempotency — omit it
+    // and there is none, vary it and you get a second transfer. Do not reinstate.
+    const { paymentId } = body as { paymentId?: string; idempotencyKey?: string };
 
     if (!paymentId) {
       return errorJson("Missing required parameter: paymentId", 400);
@@ -431,7 +435,20 @@ Deno.serve(async (req: Request) => {
           source_charge: sourceChargeId ?? "",
         },
       },
-      idempotencyKey ? { idempotencyKey } : undefined,
+      // DERIVED from the payment, never caller-supplied. Two problems with the
+      // old `idempotencyKey ? {idempotencyKey} : undefined`:
+      //   1. When the caller omitted it there was NO idempotency at all, so a
+      //      retry created a SECOND transfer — real duplicate money. The failure
+      //      window is narrow but real: Stripe succeeds, the metadata write that
+      //      records transfer_id fails, the guard above then sees nothing and
+      //      lets the next attempt through. The code below already flags this as
+      //      "CRITICAL: Transfer succeeded but metadata not saved".
+      //   2. auto-release-payments used a DIFFERENT key (auto_release_<id>), so
+      //      even when a key was supplied the two paths could each create their
+      //      own transfer for the same payment.
+      // Both now use this exact string, mirroring release_payout_<id> on the
+      // destination path, so Stripe collapses any duplicate attempt.
+      { idempotencyKey: `release_transfer_${paymentId}` },
     );
 
     // Update payment metadata with transfer info. Strip pending_increase so the

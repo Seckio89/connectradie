@@ -137,7 +137,18 @@ Deno.serve(async (req: Request) => {
         groups.set(key, list);
       }
 
-      for (const [, group] of groups) {
+      // A monthly invoice must cover a FINISHED month. Without this, a daily cron
+      // would issue an invoice for the current, partial month today and another
+      // one tomorrow for the next day's charges — turning "monthly consolidated"
+      // into "daily, but mislabelled". Per-release tradies are unaffected: their
+      // key is the charge id, so each charge invoices as soon as it appears.
+      const currentMonth = new Date().toISOString().slice(0, 7);
+
+      for (const [key, group] of groups) {
+        if (!perRelease && key === currentMonth) {
+          results.push({ tradieId, deferred: `${key} still in progress`, charges: group.length });
+          continue;
+        }
         const subtotal = group.reduce((s, c) => s + c.ex_gst_cents, 0);
         const gst = group.reduce((s, c) => s + c.gst_cents, 0);
         const total = group.reduce((s, c) => s + c.commission_cents, 0);
