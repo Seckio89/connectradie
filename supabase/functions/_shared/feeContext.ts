@@ -222,6 +222,14 @@ export async function recordFeeRefund(
     }
 
     // Already invoiced → issue an adjustment note offsetting it.
+    //
+    // Idempotent via the partial UNIQUE index on adjusts_charge_id: a refund
+    // that runs twice for the same payment (concurrent requests, or a retry
+    // after the payments UPDATE failed) must not emit a SECOND adjustment note
+    // and double-credit the commission on paper. We key on the charge — NOT on
+    // adjusts_invoice_id — because a monthly consolidated invoice covers many
+    // charges, so distinct payments refunded against the same invoice each need
+    // their own adjustment note.
     const today = new Date().toISOString().slice(0, 10);
     const { error: adjErr } = await supabase.from("platform_fee_invoices").insert({
       tradie_profile_id: charge.tradie_profile_id,
@@ -232,8 +240,11 @@ export async function recordFeeRefund(
       total_cents: -charge.commission_cents,
       kind: "adjustment",
       adjusts_invoice_id: charge.invoice_id,
+      adjusts_charge_id: charge.id,
     });
-    if (adjErr) {
+    // 23505 = an adjustment note already exists for this charge; that's the
+    // idempotent path, not a failure.
+    if (adjErr && (adjErr as { code?: string }).code !== "23505") {
       console.error("[recordFeeRefund] ADJUSTMENT NOTE FAILED — invoice", charge.invoice_id,
         "still stands against a refunded payment", paymentId, adjErr);
     }
