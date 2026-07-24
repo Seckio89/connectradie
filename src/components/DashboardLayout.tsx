@@ -278,23 +278,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         .is('archived_at', null);
 
       if (completedJobs && completedJobs.length > 0) {
-        // Fetch all job_funding payments (completed or released) for these jobs
+        // A job needs release ONLY if it still holds an in-escrow payment
+        // (status='completed') that the client hasn't actioned. Counting
+        // "completed jobs minus released ones" was wrong: a refunded/failed
+        // payment isn't status='completed', so its job fell through and the dot
+        // counted it forever (a refund leaves job.status='completed'). Fetch only
+        // in-escrow payments and count the ones not yet release-actioned — this
+        // also naturally ignores 'released' payments and jobs with no payment.
         const { data: payments } = await supabase
           .from('payments')
           .select('id, job_id, status, metadata')
           .in('job_id', completedJobs.map(j => j.id))
-          .in('status', ['completed', 'released'])
+          .eq('status', 'completed')
           .eq('payment_type', 'job_funding');
 
-        const releasedIds = new Set<string>();
+        const awaiting = new Set<string>();
         for (const p of payments || []) {
-          // Shared predicate — must match the dashboard's attention panel exactly,
-          // or the sidebar dot keeps glowing for jobs the client already released.
-          if (isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null })) {
-            releasedIds.add(p.job_id);
+          if (!isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null })) {
+            awaiting.add(p.job_id);
           }
         }
-        total += completedJobs.filter(j => !releasedIds.has(j.id)).length;
+        total += awaiting.size;
       }
 
       // 2. Pending jobs with quotes to review
