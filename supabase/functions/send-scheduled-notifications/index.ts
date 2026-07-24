@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { hasServiceRole } from "../_shared/serviceAuth.ts";
 
 function requireEnv(key: string): string {
   const val = Deno.env.get(key);
@@ -55,7 +56,9 @@ Deno.serve(async (req: Request) => {
     // SUPABASE_SERVICE_ROLE_KEY can drift from the vault-stored secret used by
     // pg_cron after key rotations, and that mismatch silently 401'd everything.
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ey")) {
+    // Service-role capability check (see _shared/serviceAuth): only a real
+    // service-role key passes — NOT any signed-in user's JWT.
+    if (!(await hasServiceRole(authHeader, supabaseUrl))) {
       return errorJson("Unauthorized", 401);
     }
 

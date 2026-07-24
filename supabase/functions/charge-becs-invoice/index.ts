@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@14.21.0";
 import { resolveTradieTier } from "../_shared/pricing.ts";
 import { resolveChargeFee } from "../_shared/feeContext.ts";
+import { hasServiceRole, getBearerUser } from "../_shared/serviceAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -43,12 +44,22 @@ Deno.serve(async (req: Request) => {
       return errorJson("Server configuration error", 500);
     }
 
-    // Caller has already passed Supabase JWT verification (verify_jwt=true).
-    // Accept any valid JWT bearer — do NOT byte-compare against the env var, which
-    // drifts from the key the caller actually holds after a key rotation and was
-    // silently 401'ing every internal call (cron auto-charge, generate-recurring-invoice).
+    // Authorization: this function initiates a BANK DEBIT on a saved mandate, so a
+    // bare "any valid JWT" gate (the old startsWith("Bearer ey")) was unsafe — it
+    // let any signed-in user charge an arbitrary invoice. Accept EITHER:
+    //   • a service-role key (cron auto-charge, generate-auto-invoices), or
+    //   • the authenticated user who OWNS this invoice (the tradie/homeowner) —
+    //     the path used by generate-recurring-invoice, which forwards the caller's
+    //     user JWT after its own ownership check.
+    // Service vs user is resolved here; ownership is enforced after the invoice is
+    // loaded (below), because we need the invoice's tradie_id/homeowner_id first.
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ey")) {
+    if (!authHeader?.startsWith("Bearer ")) {
+      return errorJson("Unauthorized", 401);
+    }
+    const isServiceCaller = await hasServiceRole(authHeader, supabaseUrl);
+    const callerUser = isServiceCaller ? null : await getBearerUser(authHeader, supabaseUrl, supabaseServiceKey);
+    if (!isServiceCaller && !callerUser) {
       return errorJson("Unauthorized", 401);
     }
 
@@ -81,6 +92,13 @@ Deno.serve(async (req: Request) => {
 
     if (invErr || !invoice) {
       return errorJson("Invoice not found", 404);
+    }
+
+    // Ownership gate for user callers: only the invoice's tradie or homeowner may
+    // trigger the debit. Service-role callers (cron) bypass this.
+    if (!isServiceCaller && callerUser &&
+        callerUser.id !== invoice.tradie_id && callerUser.id !== invoice.homeowner_id) {
+      return errorJson("Forbidden", 403);
     }
 
     const totalCents = Math.round(Number(invoice.total) * 100);
@@ -167,7 +185,12 @@ Deno.serve(async (req: Request) => {
       paymentIntentParams.mandate = saved.stripe_mandate_id;
     }
 
-    const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
+    // Idempotency: keyed on the invoice so a retry (network blip, cron overlap,
+    // double-tap) can never create a SECOND direct debit for the same invoice —
+    // Stripe returns the original PaymentIntent instead of charging again.
+    const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams, {
+      idempotencyKey: `becs-invoice:${invoiceId}`,
+    });
 
     // Update invoice with BECS details
     await supabase

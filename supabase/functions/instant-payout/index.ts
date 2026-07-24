@@ -204,7 +204,15 @@ Deno.serve(async (req: Request) => {
             fee_bps: String(feeBps),
           },
         },
-        { stripeAccount: acct },
+        {
+          stripeAccount: acct,
+          // Idempotency guards the concurrent-request race (two taps before the
+          // first settles): both would see instant_available > 0 and could each
+          // create a payout. A per-user+amount+minute key makes Stripe return the
+          // first payout instead of paying twice. (Retry-after-success is already
+          // blocked separately — the balance drops to 0 and eligibility fails.)
+          idempotencyKey: `instant-payout:${user.id}:${netCents}:${Math.floor(Date.now() / 60000)}`,
+        },
       );
 
       // Notify: money on its way in minutes.

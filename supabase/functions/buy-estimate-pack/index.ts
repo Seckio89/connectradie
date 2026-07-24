@@ -112,6 +112,11 @@ Deno.serve(async (req: Request) => {
       },
       success_url: successUrl,
       cancel_url: cancelUrl,
+    }, {
+      // Rapid double-clicks reuse one Checkout session instead of minting two.
+      // (The real double-credit risk is a webhook retry — covered by the webhook
+      // event-dedupe — not the session create, so a short-window key suffices.)
+      idempotencyKey: `estimate-pack:${user.id}:${Math.floor(Date.now() / 60000)}`,
     });
 
     return json({ url: session.url });

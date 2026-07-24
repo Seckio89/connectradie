@@ -16,6 +16,7 @@
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { hasServiceRole } from "../_shared/serviceAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -37,7 +38,7 @@ Deno.serve(async (req: Request) => {
     if (!supabaseUrl || !serviceKey) return json({ error: "Server configuration error" }, 500);
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ey")) return json({ error: "Unauthorized" }, 401);
+    if (!(await hasServiceRole(authHeader, supabaseUrl))) return json({ error: "Unauthorized" }, 401);
 
     // Optional { alert: true } forces the admin notification regardless of the
     // once-daily gate (handy for manual/ops invocation).

@@ -57,8 +57,34 @@ Deno.serve(async (req) => {
 
     console.info(`Webhook received: ${event.type} (${event.id})`);
 
+    // ── Idempotency: claim this event before processing ──────────────────────
+    // Stripe re-delivers the SAME event (same id) on any non-2xx or timeout, and
+    // several handlers aren't self-idempotent (escrow release, pack credits). We
+    // claim event.id: a unique-violation means a prior delivery already handled it,
+    // so we ack 200 and skip. Any OTHER insert error → fail OPEN (process anyway);
+    // dedupe must never block a real event. If handling then throws, we RELEASE the
+    // claim so Stripe's retry re-runs it — a failed event is never marked done.
+    const { error: claimErr } = await supabase
+      .from('stripe_webhook_events')
+      .insert({ event_id: event.id, type: event.type });
+    if (claimErr) {
+      if ((claimErr as { code?: string }).code === '23505') {
+        console.info(`Duplicate webhook ${event.id} — already processed, skipping`);
+        return new Response(JSON.stringify({ received: true, duplicate: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      console.warn(`webhook dedupe insert failed (code ${(claimErr as { code?: string }).code}); processing anyway`, claimErr);
+    }
+
     // Process synchronously so Stripe retries on failure (don't use EdgeRuntime.waitUntil)
-    await handleEvent(event);
+    try {
+      await handleEvent(event);
+    } catch (err) {
+      // Release the claim so Stripe's retry re-processes this event.
+      try { await supabase.from('stripe_webhook_events').delete().eq('event_id', event.id); } catch { /* best effort */ }
+      throw err;
+    }
 
     return new Response(JSON.stringify({ received: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { hasServiceRole } from "../_shared/serviceAuth.ts";
 
 /*
   send-invoice-approval-nudge — fires a fresh in-app notification + email to a
@@ -52,7 +53,9 @@ Deno.serve(async (req: Request) => {
     }
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ey")) {
+    // Service-role capability check (see _shared/serviceAuth): only a real
+    // service-role key passes — NOT any signed-in user's JWT.
+    if (!(await hasServiceRole(authHeader, supabaseUrl))) {
       return errorJson("Unauthorized", 401);
     }
 
