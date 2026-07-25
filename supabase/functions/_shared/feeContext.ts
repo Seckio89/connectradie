@@ -36,7 +36,12 @@ export interface ChargeFeeInput {
   /** Materials portion from the quote, if known. */
   materialsCents?: number | null;
   tier: TradieTier;
-  /** profiles.platform_fee_override_bps */
+  /**
+   * @deprecated FALLBACK ONLY — do not rely on this.
+   * resolveChargeFee now looks profiles.platform_fee_override_bps up itself from
+   * `tradieId`, because a caller passing null here silently produces a full-rate
+   * overcharge. This value is used only if that lookup can't run or fails.
+   */
   overrideBps?: number | null;
   tradieId?: string | null;
   clientId?: string | null;
@@ -306,13 +311,51 @@ export async function resolveChargeFee(
     ? false
     : await isRepeatClientPair(supabase, input.tradieId, input.clientId, input.jobId);
 
+  // ── Fee override: resolved HERE, server-side, not trusted from the caller ──
+  // Previously every charge path did its own `profiles` select and passed this
+  // in — 20 call sites across 14 functions, so 20 chances for it to arrive null
+  // (a column missing from a select, a stale deployed artifact, a partial row).
+  // A null override silently falls through to full tier pricing, i.e. a SILENT
+  // OVERCHARGE. That is exactly what happened on 2026-07-24: a tradie holding a
+  // 0 bps override was billed the standard Pro min fee, and because the applied
+  // rate was never recorded the cause could not be established afterwards.
+  //
+  // Looking it up here makes the override a property of the fee engine that no
+  // caller can omit. input.overrideBps is kept only as a FALLBACK for when the
+  // lookup can't run or fails.
+  let effectiveOverrideBps: number | null = input.overrideBps ?? null;
+  let overrideLookupFailed = false;
+  if (input.tradieId) {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("platform_fee_override_bps")
+        .eq("id", input.tradieId)
+        .maybeSingle();
+      if (error) throw error;
+      // A found row is authoritative — including when the value is NULL, which
+      // legitimately means "no override, charge normal tier rates".
+      if (data) {
+        effectiveOverrideBps =
+          (data as { platform_fee_override_bps: number | null }).platform_fee_override_bps ?? null;
+      }
+    } catch (err) {
+      // Deliberately do NOT throw: that would fail the charge on a transient DB
+      // blip and break payments. Fall back to whatever the caller supplied and
+      // mark it, so a silent overcharge becomes a VISIBLE one the daily fee
+      // audit can flag (check_v21_fee_invariants).
+      overrideLookupFailed = true;
+      console.error("[resolveChargeFee] override lookup failed for tradie", input.tradieId, err);
+    }
+  }
+
   const breakdown = calculateFeeV21({
     labourCents,
     materialsCents,
     tier: resolveTierScheduleV21(input.tier),
     isRepeatClient: isRepeat,
     materialsProcessingBps,
-    overrideBps: input.overrideBps ?? null,
+    overrideBps: effectiveOverrideBps,
   });
 
   return {
@@ -336,6 +379,12 @@ export async function resolveChargeFee(
       fee_rate_type: breakdown.rateType,
       fee_gst_component: String(breakdown.gstComponentCents),
       fee_floor_applied: String(breakdown.floorApplied),
+      // Forensics: what override actually applied to this charge, and whether the
+      // server-side lookup failed (in which case the caller's value was used and
+      // the fee may be wrong). The daily audit cross-checks these against the
+      // tradie's current override — see check_v21_fee_invariants.
+      override_bps_applied: effectiveOverrideBps === null ? "" : String(effectiveOverrideBps),
+      ...(overrideLookupFailed ? { override_lookup_failed: "true" } : {}),
       fee_model: "v2.1",
     },
     paymentColumns: {
