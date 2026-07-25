@@ -80,6 +80,13 @@ targets tsconfig.app.json.
 3. Verify — run `npm run typecheck`, fix all errors before moving on
    (NOT `npx tsc --noEmit` — see the warning above; it exits 0 without checking
    anything, and that is exactly how 239 real errors accumulated unnoticed)
+   Also run `npm run check:columns` after touching any query. TypeScript CANNOT
+   catch a column that doesn't exist in a `.select()`/`.update()`/`.insert()` —
+   postgrest-js binds the payload to a naked generic, which erases the
+   excess-property check. That gap silently shipped broken bonus payments, a
+   broken price-reduction flow, a dead Google Calendar export, and ABN-less tax
+   invoices. Edge functions aren't type-checked at all, so this is their only
+   column-level safety net.
 4. Iterate — if screenshot provided, compare and fix immediately
 
 ## Business Context

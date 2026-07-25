@@ -116,7 +116,7 @@ Deno.serve(async (req: Request) => {
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
       .select(
-        "id, profile_id, tradie_id, job_id, amount, status, metadata"
+        "id, profile_id, job_id, amount, status, metadata"
       )
       .eq("id", originalPaymentId)
       .maybeSingle();
@@ -167,7 +167,8 @@ Deno.serve(async (req: Request) => {
       return errorJson("Job not found", 404);
     }
 
-    const tradieId = job.tradie_id || payment.tradie_id;
+    // `payments` has no tradie_id column, so this fallback could never fire.
+    const tradieId = job.tradie_id;
     if (!tradieId) {
       return errorJson("No tradie assigned to this job", 400);
     }
@@ -226,7 +227,9 @@ Deno.serve(async (req: Request) => {
       .from("payments")
       .insert({
         profile_id: user.id,
-        tradie_id: tradieId,
+        // NOTE: `payments` has NO tradie_id column. This insert used to name one
+        // and failed 42703 every time, so bonus payments never worked. The tradie
+        // goes in metadata, matching accept-and-pay and what BonusModal reads.
         payment_type: "bonus",
         job_id: payment.job_id,
         amount: bonusCents,
@@ -237,6 +240,7 @@ Deno.serve(async (req: Request) => {
         ...fee.paymentColumns,
         metadata: {
           type: "bonus",
+          tradie_id: tradieId,
           parent_payment_id: originalPaymentId,
           // NUMBER, not string — release-escrow guards on typeof === "number".
           platform_fee: fee.breakdown.totalDeductionCents,

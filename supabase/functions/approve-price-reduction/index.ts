@@ -96,7 +96,7 @@ Deno.serve(async (req: Request) => {
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
       .select(
-        "id, profile_id, tradie_id, job_id, amount, processing_fee, status, stripe_payment_intent_id, metadata"
+        "id, profile_id, job_id, amount, processing_fee, status, stripe_payment_intent_id, metadata"
       )
       .eq("id", paymentId)
       .maybeSingle();
@@ -139,7 +139,8 @@ Deno.serve(async (req: Request) => {
       return errorJson("Job not found", 404);
     }
 
-    const tradieIdOnJob = job.tradie_id || payment.tradie_id;
+    // `payments` has no tradie_id column, so this fallback could never fire.
+    const tradieIdOnJob = job.tradie_id;
     if (tradieIdOnJob !== user.id) {
       return errorJson("Only the tradie on this job can respond to a reduction request", 403);
     }

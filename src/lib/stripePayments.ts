@@ -35,7 +35,9 @@ export interface PaymentHistoryItem extends PaymentRecord {
     id: string;
     description: string;
     status: string;
-    trade_category: string;
+    // NOTE: `jobs` has no trade_category column — this embed used to request it
+    // and 400'd. The category is encoded in the `[Category] ...` description
+    // prefix; use extractCategory() if it's needed.
   } | null;
 }
 
@@ -322,7 +324,7 @@ export async function getPaymentHistory(
     .from('payments')
     .select(`
       *,
-      job:jobs(id, description, status, trade_category)
+      job:jobs(id, description, status)
     `)
     .eq('profile_id', profileId)
     .order('created_at', { ascending: false });
@@ -342,7 +344,7 @@ export async function getPaymentById(
     .from('payments')
     .select(`
       *,
-      job:jobs(id, description, status, trade_category)
+      job:jobs(id, description, status)
     `)
     .eq('id', paymentId)
     .maybeSingle();

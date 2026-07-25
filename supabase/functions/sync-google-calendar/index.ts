@@ -243,7 +243,7 @@ Deno.serve(async (req: Request) => {
     try {
       const { data: upcomingJobs } = await supabaseClient
         .from("jobs")
-        .select("id, title, description, scheduled_date, start_time, location, status")
+        .select("id, title, description, scheduled_date, start_time, location_address, status")
         .eq("tradie_id", user.id)
         .in("status", ["accepted", "funded", "in_progress"])
         .not("scheduled_date", "is", null)
@@ -267,7 +267,7 @@ Deno.serve(async (req: Request) => {
             description: `ConnecTradie job\n${job.description?.replace(/^\[[^\]]+\]\s*/, "") || ""}\n\nStatus: ${job.status}`,
             start: { dateTime: startDateTime, timeZone: "Australia/Sydney" },
             end: { dateTime: endDateTime, timeZone: "Australia/Sydney" },
-            location: job.location || undefined,
+            location: job.location_address || undefined,
             colorId: "10",
           };
 
