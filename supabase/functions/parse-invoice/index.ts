@@ -183,14 +183,21 @@ async function extractWithUnpdf(pdfBytes: Uint8Array): Promise<string> {
   // (which includes SharedArrayBuffer and is not an accepted input), and it
   // would also discard any byteOffset/byteLength if the view were ever a
   // subarray. A Uint8Array is pdf.js's preferred input.
-  // `mergePages: true` is REQUIRED for the declared `Promise<string>`. unpdf
-  // defaults to mergePages:false and returns `text: string[]` (one entry per
-  // page). The old call passed `.buffer`, which broke overload resolution and
-  // degraded `text` to `any` — so the array flowed out untyped and
-  // extractPdfText() blew up on `text.trim()`, silently sending EVERY invoice
-  // down the pdf-parse/basic fallbacks. This method never once succeeded.
-  const { text } = await extractText(pdfBytes, { mergePages: true });
-  return text || "";
+  // unpdf returns `text: string[]`, one entry per page. Join with newlines —
+  // do NOT use `{ mergePages: true }`, which flattens every newline to a space
+  // and hands the parsers one unbroken line. They are line-based:
+  // findBusinessName looks 1-3 lines ABOVE the ABN line, and findTotalAmount
+  // scores candidates by lineIndex/lines.length. Measured on a 2-page invoice:
+  // mergePages gave 1 line (ABN at index 0, so that branch is dead), joining
+  // gives 11 lines with the ABN at index 2 — structurally identical to what
+  // pdf-parse produced, which is what these heuristics were tuned against.
+  //
+  // (The original bug was passing `.buffer`: it broke overload resolution,
+  // degraded `text` to `any`, and extractPdfText() then threw on `text.trim()`,
+  // silently sending EVERY invoice down the fallbacks. This method had never
+  // once succeeded.)
+  const { text } = await extractText(pdfBytes);
+  return text.join("\n");
 }
 
 async function extractWithPdfParse(pdfBytes: Uint8Array): Promise<string> {
