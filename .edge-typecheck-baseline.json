@@ -4,8 +4,6 @@
     "book-site-visit",
     "migrate-payout-schedules",
     "parse-invoice",
-    "send-recurring-reminders",
-    "stripe-connect-account",
-    "verify-payment"
+    "send-recurring-reminders"
   ]
 }

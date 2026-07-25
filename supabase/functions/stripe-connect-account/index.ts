@@ -117,11 +117,20 @@ Deno.serve(async (req: Request) => {
         const all: Stripe.Payout[] = [];
         let startingAfter: string | undefined;
         for (let i = 0; i < 5 && all.length < 500; i++) {
-          const page = await stripe.payouts.list({
-            stripeAccount: accountId,
-            limit: 100,
-            ...(startingAfter ? { starting_after: startingAfter } : {}),
-          });
+          // `stripeAccount` is a REQUEST OPTION (2nd arg), not a list param. It
+          // was in the params object, where Stripe silently ignores it — verified
+          // against the live API, which returns 200 rather than erroring on the
+          // unknown key. With no Stripe-Account header the call runs against the
+          // PLATFORM account, so every tradie's payout history, monthly earnings
+          // totals and CSV/tax export were built from the platform's payouts
+          // instead of their own.
+          const page = await stripe.payouts.list(
+            {
+              limit: 100,
+              ...(startingAfter ? { starting_after: startingAfter } : {}),
+            },
+            { stripeAccount: accountId },
+          );
           all.push(...page.data);
           if (!page.has_more || page.data.length === 0) break;
           startingAfter = page.data[page.data.length - 1].id;

@@ -143,7 +143,12 @@ Deno.serve(async (req: Request) => {
     // Look up the payment
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
-      .select("id, profile_id, job_id, status, stripe_checkout_session_id, stripe_payment_intent_id")
+      // processing_fee is READ below as the fallback when the Stripe session
+      // carries no processing_fee metadata. It was missing from this select, so
+      // that fallback was `undefined` — the key then dropped out of the PATCH
+      // entirely, which happened to preserve the stored value but only by
+      // accident. Select it so the fallback is the real one.
+      .select("id, profile_id, job_id, status, stripe_checkout_session_id, stripe_payment_intent_id, processing_fee")
       .eq("id", paymentId)
       .maybeSingle();
 
