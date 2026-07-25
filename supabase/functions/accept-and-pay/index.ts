@@ -516,6 +516,16 @@ Deno.serve(async (req: Request) => {
           commission: fee.breakdown.commissionCents,
           materials_processing: fee.breakdown.materialsProcessingCents,
           fee_rate_type: fee.breakdown.rateType,
+          // Forensics: the rate ACTUALLY applied, and the override we read for
+          // this tradie. Without these, an overcharge can only be diagnosed by
+          // archaeology — a $70 job on 2026-07-24 charged the standard Pro
+          // min-fee despite the tradie holding a 0 bps override, and the cause
+          // could not be established after the fact. The daily fee audit now
+          // cross-checks these two against the tradie's current override.
+          fee_rate_bps: fee.breakdown.rateApplied,
+          override_bps_applied: tradieProfile?.platform_fee_override_bps ?? null,
+          labour_cents: fee.breakdown.labourCents,
+          materials_cents: fee.breakdown.materialsCents,
           fee_model: "v2.1",
           tradie_tier: tradieSubscriptionTier,
         },
