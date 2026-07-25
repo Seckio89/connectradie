@@ -1,6 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@14.21.0';
-import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
+import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
 import { resolveTradieTier } from '../_shared/pricing.ts';
 import { resolveChargeFee } from '../_shared/feeContext.ts';
 import type { Insert, Update } from '../_shared/dbTypes.ts';
