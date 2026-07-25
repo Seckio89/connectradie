@@ -21,6 +21,19 @@ import type { Database, Json } from "../../../src/types/supabase.ts";
  *  edge functions can declare jsonb fields with the real column type. */
 export type { Json };
 
+/**
+ * The full generated schema. Pass it to `createClient<Database>(...)` so the
+ * client knows the real column types AND embed cardinality.
+ *
+ * Worth doing on any function that reads a joined embed: an UNTYPED client can't
+ * resolve a relationship, so postgrest-js falls back to typing every embed as an
+ * array. That has led to hand-written casts of the shape
+ * `session.recurring_job as { client_id: string; ... }` — which fix the
+ * array-vs-object complaint but quietly assert non-null on nullable columns.
+ * Two live bugs came from exactly that.
+ */
+export type { Database };
+
 /** Insert payload for a table, straight from the GENERATED types. */
 export type Insert<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Insert"];

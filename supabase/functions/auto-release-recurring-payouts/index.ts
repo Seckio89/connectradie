@@ -32,7 +32,7 @@ import { resolveChargeFee } from "../_shared/feeContext.ts";
 
 // Invoices paid at/after this instant get an automatic BANK PAYOUT (Stripe
 // balance → bank) once their funds settle. Tradie accounts are on MANUAL payouts
-// (see migrate-payout-schedules — the escrow replacement), and modern invoices use
+// (set at account creation by stripe-connect-onboarding), and modern invoices use
 // destination charges that land funds in the tradie's balance at charge time, so
 // nothing ever moved them to the bank. This cutover is the deploy time of that fix:
 // invoices paid BEFORE it were auto-paid-out under the old automatic-payout schedule

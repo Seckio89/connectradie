@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { hasServiceRole } from "../_shared/serviceAuth.ts";
-import type { Insert } from "../_shared/dbTypes.ts";
+import type { Database, Insert } from "../_shared/dbTypes.ts";
 
 function requireEnv(key: string): string {
   const val = Deno.env.get(key);
@@ -51,7 +51,9 @@ Deno.serve(async (req: Request) => {
       return errorJson("Server configuration error", 500);
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Typed client: resolves embed cardinality (an untyped client cannot, and
+    // defaults every embed to an array) and surfaces real column nullability.
+    const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
 
     // Caller has already passed Supabase JWT verification (verify_jwt=true).
     // Defence-in-depth: require the bearer be a JWT (starts with 'ey').
@@ -110,13 +112,7 @@ Deno.serve(async (req: Request) => {
 
         autoConfirmed++;
 
-        const job = session.recurring_job as {
-          client_id: string;
-          tradie_id: string | null;
-          trade_category: string;
-          service_subtype: string | null;
-          preferred_time: string | null;
-        } | null;
+        const job = session.recurring_job;
 
         if (!job) continue;
 
@@ -175,22 +171,36 @@ Deno.serve(async (req: Request) => {
           });
         }
 
-        notifications.push({
-          user_id: job.client_id,
-          type: "recurring_job_auto_confirmed",
-          message: `${tradeLabel} session on ${dateLabel} has been auto-confirmed with your tradie.`,
-          metadata: {
-            recurring_job_id: session.recurring_job_id,
-            session_date: session.scheduled_date,
-          },
-          read: false,
-        });
+        // Only notify a homeowner if there IS one. `recurring_jobs.client_id` is
+        // nullable — a job booked for an off-app CRM contact carries
+        // client_contact_id instead and has no on-app profile to notify — while
+        // `notifications.user_id` is NOT NULL. Because these rows go in as a
+        // SINGLE multi-row insert, one null user_id previously rejected the
+        // WHOLE batch with 23502, losing the tradie's notification too. The old
+        // hand-written cast asserted `client_id: string` and hid it.
+        if (job.client_id) {
+          notifications.push({
+            user_id: job.client_id,
+            type: "recurring_job_auto_confirmed",
+            message: `${tradeLabel} session on ${dateLabel} has been auto-confirmed with your tradie.`,
+            metadata: {
+              recurring_job_id: session.recurring_job_id,
+              session_date: session.scheduled_date,
+            },
+            read: false,
+          });
+        }
 
         if (notifications.length > 0) {
-          try {
-            await supabase.from("notifications").insert(notifications);
-          } catch {
-            // Non-critical
+          // PostgREST RESOLVES with `{ error }` instead of rejecting, so a
+          // try/catch around this can never fire — the error has to be read.
+          const { error: notifyError } = await supabase
+            .from("notifications")
+            .insert(notifications);
+          if (notifyError) {
+            errors.push(
+              `Session ${session.id}: failed to send auto-confirm notifications — ${notifyError.message}`,
+            );
           }
         }
       } catch (err) {
@@ -233,7 +243,7 @@ Deno.serve(async (req: Request) => {
       // get their sessions parked in 'awaiting_completion' for manual sign-off.
       const tradieIds = Array.from(new Set(
         (candidateSessions ?? [])
-          .map((s) => (s.recurring_job as { tradie_id?: string | null } | null)?.tradie_id)
+          .map((s) => s.recurring_job?.tradie_id)
           .filter((id): id is string => !!id),
       ));
       const autoCompletePrefs = new Map<string, boolean>();
@@ -249,7 +259,7 @@ Deno.serve(async (req: Request) => {
       }
 
       // Filter: past dates always qualify; today's sessions only if end_time has passed
-      const pastSessions = (candidateSessions ?? []).filter((s: { scheduled_date: string; start_time: string | null; end_time: string | null; recurring_job: { client_id: string; preferred_time: string | null } | null }) => {
+      const pastSessions = (candidateSessions ?? []).filter((s) => {
         if (s.scheduled_date < today) return true;
         // Today's session — check if end_time has passed
         const startTime = s.start_time || s.recurring_job?.preferred_time || null;
@@ -270,12 +280,12 @@ Deno.serve(async (req: Request) => {
       // Split: tradies opted in → auto-complete now; opted out → park in
       // 'awaiting_completion' and ping the tradie to confirm manually.
       const sessionsToAutoComplete = pastSessions.filter((s) => {
-        const tradieId = (s.recurring_job as { tradie_id?: string | null } | null)?.tradie_id;
+        const tradieId = s.recurring_job?.tradie_id;
         if (!tradieId) return true;
         return autoCompletePrefs.get(tradieId) ?? true;
       });
       const sessionsAwaitingTradie = pastSessions.filter((s) => {
-        const tradieId = (s.recurring_job as { tradie_id?: string | null } | null)?.tradie_id;
+        const tradieId = s.recurring_job?.tradie_id;
         if (!tradieId) return false;
         return !(autoCompletePrefs.get(tradieId) ?? true);
       });
@@ -296,7 +306,7 @@ Deno.serve(async (req: Request) => {
           // The callback-return annotation is the load-bearing one — `.flatMap()`
           // infers through a naked generic and erases object-literal freshness.
           const awaitNotifs: Insert<"notifications">[] = sessionsAwaitingTradie.flatMap((s): Insert<"notifications">[] => {
-            const job = s.recurring_job as { client_id: string; tradie_id: string | null; trade_category: string; service_subtype: string | null } | null;
+            const job = s.recurring_job;
             if (!job?.tradie_id) return [];
             const tradeLabel = (job.service_subtype || job.trade_category)
               .replace(/_/g, " ")
@@ -312,7 +322,17 @@ Deno.serve(async (req: Request) => {
             }];
           });
           if (awaitNotifs.length > 0) {
-            try { await supabase.from("notifications").insert(awaitNotifs); } catch { /* non-critical */ }
+            // PostgREST resolves with `{ error }` rather than rejecting, so the
+            // old try/catch here could never fire and failures were discarded.
+            const { error: awaitNotifErr } = await supabase
+              .from("notifications")
+              .insert(awaitNotifs);
+            if (awaitNotifErr) {
+              console.error(
+                "[auto-confirm] Failed to send awaiting-completion notifications:",
+                awaitNotifErr,
+              );
+            }
           }
         } else {
           console.error("[auto-confirm] Failed to mark sessions awaiting_completion:", awaitingErr);
@@ -335,26 +355,29 @@ Deno.serve(async (req: Request) => {
           for (const s of sessionsToAutoComplete) {
             jobCounts.set(s.recurring_job_id, (jobCounts.get(s.recurring_job_id) || 0) + 1);
           }
+          // Direct read-then-update. There used to be a
+          // `supabase.rpc("increment_times_completed", …)` here with this block
+          // as its catch-fallback, but that function exists in NO migration and
+          // `.rpc()` resolves with `{ error }` instead of throwing — so the
+          // catch never fired, the fallback was unreachable, and
+          // recurring_jobs.times_completed was never actually incremented.
           for (const [jobId, count] of jobCounts) {
-            try {
-              await supabase.rpc("increment_times_completed", { job_id: jobId, amount: count });
-            } catch {
-              // Fallback: direct update (awaited to avoid fire-and-forget)
-              try {
-                const { data: rj } = await supabase
-                  .from("recurring_jobs")
-                  .select("times_completed")
-                  .eq("id", jobId)
-                  .maybeSingle();
-                if (rj) {
-                  await supabase
-                    .from("recurring_jobs")
-                    .update({ times_completed: (rj.times_completed || 0) + count })
-                    .eq("id", jobId);
-                }
-              } catch (fallbackErr) {
-                console.error(`Failed to update times_completed for job ${jobId}:`, fallbackErr);
-              }
+            const { data: rj, error: rjError } = await supabase
+              .from("recurring_jobs")
+              .select("times_completed")
+              .eq("id", jobId)
+              .maybeSingle();
+            if (rjError) {
+              console.error(`Failed to read times_completed for job ${jobId}:`, rjError);
+              continue;
+            }
+            if (!rj) continue;
+            const { error: incError } = await supabase
+              .from("recurring_jobs")
+              .update({ times_completed: (rj.times_completed || 0) + count })
+              .eq("id", jobId);
+            if (incError) {
+              console.error(`Failed to update times_completed for job ${jobId}:`, incError);
             }
           }
 
@@ -363,12 +386,7 @@ Deno.serve(async (req: Request) => {
           const completionNotifications: Insert<"notifications">[] = [];
 
           for (const s of sessionsToAutoComplete) {
-            const job = s.recurring_job as {
-              client_id: string;
-              tradie_id: string | null;
-              trade_category: string;
-              service_subtype: string | null;
-            } | null;
+            const job = s.recurring_job;
 
             if (!job) continue;
 
@@ -399,25 +417,37 @@ Deno.serve(async (req: Request) => {
               });
             }
 
-            // Notify client
-            completionNotifications.push({
-              user_id: job.client_id,
-              type: "session_completed",
-              title: "Visit Completed",
-              message: `Your ${tradeLabel} service visit on ${dateLabel} has been completed.`,
-              metadata: {
-                recurring_job_id: s.recurring_job_id,
-                session_date: s.scheduled_date,
-              },
-              read: false,
-            });
+            // Notify client — only when there IS one. `recurring_jobs.client_id`
+            // is nullable (off-app CRM contacts have client_contact_id instead)
+            // and `notifications.user_id` is NOT NULL, so a single null here
+            // used to reject this ENTIRE multi-row insert with 23502 and lose
+            // every notification in the cron run.
+            if (job.client_id) {
+              completionNotifications.push({
+                user_id: job.client_id,
+                type: "session_completed",
+                title: "Visit Completed",
+                message: `Your ${tradeLabel} service visit on ${dateLabel} has been completed.`,
+                metadata: {
+                  recurring_job_id: s.recurring_job_id,
+                  session_date: s.scheduled_date,
+                },
+                read: false,
+              });
+            }
           }
 
           if (completionNotifications.length > 0) {
-            try {
-              await supabase.from("notifications").insert(completionNotifications);
-            } catch {
-              // Non-critical
+            // PostgREST resolves with `{ error }` rather than rejecting, so the
+            // old try/catch here could never fire and failures were discarded.
+            const { error: completionNotifError } = await supabase
+              .from("notifications")
+              .insert(completionNotifications);
+            if (completionNotifError) {
+              console.error(
+                "[auto-confirm] Failed to send auto-completion notifications:",
+                completionNotifError,
+              );
             }
           }
         } else {

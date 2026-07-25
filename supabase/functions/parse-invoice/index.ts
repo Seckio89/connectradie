@@ -179,7 +179,17 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
 
 async function extractWithUnpdf(pdfBytes: Uint8Array): Promise<string> {
   const { extractText } = await import("npm:unpdf@0.12.1");
-  const { text } = await extractText(pdfBytes.buffer);
+  // Pass the Uint8Array itself, not `.buffer`. `.buffer` is `ArrayBufferLike`
+  // (which includes SharedArrayBuffer and is not an accepted input), and it
+  // would also discard any byteOffset/byteLength if the view were ever a
+  // subarray. A Uint8Array is pdf.js's preferred input.
+  // `mergePages: true` is REQUIRED for the declared `Promise<string>`. unpdf
+  // defaults to mergePages:false and returns `text: string[]` (one entry per
+  // page). The old call passed `.buffer`, which broke overload resolution and
+  // degraded `text` to `any` — so the array flowed out untyped and
+  // extractPdfText() blew up on `text.trim()`, silently sending EVERY invoice
+  // down the pdf-parse/basic fallbacks. This method never once succeeded.
+  const { text } = await extractText(pdfBytes, { mergePages: true });
   return text || "";
 }
 
@@ -187,8 +197,17 @@ async function extractWithPdfParse(pdfBytes: Uint8Array): Promise<string> {
   const pdfParse = (await import("npm:pdf-parse@1.1.1")).default;
   const { Buffer } = await import("node:buffer");
   const buffer = Buffer.from(pdfBytes);
-  const data = await withTimeout(pdfParse(buffer), PDF_PARSE_TIMEOUT_MS);
-  return data.text || "";
+  // pdf-parse@1.1.1 ships no type declarations, so its result is `unknown`.
+  // Narrow it structurally rather than asserting: anything unexpected returns
+  // "" and extractPdfText() falls through to the next extraction method.
+  const data: unknown = await withTimeout(pdfParse(buffer), PDF_PARSE_TIMEOUT_MS);
+  if (
+    typeof data === "object" && data !== null &&
+    "text" in data && typeof data.text === "string"
+  ) {
+    return data.text;
+  }
+  return "";
 }
 
 function basicPdfExtract(pdfBytes: Uint8Array): string {

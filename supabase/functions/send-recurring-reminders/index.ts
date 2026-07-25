@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import type { Database } from "../_shared/dbTypes.ts";
 
 function requireEnv(key: string): string {
   const val = Deno.env.get(key);
@@ -47,7 +48,9 @@ Deno.serve(async (req: Request) => {
       return errorJson("Server configuration error", 500);
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Typed client: resolves embed cardinality (an untyped client cannot, and
+    // defaults every embed to an array) and surfaces real column nullability.
+    const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
 
     // Verify caller is using service role key or anon key (cron/internal only)
     const authHeader = req.headers.get("Authorization");
@@ -107,14 +110,7 @@ Deno.serve(async (req: Request) => {
     const errors: string[] = [];
 
     for (const session of sessions) {
-      const job = session.recurring_job as {
-        id: string;
-        client_id: string;
-        tradie_id: string | null;
-        trade_category: string;
-        preferred_time: string | null;
-        location: string | null;
-      } | null;
+      const job = session.recurring_job;
 
       if (!job) {
         errors.push(`Session ${session.id}: missing recurring job data`);
@@ -134,29 +130,35 @@ Deno.serve(async (req: Request) => {
         { weekday: "long", day: "numeric", month: "long" },
       );
 
-      // Notify homeowner
-      const { error: clientNotifError } = await supabase
-        .from("notifications")
-        .insert({
-          user_id: job.client_id,
-          title: "Session Tomorrow",
-          message: `Reminder: Your ${tradeLabel} session is scheduled for ${dateLabel} at ${timeLabel}.`,
-          type: "session_reminder",
-          read: false,
-          metadata: {
-            session_id: session.id,
-            recurring_job_id: job.id,
-            scheduled_date: tomorrowStr,
-            trade_category: job.trade_category,
-          },
-        });
+      // Notify homeowner — only if there IS one. `recurring_jobs.client_id` is
+      // nullable: a service booked for an off-app CRM contact has client_contact_id
+      // instead, and no on-app profile to notify. `notifications.user_id` is NOT
+      // NULL, so this insert previously failed 23502 on every such session — the
+      // old hand-written cast asserted `client_id: string` and hid it.
+      if (job.client_id) {
+        const { error: clientNotifError } = await supabase
+          .from("notifications")
+          .insert({
+            user_id: job.client_id,
+            title: "Session Tomorrow",
+            message: `Reminder: Your ${tradeLabel} session is scheduled for ${dateLabel} at ${timeLabel}.`,
+            type: "session_reminder",
+            read: false,
+            metadata: {
+              session_id: session.id,
+              recurring_job_id: job.id,
+              scheduled_date: tomorrowStr,
+              trade_category: job.trade_category,
+            },
+          });
 
-      if (clientNotifError) {
-        errors.push(
-          `Session ${session.id}: failed to notify homeowner — ${clientNotifError.message}`,
-        );
-      } else {
-        remindersSent++;
+        if (clientNotifError) {
+          errors.push(
+            `Session ${session.id}: failed to notify homeowner — ${clientNotifError.message}`,
+          );
+        } else {
+          remindersSent++;
+        }
       }
 
       // Notify tradie (if assigned)

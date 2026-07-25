@@ -1,9 +1,3 @@
 {
-  "knownFailing": [
-    "auto-confirm-sessions",
-    "book-site-visit",
-    "migrate-payout-schedules",
-    "parse-invoice",
-    "send-recurring-reminders"
-  ]
+  "knownFailing": []
 }

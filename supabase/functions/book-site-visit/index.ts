@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { calculateProcessingFeeCents } from "../_shared/pricing.ts";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
@@ -41,8 +41,13 @@ function jsonOk(data: unknown) {
   });
 }
 
+// `SupabaseClient` (no type args) is exactly what `createClient(url, key)`
+// returns. Do NOT use `ReturnType<typeof createClient>` here: ReturnType
+// instantiates the generic signature with its parameters' CONSTRAINTS, not
+// their defaults, so `Schema` collapses to `never` and `.insert()`'s argument
+// becomes `never` — every write below then fails to type-check.
 async function notifyTradieVisitBooked(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   args: { tradieId: string; jobId: string; quoteId: string; clientId: string; jobTitle: string; siteVisitDate?: string | null; feePaid: boolean },
 ) {
   const dateLine = args.siteVisitDate
