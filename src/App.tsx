@@ -33,7 +33,6 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Search = lazy(() => import('./pages/Search'));
 const MyTrades = lazy(() => import('./pages/MyTrades'));
 const Settings = lazy(() => import('./pages/Settings'));
-const Jobs = lazy(() => import('./pages/Jobs'));
 const Messages = lazy(() => import('./pages/Messages'));
 const Explore = lazy(() => import('./pages/Explore'));
 const CareersPublic = lazy(() => import('./pages/CareersPublic'));

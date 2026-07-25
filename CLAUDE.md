@@ -77,7 +77,9 @@ targets tsconfig.app.json.
 ## Workflow: Plan → Execute → Verify → Iterate
 1. Plan — read relevant files, trace full path (UI → edge fn → DB), state plan before coding
 2. Execute — types first → backend → frontend, minimal changes, follow existing patterns
-3. Verify — run `npx tsc --noEmit --skipLibCheck`, fix all errors before moving on
+3. Verify — run `npm run typecheck`, fix all errors before moving on
+   (NOT `npx tsc --noEmit` — see the warning above; it exits 0 without checking
+   anything, and that is exactly how 239 real errors accumulated unnoticed)
 4. Iterate — if screenshot provided, compare and fix immediately
 
 ## Business Context

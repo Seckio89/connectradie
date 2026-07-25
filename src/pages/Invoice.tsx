@@ -49,21 +49,37 @@ export default function Invoice() {
       try {
         const { data: payment, error: payErr } = await supabase
           .from('payments')
-          .select('id, amount, processing_fee, created_at, status, metadata, job_id, profile_id, tradie_id, invoice_number, invoice_ref')
+          .select('id, amount, processing_fee, created_at, status, metadata, job_id, profile_id, invoice_number, invoice_ref')
           .eq('id', paymentId)
           .maybeSingle();
         if (payErr) throw payErr;
         if (!payment) throw new Error('Invoice not found');
+        if (!payment.job_id) throw new Error('Invoice not found');
 
-        const [jobRes, clientRes, tradieRes] = await Promise.all([
-          supabase.from('jobs').select('id, title, description, location_address').eq('id', payment.job_id).maybeSingle(),
+        const [jobRes, clientRes] = await Promise.all([
+          supabase.from('jobs').select('id, title, description, location_address, tradie_id').eq('id', payment.job_id).maybeSingle(),
           supabase.from('profiles').select('full_name, email').eq('id', payment.profile_id).maybeSingle(),
-          supabase.from('profiles').select('full_name, email, abn_number, abn_entity_name, is_gst_registered, address, suburb').eq('id', payment.tradie_id).maybeSingle(),
         ]);
 
         if (cancelled) return;
         if (!jobRes.data) throw new Error('Job not found');
         if (!clientRes.data) throw new Error('Client not found');
+
+        // `payments` has no tradie_id column. The charge functions stamp it into
+        // metadata (see accept-and-pay), and the job carries it too — prefer the
+        // frozen metadata value, fall back to the job for older rows.
+        const meta = (payment.metadata ?? {}) as Record<string, unknown>;
+        const metaTradieId = typeof meta.tradie_id === 'string' ? meta.tradie_id : null;
+        const tradieId = metaTradieId ?? jobRes.data.tradie_id;
+        if (!tradieId) throw new Error('Tradie not found');
+
+        const tradieRes = await supabase
+          .from('profiles')
+          .select('full_name, email, abn_number, abn_entity_name, is_gst_registered, address, suburb')
+          .eq('id', tradieId)
+          .maybeSingle();
+
+        if (cancelled) return;
         if (!tradieRes.data) throw new Error('Tradie not found');
 
         setData({
@@ -72,9 +88,9 @@ export default function Invoice() {
           processing_fee: payment.processing_fee || 0,
           created_at: payment.created_at,
           status: payment.status,
-          metadata: payment.metadata,
-          invoice_number: (payment as Record<string, unknown>).invoice_number as number | null,
-          invoice_ref: (payment as Record<string, unknown>).invoice_ref as string | null,
+          metadata: meta,
+          invoice_number: payment.invoice_number,
+          invoice_ref: payment.invoice_ref,
           job: jobRes.data,
           client: clientRes.data,
           tradie: tradieRes.data,

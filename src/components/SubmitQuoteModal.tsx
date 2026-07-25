@@ -596,7 +596,7 @@ export default function SubmitQuoteModal({
                   </span>
                   {job.budget_amount ? (
                     <span>Budget: ${job.budget_amount.toLocaleString()}</span>
-                  ) : (job.budget_type === 'request_quote' || job.budget_type === 'to_be_quoted') ? (
+                  ) : job.budget_type === 'request_quote' ? (
                     <span>Quote requested</span>
                   ) : null}
                   {typeof job.parking_available === 'boolean' && (
@@ -655,7 +655,7 @@ export default function SubmitQuoteModal({
                   <span className="text-sm text-gray-600">Client's budget:</span>
                   <span className="text-sm font-medium text-gray-900">${job.budget_amount.toLocaleString()}</span>
                 </div>
-              ) : (job.budget_type === 'request_quote' || job.budget_type === 'to_be_quoted') ? (
+              ) : job.budget_type === 'request_quote' ? (
                 <div className="mb-4 px-3 py-2 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600">Client wants a quote — submit your best competitive price.</p>
                 </div>

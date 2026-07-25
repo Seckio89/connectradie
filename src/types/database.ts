@@ -393,6 +393,9 @@ export type QuoteWithTradie = Quote & {
     verified_trades: string[];
     declared_trades: string[];
     is_gst_registered?: boolean;
+    /** Gates the "verified" ProBadge on quote cards. Was read but never
+     *  selected, so the badge silently never rendered. */
+    is_identity_verified?: boolean | null;
     /** When the tradie joined the platform — used for the "Member since YYYY"
      *  retention signal on quote cards. */
     created_at?: string;

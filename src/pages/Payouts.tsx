@@ -248,13 +248,17 @@ export default function Payouts() {
         const recurringStatusMap = new Map<string, string>();
         if (recurringJobIds.length > 0) {
           const uniqueIds = [...new Set(recurringJobIds)];
+          // `recurring_jobs` has no `status` column — it tracks is_active +
+          // cancelled_at. Selecting `status` made PostgREST reject the query, so
+          // this map stayed empty and cancelled services rendered as active.
           const { data: recurringJobs } = await supabase
             .from('recurring_jobs')
-            .select('id, status')
+            .select('id, is_active, cancelled_at')
             .in('id', uniqueIds);
           if (recurringJobs) {
             for (const rj of recurringJobs) {
-              recurringStatusMap.set(rj.id, rj.status);
+              const cancelled = rj.cancelled_at !== null || rj.is_active === false;
+              recurringStatusMap.set(rj.id, cancelled ? 'cancelled' : 'active');
             }
           }
         }

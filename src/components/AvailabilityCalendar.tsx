@@ -1,7 +1,7 @@
 import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { friendlyError } from '../lib/utils';
-import { ChevronLeft, ChevronRight, Clock, X, Loader2, Calendar as CalendarIcon, Upload, User, MapPin, Key } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, X, Loader2, Calendar as CalendarIcon, Upload, User, MapPin, Key, Lock } from 'lucide-react';
 import type { AvailabilitySlot, TradieWithDetails } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';

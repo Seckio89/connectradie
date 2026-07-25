@@ -1116,7 +1116,7 @@ export default function JobManagementModal({
                       <p className="text-sm font-semibold text-gray-800">
                         {job.budget_amount
                           ? `$${job.budget_amount.toLocaleString()}${job.budget_type === 'hourly_rate' ? '/hr' : ''}`
-                          : (job.budget_type === 'request_quote' || job.budget_type === 'to_be_quoted')
+                          : job.budget_type === 'request_quote'
                             ? 'Quote requested'
                             : 'Not specified'}
                       </p>

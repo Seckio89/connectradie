@@ -66,20 +66,23 @@ export default function CreateInvoiceModal({
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, phone, address, email')
+        .select('full_name, phone, address, email, abn_number')
         .eq('id', user.id)
         .maybeSingle();
 
+      // ABN lives on profiles.abn_number, NOT tradie_details.abn — there is no
+      // such column. Selecting it made PostgREST reject the whole query, so both
+      // the business-name AND the ABN prefill silently failed on every invoice.
       const { data: tradieDetails } = await supabase
         .from('tradie_details')
-        .select('business_name, abn')
+        .select('business_name')
         .eq('profile_id', user.id)
         .maybeSingle();
 
       if (tradieDetails?.business_name && !businessName && !prefillBusinessName) {
         setBusinessName(tradieDetails.business_name);
       }
-      if (tradieDetails?.abn && !businessAbn) setBusinessAbn(tradieDetails.abn);
+      if (profile?.abn_number && !businessAbn) setBusinessAbn(profile.abn_number);
       if (profile?.phone && !businessPhone) setBusinessPhone(profile.phone);
       if (profile?.address && !businessAddress) setBusinessAddress(profile.address);
       if (profile?.email && !businessEmail) setBusinessEmail(profile.email);

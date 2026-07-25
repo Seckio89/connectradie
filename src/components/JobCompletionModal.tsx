@@ -670,7 +670,12 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
     try {
       const tradeCategory = job.description?.match(/^\[([^\]]+)\]/)?.[1] || 'General';
       await createRecurringJob({
-        client_id: job.client_id,
+        // Off-app jobs have no client_id — they're billed via a CRM contact.
+        // recurring_jobs CHECKs (client_id IS NOT NULL OR client_contact_id IS
+        // NOT NULL), so passing a bare null here made "Set up ongoing service"
+        // fail on every off-app job.
+        client_id: job.client_id ?? undefined,
+        client_contact_id: job.client_contact_id ?? undefined,
         tradie_id: userId,
         trade_category: tradeCategory,
         description: job.description?.replace(/^\[[^\]]+\]\s*/, '') || '',

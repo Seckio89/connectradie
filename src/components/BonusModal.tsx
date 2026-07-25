@@ -59,7 +59,7 @@ export default function BonusModal({ isOpen, onClose, jobId, tradieName, jobLabe
 
       const { data: paymentRow, error: payErr } = await supabase
         .from('payments')
-        .select('id, amount, tradie_id, metadata, status, payment_type')
+        .select('id, amount, metadata, status, payment_type')
         .eq('job_id', jobId)
         .eq('payment_type', 'job_funding')
         .eq('status', 'completed')
@@ -85,11 +85,15 @@ export default function BonusModal({ isOpen, onClose, jobId, tradieName, jobLabe
       setPaymentId(paymentRow.id);
       setOriginalAmount(paymentRow.amount);
 
-      if (paymentRow.tradie_id) {
+      // `payments` has no tradie_id column — the charge functions stamp it into
+      // metadata. Selecting it made PostgREST reject the whole query, which is
+      // why every bonus attempt reported "couldn't find the original payment".
+      const metaTradieId = typeof meta.tradie_id === 'string' ? meta.tradie_id : null;
+      if (metaTradieId) {
         const { data: tradie } = await supabase
           .from('profiles')
           .select('is_gst_registered')
-          .eq('id', paymentRow.tradie_id)
+          .eq('id', metaTradieId)
           .maybeSingle();
         if (!cancelled) {
           setTradieIsGstRegistered(tradie?.is_gst_registered === true);

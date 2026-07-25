@@ -1746,7 +1746,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 Waiting for tradies to submit quotes...
               </div>
               <Link
-                to={`/search?trade=${lead.trade_category || ''}`}
+                to={`/search?trade=${extractCategory(lead.description) || ''}`}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 transition-colors"
                 onClick={(e) => e.stopPropagation()}
               >

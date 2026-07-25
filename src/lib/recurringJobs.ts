@@ -1461,13 +1461,16 @@ export async function cancelRecurringJob(
           .eq('status', 'active');
       }
       if (job.client_id) {
-        await supabase
+        // tradie_id is nullable. `.eq(col, null)` renders `col=eq.null`, which
+        // SQL never matches, so an unguarded eq here silently ended nothing.
+        let q = supabase
           .from('service_agreements')
           .update(endUpdate)
           .eq('client_id', job.client_id)
-          .eq('tradie_id', job.tradie_id)
           .eq('trade_category', job.trade_category)
           .eq('status', 'active');
+        q = job.tradie_id ? q.eq('tradie_id', job.tradie_id) : q.is('tradie_id', null);
+        await q;
       }
     } catch { /* Non-critical */ }
 

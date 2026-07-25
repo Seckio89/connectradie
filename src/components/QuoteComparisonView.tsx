@@ -267,7 +267,7 @@ export default function QuoteComparisonView({
       (quotesData as unknown as Quote[]).map(async (q) => {
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('full_name, avatar_url, verification_status, verified_trades, declared_trades, is_gst_registered, created_at')
+          .select('full_name, avatar_url, verification_status, verified_trades, declared_trades, is_gst_registered, created_at, is_identity_verified')
           .eq('id', q.tradie_id)
           .maybeSingle();
 

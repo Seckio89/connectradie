@@ -1190,6 +1190,36 @@ export type Database = {
           },
         ]
       }
+      fee_audit_anomalies: {
+        Row: {
+          details: Json | null
+          detected_at: string
+          id: string
+          job_id: string | null
+          payment_id: string
+          reason: string
+          resolved_at: string | null
+        }
+        Insert: {
+          details?: Json | null
+          detected_at?: string
+          id?: string
+          job_id?: string | null
+          payment_id: string
+          reason: string
+          resolved_at?: string | null
+        }
+        Update: {
+          details?: Json | null
+          detected_at?: string
+          id?: string
+          job_id?: string | null
+          payment_id?: string
+          reason?: string
+          resolved_at?: string | null
+        }
+        Relationships: []
+      }
       hint_tracking: {
         Row: {
           created_at: string | null
@@ -5513,6 +5543,7 @@ export type Database = {
         Args: { p_job_id: string; p_uid: string }
         Returns: boolean
       }
+      check_v21_fee_invariants: { Args: never; Returns: number }
       consume_estimate_pack_credit: {
         Args: { p_profile_id: string }
         Returns: string

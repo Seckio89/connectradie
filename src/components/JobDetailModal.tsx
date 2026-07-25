@@ -795,7 +795,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
                 <p className="text-sm text-gray-700 font-medium">
                   {job.budget_amount
                     ? `$${job.budget_amount.toLocaleString()}${job.budget_type === 'hourly_rate' ? '/hr' : ''}`
-                    : (job.budget_type === 'request_quote' || job.budget_type === 'to_be_quoted')
+                    : job.budget_type === 'request_quote'
                       ? 'Quote requested — client wants you to set the price'
                       : 'Not specified'}
                 </p>
@@ -939,7 +939,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
           Close
         </button>
 
-        {isTradie && localStatus === 'pending' && onQuote && job.budget_type === 'to_be_quoted' && (
+        {isTradie && localStatus === 'pending' && onQuote && job.budget_type === 'request_quote' && (
           <button
             onClick={() => onQuote(selectedAvailDate)}
             className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
