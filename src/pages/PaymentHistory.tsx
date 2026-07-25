@@ -119,38 +119,6 @@ export default function PaymentHistory() {
   const [showFilters, setShowFilters] = useState(false);
 
   const isTradie = profile?.role === 'tradie';
-  const [releasingId, setReleasingId] = useState<string | null>(null);
-
-  const friendlyReleaseError = (err: unknown): string => {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes('insufficient') || msg.includes('Insufficient')) {
-      return 'Payment is being processed. Please try again in a few minutes.';
-    }
-    if (msg.includes('pending') && msg.includes('increase')) {
-      return 'A price adjustment needs to be paid before this payment can be released.';
-    }
-    return 'Unable to release payment. Please try again later.';
-  };
-
-  const handleInlineRelease = async (e: React.MouseEvent, paymentId: string, tradieName?: string, jobId?: string) => {
-    e.stopPropagation();
-    setReleasingId(paymentId);
-    try {
-      await releaseEscrow(paymentId);
-      showToast(`Payment released to ${tradieName || 'your tradie'}!`);
-      fetchPayments();
-      fetchSummary();
-      // Navigate to review page so client can leave a review
-      if (jobId) {
-        navigate(`/review/${jobId}`);
-      }
-    } catch (err) {
-      showToast(friendlyReleaseError(err), true);
-    } finally {
-      setReleasingId(null);
-    }
-  };
-
   // Recurring invoices (clients only)
   const [recurringInvoices, setRecurringInvoices] = useState<RecurringInvoice[]>([]);
   const [recurringLoading, setRecurringLoading] = useState(false);

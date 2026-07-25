@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { TIER_PRICING, PLATFORM_FEES, getCurrentTier, type SubscriptionTier } from '../lib/subscription';
+import { TIER_PRICING, getCurrentTier, type SubscriptionTier } from '../lib/subscription';
 import { createCheckoutSession, cancelSubscription } from '../lib/stripe';
 
 interface SubscriptionModalProps {
@@ -254,13 +254,6 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
     // pro_plus is retired — any legacy account on it shows as "Pro".
     if (tier === 'pro' || tier === 'pro_plus') return 'Pro';
     return 'Free';
-  };
-
-  const feeDescription = (tier: SubscriptionTier) => {
-    const config = PLATFORM_FEES[tier];
-    const headline = config.type === 'flat' ? (config.rate ?? 0) : (config.tiers?.[0]?.rate ?? 0);
-    const headlinePct = (headline * 100).toLocaleString('en-AU', { maximumFractionDigits: 1 });
-    return `${headlinePct}% fee, capped at $${config.cap}`;
   };
 
   return (

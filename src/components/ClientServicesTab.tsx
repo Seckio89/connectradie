@@ -1260,10 +1260,6 @@ export default function ClientServicesTab() {
   const [expandedSessionsJobId, setExpandedSessionsJobId] = useState<string | null>(null);
   // Which Recent Visits row is expanded to reveal its full details (mobile-friendly tap target)
   const [expandedVisitId, setExpandedVisitId] = useState<string | null>(null);
-  const [setAllTimeJobId, setSetAllTimeJobId] = useState<string | null>(null);
-  const [allStartTime, setAllStartTime] = useState('');
-  const [allEndTime, setAllEndTime] = useState('');
-  const [savingAllTime, setSavingAllTime] = useState(false);
   const [pendingQuoteJobIds, setPendingQuoteJobIds] = useState<Set<string>>(new Set());
   const [requestingQuoteId, setRequestingQuoteId] = useState<string | null>(null);
   const [originalJobQuotes, setOriginalJobQuotes] = useState<Map<string, { count: number; topPrice: number; topTradie: string; originalJobId: string; quoteId: string; message: string | null; estimatedDuration: string | null; includesMaterials: boolean; businessName: string | null; avgRating: number | null; reviewCount: number; isPro: boolean }>>(new Map());
@@ -1493,40 +1489,6 @@ export default function ClientServicesTab() {
       requestAnimationFrame(() => window.scrollTo(0, scrollY));
     } catch {
       showToast('Failed to remove direct debit', true);
-    }
-  };
-
-  const handleSetAllTime = async (jobId: string) => {
-    if (!allStartTime) return;
-    setSavingAllTime(true);
-    try {
-      const startVal = allStartTime + ':00';
-      const endVal = allEndTime ? allEndTime + ':00' : null;
-
-      // Update the job's preferred_time
-      await supabase
-        .from('recurring_jobs')
-        .update({ preferred_time: startVal })
-        .eq('id', jobId);
-
-      // Update all upcoming scheduled/pending sessions for this job
-      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' });
-      await supabase
-        .from('recurring_sessions')
-        .update({ start_time: startVal, end_time: endVal })
-        .eq('recurring_job_id', jobId)
-        .in('status', ['scheduled', 'pending_confirmation'])
-        .gte('scheduled_date', today);
-
-      showToast('Time set for all upcoming visits');
-      setSetAllTimeJobId(null);
-      setAllStartTime('');
-      setAllEndTime('');
-      fetchJobs();
-    } catch {
-      showToast('Failed to update times', true);
-    } finally {
-      setSavingAllTime(false);
     }
   };
 
@@ -2080,7 +2042,6 @@ export default function ClientServicesTab() {
                     sessionsInPeriod.slice(0, coveredCount).forEach(s => paidSessionIds.add(s.id));
                   }
 
-                  const hasBecs = savedMethods.has(job.id) && savedMethods.get(job.id)!.mandate_status === 'active';
 
                   const getPaymentStatus = (sessionId: string, sessionDate: string): { label: string; style: string; method?: string } => {
                     // Check if this session was covered by a paid invoice

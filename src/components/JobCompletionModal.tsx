@@ -487,7 +487,6 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
             p_type: 'payment',
             p_channel: 'in_app',
             p_read: false,
-            p_link: null,
             p_job_id: job.id,
             p_metadata: { tradie_id: userId },
           });

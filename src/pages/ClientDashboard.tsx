@@ -307,6 +307,7 @@ export default function ClientDashboard() {
             const diffCents = typeof inc.diff_cents === 'number' ? inc.diff_cents : 0;
             if (diffCents <= 0) continue;
             const originalCents = typeof p.amount === 'number' ? p.amount : 0;
+            if (!p.job_id) continue;
             increases[p.job_id] = {
               paymentId: p.id,
               amount: diffCents / 100,
@@ -466,7 +467,6 @@ export default function ClientDashboard() {
           p_type: 'new_job',
           p_channel: 'in_app',
           p_read: false,
-          p_link: null,
           p_job_id: jobId,
           p_metadata: {},
         });
@@ -485,7 +485,6 @@ export default function ClientDashboard() {
             p_type: 'new_job',
             p_channel: 'in_app',
             p_read: false,
-            p_link: null,
             p_job_id: jobId,
             p_metadata: {},
           })));
@@ -697,7 +696,6 @@ export default function ClientDashboard() {
         p_type: 'new_job',
         p_channel: 'in_app',
         p_read: false,
-        p_link: null,
         p_job_id: jobId,
         p_metadata: { invited: true, invited_by: user.id },
       });
@@ -1032,7 +1030,6 @@ export default function ClientDashboard() {
                                 const categoryRaw = categoryMatch ? categoryMatch[1] : null;
                                 const category = categoryRaw ? categoryRaw.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) : null;
                                 const desc = job.description.replace(/^\[[^\]]+\]\s*/, '');
-                                const isArchived = !!job.archived_at;
                                 const isReleased = releasedJobIds.has(job.id);
                                 const isReviewed = reviewedJobIds.has(job.id);
                                 const statusLabel = 'Paid';
@@ -1469,10 +1466,6 @@ export default function ClientDashboard() {
                       );
                     }
 
-                    {/* Count matching saved tradies for this trade */}
-                    const matchingSavedCount = savedTradies.filter(t =>
-                      t.tradie_details?.trade_category?.toLowerCase() === job.trade_category.toLowerCase()
-                    ).length;
 
                     return (
                       <div key={job.id} className={`rounded-xl border transition-all ${isOverdue ? 'border-red-200 bg-red-50/50' : isDueSoon ? 'border-amber-100 bg-amber-50/30' : 'border-gray-200 bg-white'}`}>

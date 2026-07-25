@@ -290,49 +290,6 @@ export default function JobManagementModal({
     setLoading(false);
   };
 
-  const handleStatusAdvance = async (nextStatus: string) => {
-    if (isLicenseExpired || !job) return;
-
-    // For completing a job, use the completion form handler
-    if (nextStatus === 'completed') {
-      await handleCompletion();
-      return;
-    }
-
-    setSaving(true);
-    const { error } = await supabase
-      .from('jobs')
-      .update({ status: nextStatus })
-      .eq('id', jobId);
-
-    if (!error) {
-      if (job.client_id) {
-        const { displayTitle } = parseJobInfo(job);
-        const tradieName = user?.user_metadata?.full_name || 'Your tradie';
-        try {
-          if (nextStatus === 'in_progress') {
-            await supabase.rpc('create_notification', {
-              p_user_id: job.client_id,
-              p_title: 'Work Started',
-              p_message: `${tradieName} has started work on ${displayTitle}.`,
-              p_type: 'job_update',
-              p_channel: 'in_app',
-              p_read: false,
-              p_link: null,
-              p_job_id: jobId,
-              p_metadata: {},
-            });
-          }
-        } catch {
-          // Non-critical
-        }
-      }
-      onJobUpdated();
-      setJob(prev => prev ? { ...prev, status: nextStatus } : prev);
-    }
-    setSaving(false);
-  };
-
   // ── Completion form logic ──
   const jobCategoryRaw = job?.description?.match(/^\[([^\]]+)\]/)?.[1] || '';
   const matched = matchCategory(jobCategoryRaw);
@@ -437,7 +394,6 @@ export default function JobManagementModal({
             p_type: 'JOB_COMPLETED',
             p_channel: 'in_app',
             p_read: false,
-            p_link: null,
             p_job_id: jobId,
             p_metadata: {},
           });

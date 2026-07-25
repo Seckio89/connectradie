@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 // Types
 // ---------------------------------------------------------------------------
 
-export interface SearchFilters {
+export type SearchFilters = {
   trade_category?: string;
   postcode?: string;
   radius_km?: number;
@@ -51,7 +51,7 @@ export async function saveSearch(
     .insert({
       user_id: user.id,
       name,
-      filters: filters as unknown as Record<string, unknown>,
+      filters,
       alert_enabled: false,
     })
     .select()

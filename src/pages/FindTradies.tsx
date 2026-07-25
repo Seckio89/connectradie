@@ -166,7 +166,7 @@ export default function FindTradies() {
             stripe_identity_verified: !!row.is_identity_verified,
           };
         })
-        .filter((t): t is PublicTradieSummary => t !== null)
+        .filter((t): t is NonNullable<typeof t> => t !== null)
         // Client-side sort by rating — server-side ordering on a separately-
         // fetched view isn't possible without restructuring the query.
         .sort((a, b) => (b.average_rating ?? 0) - (a.average_rating ?? 0));

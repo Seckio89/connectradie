@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
+import type { Json } from '../types/supabase';
 
-export async function logAdminAction(action: string, targetType: string, targetId?: string, details?: Record<string, unknown>) {
+export async function logAdminAction(action: string, targetType: string, targetId?: string, details?: Record<string, Json | undefined>) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
   await supabase.from('admin_audit_log').insert({

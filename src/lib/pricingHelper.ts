@@ -14,9 +14,12 @@ import type { QuoteTemplate, CustomTaskSuggestion } from '../types/database';
 export async function submitCustomTask(taskName: string, tradeContext?: string | null): Promise<{ ok: boolean; error?: string }> {
   const name = taskName.trim();
   if (name.length < 2) return { ok: false, error: 'Describe the task in a few words.' };
+  // Omit rather than pass null: `supabase gen types` maps a SQL `DEFAULT NULL`
+  // param to an optional property, and omitting it lets that default apply —
+  // identical at runtime.
   const { error } = await supabase.rpc('submit_custom_task', {
     p_task_name: name,
-    p_trade_context: tradeContext ?? null,
+    ...(tradeContext ? { p_trade_context: tradeContext } : {}),
   });
   if (error) return { ok: false, error: 'Could not submit — please try again.' };
   return { ok: true };
@@ -143,9 +146,9 @@ export async function getAreaPriceRange(
 ): Promise<AreaPriceRange | null> {
   const { data, error } = await supabase.rpc('get_area_price_range', {
     p_trade: trade,
-    p_property: property ?? null,
-    p_lat: lat ?? null,
-    p_lng: lng ?? null,
+    ...(property ? { p_property: property } : {}),
+    ...(lat != null ? { p_lat: lat } : {}),
+    ...(lng != null ? { p_lng: lng } : {}),
   });
   if (error) return null;
   const row = (Array.isArray(data) ? data[0] : data) as

@@ -19,7 +19,7 @@ import {
   Car,
   Send,
 } from 'lucide-react';
-import { formatDate, friendlyError } from '../lib/utils';
+import { formatDate } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { sendJobPaymentLink } from '../lib/jobPaymentLink';
 import { useAuth } from '../contexts/AuthContext';
@@ -81,7 +81,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
   const { user, profile, tradieDetails } = useAuth();
   const photoSignedUrls = useSignedUrls('job-attachments', job?.images_url || []);
   const [milestones, setMilestones] = useState<JobMilestone[]>([]);
-  const [statusLoading, setStatusLoading] = useState(false);
+  const [, setStatusLoading] = useState(false);
   const [localStatus, setLocalStatus] = useState<string>(job?.status || 'pending');
 
   // On mobile the progress stepper scrolls horizontally; auto-scroll it so the
@@ -287,32 +287,6 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
   const [statusError, setStatusError] = useState<string | null>(null);
   // Off-app payment link (accepted one-off jobs for client contacts).
   const [payLinkState, setPayLinkState] = useState<'idle' | 'sending' | 'sent'>('idle');
-
-  const handleUpdateStatus = async (newStatus: Job['status']) => {
-    if (!job || !user || statusLoading) return;
-    setStatusLoading(true);
-    setStatusError(null);
-
-    try {
-      const { error } = await supabase
-        .from('jobs')
-        .update({ status: newStatus })
-        .eq('id', job.id);
-
-      if (error) {
-        console.error('Job status update failed:', error);
-        setStatusError(friendlyError(error, 'Unable to update the job status. Please try again.'));
-      } else {
-        setLocalStatus(newStatus);
-        onStatusChange?.();
-      }
-    } catch (err) {
-      console.error('Job status update exception:', err);
-      setStatusError('Update failed unexpectedly. Please try again.');
-    } finally {
-      setStatusLoading(false);
-    }
-  };
 
   const handleSetFinalPrice = () => {
     if (!acceptedQuote || finalPriceLoading) return;

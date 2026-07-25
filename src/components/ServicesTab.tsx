@@ -1028,8 +1028,6 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
         p_type: 'supply_restock_needed',
         p_channel: 'in_app',
         p_read: false,
-        p_link: null,
-        p_job_id: null,
         p_metadata: { recurring_job_id: jobId, supply_id: item.id, supply_name: item.name },
       });
 
@@ -1326,36 +1324,7 @@ function JobCard({
   const [showLogVisit, setShowLogVisit] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [showAssignWorker, setShowAssignWorker] = useState(false);
-  const [showSetAllTime, setShowSetAllTime] = useState(false);
-  const [allStart, setAllStart] = useState('');
-  const [allEnd, setAllEnd] = useState('');
-  const [savingAll, setSavingAll] = useState(false);
   const { showToast } = useToast();
-
-  const handleSetAllTime = async () => {
-    if (!allStart) return;
-    setSavingAll(true);
-    try {
-      const startVal = allStart + ':00';
-      const endVal = allEnd ? allEnd + ':00' : null;
-      await supabase.from('recurring_jobs').update({ preferred_time: startVal }).eq('id', jobId);
-      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' });
-      await supabase.from('recurring_sessions')
-        .update({ start_time: startVal, end_time: endVal })
-        .eq('recurring_job_id', jobId)
-        .in('status', ['scheduled', 'pending_confirmation'])
-        .gte('scheduled_date', today);
-      showToast('Time set for all upcoming visits');
-      setShowSetAllTime(false);
-      setAllStart('');
-      setAllEnd('');
-      onUpdate();
-    } catch {
-      showToast('Failed to update times', true);
-    } finally {
-      setSavingAll(false);
-    }
-  };
 
   const statusBadge = isCancelled
     ? { bg: 'bg-red-50 border-red-200', text: 'text-red-700', label: 'Ended' }

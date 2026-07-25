@@ -36,7 +36,7 @@ function useIsMobile(breakpoint = 768) {
 const isNativePlatform = Capacitor.isNativePlatform();
 
 export default function LandingPage() {
-  const { user, profile, loading } = useAuth();
+  const { user, loading } = useAuth();
   const isMobile = useIsMobile();
 
   // On native app OR mobile browser, skip the marketing landing page entirely.

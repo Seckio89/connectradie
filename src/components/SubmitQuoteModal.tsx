@@ -130,9 +130,6 @@ export default function SubmitQuoteModal({
   const [modalState, setModalState] = useState<ModalState>('form');
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [savingTemplate, setSavingTemplate] = useState(false);
-  const [templateName, setTemplateName] = useState('');
-  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
 
   const fetchTemplates = useCallback(async () => {
     if (!user) return;
@@ -164,22 +161,6 @@ export default function SubmitQuoteModal({
     setShowTemplates(false);
   };
 
-  const handleSaveTemplate = async () => {
-    if (!user || !templateName.trim() || !message.trim()) return;
-    setSavingTemplate(true);
-    await supabase.from('quote_templates').insert({
-      tradie_id: user.id,
-      name: templateName.trim(),
-      message: message.trim(),
-      default_duration: estimatedDuration || null,
-      includes_materials: includesMaterials,
-    });
-    setTemplateName('');
-    setShowSaveTemplate(false);
-    setSavingTemplate(false);
-    fetchTemplates();
-  };
-
   const handleDeleteTemplate = async (id: string) => {
     await supabase.from('quote_templates').delete().eq('id', id);
     setTemplates(prev => prev.filter(t => t.id !== id));
@@ -197,7 +178,6 @@ export default function SubmitQuoteModal({
   const suburb = extractSuburb(job.location_address || '') || 'Unknown area';
   const slotsRemaining = job.max_quotes - job.quote_count;
   const isRecurring = !!(job.title && /ongoing|recurring/i.test(job.title));
-  const businessName = tradieDetails?.business_name || profile?.full_name || 'our team';
 
   // ── Pricing v2.1: labour / materials split ────────────────────────────────
   // Total is what the client pays (firm price, or the top of an estimated range).
@@ -258,8 +238,7 @@ export default function SubmitQuoteModal({
         if (avgMin > 0 && avgMax > 0) {
           setPriceHint({ min: Math.round(avgMin / 10) * 10, max: Math.round(avgMax / 10) * 10 });
         }
-      })
-      .catch(() => {});
+      }, () => {});
   }, [isOpen, categoryRaw, job.location_address]);
 
   // Auto-load first message option (or saved template) when modal opens

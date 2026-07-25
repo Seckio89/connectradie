@@ -36,9 +36,11 @@ const CONTRACTOR_TYPES = ['Solo', 'Company', 'Labour Hire'];
 export default function EditDetailsModal({ isOpen, onClose, currentValues, onSave }: EditDetailsModalProps) {
   const [businessName, setBusinessName] = useState(currentValues.businessName || '');
   const [hourlyRate, setHourlyRate] = useState(currentValues.hourlyRate?.toString() || '');
-  const [callOutFee, setCallOutFee] = useState(currentValues.callOutFee?.toString() || '');
-  const [showCalloutFee, setShowCalloutFee] = useState(currentValues.showCalloutFee);
-  const [calloutFeeWaived, setCalloutFeeWaived] = useState(currentValues.calloutFeeWaived);
+  // Not editable in this modal — no control binds to them, so they are passed
+  // straight back through on save. Plain consts, not state: nothing can change them.
+  const callOutFee = currentValues.callOutFee?.toString() || '';
+  const showCalloutFee = currentValues.showCalloutFee;
+  const calloutFeeWaived = currentValues.calloutFeeWaived;
   const [contractorType, setContractorType] = useState(currentValues.contractorType || 'Solo');
   const [teamSize, setTeamSize] = useState(currentValues.teamSize || 'Solo');
   const [qualifications, setQualifications] = useState(currentValues.qualifications.join(', '));

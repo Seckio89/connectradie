@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { Json } from '../types/supabase';
 import { getAuthHeaders } from './edgeFn';
 import {
   CHANNEL_SMS,
@@ -65,8 +66,8 @@ async function insertInAppNotification(payload: NotificationPayload, channels: N
     p_type: payload.type.toLowerCase(),
     p_channel: primaryChannel,
     p_read: false,
-    p_link: payload.link || null,
-    p_job_id: payload.jobId || null,
+    ...(payload.link ? { p_link: payload.link } : {}),
+    ...(payload.jobId ? { p_job_id: payload.jobId } : {}),
     p_metadata: payload.metadata || {},
   });
 
@@ -270,7 +271,7 @@ export interface InsertNotificationInput {
   read?: boolean;
   link?: string | null;
   job_id?: string | null;
-  metadata?: Record<string, unknown> | null;
+  metadata?: Record<string, Json> | null;
 }
 
 export async function insertNotification(input: InsertNotificationInput): Promise<string | null> {
@@ -281,9 +282,9 @@ export async function insertNotification(input: InsertNotificationInput): Promis
     p_type: input.type,
     p_channel: input.channel ?? 'in_app',
     p_read: input.read ?? false,
-    p_link: input.link ?? null,
-    p_job_id: input.job_id ?? null,
-    p_metadata: input.metadata ?? null,
+    ...(input.link ? { p_link: input.link } : {}),
+    ...(input.job_id ? { p_job_id: input.job_id } : {}),
+    ...(input.metadata ? { p_metadata: input.metadata } : {}),
   });
   if (error) {
     console.error('insertNotification: rpc failed:', error.message);

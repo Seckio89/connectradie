@@ -1,5 +1,5 @@
 export type UserRole = 'client' | 'tradie' | 'admin';
-export type SubscriptionTier = 'free' | 'pro' | 'business';
+export type SubscriptionTier = 'free' | 'pro' | 'pro_plus' | 'business';
 export type SlotStatus = 'available' | 'booked' | 'blocked';
 export type JobStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'declined' | 'funded';
 export type QuoteStatus =

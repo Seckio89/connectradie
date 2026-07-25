@@ -428,8 +428,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
           p_type: 'new_message',
           p_channel: 'in_app',
           p_read: false,
-          p_link: null,
-          p_job_id: jobId || null,
+          ...(jobId ? { p_job_id: jobId } : {}),
           p_metadata: { conversation_id: conversationId, sender_id: user.id },
         });
       } catch {

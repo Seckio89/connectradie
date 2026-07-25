@@ -14,7 +14,6 @@ import { redactContactInfo, shouldAllowContactSharing, detectCrossMessageDigitBy
 import EmptyState from '../components/EmptyState';
 
 interface ConversationWithDetails extends Conversation {
-  job_id?: string; // Add this line to include job_id
   participants: (ConversationParticipant & { profile?: Profile })[];
   lastMessage?: Message & { sender_profile?: Profile };
   messages: (Message & { sender_profile?: Profile })[];
@@ -104,7 +103,7 @@ export default function Messages() {
           });
         }
       )
-      .subscribe((status, err) => {
+      .subscribe((_status, err) => {
         if (err) {
           console.error('Messages realtime subscription error:', err);
         }
@@ -534,8 +533,6 @@ export default function Messages() {
           p_type: 'new_message',
           p_channel: 'in_app',
           p_read: false,
-          p_link: null,
-          p_job_id: null,
           p_metadata: { conversation_id: selectedConversation.id, sender_id: user.id },
         })));
       } catch {

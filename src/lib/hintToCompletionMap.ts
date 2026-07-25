@@ -2,7 +2,6 @@
 // tradie-facing completion prompt(s) (from JobCompletionModal.tsx).
 // Used to filter the completion checklist so it only shows tasks the client selected.
 
-import { JOB_DESCRIPTION_HINTS } from './jobDescriptionHints';
 
 /**
  * category → { hint → completion prompt(s) }

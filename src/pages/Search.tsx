@@ -247,6 +247,7 @@ export default function Search() {
       const completionCounts: Record<string, number> = {};
       if (completedJobs) {
         for (const j of completedJobs) {
+          if (!j.tradie_id) continue;
           completionCounts[j.tradie_id] = (completionCounts[j.tradie_id] || 0) + 1;
         }
       }
@@ -499,7 +500,6 @@ export default function Search() {
         p_type: 'new_job',
         p_channel: 'in_app',
         p_read: false,
-        p_link: null,
         p_job_id: jobId,
         p_metadata: { invited: true, invited_by: user.id },
       });

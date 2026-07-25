@@ -1,3 +1,5 @@
+import type { Json } from '../types/supabase';
+
 export const CHANNEL_SMS = 'sms' as const;
 export const CHANNEL_IN_APP = 'in_app' as const;
 export const CHANNEL_EMAIL = 'email' as const;
@@ -37,7 +39,7 @@ export interface NotificationPayload {
   userId: string;
   title: string;
   message: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, Json>;
   link?: string;
   jobId?: string;
   isUrgent?: boolean;

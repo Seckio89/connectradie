@@ -491,7 +491,6 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
             p_type: 'JOB_ACCEPTED',
             p_channel: 'in_app',
             p_read: false,
-            p_link: null,
             p_job_id: normalizedJob.id,
             p_metadata: {},
           });
@@ -893,7 +892,6 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                         {!isCollapsed && (
                           <div className="space-y-3 ml-1">
                             {monthJobs.map((job) => {
-                              const isFlashActive = job.is_flash_boost && job.flash_expiry && new Date(job.flash_expiry) > new Date();
                               const normalizedJob = { ...job, profiles: job.profiles ?? undefined };
                               return (
                                 <div

@@ -579,7 +579,6 @@ export default function PostLead() {
           p_type: 'new_job',
           p_channel: 'in_app',
           p_read: false,
-          p_link: null,
           p_job_id: jobId,
           p_metadata: { invited: true, invited_by: user.id },
         });
@@ -1109,24 +1108,22 @@ export default function PostLead() {
                           onClick={() => setPreferredSlot(slot.key)}
                           className={`relative rounded-xl border-2 p-3 text-center transition-all duration-200 ${
                             isSelected
-                              ? scheduleMode === 'urgent'
-                                ? 'border-emerald-300 bg-emerald-50 shadow-sm'
-                                : 'border-secondary-300 bg-secondary-50 shadow-sm'
+                              ? 'border-secondary-300 bg-secondary-50 shadow-sm'
                               : 'border-gray-200 bg-white hover:border-secondary-300 hover:bg-secondary-50/30'
                           }`}
                         >
                           {isSelected && (
                             <div className="absolute -top-2 right-2">
-                              <span className={`inline-block w-2 h-2 rounded-full ${scheduleMode === 'urgent' ? 'bg-emerald-500' : 'bg-secondary-500'}`} title="Your selected time" />
+                              <span className="inline-block w-2 h-2 rounded-full bg-secondary-500" title="Your selected time" />
                             </div>
                           )}
                           <Icon className={`w-5 h-5 mx-auto mb-1.5 ${
-                            isSelected ? (scheduleMode === 'urgent' ? 'text-emerald-600' : 'text-secondary-600') : 'text-gray-400'
+                            isSelected ? 'text-secondary-600' : 'text-gray-400'
                           }`} />
-                          <div className={`text-sm font-semibold ${isSelected ? (scheduleMode === 'urgent' ? 'text-emerald-700' : 'text-secondary-700') : 'text-gray-700'}`}>
+                          <div className={`text-sm font-semibold ${isSelected ? 'text-secondary-700' : 'text-gray-700'}`}>
                             {slot.label}
                           </div>
-                          <div className={`text-xs mt-0.5 ${isSelected ? (scheduleMode === 'urgent' ? 'text-emerald-600' : 'text-secondary-600') : 'text-gray-400'}`}>{slot.range}</div>
+                          <div className={`text-xs mt-0.5 ${isSelected ? 'text-secondary-600' : 'text-gray-400'}`}>{slot.range}</div>
                         </button>
                       );
                     })}

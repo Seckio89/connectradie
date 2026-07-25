@@ -27,11 +27,16 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
       return;
     }
 
+    if (!user) {
+      setError('You must be signed in to create a job group');
+      return;
+    }
+
     try {
       setLoading(true);
 
       const { error: insertError } = await supabase.from('projects').insert({
-        client_id: user?.id,
+        client_id: user.id,
         title: title.trim(),
         description: description.trim() || null,
         start_date: startDate || null,

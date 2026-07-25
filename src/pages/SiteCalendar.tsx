@@ -675,9 +675,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
               p_type: 'site_visit_time_confirmed',
               p_channel: 'in_app',
               p_read: false,
-              p_link: null,
               p_job_id: underlyingJobId,
-              p_metadata: null,
             });
           }
         } else if (job.tradie_id) {
@@ -697,9 +695,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
               p_type: 'site_visit_time_proposed',
               p_channel: 'in_app',
               p_read: false,
-              p_link: null,
               p_job_id: underlyingJobId,
-              p_metadata: null,
             });
           }
         }
@@ -760,7 +756,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
               p_title: 'Visit time confirmed',
               p_message: `Your tradie confirmed "${svcTitle}" for ${whenLabel}.`,
               p_type: 'job_time_confirmed', p_channel: 'in_app', p_read: false,
-              p_link: null, p_job_id: rj.original_job_id, p_metadata: null,
+              p_job_id: rj.original_job_id,
             });
           } else if (!isTradie && rj.tradie_id && newTime) {
             await supabase.rpc('create_notification', {
@@ -768,7 +764,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
               p_title: 'New time to confirm',
               p_message: `The client proposed ${whenLabel} for "${svcTitle}". Please confirm or adjust the time.`,
               p_type: 'job_time_proposed', p_channel: 'in_app', p_read: false,
-              p_link: null, p_job_id: rj.original_job_id, p_metadata: null,
+              p_job_id: rj.original_job_id,
             });
           }
         }
@@ -849,9 +845,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
             p_type: 'job_time_confirmed',
             p_channel: 'in_app',
             p_read: false,
-            p_link: null,
             p_job_id: job.id,
-            p_metadata: null,
           });
         }
         return;
@@ -866,9 +860,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
           p_type: 'job_time_proposed',
           p_channel: 'in_app',
           p_read: false,
-          p_link: null,
           p_job_id: job.id,
-          p_metadata: null,
         });
       }
 
@@ -909,9 +901,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
         p_type: 'schedule_conflict',
         p_channel: 'in_app',
         p_read: false,
-        p_link: null,
         p_job_id: job.id,
-        p_metadata: null,
       });
     } catch (e) {
       console.warn('Reschedule notifications failed (non-fatal):', e);

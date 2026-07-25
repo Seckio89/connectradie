@@ -698,7 +698,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
             if (meta?.pending_increase) {
               const inc = meta.pending_increase as Record<string, unknown>;
               const diffCents = typeof inc.diff_cents === 'number' ? inc.diff_cents : 0;
-              if (diffCents > 0) {
+              if (diffCents > 0 && p.job_id) {
                 const originalCents = typeof p.amount === 'number' ? p.amount : 0;
                 increases[p.job_id] = {
                   paymentId: p.id,
@@ -1199,7 +1199,6 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           p_type: 'JOB_DECLINED',
           p_channel: 'in_app',
           p_read: false,
-          p_link: null,
           p_job_id: quote.job_id,
           p_metadata: {},
         });

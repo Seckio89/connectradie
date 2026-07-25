@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { Json } from '../types/supabase';
 
 // ---------------------------------------------------------------------------
 // Pre-written quote message options per trade (Australian tradie tone)
@@ -534,7 +535,7 @@ export interface RecurringJobData {
   consumables_provider?: 'client' | 'tradie_billed';
 }
 
-export interface RecurringJob {
+export type RecurringJob = {
   id: string;
   client_id: string;
   tradie_id: string;
@@ -1150,7 +1151,6 @@ export async function requestQuoteForRecurringJob(
       p_type: 'new_job',
       p_channel: 'in_app',
       p_read: false,
-      p_link: null,
       p_job_id: jobId,
       p_metadata: { recurring_job_id: recurringJob.id },
     });
@@ -1162,7 +1162,6 @@ export async function requestQuoteForRecurringJob(
       p_type: 'new_job',
       p_channel: 'in_app',
       p_read: false,
-      p_link: null,
       p_job_id: jobId,
       p_metadata: { recurring_job_id: recurringJob.id },
     })));
@@ -2625,7 +2624,7 @@ export async function insertNotification(
   userId: string,
   type: string,
   message: string,
-  metadata?: Record<string, unknown>,
+  metadata?: Record<string, Json>,
   title?: string,
 ): Promise<void> {
   // Route through the SECURITY DEFINER create_notification RPC. Direct
@@ -2637,8 +2636,6 @@ export async function insertNotification(
     p_type: type,
     p_channel: 'in_app',
     p_read: false,
-    p_link: null,
-    p_job_id: null,
     p_metadata: metadata ?? {},
   });
   if (error) throw new Error(error.message);
