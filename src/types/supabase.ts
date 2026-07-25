@@ -16,7 +16,8 @@ export type Database = {
     Tables: {
       abuse_reports: {
         Row: {
-          created_at: string | null
+          admin_notes: string | null
+          created_at: string
           description: string | null
           evidence_urls: string[] | null
           id: string
@@ -29,7 +30,8 @@ export type Database = {
           status: string | null
         }
         Insert: {
-          created_at?: string | null
+          admin_notes?: string | null
+          created_at?: string
           description?: string | null
           evidence_urls?: string[] | null
           id?: string
@@ -42,7 +44,8 @@ export type Database = {
           status?: string | null
         }
         Update: {
-          created_at?: string | null
+          admin_notes?: string | null
+          created_at?: string
           description?: string | null
           evidence_urls?: string[] | null
           id?: string
@@ -125,7 +128,7 @@ export type Database = {
       account_removals: {
         Row: {
           additional_message: string | null
-          created_at: string | null
+          created_at: string
           email: string
           full_name: string | null
           id: string
@@ -137,7 +140,7 @@ export type Database = {
         }
         Insert: {
           additional_message?: string | null
-          created_at?: string | null
+          created_at?: string
           email?: string
           full_name?: string | null
           id?: string
@@ -149,7 +152,7 @@ export type Database = {
         }
         Update: {
           additional_message?: string | null
-          created_at?: string | null
+          created_at?: string
           email?: string
           full_name?: string | null
           id?: string
@@ -241,19 +244,19 @@ export type Database = {
       app_settings: {
         Row: {
           key: string
-          updated_at: string | null
+          updated_at: string
           updated_by: string | null
           value: Json
         }
         Insert: {
           key: string
-          updated_at?: string | null
+          updated_at?: string
           updated_by?: string | null
           value?: Json
         }
         Update: {
           key?: string
-          updated_at?: string | null
+          updated_at?: string
           updated_by?: string | null
           value?: Json
         }
@@ -263,7 +266,7 @@ export type Database = {
         Row: {
           booked_by: string | null
           calendar_event_id: string | null
-          created_at: string | null
+          created_at: string
           end_time: string
           id: string
           start_time: string
@@ -273,7 +276,7 @@ export type Database = {
         Insert: {
           booked_by?: string | null
           calendar_event_id?: string | null
-          created_at?: string | null
+          created_at?: string
           end_time: string
           id?: string
           start_time: string
@@ -283,7 +286,7 @@ export type Database = {
         Update: {
           booked_by?: string | null
           calendar_event_id?: string | null
-          created_at?: string | null
+          created_at?: string
           end_time?: string
           id?: string
           start_time?: string
@@ -311,7 +314,7 @@ export type Database = {
         Row: {
           business_name: string
           business_owner_id: string
-          created_at: string | null
+          created_at: string
           id: string
           message: string | null
           requester_email: string
@@ -320,12 +323,12 @@ export type Database = {
           role: string
           status: string
           trade_specialty: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           business_name?: string
           business_owner_id: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           message?: string | null
           requester_email?: string
@@ -334,12 +337,12 @@ export type Database = {
           role?: string
           status?: string
           trade_specialty?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           business_name?: string
           business_owner_id?: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           message?: string | null
           requester_email?: string
@@ -348,7 +351,7 @@ export type Database = {
           role?: string
           status?: string
           trade_specialty?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -371,7 +374,7 @@ export type Database = {
         Row: {
           business_owner_id: string
           color: string | null
-          created_at: string | null
+          created_at: string
           hourly_rate: number | null
           id: string
           invite_email: string | null
@@ -384,12 +387,12 @@ export type Database = {
           role: string
           status: string
           trade_specialty: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           business_owner_id: string
           color?: string | null
-          created_at?: string | null
+          created_at?: string
           hourly_rate?: number | null
           id?: string
           invite_email?: string | null
@@ -402,12 +405,12 @@ export type Database = {
           role?: string
           status?: string
           trade_specialty?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           business_owner_id?: string
           color?: string | null
-          created_at?: string | null
+          created_at?: string
           hourly_rate?: number | null
           id?: string
           invite_email?: string | null
@@ -420,7 +423,7 @@ export type Database = {
           role?: string
           status?: string
           trade_specialty?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -443,7 +446,7 @@ export type Database = {
         Row: {
           access_token: string
           calendar_id: string | null
-          created_at: string | null
+          created_at: string
           id: string
           last_synced_at: string | null
           provider: string
@@ -451,12 +454,12 @@ export type Database = {
           sync_enabled: boolean | null
           token_expires_at: string
           tradie_id: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           access_token: string
           calendar_id?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           last_synced_at?: string | null
           provider: string
@@ -464,12 +467,12 @@ export type Database = {
           sync_enabled?: boolean | null
           token_expires_at: string
           tradie_id: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           access_token?: string
           calendar_id?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           last_synced_at?: string | null
           provider?: string
@@ -477,7 +480,7 @@ export type Database = {
           sync_enabled?: boolean | null
           token_expires_at?: string
           tradie_id?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -564,7 +567,7 @@ export type Database = {
       client_errors: {
         Row: {
           component_stack: string | null
-          created_at: string | null
+          created_at: string
           id: string
           message: string
           stack: string | null
@@ -573,7 +576,7 @@ export type Database = {
         }
         Insert: {
           component_stack?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           message: string
           stack?: string | null
@@ -582,7 +585,7 @@ export type Database = {
         }
         Update: {
           component_stack?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           message?: string
           stack?: string | null
@@ -672,7 +675,7 @@ export type Database = {
         Row: {
           amount_paid: number | null
           client_id: string
-          created_at: string | null
+          created_at: string
           id: string
           tradie_id: string
           unlocked_at: string | null
@@ -680,7 +683,7 @@ export type Database = {
         Insert: {
           amount_paid?: number | null
           client_id: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           tradie_id: string
           unlocked_at?: string | null
@@ -688,7 +691,7 @@ export type Database = {
         Update: {
           amount_paid?: number | null
           client_id?: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           tradie_id?: string
           unlocked_at?: string | null
@@ -712,7 +715,7 @@ export type Database = {
       }
       contact_messages: {
         Row: {
-          created_at: string | null
+          created_at: string
           email: string
           id: string
           message: string
@@ -720,7 +723,7 @@ export type Database = {
           read: boolean | null
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           email: string
           id?: string
           message: string
@@ -728,7 +731,7 @@ export type Database = {
           read?: boolean | null
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           email?: string
           id?: string
           message?: string
@@ -954,7 +957,7 @@ export type Database = {
       }
       date_change_requests: {
         Row: {
-          created_at: string | null
+          created_at: string
           field_name: string
           id: string
           project_id: string
@@ -965,7 +968,7 @@ export type Database = {
           status: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           field_name: string
           id?: string
           project_id: string
@@ -976,7 +979,7 @@ export type Database = {
           status?: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           field_name?: string
           id?: string
           project_id?: string
@@ -1108,32 +1111,32 @@ export type Database = {
       email_preferences: {
         Row: {
           category: string
-          created_at: string | null
+          created_at: string
           email_enabled: boolean | null
           id: string
           push_enabled: boolean | null
           sms_enabled: boolean | null
-          updated_at: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
           category: string
-          created_at?: string | null
+          created_at?: string
           email_enabled?: boolean | null
           id?: string
           push_enabled?: boolean | null
           sms_enabled?: boolean | null
-          updated_at?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
           category?: string
-          created_at?: string | null
+          created_at?: string
           email_enabled?: boolean | null
           id?: string
           push_enabled?: boolean | null
           sms_enabled?: boolean | null
-          updated_at?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -1222,7 +1225,7 @@ export type Database = {
       }
       hint_tracking: {
         Row: {
-          created_at: string | null
+          created_at: string
           dismissed_at: string | null
           hint_key: string
           id: string
@@ -1230,7 +1233,7 @@ export type Database = {
           view_count: number | null
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           dismissed_at?: string | null
           hint_key: string
           id?: string
@@ -1238,7 +1241,7 @@ export type Database = {
           view_count?: number | null
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           dismissed_at?: string | null
           hint_key?: string
           id?: string
@@ -1260,7 +1263,7 @@ export type Database = {
           all_day: boolean
           business_owner_id: string
           color: string | null
-          created_at: string | null
+          created_at: string
           description: string | null
           ends_at: string | null
           google_calendar_id: string
@@ -1271,13 +1274,13 @@ export type Database = {
           starts_at: string
           team_member_id: string | null
           title: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           all_day?: boolean
           business_owner_id: string
           color?: string | null
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           ends_at?: string | null
           google_calendar_id: string
@@ -1288,13 +1291,13 @@ export type Database = {
           starts_at: string
           team_member_id?: string | null
           title?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           all_day?: boolean
           business_owner_id?: string
           color?: string | null
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           ends_at?: string | null
           google_calendar_id?: string
@@ -1305,7 +1308,7 @@ export type Database = {
           starts_at?: string
           team_member_id?: string | null
           title?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1327,7 +1330,7 @@ export type Database = {
       invoice_line_items: {
         Row: {
           amount: number
-          created_at: string | null
+          created_at: string
           description: string
           id: string
           invoice_id: string
@@ -1337,7 +1340,7 @@ export type Database = {
         }
         Insert: {
           amount?: number
-          created_at?: string | null
+          created_at?: string
           description?: string
           id?: string
           invoice_id: string
@@ -1347,7 +1350,7 @@ export type Database = {
         }
         Update: {
           amount?: number
-          created_at?: string | null
+          created_at?: string
           description?: string
           id?: string
           invoice_id?: string
@@ -1375,7 +1378,7 @@ export type Database = {
           business_email: string | null
           business_name: string
           business_phone: string | null
-          created_at: string | null
+          created_at: string
           created_by: string
           due_date: string | null
           gst_amount: number
@@ -1392,7 +1395,7 @@ export type Database = {
           status: string
           subtotal: number
           total_amount: number
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           bill_to_address?: string | null
@@ -1403,7 +1406,7 @@ export type Database = {
           business_email?: string | null
           business_name?: string
           business_phone?: string | null
-          created_at?: string | null
+          created_at?: string
           created_by: string
           due_date?: string | null
           gst_amount?: number
@@ -1420,7 +1423,7 @@ export type Database = {
           status?: string
           subtotal?: number
           total_amount?: number
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           bill_to_address?: string | null
@@ -1431,7 +1434,7 @@ export type Database = {
           business_email?: string | null
           business_name?: string
           business_phone?: string | null
-          created_at?: string | null
+          created_at?: string
           created_by?: string
           due_date?: string | null
           gst_amount?: number
@@ -1448,7 +1451,7 @@ export type Database = {
           status?: string
           subtotal?: number
           total_amount?: number
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1555,7 +1558,7 @@ export type Database = {
         Row: {
           amount: number
           approved_at: string | null
-          created_at: string | null
+          created_at: string
           created_by: string
           due_date: string | null
           id: string
@@ -1568,12 +1571,12 @@ export type Database = {
           status: string
           subcontractor_business_name: string | null
           title: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           amount: number
           approved_at?: string | null
-          created_at?: string | null
+          created_at?: string
           created_by: string
           due_date?: string | null
           id?: string
@@ -1586,12 +1589,12 @@ export type Database = {
           status?: string
           subcontractor_business_name?: string | null
           title: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           amount?: number
           approved_at?: string | null
-          created_at?: string | null
+          created_at?: string
           created_by?: string
           due_date?: string | null
           id?: string
@@ -1604,7 +1607,7 @@ export type Database = {
           status?: string
           subcontractor_business_name?: string | null
           title?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1620,7 +1623,7 @@ export type Database = {
         Row: {
           add_to_portfolio: boolean | null
           caption: string | null
-          created_at: string | null
+          created_at: string
           id: string
           job_id: string
           photo_url: string
@@ -1630,7 +1633,7 @@ export type Database = {
         Insert: {
           add_to_portfolio?: boolean | null
           caption?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           job_id: string
           photo_url: string
@@ -1640,7 +1643,7 @@ export type Database = {
         Update: {
           add_to_portfolio?: boolean | null
           caption?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           job_id?: string
           photo_url?: string
@@ -1667,7 +1670,7 @@ export type Database = {
       job_team_assignments: {
         Row: {
           business_owner_id: string
-          created_at: string | null
+          created_at: string
           end_time: string | null
           id: string
           job_id: string
@@ -1677,11 +1680,11 @@ export type Database = {
           start_time: string | null
           status: string
           team_member_id: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           business_owner_id: string
-          created_at?: string | null
+          created_at?: string
           end_time?: string | null
           id?: string
           job_id: string
@@ -1691,11 +1694,11 @@ export type Database = {
           start_time?: string | null
           status?: string
           team_member_id: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           business_owner_id?: string
-          created_at?: string | null
+          created_at?: string
           end_time?: string | null
           id?: string
           job_id?: string
@@ -1705,7 +1708,7 @@ export type Database = {
           start_time?: string | null
           status?: string
           team_member_id?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1734,7 +1737,7 @@ export type Database = {
       job_unlocks: {
         Row: {
           amount_paid: number | null
-          created_at: string | null
+          created_at: string
           id: string
           job_id: string
           tradie_id: string
@@ -1742,7 +1745,7 @@ export type Database = {
         }
         Insert: {
           amount_paid?: number | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           job_id: string
           tradie_id: string
@@ -1750,7 +1753,7 @@ export type Database = {
         }
         Update: {
           amount_paid?: number | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           job_id?: string
           tradie_id?: string
@@ -1776,36 +1779,36 @@ export type Database = {
       job_variations: {
         Row: {
           additional_amount: number
-          created_at: string | null
+          created_at: string
           description: string
           id: string
           job_id: string
           photo_urls: string[] | null
           reason_category: string | null
           status: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           additional_amount: number
-          created_at?: string | null
+          created_at?: string
           description: string
           id?: string
           job_id: string
           photo_urls?: string[] | null
           reason_category?: string | null
           status?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           additional_amount?: number
-          created_at?: string | null
+          created_at?: string
           description?: string
           id?: string
           job_id?: string
           photo_urls?: string[] | null
           reason_category?: string | null
           status?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1834,7 +1837,7 @@ export type Database = {
           contact_flagged: boolean | null
           contact_name: string | null
           contact_phone: string | null
-          created_at: string | null
+          created_at: string
           day_before_notification_sent: string | null
           decline_reason: string | null
           declined_at: string | null
@@ -1875,7 +1878,7 @@ export type Database = {
           title: string | null
           tradie_id: string | null
           two_hour_notification_sent: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           access_instructions?: string | null
@@ -1893,7 +1896,7 @@ export type Database = {
           contact_flagged?: boolean | null
           contact_name?: string | null
           contact_phone?: string | null
-          created_at?: string | null
+          created_at?: string
           day_before_notification_sent?: string | null
           decline_reason?: string | null
           declined_at?: string | null
@@ -1934,7 +1937,7 @@ export type Database = {
           title?: string | null
           tradie_id?: string | null
           two_hour_notification_sent?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           access_instructions?: string | null
@@ -1952,7 +1955,7 @@ export type Database = {
           contact_flagged?: boolean | null
           contact_name?: string | null
           contact_phone?: string | null
-          created_at?: string | null
+          created_at?: string
           day_before_notification_sent?: string | null
           decline_reason?: string | null
           declined_at?: string | null
@@ -1993,7 +1996,7 @@ export type Database = {
           title?: string | null
           tradie_id?: string | null
           two_hour_notification_sent?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -2151,7 +2154,7 @@ export type Database = {
           attachment_url: string | null
           content: string
           conversation_id: string | null
-          created_at: string | null
+          created_at: string
           deleted_at: string | null
           id: string
           image_url: string | null
@@ -2169,7 +2172,7 @@ export type Database = {
           attachment_url?: string | null
           content: string
           conversation_id?: string | null
-          created_at?: string | null
+          created_at?: string
           deleted_at?: string | null
           id?: string
           image_url?: string | null
@@ -2187,7 +2190,7 @@ export type Database = {
           attachment_url?: string | null
           content?: string
           conversation_id?: string | null
-          created_at?: string | null
+          created_at?: string
           deleted_at?: string | null
           id?: string
           image_url?: string | null
@@ -2233,7 +2236,7 @@ export type Database = {
         Row: {
           amount: number
           business_name: string
-          created_at: string | null
+          created_at: string
           id: string
           invoice_id: string | null
           invoice_number: string | null
@@ -2242,7 +2245,7 @@ export type Database = {
         Insert: {
           amount?: number
           business_name?: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           invoice_id?: string | null
           invoice_number?: string | null
@@ -2251,7 +2254,7 @@ export type Database = {
         Update: {
           amount?: number
           business_name?: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           invoice_id?: string | null
           invoice_number?: string | null
@@ -2277,19 +2280,19 @@ export type Database = {
       my_trades: {
         Row: {
           client_id: string
-          created_at: string | null
+          created_at: string
           id: string
           tradie_id: string
         }
         Insert: {
           client_id: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           tradie_id: string
         }
         Update: {
           client_id?: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           tradie_id?: string
         }
@@ -2313,7 +2316,7 @@ export type Database = {
       notifications: {
         Row: {
           channel: string
-          created_at: string | null
+          created_at: string
           email_sent_at: string | null
           id: string
           job_id: string | null
@@ -2330,7 +2333,7 @@ export type Database = {
         }
         Insert: {
           channel?: string
-          created_at?: string | null
+          created_at?: string
           email_sent_at?: string | null
           id?: string
           job_id?: string | null
@@ -2347,7 +2350,7 @@ export type Database = {
         }
         Update: {
           channel?: string
-          created_at?: string | null
+          created_at?: string
           email_sent_at?: string | null
           id?: string
           job_id?: string | null
@@ -2384,36 +2387,36 @@ export type Database = {
           availability_set: boolean | null
           avatar_complete: boolean | null
           completed_at: string | null
-          created_at: string | null
+          created_at: string
           first_job_viewed: boolean | null
           id: string
           profile_complete: boolean | null
           trades_added: boolean | null
-          updated_at: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
           availability_set?: boolean | null
           avatar_complete?: boolean | null
           completed_at?: string | null
-          created_at?: string | null
+          created_at?: string
           first_job_viewed?: boolean | null
           id?: string
           profile_complete?: boolean | null
           trades_added?: boolean | null
-          updated_at?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
           availability_set?: boolean | null
           avatar_complete?: boolean | null
           completed_at?: string | null
-          created_at?: string | null
+          created_at?: string
           first_job_viewed?: boolean | null
           id?: string
           profile_complete?: boolean | null
           trades_added?: boolean | null
-          updated_at?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -2577,7 +2580,7 @@ export type Database = {
       phase_team_assignments: {
         Row: {
           business_owner_id: string
-          created_at: string | null
+          created_at: string
           id: string
           lead_person: boolean | null
           notes: string | null
@@ -2588,7 +2591,7 @@ export type Database = {
         }
         Insert: {
           business_owner_id: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           lead_person?: boolean | null
           notes?: string | null
@@ -2599,7 +2602,7 @@ export type Database = {
         }
         Update: {
           business_owner_id?: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           lead_person?: boolean | null
           notes?: string | null
@@ -2909,7 +2912,7 @@ export type Database = {
       portfolio_images: {
         Row: {
           caption: string | null
-          created_at: string | null
+          created_at: string
           id: string
           image_url: string
           sort_order: number | null
@@ -2917,7 +2920,7 @@ export type Database = {
         }
         Insert: {
           caption?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           image_url: string
           sort_order?: number | null
@@ -2925,7 +2928,7 @@ export type Database = {
         }
         Update: {
           caption?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           image_url?: string
           sort_order?: number | null
@@ -3086,7 +3089,7 @@ export type Database = {
           call_out_fee: number | null
           callout_fee_waived_on_proceed: boolean | null
           cover_photo_url: string | null
-          created_at: string | null
+          created_at: string
           declared_trades: string[] | null
           documents_url: string[] | null
           email: string
@@ -3099,9 +3102,11 @@ export type Database = {
           id: string
           insurance_policy: boolean | null
           is_admin: boolean
+          is_apprentice: boolean
           is_emergency_available: boolean | null
           is_gst_registered: boolean
           is_identity_verified: boolean | null
+          is_license_required: boolean
           is_premium: boolean | null
           last_invoice_reminder_email_at: string | null
           last_license_check: string | null
@@ -3136,6 +3141,8 @@ export type Database = {
           subscription_started_at: string | null
           subscription_tier: string | null
           suburb: string | null
+          supervisor_license: string | null
+          supervisor_name: string | null
           team_size: string | null
           terms_accepted_at: string | null
           timezone: string
@@ -3156,7 +3163,7 @@ export type Database = {
           call_out_fee?: number | null
           callout_fee_waived_on_proceed?: boolean | null
           cover_photo_url?: string | null
-          created_at?: string | null
+          created_at?: string
           declared_trades?: string[] | null
           documents_url?: string[] | null
           email: string
@@ -3169,9 +3176,11 @@ export type Database = {
           id: string
           insurance_policy?: boolean | null
           is_admin?: boolean
+          is_apprentice?: boolean
           is_emergency_available?: boolean | null
           is_gst_registered?: boolean
           is_identity_verified?: boolean | null
+          is_license_required?: boolean
           is_premium?: boolean | null
           last_invoice_reminder_email_at?: string | null
           last_license_check?: string | null
@@ -3206,6 +3215,8 @@ export type Database = {
           subscription_started_at?: string | null
           subscription_tier?: string | null
           suburb?: string | null
+          supervisor_license?: string | null
+          supervisor_name?: string | null
           team_size?: string | null
           terms_accepted_at?: string | null
           timezone?: string
@@ -3226,7 +3237,7 @@ export type Database = {
           call_out_fee?: number | null
           callout_fee_waived_on_proceed?: boolean | null
           cover_photo_url?: string | null
-          created_at?: string | null
+          created_at?: string
           declared_trades?: string[] | null
           documents_url?: string[] | null
           email?: string
@@ -3239,9 +3250,11 @@ export type Database = {
           id?: string
           insurance_policy?: boolean | null
           is_admin?: boolean
+          is_apprentice?: boolean
           is_emergency_available?: boolean | null
           is_gst_registered?: boolean
           is_identity_verified?: boolean | null
+          is_license_required?: boolean
           is_premium?: boolean | null
           last_invoice_reminder_email_at?: string | null
           last_license_check?: string | null
@@ -3276,6 +3289,8 @@ export type Database = {
           subscription_started_at?: string | null
           subscription_tier?: string | null
           suburb?: string | null
+          supervisor_license?: string | null
+          supervisor_name?: string | null
           team_size?: string | null
           terms_accepted_at?: string | null
           timezone?: string
@@ -3299,7 +3314,7 @@ export type Database = {
           actual_start_date: string | null
           business_owner_id: string
           color: string | null
-          created_at: string | null
+          created_at: string
           description: string | null
           estimated_hours: number | null
           id: string
@@ -3309,14 +3324,14 @@ export type Database = {
           stage_order: number
           status: string
           title: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           actual_end_date?: string | null
           actual_start_date?: string | null
           business_owner_id: string
           color?: string | null
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           estimated_hours?: number | null
           id?: string
@@ -3326,14 +3341,14 @@ export type Database = {
           stage_order?: number
           status?: string
           title?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           actual_end_date?: string | null
           actual_start_date?: string | null
           business_owner_id?: string
           color?: string | null
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           estimated_hours?: number | null
           id?: string
@@ -3343,7 +3358,7 @@ export type Database = {
           stage_order?: number
           status?: string
           title?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -3367,7 +3382,7 @@ export type Database = {
           client_id: string
           client_status: string | null
           client_status_updated_at: string | null
-          created_at: string | null
+          created_at: string
           description: string | null
           end_reason: string | null
           estimated_end_date: string | null
@@ -3379,13 +3394,13 @@ export type Database = {
           title: string
           tradie_status: string | null
           tradie_status_updated_at: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           client_id: string
           client_status?: string | null
           client_status_updated_at?: string | null
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           end_reason?: string | null
           estimated_end_date?: string | null
@@ -3397,13 +3412,13 @@ export type Database = {
           title: string
           tradie_status?: string | null
           tradie_status_updated_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           client_id?: string
           client_status?: string | null
           client_status_updated_at?: string | null
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           end_reason?: string | null
           estimated_end_date?: string | null
@@ -3415,14 +3430,14 @@ export type Database = {
           title?: string
           tradie_status?: string | null
           tradie_status_updated_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
       quote_templates: {
         Row: {
           conditions: string | null
-          created_at: string | null
+          created_at: string
           default_duration: string | null
           id: string
           includes_materials: boolean | null
@@ -3435,11 +3450,11 @@ export type Database = {
           title: string | null
           trade_category: string | null
           tradie_id: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           conditions?: string | null
-          created_at?: string | null
+          created_at?: string
           default_duration?: string | null
           id?: string
           includes_materials?: boolean | null
@@ -3452,11 +3467,11 @@ export type Database = {
           title?: string | null
           trade_category?: string | null
           tradie_id: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           conditions?: string | null
-          created_at?: string | null
+          created_at?: string
           default_duration?: string | null
           id?: string
           includes_materials?: boolean | null
@@ -3469,7 +3484,7 @@ export type Database = {
           title?: string | null
           trade_category?: string | null
           tradie_id?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -3624,7 +3639,7 @@ export type Database = {
           billing_period_end: string
           billing_period_start: string
           client_contact_id: string | null
-          created_at: string | null
+          created_at: string
           dispute_reason: string | null
           disputed_at: string | null
           disputed_by: string | null
@@ -3658,7 +3673,7 @@ export type Database = {
           tradie_responded_at: string | null
           tradie_response: string | null
           transferred_at: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           approval_reminder_sent_at?: string | null
@@ -3670,7 +3685,7 @@ export type Database = {
           billing_period_end: string
           billing_period_start: string
           client_contact_id?: string | null
-          created_at?: string | null
+          created_at?: string
           dispute_reason?: string | null
           disputed_at?: string | null
           disputed_by?: string | null
@@ -3704,7 +3719,7 @@ export type Database = {
           tradie_responded_at?: string | null
           tradie_response?: string | null
           transferred_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           approval_reminder_sent_at?: string | null
@@ -3716,7 +3731,7 @@ export type Database = {
           billing_period_end?: string
           billing_period_start?: string
           client_contact_id?: string | null
-          created_at?: string | null
+          created_at?: string
           dispute_reason?: string | null
           disputed_at?: string | null
           disputed_by?: string | null
@@ -3750,7 +3765,7 @@ export type Database = {
           tradie_responded_at?: string | null
           tradie_response?: string | null
           transferred_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -3825,7 +3840,7 @@ export type Database = {
           client_contact_id: string | null
           client_id: string | null
           consumables_provider: string
-          created_at: string | null
+          created_at: string
           day_of_week: number | null
           description: string | null
           end_date: string | null
@@ -3847,7 +3862,7 @@ export type Database = {
           times_completed: number | null
           trade_category: string
           tradie_id: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           agreed_price?: number | null
@@ -3862,7 +3877,7 @@ export type Database = {
           client_contact_id?: string | null
           client_id?: string | null
           consumables_provider?: string
-          created_at?: string | null
+          created_at?: string
           day_of_week?: number | null
           description?: string | null
           end_date?: string | null
@@ -3884,7 +3899,7 @@ export type Database = {
           times_completed?: number | null
           trade_category: string
           tradie_id?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           agreed_price?: number | null
@@ -3899,7 +3914,7 @@ export type Database = {
           client_contact_id?: string | null
           client_id?: string | null
           consumables_provider?: string
-          created_at?: string | null
+          created_at?: string
           day_of_week?: number | null
           description?: string | null
           end_date?: string | null
@@ -3921,7 +3936,7 @@ export type Database = {
           times_completed?: number | null
           trade_category?: string
           tradie_id?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -3965,7 +3980,7 @@ export type Database = {
         Row: {
           actual_date: string | null
           confirmation_deadline: string | null
-          created_at: string | null
+          created_at: string
           end_time: string | null
           extra_cost: number | null
           extra_hours: number | null
@@ -3982,12 +3997,12 @@ export type Database = {
           supplies_used: Json | null
           supply_cost: number | null
           time_proposal_by: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           actual_date?: string | null
           confirmation_deadline?: string | null
-          created_at?: string | null
+          created_at?: string
           end_time?: string | null
           extra_cost?: number | null
           extra_hours?: number | null
@@ -4004,12 +4019,12 @@ export type Database = {
           supplies_used?: Json | null
           supply_cost?: number | null
           time_proposal_by?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           actual_date?: string | null
           confirmation_deadline?: string | null
-          created_at?: string | null
+          created_at?: string
           end_time?: string | null
           extra_cost?: number | null
           extra_hours?: number | null
@@ -4026,7 +4041,7 @@ export type Database = {
           supplies_used?: Json | null
           supply_cost?: number | null
           time_proposal_by?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -4042,35 +4057,35 @@ export type Database = {
         Row: {
           client_id: string
           comment: string | null
-          created_at: string | null
+          created_at: string
           id: string
           job_id: string | null
           rating: number
           recurring_job_id: string | null
           tradie_id: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           client_id: string
           comment?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           job_id?: string | null
           rating: number
           recurring_job_id?: string | null
           tradie_id: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           client_id?: string
           comment?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           job_id?: string | null
           rating?: number
           recurring_job_id?: string | null
           tradie_id?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -4179,7 +4194,7 @@ export type Database = {
       saved_searches: {
         Row: {
           alert_enabled: boolean | null
-          created_at: string | null
+          created_at: string
           filters: Json
           id: string
           last_alerted_at: string | null
@@ -4188,7 +4203,7 @@ export type Database = {
         }
         Insert: {
           alert_enabled?: boolean | null
-          created_at?: string | null
+          created_at?: string
           filters?: Json
           id?: string
           last_alerted_at?: string | null
@@ -4197,7 +4212,7 @@ export type Database = {
         }
         Update: {
           alert_enabled?: boolean | null
-          created_at?: string | null
+          created_at?: string
           filters?: Json
           id?: string
           last_alerted_at?: string | null
@@ -4219,7 +4234,7 @@ export type Database = {
           address: string
           billing_cycle: string | null
           client_id: string
-          created_at: string | null
+          created_at: string
           description: string | null
           ended_at: string | null
           id: string
@@ -4239,13 +4254,13 @@ export type Database = {
           typical_day: string | null
           typical_frequency: string | null
           typical_time: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           address: string
           billing_cycle?: string | null
           client_id: string
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           ended_at?: string | null
           id?: string
@@ -4265,13 +4280,13 @@ export type Database = {
           typical_day?: string | null
           typical_frequency?: string | null
           typical_time?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           address?: string
           billing_cycle?: string | null
           client_id?: string
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           ended_at?: string | null
           id?: string
@@ -4291,7 +4306,7 @@ export type Database = {
           typical_day?: string | null
           typical_frequency?: string | null
           typical_time?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -4446,7 +4461,7 @@ export type Database = {
       service_invoices: {
         Row: {
           agreement_id: string
-          created_at: string | null
+          created_at: string
           due_date: string | null
           gst_amount: number
           id: string
@@ -4460,12 +4475,12 @@ export type Database = {
           status: string | null
           subtotal: number
           total: number
-          updated_at: string | null
+          updated_at: string
           visit_count: number
         }
         Insert: {
           agreement_id: string
-          created_at?: string | null
+          created_at?: string
           due_date?: string | null
           gst_amount?: number
           id?: string
@@ -4479,12 +4494,12 @@ export type Database = {
           status?: string | null
           subtotal: number
           total: number
-          updated_at?: string | null
+          updated_at?: string
           visit_count?: number
         }
         Update: {
           agreement_id?: string
-          created_at?: string | null
+          created_at?: string
           due_date?: string | null
           gst_amount?: number
           id?: string
@@ -4498,7 +4513,7 @@ export type Database = {
           status?: string | null
           subtotal?: number
           total?: number
-          updated_at?: string | null
+          updated_at?: string
           visit_count?: number
         }
         Relationships: [
@@ -4515,7 +4530,7 @@ export type Database = {
         Row: {
           category_name: string
           client_id: string
-          created_at: string | null
+          created_at: string
           due_date: string
           id: string
           job_id: string
@@ -4526,7 +4541,7 @@ export type Database = {
         Insert: {
           category_name?: string
           client_id: string
-          created_at?: string | null
+          created_at?: string
           due_date: string
           id?: string
           job_id: string
@@ -4537,7 +4552,7 @@ export type Database = {
         Update: {
           category_name?: string
           client_id?: string
-          created_at?: string | null
+          created_at?: string
           due_date?: string
           id?: string
           job_id?: string
@@ -4576,12 +4591,12 @@ export type Database = {
           amount_includes_gst: boolean | null
           completed_at: string | null
           completed_by: string | null
-          created_at: string | null
+          created_at: string
           id: string
           invoice_id: string | null
           notes: string | null
           status: string | null
-          updated_at: string | null
+          updated_at: string
           visit_date: string
           visit_type: string | null
         }
@@ -4591,12 +4606,12 @@ export type Database = {
           amount_includes_gst?: boolean | null
           completed_at?: string | null
           completed_by?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           invoice_id?: string | null
           notes?: string | null
           status?: string | null
-          updated_at?: string | null
+          updated_at?: string
           visit_date: string
           visit_type?: string | null
         }
@@ -4606,12 +4621,12 @@ export type Database = {
           amount_includes_gst?: boolean | null
           completed_at?: string | null
           completed_by?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           invoice_id?: string | null
           notes?: string | null
           status?: string | null
-          updated_at?: string | null
+          updated_at?: string
           visit_date?: string
           visit_type?: string | null
         }
@@ -4723,7 +4738,7 @@ export type Database = {
       }
       standard_rates: {
         Row: {
-          created_at: string | null
+          created_at: string
           description: string | null
           flat_rate: number | null
           id: string
@@ -4732,10 +4747,10 @@ export type Database = {
           price_per_hour: number | null
           service_name: string
           tradie_id: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           flat_rate?: number | null
           id?: string
@@ -4744,10 +4759,10 @@ export type Database = {
           price_per_hour?: number | null
           service_name: string
           tradie_id: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           flat_rate?: number | null
           id?: string
@@ -4756,7 +4771,7 @@ export type Database = {
           price_per_hour?: number | null
           service_name?: string
           tradie_id?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -4770,27 +4785,27 @@ export type Database = {
       }
       stripe_customers: {
         Row: {
-          created_at: string | null
+          created_at: string
           customer_id: string
           deleted_at: string | null
           id: number
-          updated_at: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           customer_id: string
           deleted_at?: string | null
           id?: never
-          updated_at?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           customer_id?: string
           deleted_at?: string | null
           id?: never
-          updated_at?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -4800,7 +4815,7 @@ export type Database = {
           amount_subtotal: number
           amount_total: number
           checkout_session_id: string
-          created_at: string | null
+          created_at: string
           currency: string
           customer_id: string
           deleted_at: string | null
@@ -4808,13 +4823,13 @@ export type Database = {
           payment_intent_id: string
           payment_status: string
           status: Database["public"]["Enums"]["stripe_order_status"]
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           amount_subtotal: number
           amount_total: number
           checkout_session_id: string
-          created_at?: string | null
+          created_at?: string
           currency: string
           customer_id: string
           deleted_at?: string | null
@@ -4822,13 +4837,13 @@ export type Database = {
           payment_intent_id: string
           payment_status: string
           status?: Database["public"]["Enums"]["stripe_order_status"]
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           amount_subtotal?: number
           amount_total?: number
           checkout_session_id?: string
-          created_at?: string | null
+          created_at?: string
           currency?: string
           customer_id?: string
           deleted_at?: string | null
@@ -4836,14 +4851,14 @@ export type Database = {
           payment_intent_id?: string
           payment_status?: string
           status?: Database["public"]["Enums"]["stripe_order_status"]
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
       stripe_subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
-          created_at: string | null
+          created_at: string
           current_period_end: string | null
           current_period_start: string | null
           id: string
@@ -4852,11 +4867,11 @@ export type Database = {
           stripe_customer_id: string
           stripe_price_id: string
           stripe_subscription_id: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           cancel_at_period_end?: boolean | null
-          created_at?: string | null
+          created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
@@ -4865,11 +4880,11 @@ export type Database = {
           stripe_customer_id: string
           stripe_price_id: string
           stripe_subscription_id: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           cancel_at_period_end?: boolean | null
-          created_at?: string | null
+          created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
@@ -4878,7 +4893,7 @@ export type Database = {
           stripe_customer_id?: string
           stripe_price_id?: string
           stripe_subscription_id?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -5001,19 +5016,19 @@ export type Database = {
       }
       trade_categories: {
         Row: {
-          created_at: string | null
+          created_at: string
           default_reminder_months: number
           id: string
           name: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           default_reminder_months?: number
           id?: string
           name: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           default_reminder_months?: number
           id?: string
           name?: string
@@ -5108,7 +5123,7 @@ export type Database = {
       }
       tradie_availability: {
         Row: {
-          created_at: string | null
+          created_at: string
           date: string
           end_time: string
           id: string
@@ -5119,7 +5134,7 @@ export type Database = {
           tradie_id: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           date: string
           end_time: string
           id?: string
@@ -5130,7 +5145,7 @@ export type Database = {
           tradie_id: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           date?: string
           end_time?: string
           id?: string
@@ -5155,7 +5170,7 @@ export type Database = {
           bio: string | null
           business_name: string
           contractor_type: string | null
-          created_at: string | null
+          created_at: string
           default_call_out_fee_cents: number | null
           emergency_available: boolean | null
           hourly_rate: number | null
@@ -5177,7 +5192,7 @@ export type Database = {
           bio?: string | null
           business_name?: string
           contractor_type?: string | null
-          created_at?: string | null
+          created_at?: string
           default_call_out_fee_cents?: number | null
           emergency_available?: boolean | null
           hourly_rate?: number | null
@@ -5199,7 +5214,7 @@ export type Database = {
           bio?: string | null
           business_name?: string
           contractor_type?: string | null
-          created_at?: string | null
+          created_at?: string
           default_call_out_fee_cents?: number | null
           emergency_available?: boolean | null
           hourly_rate?: number | null
