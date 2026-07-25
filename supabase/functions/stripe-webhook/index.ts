@@ -385,7 +385,14 @@ async function handleEvent(event: Stripe.Event) {
   // Handle mandate.updated — BECS mandate revoked by bank or client
   if (event.type === 'mandate.updated') {
     const mandate = event.data.object as Stripe.Mandate;
-    if (mandate.status === 'inactive' || mandate.status === 'revoked' || (mandate as Record<string, unknown>).status === 'revoked') {
+    // Stripe types Mandate.status as 'active' | 'inactive' | 'pending' — there is
+    // no 'revoked'. We test for it anyway: missing a revocation would mean going
+    // on to attempt BECS charges against a cancelled authorisation, which is the
+    // expensive direction to be wrong in. Widening to `string` is an assignment,
+    // not an assertion, so the comparison is legal without a cast — the previous
+    // `as Record<string, unknown>` clause tested the very same thing and is gone.
+    const mandateStatus: string = mandate.status;
+    if (mandateStatus === 'inactive' || mandateStatus === 'revoked') {
       const mandateId = mandate.id;
 
       const { data: saved } = await supabase

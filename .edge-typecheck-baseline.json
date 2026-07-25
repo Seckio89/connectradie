@@ -6,7 +6,6 @@
     "parse-invoice",
     "send-recurring-reminders",
     "stripe-connect-account",
-    "stripe-webhook",
     "verify-payment"
   ]
 }
