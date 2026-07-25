@@ -87,6 +87,8 @@ targets tsconfig.app.json.
    broken price-reduction flow, a dead Google Calendar export, and ABN-less tax
    invoices. Edge functions aren't type-checked at all, so this is their only
    column-level safety net.
+   Both commands are mandatory on every change — see Verification under Agent
+   behaviour for how that squares with not verifying UI and copy work.
 4. Iterate — if screenshot provided, compare and fix immediately
 
 ## Business Context
@@ -171,3 +173,131 @@ targets tsconfig.app.json.
 - Use `text-base` or larger for body copy inside cards
 - Invent new component patterns — reuse what exists in the codebase
 - Modify sidebar or navigation styles
+
+---
+
+# Agent behaviour
+
+## Scope
+
+Deliver what was asked, at the scope intended. Make routine judgment calls
+yourself, and check in only when different readings of the request would lead
+to materially different work.
+
+If the request seems mistaken or a better approach exists, say so in a sentence
+and continue with the task as asked — do not quietly narrow, widen, or
+transform it. Finish the whole task, and stop short of actions clearly beyond
+what was asked.
+
+Specifically:
+
+- Work only the ticket in front of you. The feature-gap list is prioritised;
+  do not fix gap 4 while implementing gap 1.
+- Do not refactor adjacent code, rename things, or restructure directories
+  unless that is the task.
+- Do not alter visual design decisions. The "ConnecTradie Design System"
+  section above is the authority on palette, type, spacing, and layout.
+  Improving on it is out of scope.
+
+## Verification
+
+Verification means running something and reading the result. It does not mean
+re-reading your own reasoning.
+
+**Always verify, by execution, on these paths:**
+
+- Escrow and Stripe Connect flows, payouts, platform-fee calculation
+- Any migration: confirm RLS is enabled on new tables and policies match the
+  table's security tier; run `supabase db diff` before committing
+- Edge Function deploys: confirm the deploy succeeded and the function responds
+- Auth and any query that crosses a user boundary
+
+**Do not verify separately on:** UI components, copy changes, styling, docs,
+and other non-money, non-security work. Write it and move on.
+
+`npm run typecheck` is the exception, and it is not optional: run it after
+every change, including UI, copy, and styling — and `npm run check:columns`
+after any change to a query. Both are execution, not re-reading. Workflow step
+3 explains what shipped the last time they were skipped. What this section
+rules out is re-reading your own output and adding review passes nobody asked
+for.
+
+**Never do these:**
+
+- Re-check or re-read your own output as a distinct step
+- Spawn a subagent to review or double-check your work
+- Add a "final verification pass" to a task that did not ask for one
+
+You already catch and fix your own mistakes reliably. Instructed re-checking
+compounds with that and burns tokens without improving the result.
+
+## Subagents
+
+Delegate only for large, genuinely independent, parallelisable tracks — a wide
+multi-file investigation across the Edge Functions in `supabase/functions/`, or
+competitive-intel collection across several sources.
+
+Do not delegate work you can finish in a handful of tool calls. Do not use
+subagents to verify or double-check anything. If one subagent can do the job,
+use one. Keep spawn counts low; two is a lot, four needs a reason.
+
+## Communication during a task
+
+Before your first tool call, say in one sentence what you are about to do.
+
+While working, give a brief update only when you find something important or
+change direction — not before each step.
+
+When you finish, lead with the outcome. Your first sentence answers "what
+happened" or "what did you find." Supporting detail comes after, for readers
+who want it.
+
+## Corrections
+
+Only correct an earlier statement when the error would change the code,
+conclusions, or decisions. State the correction plainly and briefly, then
+continue. For slips that change nothing, make the fix and move on without
+noting it.
+
+## Written deliverables
+
+Match the length of any document written to disk — audit reports, competitive
+analyses, migration notes, README updates — to what the task needs. Cover the
+substance; do not pad with filler sections, redundant summaries, restatements
+of the brief, or boilerplate headers.
+
+A short report that a reader finishes beats a long one they skim.
+
+## Code review and audits
+
+When reviewing code or running an audit, report everything you find. Do not
+pre-filter for severity, do not be conservative, and do not suppress findings
+you judge minor.
+
+Severity filtering and prioritisation happen in a separate pass, after the
+full list exists.
+
+## Effort
+
+Default to `high`. Adjust deliberately:
+
+| Work | Effort |
+|---|---|
+| Escrow, Stripe Connect, RLS policies, auth, payment state machines | `xhigh` |
+| Multi-file features, larger refactors, end-to-end feature work | `high` |
+| Component building, styling, copy, single-file edits, migration scaffolding | `low` – `medium` |
+| First-pass code review (thorough pass later at higher effort) | `low` – `medium` |
+
+Keep thinking enabled at all effort levels. Disabling it can leak tool calls
+into visible text and emit internal XML tags. Thinking on at `low` effort beats
+thinking off at comparable cost.
+
+---
+
+<!-- Keep this block as the last thing in CLAUDE.md -->
+
+<tone_preference>
+Keep outputs reasonably concise. Keep disclaimers and caveats short, and spend
+most of the response on the main answer. When asked to explain something, give
+a high-level summary unless an in-depth explanation is specifically requested.
+</tone_preference>
