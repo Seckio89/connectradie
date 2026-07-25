@@ -17,6 +17,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import Breadcrumbs from '../components/Breadcrumbs';
 import ConfirmModal from '../components/ConfirmModal';
@@ -65,6 +66,7 @@ interface AbuseReport {
 }
 
 export default function AdminModeration() {
+  const { user } = useAuth();
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [jobs, setJobs] = useState<JobRow[]>([]);
   const [reports, setReports] = useState<AbuseReport[]>([]);
@@ -139,7 +141,13 @@ export default function AdminModeration() {
     const notes = adminNotes[reportId] || '';
     const { error } = await supabase
       .from('abuse_reports')
-      .update({ status: newStatus, admin_notes: notes || null })
+      .update({
+        status: newStatus,
+        admin_notes: notes || null,
+        // These columns existed but were never written — record who actioned it.
+        resolved_at: new Date().toISOString(),
+        resolved_by: user?.id ?? null,
+      })
       .eq('id', reportId);
 
     if (error) {

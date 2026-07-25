@@ -169,14 +169,29 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
       if (projectError) throw projectError;
       setProject(projectData as Project | null);
 
+      // There is NO foreign key between `jobs` and `tradie_details` — the path is
+      // jobs -> profiles -> tradie_details, and PostgREST will not resolve two
+      // hops on its own. Embedding `tradie_details!inner` directly returned 400
+      // PGRST200, which the silent catch below swallowed, so this timeline was
+      // always empty. Go through jobs_tradie_id_fkey, which does exist.
       const { data: jobsData, error: jobsError } = await supabase
         .from('jobs')
-        .select(`id, description, scheduled_time, status, is_delayed, tradie_id, tradie_details:tradie_details!inner(trade_category)`)
+        .select(`id, description, scheduled_time, status, is_delayed, tradie_id, tradie:profiles!jobs_tradie_id_fkey(tradie_details(trade_category))`)
         .eq('project_id', job.project_id)
         .neq('id', job.id)
         .in('status', ['accepted', 'in_progress', 'completed']);
       if (jobsError) throw jobsError;
-      setProjectJobs(jobsData as ProjectJob[] || []);
+
+      // Flatten the two-hop embed back to the shape the render expects.
+      type TradieEmbed = { tradie_details?: { trade_category: string }[] | { trade_category: string } | null } | null;
+      const rows = (jobsData ?? []) as unknown as (Omit<ProjectJob, 'tradie_details'> & { tradie?: TradieEmbed })[];
+      setProjectJobs(
+        rows.map(({ tradie, ...rest }) => {
+          const td = tradie?.tradie_details;
+          const detail = Array.isArray(td) ? td[0] : td;
+          return { ...rest, tradie_details: detail ?? null };
+        }),
+      );
     } catch {
       // silent
     }

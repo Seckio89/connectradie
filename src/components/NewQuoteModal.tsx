@@ -147,6 +147,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
   const [templateName, setTemplateName] = useState('');
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [templateSaved, setTemplateSaved] = useState(false);
+  const [templateError, setTemplateError] = useState<string | null>(null);
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
 
   useEffect(() => {
@@ -168,6 +169,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
   const handleSaveTemplate = async () => {
     if (!templateName.trim()) return;
     setSavingTemplate(true);
+    setTemplateError(null);
     const r = await saveQuoteTemplate(tradieId, {
       name: templateName.trim(),
       title: title.trim() || null,
@@ -184,6 +186,9 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
       setShowSaveTemplate(false);
       setTemplateName('');
       listQuoteTemplates(tradieId).then(setTemplates);
+    } else {
+      // Previously discarded, so a failed save looked identical to no click.
+      setTemplateError(r.error ?? 'Could not save the template.');
     }
   };
 
@@ -461,21 +466,24 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                 <Check className="w-3.5 h-3.5" /> Saved as a template — reuse it on your next quote.
               </p>
             ) : showSaveTemplate ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={templateName}
-                  onChange={(e) => setTemplateName(e.target.value)}
-                  placeholder="Template name, e.g. Standard office clean"
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-                <button
-                  onClick={handleSaveTemplate}
-                  disabled={savingTemplate || !templateName.trim()}
-                  className="px-3 py-2 rounded-lg bg-secondary-600 text-white text-sm font-medium hover:bg-secondary-700 disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
-                >
-                  {savingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookmarkPlus className="w-4 h-4" />} Save
-                </button>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    placeholder="Template name, e.g. Standard office clean"
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                  <button
+                    onClick={handleSaveTemplate}
+                    disabled={savingTemplate || !templateName.trim()}
+                    className="px-3 py-2 rounded-lg bg-secondary-600 text-white text-sm font-medium hover:bg-secondary-700 disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+                  >
+                    {savingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookmarkPlus className="w-4 h-4" />} Save
+                  </button>
+                </div>
+                {templateError && <p className="text-xs text-red-600">{templateError}</p>}
               </div>
             ) : (
               <button

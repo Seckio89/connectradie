@@ -107,7 +107,10 @@ export async function saveQuoteTemplate(tradieId: string, input: SaveTemplateInp
     title: input.title ?? null,
     scope: input.scope ?? null,
     internal_notes: input.internalNotes ?? null,
-    message: input.message ?? null,
+    // quote_templates.message is NOT NULL. Callers pass `message.trim() || null`,
+    // so a template saved with an empty body sent null and hit a 23502 that the
+    // caller then discarded — the save just silently did nothing.
+    message: input.message ?? '',
     price: input.price ?? null,
     property_type: input.propertyType ?? null,
     trade_category: input.tradeCategory ?? null,

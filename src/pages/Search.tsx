@@ -14,7 +14,7 @@ import SEO from '../components/SEO';
 import { recordProfileView, getDailyViewCount, hasEngagement, getRemainingViews, DAILY_VIEW_LIMIT_VALUE, redactName } from '../lib/contactGating';
 import { useToast } from '../hooks/useToast';
 import { saveSearch, getSavedSearches, deleteSavedSearch, toggleSearchAlerts, type SavedSearch, type SearchFilters } from '../lib/savedSearches';
-import { TRADE_OPTIONS } from '../lib/tradeCategories';
+import { TRADE_OPTIONS, TRADE_CATEGORIES } from '../lib/tradeCategories';
 import { TIER_PRICING } from '../lib/subscription';
 import { calculateTradeScore, buildScoringFactors } from '../lib/searchRanking';
 
@@ -79,22 +79,36 @@ export default function Search() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const rawTrade = searchParams.get('trade') || '';
+  // Resolved against TRADE_CATEGORIES, not TRADE_OPTIONS: the latter is built by
+  // `.map(({value,label}) => …)` (tradeCategories.ts), which STRIPS
+  // `subcategories`, so the subcategory pass could never match — searching
+  // "Blocked drains" never resolved to `plumber` and returned nothing.
+  //
+  // Two passes, deliberately. Subcategories must be a FALLBACK, not a competitor:
+  // matching them in the same pass lets an earlier category's subcategory beat a
+  // later category's own name (e.g. "Hot water" would hit plumber's subcategory
+  // before reaching the dedicated hot-water-service category).
   const normalizedTrade = rawTrade
-    ? (TRADE_OPTIONS.find(t => {
+    ? (() => {
         const raw = rawTrade.toLowerCase();
-        const val = t.value.toLowerCase();
-        const lbl = t.label.toLowerCase();
-        // Exact match
-        if (val === raw || lbl === raw) return true;
-        // Contains match
-        if (lbl.includes(raw) || raw.includes(lbl) || val.includes(raw) || raw.includes(val)) return true;
-        // Stem match — strip common suffixes (ing, er, or, s) and compare roots
         const stem = (s: string) => s.replace(/(ing|er|or|ist|tion|s)$/i, '');
-        if (stem(raw) === stem(val) || stem(raw) === stem(lbl)) return true;
-        // Subcategory match
-        if (t.subcategories?.some(s => s.toLowerCase() === raw || s.toLowerCase().includes(raw))) return true;
-        return false;
-      })?.value || rawTrade)
+        const byName = TRADE_CATEGORIES.find(t => {
+          const val = t.value.toLowerCase();
+          const lbl = t.label.toLowerCase();
+          // Exact match
+          if (val === raw || lbl === raw) return true;
+          // Contains match
+          if (lbl.includes(raw) || raw.includes(lbl) || val.includes(raw) || raw.includes(val)) return true;
+          // Stem match — strip common suffixes (ing, er, or, s) and compare roots
+          return stem(raw) === stem(val) || stem(raw) === stem(lbl);
+        });
+        if (byName) return byName.value;
+        // Only now widen to subcategories.
+        const bySub = TRADE_CATEGORIES.find(t =>
+          t.subcategories?.some(s => s.toLowerCase() === raw || s.toLowerCase().includes(raw)),
+        );
+        return bySub?.value || rawTrade;
+      })()
     : '';
   const [tradeFilter, setTradeFilter] = useState(normalizedTrade);
   const [postcodeFilter, setPostcodeFilter] = useState(searchParams.get('postcode') || '');

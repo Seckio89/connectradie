@@ -587,6 +587,10 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
       const { error } = await supabase.from('job_team_assignments').insert({
         job_id: jobId,
         team_member_id: memberId,
+        // NOT NULL with no default, and the subject of the RLS WITH CHECK.
+        // Omitting it failed twice over (23502 then 42501), and the error was
+        // only console.error'd — so assigning a team member silently did nothing.
+        business_owner_id: user.id,
         scheduled_date: data.scheduled_date || null,
         start_time: data.start_time || null,
         end_time: data.end_time || null,
