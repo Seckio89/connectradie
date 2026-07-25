@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import type { Insert } from "../_shared/dbTypes.ts";
 
 /*
   geofence-event — receives native background-geolocation geofence crossings.
@@ -195,9 +196,10 @@ Deno.serve(async (req: Request) => {
               const muted = new Set(
                 (prefs ?? []).filter((p) => p.notify_site_arrival === false).map((p) => p.id),
               );
-              const rows = recipientIds
+              // Annotated so every key is column-checked — see ../_shared/dbTypes.ts.
+              const rows: Insert<"notifications">[] = recipientIds
                 .filter((id) => !muted.has(id))
-                .map((id) => ({
+                .map((id): Insert<"notifications"> => ({
                   user_id: id,
                   type: "site_arrival",
                   title: "Tradie arrived on site",

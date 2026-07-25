@@ -5,7 +5,7 @@ import { Bell, Plus, Loader2, MapPin, ArrowRight, Crown, RefreshCw, Repeat, Tras
 import { supabase } from '../lib/supabase';
 import { isReleaseActioned } from '../lib/paymentRelease';
 import { useAuth } from '../contexts/AuthContext';
-import type { TradieWithDetails, AvailabilitySlot, Job } from '../types/database';
+import type { TradieWithDetails, AvailabilitySlot, Job, Insert } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
 import TradieCard from '../components/TradieCard';
 import ChatDrawer from '../components/ChatDrawer';
@@ -428,7 +428,9 @@ export default function ClientDashboard() {
     if (!user) return;
     try {
       // Create a job from the recurring service
-      const jobData = {
+      // Annotated so every key is column-checked — see the `Insert`/`Update`
+      // note in types/database.ts.
+      const jobData: Insert<'jobs'> = {
         client_id: user.id,
         title: `${job.service_subtype || job.trade_category.replace(/_/g, ' ')} — Ongoing Service`,
         description: `[${job.trade_category}] ${job.description}`,

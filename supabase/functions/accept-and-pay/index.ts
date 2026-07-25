@@ -4,6 +4,7 @@ import Stripe from "npm:stripe@14.21.0";
 import { calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
 import { resolveChargeFee } from "../_shared/feeContext.ts";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
+import type { Insert, Update } from "../_shared/dbTypes.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -343,9 +344,13 @@ Deno.serve(async (req: Request) => {
     if (!alreadyAccepted) {
       // Mark the call-out fee as credited (it was deducted from the charge above).
       const creditFee = quote.site_visit_fee_status === "paid" && Number(quote.call_out_fee_cents) > 0;
+      // Annotated so every key is column-checked — see ../_shared/dbTypes.ts.
+      const quoteUpdate: Update<"quotes"> = creditFee
+        ? { status: "accepted", site_visit_fee_status: "credited" }
+        : { status: "accepted" };
       const { error: quoteUpdateError } = await supabase
         .from("quotes")
-        .update(creditFee ? { status: "accepted", site_visit_fee_status: "credited" } : { status: "accepted" })
+        .update(quoteUpdate)
         .eq("id", quoteId);
 
       if (quoteUpdateError) {
@@ -469,7 +474,9 @@ Deno.serve(async (req: Request) => {
 
           // Notify the declined tradies — best effort
           try {
-            const notifs = siblings.map((s) => ({
+            // The callback-return annotation is the load-bearing one — `.map()`
+            // infers through a naked generic and erases object-literal freshness.
+            const notifs: Insert<"notifications">[] = siblings.map((s): Insert<"notifications"> => ({
               user_id: s.tradie_id as string,
               type: "quote_declined_cascade",
               title: "Quote not selected",

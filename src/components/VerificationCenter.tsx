@@ -17,6 +17,7 @@ import {
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import type { Update } from '../types/database';
 import { createIdentityVerification } from '../lib/stripe';
 import LicenseCard from './LicenseCard';
 import LicenseCertificate from './LicenseCertificate';
@@ -295,7 +296,10 @@ export default function VerificationCenter() {
         documentUrls.push(path);
       }
 
-      const updatePayload: Record<string, unknown> = {
+      // Annotated, not `Record<string, unknown>`: the annotation is what makes
+      // every key below column-checked. See the note on `Update` in
+      // types/database.ts.
+      const updatePayload: Update<'profiles'> = {
         abn_number: abnInput.replace(/\s/g, ''),
         verification_status: 'pending',
         documents_url: documentUrls.length > 0 ? documentUrls : null,

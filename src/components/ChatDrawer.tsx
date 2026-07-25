@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { X, Send, Paperclip, Calendar, Loader2, ChevronLeft, ChevronRight, Clock, MapPin, Image as ImageIcon, User, DollarSign, AlertTriangle, Key, FileText, ShieldAlert, Maximize2, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import type { TradieWithDetails, Message, AvailabilitySlot, BudgetType, JobComplexity } from '../types/database';
+import type { TradieWithDetails, Message, AvailabilitySlot, BudgetType, JobComplexity, Insert } from '../types/database';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { proseInputProps } from '../lib/proseInput';
@@ -177,20 +177,23 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
 
     if (newConversation) {
       const convId = (newConversation as unknown as { id: string }).id;
+      // Annotated so every key is column-checked — see the `Insert`/`Update`
+      // note in types/database.ts.
+      const participantRows: Insert<'conversation_participants'>[] = [
+        {
+          conversation_id: convId,
+          user_id: user.id,
+          is_admin: true,
+        },
+        {
+          conversation_id: convId,
+          user_id: tradie.id,
+          is_admin: true,
+        },
+      ];
       await supabase
         .from('conversation_participants')
-        .insert([
-          {
-            conversation_id: convId,
-            user_id: user.id,
-            is_admin: true,
-          },
-          {
-            conversation_id: convId,
-            user_id: tradie.id,
-            is_admin: true,
-          },
-        ]);
+        .insert(participantRows);
 
       setConversationId(convId);
       setMessages([]);

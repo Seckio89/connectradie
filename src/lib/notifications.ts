@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Job } from '../types/database';
+import type { Job, Insert } from '../types/database';
 import { sendNotification } from './notificationService';
 import { NOTIFICATION_TYPES } from './notificationTypes';
 import { calculateDistance } from '../hooks/useGeolocation';
@@ -213,10 +213,16 @@ export async function notifyTradiesForNewLead(job: Job) {
       // Only notify tradies whose service area covers the job (fail-open).
       const fallbackIds = await filterTradiesByServiceArea(fallbackCandidates, job);
       if (fallbackIds.length === 0) return { notified: 0 };
+      // Annotated so every key is column-checked — see the `Insert`/`Update`
+      // note in types/database.ts.
+      // The callback-return annotation is the load-bearing one — `.map()` infers
+      // through a naked generic and erases object-literal freshness.
+      const fallbackImpressions: Insert<'lead_impressions'>[] =
+        fallbackIds.map((tradieId): Insert<'lead_impressions'> => ({ job_id: job.id, tradie_id: tradieId }));
       await supabase
         .from('lead_impressions')
         .upsert(
-          fallbackIds.map((tradieId) => ({ job_id: job.id, tradie_id: tradieId })),
+          fallbackImpressions,
           { onConflict: 'job_id,tradie_id', ignoreDuplicates: true },
         );
 
@@ -247,10 +253,12 @@ export async function notifyTradiesForNewLead(job: Job) {
 
     // Record impressions so the nudge cron can age them. ON CONFLICT DO NOTHING
     // because re-broadcasting must not reset the original shown_at clock.
+    const impressions: Insert<'lead_impressions'>[] =
+      tradieIds.map((tradieId): Insert<'lead_impressions'> => ({ job_id: job.id, tradie_id: tradieId }));
     await supabase
       .from('lead_impressions')
       .upsert(
-        tradieIds.map((tradieId) => ({ job_id: job.id, tradie_id: tradieId })),
+        impressions,
         { onConflict: 'job_id,tradie_id', ignoreDuplicates: true },
       );
 
@@ -285,10 +293,12 @@ export async function notifyTradiesForUrgentJob(job: Job) {
     // Record impressions so the nudge cron can age the lead and escalate if no quote.
     const recipientIds = tradies.map((t: { id: string }) => t.id).filter((id) => id !== job.client_id);
     if (recipientIds.length > 0) {
+      const urgentImpressions: Insert<'lead_impressions'>[] =
+        recipientIds.map((tradieId): Insert<'lead_impressions'> => ({ job_id: job.id, tradie_id: tradieId }));
       await supabase
         .from('lead_impressions')
         .upsert(
-          recipientIds.map((tradieId) => ({ job_id: job.id, tradie_id: tradieId })),
+          urgentImpressions,
           { onConflict: 'job_id,tradie_id', ignoreDuplicates: true },
         );
     }

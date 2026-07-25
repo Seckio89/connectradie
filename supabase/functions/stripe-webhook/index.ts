@@ -3,6 +3,7 @@ import Stripe from 'npm:stripe@14.21.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
 import { resolveTradieTier } from '../_shared/pricing.ts';
 import { resolveChargeFee } from '../_shared/feeContext.ts';
+import type { Insert, Update } from '../_shared/dbTypes.ts';
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
@@ -526,7 +527,10 @@ async function handleEvent(event: Stripe.Event) {
       .eq('role', 'admin');
 
     if (admins && admins.length > 0) {
-      const adminNotifications = admins.map((admin) => ({
+      // Annotated so every key is column-checked — see ../_shared/dbTypes.ts.
+      // The callback-return annotation is the load-bearing one — `.map()` infers
+      // through a naked generic and erases object-literal freshness.
+      const adminNotifications: Insert<'notifications'>[] = admins.map((admin): Insert<'notifications'> => ({
         user_id: admin.id,
         type: 'DISPUTE_CREATED',
         title: 'New Payment Dispute',
@@ -802,7 +806,8 @@ async function handleEvent(event: Stripe.Event) {
               // Guard on NULL so a redelivered webhook can't clobber a later
               // 'paid_out' (bank stage) — that would re-arm a second bank payout.
               // Stamp transferred_at when funds landed so the bank stage can gate on it.
-              const flagUpdate: Record<string, unknown> = { payout_status: payoutOutcome };
+              // Annotated, not `Record<string, unknown>` — see ../_shared/dbTypes.ts.
+              const flagUpdate: Update<'recurring_invoices'> = { payout_status: payoutOutcome };
               if (payoutOutcome === 'transferred') flagUpdate.transferred_at = new Date().toISOString();
               await supabase
                 .from('recurring_invoices')

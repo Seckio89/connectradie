@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { friendlyError } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { Project, Job } from '../types/database';
+import type { Update } from '../types/database';
 import { autoNameProject } from '../lib/projectAutoName';
 import Toast from './Toast';
 import ConfirmModal from './ConfirmModal';
@@ -243,7 +244,14 @@ export default function ProjectDetailsModal({
 
   const handleUpdateDate = async (field: 'start_date' | 'estimated_end_date', value: string) => {
     try {
-      const updateData: Record<string, unknown> = { [field]: value || null };
+      // Annotated, not `Record<string, unknown>`: the annotation is what makes
+      // every key below column-checked. See the note on `Update` in
+      // types/database.ts. Spelled out per branch rather than `{ [field]: … }`
+      // — a COMPUTED key is not excess-property-checked, so the dynamic form
+      // would have left both column names unverified.
+      const updateData: Update<'projects'> = field === 'start_date'
+        ? { start_date: value || null }
+        : { estimated_end_date: value || null };
       if (field === 'estimated_end_date' && value) {
         updateData.status = 'active';
         updateData.client_status = 'active';
@@ -269,7 +277,8 @@ export default function ProjectDetailsModal({
     const newValue = !isOngoing;
     setIsOngoing(newValue);
     try {
-      const updateData: Record<string, unknown> = { is_ongoing: newValue };
+      // Annotated, not `Record<string, unknown>` — see types/database.ts.
+      const updateData: Update<'projects'> = { is_ongoing: newValue };
       if (newValue) {
         updateData.estimated_end_date = null;
         updateData.status = 'ongoing';
@@ -295,7 +304,8 @@ export default function ProjectDetailsModal({
     if (!endOngoingReason.trim()) return;
     try {
       setLoading(true);
-      const updateData: Record<string, unknown> = {
+      // Annotated, not `Record<string, unknown>` — see types/database.ts.
+      const updateData: Update<'projects'> = {
         is_ongoing: false,
         status: endOngoingStatus,
         client_status: endOngoingStatus,

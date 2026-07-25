@@ -5,7 +5,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/useToast';
 import { supabase } from '../lib/supabase';
-import type { AvailabilitySlot, Job } from '../types/database';
+import type { AvailabilitySlot, Job, Insert, Update } from '../types/database';
 
 /** Format a Date as YYYY-MM-DD in local timezone (avoids UTC shift) */
 function toLocalDateStr(d: Date): string {
@@ -617,9 +617,15 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
     });
     setConflictMenuJob(null);
     try {
+      // Annotated so every key is column-checked — see the `Insert`/`Update`
+      // note in types/database.ts.
+      // The callback-return annotation is the load-bearing one — `.map()` infers
+      // through a naked generic and erases object-literal freshness.
+      const dismissalRows: Insert<'conflict_dismissals'>[] =
+        pairKeys.map((pk): Insert<'conflict_dismissals'> => ({ user_id: user.id, pair_key: pk }));
       await supabase
         .from('conflict_dismissals')
-        .upsert(pairKeys.map((pk) => ({ user_id: user.id, pair_key: pk })), { onConflict: 'user_id,pair_key' });
+        .upsert(dismissalRows, { onConflict: 'user_id,pair_key' });
     } catch (e) {
       console.warn('Failed to persist conflict dismissal (non-fatal):', e);
     }
@@ -702,7 +708,10 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
     const isRecurring = job.id.startsWith('recurring-');
     if (isRecurring) {
       const sessionId = job.id.replace('recurring-', '');
-      const sessionUpdate: Record<string, string | null> = { scheduled_date: newDate };
+      // Annotated, not `Record<string, string | null>`: the annotation is what
+      // makes every key below column-checked. See the note on `Update` in
+      // types/database.ts.
+      const sessionUpdate: Update<'recurring_sessions'> = { scheduled_date: newDate };
       if (newTime) {
         const endT = addMinutesToTime(newTime, newDurationMinutes ?? 120);
         if (isTradie) {
@@ -768,7 +777,9 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
       return;
     }
 
-    const updateData: Record<string, string | null | boolean> = { scheduled_date: newDate };
+    // Annotated, not `Record<string, …>`: the annotation is what makes every key
+    // below column-checked. See the note on `Update` in types/database.ts.
+    const updateData: Update<'jobs'> = { scheduled_date: newDate };
     if (newTime) {
       // Exact clock time wins; keep the slot consistent for calendar grouping and
       // recompute the end time as a block (start + duration).

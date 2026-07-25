@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { Update } from '../types/database';
 import { getAuthHeaders } from './edgeFn';
 import { queueOfflineAction, requestBackgroundSync } from './serviceWorker';
 
@@ -71,10 +72,12 @@ export async function offlineSubmitMilestone(
   milestoneId: string,
   action: 'approved' | 'paid'
 ): Promise<{ online: boolean }> {
-  const updateData =
+  // Annotated so every key is column-checked — see the note on `Update` in
+  // types/database.ts.
+  const updateData: Update<'job_milestones'> =
     action === 'approved'
-      ? { status: 'approved' as const, approved_at: new Date().toISOString() }
-      : { status: 'paid' as const, paid_at: new Date().toISOString() };
+      ? { status: 'approved', approved_at: new Date().toISOString() }
+      : { status: 'paid', paid_at: new Date().toISOString() };
 
   try {
     const { error } = await supabase

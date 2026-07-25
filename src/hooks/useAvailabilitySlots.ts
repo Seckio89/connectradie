@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import type { AvailabilitySlot } from '../types/database';
+import type { AvailabilitySlot, Insert } from '../types/database';
 
 interface UseAvailabilitySlotsOptions {
   userId: string | undefined;
@@ -46,11 +46,15 @@ export function useAvailabilitySlots({ userId, currentDate, onSuccess, onError }
   const addSlot = useCallback(async (slotsToAdd: Array<{ date: string; startTime: string; endTime: string }>) => {
     if (!userId || slotsToAdd.length === 0) return;
     try {
-      const rows = slotsToAdd.map((slot) => ({
+      // Annotated so every key is column-checked — see the `Insert`/`Update`
+      // note in types/database.ts.
+      // The callback-return annotation is the load-bearing one — `.map()` infers
+      // through a naked generic and erases object-literal freshness.
+      const rows: Insert<'availability_slots'>[] = slotsToAdd.map((slot): Insert<'availability_slots'> => ({
         tradie_id: userId,
         start_time: new Date(`${slot.date}T${slot.startTime}`).toISOString(),
         end_time: new Date(`${slot.date}T${slot.endTime}`).toISOString(),
-        status: 'available' as const,
+        status: 'available',
       }));
       const { error } = await supabase.from('availability_slots').insert(rows);
       if (!error) {

@@ -3,7 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import * as Sentry from '@sentry/react';
 import { supabase } from '../lib/supabase';
 import { trackEvent, GA_EVENTS } from '../lib/analytics';
-import type { Profile, TradieDetails } from '../types/database';
+import type { Profile, TradieDetails, Insert, Update } from '../types/database';
 
 interface SignInResult {
   error: Error | null;
@@ -22,8 +22,11 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<SignInResult>;
   signOut: () => Promise<void>;
-  updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>;
-  updateTradieDetails: (updates: Partial<TradieDetails>) => Promise<{ error: Error | null }>;
+  // `Update<'…'>` rather than `Partial<Row>`: these values go straight into a
+  // `.update()`/`.insert()`, so the write-payload type is the one that keeps
+  // every caller's keys column-checked. See types/database.ts.
+  updateProfile: (updates: Update<'profiles'>) => Promise<{ error: Error | null }>;
+  updateTradieDetails: (updates: Update<'tradie_details'>) => Promise<{ error: Error | null }>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -265,7 +268,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTradieDetails(null);
   };
 
-  const updateProfile = async (updates: Partial<Profile>) => {
+  const updateProfile = async (updates: Update<'profiles'>) => {
     if (!user) return { error: new Error('Not authenticated') };
 
     const { error } = await supabase
@@ -280,7 +283,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const updateTradieDetails = async (updates: Partial<TradieDetails>) => {
+  const updateTradieDetails = async (updates: Update<'tradie_details'>) => {
     if (!user) return { error: new Error('Not authenticated') };
 
     const { data: existing } = await supabase
@@ -297,9 +300,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('profile_id', user.id);
       error = result.error;
     } else {
+      // Annotated instead of `as TradieDetails`: the annotation is what makes
+      // every key column-checked, and it makes the cast redundant.
+      const insertPayload: Insert<'tradie_details'> = { ...updates, profile_id: user.id };
       const result = await supabase
         .from('tradie_details')
-        .insert({ ...updates, profile_id: user.id } as TradieDetails);
+        .insert(insertPayload);
       error = result.error;
     }
 

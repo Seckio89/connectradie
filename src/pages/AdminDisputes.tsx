@@ -15,6 +15,7 @@ import {
 import DashboardLayout from '../components/DashboardLayout';
 import Breadcrumbs from '../components/Breadcrumbs';
 import { supabase } from '../lib/supabase';
+import type { Update } from '../types/database';
 import { useAuth } from '../contexts/AuthContext';
 
 type DisputeStatus = 'open' | 'under_review' | 'resolved_client' | 'resolved_tradie' | 'resolved_split' | 'dismissed';
@@ -135,7 +136,10 @@ export default function AdminDisputes() {
     const notes = adminNotes[disputeId] || null;
     const isResolution = newStatus.startsWith('resolved_') || newStatus === 'dismissed';
 
-    const updateData: Record<string, unknown> = {
+    // Annotated, not `Record<string, unknown>`: the annotation is what makes
+    // every key below column-checked. See the note on `Update` in
+    // types/database.ts.
+    const updateData: Update<'disputes'> = {
       status: newStatus,
       admin_notes: notes,
       updated_at: new Date().toISOString(),

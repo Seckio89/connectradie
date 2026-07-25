@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import type { Insert } from "../_shared/dbTypes.ts";
 
 /*
   google-calendar-import — one-time Google Calendar → ConnecTradie import.
@@ -129,7 +130,9 @@ Deno.serve(async (req: Request) => {
 
       for (const cal of calendars) {
         let pageToken: string | undefined;
-        const rows: Record<string, unknown>[] = [];
+        // Annotated, not `Record<string, unknown>[]`: the annotation is what
+        // makes every key column-checked. See ../_shared/dbTypes.ts.
+        const rows: Insert<"imported_calendar_visits">[] = [];
         do {
           const u = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events`);
           u.searchParams.set("timeMin", timeMin);

@@ -16,6 +16,22 @@ type Row<T extends keyof Database['public']['Tables']> =
 export type Insert<T extends keyof Database['public']['Tables']> =
   Database['public']['Tables'][T]['Insert'];
 
+/**
+ * Update payload for a table, straight from the GENERATED types.
+ *
+ * ANNOTATE EVERY payload variable with this or `Insert<'…'>`. It is the only
+ * thing that makes a write payload column-checked: postgrest-js binds the
+ * argument of `.update()` to a naked generic, and inference erases object-literal
+ * freshness, so an inline literal with an unknown column compiles clean. A
+ * variable with an explicit annotation is a plain assignment, so excess-property
+ * checking fires — and a later `payload.bogus = 1` fails too, because the
+ * property does not exist on the annotated type.
+ *
+ * `npm run check:columns` covers inline literals; this covers the rest.
+ */
+export type Update<T extends keyof Database['public']['Tables']> =
+  Database['public']['Tables'][T]['Update'];
+
 export type UserRole = 'client' | 'tradie' | 'admin';
 export type SubscriptionTier = 'free' | 'pro' | 'pro_plus' | 'business';
 export type SlotStatus = 'available' | 'booked' | 'blocked';

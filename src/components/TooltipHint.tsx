@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Lightbulb } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import type { Insert } from '../types/database';
 import { useAuth } from '../contexts/AuthContext';
 
 interface HintRecord {
@@ -93,16 +94,19 @@ export default function TooltipHint({
         .eq('user_id', user.id)
         .eq('hint_key', hintKey);
     } else {
+      // Annotated so every key is column-checked — see the `Insert`/`Update`
+      // note in types/database.ts.
+      const hintRows: Insert<'hint_tracking'>[] = [
+        {
+          user_id: user.id,
+          hint_key: hintKey,
+          dismissed_at: new Date().toISOString(),
+          view_count: 1,
+        },
+      ];
       await supabase
         .from('hint_tracking')
-        .insert([
-          {
-            user_id: user.id,
-            hint_key: hintKey,
-            dismissed_at: new Date().toISOString(),
-            view_count: 1,
-          },
-        ]);
+        .insert(hintRows);
     }
 
     setIsVisible(false);

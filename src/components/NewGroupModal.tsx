@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Users, Loader2, Check, Search, Briefcase } from 'lucide-react';
 import Modal from './Modal';
 import { supabase } from '../lib/supabase';
+import type { Insert } from '../types/database';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NewGroupModal — create a group conversation. Pick participants from the
@@ -117,9 +118,13 @@ export default function NewGroupModal({ isOpen, onClose, currentUserId, onCreate
         .single();
       if (convErr || !conv) throw convErr ?? new Error('create failed');
 
-      const rows = [
+      // Annotated so every key is column-checked — see the `Insert`/`Update`
+      // note in types/database.ts.
+      const rows: Insert<'conversation_participants'>[] = [
         { conversation_id: conv.id, user_id: currentUserId, is_admin: true },
-        ...[...selected].map((uid) => ({ conversation_id: conv.id, user_id: uid, is_admin: false })),
+        // Callback-return annotation: a spread of a `.map()` result is inferred
+        // through a naked generic, which erases object-literal freshness.
+        ...[...selected].map((uid): Insert<'conversation_participants'> => ({ conversation_id: conv.id, user_id: uid, is_admin: false })),
       ];
       const { error: partErr } = await supabase.from('conversation_participants').insert(rows);
       if (partErr) throw partErr;

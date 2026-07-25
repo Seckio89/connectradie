@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
+import type { Update } from "../_shared/dbTypes.ts";
 
 /*
   submit-final-quote — stage 3 of the 3-stage quote flow.
@@ -178,7 +179,9 @@ Deno.serve(async (req: Request) => {
 
     // 5. Build the update. message is optional but recommended when the price
     // is significantly above the estimate range — UI should require it.
-    const updates: Record<string, unknown> = {
+    // Annotated, not `Record<string, unknown>`: the annotation is what makes
+    // every key below column-checked. See ../_shared/dbTypes.ts.
+    const updates: Update<"quotes"> = {
       status: "final_submitted",
       final_price: finalPrice,
       final_valid_until: validUntil,

@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { hasServiceRole } from "../_shared/serviceAuth.ts";
+import type { Insert } from "../_shared/dbTypes.ts";
 
 function requireEnv(key: string): string {
   const val = Deno.env.get(key);
@@ -158,7 +159,8 @@ Deno.serve(async (req: Request) => {
         }
 
         // Notify both parties
-        const notifications = [];
+        // Annotated so every pushed key is column-checked — see ../_shared/dbTypes.ts.
+        const notifications: Insert<"notifications">[] = [];
 
         if (job.tradie_id) {
           notifications.push({
@@ -290,7 +292,10 @@ Deno.serve(async (req: Request) => {
           .in("id", awaitingIds);
         if (!awaitingErr) {
           awaitingTradieConfirmation = awaitingIds.length;
-          const awaitNotifs = sessionsAwaitingTradie.flatMap((s) => {
+          // Annotated so every key is column-checked — see ../_shared/dbTypes.ts.
+          // The callback-return annotation is the load-bearing one — `.flatMap()`
+          // infers through a naked generic and erases object-literal freshness.
+          const awaitNotifs: Insert<"notifications">[] = sessionsAwaitingTradie.flatMap((s): Insert<"notifications">[] => {
             const job = s.recurring_job as { client_id: string; tradie_id: string | null; trade_category: string; service_subtype: string | null } | null;
             if (!job?.tradie_id) return [];
             const tradeLabel = (job.service_subtype || job.trade_category)
@@ -354,14 +359,8 @@ Deno.serve(async (req: Request) => {
           }
 
           // Notify both tradie and client about auto-completed sessions
-          const completionNotifications: {
-            user_id: string;
-            type: string;
-            title: string;
-            message: string;
-            metadata: Record<string, string>;
-            read: boolean;
-          }[] = [];
+          // Annotated so every pushed key is column-checked — see ../_shared/dbTypes.ts.
+          const completionNotifications: Insert<"notifications">[] = [];
 
           for (const s of sessionsToAutoComplete) {
             const job = s.recurring_job as {

@@ -12,7 +12,19 @@
  * excess-property checking. The payload then only has to be *assignable* to the
  * constraint, and assignability permits extra properties. So `.update()` can
  * essentially never flag an unknown column, and no `satisfies` or annotation at
- * the call site changes it (the constraint is applied after inference).
+ * the CALL SITE changes it (the constraint is applied after inference).
+ *
+ * THE ESCAPE HATCH: annotate the payload VARIABLE.
+ *   const p: Update<'jobs'> = { ... };   await supabase.from('jobs').update(p);
+ * That is a plain assignment to an object type, so excess-property checking
+ * fires (TS2353) and a later `p.bogus = 1` fails too (TS2339). Verified
+ * empirically. This scanner counts such payloads as compiler-covered.
+ *
+ * ⚠️ `.map()` / `.flatMap()` erase freshness the SAME way `.update()` does, so
+ * an array payload also needs the annotation on the CALLBACK RETURN:
+ *   rows.map((x): Insert<'t'> => ({ ... }))
+ * The variable annotation alone is NOT enough there — also verified empirically,
+ * and the scanner reports that case rather than counting it.
  *
  * `.select()` is checked only LAZILY — a bad column resolves the row type to
  * `SelectQueryError<...>` and errors just at the point of use, which any cast
@@ -163,7 +175,7 @@ function selectColumns(sel, table, schema, out = []) {
 const schema = parseSchema();
 const findings = [];
 const unverifiable = [];
-let writes = 0, selects = 0;
+let writes = 0, selects = 0, compilerCovered = 0;
 
 for (const root of ROOTS) {
   for (const file of walk(root)) {
@@ -195,9 +207,66 @@ for (const root of ROOTS) {
         for (const k of topLevelKeys(obj)) {
           if (!valid.has(k)) findings.push({ where, table, what: k, kind: `unknown column in .${wm[1]}()` });
         }
-      } else if (/^\s*(?:\.\w+\([^)]*\)\s*)*?\.(update|insert|upsert)\(/s.test(win)) {
-        // Payload is a variable/spread — no static view of the keys.
-        unverifiable.push(`${where}  ${table}  (payload is a variable or spread)`);
+      } else {
+        const vm = /^\s*(?:\.\w+\([^)]*\)\s*)*?\.(update|insert|upsert)\(\s*([A-Za-z_$][\w$]*)\s*[,)]/s.exec(win);
+        if (vm) {
+          // A payload variable is INVISIBLE to this scanner but VISIBLE to the
+          // compiler — provided it carries an explicit annotation. That is the
+          // whole trick: `.update()` binds its argument to a naked generic, which
+          // erases object-literal freshness, but `const p: Update<'t'> = {...}` is
+          // a plain assignment, so excess-property checking fires (TS2353) and a
+          // later `p.bogus = 1` fails too (TS2339).
+          //
+          // ⚠️ `.map()` erases freshness the same way `.update()` does, so an
+          // array payload needs the annotation on the CALLBACK RETURN
+          // (`map((x): Insert<'t'> => ({...}))`) — the variable annotation alone
+          // is NOT enough. Verified empirically. Only count it as covered when
+          // the callback carries it too.
+          // Matches a const/let/var declaration OR a function parameter, in
+          // either quote style (edge functions use double quotes).
+          const Q = `['"]`;
+          const annotated = (name) =>
+            new RegExp(`\\b${name}\\s*:\\s*(Insert|Update)<${Q}${table}${Q}>(\\s*\\[\\])?`).exec(text);
+
+          // `Pick<Row<'t'>, 'a' | 'b'>` is compiler-checked by construction —
+          // `Pick<T, 'bogus'>` is TS2344 — and is STRICTER than Update<> because
+          // it also restricts which columns a caller may write. Count it.
+          const picked = new RegExp(`\\b${vm[2]}\\s*:[^=;\\n]*\\bPick<`).test(text);
+          let decl = picked ? [''] : annotated(vm[2]);
+          // One level of aliasing: `const chunk = rows.slice(...)` inherits its
+          // element type from an annotated `rows`.
+          if (!decl) {
+            const alias = new RegExp(`\\b${vm[2]}\\s*=\\s*([A-Za-z_$][\\w$]*)\\s*\\.`).exec(text);
+            if (alias) decl = annotated(alias[1]);
+          }
+
+          // The callback-return annotation is only REQUIRED when the payload is
+          // built by .map()/.flatMap(), which erase freshness the same way
+          // .update() does. A plain array literal, or .push() onto an annotated
+          // array, is checked without it. Bound the search to THIS statement —
+          // a wide window picks up unrelated `.map(` further down the file.
+          let needsCallbackAnnotation = false;
+          if (decl) {
+            const stmtEnd = text.indexOf(';', decl.index);
+            const init = text.slice(decl.index, stmtEnd === -1 ? decl.index + 600 : stmtEnd);
+            needsCallbackAnnotation = /\.(map|flatMap)\s*\(/.test(init);
+          }
+          // The callback may return a single row OR an array of them (flatMap).
+          const cbAnnotated =
+            !needsCallbackAnnotation ||
+            new RegExp(`\\)\\s*:\\s*(Insert|Update)<${Q}${table}${Q}>(\\s*\\[\\])?\\s*=>`).test(text);
+
+          if (decl && cbAnnotated) compilerCovered++;
+          else if (decl) {
+            unverifiable.push(
+              `${where}  ${table}  (annotated, but built via .map() whose callback return is NOT annotated — freshness erased)`,
+            );
+          } else {
+            unverifiable.push(`${where}  ${table}  (payload variable has no Insert/Update annotation)`);
+          }
+        } else if (/^\s*(?:\.\w+\([^)]*\)\s*)*?\.(update|insert|upsert)\(/s.test(win)) {
+          unverifiable.push(`${where}  ${table}  (payload is a spread or expression)`);
+        }
       }
 
       // ── selects ──
@@ -236,7 +305,8 @@ if (unique.length) {
 }
 
 // A clean run must not imply coverage we don't have.
-console.log(`${unverifiable.length} write payload(s) not statically checkable (variable/spread) — audit by hand.`);
+console.log(`${compilerCovered} payload variable(s) covered by an Insert/Update annotation (the COMPILER checks those).`);
+console.log(`${unverifiable.length} payload(s) still unverifiable — neither this scanner nor the compiler sees them.`);
 if (VERBOSE) for (const u of unverifiable) console.log(`  ${u}`);
 
 if (unique.length) {

@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import type { Json } from '../types/supabase';
+import type { Update } from '../types/database';
 import { getAuthHeaders } from './edgeFn';
 import {
   CHANNEL_SMS,
@@ -182,7 +183,9 @@ async function updateDeliveryTimestamps(
   notificationId: string,
   channelResults: ChannelResult[]
 ): Promise<void> {
-  const updates: Record<string, string> = {};
+  // Annotated, not `Record<string, string>`: the annotation is what makes every
+  // key below column-checked. See the note on `Update` in types/database.ts.
+  const updates: Update<'notifications'> = {};
 
   for (const result of channelResults) {
     if (result.success && result.sentAt) {

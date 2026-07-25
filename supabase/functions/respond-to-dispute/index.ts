@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
+import type { Insert } from "../_shared/dbTypes.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin":
@@ -182,7 +183,10 @@ Deno.serve(async (req: Request) => {
         .eq("role", "admin");
 
       if (admins && admins.length > 0) {
-        const adminNotifications = admins.map((admin: { id: string }) => ({
+        // Annotated so every key is column-checked — see ../_shared/dbTypes.ts.
+        // The callback-return annotation is the load-bearing one — `.map()`
+        // infers through a naked generic and erases object-literal freshness.
+        const adminNotifications: Insert<"notifications">[] = admins.map((admin: { id: string }): Insert<"notifications"> => ({
           user_id: admin.id,
           type: "dispute_escalated",
           title: "Invoice Dispute Escalated",

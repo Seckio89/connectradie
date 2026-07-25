@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { proseInputProps } from '../lib/proseInput';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import type { Message, Conversation, ConversationParticipant, Profile } from '../types/database';
+import type { Message, Conversation, ConversationParticipant, Profile, Insert } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
 import UnlockLeadModal from '../components/UnlockLeadModal';
 import ConversationSettingsModal from '../components/ConversationSettingsModal';
@@ -267,12 +267,15 @@ export default function Messages() {
         if (convError || !conv) throw convError;
 
         // Add both participants
+        // Annotated so every key is column-checked — see the `Insert`/`Update`
+        // note in types/database.ts.
+        const participantRows: Insert<'conversation_participants'>[] = [
+          { conversation_id: conv.id, user_id: user.id },
+          { conversation_id: conv.id, user_id: tradieId },
+        ];
         const { error: partError } = await supabase
           .from('conversation_participants')
-          .insert([
-            { conversation_id: conv.id, user_id: user.id },
-            { conversation_id: conv.id, user_id: tradieId },
-          ]);
+          .insert(participantRows);
 
         if (partError) throw partError;
 

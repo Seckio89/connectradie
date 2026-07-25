@@ -2,6 +2,7 @@ import { proseInputProps } from '../lib/proseInput';
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Eye, EyeOff, Loader2, Shield, Sparkles, Lightbulb, Wrench, AlertTriangle, CheckCircle2, Users, Calendar } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import type { Insert } from '../types/database';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import Modal from '../components/Modal';
@@ -150,7 +151,10 @@ export default function AdminUpdates() {
     if (!title.trim() || !content.trim() || !user) return;
     setSaving(true);
 
-    const payload = {
+    // Annotated so every key is column-checked — see the `Insert`/`Update` note
+    // in types/database.ts. `Insert` (the stricter of the two) because the same
+    // payload feeds both branches below.
+    const payload: Insert<'platform_updates'> = {
       title: title.trim(),
       content: content.trim(),
       type,
@@ -166,9 +170,10 @@ export default function AdminUpdates() {
         .update(payload)
         .eq('id', editingUpdate.id);
     } else {
+      const insertPayload: Insert<'platform_updates'> = { ...payload, created_by: user.id };
       await supabase
         .from('platform_updates')
-        .insert({ ...payload, created_by: user.id });
+        .insert(insertPayload);
     }
 
     setSaving(false);

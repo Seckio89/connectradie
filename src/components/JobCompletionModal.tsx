@@ -3,7 +3,7 @@ import { useState, useRef, useMemo, useEffect } from 'react';
 import { Camera, Loader2, X, Plus, AlertCircle, Check, RefreshCw } from 'lucide-react';
 import Modal from './Modal';
 import { supabase } from '../lib/supabase';
-import type { JobWithRelations } from '../types/database';
+import type { JobWithRelations, Update } from '../types/database';
 import { calculateNextDueDate, createRecurringJob, FREQ_WEEKLY, FREQ_FORTNIGHTLY, insertNotification } from '../lib/recurringJobs';
 import { getFilteredCompletionPrompts } from '../lib/hintToCompletionMap';
 import { emailOffAppClientOnCompletion } from '../lib/offAppCompletionEmail';
@@ -416,7 +416,10 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
       }
 
       // Update job: set status to completed (if not already) + add notes/photo.
-      const updateData: Record<string, unknown> = {
+      // Annotated, not `Record<string, unknown>`: the annotation is what makes
+      // every key below column-checked. See the note on `Update` in
+      // types/database.ts.
+      const updateData: Update<'jobs'> = {
         status: 'completed',
         completed_at: new Date().toISOString(),
         completion_notes: notes.trim(),

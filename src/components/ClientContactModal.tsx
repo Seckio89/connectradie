@@ -10,7 +10,7 @@ import { Loader2, User, Mail, Phone, StickyNote, Landmark, CreditCard } from 'lu
 import Modal from './Modal';
 import AddressAutocomplete from './AddressAutocomplete';
 import { supabase } from '../lib/supabase';
-import type { ClientContact } from '../types/database';
+import type { ClientContact, Insert, Update } from '../types/database';
 
 interface ClientContactModalProps {
   isOpen: boolean;
@@ -59,7 +59,9 @@ export default function ClientContactModal({
     setSaving(true);
     setError('');
 
-    const row = {
+    // Annotated so every key is column-checked — see the `Insert`/`Update`
+    // note in types/database.ts.
+    const row: Insert<'client_contacts'> = {
       owner_id: ownerId,
       full_name: fullName.trim(),
       email: email.trim() || null,
@@ -77,9 +79,10 @@ export default function ClientContactModal({
     try {
       let saveError;
       if (editContact) {
+        const updateRow: Update<'client_contacts'> = { ...row, updated_at: new Date().toISOString() };
         ({ error: saveError } = await supabase
           .from('client_contacts')
-          .update({ ...row, updated_at: new Date().toISOString() })
+          .update(updateRow)
           .eq('id', editContact.id));
       } else {
         ({ error: saveError } = await supabase.from('client_contacts').insert(row));

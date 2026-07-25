@@ -10,7 +10,7 @@ import {
 import FormattedNotes from './FormattedNotes';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import type { Job, Quote } from '../types/database';
+import type { Job, Quote, Update } from '../types/database';
 import { extractSuburb } from '../lib/contactGating';
 import SubmitQuoteModal from './SubmitQuoteModal';
 import ConfirmModal from './ConfirmModal';
@@ -368,7 +368,10 @@ export default function JobManagementModal({
         if (signedData?.signedUrl) thumbnailUrl = signedData.signedUrl;
       }
 
-      const updateData: Record<string, unknown> = {
+      // Annotated, not `Record<string, unknown>`: the annotation is what makes
+      // every key below column-checked. See the note on `Update` in
+      // types/database.ts.
+      const updateData: Update<'jobs'> = {
         status: 'completed',
         completed_at: new Date().toISOString(),
         completion_notes: combinedCompletionNotes.trim(),

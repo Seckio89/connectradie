@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
+import type { Insert, Json } from "../_shared/dbTypes.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -76,7 +77,10 @@ interface Recommendation {
   title: string;
   description: string;
   priority: "high" | "medium" | "low";
-  data_snapshot: Record<string, unknown>;
+  // `Json`, not `Record<string, unknown>` — this lands verbatim in the jsonb
+  // column `platform_recommendations.data_snapshot`, and `unknown` values are
+  // not assignable to the generated column type.
+  data_snapshot: Json;
   action_url: string | null;
 }
 
@@ -735,7 +739,10 @@ Deno.serve(async (req: Request) => {
     // ── Insert new recommendations ───────────────────────────────────
     let inserted = 0;
     if (newRecs.length > 0) {
-      const rows = newRecs.map((r) => ({
+      // Annotated so every key is column-checked — see ../_shared/dbTypes.ts.
+      // The callback-return annotation is the load-bearing one: `.map()` infers
+      // through a naked generic, which erases object-literal freshness.
+      const rows: Insert<"platform_recommendations">[] = newRecs.map((r): Insert<"platform_recommendations"> => ({
         category: r.category,
         title: r.title,
         description: r.description,

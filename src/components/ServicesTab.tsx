@@ -10,7 +10,7 @@ import type { RecurringSession, RecurringJob, CancellationCategory } from '../li
 import CancelServiceModal from './CancelServiceModal';
 import AssignWorkerModal from './AssignWorkerModal';
 import { getActiveAgreements } from '../lib/ongoingServices';
-import type { ServiceAgreement, SupplyItem } from '../types/database';
+import type { ServiceAgreement, SupplyItem, Insert } from '../types/database';
 import RecurringSessionCard from './RecurringSessionCard';
 import LogVisitModal from './LogVisitModal';
 import RecurringInvoiceCard from './RecurringInvoiceCard';
@@ -861,10 +861,13 @@ function QuickChat({ clientId, clientName, userId, recurringJobId }: { clientId:
           .select()
           .single();
         if (!conv) throw new Error('Failed to create conversation');
-        await supabase.from('conversation_participants').insert([
+        // Annotated so every key is column-checked — see the `Insert`/`Update`
+        // note in types/database.ts.
+        const participantRows: Insert<'conversation_participants'>[] = [
           { conversation_id: conv.id, user_id: userId },
           { conversation_id: conv.id, user_id: clientId },
-        ]);
+        ];
+        await supabase.from('conversation_participants').insert(participantRows);
         convId = conv.id;
         setConversationId(convId);
       }

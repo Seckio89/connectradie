@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@14";
+import type { Update } from "../_shared/dbTypes.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -183,7 +184,9 @@ Deno.serve(async (req: Request) => {
       if (payment.status !== mappedStatus) {
         mismatchesFound++;
 
-        const updatePayload: Record<string, unknown> = {
+        // Annotated, not `Record<string, unknown>`: the annotation is what makes
+        // every key below column-checked. See ../_shared/dbTypes.ts.
+        const updatePayload: Update<"payments"> = {
           status: mappedStatus,
         };
         if (mappedStatus === "completed" && payment.status !== "completed") {

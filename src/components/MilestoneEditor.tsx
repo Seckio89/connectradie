@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import type { JobMilestone } from '../types/database';
+import type { JobMilestone, Insert } from '../types/database';
 
 type MilestoneStatus = JobMilestone['status'];
 
@@ -312,7 +312,10 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
       // Upsert milestones
       for (const m of localMilestones) {
         const amountCents = Math.round(parseFloat(m.amount) * 100);
-        const payload = {
+        // Annotated so every key is column-checked — see the `Insert`/`Update`
+        // note in types/database.ts. Used for both the update and the insert,
+        // so `Insert` (the stricter of the two) is the right annotation.
+        const payload: Insert<'job_milestones'> = {
           job_id: jobId,
           title: m.title.trim(),
           amount: amountCents,

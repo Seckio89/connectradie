@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import type { Json } from '../types/supabase';
-import type { Insert, SupplyItem } from '../types/database';
+import type { Insert, Update, SupplyItem } from '../types/database';
 
 // ---------------------------------------------------------------------------
 // Pre-written quote message options per trade (Australian tradie tone)
@@ -1088,7 +1088,9 @@ export async function updateRecurringJob(
   id: string,
   data: Partial<RecurringJobData>,
 ): Promise<void> {
-  const updatePayload: Record<string, unknown> = {};
+  // Annotated, not `Record<string, unknown>`: the annotation is what makes every
+  // key below column-checked. See the note on `Update` in types/database.ts.
+  const updatePayload: Update<'recurring_jobs'> = {};
 
   if (data.trade_category !== undefined) updatePayload.trade_category = data.trade_category;
   if (data.service_subtype !== undefined) updatePayload.service_subtype = data.service_subtype;
@@ -1421,7 +1423,8 @@ export async function cancelRecurringJob(
     // gate a cancellation on them, but persist whatever was supplied so the
     // other party gets context and we can analyse churn later.
     const trimmedReason = options?.reason?.trim() || null;
-    const cancelUpdate: Record<string, unknown> = {
+    // Annotated, not `Record<string, unknown>` — see types/database.ts.
+    const cancelUpdate: Update<'recurring_jobs'> = {
       is_active: false,
       cancelled_at: new Date().toISOString(),
     };
@@ -1461,7 +1464,9 @@ export async function cancelRecurringJob(
     // silently ends nothing). Fall back to the client/tradie/category tuple for
     // on-app agreements created before the link existed.
     try {
-      const endUpdate = { status: 'ended', ended_at: new Date().toISOString() };
+      // Annotated so both `.update()` calls below are column-checked — see
+      // types/database.ts.
+      const endUpdate: Update<'service_agreements'> = { status: 'ended', ended_at: new Date().toISOString() };
       if (job.original_job_id) {
         await supabase
           .from('service_agreements')
@@ -2579,7 +2584,9 @@ export async function generateFutureSessions(
     : (job.next_due_date || new Date().toISOString().split('T')[0]);
 
   let created = 0;
-  const inserts: { recurring_job_id: string; scheduled_date: string; status: string; confirmation_deadline: null }[] = [];
+  // Annotated so every key is column-checked — see the `Insert`/`Update` note in
+  // types/database.ts.
+  const inserts: Insert<'recurring_sessions'>[] = [];
 
   for (let i = 0; i < count; i++) {
     const nextDate = calculateNextDueDate(cursor, job.frequency_months);

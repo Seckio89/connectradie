@@ -4,6 +4,7 @@ import { X, Plus, Trash2, FileText, Calculator } from 'lucide-react';
 import Modal from './Modal';
 import AddressAutocomplete from './AddressAutocomplete';
 import { supabase } from '../lib/supabase';
+import type { Insert } from '../types/database';
 
 interface LineItem {
   description: string;
@@ -191,7 +192,12 @@ export default function CreateInvoiceModal({
 
       if (invoiceError) throw invoiceError;
 
-      const lineItemInserts = validItems.map((item, idx) => ({
+      // Annotated so every key is column-checked — see the `Insert`/`Update`
+      // note in types/database.ts. The annotation on the CALLBACK RETURN is the
+      // load-bearing one: `.map()` infers its element type from a naked generic,
+      // which erases object-literal freshness exactly like `.insert()` does, so
+      // the variable annotation alone would not catch an unknown column.
+      const lineItemInserts: Insert<'invoice_line_items'>[] = validItems.map((item, idx): Insert<'invoice_line_items'> => ({
         invoice_id: invoice.id,
         description: item.description.trim(),
         quantity: parseFloat(item.quantity) || 1,

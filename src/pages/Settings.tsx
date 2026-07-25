@@ -4,6 +4,7 @@ import { User, Loader2, CheckCircle2, Shield, X, Zap, Crown, BadgeCheck, Wrench,
 import { useDarkMode } from '../hooks/useDarkMode';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import type { Update } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
 import SubscriptionModal from '../components/SubscriptionModal';
 import VerificationCenter from '../components/VerificationCenter';
@@ -356,7 +357,10 @@ export default function Settings() {
       return;
     }
 
-    const updates: Record<string, unknown> = {
+    // Annotated, not `Record<string, unknown>`: the annotation is what makes
+    // every key below column-checked. See the note on `Update` in
+    // types/database.ts.
+    const updates: Update<'profiles'> = {
       full_name: fullName,
       phone,
       address,

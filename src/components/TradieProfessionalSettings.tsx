@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import type { Update } from '../types/database';
 import { ALL_TRADES, TOP_10_TRADES, normalizeTradeName, AUSTRALIAN_STATES, getLicensingRequirements, isLicenseRequiredForTrade, type AustralianState } from '../lib/licensingRequirements';
 import SearchableSelect from './SearchableSelect';
 
@@ -183,7 +184,10 @@ export default function TradieProfessionalSettings() {
     setError('');
     setSuccess(false);
 
-    const updates: Record<string, unknown> = {
+    // Annotated, not `Record<string, unknown>`: the annotation is what makes
+    // every key below column-checked. See the note on `Update` in
+    // types/database.ts.
+    const updates: Update<'profiles'> = {
       abn_number: abnNumber || null,
       license_number: !licenseRequired || isApprentice ? null : licenseNumber || null,
       license_state: licenseState || null,

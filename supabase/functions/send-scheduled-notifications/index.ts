@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { hasServiceRole } from "../_shared/serviceAuth.ts";
+import type { Insert } from "../_shared/dbTypes.ts";
 
 function requireEnv(key: string): string {
   const val = Deno.env.get(key);
@@ -95,7 +96,8 @@ Deno.serve(async (req: Request) => {
         const jobTitle = job.title || category || "your job";
         const suburb = (job.location_address as string)?.split(",")[0]?.trim() || "";
 
-        const notifications = [];
+        // Annotated so every pushed key is column-checked — see ../_shared/dbTypes.ts.
+        const notifications: Insert<"notifications">[] = [];
 
         // Notify client
         if (job.client_id) {

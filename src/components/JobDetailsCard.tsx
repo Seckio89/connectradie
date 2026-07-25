@@ -2,7 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { Calendar, MapPin, Clock, User, Mail, Phone, FileText, Image as ImageIcon, DollarSign, AlertTriangle, Zap, Plus, CheckCircle, XCircle, CreditCard, Package, Info, Upload, X, Receipt, Building2, Trash2, Eye, PenLine, Crown, WifiOff, Lock, Circle, Loader2, Car } from 'lucide-react';
 import AccessInstructions from './AccessInstructions';
-import type { Job, Profile, Project } from '../types/database';
+import type { Job, Profile, Project, Insert } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { getAuthHeaders } from '../lib/edgeFn';
 import { offlineSubmitMilestone } from '../lib/offlineSync';
@@ -344,7 +344,9 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
     try {
       const { data: userData } = await supabase.auth.getUser();
       const nextStageNumber = milestones.length > 0 ? Math.max(...milestones.map(m => m.stage_number)) + 1 : 1;
-      const insertData = {
+      // Annotated so every key is column-checked — see the `Insert`/`Update`
+      // note in types/database.ts.
+      const insertData: Insert<'job_milestones'> = {
         job_id: job.id, title: milestoneTitle, amount: totalAmount,
         due_date: milestoneDueDate || null, created_by: userData.user!.id,
         stage_number: nextStageNumber, payment_type: milestonePaymentType,
@@ -357,7 +359,9 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
       if (error) throw error;
       if (isSubType && milestoneData) {
         const validSubs = subcontractors.filter(s => s.business_name.trim() && parseFloat(s.amount) > 0);
-        const subInserts = validSubs.map(s => ({
+        // The callback-return annotation is the load-bearing one — `.map()`
+        // infers through a naked generic and erases object-literal freshness.
+        const subInserts: Insert<'milestone_subcontractors'>[] = validSubs.map((s): Insert<'milestone_subcontractors'> => ({
           milestone_id: milestoneData.id,
           business_name: s.business_name.trim(),
           invoice_number: s.invoice_number.trim() || null,

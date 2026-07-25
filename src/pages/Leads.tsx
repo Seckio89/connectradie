@@ -44,7 +44,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { isReleaseActioned } from '../lib/paymentRelease';
-import type { Job, Quote } from '../types/database';
+import type { Job, Quote, Update } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
 import EmptyState from '../components/EmptyState';
 import VerificationGateModal from '../components/VerificationGateModal';
@@ -1329,7 +1329,10 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
       // and budget aren't included in the update payload, so a tampered form
       // can't bypass the UI lock.
       const dealLocked = !!editJob.tradie_id;
-      const updateData: Record<string, unknown> = {
+      // Annotated, not `Record<string, unknown>`: the annotation is what makes
+      // every key below column-checked. See the note on `Update` in
+      // types/database.ts.
+      const updateData: Update<'jobs'> = {
         description: newDescription,
         location_address: editLocation.trim(),
         images_url: imageUrls.length > 0 ? imageUrls : null,
