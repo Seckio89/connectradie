@@ -27,7 +27,7 @@ export type Database = {
           resolved_at: string | null
           resolved_by: string | null
           severity: string | null
-          status: string | null
+          status: string
         }
         Insert: {
           admin_notes?: string | null
@@ -41,7 +41,7 @@ export type Database = {
           resolved_at?: string | null
           resolved_by?: string | null
           severity?: string | null
-          status?: string | null
+          status?: string
         }
         Update: {
           admin_notes?: string | null
@@ -55,7 +55,7 @@ export type Database = {
           resolved_at?: string | null
           resolved_by?: string | null
           severity?: string | null
-          status?: string | null
+          status?: string
         }
         Relationships: [
           {
@@ -1873,7 +1873,7 @@ export type Database = {
           scheduled_time: string | null
           slot_id: string | null
           start_time: string | null
-          status: string | null
+          status: string
           time_confirmed: boolean
           title: string | null
           tradie_id: string | null
@@ -1932,7 +1932,7 @@ export type Database = {
           scheduled_time?: string | null
           slot_id?: string | null
           start_time?: string | null
-          status?: string | null
+          status?: string
           time_confirmed?: boolean
           title?: string | null
           tradie_id?: string | null
@@ -1991,7 +1991,7 @@ export type Database = {
           scheduled_time?: string | null
           slot_id?: string | null
           start_time?: string | null
-          status?: string | null
+          status?: string
           time_confirmed?: boolean
           title?: string | null
           tradie_id?: string | null
@@ -4246,7 +4246,7 @@ export type Database = {
           rate_per_visit: number
           started_at: string | null
           state: string | null
-          status: string | null
+          status: string
           suburb: string | null
           title: string
           trade_category: string
@@ -4272,7 +4272,7 @@ export type Database = {
           rate_per_visit: number
           started_at?: string | null
           state?: string | null
-          status?: string | null
+          status?: string
           suburb?: string | null
           title: string
           trade_category: string
@@ -4298,7 +4298,7 @@ export type Database = {
           rate_per_visit?: number
           started_at?: string | null
           state?: string | null
-          status?: string | null
+          status?: string
           suburb?: string | null
           title?: string
           trade_category?: string

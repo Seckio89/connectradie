@@ -123,9 +123,9 @@ export function calculateTradeScore(factors: TradieScoringFactors): number {
  * Fields that aren't available yet default to neutral values.
  */
 export function buildScoringFactors(tradie: {
-  abn_verified?: boolean;
-  license_verified?: boolean;
-  verification_status?: string;
+  abn_verified?: boolean | null;
+  license_verified?: boolean | null;
+  verification_status?: string | null;
   bio?: string | null;
   avatar_url?: string | null;
   phone?: string | null;

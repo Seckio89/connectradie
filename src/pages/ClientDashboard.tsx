@@ -78,11 +78,11 @@ export default function ClientDashboard() {
   const [payingIncreaseJobId, setPayingIncreaseJobId] = useState<string | null>(null);
   const [cancelRecurringTarget, setCancelRecurringTarget] = useState<RecurringJob | null>(null);
   const [invoices, setInvoices] = useState<RecurringInvoice[]>([]);
-  const [pendingPayments, setPendingPayments] = useState<{ id: string; amount: number; job_id: string; jobTitle: string; created_at: string }[]>([]);
+  const [pendingPayments, setPendingPayments] = useState<{ id: string; amount: number; job_id: string | null; jobTitle: string; created_at: string }[]>([]);
   const [payingPendingId, setPayingPendingId] = useState<string | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
   const [quoteRequestTradie, setQuoteRequestTradie] = useState<TradieWithDetails | null>(null);
-  const [clientPendingJobs, setClientPendingJobs] = useState<{ id: string; title: string; description: string; location_address: string }[]>([]);
+  const [clientPendingJobs, setClientPendingJobs] = useState<{ id: string; title: string | null; description: string; location_address: string | null }[]>([]);
   const [loadingQuoteJobs, setLoadingQuoteJobs] = useState(false);
   const [sendingInvite, setSendingInvite] = useState(false);
 
@@ -156,7 +156,7 @@ export default function ClientDashboard() {
       }
 
       // Fetch job titles for context
-      const jobIds = [...new Set(pending.map(p => p.job_id).filter(Boolean))];
+      const jobIds = [...new Set(pending.map(p => p.job_id).filter((id): id is string => id !== null))];
       const { data: jobs } = await supabase
         .from('jobs')
         .select('id, title, description')
@@ -165,7 +165,7 @@ export default function ClientDashboard() {
       const jobMap = new Map((jobs || []).map(j => [j.id, j]));
 
       setPendingPayments(pending.map(p => {
-        const job = jobMap.get(p.job_id);
+        const job = p.job_id ? jobMap.get(p.job_id) : undefined;
         const category = job?.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
         return {
           id: p.id,
@@ -238,7 +238,7 @@ export default function ClientDashboard() {
               // Shared predicate (lib/paymentRelease) — "the CLIENT'S part is done",
               // not "the money finished moving". `status === 'completed'` alone only
               // means they paid INTO escrow. Must match the sidebar dot exactly.
-              if (isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null })) {
+              if (p.job_id && isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null })) {
                 released.add(p.job_id);
               }
             }
@@ -257,7 +257,7 @@ export default function ClientDashboard() {
             .in('job_id', completedIds)
             .eq('client_id', user.id);
           if (reviews) {
-            reviewed = new Set(reviews.map(r => r.job_id));
+            reviewed = new Set(reviews.flatMap(r => r.job_id ? [r.job_id] : []));
           }
         }
         // Find jobs linked to recurring services — these belong under "Ongoing Services",
@@ -289,7 +289,7 @@ export default function ClientDashboard() {
         // Include 'completed' because tradies sometimes mark complete before the
         // client has paid the increase; we want the banner to follow the money.
         const activeJobIds = jobs
-          .filter(j => ['funded', 'in_progress', 'completed'].includes(j.status))
+          .filter(j => j.status !== null && ['funded', 'in_progress', 'completed'].includes(j.status))
           .map(j => j.id);
         const increases: Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number }> = {};
         if (activeJobIds.length > 0) {
@@ -329,12 +329,13 @@ export default function ClientDashboard() {
   }, [user]);
 
   const archiveJob = async (jobId: string) => {
+    if (!user) return;
     try {
       const { error } = await supabase
         .from('jobs')
         .update({ archived_at: new Date().toISOString() })
         .eq('id', jobId)
-        .eq('client_id', user?.id);
+        .eq('client_id', user.id);
       if (error) throw error;
       setRecentJobs(prev => prev.filter(j => j.id !== jobId));
       showToast('Job archived');
@@ -389,12 +390,13 @@ export default function ClientDashboard() {
   };
 
   const unarchiveJob = async (jobId: string) => {
+    if (!user) return;
     try {
       const { error } = await supabase
         .from('jobs')
         .update({ archived_at: null })
         .eq('id', jobId)
-        .eq('client_id', user?.id);
+        .eq('client_id', user.id);
       if (error) throw error;
       setRecentJobs(prev => prev.map(j => j.id === jobId ? { ...j, archived_at: null } : j));
       showToast('Job restored');
@@ -426,7 +428,7 @@ export default function ClientDashboard() {
     if (!user) return;
     try {
       // Create a job from the recurring service
-      const jobData: Record<string, unknown> = {
+      const jobData = {
         client_id: user.id,
         title: `${job.service_subtype || job.trade_category.replace(/_/g, ' ')} — Ongoing Service`,
         description: `[${job.trade_category}] ${job.description}`,
@@ -439,12 +441,9 @@ export default function ClientDashboard() {
         is_delayed: false,
         max_quotes: 5,
         recurring_job_id: job.id,
+        // If sending to a specific saved tradie, assign them directly
+        tradie_id: targetMode === 'saved' && job.tradie_id ? job.tradie_id : null,
       };
-
-      // If sending to a specific saved tradie, assign them directly
-      if (targetMode === 'saved' && job.tradie_id) {
-        jobData.tradie_id = job.tradie_id;
-      }
 
       const { data: insertedJob, error: insertError } = await supabase
         .from('jobs')
@@ -454,7 +453,7 @@ export default function ClientDashboard() {
 
       if (insertError || !insertedJob) throw insertError || new Error('Failed to create job');
 
-      const jobId = (insertedJob as Record<string, unknown>).id;
+      const jobId = insertedJob.id;
       const tradeName = job.trade_category.replace(/_/g, ' ');
       const clientName = profile?.full_name || 'A client';
 
@@ -894,7 +893,7 @@ export default function ClientDashboard() {
               <div className="flex items-center gap-1 mb-4 overflow-x-auto -mx-1 px-1 flex-nowrap" style={{ WebkitOverflowScrolling: 'touch' }}>
                 {([
                   { key: 'active' as const, label: 'Active', count: recentJobs.filter(j => !j.archived_at && j.status === 'pending').length },
-                  { key: 'accepted' as const, label: 'Accepted', count: recentJobs.filter(j => !j.archived_at && !recurringJobIds.has(j.id) && (['accepted', 'funded', 'in_progress'].includes(j.status) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))).length },
+                  { key: 'accepted' as const, label: 'Accepted', count: recentJobs.filter(j => !j.archived_at && !recurringJobIds.has(j.id) && ((j.status !== null && ['accepted', 'funded', 'in_progress'].includes(j.status)) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))).length },
                   { key: 'completed' as const, label: 'Completed', count: recentJobs.filter(j => !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)).length },
                 ]).map(tab => {
                   const isActive = jobTab === tab.key;
@@ -936,7 +935,7 @@ export default function ClientDashboard() {
                 : jobTab === 'active'
                   ? !j.archived_at && j.status === 'pending'
                   : jobTab === 'accepted'
-                    ? !j.archived_at && !recurringJobIds.has(j.id) && (['accepted', 'funded', 'in_progress'].includes(j.status) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))
+                    ? !j.archived_at && !recurringJobIds.has(j.id) && ((j.status !== null && ['accepted', 'funded', 'in_progress'].includes(j.status)) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))
                     : !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)
               ).length === 0 && recentJobs.length > 0 ? (
                 <div className="bg-gray-50 rounded-2xl border border-gray-200 p-8 text-center">
@@ -996,7 +995,7 @@ export default function ClientDashboard() {
                         : jobTab === 'active'
                           ? !j.archived_at && j.status === 'pending'
                           : jobTab === 'accepted'
-                            ? !j.archived_at && !recurringJobIds.has(j.id) && (['accepted', 'funded', 'in_progress'].includes(j.status) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))
+                            ? !j.archived_at && !recurringJobIds.has(j.id) && ((j.status !== null && ['accepted', 'funded', 'in_progress'].includes(j.status)) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))
                             : !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)
                       )
                       .slice(0, jobTab === 'completed' ? 200 : 20);
@@ -1280,7 +1279,7 @@ export default function ClientDashboard() {
                                 </div>
                               </div>
                             )}
-                            {pendingIncreases[job.id] && ['funded', 'in_progress', 'completed'].includes(job.status) && (
+                            {pendingIncreases[job.id] && (job.status !== null && ['funded', 'in_progress', 'completed'].includes(job.status)) && (
                               <div className="px-5 py-3 border-t border-amber-200 bg-amber-50">
                                 <div className="flex items-center gap-2 text-sm font-medium text-amber-800 mb-2">
                                   <AlertCircle className="w-4 h-4 flex-shrink-0" />

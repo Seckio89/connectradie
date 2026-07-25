@@ -114,7 +114,8 @@ export default function ConversationSettingsModal({
       .from('conversation_participants')
       .select(`
         *,
-        profile:profiles(*)
+        is_admin,
+        profile:profiles(*, is_admin)
       `)
       .eq('conversation_id', conversationId)
       .is('left_at', null);

@@ -263,7 +263,7 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
   const [sending, setSending] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showInvoicePreview, setShowInvoicePreview] = useState(false);
-  const [previewSessions, setPreviewSessions] = useState<{ id: string; scheduled_date: string; status: string; extra_cost?: number; supply_cost?: number; notes?: string; invoiceStatus?: string }[]>([]);
+  const [previewSessions, setPreviewSessions] = useState<{ id: string; scheduled_date: string; status: string; extra_cost?: number | null; supply_cost?: number | null; notes?: string | null; invoiceStatus?: string | null }[]>([]);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const { showToast } = useToast();
@@ -1801,7 +1801,7 @@ export default function ServicesTab() {
   const jobRows: JobRow[] = useMemo(() => Object.entries(groupedByJob).map(([jobId, sessions]) => {
     const jobInfo = sessions[0]?.recurring_job;
     const fallbackJob = tradieJobs.find(j => j.id === jobId);
-    const fallbackClient = fallbackJob?.client as { full_name?: string; phone?: string; email?: string } | undefined;
+    const fallbackClient = fallbackJob?.client;
 
     const tradeCategory = jobInfo?.trade_category || fallbackJob?.trade_category || '';
     const serviceSubtype = jobInfo?.service_subtype || fallbackJob?.service_subtype || null;

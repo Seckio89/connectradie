@@ -182,7 +182,7 @@ export default function AdminVerifications() {
     setActionLoading(null);
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string | null) => {
     switch (status) {
       case 'pending':
         return <span className="px-3 py-1 bg-warm-100 text-warm-700 rounded-full text-xs font-medium">Pending</span>;

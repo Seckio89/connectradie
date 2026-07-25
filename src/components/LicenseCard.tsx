@@ -1,13 +1,13 @@
 import { Shield, Calendar, MapPin, CheckCircle, AlertCircle, Clock, XCircle, BadgeCheck } from 'lucide-react';
 
-type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected' | 'expired';
-
 interface LicenseCardProps {
   licenseNumber: string;
   licenseState: string;
   expiryDate: string;
   verified: boolean;
-  verificationStatus?: VerificationStatus;
+  /** Raw `profiles.verification_status` (profiles_verification_status_check
+   *  restricts it to unverified|pending|verified|rejected|expired). */
+  verificationStatus?: string | null;
   holderName: string;
   businessName?: string;
   tradeType?: string;

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { AbuseReport } from '../types/database';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -30,18 +31,15 @@ export interface ScrapingDetection {
   severity: 'low' | 'medium' | 'high';
 }
 
-export interface AbuseReport {
-  id: string;
-  reporter_id: string;
-  reported_user_id: string;
-  report_type: string;
-  severity: string;
-  description: string;
-  status: string;
-  resolved_by: string | null;
-  resolution_notes: string | null;
-  created_at: string;
-}
+/**
+ * An abuse_reports row, re-exported from the generated schema types.
+ *
+ * The previous hand-written shape declared a `resolution_notes` column that
+ * does not exist on the table (admin notes live in `admin_notes`), and marked
+ * reported_user_id / description / severity / status non-null when all four are
+ * nullable. Two `as AbuseReport` casts kept that hidden.
+ */
+export type { AbuseReport };
 
 export interface AbuseReportFilters {
   status?: string;
@@ -325,7 +323,7 @@ export async function reportAbuse(
 
   if (error) throw new Error(error.message);
 
-  return data as AbuseReport;
+  return data;
 }
 
 /**
@@ -355,5 +353,5 @@ export async function getAbuseReports(
 
   if (error) throw new Error(error.message);
 
-  return (data as AbuseReport[]) ?? [];
+  return data ?? [];
 }

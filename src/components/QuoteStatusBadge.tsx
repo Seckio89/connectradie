@@ -10,7 +10,6 @@
 // Helpers: src/lib/quoteFlow.ts
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { QuoteStatus } from '../types/database';
 import {
   getQuoteStatusBadgeStyle,
   getQuoteStatusLabel,
@@ -19,7 +18,8 @@ import {
 } from '../lib/quoteFlow';
 
 interface QuoteStatusBadgeProps {
-  status: QuoteStatus;
+  /** Raw `quotes.status`. Constrained to QuoteStatus by quotes_status_check. */
+  status: string;
   /** Who is viewing — changes the wording (action-oriented vs informational). */
   role?: Role;
   /** Optional smaller variant for tight rows (defaults to the standard inline tag size). */

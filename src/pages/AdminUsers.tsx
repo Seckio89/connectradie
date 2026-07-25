@@ -254,7 +254,7 @@ export default function AdminUsers() {
     return true;
   });
 
-  const handleTogglePremium = async (userId: string, currentValue: boolean) => {
+  const handleTogglePremium = async (userId: string, currentValue: boolean | null) => {
     setActionLoading(userId);
     const { error } = await supabase
       .from('profiles')
@@ -387,7 +387,7 @@ export default function AdminUsers() {
     setActionLoading(null);
   };
 
-  const getVerificationBadge = (status: string) => {
+  const getVerificationBadge = (status: string | null) => {
     const map: Record<string, string> = {
       pending: 'bg-warm-100 text-warm-700',
       verified: 'bg-green-100 text-green-700',
@@ -396,7 +396,7 @@ export default function AdminUsers() {
       expired: 'bg-warm-100 text-warm-700',
     };
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[status] || 'bg-gray-100 text-gray-600'}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${(status && map[status]) || 'bg-gray-100 text-gray-600'}`}>
         {status}
       </span>
     );
@@ -415,7 +415,7 @@ export default function AdminUsers() {
     );
   };
 
-  const getSubscriptionBadge = (tier: string) => {
+  const getSubscriptionBadge = (tier: string | null) => {
     if (tier === 'pro') return <span className="px-3 py-1 rounded-full text-xs font-medium bg-warm-100 text-warm-700">Pro</span>;
     if (tier === 'business') return <span className="px-3 py-1 rounded-full text-xs font-medium bg-warm-100 text-warm-700">Business</span>;
     return <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Free</span>;

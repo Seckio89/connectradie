@@ -960,7 +960,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                         ) : (
                                           getStatusBadge(p.status)
                                         )}
-                                        {!isTradie && (p.metadata as Record<string, unknown> | null)?.pending_increase && !isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null }) && (() => {
+                                        {!isTradie && Boolean((p.metadata as Record<string, unknown> | null)?.pending_increase) && !isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null }) && (() => {
                                           const inc = (p.metadata as Record<string, unknown>).pending_increase as Record<string, unknown> | undefined;
                                           const diffCents = Number(inc?.diff_cents || 0);
                                           const diffLabel = diffCents > 0 ? ` $${(diffCents / 100).toFixed(2)}` : '';
@@ -1030,7 +1030,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                     ) : (
                                       getStatusBadge(p.status)
                                     )}
-                                    {!isTradie && (p.metadata as Record<string, unknown> | null)?.pending_increase && !(p.metadata as Record<string, unknown> | null)?.transfer_id && (() => {
+                                    {!isTradie && Boolean((p.metadata as Record<string, unknown> | null)?.pending_increase) && !(p.metadata as Record<string, unknown> | null)?.transfer_id && (() => {
                                       const inc = (p.metadata as Record<string, unknown>).pending_increase as Record<string, unknown> | undefined;
                                       const diffCents = Number(inc?.diff_cents || 0);
                                       const diffLabel = diffCents > 0 ? ` $${(diffCents / 100).toFixed(2)}` : '';

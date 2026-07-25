@@ -33,6 +33,26 @@ function formatCurrency(cents: number): string {
   return `$${(cents / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+/**
+ * A row in the "recent payments" list. Two sources feed it: real `payments`
+ * rows joined to their job, and synthesised rows built from paid
+ * `recurring_invoices`. Nullability matches the underlying columns.
+ */
+type RecentPaymentRow = {
+  id: string;
+  job_id: string;
+  amount: number;
+  status: string;
+  created_at: string;
+  metadata: Record<string, unknown> | null;
+  invoice_number: number | null;
+  invoice_ref: string | null;
+  jobs: { title: string | null; description: string; status: string | null; client_id: string | null } | null;
+  client_name: string;
+  jobStatus: string;
+  isRecurring: boolean;
+};
+
 export default function Payouts() {
   const { session, user } = useAuth();
   const [accountDetails, setAccountDetails] = useState<ConnectAccountDetails | null>(null);
@@ -117,20 +137,7 @@ export default function Payouts() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [customInvoiceTemplate, setCustomInvoiceTemplate] = useState<string | null>(null);
   const templateInputRef = useRef<HTMLInputElement>(null);
-  const [recentPayments, setRecentPayments] = useState<{
-    id: string;
-    job_id: string;
-    amount: number;
-    status: string;
-    created_at: string;
-    metadata: Record<string, unknown> | null;
-    invoice_number: number | null;
-    invoice_ref: string | null;
-    jobs: { title: string; description: string; status: string; client_id: string } | null;
-    client_name: string;
-    jobStatus: string;
-    isRecurring: boolean;
-  }[]>([]);
+  const [recentPayments, setRecentPayments] = useState<RecentPaymentRow[]>([]);
   // Externally-received (bank transfer / cash) invoice payments — kept separate
   // from Stripe so the two can be shown apart and filtered.
   const [externalPayments, setExternalPayments] = useState<{
@@ -233,7 +240,7 @@ export default function Payouts() {
 
       if (jobPayments && jobPayments.length > 0) {
         // Fetch client names
-        const clientIds = [...new Set(jobPayments.map(p => (p.jobs as unknown as { client_id: string }).client_id))];
+        const clientIds = [...new Set(jobPayments.flatMap(p => p.jobs.client_id ? [p.jobs.client_id] : []))];
         const { data: clients } = await supabase
           .from('profiles')
           .select('id, full_name')
@@ -263,8 +270,8 @@ export default function Payouts() {
           }
         }
 
-        const mapped = jobPayments.map(p => {
-          const job = p.jobs as unknown as { title: string; description: string; status: string; client_id: string };
+        const mapped: RecentPaymentRow[] = jobPayments.map(p => {
+          const job = p.jobs;
           const meta = p.metadata as Record<string, unknown> | null;
           const recurringId = meta?.recurring_job_id as string | undefined;
           const isRecurring = !!recurringId || /recurring|ongoing/i.test(job.title || '') || /recurring|ongoing/i.test(job.description || '');
@@ -278,16 +285,16 @@ export default function Payouts() {
 
           return {
             id: p.id,
-            job_id: (p as unknown as { job_id: string }).job_id,
+            job_id: p.job_id ?? '',
             amount: p.amount,
             status: p.status,
             created_at: p.created_at,
             metadata: meta,
-            invoice_number: (p as unknown as { invoice_number: number | null }).invoice_number ?? null,
-            invoice_ref: (p as unknown as { invoice_ref: string | null }).invoice_ref ?? null,
+            invoice_number: p.invoice_number,
+            invoice_ref: p.invoice_ref,
             jobs: job,
-            client_name: clientMap.get(job.client_id) || 'Client',
-            jobStatus: isCancelledRecurring ? 'cancelled' : job.status,
+            client_name: (job.client_id && clientMap.get(job.client_id)) || 'Client',
+            jobStatus: isCancelledRecurring ? 'cancelled' : (job.status ?? 'pending'),
             isRecurring,
           };
         });
@@ -304,7 +311,7 @@ export default function Payouts() {
 
           if (invData && invData.length > 0) {
             // Fetch client names for invoices
-            const invClientIds = [...new Set(invData.map(inv => inv.homeowner_id))];
+            const invClientIds = [...new Set(invData.flatMap(inv => inv.homeowner_id ? [inv.homeowner_id] : []))];
             const { data: invClients } = await supabase
               .from('profiles')
               .select('id, full_name')
@@ -329,7 +336,7 @@ export default function Payouts() {
                 invoice_number: null,
                 invoice_ref: null,
                 jobs: { title: `${label} Invoice`, description: `Service Invoice — ${sessions} session${sessions !== 1 ? 's' : ''} (${period})`, status: 'completed', client_id: inv.homeowner_id },
-                client_name: invClientMap.get(inv.homeowner_id) || 'Client',
+                client_name: (inv.homeowner_id && invClientMap.get(inv.homeowner_id)) || 'Client',
                 jobStatus: 'completed',
                 isRecurring: true,
               };
@@ -354,7 +361,7 @@ export default function Payouts() {
             .order('paid_at', { ascending: false });
 
           if (invData && invData.length > 0) {
-            const invClientIds = [...new Set(invData.map(inv => inv.homeowner_id))];
+            const invClientIds = [...new Set(invData.flatMap(inv => inv.homeowner_id ? [inv.homeowner_id] : []))];
             const { data: invClients } = await supabase
               .from('profiles')
               .select('id, full_name')
@@ -379,7 +386,7 @@ export default function Payouts() {
                 invoice_number: null,
                 invoice_ref: null,
                 jobs: { title: `${label} Invoice`, description: `Service Invoice — ${sessions} session${sessions !== 1 ? 's' : ''} (${period})`, status: 'completed', client_id: inv.homeowner_id },
-                client_name: invClientMap.get(inv.homeowner_id) || 'Client',
+                client_name: (inv.homeowner_id && invClientMap.get(inv.homeowner_id)) || 'Client',
                 jobStatus: 'completed',
                 isRecurring: true,
               };

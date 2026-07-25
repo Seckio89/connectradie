@@ -25,9 +25,9 @@ interface Dispute {
   opened_by: string;
   against_user: string;
   reason: string;
-  description: string;
-  evidence_urls: string[];
-  status: DisputeStatus;
+  description: string | null;
+  evidence_urls: string[] | null;
+  status: string | null;
   admin_notes: string | null;
   resolution: string | null;
   resolved_by: string | null;
@@ -39,7 +39,7 @@ interface Dispute {
   job_description?: string;
 }
 
-const STATUS_LABELS: Record<DisputeStatus, string> = {
+const STATUS_LABELS: Record<string, string | undefined> = {
   open: 'Open',
   under_review: 'Under Review',
   resolved_client: 'Resolved (Client)',
@@ -48,7 +48,7 @@ const STATUS_LABELS: Record<DisputeStatus, string> = {
   dismissed: 'Dismissed',
 };
 
-const STATUS_COLORS: Record<DisputeStatus, string> = {
+const STATUS_COLORS: Record<string, string | undefined> = {
   open: 'bg-yellow-100 text-yellow-800',
   under_review: 'bg-secondary-100 text-secondary-800',
   resolved_client: 'bg-green-100 text-green-800',
@@ -182,7 +182,7 @@ export default function AdminDisputes() {
     if (filter === 'under_review' && d.status !== 'under_review') return false;
     if (
       filter === 'resolved' &&
-      !['resolved_client', 'resolved_tradie', 'resolved_split', 'dismissed'].includes(d.status)
+      !(d.status !== null && ['resolved_client', 'resolved_tradie', 'resolved_split', 'dismissed'].includes(d.status))
     )
       return false;
 
@@ -191,7 +191,7 @@ export default function AdminDisputes() {
       const q = searchQuery.toLowerCase();
       return (
         d.reason.toLowerCase().includes(q) ||
-        d.description.toLowerCase().includes(q) ||
+        (d.description ?? '').toLowerCase().includes(q) ||
         d.opener_name?.toLowerCase().includes(q) ||
         d.against_name?.toLowerCase().includes(q) ||
         d.job_description?.toLowerCase().includes(q)
@@ -201,7 +201,7 @@ export default function AdminDisputes() {
     return true;
   });
 
-  const getStatusIcon = (status: DisputeStatus) => {
+  const getStatusIcon = (status: string | null) => {
     switch (status) {
       case 'open':
         return <AlertTriangle className="w-4 h-4" />;
@@ -301,11 +301,11 @@ export default function AdminDisputes() {
                       <div className="flex items-center gap-3 mb-2">
                         <span
                           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
-                            STATUS_COLORS[dispute.status]
+                            (dispute.status && STATUS_COLORS[dispute.status]) || ''
                           }`}
                         >
                           {getStatusIcon(dispute.status)}
-                          {STATUS_LABELS[dispute.status]}
+                          {(dispute.status && STATUS_LABELS[dispute.status]) || dispute.status}
                         </span>
                         <span className="text-sm font-medium text-gray-900">{dispute.reason}</span>
                       </div>
@@ -381,9 +381,9 @@ export default function AdminDisputes() {
                       )}
 
                       {/* Admin actions */}
-                      {!['resolved_client', 'resolved_tradie', 'resolved_split', 'dismissed'].includes(
+                      {!(dispute.status !== null && ['resolved_client', 'resolved_tradie', 'resolved_split', 'dismissed'].includes(
                         dispute.status
-                      ) && (
+                      )) && (
                         <div className="border-t border-gray-100 pt-5">
                           <h4 className="text-sm font-semibold text-gray-700 mb-3">Admin Actions</h4>
 

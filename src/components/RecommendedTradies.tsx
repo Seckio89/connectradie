@@ -124,7 +124,7 @@ export default function RecommendedTradies() {
             .select('tradie_id, average_rating, total_reviews')
             .in('tradie_id', ids);
           for (const r of ratings ?? []) {
-            ratingMap.set(r.tradie_id, { avg: r.average_rating ?? 0, count: r.total_reviews ?? 0 });
+            if (r.tradie_id) ratingMap.set(r.tradie_id, { avg: r.average_rating ?? 0, count: r.total_reviews ?? 0 });
           }
         }
 

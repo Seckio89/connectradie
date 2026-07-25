@@ -140,7 +140,7 @@ export default function FindTradies() {
       if (cancelled) return;
 
       const ratingsByTradie = new Map<string, { average_rating: number | null; total_reviews: number | null }>(
-        (ratings ?? []).map((r) => [r.tradie_id, { average_rating: r.average_rating, total_reviews: r.total_reviews }]),
+        (ratings ?? []).flatMap((r) => r.tradie_id ? [[r.tradie_id, { average_rating: r.average_rating, total_reviews: r.total_reviews }] as const] : []),
       );
 
       const mapped: PublicTradieSummary[] = data

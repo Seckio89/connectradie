@@ -18,7 +18,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { redactContactInfo } from '../lib/redaction';
-import type { Job, Quote, QuoteWithTradie } from '../types/database';
+import type { Job, QuoteWithTradie } from '../types/database';
 import QuoteStatusBadge from './QuoteStatusBadge';
 import TrustSignals from './TrustSignals';
 import ProBadge from './ProBadge';
@@ -264,7 +264,7 @@ export default function QuoteComparisonView({
     }
 
     const enriched: QuoteWithTradie[] = await Promise.all(
-      (quotesData as unknown as Quote[]).map(async (q) => {
+      quotesData.map(async (q) => {
         const { data: profileData } = await supabase
           .from('profiles')
           .select('full_name, avatar_url, verification_status, verified_trades, declared_trades, is_gst_registered, created_at, is_identity_verified')

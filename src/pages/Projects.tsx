@@ -36,7 +36,7 @@ function extractSuburbFromAddress(address: string | null): string | null {
   return null;
 }
 
-function getStatusDot(status: string) {
+function getStatusDot(status: string | null) {
   switch (status) {
     case 'completed': return 'bg-green-500';
     case 'in_progress': return 'bg-primary-500';
@@ -480,7 +480,7 @@ function ProjectTimeline({ projects, onSelect, formatDate, getStatusColor, getSt
   formatDate: (d: string | null) => string;
   getStatusColor: (s: string) => string;
   getStatusLabel: (s: string) => string;
-  getStatusDot: (s: string) => string;
+  getStatusDot: (s: string | null) => string;
   extractCategory: (d: string) => string | null;
   cleanDescription: (d: string) => string;
 }) {
@@ -540,7 +540,7 @@ function ProjectTimeline({ projects, onSelect, formatDate, getStatusColor, getSt
                               job.status === 'accepted' ? 'bg-warm-50 text-warm-700' :
                               'bg-gray-50 text-gray-600'
                             }`}>
-                              {job.status.replace('_', ' ')}
+                              {(job.status ?? 'pending').replace('_', ' ')}
                             </span>
                           </div>
                           <p className="text-sm text-gray-700 mt-1 truncate">{desc}</p>

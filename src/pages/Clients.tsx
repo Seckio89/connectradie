@@ -84,7 +84,7 @@ export default function Clients() {
       .is('client_id', null);
     const DEAD_STATUSES = ['pending', 'declined', 'cancelled', 'expired'];
     const jobs = offAppJobs ?? [];
-    const activeJobs = jobs.filter((j) => !DEAD_STATUSES.includes(j.status));
+    const activeJobs = jobs.filter((j) => !(j.status !== null && DEAD_STATUSES.includes(j.status)));
     if (activeJobs.length > 0) {
       showToast(
         `${target.full_name.split(' ')[0]} has ${activeJobs.length} active or completed job${activeJobs.length === 1 ? '' : 's'} — finish or cancel ${activeJobs.length === 1 ? 'it' : 'them'} before removing the client.`,

@@ -2,8 +2,11 @@ import { useState, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Job } from '../types/database';
 
+// Shaped by `.select('*, profiles!jobs_client_id_fkey(full_name, email)')`.
+// The joined key is always present and is null when jobs.client_id is null
+// (off-app CRM jobs), so it is required-and-nullable, not optional.
 export interface DashboardJob extends Job {
-  profiles?: {
+  profiles: {
     full_name: string;
     email: string;
   } | null;

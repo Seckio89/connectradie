@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import type { Json } from '../types/supabase';
+import type { Insert, SupplyItem } from '../types/database';
 
 // ---------------------------------------------------------------------------
 // Pre-written quote message options per trade (Australian tradie tone)
@@ -531,7 +532,7 @@ export interface RecurringJobData {
   day_of_week?: number;
   preferred_time?: string;
   billing_cycle?: 'fortnightly' | 'monthly';
-  supplies?: Record<string, unknown>[];
+  supplies?: SupplyItem[];
   consumables_provider?: 'client' | 'tradie_billed';
 }
 
@@ -572,6 +573,15 @@ export type RecurringJob = {
     id: string;
     full_name: string;
     email: string;
+  } | null;
+  // Client profile, joined by getTradieRecurringJobs / getAssignedRecurringJobs
+  // via `client:profiles!recurring_jobs_client_id_fkey(...)`. Was selected but
+  // never declared, so call sites had to cast to read it.
+  client?: {
+    id: string;
+    full_name: string;
+    email: string;
+    phone: string | null;
   } | null;
   // Owning business (populated for the assigned-worker view)
   owner?: {
@@ -781,7 +791,7 @@ export async function createRecurringJob(
     }
   }
 
-  const insertPayload: Record<string, unknown> = {
+  const insertPayload: Insert<'recurring_jobs'> = {
     // For an off-app contact, don't default client_id to the caller — the tradie
     // is not the client; the contact carries the relationship.
     client_id: data.client_contact_id ? (data.client_id ?? null) : (data.client_id ?? user.id),

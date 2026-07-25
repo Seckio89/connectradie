@@ -295,7 +295,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         const awaiting = new Set<string>();
         for (const p of payments || []) {
           if (!isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null })) {
-            awaiting.add(p.job_id);
+            if (p.job_id) awaiting.add(p.job_id);
           }
         }
         total += awaiting.size;

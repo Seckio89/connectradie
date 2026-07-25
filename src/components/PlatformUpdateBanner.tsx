@@ -3,17 +3,30 @@ import { X, Bell, Shield, Sparkles, Lightbulb, Wrench, ChevronRight, CheckCircle
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
+/**
+ * A platform_updates row as this banner consumes it.
+ *
+ * `type` and `priority` are plain strings, matching the generated row.
+ * platform_updates_type_check / _priority_check restrict them to the keys of
+ * typeConfig / priorityConfig below, but PostgREST types text columns as
+ * `string`, so the lookups fall back rather than assume.
+ */
 interface PlatformUpdate {
   id: string;
   title: string;
   content: string;
-  type: 'tos' | 'policy' | 'feature' | 'recommendation' | 'maintenance';
-  priority: 'low' | 'normal' | 'high' | 'critical';
+  type: string;
+  priority: string;
   requires_acknowledgment: boolean;
   published_at: string;
 }
 
-const typeConfig = {
+type TypeConfig = { icon: typeof Shield; label: string; color: string; bg: string; border: string; badge: string };
+
+const FALLBACK_TYPE: TypeConfig = { icon: Wrench, label: 'Update', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200', badge: 'bg-gray-100 text-gray-700' };
+const FALLBACK_PRIORITY = { bar: 'bg-secondary-500' };
+
+const typeConfig: Record<string, TypeConfig | undefined> = {
   tos: { icon: Shield, label: 'Terms of Service', color: 'text-secondary-600', bg: 'bg-secondary-50', border: 'border-secondary-200', badge: 'bg-secondary-100 text-secondary-700' },
   policy: { icon: Shield, label: 'Policy Update', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200', badge: 'bg-purple-100 text-purple-700' },
   feature: { icon: Sparkles, label: 'New Feature', color: 'text-warm-600', bg: 'bg-warm-50', border: 'border-warm-200', badge: 'bg-warm-100 text-warm-700' },
@@ -21,7 +34,7 @@ const typeConfig = {
   maintenance: { icon: Wrench, label: 'Maintenance', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200', badge: 'bg-gray-100 text-gray-700' },
 };
 
-const priorityConfig = {
+const priorityConfig: Record<string, { bar: string } | undefined> = {
   low: { bar: 'bg-gray-300' },
   normal: { bar: 'bg-secondary-500' },
   high: { bar: 'bg-amber-500' },
@@ -64,7 +77,7 @@ export default function PlatformUpdateBanner() {
     );
 
     // Filter: show unread updates, or unacknowledged ones that require acknowledgment
-    const unread = data.filter((u: PlatformUpdate) => {
+    const unread = data.filter((u) => {
       const isRead = readMap.has(u.id);
       const isAcknowledged = readMap.get(u.id) !== null && readMap.get(u.id) !== undefined;
       if (u.requires_acknowledgment && !isAcknowledged) return true;
@@ -72,8 +85,8 @@ export default function PlatformUpdateBanner() {
     });
 
     // Sort: critical first, then high, normal, low
-    const priorityOrder = { critical: 0, high: 1, normal: 2, low: 3 };
-    unread.sort((a: PlatformUpdate, b: PlatformUpdate) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+    const priorityOrder: Record<string, number | undefined> = { critical: 0, high: 1, normal: 2, low: 3 };
+    unread.sort((a, b) => (priorityOrder[a.priority] ?? 99) - (priorityOrder[b.priority] ?? 99));
 
     setUpdates(unread);
   };
@@ -138,8 +151,8 @@ export default function PlatformUpdateBanner() {
   return (
     <div className="mb-4 space-y-2">
       {visibleUpdates.map((update) => {
-        const config = typeConfig[update.type];
-        const pConfig = priorityConfig[update.priority];
+        const config = typeConfig[update.type] ?? FALLBACK_TYPE;
+        const pConfig = priorityConfig[update.priority] ?? FALLBACK_PRIORITY;
         const Icon = config.icon;
         const isExpanded = expandedId === update.id;
         const isDismissed = dismissed.has(update.id);

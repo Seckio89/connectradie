@@ -33,8 +33,8 @@ interface JobInfo {
   id: string;
   description: string;
   location_address: string | null;
-  status: string;
-  client_id: string;
+  status: string | null;
+  client_id: string | null;
   tradie_id: string | null;
   created_at: string;
   tradie?: { full_name: string; avatar_url: string | null; id: string } | null;

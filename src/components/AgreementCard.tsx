@@ -116,7 +116,7 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
           </span>
           <span className="inline-flex items-center gap-1">
             <Calendar className="w-3 h-3" />
-            {freqLabel[agreement.typical_frequency] || agreement.typical_frequency}
+            {(agreement.typical_frequency && freqLabel[agreement.typical_frequency]) || agreement.typical_frequency}
             {agreement.typical_day && ` (${agreement.typical_day})`}
           </span>
         </div>

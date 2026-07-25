@@ -183,11 +183,11 @@ export function isPlatformAdmin(
   return profile?.is_admin === true || profile?.role === 'admin';
 }
 
-export function isPro(subscriptionTier?: string, isPremium?: boolean, isAdmin?: boolean): boolean {
+export function isPro(subscriptionTier?: string | null, isPremium?: boolean | null, isAdmin?: boolean | null): boolean {
   return isAdmin === true || subscriptionTier === 'pro' || subscriptionTier === 'pro_plus' || subscriptionTier === 'business' || isPremium === true;
 }
 
-export function getCurrentTier(subscriptionTier?: string, isPremium?: boolean, isAdmin?: boolean): SubscriptionTier {
+export function getCurrentTier(subscriptionTier?: string | null, isPremium?: boolean | null, isAdmin?: boolean | null): SubscriptionTier {
   if (isAdmin === true) return 'pro';
   if (subscriptionTier === 'pro_plus') return 'pro_plus';
   if (subscriptionTier === 'pro' || subscriptionTier === 'business' || isPremium === true) return 'pro';

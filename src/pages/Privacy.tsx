@@ -9,7 +9,6 @@ export default function Privacy() {
         title="Privacy Policy"
         description="ConnecTradie Privacy Policy. How we collect, use, and protect your personal information in accordance with Australian Privacy Law."
         canonical="/privacy"
-        lastUpdated="July 2026"
       />
 
       {/* Header */}

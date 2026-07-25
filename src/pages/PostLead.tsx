@@ -31,7 +31,7 @@ import SearchableSelect from '../components/SearchableSelect';
 import { notifyTradiesForUrgentJob } from '../lib/notifications';
 import { redactContactInfo, detectContactInfo, getContactWarningMessage } from '../lib/redaction';
 import { getJobHints } from '../lib/jobDescriptionHints';
-import type { Job } from '../types/database';
+import type { Job, Insert } from '../types/database';
 
 const TRADE_CATEGORIES = [
   'Plumber',
@@ -477,7 +477,7 @@ export default function PostLead() {
     if (detection.hasSeparatedDigits) flagReasons.push('separator-split digits (e.g. 0/4/4/2...)');
     if (detection.hasIntentPhrase) flagReasons.push('contact-sharing intent phrase');
 
-    const jobData: Record<string, unknown> = {
+    const jobData: Insert<'jobs'> = {
       client_id: user.id,
       title: redactContactInfo(title.trim()),
       description: `[${category}] ${cleanDescription}`,

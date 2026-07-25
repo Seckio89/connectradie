@@ -499,7 +499,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
       if (job.client_id && job.tradie_id) {
         try {
           // Find the linked recurring_jobs record — first by original_job_id, then by title/tradie match
-          let recurringJob: { id: string; frequency_months: number; is_active: boolean; trade_category: string; service_subtype: string | null; agreed_price: number | null; auto_accept: boolean | null; tradie_id: string | null } | null = null;
+          let recurringJob: { id: string; frequency_months: number; is_active: boolean | null; trade_category: string; service_subtype: string | null; agreed_price: number | null; auto_accept: boolean | null; tradie_id: string | null } | null = null;
 
           // 1. Check by original_job_id link (from Schedule a Service form)
           const { data: linkedJob } = await supabase

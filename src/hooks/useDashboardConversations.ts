@@ -32,7 +32,7 @@ export function useDashboardConversations({ userId, onError }: UseDashboardConve
     try {
       const { data: myParticipations, error } = await supabase
         .from('conversation_participants')
-        .select(`*, conversation:conversations(*)`)
+        .select(`*, is_admin, conversation:conversations(*)`)
         .eq('user_id', userId)
         .is('left_at', null)
         .is('archived_at', null)

@@ -38,7 +38,7 @@ import AvailabilityMiniCalendar from './AvailabilityMiniCalendar';
 interface JobDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  job: (Job & { profiles?: { full_name: string; email: string; phone?: string } }) | null;
+  job: (Job & { profiles?: { full_name: string; email: string; phone?: string | null } | null }) | null;
   onQuote?: (proposedStartDate?: string | null) => void;
   isUnlocked?: boolean;
   onStatusChange?: () => void;
@@ -142,7 +142,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
 
   useEffect(() => {
     if (job) {
-      setLocalStatus(job.status);
+      setLocalStatus(job.status ?? 'pending');
       setStatusLoading(false);
       setSelectedAvailDate(null);
       setFinalPriceError(null);
@@ -347,8 +347,10 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlock
               setRecurringJob({ ...recurringJob, agreed_price: price });
               successMsg += ` The ongoing service rate has also been updated to $${price.toFixed(2)} per visit.`;
 
+              // Off-app jobs (client_contact_id, no client_id) have no
+              // platform account to notify.
               try {
-                await insertNotification(
+                if (job.client_id) await insertNotification(
                   job.client_id,
                   'recurring_price_updated',
                   `Your ongoing service rate has been updated from $${originalPrice.toFixed(2)} to $${price.toFixed(2)} per visit.`,

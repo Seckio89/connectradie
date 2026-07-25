@@ -13,14 +13,27 @@ import BookingRequestModal from '../components/BookingRequestModal';
 import { redactContactInfo, shouldAllowContactSharing, detectCrossMessageDigitBypass } from '../lib/redaction';
 import EmptyState from '../components/EmptyState';
 
+/**
+ * The message list selects only `full_name, email` off the sender, not a whole
+ * profile row — so this is what the join actually yields. Typing it as `Profile`
+ * claimed 60+ columns that were never fetched.
+ */
+type MessageSender = { full_name: string; email: string } | null;
+
+/** A message row plus its embedded sender, as returned by the messages query. */
+type MessageWithSender = Message & { sender_profile: MessageSender };
+
+/** A participant row plus its embedded profile (`.select('*, is_admin, profile:profiles(*, is_admin)')`). */
+type ParticipantWithProfile = ConversationParticipant & { profile: Profile | null };
+
 interface ConversationWithDetails extends Conversation {
-  participants: (ConversationParticipant & { profile?: Profile })[];
-  lastMessage?: Message & { sender_profile?: Profile };
-  messages: (Message & { sender_profile?: Profile })[];
+  participants: ParticipantWithProfile[];
+  lastMessage?: MessageWithSender;
+  messages: MessageWithSender[];
   unreadCount: number;
   isUnlocked?: boolean;
   myParticipation?: ConversationParticipant;
-  otherParticipants: (ConversationParticipant & { profile?: Profile })[];
+  otherParticipants: ParticipantWithProfile[];
   otherParticipantTier?: string | null;
 }
 
@@ -80,7 +93,7 @@ export default function Messages() {
           table: 'messages',
         },
         (payload) => {
-          const newMsg = payload.new as Message & { sender_profile?: Profile };
+          const newMsg = payload.new as MessageWithSender;
           if (newMsg.sender_id === user.id) return;
 
           setConversations(prev => prev.map(conv => {
@@ -365,6 +378,7 @@ export default function Messages() {
       .from('conversation_participants')
       .select(`
         *,
+        is_admin,
         conversation:conversations(*)
       `)
       .eq('user_id', user.id)
@@ -374,13 +388,13 @@ export default function Messages() {
     if (myParticipations) {
       const conversationsWithDetails = await Promise.all(
         myParticipations
-          .filter((mp: ConversationParticipant & { conversation: Conversation; archived_at: string | null }) => showArchivedFilter ? mp.archived_at !== null : mp.archived_at === null)
-          .map(async (mp: ConversationParticipant & { conversation: Conversation; archived_at: string | null }) => {
+          .filter((mp) => showArchivedFilter ? mp.archived_at !== null : mp.archived_at === null)
+          .map(async (mp) => {
             const conv = mp.conversation;
 
             const { data: allParticipants } = await supabase
               .from('conversation_participants')
-              .select('*, profile:profiles(*)')
+              .select('*, is_admin, profile:profiles(*, is_admin)')
               .eq('conversation_id', conv.id)
               .is('left_at', null);
 
@@ -465,8 +479,8 @@ export default function Messages() {
 
     if (conv.unreadCount > 0 && user) {
       const unreadIds = conv.messages
-        .filter((m: Message & { sender_profile?: Profile }) => m.receiver_id === user.id && !m.read_at)
-        .map((m: Message & { sender_profile?: Profile }) => m.id);
+        .filter((m) => m.receiver_id === user.id && !m.read_at)
+        .map((m) => m.id);
 
       if (unreadIds.length > 0) {
         await supabase
@@ -741,7 +755,7 @@ export default function Messages() {
     return date.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
   };
 
-  const shouldShowDateSeparator = (messages: (Message & { sender_profile?: Profile })[], index: number) => {
+  const shouldShowDateSeparator = (messages: MessageWithSender[], index: number) => {
     if (index === 0) return true;
     const current = new Date(messages[index].created_at).toDateString();
     const previous = new Date(messages[index - 1].created_at).toDateString();

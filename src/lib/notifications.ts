@@ -296,17 +296,16 @@ export async function notifyTradiesForUrgentJob(job: Job) {
     let pushCount = 0;
     let smsCount = 0;
 
-    type TradieNotifRow = { id: string; full_name: string | null; push_enabled: boolean; sms_alerts_enabled: boolean; push_subscription: unknown };
-    const pushEligible = tradies.filter((t: TradieNotifRow) => t.push_enabled && t.push_subscription);
+    const pushEligible = tradies.filter((t) => t.push_enabled && t.push_subscription);
     if (pushEligible.length > 0) {
       pushCount = pushEligible.length;
     }
 
-    const smsEligible = tradies.filter((t: TradieNotifRow) => t.sms_alerts_enabled);
+    const smsEligible = tradies.filter((t) => t.sms_alerts_enabled);
     if (smsEligible.length > 0) {
       const smsResult = simulateSmsAlert(
         job,
-        smsEligible.map((t: TradieNotifRow) => t.full_name || 'Unknown Tradie')
+        smsEligible.map((t) => t.full_name || 'Unknown Tradie')
       );
       smsCount = smsResult.recipientCount;
     }

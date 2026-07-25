@@ -201,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!profileExists) {
         // Profile was deleted — check if self-deleted or admin-removed
-        let removal: { reason: string; additional_message: string } | null = null;
+        let removal: { reason: string; additional_message: string | null } | null = null;
         try {
           const { data: removalData } = await supabase
             .from('account_removals')

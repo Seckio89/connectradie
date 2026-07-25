@@ -248,7 +248,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
             month: 'long',
             year: 'numeric'
           })} at ${customStartTime}`,
-          jobId: (jobData as Record<string, string>).id,
+          jobId: jobData.id,
           metadata: {
             client_id: user.id,
             scheduled_time: scheduledTime.toISOString(),

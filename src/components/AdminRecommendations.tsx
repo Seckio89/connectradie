@@ -290,6 +290,8 @@ export default function AdminRecommendations() {
             const priorityConfig = PRIORITY_CONFIG[rec.priority];
             const isExpanded = expandedId === rec.id;
             const parsed = parseDescription(rec.description);
+            // data_snapshot is Json, so this is `unknown` until compared.
+            const confidence = rec.data_snapshot?.confidence;
 
             return (
               <div
@@ -368,18 +370,18 @@ export default function AdminRecommendations() {
                       ))}
 
                       {/* Confidence indicator */}
-                      {rec.data_snapshot?.confidence && (
+                      {Boolean(confidence) && (
                         <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium ${
-                          rec.data_snapshot.confidence === 'high'
+                          confidence === 'high'
                             ? 'bg-emerald-50 text-emerald-700'
-                            : rec.data_snapshot.confidence === 'medium'
+                            : confidence === 'medium'
                               ? 'bg-amber-50 text-amber-700'
                               : 'bg-gray-100 text-gray-500'
                         }`}>
                           <Info className="w-3 h-3" />
-                          {rec.data_snapshot.confidence === 'high'
+                          {confidence === 'high'
                             ? 'High confidence'
-                            : rec.data_snapshot.confidence === 'medium'
+                            : confidence === 'medium'
                               ? 'Medium confidence'
                               : 'Low confidence'}
                         </div>

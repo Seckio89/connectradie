@@ -54,7 +54,7 @@ export const calculateProfileCompletion = (profile: ProfileData | null): number 
 };
 
 export function checkLicenseExpired(
-  verificationStatus?: string,
+  verificationStatus?: string | null,
   licenseExpiry?: string | null
 ): boolean {
   if (verificationStatus === 'expired') return true;

@@ -485,7 +485,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
       }
 
       // Auto-switch to active tab if the deep-linked job is funded/in_progress
-      if (targetJob && ['funded', 'in_progress'].includes(targetJob.status) && filter !== 'active' && filter !== 'all') {
+      if (targetJob && targetJob.status !== null && ['funded', 'in_progress'].includes(targetJob.status) && filter !== 'active' && filter !== 'all') {
         setFilter('active');
       }
 
@@ -565,7 +565,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
   const isAutoArchivable = (job: Job) => {
     if (job.archived_at) return true;
     const finishedStatuses = ['completed', 'cancelled', 'declined'];
-    if (!finishedStatuses.includes(job.status)) return false;
+    if (job.status === null || !finishedStatuses.includes(job.status)) return false;
     const age = (Date.now() - new Date(job.updated_at).getTime()) / 86400000;
     return age >= ARCHIVE_AFTER_DAYS;
   };
@@ -594,7 +594,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
 
       // Fetch accepted quotes for awarded jobs (tradie assigned but not yet funded)
       const awardedJobIds = jobs
-        .filter(j => j.tradie_id && ['pending', 'accepted'].includes(j.status))
+        .filter(j => j.tradie_id && j.status !== null && ['pending', 'accepted'].includes(j.status))
         .map(j => j.id);
 
       if (awardedJobIds.length > 0) {
@@ -662,7 +662,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
             // Shared predicate (lib/paymentRelease) — treats an approved-but-still-
             // settling payout as done, so My Jobs stops showing "Ready to Release"
             // for a job the client already released. Must match the dashboard.
-            if (isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null })) {
+            if (p.job_id && isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null })) {
               releasedSet.add(p.job_id);
             }
           }
@@ -673,14 +673,14 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
         }
 
         if (reviewsResult.data && reviewsResult.data.length > 0) {
-          reviewsResult.data.forEach(r => reviewedSet.add(r.job_id));
+          reviewsResult.data.forEach(r => { if (r.job_id) reviewedSet.add(r.job_id); });
           setReviewedJobIds(reviewedSet);
         }
       }
 
       // Fetch pending price increases for active jobs
       const activeJobIds = jobs
-        .filter(j => ['funded', 'in_progress', 'completed'].includes(j.status))
+        .filter(j => j.status !== null && ['funded', 'in_progress', 'completed'].includes(j.status))
         .map(j => j.id);
 
       if (activeJobIds.length > 0) {
@@ -758,7 +758,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
       } else if (filter === 'in_progress') {
         // Funded or actively being worked on
         setLeads(jobs.filter(j =>
-          ['funded', 'in_progress'].includes(j.status)
+          j.status !== null && ['funded', 'in_progress'].includes(j.status)
           && isActive(j)
         ));
       } else if (filter === 'completed') {
@@ -778,7 +778,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
         // from client to release escrow). Excludes recurring service jobs.
         setLeads(jobs.filter(j =>
           (j.status === 'pending'
-            || ['accepted', 'funded', 'in_progress'].includes(j.status)
+            || (j.status !== null && ['accepted', 'funded', 'in_progress'].includes(j.status))
             || (j.status === 'completed' && !releasedSet.has(j.id)))
           && isActive(j) && isNotRecurring(j)
         ));
@@ -1449,7 +1449,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     const isClientEditable = isClientViewing
       && !lead.deleted_at
       && !lead.archived_at
-      && !['completed', 'cancelled', 'declined'].includes(lead.status);
+      && !(lead.status !== null && ['completed', 'cancelled', 'declined'].includes(lead.status));
 
     return (
       <div key={lead.id} id={`job-${lead.id}`}>
@@ -1886,7 +1886,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             </div>
           )}
 
-          {!isTradie && pendingIncreases[lead.id] && !paidIncreaseJobIds.has(lead.id) && ['funded', 'in_progress', 'completed'].includes(lead.status) && (
+          {!isTradie && pendingIncreases[lead.id] && !paidIncreaseJobIds.has(lead.id) && lead.status !== null && ['funded', 'in_progress', 'completed'].includes(lead.status) && (
             <div className="px-5 py-3 border-t border-amber-200 bg-amber-50">
               <div className="flex items-center gap-2 text-sm font-medium text-amber-800 mb-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -2606,7 +2606,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                           lead.status === 'cancelled' ? 'bg-gray-100 text-gray-600' :
                           lead.status === 'declined' ? 'bg-red-100 text-red-600' :
                           'bg-yellow-100 text-yellow-700'
-                        }`}>{lead.status.replace('_', ' ')}</span>
+                        }`}>{(lead.status ?? 'pending').replace('_', ' ')}</span>
                         {lead.location_address && (
                           <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{lead.location_address}</span>
                         )}
@@ -2782,7 +2782,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       </div>
                     </div>
                   )}
-                  {vl.allows_site_inspection && !['Cleaner', 'Handyman', 'Pest Control', 'Locksmith', 'Appliance Repair', 'Private Chef', 'Event Catering', 'Security Systems', 'Garage Doors'].includes(vlCategory) && (
+                  {vl.allows_site_inspection && !['Cleaner', 'Handyman', 'Pest Control', 'Locksmith', 'Appliance Repair', 'Private Chef', 'Event Catering', 'Security Systems', 'Garage Doors'].includes(vlCategory ?? '') && (
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-secondary-50 rounded-xl">
                       <Eye className="w-4 h-4 text-secondary-500 mt-0.5 flex-shrink-0" />
                       <div>

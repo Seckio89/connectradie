@@ -140,7 +140,7 @@ export default function Search() {
   const navigate = useNavigate();
   const isClient = profile?.role === 'client';
   const [quoteRequestTradie, setQuoteRequestTradie] = useState<TradieWithDetails | null>(null);
-  const [clientPendingJobs, setClientPendingJobs] = useState<{ id: string; title: string; description: string; location_address: string }[]>([]);
+  const [clientPendingJobs, setClientPendingJobs] = useState<{ id: string; title: string | null; description: string; location_address: string | null }[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [sendingInvite, setSendingInvite] = useState(false);
 
@@ -186,11 +186,12 @@ export default function Search() {
     if (data) {
       const map: TradieRatingMap = {};
       const detailMap: TradieRatingDetailMap = {};
-      data.forEach((r: { tradie_id: string; average_rating: number; total_reviews: number }) => {
-        map[r.tradie_id] = r.average_rating;
+      data.forEach((r) => {
+        if (!r.tradie_id) return;
+        map[r.tradie_id] = r.average_rating ?? 0;
         detailMap[r.tradie_id] = {
-          averageRating: r.average_rating,
-          totalReviews: r.total_reviews,
+          averageRating: r.average_rating ?? 0,
+          totalReviews: r.total_reviews ?? 0,
         };
       });
       setTradieRatings(map);

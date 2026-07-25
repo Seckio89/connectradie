@@ -5,7 +5,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/useToast';
 import { supabase } from '../lib/supabase';
-import type { AvailabilitySlot } from '../types/database';
+import type { AvailabilitySlot, Job } from '../types/database';
 
 /** Format a Date as YYYY-MM-DD in local timezone (avoids UTC shift) */
 function toLocalDateStr(d: Date): string {
@@ -13,24 +13,6 @@ function toLocalDateStr(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
-}
-
-interface Job {
-  id: string;
-  description: string;
-  status: string;
-  scheduled_date: string | null;
-  preferred_time_slot: string | null;
-  start_time: string | null;
-  end_time: string | null;
-  time_confirmed: boolean;
-  location_address: string | null;
-  contact_name: string | null;
-  budget_amount: number | null;
-  budget_type: string | null;
-  is_emergency: boolean;
-  project_id: string | null;
-  tradie_id: string | null;
 }
 
 function formatJobTime(timeStr: string | null): string | null {
@@ -118,7 +100,7 @@ function jobShortTitle(job: { description?: string | null }): string {
   return text.length > 60 ? text.slice(0, 60) + '…' : text;
 }
 
-function jobsConflict(a: Job, b: Job): boolean {
+function jobsConflict(a: CalendarJob, b: CalendarJob): boolean {
   if (a.start_time && b.start_time) {
     const aMin = timeToMinutes(a.start_time);
     const bMin = timeToMinutes(b.start_time);
@@ -129,11 +111,24 @@ function jobsConflict(a: Job, b: Job): boolean {
   return !!(a.preferred_time_slot && b.preferred_time_slot && a.preferred_time_slot === b.preferred_time_slot);
 }
 
+/**
+ * The slice of a job the calendar works with. Matches the column list in
+ * jobsQuery, and is also the shape the recurring-session and site-visit
+ * pseudo-jobs are built to — none of which have a real `jobs` row.
+ */
+type CalendarJob = Pick<
+  Job,
+  | 'id' | 'description' | 'status' | 'scheduled_date' | 'preferred_time_slot'
+  | 'start_time' | 'end_time' | 'time_confirmed' | 'location_address'
+  | 'contact_name' | 'budget_amount' | 'budget_type' | 'is_emergency'
+  | 'project_id' | 'tradie_id'
+> & { proposed_start_time?: string | null };
+
 interface TeamMember {
   id: string;
   invite_name: string;
   role: string;
-  trade_specialty: string;
+  trade_specialty: string | null;
   status: string;
 }
 
@@ -149,7 +144,7 @@ interface JobAssignment {
 }
 
 interface CalendarEntry {
-  job: Job;
+  job: CalendarJob;
   assignments: (JobAssignment & { member: TeamMember })[];
   conflictWarning?: boolean;
   conflictsWith?: string[];
@@ -187,7 +182,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 interface AssignTeamModalProps {
-  job: Job;
+  job: CalendarJob;
   teamMembers: TeamMember[];
   existingAssignments: JobAssignment[];
   onClose: () => void;
@@ -355,24 +350,24 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
   const isTradie = profile?.role === 'tradie';
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'week' | 'month'>('week');
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobs, setJobs] = useState<CalendarJob[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [assignments, setAssignments] = useState<JobAssignment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [selectedJob, setSelectedJob] = useState<CalendarJob | null>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [filterMember, setFilterMember] = useState<string>('all');
   const [showOnlyConflicts, setShowOnlyConflicts] = useState(false);
   const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>([]);
   const [dismissedConflicts, setDismissedConflicts] = useState<Set<string>>(new Set());
   const [conflictMenuJob, setConflictMenuJob] = useState<string | null>(null);
-  const [rescheduleJob, setRescheduleJob] = useState<Job | null>(null);
+  const [rescheduleJob, setRescheduleJob] = useState<CalendarJob | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [rescheduleSlot, setRescheduleSlot] = useState('');
   const [rescheduleTime, setRescheduleTime] = useState('');
   const [rescheduleDuration, setRescheduleDuration] = useState(120);
   const [rescheduleSaving, setRescheduleSaving] = useState(false);
-  const [removeConfirmJob, setRemoveConfirmJob] = useState<Job | null>(null);
+  const [removeConfirmJob, setRemoveConfirmJob] = useState<CalendarJob | null>(null);
   const [removeSaving, setRemoveSaving] = useState(false);
   // Bump to force a refetch even when currentDate doesn't change (e.g. moving
   // a job within the same week). Avoids the closure-stale fetch race.
@@ -480,7 +475,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
       const rj = s.recurring_job as { tradie_id: string | null; client_id: string | null } | null;
       return isTradie ? rj?.tradie_id === user.id : rj?.client_id === user.id;
     });
-    const recurringPseudoJobs: Job[] = myRecurringSessions.map((s) => {
+    const recurringPseudoJobs: CalendarJob[] = myRecurringSessions.map((s) => {
       const rj = s.recurring_job as { tradie_id: string | null; trade_category: string; service_subtype: string | null; description: string | null; location: string | null; preferred_time: string | null } | null;
       const ss = s as { start_time: string | null; end_time: string | null; proposed_start_time: string | null };
       // Per-session confirmed start_time wins (the tradie-confirmed override);
@@ -513,15 +508,10 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
         is_emergency: false,
         project_id: null,
         tradie_id: user.id,
-      } as Job;
+      };
     });
 
-    const oneOffJobs: Job[] = (jobsRes.data || []).map((j) => ({
-      ...j,
-      start_time: (j as { start_time?: string | null }).start_time ?? null,
-      end_time: (j as { end_time?: string | null }).end_time ?? null,
-      time_confirmed: (j as { time_confirmed?: boolean }).time_confirmed ?? false,
-    }));
+    const oneOffJobs: CalendarJob[] = jobsRes.data || [];
 
     // Call-out-fee site visits live on quotes; surface them as their own calendar
     // blocks for both the client and the visiting tradie. site_visit_scheduled_at is
@@ -537,7 +527,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
     const { data: visitRows } = await visitQuery;
 
     const toHM = (dt: Date) => `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
-    const siteVisitJobs: Job[] = (visitRows || [])
+    const siteVisitJobs: CalendarJob[] = (visitRows || [])
       .filter((v) => (v as { site_visit_scheduled_at: string | null }).site_visit_scheduled_at)
       .map((v) => {
         const jb = v.job as { title: string | null; description: string | null; location_address: string | null } | null;
@@ -635,7 +625,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
     }
   };
 
-  const performReschedule = async (job: Job, newDate: string, newSlot?: string, newTime?: string, newDurationMinutes?: number) => {
+  const performReschedule = async (job: CalendarJob, newDate: string, newSlot?: string, newTime?: string, newDurationMinutes?: number) => {
     // Site-visit blocks are backed by a quote, not the jobs table. A tradie acting
     // here confirms the window; a client proposes a new one (tradie re-confirms).
     if (job.id.startsWith('sitevisit-')) {
@@ -816,7 +806,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
   //  • Tradie confirms/adjusts the window → the client is told it's confirmed.
   // Unaffected tradies are never notified.
   const notifyReschedule = async (
-    job: Job,
+    job: CalendarJob,
     newDate: string,
     newStart: string | null,
     newEnd: string | null,
@@ -958,7 +948,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
   useEffect(() => {
     setPendingSlot(null);
   }, [selectedJob?.id]);
-  const quickChangeSlot = async (job: Job, newSlot: string) => {
+  const quickChangeSlot = async (job: CalendarJob, newSlot: string) => {
     setSlotSaving(newSlot);
     try {
       if (job.id.startsWith('recurring-')) {
@@ -1004,7 +994,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
   // After save we (a) toast confirmation, (b) jump the calendar to the week/month
   // containing the new date so the moved job is visible immediately.
   const [quickRescheduling, setQuickRescheduling] = useState<string | null>(null);
-  const quickReschedule = async (job: Job, newDate: string) => {
+  const quickReschedule = async (job: CalendarJob, newDate: string) => {
     setQuickRescheduling(newDate);
     try {
       await performReschedule(job, newDate);
@@ -1337,8 +1327,8 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                     {category}
                                   </span>
                                 )}
-                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${STATUS_COLORS[job.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                                  {job.status.replace('_', ' ')}
+                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${(job.status && STATUS_COLORS[job.status]) || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                                  {(job.status ?? 'pending').replace('_', ' ')}
                                 </span>
                                 {job.is_emergency && (
                                   <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-red-100 text-red-700 text-[10px] font-semibold">
@@ -1600,7 +1590,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                   job.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
                                   'bg-amber-100 text-amber-700'
                                 }`}>
-                                  {job.status.replace('_', ' ')}
+                                  {(job.status ?? 'pending').replace('_', ' ')}
                                 </span>
                               </button>
                             );
@@ -1672,7 +1662,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                   ? 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200'
                                   : conflictWarning
                                   ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-                                  : STATUS_COLORS[job.status] || 'bg-gray-100 text-gray-600 border-gray-200'
+                                  : (job.status && STATUS_COLORS[job.status]) || 'bg-gray-100 text-gray-600 border-gray-200'
                               }`}
                             >
                               {job.description}
@@ -1799,7 +1789,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                 job.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
                                 'bg-amber-100 text-amber-700'
                               }`}>
-                                {job.status.replace('_', ' ')}
+                                {(job.status ?? 'pending').replace('_', ' ')}
                               </span>
                             </div>
                           );
@@ -1919,8 +1909,8 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
             <div className="sticky top-0 z-10 bg-white rounded-t-2xl flex items-start justify-between p-6 border-b border-gray-100">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${STATUS_COLORS[selectedJob.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                    {selectedJob.status.replace('_', ' ')}
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${(selectedJob.status && STATUS_COLORS[selectedJob.status]) || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                    {(selectedJob.status ?? 'pending').replace('_', ' ')}
                   </span>
                   {serviceTag && (
                     <span className="px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide bg-secondary-50 text-secondary-700 border border-secondary-200">

@@ -25,6 +25,7 @@ export default function CareerDetailPublic() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!id) { setLoading(false); return; }
     (async () => {
       setLoading(true);
       const { data } = await supabase.from('public_vacancies').select('*').eq('id', id).maybeSingle();

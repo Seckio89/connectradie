@@ -9,7 +9,6 @@ export default function Terms() {
         title="Terms of Service"
         description="ConnecTradie terms of service and user agreement. Read our terms governing the use of Australia's trusted tradie marketplace."
         canonical="/terms"
-        lastUpdated="7 March 2026"
       />
 
       {/* Header */}

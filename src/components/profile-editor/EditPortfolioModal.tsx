@@ -196,7 +196,7 @@ export default function EditPortfolioModal({ isOpen, onClose, images, tradieId, 
                 <div className="flex-1 min-w-0">
                   <input
                     type="text"
-                    value={image.caption}
+                    value={image.caption ?? ''}
                     onChange={(e) => {
                       const updated = localImages.map((img) =>
                         img.id === image.id ? { ...img, caption: e.target.value } : img

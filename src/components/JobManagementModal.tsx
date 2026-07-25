@@ -59,7 +59,7 @@ interface JobData {
   flow_version: number;
   // Off-app CRM contact (set with client_id null for email-only clients).
   client_contact_id?: string | null;
-  profiles?: { full_name: string; email: string; phone?: string } | null;
+  profiles?: { full_name: string; email: string; phone?: string | null } | null;
 }
 
 interface QuoteData {
@@ -860,7 +860,7 @@ export default function JobManagementModal({
                 })()}
 
                 {/* ── Client requested a price reduction ── */}
-                {payment && (payment.metadata as Record<string, unknown> | null)?.pending_reduction && (() => {
+                {payment && Boolean((payment.metadata as Record<string, unknown> | null)?.pending_reduction) && (() => {
                   const pr = (payment.metadata as Record<string, unknown>).pending_reduction as
                     | { proposed_amount_cents?: number; original_amount_cents?: number; diff_cents?: number; reason?: string | null }
                     | undefined;

@@ -194,7 +194,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
       setJobs(allJobs);
     } else if (filter === 'active') {
       // Active = accepted + funded + in_progress (merged)
-      const active = allJobs.filter(j => ['accepted', 'funded', 'in_progress'].includes(j.status));
+      const active = allJobs.filter(j => j.status !== null && ['accepted', 'funded', 'in_progress'].includes(j.status));
       // Sort: today/past jobs first (ready to complete), then future by date
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -341,7 +341,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
             if (payments) {
               const paid = new Set<string>();
               for (const p of payments) {
-                if (isReleaseActioned({ metadata: p.metadata as Record<string, unknown> | null })) {
+                if (p.job_id && isReleaseActioned({ metadata: p.metadata as Record<string, unknown> | null })) {
                   paid.add(p.job_id);
                 }
               }
@@ -376,7 +376,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
 
         // Fetch tradie's own quotes for these jobs
         if (isTradie) {
-          const pendingJobIds = filteredJobs.filter(j => ['pending', 'funded', 'in_progress'].includes(j.status)).map(j => j.id);
+          const pendingJobIds = filteredJobs.filter(j => j.status !== null && ['pending', 'funded', 'in_progress'].includes(j.status)).map(j => j.id);
           if (pendingJobIds.length > 0) {
             try {
               const { data: quotes, error: quotesError } = await supabase
@@ -401,6 +401,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
         // Compute counts from fetched data
         const counts: Record<string, number> = {};
         for (const j of filteredJobs) {
+          if (j.status === null) continue;
           // Merge accepted + funded + in_progress into 'active'
           if (['accepted', 'funded', 'in_progress'].includes(j.status)) {
             counts.active = (counts.active || 0) + 1;
@@ -419,7 +420,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
 
   // Job counts are now computed within fetchJobs to avoid extra DB queries
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | null) => {
     switch (status) {
       case 'completed':
         return 'bg-green-100 text-green-700 border-green-200';
@@ -459,39 +460,36 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
 
     setActionLoading(job.id);
 
-    // Normalize profiles to undefined if null
-    const normalizedJob = { ...job, profiles: job.profiles ?? undefined };
-
-    const result = await offlineAcceptJob(normalizedJob.id, user.id);
+    const result = await offlineAcceptJob(job.id, user.id);
 
     if (result.online) {
-      if (normalizedJob.slot_id) {
+      if (job.slot_id) {
         await supabase
           .from('availability_slots')
           .update({ status: 'booked' })
-          .eq('id', normalizedJob.slot_id);
+          .eq('id', job.slot_id);
       }
-      if (normalizedJob.project_id) {
-        autoNameProject(normalizedJob.project_id, {
-          description: normalizedJob.description,
-          location_address: normalizedJob.location_address,
+      if (job.project_id) {
+        autoNameProject(job.project_id, {
+          description: job.description,
+          location_address: job.location_address,
         });
       }
 
       // Notify client that their job was accepted
-      if (normalizedJob.client_id) {
+      if (job.client_id) {
         const tradieName = profile?.full_name || 'A tradie';
-        const category = normalizedJob.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || '';
-        const jobTitle = normalizedJob.title || category || 'your job';
+        const category = job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || '';
+        const jobTitle = job.title || category || 'your job';
         try {
           await supabase.rpc('create_notification', {
-            p_user_id: normalizedJob.client_id,
+            p_user_id: job.client_id,
             p_title: 'Job Accepted',
             p_message: `${tradieName} has accepted ${jobTitle}. Next step: fund the payment to secure the booking.`,
             p_type: 'JOB_ACCEPTED',
             p_channel: 'in_app',
             p_read: false,
-            p_job_id: normalizedJob.id,
+            p_job_id: job.id,
             p_metadata: {},
           });
         } catch {
@@ -637,14 +635,13 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
     offSite?: { distanceM: number; pos: { lat: number; lng: number } },
   ) => {
     if (!user) return;
-    const normalizedJob = { ...job, profiles: job.profiles ?? undefined };
-    setActionLoading(normalizedJob.id);
+    setActionLoading(job.id);
 
     try {
       const { error } = await supabase
         .from('jobs')
         .update({ status: 'in_progress' })
-        .eq('id', normalizedJob.id);
+        .eq('id', job.id);
 
       if (!error) {
         // Log the off-site start so the employer sees it in Site Activity.
@@ -652,7 +649,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
         if (offSite) {
           const { error: logError } = await supabase.from('site_visit_events').insert({
             tradie_id: user.id,
-            job_id: normalizedJob.id,
+            job_id: job.id,
             action: 'START_OFFSITE',
             latitude: offSite.pos.lat,
             longitude: offSite.pos.lng,
@@ -682,9 +679,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
       return;
     }
 
-    // Normalize profiles to undefined if null
-    const normalizedJob = { ...job, profiles: job.profiles ?? undefined };
-    setCompletionJob(normalizedJob);
+    setCompletionJob(job);
   };
 
   const content = (
@@ -892,17 +887,16 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                         {!isCollapsed && (
                           <div className="space-y-3 ml-1">
                             {monthJobs.map((job) => {
-                              const normalizedJob = { ...job, profiles: job.profiles ?? undefined };
                               return (
                                 <div
                                   key={job.id}
                                   role="button"
                                   tabIndex={0}
-                                  onClick={() => setSelectedJob(normalizedJob)}
+                                  onClick={() => setSelectedJob(job)}
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
                                       e.preventDefault();
-                                      setSelectedJob(normalizedJob);
+                                      setSelectedJob(job);
                                     }
                                   }}
                                   className="w-full text-left rounded-xl transition-all cursor-pointer border border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
@@ -915,7 +909,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                                         {job.title || job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job'}
                                       </h3>
                                       <span className={`px-3 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
-                                        {paidJobIds.has(job.id) ? 'paid' : job.status.replace(/_/g, ' ')}
+                                        {paidJobIds.has(job.id) ? 'paid' : (job.status ?? 'pending').replace(/_/g, ' ')}
                                       </span>
                                     </div>
                                     <div className="space-y-1.5 text-sm text-gray-600">
@@ -970,7 +964,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                                         </p>
                                       </div>
                                       <span className={`px-3 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
-                                        {job.status.replace(/_/g, ' ')}
+                                        {(job.status ?? 'pending').replace(/_/g, ' ')}
                                       </span>
                                     </div>
                                     <p className="text-sm text-gray-600 line-clamp-2 mb-3">
@@ -1043,8 +1037,6 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
               {jobs.map((job) => {
                 const isFlashActive = job.is_flash_boost && job.flash_expiry && new Date(job.flash_expiry) > new Date();
 
-                // Normalize profiles to undefined if null
-                const normalizedJob = { ...job, profiles: job.profiles ?? undefined };
                 return (
                 <div
                   key={job.id}
@@ -1053,18 +1045,18 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                   onClick={() => {
                     // Pending unquoted jobs → go straight to quote modal
                     if (isTradie && job.status === 'pending' && !myQuotes.has(job.id)) {
-                      setQuoteJob(normalizedJob);
+                      setQuoteJob(job);
                     } else {
-                      setSelectedJob(normalizedJob);
+                      setSelectedJob(job);
                     }
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
                       if (isTradie && job.status === 'pending' && !myQuotes.has(job.id)) {
-                        setQuoteJob(normalizedJob);
+                        setQuoteJob(job);
                       } else {
-                        setSelectedJob(normalizedJob);
+                        setSelectedJob(job);
                       }
                     }
                   }}
@@ -1092,7 +1084,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                       }`}>
                         {job.status === 'funded' && myQuotes.get(job.id)?.requires_site_inspection && myQuotes.get(job.id)?.final_price == null
                           ? 'Set Price'
-                          : job.status === 'funded' ? 'Paid' : job.status === 'accepted' ? 'Awaiting Payment' : job.status.replace(/_/g, ' ')}
+                          : job.status === 'funded' ? 'Paid' : job.status === 'accepted' ? 'Awaiting Payment' : (job.status ?? 'pending').replace(/_/g, ' ')}
                       </span>
                     </div>
 
@@ -1368,7 +1360,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
       <JobDetailModal
         isOpen={!!selectedJob}
         onClose={() => setSelectedJob(null)}
-        job={selectedJob ? { ...selectedJob, profiles: selectedJob.profiles ?? undefined } : null}
+        job={selectedJob}
         isUnlocked={true}
         onStatusChange={fetchJobs}
         onQuote={selectedJob && !myQuotes.has(selectedJob.id) ? (startDate) => {

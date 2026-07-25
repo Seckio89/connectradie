@@ -37,7 +37,7 @@ export default function ActivityFeed() {
       const activities: Activity[] = [];
 
       if (recentJobs && recentJobs.length > 0) {
-        recentJobs.forEach((job: { id: string; created_at: string; status: string; profiles: { full_name: string } | null }) => {
+        recentJobs.forEach((job) => {
           const timeAgo = getTimeAgo(job.created_at);
           activities.push({
             id: `booking-${job.id}`,

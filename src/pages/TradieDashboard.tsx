@@ -95,7 +95,7 @@ function getDaysInMonth(date: Date) {
   return { daysInMonth: lastDay.getDate(), startingDay: firstDay.getDay() };
 }
 
-function getStatusColor(status: string) {
+function getStatusColor(status: string | null) {
   switch (status) {
     case 'completed':
       return 'bg-green-100 text-green-700 border-green-200';
@@ -109,6 +109,9 @@ function getStatusColor(status: string) {
       return 'bg-warm-100 text-warm-700 border-warm-200';
   }
 }
+
+/** Shape of the "new leads" query: a job row plus the joined client name. */
+type LeadWithClientName = Job & { profiles: { full_name: string } | null };
 
 // ─── Main Component ───────────────────────────────────────
 
@@ -238,7 +241,7 @@ export default function TradieDashboard() {
   const [recurringJobs, setRecurringJobs] = useState<(RecurringJob & { client?: { full_name: string } | null })[]>([]);
 
   // New leads matching tradie's trade categories
-  const [newLeads, setNewLeads] = useState<Job[]>([]);
+  const [newLeads, setNewLeads] = useState<LeadWithClientName[]>([]);
   const [quoteModalJob, setQuoteModalJob] = useState<Job | null>(null);
   const [invitedLeadIds, setInvitedLeadIds] = useState<Set<string>>(new Set());
 
@@ -380,13 +383,14 @@ export default function TradieDashboard() {
   const isPendingEmployerApproval = profile?.employer_status === 'pending_approval' && !!profile?.employer_id;
   const [employerName, setEmployerName] = useState<string | null>(null);
   useEffect(() => {
-    if (!isPendingEmployerApproval || !profile?.employer_id) return;
+    const employerId = profile?.employer_id;
+    if (!isPendingEmployerApproval || !employerId) return;
     let cancelled = false;
     (async () => {
       try {
         const [{ data: emp }, { data: empTd }] = await Promise.all([
-          supabase.from('profiles').select('full_name').eq('id', profile.employer_id).maybeSingle(),
-          supabase.from('tradie_details').select('business_name').eq('profile_id', profile.employer_id).maybeSingle(),
+          supabase.from('profiles').select('full_name').eq('id', employerId).maybeSingle(),
+          supabase.from('tradie_details').select('business_name').eq('profile_id', employerId).maybeSingle(),
         ]);
         if (!cancelled) setEmployerName(empTd?.business_name || emp?.full_name || null);
       } catch { /* banner falls back to generic copy */ }
@@ -431,7 +435,7 @@ export default function TradieDashboard() {
       if (jobsError) throw jobsError;
 
       const jobIds = (tradieJobs || []).map(j => j.id);
-      const activeCount = (tradieJobs || []).filter(j => ['accepted', 'in_progress', 'funded'].includes(j.status)).length;
+      const activeCount = (tradieJobs || []).filter(j => j.status !== null && ['accepted', 'in_progress', 'funded'].includes(j.status)).length;
 
       // Externally-received (bank transfer / cash) invoice income — counted in
       // earnings alongside Stripe so totals reflect the whole business.
@@ -558,6 +562,7 @@ export default function TradieDashboard() {
         if (invoicesError) throw invoicesError;
         const invoicesByJob = new Map<string, { start: string; end: string }[]>();
         (invoices ?? []).forEach(inv => {
+          if (!inv.recurring_job_id) return;
           const arr = invoicesByJob.get(inv.recurring_job_id) ?? [];
           arr.push({ start: inv.billing_period_start, end: inv.billing_period_end });
           invoicesByJob.set(inv.recurring_job_id, arr);
@@ -1375,9 +1380,9 @@ export default function TradieDashboard() {
           <div className="px-4 py-3 sm:p-6 overflow-hidden">
             {/* ─── JOBS TAB ─── */}
             {activeTab === 'jobs' && (() => {
-              const activeJobs = jobs.filter((j: DashboardJob) => !['completed', 'cancelled', 'declined'].includes(j.status));
+              const activeJobs = jobs.filter((j: DashboardJob) => !(j.status !== null && ['completed', 'cancelled', 'declined'].includes(j.status)));
               const completedJobs = jobs.filter((j: DashboardJob) => j.status === 'completed');
-              const otherJobs = jobs.filter((j: DashboardJob) => ['cancelled', 'declined'].includes(j.status));
+              const otherJobs = jobs.filter((j: DashboardJob) => j.status !== null && ['cancelled', 'declined'].includes(j.status));
 
               return (
               <div>
@@ -1558,7 +1563,7 @@ export default function TradieDashboard() {
                                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
                                   <h3 className="font-semibold text-gray-900 truncate capitalize max-w-[60vw] sm:max-w-none">{displayTitle}</h3>
                                   <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
-                                    {job.status.replace(/_/g, ' ')}
+                                    {(job.status ?? 'pending').replace(/_/g, ' ')}
                                   </span>
                                   {job.priority === 'high' && (
                                     <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full border border-orange-200 flex-shrink-0">

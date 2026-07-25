@@ -115,7 +115,7 @@ export default function AdminOverview() {
         adminCount: profiles.filter(p => p.role === 'admin').length,
         totalJobs: jobs.length,
         pendingJobs: jobs.filter(j => j.status === 'pending').length,
-        activeJobs: jobs.filter(j => ['accepted', 'in_progress', 'funded'].includes(j.status)).length,
+        activeJobs: jobs.filter(j => j.status !== null && ['accepted', 'in_progress', 'funded'].includes(j.status)).length,
         completedJobs: jobs.filter(j => j.status === 'completed').length,
         totalRevenue: completedPayments.reduce((sum, p) => sum + (p.amount || 0), 0),
         activeSubscriptions: subscriptionsRes.data?.length || 0,

@@ -9,7 +9,13 @@
 // Spec: docs/three-stage-quote-flow.md
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { Quote, QuoteStatus, Job } from '../types/database';
+import type { Quote, Job } from '../types/database';
+
+// These helpers take `quotes.status` straight off a row, which the generated
+// types give as `string`. quotes_status_check restricts the real values to
+// exactly QuoteStatus (see src/types/database.ts for why the row type is not
+// narrowed), so every switch below still enumerates the full domain — the
+// `default` arms only exist for values a future migration might add.
 
 export type Role = 'client' | 'tradie';
 
@@ -30,7 +36,7 @@ const BADGE_RED: BadgeStyle = { bg: 'bg-red-50', text: 'text-red-700', border: '
  * Visual badge style per status. Role-independent — the same status looks the
  * same to both sides; only the label text changes (see getQuoteStatusLabel).
  */
-export function getQuoteStatusBadgeStyle(status: QuoteStatus): BadgeStyle {
+export function getQuoteStatusBadgeStyle(status: string): BadgeStyle {
   switch (status) {
     case 'pending':              return BADGE_AMBER;     // awaiting action by the other party
     case 'site_visit_scheduled': return BADGE_SECONDARY; // in-flight workflow state
@@ -49,7 +55,7 @@ export function getQuoteStatusBadgeStyle(status: QuoteStatus): BadgeStyle {
  * action-required states (e.g. final_submitted), the client sees an
  * action-oriented label and the tradie sees the waiting state.
  */
-export function getQuoteStatusLabel(status: QuoteStatus, role: Role = 'client'): string {
+export function getQuoteStatusLabel(status: string, role: Role = 'client'): string {
   switch (status) {
     case 'pending':
       return role === 'tradie' ? 'Estimate sent' : 'Estimate received';
@@ -75,7 +81,7 @@ export function getQuoteStatusLabel(status: QuoteStatus, role: Role = 'client'):
 /**
  * One-line description for tooltips / help text.
  */
-export function getQuoteStatusDescription(status: QuoteStatus, role: Role = 'client'): string {
+export function getQuoteStatusDescription(status: string, role: Role = 'client'): string {
   switch (status) {
     case 'pending':
       return role === 'tradie'
@@ -111,12 +117,12 @@ export function getQuoteStatusDescription(status: QuoteStatus, role: Role = 'cli
 }
 
 /** Whether a status is terminal (no further transitions). */
-export function isTerminalQuoteStatus(status: QuoteStatus): boolean {
+export function isTerminalQuoteStatus(status: string): boolean {
   return status === 'accepted' || status === 'declined' || status === 'withdrawn' || status === 'expired';
 }
 
 /** Whether the quote is "in flight" — neither initial pending nor terminal. */
-export function isQuoteInFlight(status: QuoteStatus): boolean {
+export function isQuoteInFlight(status: string): boolean {
   return status === 'site_visit_scheduled' || status === 'site_visit_completed' || status === 'final_submitted';
 }
 
@@ -215,7 +221,7 @@ export function getTradieActions(quote: Quote, job: Pick<Job, 'flow_version'>): 
  * Whether the address should be visible to the tradie holding this quote.
  * Spec §5.2: suburb-only until a site visit is booked.
  */
-export function isAddressVisibleToTradie(status: QuoteStatus): boolean {
+export function isAddressVisibleToTradie(status: string): boolean {
   return status === 'site_visit_scheduled'
     || status === 'site_visit_completed'
     || status === 'final_submitted'

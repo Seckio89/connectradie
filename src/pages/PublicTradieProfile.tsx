@@ -33,11 +33,13 @@ import RatingBreakdown from '../components/RatingBreakdown';
 import DashboardLayout from '../components/DashboardLayout';
 import SEO from '../components/SEO';
 
+// Matches `.select('id, image_url, caption, sort_order')`; caption and
+// sort_order are nullable columns.
 interface PortfolioImage {
   id: string;
   image_url: string;
-  caption: string;
-  sort_order: number;
+  caption: string | null;
+  sort_order: number | null;
 }
 
 export default function PublicTradieProfile() {

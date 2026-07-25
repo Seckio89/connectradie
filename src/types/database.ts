@@ -1,3 +1,21 @@
+import type { Database } from './supabase';
+
+/**
+ * Row shape of a table, straight from the GENERATED types (src/types/supabase.ts).
+ *
+ * The Supabase client is instantiated as `createClient<Database>` with those
+ * generated types, so every query RESULT is shaped by them. Deriving the
+ * hand-written domain types from `Row<'…'>` is what keeps annotations and
+ * results from drifting apart. Regenerate supabase.ts after every migration —
+ * never hand-edit it.
+ */
+type Row<T extends keyof Database['public']['Tables']> =
+  Database['public']['Tables'][T]['Row'];
+
+/** Insert payload for a table, straight from the GENERATED types. */
+export type Insert<T extends keyof Database['public']['Tables']> =
+  Database['public']['Tables'][T]['Insert'];
+
 export type UserRole = 'client' | 'tradie' | 'admin';
 export type SubscriptionTier = 'free' | 'pro' | 'pro_plus' | 'business';
 export type SlotStatus = 'available' | 'booked' | 'blocked';
@@ -16,118 +34,24 @@ export type ProjectStatus = 'active' | 'completed' | 'cancelled' | 'ongoing' | '
 
 export type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected' | 'expired';
 
-export type Profile = {
-  id: string;
-  email: string;
-  full_name: string;
-  role: UserRole | null;
-  avatar_url: string | null;
-  phone: string | null;
-  address: string | null;
-  postcode: string | null;
-  suburb: string | null;
-  abn_number: string | null;
-  abn_entity_name: string | null;
-  abn_verified: boolean;
-  is_gst_registered: boolean;
-  license_number: string | null;
-  license_expiry: string | null;
-  license_state: string | null;
-  license_verified: boolean;
-  license_holder_name: string | null;
-  license_api_verified: boolean;
-  license_class: string | null;
-  is_apprentice: boolean;
-  supervisor_license: string | null;
-  supervisor_name: string | null;
-  is_license_required: boolean;
-  verification_status: VerificationStatus;
-  documents_url: string[] | null;
-  rejection_reason: string | null;
-  onboarding_completed: boolean;
-  // Progressive onboarding stage: 1 welcome · 2 simplified · 3 almost-there · 4 full.
-  onboarding_stage: number;
-  is_premium: boolean;
-  // Platform-owner/admin entitlement flag — grants full feature access + fee
-  // exemption independently of `role` (which drives the user's experience and
-  // public appearance). See isPlatformAdmin() in lib/subscription.ts.
-  is_admin: boolean;
-  subscription_expiry: string | null;
-  push_enabled: boolean;
-  sms_alerts_enabled: boolean;
-  notify_site_arrival: boolean;
-  timezone: string;
-  push_subscription: Record<string, unknown> | null;
-  insurance_policy: boolean;
-  service_radius_km: number;
-  // Tradie base coordinates — the centre point for service_radius_km matching.
-  // Geocoded from their address; null until set.
-  base_latitude: number | null;
-  base_longitude: number | null;
-  is_emergency_available: boolean;
-  team_size: string | null;
-  call_out_fee: number | null;
-  show_callout_fee: boolean;
-  callout_fee_waived_on_proceed: boolean;
-  auto_complete_sessions: boolean;
-  bio: string | null;
-  cover_photo_url: string | null;
-  stripe_connect_account_id: string | null;
-  stripe_connect_onboarding_complete: boolean;
-  stripe_customer_id: string | null;
-  // NOTE: bank details for external (manual-transfer) invoices are NOT here —
-  // they live in `profile_private` (owner/admin only), because every signed-in
-  // user can read `profiles`. See ProfilePrivate below.
-  employer_id: string | null;
-  employment_type: 'employee' | 'subcontractor' | 'none';
-  employer_status: 'active' | 'pending_approval' | 'rejected' | 'none';
-  declared_trades: string[];
-  verified_trades: string[];
-  license_trades: string[];
-  stripe_identity_session_id: string | null;
-  is_identity_verified: boolean;
-  // ToS acceptance audit + grandfathered external-pay permission (pricing phase 1).
-  terms_accepted_at: string | null;
-  tos_version: string | null;
-  external_pay_allowed: boolean;
-  // Grandfathered flat commission rate (bps); NULL = normal tier rates.
-  platform_fee_override_bps: number | null;
-  created_at: string;
-}
+/**
+ * A profile row — EXACTLY the generated `profiles` Row.
+ *
+ * Un-narrowed for the same reason as Job: `role`, `verification_status`,
+ * `employment_type` and `employer_status` DO each have a matching CHECK
+ * constraint, but PostgREST types every text column as `string`, so narrowing
+ * any of them would make raw `.from('profiles')` rows non-assignable and force
+ * an `as Profile` cast at every read — the exact drift this collapse removes.
+ *
+ * Note `declared_trades` / `verified_trades` / `license_trades` are genuinely
+ * NULLABLE arrays. The old hand-written type claimed `string[]`, so `.map()` on
+ * them type-checked while being a live TypeError for any profile that has never
+ * had trades set. Call sites now have to guard, and several did not.
+ */
+export type Profile = Row<'profiles'>;
 
-export type TradieDetails = {
-  id: string;
-  profile_id: string;
-  business_name: string;
-  trade_category: string;
-  is_verified: boolean;
-  is_insured: boolean;
-  is_licensed: boolean;
-  subscription_tier: SubscriptionTier;
-  default_call_out_fee_cents: number | null;
-  service_radius_km: number;
-  bio: string | null;
-  hourly_rate: number | null;
-  emergency_available: boolean;
-  insurance_provider: string;
-  qualifications: string[];
-  contractor_type: 'Solo' | 'Company' | 'Labour Hire';
-  trade_type: 'construction' | 'hospitality';
-  white_card: string | null;
-  created_at: string;
-}
-
-// Owner/admin-only PII, split out of `profiles` (which any signed-in user can
-// read). Bank details for off-platform "bank transfer" invoices live here; the
-// service role (invoice-contact) reads them to print on the invoice.
-export type ProfilePrivate = {
-  profile_id: string;
-  bank_name: string | null;
-  bank_bsb: string | null;
-  bank_account_number: string | null;
-  bank_account_name: string | null;
-  updated_at: string;
-}
+/** A tradie_details row — EXACTLY the generated Row (see the note on Profile). */
+export type TradieDetails = Row<'tradie_details'>;
 
 export type Project = {
   id: string;
@@ -146,13 +70,6 @@ export type Project = {
   tradie_status_updated_at: string;
   created_at: string;
   updated_at: string;
-}
-
-export type MyTrade = {
-  id: string;
-  client_id: string;
-  tradie_id: string;
-  created_at: string;
 }
 
 /** A tradie's CRM contact — an on- or off-app client they can quote / assign work for. */
@@ -204,53 +121,6 @@ export type PricingTier = {
   updated_at: string;
 }
 
-/** Platform-level tunables (pricing rebuild v2.1). Public read; service-role writes only. */
-export type PlatformConfig = {
-  key: string; // e.g. 'materials_processing_bps'
-  value_int: number | null;
-  updated_at: string;
-}
-
-/** Tier membership — webhook-only writes; users can never set their own tier. */
-export type TradieSubscription = {
-  id: string;
-  profile_id: string;
-  tier_id: string;
-  status: 'active' | 'past_due' | 'canceled' | 'incomplete';
-  billing_cycle: 'monthly' | 'annual' | null;
-  stripe_subscription_id: string | null;
-  stripe_customer_id: string | null;
-  current_period_end: string | null;
-  grace_until: string | null;
-  canceled_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-/** A message auto-flagged for off-platform-payment talk (anti-circumvention). Flag only, never blocks. */
-export type MessageFlag = {
-  id: string;
-  message_id: string | null;
-  conversation_id: string | null;
-  job_id: string | null;
-  sender_id: string | null;
-  flag_type: string;
-  matched_text: string | null;
-  created_at: string;
-}
-
-/** Client contact revealed to the assigned tradie only once the job is funded. */
-export type JobContactDetails = {
-  job_id: string;
-  contact_name: string | null;
-  contact_phone: string | null;
-  contact_email: string | null;
-  address: string | null;
-  access_notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export type AvailabilitySlot = {
   id: string;
   tradie_id: string;
@@ -264,206 +134,97 @@ export type AvailabilitySlot = {
 export type BudgetType = 'request_quote' | 'fixed_budget' | 'hourly_rate';
 export type JobComplexity = 'standard' | 'emergency' | 'complex';
 
-export type OnboardingProgress = {
-  id: string;
-  user_id: string;
-  profile_complete: boolean;
-  avatar_complete: boolean;
-  trades_added: boolean;
-  availability_set: boolean;
-  first_job_viewed: boolean;
-  completed_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
+/**
+ * A job row — EXACTLY the generated `jobs` Row, deliberately un-narrowed.
+ *
+ * `jobs.status`, `priority` and `quoting_status` do each have a CHECK constraint
+ * that matches JobStatus / low|normal|high / QuotingStatus (verified against the
+ * live DB, not just the migration files). Narrowing them here was tried and
+ * reverted: PostgREST types every text column as `string`, so the moment `Job`
+ * declares a narrower member, a raw `.from('jobs').select('*')` row stops being
+ * assignable to `Job` and every query boundary needs an `as` cast. Casts are the
+ * exact failure mode this refactor exists to remove (CLAUDE.md: "no `any`, no
+ * assertion-papering"), and a cast would reintroduce the drift silently.
+ *
+ * So the row type stays honest and the domain unions stay useful at the points
+ * where a status is *written* or *compared* — see JobStatus / QuotingStatus,
+ * which are still exported and still constrain `.update({ status: … })` payloads
+ * via the generated Insert/Update types.
+ *
+ * `budget_type`, `job_complexity` and `preferred_time_slot` have NO CHECK
+ * constraint at all, so BudgetType / JobComplexity are aspirational — validate
+ * those at the boundary, never assume them.
+ */
+export type Job = Row<'jobs'>;
 
-export type HintTracking = {
-  id: string;
-  user_id: string;
-  hint_key: string;
-  dismissed_at: string | null;
-  view_count: number;
-  created_at: string;
-}
+/**
+ * A quote row — EXACTLY the generated `quotes` Row.
+ *
+ * `quotes.status` is NOT NULL and quotes_status_check matches QuoteStatus
+ * exactly, and quotes_site_visit_fee_status_check restricts
+ * `site_visit_fee_status` to NULL|'paid'|'credited'. Both are still left
+ * un-narrowed for the assignability reason documented on Job: narrowing forces
+ * an `as` cast at every query boundary, and this is the payment path — a cast
+ * here is exactly where silent drift would be most expensive.
+ *
+ * Collapsing onto the generated Row also picks up columns the hand-written type
+ * never had, several of which the app already writes: withdrawn_at,
+ * decline_reason, declined_at, labour_cents, materials_cents,
+ * materials_description, property_type, trade_category.
+ *
+ * NOTE `site_visit_time_confirmed` is NOT NULL in the DB; the hand-written type
+ * said `boolean | null`.
+ */
+export type Quote = Row<'quotes'>;
 
-export type Job = {
-  id: string;
-  // Nullable since 20260708110000: a job belongs to EITHER a platform user
-  // (client_id) OR a tradie's off-app CRM contact (client_contact_id).
-  client_id: string | null;
-  client_contact_id: string | null;
-  tradie_id: string | null;
-  title: string | null;
-  description: string;
-  status: JobStatus;
-  scheduled_time: string | null;
-  slot_id: string | null;
-  images_url: string[] | null;
-  estimated_duration: string | null;
-  is_emergency: boolean;
-  decline_reason: string | null;
-  declined_at: string | null;
-  priority: 'low' | 'normal' | 'high';
-  is_delayed: boolean;
-  delayed_until: string | null;
-  notes: string | null;
-  contact_name: string | null;
-  contact_phone: string | null;
-  location_address: string | null;
-  // Geocoded job-site coordinates (WGS84). Captured from Google Places at post
-  // time, backfilled for older jobs. Null until geocoded. Used for tradie
-  // service-area matching and the native on-site geofence.
-  latitude: number | null;
-  longitude: number | null;
-  geofence_radius_m: number;
-  parking_available: boolean | null;
-  budget_type: BudgetType | null;
-  budget_amount: number | null;
-  access_instructions: string | null;
-  job_complexity: JobComplexity | null;
-  project_id: string | null;
-  is_flash_boost: boolean;
-  flash_expiry: string | null;
-  scheduled_date: string | null;
-  preferred_time_slot: 'morning' | 'midday' | 'afternoon' | 'evening' | null;
-  start_time: string | null;
-  end_time: string | null;
-  time_confirmed: boolean;
-  emergency_fee_applied: boolean;
-  completion_notes: string | null;
-  completion_photo_url: string | null;
-  max_quotes: number;
-  quote_count: number;
-  allows_site_inspection: boolean;
-  quoting_status: QuotingStatus;
-  archived_at: string | null;
-  deleted_at: string | null;
-  deleted_by: string | null;
-  contact_flagged: boolean;
-  contact_flag_reason: string | null;
-  recurring_job_id: string | null;
-  // Quote flow: 1 = legacy single-step accept-and-pay. 2 = 3-stage estimate /
-  // site visit / final quote / pay. See docs/three-stage-quote-flow.md.
-  flow_version: number;
-  updated_at: string;
-  created_at: string;
-}
-
-export type Quote = {
-  id: string;
-  job_id: string;
-  tradie_id: string;
-  price_min: number;
-  price_max: number;
-  firm_price: number | null;
-  message: string;
-  estimated_duration: string | null;
-  includes_materials: boolean;
-  requires_site_inspection: boolean;
-  final_price: number | null;
-  status: QuoteStatus;
-  accepted_at: string | null;
-  proposed_start_date: string | null;
-  // 3-stage flow tracking (active when the parent job has flow_version=2).
-  // See docs/three-stage-quote-flow.md for the full state machine.
-  site_visit_scheduled_at: string | null;
-  site_visit_ends_at: string | null;
-  site_visit_time_confirmed: boolean | null;
-  site_visit_completed_at: string | null;
-  final_submitted_at: string | null;
-  final_valid_until: string | null;
-  // Tradie-set site-visit call-out fee (paid by client at booking, credited at accept).
-  call_out_fee_cents: number | null;
-  site_visit_fee_status: 'paid' | 'credited' | null;
-  site_visit_fee_paid_at: string | null;
-  site_visit_fee_payment_intent_id: string | null;
-  // Off-app email quotes: unguessable token for the public accept page + the
-  // email it was sent to.
-  public_token: string | null;
-  sent_to_email: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
+/**
+ * A quote enriched with the tradie's public profile, business details and
+ * review aggregates — assembled in QuoteComparisonView, not returned by a
+ * single query.
+ *
+ * Every member below mirrors the exact column list its `.select(...)` asks for,
+ * with the generated nullability. Previously this claimed `verified_trades` /
+ * `declared_trades` were `string[]` and `verification_status` was a
+ * VerificationStatus; all three are nullable text/array columns, so the old
+ * shape was wrong in a way `.map()`/`.length` call sites could have tripped on.
+ * The three keys are required-and-nullable because the builder always assigns
+ * them (`profileData || null`).
+ */
 export type QuoteWithTradie = Quote & {
-  tradie_profile?: {
+  tradie_profile: {
     full_name: string;
     avatar_url: string | null;
-    verification_status: VerificationStatus;
-    verified_trades: string[];
-    declared_trades: string[];
-    is_gst_registered?: boolean;
-    /** Gates the "verified" ProBadge on quote cards. Was read but never
-     *  selected, so the badge silently never rendered. */
-    is_identity_verified?: boolean | null;
+    verification_status: string | null;
+    verified_trades: string[] | null;
+    declared_trades: string[] | null;
+    is_gst_registered: boolean;
+    /** Gates the "verified" ProBadge on quote cards. */
+    is_identity_verified: boolean | null;
     /** When the tradie joined the platform — used for the "Member since YYYY"
      *  retention signal on quote cards. */
-    created_at?: string;
+    created_at: string;
   } | null;
-  tradie_details?: {
+  tradie_details: {
     business_name: string;
     trade_category: string;
-    is_verified: boolean;
-    is_insured: boolean;
-    subscription_tier: SubscriptionTier;
+    is_verified: boolean | null;
+    is_insured: boolean | null;
+    subscription_tier: string | null;
   } | null;
-  review_stats?: {
+  review_stats: {
     avg_rating: number;
     total_reviews: number;
     total_jobs_completed: number;
   } | null;
 }
 
-export type Conversation = {
-  id: string;
-  title: string | null;
-  is_group: boolean;
-  created_by: string | null;
-  job_id: string | null;
-  recurring_job_id: string | null;
-  created_at: string;
-  updated_at: string;
-}
+export type Conversation = Row<'conversations'>;
 
-export type ConversationParticipant = {
-  id: string;
-  conversation_id: string;
-  user_id: string;
-  joined_at: string;
-  left_at: string | null;
-  is_admin: boolean;
-  archived_at: string | null;
-}
+export type ConversationParticipant = Row<'conversation_participants'>;
 
-export type ConversationPermission = {
-  id: string;
-  conversation_id: string;
-  user_id: string;
-  blocked_by: string;
-  can_see_phone: boolean;
-  can_see_email: boolean;
-  can_see_address: boolean;
-  created_at: string;
-}
+export type ConversationPermission = Row<'conversation_permissions'>;
 
-export type Message = {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  conversation_id: string | null;
-  content: string;
-  image_url: string | null;
-  is_booking_request: boolean;
-  job_id: string | null;
-  read_at: string | null;
-  read_by: string[] | null;
-  deleted_at: string | null;
-  attachment_url: string | null;
-  attachment_type: string | null;
-  attachment_name: string | null;
-  attachment_size: number | null;
-  created_at: string;
-}
+export type Message = Row<'messages'>;
 
 export type Notification = {
   id: string;
@@ -540,15 +301,6 @@ export type Connection = {
   created_at: string;
 }
 
-export type JobUnlock = {
-  id: string;
-  tradie_id: string;
-  job_id: string;
-  unlocked_at: string;
-  amount_paid: number;
-  created_at: string;
-}
-
 export type JobVariation = {
   id: string;
   job_id: string;
@@ -588,31 +340,6 @@ export type MilestoneSubcontractor = {
   created_at: string;
 }
 
-export type Invoice = {
-  id: string;
-  created_by: string;
-  job_id: string | null;
-  milestone_id: string | null;
-  milestone_subcontractor_id: string | null;
-  business_name: string;
-  business_abn: string | null;
-  business_address: string | null;
-  business_phone: string | null;
-  business_email: string | null;
-  invoice_number: string;
-  invoice_date: string;
-  due_date: string | null;
-  bill_to_name: string | null;
-  bill_to_address: string | null;
-  subtotal: number;
-  gst_amount: number;
-  total_amount: number;
-  notes: string | null;
-  status: 'draft' | 'sent' | 'paid';
-  created_at: string;
-  updated_at: string;
-}
-
 export type InvoiceLineItem = {
   id: string;
   invoice_id: string;
@@ -621,55 +348,6 @@ export type InvoiceLineItem = {
   unit_price: number;
   amount: number;
   sort_order: number;
-  created_at: string;
-}
-
-export type StripeSubscription = {
-  id: string;
-  profile_id: string;
-  stripe_customer_id: string;
-  stripe_subscription_id: string;
-  stripe_price_id: string;
-  status: string;
-  current_period_start: string | null;
-  current_period_end: string | null;
-  cancel_at_period_end: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export type AppSetting = {
-  key: string;
-  value: unknown;
-  updated_by: string | null;
-  updated_at: string;
-}
-
-export type BusinessTeamMember = {
-  id: string;
-  business_owner_id: string;
-  member_profile_id: string | null;
-  invite_email: string | null;
-  invite_name: string;
-  invite_phone: string;
-  role: 'employee' | 'subcontractor' | 'apprentice';
-  trade_specialty: string;
-  status: 'invited' | 'active' | 'inactive';
-  hourly_rate: number;
-  notes: string;
-  color: string | null;
-  invited_at: string;
-  joined_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export type ContactMessage = {
-  id: string;
-  name: string;
-  email: string;
-  message: string;
-  read: boolean;
   created_at: string;
 }
 
@@ -686,39 +364,6 @@ export type DateChangeRequest = {
   status: DateChangeRequestStatus;
   created_at: string;
   responded_at: string | null;
-}
-
-export type JobTeamAssignment = {
-  id: string;
-  job_id: string;
-  team_member_id: string;
-  business_owner_id: string;
-  scheduled_date: string | null;
-  start_time: string | null;
-  end_time: string | null;
-  role_on_job: string;
-  notes: string;
-  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
-  created_at: string;
-  updated_at: string;
-}
-
-export type ProfileView = {
-  id: string;
-  viewer_id: string;
-  tradie_id: string;
-  viewed_at: string;
-}
-
-export type TradieRatingView = {
-  tradie_id: string;
-  total_reviews: number;
-  average_rating: number;
-  five_star_count: number;
-  four_star_count: number;
-  three_star_count: number;
-  two_star_count: number;
-  one_star_count: number;
 }
 
 export type VacancyRoleType = 'apprentice' | 'qualified' | 'senior_advisory' | 'non_trade';
@@ -761,6 +406,18 @@ export type VacancyApplication = {
 }
 
 /** Row shape of the public_vacancies view — safe columns for the public /careers pages. */
+/**
+ * Row shape of the `public_vacancies` VIEW — the safe columns for the public
+ * /careers pages.
+ *
+ * NOT collapsed onto Row<'public_vacancies'>. Postgres cannot prove NOT NULL
+ * through a view, so the generated Row types every column as nullable —
+ * including `id`, `title` and `role_type`, which the underlying
+ * `trade_vacancies` columns declare NOT NULL. Adopting that would force ~75
+ * null-guards across the /careers pages to model a state the base table forbids.
+ * Kept hand-written and matched to the base table's real nullability; re-check
+ * this if the view's column list changes.
+ */
 export type PublicVacancy = {
   id: string;
   title: string;
@@ -784,14 +441,7 @@ export type PublicVacancy = {
   employer_verified: boolean;
 }
 
-export type PortfolioImage = {
-  id: string;
-  tradie_id: string;
-  image_url: string;
-  caption: string;
-  sort_order: number;
-  created_at: string;
-}
+export type PortfolioImage = Row<'portfolio_images'>;
 
 export type TradeVacancyWithEmployer = TradeVacancy & {
   employer?: {
@@ -824,54 +474,6 @@ export type VacancyApplicationWithApplicant = VacancyApplication & {
 export type PaymentType = 'lead_unlock' | 'job_access' | 'job_funding' | 'price_adjustment';
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 
-export type Payment = {
-  id: string;
-  profile_id: string;
-  stripe_payment_intent_id: string | null;
-  stripe_checkout_session_id: string | null;
-  payment_type: PaymentType;
-  job_id: string | null;
-  amount: number;
-  processing_fee: number | null;
-  currency: string;
-  status: PaymentStatus;
-  metadata: Record<string, unknown> | null;
-  original_amount: number | null;
-  parent_payment_id: string | null;
-  created_at: string;
-  completed_at: string | null;
-}
-
-export type DisputeStatus = 'open' | 'under_review' | 'resolved' | 'dismissed';
-
-export type Dispute = {
-  id: string;
-  job_id: string;
-  opened_by: string;
-  against_user: string;
-  reason: string;
-  description: string | null;
-  evidence_urls: string[] | null;
-  status: DisputeStatus;
-  resolution: string | null;
-  resolved_at: string | null;
-  resolved_by: string | null;
-  stripe_dispute_id: string | null;
-  stripe_charge_id: string | null;
-  amount: number | null;
-  currency: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export type TypingIndicator = {
-  id: string;
-  conversation_id: string;
-  user_id: string;
-  is_typing: boolean;
-  updated_at: string;
-}
-
 export type AccountRemoval = {
   id: string;
   user_id: string;
@@ -880,40 +482,6 @@ export type AccountRemoval = {
   processed_at: string | null;
   status: 'pending' | 'processed' | 'reinstated';
   reinstated_at: string | null;
-}
-
-export type AdminAuditLog = {
-  id: string;
-  admin_id: string;
-  action: string;
-  target_type: string;
-  target_id: string | null;
-  details: Record<string, unknown> | null;
-  created_at: string;
-}
-
-export type StripeCustomer = {
-  id: string;
-  user_id: string;
-  customer_id: string;
-  deleted_at: string | null;
-  created_at: string;
-}
-
-export type SmsSendLog = {
-  id: string;
-  phone_number: string;
-  notification_type: string | null;
-  sent_at: string;
-}
-
-export type PaymentReconciliationLog = {
-  id: string;
-  payment_id: string | null;
-  stripe_payment_intent_id: string | null;
-  status: string;
-  details: Record<string, unknown> | null;
-  reconciled_at: string;
 }
 
 export type QuoteTemplate = {
@@ -983,64 +551,6 @@ export type TradeCategory = {
   created_at: string;
 }
 
-export type SystemSettings = {
-  id: number;
-  is_training_mode_active: boolean;
-  updated_at: string;
-}
-
-export type StandardRate = {
-  id: string;
-  tradie_id: string;
-  service_name: string;
-  description: string | null;
-  price_per_hour: number | null;
-  flat_rate: number | null;
-  includes_materials: boolean;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export type JobPhotoStage = 'before' | 'during' | 'after';
-
-export type JobPhoto = {
-  id: string;
-  job_id: string;
-  uploaded_by: string;
-  photo_url: string;
-  stage: JobPhotoStage;
-  caption: string | null;
-  add_to_portfolio: boolean;
-  created_at: string;
-}
-
-export type RecurringJob = {
-  id: string;
-  client_id: string;
-  tradie_id: string | null;
-  original_job_id: string | null;
-  trade_category: string;
-  description: string | null;
-  frequency_months: number;
-  auto_remind: boolean;
-  reminder_days_before: number;
-  next_due_date: string | null;
-  last_completed_at: string | null;
-  times_completed: number;
-  is_active: boolean;
-  cancelled_at: string | null;
-  // Optional preferred visit time (HH:MM) used by SiteCalendar and the
-  // recurring-job helpers to anchor sessions. Multiple call sites already
-  // read this field via inline casts — declared here so the casts can drop.
-  preferred_time: string | null;
-  service_subtype: string | null;
-  agreed_price: number | null;
-  location: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export type SavedSearch = {
   id: string;
   user_id: string;
@@ -1051,34 +561,18 @@ export type SavedSearch = {
   created_at: string;
 }
 
-export type EmailPreference = {
-  id: string;
-  user_id: string;
-  category: string;
-  email_enabled: boolean;
-  sms_enabled: boolean;
-  push_enabled: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
 export type AbuseReportType = 'spam' | 'fake_review' | 'harassment' | 'contact_scraping' | 'other';
 export type AbuseReportSeverity = 'low' | 'medium' | 'high' | 'critical';
 export type AbuseReportStatus = 'pending' | 'investigating' | 'resolved' | 'dismissed';
 
-export type AbuseReport = {
-  id: string;
-  reporter_id: string;
-  reported_user_id: string | null;
-  report_type: AbuseReportType;
-  description: string | null;
-  evidence_urls: string[] | null;
-  severity: AbuseReportSeverity;
-  status: AbuseReportStatus;
-  resolved_at: string | null;
-  resolved_by: string | null;
-  created_at: string;
-}
+/**
+ * An abuse_reports row — EXACTLY the generated Row.
+ *
+ * abuse_reports_status_check allows 'warned' in addition to the four values
+ * AbuseReportStatus lists, so the union below is INCOMPLETE — another reason
+ * not to narrow the column here.
+ */
+export type AbuseReport = Row<'abuse_reports'>;
 
 export type RecommendationCategory = 'growth' | 'pricing' | 'promotions' | 'trends' | 'operations';
 export type RecommendationPriority = 'high' | 'medium' | 'low';
@@ -1099,13 +593,23 @@ export type PlatformRecommendation = {
   created_at: string;
 };
 
+/**
+ * A job plus its embedded joins, as returned by
+ *   .select('*, profiles!jobs_client_id_fkey(full_name, email, phone), projects(id, title)')
+ *
+ * The joined keys are REQUIRED and nullable, not optional — PostgREST always
+ * emits the key, and it is `null` when the FK is null (client_id and project_id
+ * are both nullable). Declaring them optional made `profiles` vanish from the
+ * type under `exactOptionalPropertyTypes`-style narrowing, which is what broke
+ * Leads.tsx and TradieDashboard.tsx.
+ */
 export type JobWithRelations = Job & {
-  profiles?: {
+  profiles: {
     full_name: string;
     email: string;
-    phone?: string;
+    phone: string | null;
   } | null;
-  projects?: {
+  projects: {
     id: string;
     title: string;
   } | null;
@@ -1125,68 +629,11 @@ export type ServiceVisitType = 'regular' | 'extra' | 'makeup' | 'final';
 export type ServiceVisitStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show';
 export type ServiceInvoiceStatus = 'draft' | 'sent' | 'viewed' | 'paid' | 'overdue' | 'cancelled';
 
-export type ServiceAgreement = {
-  id: string;
-  client_id: string;
-  tradie_id: string;
-  title: string;
-  description: string | null;
-  trade_category: string;
-  address: string;
-  suburb: string | null;
-  state: string | null;
-  postcode: string | null;
-  rate_per_visit: number;
-  rate_includes_gst: boolean;
-  typical_frequency: ServiceAgreementFrequency;
-  typical_day: string | null;
-  typical_time: string | null;
-  notes: string | null;
-  billing_cycle: ServiceAgreementBillingCycle;
-  status: ServiceAgreementStatus;
-  original_job_id: string | null;
-  original_quote_id: string | null;
-  started_at: string;
-  ended_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
+export type ServiceAgreement = Row<'service_agreements'>;
 
-export type ServiceVisit = {
-  id: string;
-  agreement_id: string;
-  visit_date: string;
-  visit_type: ServiceVisitType;
-  amount: number;
-  amount_includes_gst: boolean;
-  status: ServiceVisitStatus;
-  notes: string | null;
-  completed_at: string | null;
-  completed_by: string | null;
-  invoice_id: string | null;
-  created_at: string;
-  updated_at: string;
-}
+export type ServiceVisit = Row<'service_visits'>;
 
-export type ServiceInvoice = {
-  id: string;
-  agreement_id: string;
-  invoice_number: string;
-  period_start: string;
-  period_end: string;
-  subtotal: number;
-  gst_amount: number;
-  total: number;
-  visit_count: number;
-  status: ServiceInvoiceStatus;
-  paid_at: string | null;
-  payment_method: string | null;
-  payment_reference: string | null;
-  sent_at: string | null;
-  due_date: string | null;
-  created_at: string;
-  updated_at: string;
-}
+export type ServiceInvoice = Row<'service_invoices'>;
 
 // ── Supplies tracking for recurring services ──
 export type SupplyItem = {
@@ -1198,367 +645,4 @@ export type SupplyItem = {
   restock_threshold: number | null;
   restock_notified_at: string | null;
   notes?: string;
-};
-
-export type SupplyUsage = {
-  supply_id: string;
-  name: string;
-  quantity_used: number;
-  cost: number;
-};
-
-export type Database = {
-  public: {
-    Tables: {
-      app_settings: {
-        Row: AppSetting;
-        Insert: Partial<Omit<AppSetting, 'updated_at'>>;
-        Update: Partial<AppSetting>;
-        Relationships: [];
-      };
-      profiles: {
-        Row: Profile;
-        Insert: Partial<Omit<Profile, 'created_at'>>;
-        Update: Partial<Omit<Profile, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      tradie_details: {
-        Row: TradieDetails;
-        Insert: Partial<Omit<TradieDetails, 'id' | 'created_at'>>;
-        Update: Partial<Omit<TradieDetails, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      projects: {
-        Row: Project;
-        Insert: Partial<Omit<Project, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<Project, 'id' | 'created_at' | 'updated_at'>>;
-        Relationships: [];
-      };
-      my_trades: {
-        Row: MyTrade;
-        Insert: Partial<Omit<MyTrade, 'id' | 'created_at'>>;
-        Update: Partial<Omit<MyTrade, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      availability_slots: {
-        Row: AvailabilitySlot;
-        Insert: Partial<Omit<AvailabilitySlot, 'id' | 'created_at'>>;
-        Update: Partial<Omit<AvailabilitySlot, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      jobs: {
-        Row: Job;
-        Insert: Partial<Omit<Job, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<Job, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      conversations: {
-        Row: Conversation;
-        Insert: Partial<Omit<Conversation, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<Conversation, 'id' | 'created_at' | 'updated_at'>>;
-        Relationships: [];
-      };
-      conversation_participants: {
-        Row: ConversationParticipant;
-        Insert: Partial<Omit<ConversationParticipant, 'id' | 'joined_at'>>;
-        Update: Partial<Omit<ConversationParticipant, 'id' | 'joined_at'>>;
-        Relationships: [];
-      };
-      conversation_permissions: {
-        Row: ConversationPermission;
-        Insert: Partial<Omit<ConversationPermission, 'id' | 'created_at'>>;
-        Update: Partial<Omit<ConversationPermission, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      messages: {
-        Row: Message;
-        Insert: Partial<Omit<Message, 'id' | 'created_at'>>;
-        Update: Partial<Omit<Message, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      notifications: {
-        Row: Notification;
-        Insert: Partial<Omit<Notification, 'id' | 'created_at'>>;
-        Update: Partial<Omit<Notification, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      reviews: {
-        Row: Review;
-        Insert: Partial<Omit<Review, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<Review, 'id' | 'created_at' | 'updated_at'>>;
-        Relationships: [];
-      };
-      connections: {
-        Row: Connection;
-        Insert: Partial<Omit<Connection, 'id' | 'created_at'>>;
-        Update: Partial<Omit<Connection, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      job_unlocks: {
-        Row: JobUnlock;
-        Insert: Partial<Omit<JobUnlock, 'id' | 'created_at'>>;
-        Update: Partial<Omit<JobUnlock, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      quotes: {
-        Row: Quote;
-        Insert: Partial<Omit<Quote, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<Quote, 'id' | 'created_at' | 'updated_at'>>;
-        Relationships: [];
-      };
-      job_variations: {
-        Row: JobVariation;
-        Insert: Partial<Omit<JobVariation, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<JobVariation, 'id' | 'created_at' | 'updated_at'>>;
-        Relationships: [];
-      };
-      job_milestones: {
-        Row: JobMilestone;
-        Insert: Partial<Omit<JobMilestone, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<JobMilestone, 'id' | 'created_at' | 'updated_at'>>;
-        Relationships: [];
-      };
-      milestone_subcontractors: {
-        Row: MilestoneSubcontractor;
-        Insert: Partial<Omit<MilestoneSubcontractor, 'id' | 'created_at'>>;
-        Update: Partial<Omit<MilestoneSubcontractor, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      invoices: {
-        Row: Invoice;
-        Insert: Partial<Omit<Invoice, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<Invoice, 'id' | 'created_at' | 'updated_at'>>;
-        Relationships: [];
-      };
-      invoice_line_items: {
-        Row: InvoiceLineItem;
-        Insert: Partial<Omit<InvoiceLineItem, 'id' | 'created_at'>>;
-        Update: Partial<Omit<InvoiceLineItem, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      calendar_integrations: {
-        Row: CalendarIntegration;
-        Insert: Partial<Omit<CalendarIntegration, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<CalendarIntegration, 'id' | 'created_at' | 'updated_at'>>;
-        Relationships: [];
-      };
-      service_reminders: {
-        Row: ServiceReminder;
-        Insert: Partial<Omit<ServiceReminder, 'id' | 'created_at'>>;
-        Update: Partial<Omit<ServiceReminder, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      stripe_subscriptions: {
-        Row: StripeSubscription;
-        Insert: Partial<Omit<StripeSubscription, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<StripeSubscription, 'id' | 'created_at' | 'updated_at'>>;
-        Relationships: [];
-      };
-      payments: {
-        Row: Payment;
-        Insert: Partial<Omit<Payment, 'id' | 'created_at'>>;
-        Update: Partial<Omit<Payment, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      onboarding_progress: {
-        Row: OnboardingProgress;
-        Insert: Partial<Omit<OnboardingProgress, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<OnboardingProgress, 'id' | 'created_at' | 'updated_at'>>;
-        Relationships: [];
-      };
-      hint_tracking: {
-        Row: HintTracking;
-        Insert: Partial<Omit<HintTracking, 'id' | 'created_at'>>;
-        Update: Partial<Omit<HintTracking, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      trade_categories: {
-        Row: TradeCategory;
-        Insert: Partial<Omit<TradeCategory, 'id' | 'created_at'>>;
-        Update: Partial<Omit<TradeCategory, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      system_settings: {
-        Row: SystemSettings;
-        Insert: Partial<SystemSettings>;
-        Update: Partial<Omit<SystemSettings, 'id'>>;
-        Relationships: [];
-      };
-      trade_vacancies: {
-        Row: TradeVacancy;
-        Insert: Partial<Omit<TradeVacancy, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<TradeVacancy, 'id' | 'created_at' | 'updated_at'>>;
-        Relationships: [];
-      };
-      vacancy_applications: {
-        Row: VacancyApplication;
-        Insert: Partial<Omit<VacancyApplication, 'id' | 'created_at'>>;
-        Update: Partial<Omit<VacancyApplication, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      business_team_members: {
-        Row: BusinessTeamMember;
-        Insert: Partial<Omit<BusinessTeamMember, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<BusinessTeamMember, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      contact_messages: {
-        Row: ContactMessage;
-        Insert: Partial<Omit<ContactMessage, 'id' | 'created_at'>>;
-        Update: Partial<Omit<ContactMessage, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      date_change_requests: {
-        Row: DateChangeRequest;
-        Insert: Partial<Omit<DateChangeRequest, 'id' | 'created_at'>>;
-        Update: Partial<Omit<DateChangeRequest, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      job_team_assignments: {
-        Row: JobTeamAssignment;
-        Insert: Partial<Omit<JobTeamAssignment, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<JobTeamAssignment, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      portfolio_images: {
-        Row: PortfolioImage;
-        Insert: Partial<Omit<PortfolioImage, 'id' | 'created_at'>>;
-        Update: Partial<Omit<PortfolioImage, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      profile_views: {
-        Row: ProfileView;
-        Insert: Partial<Omit<ProfileView, 'id' | 'viewed_at'>>;
-        Update: Partial<Omit<ProfileView, 'id' | 'viewed_at'>>;
-        Relationships: [];
-      };
-      standard_rates: {
-        Row: StandardRate;
-        Insert: Partial<Omit<StandardRate, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<StandardRate, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      job_photos: {
-        Row: JobPhoto;
-        Insert: Partial<Omit<JobPhoto, 'id' | 'created_at'>>;
-        Update: Partial<Omit<JobPhoto, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      recurring_jobs: {
-        Row: RecurringJob;
-        Insert: Partial<Omit<RecurringJob, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<RecurringJob, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      saved_searches: {
-        Row: SavedSearch;
-        Insert: Partial<Omit<SavedSearch, 'id' | 'created_at'>>;
-        Update: Partial<Omit<SavedSearch, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      email_preferences: {
-        Row: EmailPreference;
-        Insert: Partial<Omit<EmailPreference, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<EmailPreference, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      abuse_reports: {
-        Row: AbuseReport;
-        Insert: Partial<Omit<AbuseReport, 'id' | 'created_at'>>;
-        Update: Partial<Omit<AbuseReport, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      disputes: {
-        Row: Dispute;
-        Insert: Partial<Omit<Dispute, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<Dispute, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      typing_indicators: {
-        Row: TypingIndicator;
-        Insert: Partial<Omit<TypingIndicator, 'id'>>;
-        Update: Partial<Omit<TypingIndicator, 'id'>>;
-        Relationships: [];
-      };
-      account_removals: {
-        Row: AccountRemoval;
-        Insert: Partial<Omit<AccountRemoval, 'id'>>;
-        Update: Partial<Omit<AccountRemoval, 'id'>>;
-        Relationships: [];
-      };
-      admin_audit_log: {
-        Row: AdminAuditLog;
-        Insert: Partial<Omit<AdminAuditLog, 'id' | 'created_at'>>;
-        Update: Partial<Omit<AdminAuditLog, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      stripe_customers: {
-        Row: StripeCustomer;
-        Insert: Partial<Omit<StripeCustomer, 'id' | 'created_at'>>;
-        Update: Partial<Omit<StripeCustomer, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      sms_send_log: {
-        Row: SmsSendLog;
-        Insert: Partial<Omit<SmsSendLog, 'id' | 'sent_at'>>;
-        Update: Partial<Omit<SmsSendLog, 'id' | 'sent_at'>>;
-        Relationships: [];
-      };
-      payment_reconciliation_log: {
-        Row: PaymentReconciliationLog;
-        Insert: Partial<Omit<PaymentReconciliationLog, 'id' | 'reconciled_at'>>;
-        Update: Partial<Omit<PaymentReconciliationLog, 'id' | 'reconciled_at'>>;
-        Relationships: [];
-      };
-      quote_templates: {
-        Row: QuoteTemplate;
-        Insert: Partial<Omit<QuoteTemplate, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<QuoteTemplate, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      custom_task_suggestions: {
-        Row: CustomTaskSuggestion;
-        Insert: Partial<Omit<CustomTaskSuggestion, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<CustomTaskSuggestion, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      client_sites: {
-        Row: ClientSite;
-        Insert: Partial<Omit<ClientSite, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<ClientSite, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      time_entries: {
-        Row: TimeEntry;
-        Insert: Partial<Omit<TimeEntry, 'id' | 'created_at'>>;
-        Update: Partial<Omit<TimeEntry, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      service_agreements: {
-        Row: ServiceAgreement;
-        Insert: Partial<Omit<ServiceAgreement, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<ServiceAgreement, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      service_visits: {
-        Row: ServiceVisit;
-        Insert: Partial<Omit<ServiceVisit, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<ServiceVisit, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-      service_invoices: {
-        Row: ServiceInvoice;
-        Insert: Partial<Omit<ServiceInvoice, 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<ServiceInvoice, 'id' | 'created_at'>>;
-        Relationships: [];
-      };
-    };
-    Views: {
-      tradie_ratings: {
-        Row: TradieRatingView;
-        Relationships: [];
-      };
-    };
-    Functions: Record<string, never>;
-  };
 };

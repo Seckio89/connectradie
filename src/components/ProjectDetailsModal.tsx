@@ -58,7 +58,7 @@ export default function ProjectDetailsModal({
   const filteredJobs = useMemo(() => {
     switch (activeTab) {
       case 'active':
-        return projectJobs.filter(j => ['pending', 'accepted', 'in_progress'].includes(j.status));
+        return projectJobs.filter(j => j.status !== null && ['pending', 'accepted', 'in_progress'].includes(j.status));
       case 'completed':
         return projectJobs.filter(j => j.status === 'completed');
       case 'declined':
@@ -69,7 +69,7 @@ export default function ProjectDetailsModal({
   }, [projectJobs, activeTab]);
 
   const tabCounts = useMemo(() => ({
-    active: projectJobs.filter(j => ['pending', 'accepted', 'in_progress'].includes(j.status)).length,
+    active: projectJobs.filter(j => j.status !== null && ['pending', 'accepted', 'in_progress'].includes(j.status)).length,
     completed: projectJobs.filter(j => j.status === 'completed').length,
     declined: projectJobs.filter(j => j.status === 'declined').length,
   }), [projectJobs]);
@@ -422,7 +422,7 @@ export default function ProjectDetailsModal({
     });
   };
 
-  const getJobStatusColor = (status: string) => {
+  const getJobStatusColor = (status: string | null) => {
     switch (status) {
       case 'completed':
         return 'bg-green-100 text-green-700';
@@ -763,7 +763,7 @@ export default function ProjectDetailsModal({
                           <p className="font-medium text-gray-900 mb-1">{job.description}</p>
                           <div className="flex items-center gap-3 text-sm text-gray-600">
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${getJobStatusColor(job.status)}`}>
-                              {job.status.replace('_', ' ')}
+                              {(job.status ?? 'pending').replace('_', ' ')}
                             </span>
                             {job.scheduled_time && (
                               <span>Scheduled: {formatDate(job.scheduled_time)}</span>

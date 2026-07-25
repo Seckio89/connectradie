@@ -142,7 +142,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
   const [viewingProof, setViewingProof] = useState<{ images: string[]; index: number } | null>(null);
   const [showCreateInvoice, setShowCreateInvoice] = useState<number | null>(null);
   const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null);
-  const isAcceptedOrBeyond = ['accepted', 'in_progress', 'completed'].includes(job.status);
+  const isAcceptedOrBeyond = job.status !== null && ['accepted', 'in_progress', 'completed'].includes(job.status);
   const canSeeContactDetails = isAcceptedOrBeyond || isUnlocked;
   const [offlineQueued, setOfflineQueued] = useState(false);
 
@@ -344,7 +344,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
     try {
       const { data: userData } = await supabase.auth.getUser();
       const nextStageNumber = milestones.length > 0 ? Math.max(...milestones.map(m => m.stage_number)) + 1 : 1;
-      const insertData: Record<string, unknown> = {
+      const insertData = {
         job_id: job.id, title: milestoneTitle, amount: totalAmount,
         due_date: milestoneDueDate || null, created_by: userData.user!.id,
         stage_number: nextStageNumber, payment_type: milestonePaymentType,
@@ -473,8 +473,8 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
       completed: 'Completed', declined: 'Declined',
     };
     return (
-      <span className={`px-3 py-1 text-sm font-medium rounded-full ${styles[job.status] || 'bg-gray-100 text-gray-700'}`}>
-        {labels[job.status] || job.status}
+      <span className={`px-3 py-1 text-sm font-medium rounded-full ${(job.status && styles[job.status]) || 'bg-gray-100 text-gray-700'}`}>
+        {(job.status && labels[job.status]) || job.status}
       </span>
     );
   };
