@@ -330,8 +330,16 @@ Deno.serve(async (req: Request) => {
     // 3. The tradie (business identity + Connect + bank details for external).
     const { data: tradieProfile } = await supabase
       .from("profiles")
-      .select("stripe_connect_account_id, stripe_connect_onboarding_complete, full_name, abn_number, is_gst_registered, bank_name, bank_bsb, bank_account_number, bank_account_name, platform_fee_override_bps")
+      .select("stripe_connect_account_id, stripe_connect_onboarding_complete, full_name, abn_number, is_gst_registered, platform_fee_override_bps")
       .eq("id", job.tradie_id)
+      .maybeSingle();
+    // Bank details for the bank-transfer ("external") invoice now live in
+    // profile_private — they were moved off `profiles`, which every signed-in user
+    // can read. This function runs with the SERVICE ROLE, so RLS is bypassed here.
+    const { data: tradieBank } = await supabase
+      .from("profile_private")
+      .select("bank_name, bank_bsb, bank_account_number, bank_account_name")
+      .eq("profile_id", job.tradie_id)
       .maybeSingle();
     const { data: tradieDetails } = await supabase
       .from("tradie_details")
@@ -392,10 +400,10 @@ Deno.serve(async (req: Request) => {
                 businessName,
                 abn: tradieProfile?.abn_number || undefined,
                 gstNote,
-                bankName: tradieProfile?.bank_name || undefined,
-                bsb: tradieProfile?.bank_bsb || undefined,
-                accountName: tradieProfile?.bank_account_name || undefined,
-                accountNumber: tradieProfile?.bank_account_number || undefined,
+                bankName: tradieBank?.bank_name || undefined,
+                bsb: tradieBank?.bank_bsb || undefined,
+                accountName: tradieBank?.bank_account_name || undefined,
+                accountNumber: tradieBank?.bank_account_number || undefined,
                 reference,
                 dueDate: fmtDate(dueStr),
               },

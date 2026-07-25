@@ -2699,6 +2699,7 @@ export type Database = {
       }
       platform_fee_invoices: {
         Row: {
+          adjusts_charge_id: string | null
           adjusts_invoice_id: string | null
           created_at: string
           emailed_at: string | null
@@ -2714,6 +2715,7 @@ export type Database = {
           tradie_profile_id: string
         }
         Insert: {
+          adjusts_charge_id?: string | null
           adjusts_invoice_id?: string | null
           created_at?: string
           emailed_at?: string | null
@@ -2729,6 +2731,7 @@ export type Database = {
           tradie_profile_id: string
         }
         Update: {
+          adjusts_charge_id?: string | null
           adjusts_invoice_id?: string | null
           created_at?: string
           emailed_at?: string | null
@@ -2744,6 +2747,13 @@ export type Database = {
           tradie_profile_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "platform_fee_invoices_adjusts_charge_id_fkey"
+            columns: ["adjusts_charge_id"]
+            isOneToOne: false
+            referencedRelation: "platform_fee_charges"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "platform_fee_invoices_adjusts_invoice_id_fkey"
             columns: ["adjusts_invoice_id"]
@@ -2976,6 +2986,41 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_private: {
+        Row: {
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_bsb: string | null
+          bank_name: string | null
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_bsb?: string | null
+          bank_name?: string | null
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_bsb?: string | null
+          bank_name?: string | null
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_private_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_views: {
         Row: {
           id: string
@@ -3005,10 +3050,6 @@ export type Database = {
           address: string | null
           auto_complete_sessions: boolean
           avatar_url: string | null
-          bank_account_name: string | null
-          bank_account_number: string | null
-          bank_bsb: string | null
-          bank_name: string | null
           base_latitude: number | null
           base_longitude: number | null
           bio: string | null
@@ -3079,10 +3120,6 @@ export type Database = {
           address?: string | null
           auto_complete_sessions?: boolean
           avatar_url?: string | null
-          bank_account_name?: string | null
-          bank_account_number?: string | null
-          bank_bsb?: string | null
-          bank_name?: string | null
           base_latitude?: number | null
           base_longitude?: number | null
           bio?: string | null
@@ -3153,10 +3190,6 @@ export type Database = {
           address?: string | null
           auto_complete_sessions?: boolean
           avatar_url?: string | null
-          bank_account_name?: string | null
-          bank_account_number?: string | null
-          bank_bsb?: string | null
-          bank_name?: string | null
           base_latitude?: number | null
           base_longitude?: number | null
           bio?: string | null
@@ -4827,6 +4860,24 @@ export type Database = {
           },
         ]
       }
+      stripe_webhook_events: {
+        Row: {
+          event_id: string
+          processed_at: string
+          type: string | null
+        }
+        Insert: {
+          event_id: string
+          processed_at?: string
+          type?: string | null
+        }
+        Update: {
+          event_id?: string
+          processed_at?: string
+          type?: string | null
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           id: number
@@ -5071,25 +5122,19 @@ export type Database = {
       }
       tradie_details: {
         Row: {
-          abn: string | null
           bio: string | null
           business_name: string
           contractor_type: string | null
-          cookery_cert: string | null
           created_at: string | null
           default_call_out_fee_cents: number | null
           emergency_available: boolean | null
-          food_safety_cert: string | null
           hourly_rate: number | null
           id: string
-          insurance_document_url: string | null
           insurance_provider: string | null
           is_insured: boolean | null
           is_licensed: boolean | null
           is_verified: boolean | null
-          license_number: string | null
           payout_speed_preference: string
-          policy_number: string | null
           profile_id: string
           qualifications: string[] | null
           service_radius_km: number | null
@@ -5099,25 +5144,19 @@ export type Database = {
           white_card: string | null
         }
         Insert: {
-          abn?: string | null
           bio?: string | null
           business_name?: string
           contractor_type?: string | null
-          cookery_cert?: string | null
           created_at?: string | null
           default_call_out_fee_cents?: number | null
           emergency_available?: boolean | null
-          food_safety_cert?: string | null
           hourly_rate?: number | null
           id?: string
-          insurance_document_url?: string | null
           insurance_provider?: string | null
           is_insured?: boolean | null
           is_licensed?: boolean | null
           is_verified?: boolean | null
-          license_number?: string | null
           payout_speed_preference?: string
-          policy_number?: string | null
           profile_id: string
           qualifications?: string[] | null
           service_radius_km?: number | null
@@ -5127,25 +5166,19 @@ export type Database = {
           white_card?: string | null
         }
         Update: {
-          abn?: string | null
           bio?: string | null
           business_name?: string
           contractor_type?: string | null
-          cookery_cert?: string | null
           created_at?: string | null
           default_call_out_fee_cents?: number | null
           emergency_available?: boolean | null
-          food_safety_cert?: string | null
           hourly_rate?: number | null
           id?: string
-          insurance_document_url?: string | null
           insurance_provider?: string | null
           is_insured?: boolean | null
           is_licensed?: boolean | null
           is_verified?: boolean | null
-          license_number?: string | null
           payout_speed_preference?: string
-          policy_number?: string | null
           profile_id?: string
           qualifications?: string[] | null
           service_radius_km?: number | null

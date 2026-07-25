@@ -75,11 +75,9 @@ export type Profile = {
   stripe_connect_account_id: string | null;
   stripe_connect_onboarding_complete: boolean;
   stripe_customer_id: string | null;
-  // Bank details printed on external (manual-transfer) invoices. Null until set.
-  bank_name: string | null;
-  bank_bsb: string | null;
-  bank_account_number: string | null;
-  bank_account_name: string | null;
+  // NOTE: bank details for external (manual-transfer) invoices are NOT here —
+  // they live in `profile_private` (owner/admin only), because every signed-in
+  // user can read `profiles`. See ProfilePrivate below.
   employer_id: string | null;
   employment_type: 'employee' | 'subcontractor' | 'none';
   employer_status: 'active' | 'pending_approval' | 'rejected' | 'none';
@@ -102,8 +100,6 @@ export type TradieDetails = {
   profile_id: string;
   business_name: string;
   trade_category: string;
-  abn: string | null;
-  license_number: string | null;
   is_verified: boolean;
   is_insured: boolean;
   is_licensed: boolean;
@@ -114,15 +110,23 @@ export type TradieDetails = {
   hourly_rate: number | null;
   emergency_available: boolean;
   insurance_provider: string;
-  policy_number: string;
   qualifications: string[];
   contractor_type: 'Solo' | 'Company' | 'Labour Hire';
-  insurance_document_url: string | null;
   trade_type: 'construction' | 'hospitality';
-  food_safety_cert: string | null;
-  cookery_cert: string | null;
   white_card: string | null;
   created_at: string;
+}
+
+// Owner/admin-only PII, split out of `profiles` (which any signed-in user can
+// read). Bank details for off-platform "bank transfer" invoices live here; the
+// service role (invoice-contact) reads them to print on the invoice.
+export type ProfilePrivate = {
+  profile_id: string;
+  bank_name: string | null;
+  bank_bsb: string | null;
+  bank_account_number: string | null;
+  bank_account_name: string | null;
+  updated_at: string;
 }
 
 export type Project = {

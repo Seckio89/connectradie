@@ -20,19 +20,52 @@ import { supabase } from '../../lib/supabase';
 // so a bank-transfer invoice can never happen and this section would be both
 // dead and a circumvention temptation — hence hidden.
 function ExternalBankDetails() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile } = useAuth();
   const { showToast } = useToast();
-  const [accountName, setAccountName] = useState(profile?.bank_account_name ?? '');
-  const [bsb, setBsb] = useState(profile?.bank_bsb ?? '');
-  const [accountNumber, setAccountNumber] = useState(profile?.bank_account_number ?? '');
-  const [bankName, setBankName] = useState(profile?.bank_name ?? '');
+  // Bank details live in profile_private (owner/admin-only), NOT on `profiles`,
+  // which every signed-in user can read. Loaded on demand rather than through
+  // AuthContext so they never sit in global state for users who don't need them.
+  const [saved, setSaved] = useState({ accountName: '', bsb: '', accountNumber: '', bankName: '' });
+  const [accountName, setAccountName] = useState('');
+  const [bsb, setBsb] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [bankName, setBankName] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const canUseExternal = profile?.external_pay_allowed === true;
+
+  useEffect(() => {
+    // Only fetch for tradies who can actually settle off-platform (the section is
+    // hidden for everyone else), so this costs nothing for the majority.
+    if (!user || !canUseExternal) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('profile_private')
+        .select('bank_name, bank_bsb, bank_account_number, bank_account_name')
+        .eq('profile_id', user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const next = {
+        accountName: data?.bank_account_name ?? '',
+        bsb: data?.bank_bsb ?? '',
+        accountNumber: data?.bank_account_number ?? '',
+        bankName: data?.bank_name ?? '',
+      };
+      setSaved(next);
+      setAccountName(next.accountName);
+      setBsb(next.bsb);
+      setAccountNumber(next.accountNumber);
+      setBankName(next.bankName);
+    })();
+    return () => { cancelled = true; };
+  }, [user, canUseExternal]);
+
   const dirty =
-    accountName !== (profile?.bank_account_name ?? '') ||
-    bsb !== (profile?.bank_bsb ?? '') ||
-    accountNumber !== (profile?.bank_account_number ?? '') ||
-    bankName !== (profile?.bank_name ?? '');
+    accountName !== saved.accountName ||
+    bsb !== saved.bsb ||
+    accountNumber !== saved.accountNumber ||
+    bankName !== saved.bankName;
 
   const handleSave = async () => {
     if (!user) return;
@@ -42,17 +75,25 @@ function ExternalBankDetails() {
     }
     setSaving(true);
     try {
+      // upsert: the private row may not exist yet. Both the INSERT and UPDATE
+      // policies permit profile_id = auth.uid().
       const { error } = await supabase
-        .from('profiles')
-        .update({
+        .from('profile_private')
+        .upsert({
+          profile_id: user.id,
           bank_account_name: accountName.trim() || null,
           bank_bsb: bsb.trim() || null,
           bank_account_number: accountNumber.trim() || null,
           bank_name: bankName.trim() || null,
-        })
-        .eq('id', user.id);
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'profile_id' });
       if (error) throw error;
-      await refreshProfile();
+      setSaved({
+        accountName: accountName.trim(),
+        bsb: bsb.trim(),
+        accountNumber: accountNumber.trim(),
+        bankName: bankName.trim(),
+      });
       showToast('Bank details saved');
     } catch {
       showToast('Could not save your bank details. Please try again.', true);
