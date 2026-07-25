@@ -33,6 +33,18 @@ export const PRO_FEATURES = {
 
 export type ProFeature = (typeof PRO_FEATURES)[keyof typeof PRO_FEATURES];
 
+/**
+ * The RESOLVED tier — the one that selects a fee schedule. Deliberately NARROWER
+ * than the raw column so a database string can never index PLATFORM_FEES
+ * unnormalised.
+ *
+ * NOT the same as `SubscriptionTier` in src/types/database.ts, which is the raw
+ * `tradie_details.subscription_tier` value and also includes 'business'.
+ * 'business' is a legacy marketing name that resolves to 'pro' here (and in the
+ * backend's resolveTradieTier) — it must NOT get its own PLATFORM_FEES entry, or
+ * that fourth schedule can drift from the money path. Pinned by
+ * __tests__/tierResolution.test.ts.
+ */
 export type SubscriptionTier = 'free' | 'pro' | 'pro_plus';
 export type BillingCycle = 'monthly' | 'annual';
 
