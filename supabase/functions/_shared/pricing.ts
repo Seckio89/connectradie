@@ -75,9 +75,21 @@ export function resolveTradieTier(subscriptionTier: string | null | undefined): 
   // Property-Manager tiers charge the single advertised PM schedule (3% / 1.5%
   // above $3k, cap $270). Previously these fell through to "free", so PM jobs
   // routed through escrow were billed the Free rate — fixed here.
-  if (subscriptionTier === "pm_starter" || subscriptionTier === "pm_pro" || subscriptionTier === "pm_enterprise") {
+  // "pm" is the canonical id (pricing_tiers.id); pm_starter/pm_pro/pm_enterprise
+  // are the retired per-subtier names. Accept all four so that whenever PM
+  // provisioning ships, the charge path is already correct rather than needing a
+  // second change to the money path.
+  if (
+    subscriptionTier === "pm" ||
+    subscriptionTier === "pm_starter" ||
+    subscriptionTier === "pm_pro" ||
+    subscriptionTier === "pm_enterprise"
+  ) {
     return "pm";
   }
+  // Unknown/absent → Free. Free is the HIGHEST rate, so a config gap can only
+  // ever over-collect for the platform, never silently under-bill. The daily fee
+  // audit flags tradies sitting on an unrecognised tier.
   return "free";
 }
 

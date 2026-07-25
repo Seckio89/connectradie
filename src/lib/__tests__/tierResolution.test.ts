@@ -50,6 +50,11 @@ function disclosedFee(rawTier: string, labourDollars: number): number {
 // with the CHECK constraint — a new tier must be added here too.
 const STORABLE_TIERS = ['free', 'pro', 'pro_plus', 'business'] as const;
 
+// Not yet storable (the CHECK rejects them) and nothing writes them, but both
+// resolvers already understand them so that enabling PM is a provisioning
+// change, not another edit to the money path.
+const FUTURE_PM_TIERS = ['pm', 'pm_starter', 'pm_pro', 'pm_enterprise'] as const;
+
 const LABOUR_AMOUNTS = [100, 500, 1_000, 5_000, 10_000, 50_000];
 
 describe('disclosed fee === charged fee, for every storable tier', () => {
@@ -101,6 +106,26 @@ describe('tiers converge on large jobs — this is by design, not a bug', () => 
       expect(backendFee('pro', labour)).toBe(expected);
       expect(backendFee('business', labour)).toBe(expected);
     }
+  });
+});
+
+describe('PM is pre-wired: disclosed === charged before it is ever sellable', () => {
+  for (const tier of FUTURE_PM_TIERS) {
+    it(`${tier} resolves to pm on both sides and prices identically`, () => {
+      expect(getChargedTier(tier)).toBe('pm');
+      expect(resolveTradieTier(tier)).toBe('pm');
+      for (const labour of LABOUR_AMOUNTS) {
+        expect(disclosedFee(tier, labour)).toBe(backendFee(tier, labour));
+      }
+    });
+  }
+
+  it('charges the advertised 3% / $270 cap, cheaper than Pro', () => {
+    // /pricing advertises 3% of labour capped at $270.
+    expect(backendFee('pm', 1_000)).toBe(30);
+    expect(backendFee('pm', 10_000)).toBe(270);
+    // Below the convergence point PM must beat Pro, or the tier is pointless.
+    expect(backendFee('pm', 10_000)).toBeLessThan(backendFee('pro', 10_000));
   });
 });
 

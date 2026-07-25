@@ -32,7 +32,12 @@ import type { PricingTier } from '../types/database';
 const FALLBACK_TIERS: PricingTier[] = [
   { id: 'free', name: 'Free', monthly_price_cents: 0, annual_monthly_price_cents: null, rate_bps: 800, reduced_rate_bps: 800, reduced_threshold_cents: 300_000, fee_cap_cents: 50_000, repeat_rate_bps: 500, cap_floor_bps: 250, min_fee_cents: 500, instant_payout_bps: 150, instant_payout_min_cents: 200, team_seats: null, direct_pay_allowed: false, stripe_price_id_monthly: null, stripe_price_id_annual: null, is_active: true, sort_order: 1, created_at: '', updated_at: '' },
   { id: 'pro', name: 'Pro', monthly_price_cents: 3900, annual_monthly_price_cents: null, rate_bps: 500, reduced_rate_bps: 500, reduced_threshold_cents: 300_000, fee_cap_cents: 40_000, repeat_rate_bps: 400, cap_floor_bps: 250, min_fee_cents: 500, instant_payout_bps: 150, instant_payout_min_cents: 200, team_seats: null, direct_pay_allowed: false, stripe_price_id_monthly: null, stripe_price_id_annual: null, is_active: true, sort_order: 2, created_at: '', updated_at: '' },
-  { id: 'pm', name: 'Property Manager', monthly_price_cents: 14900, annual_monthly_price_cents: 11900, rate_bps: 300, reduced_rate_bps: 300, reduced_threshold_cents: 300_000, fee_cap_cents: 27_000, repeat_rate_bps: 300, cap_floor_bps: 250, min_fee_cents: 500, instant_payout_bps: 150, instant_payout_min_cents: 200, team_seats: 10, direct_pay_allowed: true, stripe_price_id_monthly: null, stripe_price_id_annual: null, is_active: true, sort_order: 3, created_at: '', updated_at: '' },
+  // PM is is_active:false — NOT sellable yet. There is no Stripe price for it, no
+  // checkout path selects it, and the webhook only ever writes 'pro'/'free', so a
+  // signup through this card would be charged the Free schedule (8%, cap $500)
+  // instead of the 3%/$270 advertised here. The row stays so the schedule is
+  // ready when PM ships; see the deferred build plan.
+  { id: 'pm', name: 'Property Manager', monthly_price_cents: 14900, annual_monthly_price_cents: 11900, rate_bps: 300, reduced_rate_bps: 300, reduced_threshold_cents: 300_000, fee_cap_cents: 27_000, repeat_rate_bps: 300, cap_floor_bps: 250, min_fee_cents: 500, instant_payout_bps: 150, instant_payout_min_cents: 200, team_seats: 10, direct_pay_allowed: true, stripe_price_id_monthly: null, stripe_price_id_annual: null, is_active: false, sort_order: 3, created_at: '', updated_at: '' },
 ];
 
 const scheduleOf = (t: PricingTier): TierScheduleV21 => ({
@@ -92,7 +97,10 @@ const COMPETITORS = [
 ];
 
 export default function Pricing() {
-  const [tiers, setTiers] = useState<PricingTier[]>(FALLBACK_TIERS);
+  // Filtered to match the DB read below (.eq('is_active', true)). Without this
+  // an inactive tier would still render whenever the fetch fails and the
+  // fallback is used — the two paths must agree.
+  const [tiers, setTiers] = useState<PricingTier[]>(() => FALLBACK_TIERS.filter((t) => t.is_active));
 
   // Load the live fee schedule (public read; falls back silently to the mirror).
   useEffect(() => {

@@ -45,7 +45,7 @@ export type ProFeature = (typeof PRO_FEATURES)[keyof typeof PRO_FEATURES];
  * that fourth schedule can drift from the money path. Pinned by
  * __tests__/tierResolution.test.ts.
  */
-export type SubscriptionTier = 'free' | 'pro' | 'pro_plus';
+export type SubscriptionTier = 'free' | 'pro' | 'pro_plus' | 'pm';
 export type BillingCycle = 'monthly' | 'annual';
 
 export interface TierPricing {
@@ -79,6 +79,14 @@ export const TIER_PRICING: Record<Exclude<SubscriptionTier, 'free'>, TierPricing
     annual: 499,
     annualMonthly: 41.58,
   },
+  // Mirrors pricing_tiers.pm (14900 / 11900 cents). NOT purchasable yet — the
+  // tier is is_active:false and has no Stripe price; listed so the subscription
+  // price is already correct when PM ships.
+  pm: {
+    monthly: 149,
+    annual: 1428,
+    annualMonthly: 119,
+  },
 };
 
 // The advertised v2.1 schedule (see /pricing): a FLAT rate on the tradie's
@@ -91,6 +99,9 @@ export const PLATFORM_FEES: Record<SubscriptionTier, PlatformFeeConfig> = {
   free: { type: 'flat', rate: 0.08, cap: 500 },
   pro: { type: 'flat', rate: 0.05, cap: 400 },
   pro_plus: { type: 'flat', rate: 0.05, cap: 400 },
+  // PM is not sellable yet (no Stripe price, nothing writes the tier). Listed so
+  // disclosure already matches TIER_SCHEDULES_V21.pm the moment it ships.
+  pm: { type: 'flat', rate: 0.03, cap: 270 },
 };
 
 /** The cheaper rate a (tradie, client) pair gets from their 2nd job onward. */
@@ -98,6 +109,7 @@ export const REPEAT_CLIENT_FEES: Record<SubscriptionTier, number> = {
   free: 0.05,
   pro: 0.04,
   pro_plus: 0.04,
+  pm: 0.03, // PM's advertised rate is flat — repeat clients pay the same 3%.
 };
 
 /**
@@ -116,7 +128,11 @@ export function calculatePlatformFee(
   overrideBps?: number | null,
   isRepeatClient = false,
 ): number {
-  const schedule = tier === 'free' ? TIER_SCHEDULES_V21.free : TIER_SCHEDULES_V21.pro; // pro + pro_plus
+  // Mirrors resolveTierScheduleV21 in the money path — keep the two in step.
+  const schedule =
+    tier === 'free' ? TIER_SCHEDULES_V21.free
+    : tier === 'pm' ? TIER_SCHEDULES_V21.pm
+    : TIER_SCHEDULES_V21.pro; // pro + pro_plus
   const labourCents = Math.round(Math.max(0, labourValue) * 100);
   return calculateFeeV21({
     labourCents,
@@ -191,6 +207,17 @@ export function getCurrentTier(subscriptionTier?: string, isPremium?: boolean, i
 export function getChargedTier(subscriptionTier?: string | null): SubscriptionTier {
   if (subscriptionTier === 'pro_plus') return 'pro_plus';
   if (subscriptionTier === 'pro' || subscriptionTier === 'business') return 'pro';
+  // Mirrors resolveTradieTier: 'pm' is canonical, pm_* are the retired subtier
+  // names. Not reachable today (no column CHECK admits them, nothing writes
+  // them) — present so disclosure is correct the moment PM ships.
+  if (
+    subscriptionTier === 'pm' ||
+    subscriptionTier === 'pm_starter' ||
+    subscriptionTier === 'pm_pro' ||
+    subscriptionTier === 'pm_enterprise'
+  ) {
+    return 'pm';
+  }
   return 'free';
 }
 
