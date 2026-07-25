@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 function checkRateLimit(
   key: string, maxRequests: number, windowMs: number,

@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Service-role authorization by CAPABILITY, not by string shape.

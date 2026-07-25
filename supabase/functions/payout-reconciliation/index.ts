@@ -15,7 +15,7 @@
 // Auth: service-role JWT (verify_jwt=true + Bearer ey), same as the other crons.
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { hasServiceRole } from "../_shared/serviceAuth.ts";
 
 const corsHeaders = {

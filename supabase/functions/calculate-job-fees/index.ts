@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { PRICING_CONFIG, calculateTradieFees, calculatePMFees, TradieTier, PMTier, FeeBreakdown } from "../_shared/pricing.ts";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
