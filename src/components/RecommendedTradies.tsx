@@ -60,7 +60,7 @@ export default function RecommendedTradies() {
   const [items, setItems] = useState<RankedTradie[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTrades, setActiveTrades] = useState<string[]>([]);
-  const [savedSet, setSavedSet] = useState<Set<string>>(new Set());
+  const [, setSavedSet] = useState<Set<string>>(new Set());
   const [savingId, setSavingId] = useState<string | null>(null);
 
   useEffect(() => {

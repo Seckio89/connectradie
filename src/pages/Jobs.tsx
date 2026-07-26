@@ -1361,7 +1361,6 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
         isOpen={!!selectedJob}
         onClose={() => setSelectedJob(null)}
         job={selectedJob}
-        isUnlocked={true}
         onStatusChange={fetchJobs}
         onQuote={selectedJob && !myQuotes.has(selectedJob.id) ? (startDate) => {
           setProposedStartDate(startDate ?? null);

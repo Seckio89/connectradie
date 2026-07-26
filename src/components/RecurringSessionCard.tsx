@@ -82,7 +82,7 @@ export default function RecurringSessionCard({
   const [extraCost, setExtraCost] = useState('');
   const [extraNotes, setExtraNotes] = useState('');
   const [loading, setLoading] = useState(false);
-  const [blockedDates, setBlockedDates] = useState<Set<string>>(new Set());
+  const [, setBlockedDates] = useState<Set<string>>(new Set());
   const [clashWarning, setClashWarning] = useState('');
   const [checkingClash, setCheckingClash] = useState(false);
   const [extraClashWarning, setExtraClashWarning] = useState('');

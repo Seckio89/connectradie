@@ -40,7 +40,6 @@ interface JobDetailModalProps {
   onClose: () => void;
   job: (Job & { profiles?: { full_name: string; email: string; phone?: string | null } | null }) | null;
   onQuote?: (proposedStartDate?: string | null) => void;
-  isUnlocked?: boolean;
   onStatusChange?: () => void;
   onComplete?: () => void;
 }
@@ -77,7 +76,7 @@ function getNextAction(status: string, isTradie: boolean): { label: string; hint
   }
 }
 
-export default function JobDetailModal({ isOpen, onClose, job, onQuote, isUnlocked = true, onStatusChange, onComplete }: JobDetailModalProps) {
+export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatusChange, onComplete }: JobDetailModalProps) {
   const { user, profile, tradieDetails } = useAuth();
   const photoSignedUrls = useSignedUrls('job-attachments', job?.images_url || []);
   const [milestones, setMilestones] = useState<JobMilestone[]>([]);

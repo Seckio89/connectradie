@@ -48,7 +48,7 @@ export default function ClientDashboard() {
     const timer = setTimeout(() => setShowSlotsBanner(false), 15000);
     return () => clearTimeout(timer);
   }, [availableThisWeek, showSlotsBanner]);
-  const [unreadTradieIds, setUnreadTradieIds] = useState<Set<string>>(new Set());
+  const [, setUnreadTradieIds] = useState<Set<string>>(new Set());
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [trainingModeEnabled, setTrainingModeEnabled] = useState(false);
   const [toast, setToast] = useState<{ message: string; show: boolean; isError?: boolean }>({ message: '', show: false });
