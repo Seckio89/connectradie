@@ -523,9 +523,81 @@ async function handleEvent(event: Stripe.Event) {
     const amount = dispute.amount;
     const reason = dispute.reason;
 
-    // Cannot insert a dispute record without job/user context from Stripe dispute alone
-    // Log for admin review and rely on the admin notification below
-    console.warn(`Stripe dispute ${dispute.id} received but cannot create DB record without job context. Charge: ${chargeId}, Amount: ${amount}, Reason: ${reason}`);
+    // Write a real disputes row (H5). This used to bail out with "cannot create
+    // DB record without job context" — but auto-release-payments builds its
+    // exclusion set ONLY from public.disputes, so a chargeback never blocked the
+    // 5-hour cron and the platform could pay the tradie money Stripe had already
+    // clawed back. The context IS derivable:
+    //   dispute.charge -> charge.payment_intent -> payments -> job -> both parties.
+    //
+    // Best-effort: a failure here must not 500 the webhook (Stripe would retry
+    // and the dedupe row is already claimed), so it falls through to the admin
+    // notification below, which is what used to be the only outcome.
+    try {
+      if (!chargeId) throw new Error("dispute has no charge id");
+
+      const charge = await stripe.charges.retrieve(chargeId);
+      const piId = typeof charge.payment_intent === "string"
+        ? charge.payment_intent
+        : (charge.payment_intent as Stripe.PaymentIntent | null)?.id;
+      if (!piId) throw new Error(`charge ${chargeId} has no payment_intent`);
+
+      const { data: disputedPayment } = await supabase
+        .from("payments")
+        .select("id, job_id, metadata")
+        .eq("stripe_payment_intent_id", piId)
+        .maybeSingle();
+      if (!disputedPayment?.job_id) throw new Error(`no payment/job for payment_intent ${piId}`);
+
+      const { data: disputedJob } = await supabase
+        .from("jobs")
+        .select("id, client_id, tradie_id")
+        .eq("id", disputedPayment.job_id)
+        .maybeSingle();
+      if (!disputedJob?.client_id || !disputedJob.tradie_id) {
+        throw new Error(`job ${disputedPayment.job_id} missing client or tradie`);
+      }
+
+      // status defaults to 'open', which is exactly what auto-release-payments
+      // excludes — that is the whole point of writing this row.
+      const disputeRow: Insert<'disputes'> = {
+        job_id: disputedJob.id,
+        opened_by: disputedJob.client_id,   // the cardholder raised the chargeback
+        against_user: disputedJob.tradie_id,
+        reason: `stripe_chargeback:${reason ?? "unknown"}`,
+        description:
+          `Automatic record of Stripe chargeback ${dispute.id} on charge ${chargeId}. ` +
+          `Amount ${(amount / 100).toFixed(2)} ${dispute.currency?.toUpperCase()}. ` +
+          `Raised by the card issuer, not in-app. Blocks auto-release until closed.`,
+        stripe_dispute_id: dispute.id,
+      };
+      const { error: disputeInsertError } = await supabase.from("disputes").insert(disputeRow);
+      // 23505 = this dispute is already recorded; redelivery is a no-op.
+      if (disputeInsertError && (disputeInsertError as { code?: string }).code !== "23505") {
+        throw disputeInsertError;
+      }
+
+      // Cross-reference on the payment so reconciliation can see it too.
+      await supabase
+        .from("payments")
+        .update({
+          metadata: {
+            ...((disputedPayment.metadata || {}) as Record<string, unknown>),
+            stripe_dispute_id: dispute.id,
+            disputed_at: new Date().toISOString(),
+          },
+        })
+        .eq("id", disputedPayment.id);
+
+      console.info(`Dispute ${dispute.id} linked to job ${disputedJob.id} — auto-release blocked.`);
+    } catch (err) {
+      // Loud, because the fallback leaves the payout UNBLOCKED.
+      console.error(
+        `CRITICAL: could not record Stripe dispute ${dispute.id} against a job — ` +
+          `auto-release is NOT blocked for it. Charge: ${chargeId}, Amount: ${amount}, Reason: ${reason}.`,
+        err,
+      );
+    }
 
     // Notify all admins
     const { data: admins } = await supabase
@@ -548,6 +620,66 @@ async function handleEvent(event: Stripe.Event) {
     }
 
     console.info(`Dispute created: ${dispute.id}, amount: ${amount}, reason: ${reason}`);
+    return;
+  }
+
+  // Handle charge.dispute.closed — release or confirm the block raised above.
+  //
+  // This is the necessary other half of dispute.created. disputes.status 'open'
+  // is what stops auto-release, so WITHOUT this a chargeback the tradie WINS
+  // would block their payout permanently — we would have turned a lost-money bug
+  // into a never-pay bug.
+  if (event.type === 'charge.dispute.closed') {
+    const dispute = event.data.object as Stripe.Dispute;
+
+    // won  -> the funds came back to us, so the tradie may be paid:
+    //         'resolved_tradie' is NOT in auto-release's exclusion list.
+    // lost  -> the money is gone; keep it excluded so we never pay it out again.
+    // other (warning_closed etc.) -> treat as dismissed, no longer blocking.
+    const mappedStatus = dispute.status === 'won'
+      ? 'resolved_tradie'
+      : dispute.status === 'lost'
+      ? 'resolved_client'
+      : 'dismissed';
+
+    const { error: closeError } = await supabase
+      .from('disputes')
+      .update({
+        status: mappedStatus,
+        resolution: `Stripe dispute ${dispute.id} closed with status "${dispute.status}".`,
+        resolved_at: new Date().toISOString(),
+      })
+      .eq('stripe_dispute_id', dispute.id);
+
+    if (closeError) {
+      console.error(`Failed to close dispute record for ${dispute.id}`, closeError);
+    } else {
+      console.info(`Dispute ${dispute.id} closed as ${dispute.status} -> ${mappedStatus}`);
+    }
+
+    // A LOST chargeback needs the PAYMENT closed too, not just the dispute row.
+    // auto-release only excludes 'open'/'under_review' disputes, so resolving to
+    // 'resolved_client' would UN-block the job and let the cron pay the tradie
+    // money the client has already taken back — the original H5 bug, just
+    // deferred to dispute-close time.
+    //
+    // 'refunded' is the honest status (the funds did go back to the cardholder)
+    // and it is already terminal everywhere that matters: auto-release requires
+    // 'completed', and reconcile-payments now refuses to downgrade a terminal
+    // status back to 'completed'.
+    if (dispute.status === 'lost') {
+      const { error: payErr } = await supabase
+        .from('payments')
+        .update({ status: 'refunded' })
+        .eq('metadata->>stripe_dispute_id', dispute.id);
+      if (payErr) {
+        console.error(
+          `CRITICAL: dispute ${dispute.id} was LOST but the payment could not be marked refunded — ` +
+            `auto-release may pay out clawed-back funds.`,
+          payErr,
+        );
+      }
+    }
     return;
   }
 
