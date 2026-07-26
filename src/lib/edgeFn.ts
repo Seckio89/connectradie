@@ -85,6 +85,23 @@ export async function callEdgeFunction<T = Record<string, unknown>>(
     if (errorCode) {
       (err as Error & { code?: string }).code = errorCode;
     }
+    // A 4xx with a message our own edge function wrote is ALREADY user-facing
+    // and actionable — it explains what to do next. Mark it so friendlyError()
+    // passes it through instead of keyword-matching it into a generic string.
+    //
+    // This mattered: process-refund returns 409 "You've already approved this
+    // payment for release... raise a dispute and our team will review it", and
+    // because that sentence contains the word "payment" the mapper replaced it
+    // with "There was a problem processing your payment. Please try again" —
+    // telling the user to retry something that can never succeed, and losing
+    // the instruction to raise a dispute.
+    //
+    // 5xx and messages we generated ourselves still go through the mapper:
+    // those are genuinely technical.
+    if (errorMessage && response.status >= 400 && response.status < 500) {
+      (err as Error & { userFacing?: boolean }).userFacing = true;
+    }
+    (err as Error & { status?: number }).status = response.status;
     throw err;
   }
 

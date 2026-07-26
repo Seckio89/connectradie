@@ -88,6 +88,18 @@ export function friendlyError(error: string | { message?: string; code?: string 
 
   if (!msg) return fallback || 'Something went wrong. Please try again.';
 
+  // Errors flagged by callEdgeFunction as user-facing (a 4xx whose body our own
+  // edge function wrote) are already plain English and already say what to do
+  // next. Rewriting them loses that. The keyword rules below exist to translate
+  // TECHNICAL errors — Postgres codes, Stripe failures, network faults — not to
+  // second-guess copy we authored ourselves.
+  if (
+    error && typeof error === 'object' &&
+    (error as { userFacing?: boolean }).userFacing === true
+  ) {
+    return msg;
+  }
+
   const raw = msg.toLowerCase();
 
   // Foreign key / dependency errors (e.g. can't delete account with linked data)
