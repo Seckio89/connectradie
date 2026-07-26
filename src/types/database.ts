@@ -64,7 +64,22 @@ export type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'reject
  * them type-checked while being a live TypeError for any profile that has never
  * had trades set. Call sites now have to guard, and several did not.
  */
-export type Profile = Row<'profiles'>;
+export type Profile = Row<'profiles'> & {
+  /**
+   * NOT columns on `profiles`. These are a home address, so they were moved to
+   * the owner-or-admin-only `profile_private` table. AuthContext.fetchProfile
+   * embeds them and flattens them back onto the profile object so consumers
+   * (QuoteEstimator, Leads) keep reading `profile.base_latitude` unchanged.
+   *
+   * They are declared here rather than left to the `as Profile` cast in
+   * AuthContext, because that cast is what let the columns disappear from the
+   * generated types without a single call site failing to compile.
+   *
+   * Null for any profile fetched WITHOUT that embed — check before using.
+   */
+  base_latitude?: number | null;
+  base_longitude?: number | null;
+};
 
 /** A tradie_details row — EXACTLY the generated Row (see the note on Profile). */
 export type TradieDetails = Row<'tradie_details'>;
