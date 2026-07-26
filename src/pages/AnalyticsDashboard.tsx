@@ -92,7 +92,7 @@ export default function AnalyticsDashboard() {
     if (!user) return;
     setLoading(true);
 
-    const [jobsRes, quotesRes, reviewsRes, paymentsRes, extRes] = await Promise.all([
+    const [jobsRes, quotesRes, reviewsRes, recurringPayRes, jobPayRes, extRes] = await Promise.all([
       supabase
         .from('jobs')
         .select('id, client_id, status, budget_amount, created_at, profiles!jobs_client_id_fkey(full_name)')
@@ -108,10 +108,28 @@ export default function AnalyticsDashboard() {
         .select('rating, created_at')
         .eq('tradie_id', user.id)
         .gte('created_at', rangeStart),
+      // Tradie income arrives under TWO different keys, so it takes two queries.
+      //
+      // (a) Recurring / off-app invoices — these rows genuinely carry
+      //     profile_id = the tradie, because the payer is often an off-app
+      //     client_contact with no profiles row at all.
       supabase
         .from('payments')
         .select('amount, created_at, status')
         .eq('profile_id', user.id)
+        .eq('payment_type', 'recurring_invoice')
+        .gte('created_at', rangeStart),
+      // (b) Escrow job income — reached via the JOB, because on job_funding rows
+      //     profile_id is the CLIENT who paid (accept-and-pay/index.ts:500,
+      //     create-job-deposit:209, pay-milestone:199 all write the payer's id).
+      //     This page previously filtered on profile_id alone, so a tradie's
+      //     revenue silently EXCLUDED every escrow job they had ever done.
+      //     Same shape as src/pages/Payouts.tsx:159-163.
+      supabase
+        .from('payments')
+        .select('amount, created_at, status, jobs!inner(tradie_id)')
+        .eq('jobs.tradie_id', user.id)
+        .eq('payment_type', 'job_funding')
         .gte('created_at', rangeStart),
       // Externally-received (bank transfer / cash) invoice income — merged into
       // payments as synthetic completed rows so revenue totals include them.
@@ -149,7 +167,19 @@ export default function AnalyticsDashboard() {
       setQuotes(validQuotes);
     }
     setReviews(Array.isArray(reviewsRes.data) && !reviewsRes.error ? (reviewsRes.data as ReviewRow[]) : []);
-    const basePayments = Array.isArray(paymentsRes.data) && !paymentsRes.error ? (paymentsRes.data as PaymentRow[]) : [];
+    const recurringPayments = Array.isArray(recurringPayRes.data) && !recurringPayRes.error
+      ? (recurringPayRes.data as PaymentRow[])
+      : [];
+    // The escrow query embeds `jobs` only to filter on tradie_id — drop it so
+    // these rows are the same shape as the rest and PaymentRow stays accurate.
+    const jobPayments: PaymentRow[] = Array.isArray(jobPayRes.data) && !jobPayRes.error
+      ? (jobPayRes.data as (PaymentRow & { jobs?: unknown })[]).map(({ amount, created_at, status }) => ({
+          amount,
+          created_at,
+          status,
+        }))
+      : [];
+    const basePayments = [...recurringPayments, ...jobPayments];
     const extRows: PaymentRow[] = Array.isArray(extRes.data) && !extRes.error
       ? (extRes.data as { total: number; paid_at: string | null }[]).map((r) => ({
           amount: Math.round(Number(r.total) * 100),
