@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { resolveTradieTier } from "../_shared/pricing.ts";
 import { resolveChargeFee } from "../_shared/feeContext.ts";
+import type { Insert } from "../_shared/dbTypes.ts";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
@@ -220,6 +221,47 @@ Deno.serve(async (req: Request) => {
             },
           });
 
+          // §7A: recurring invoices had no payments row, and platform_fee_charges
+          // (the only table issue-fee-invoices reads) is keyed on payment_id — so
+          // commission collected here was never tax-invoiced.
+          //
+          // Inserted AFTER the PaymentIntent succeeds, unlike charge-becs-invoice
+          // which inserts first. The create above sits in a try/catch that
+          // SWALLOWS failures and falls through to the Checkout path below, so an
+          // insert-first would leave an orphaned pending row plus a second row
+          // from the fallback. Keyed on the PI id rather than threading
+          // payment_record_id through metadata, since the PI already exists.
+          //
+          // payment_type 'recurring_invoice' keeps this out of Payouts earnings
+          // and out of auto-release-payments; profile_id is the TRADIE because
+          // off-app payers have no profiles row.
+          const becsRow: Insert<'payments'> = {
+            profile_id: recurringJob?.tradie_id ?? "",
+            payment_type: "recurring_invoice",
+            amount: chargeAmount,
+            status: "pending", // the webhook completes it once BECS settles
+            stripe_payment_intent_id: pi.id,
+            ...becsFee.paymentColumns,
+            metadata: {
+              ...becsFee.metadata,
+              type: "recurring_invoice_becs",
+              routing: "destination",
+              invoice_id: invoiceId,
+              recurring_job_id: invoice.recurring_job_id,
+              tradie_id: recurringJob?.tradie_id || "",
+            },
+          };
+          const { error: becsRowErr } = await supabase.from("payments").insert(becsRow);
+          if (becsRowErr) {
+            // Loud but non-fatal: the client has already been debited, so failing
+            // the request here would be worse than a missing ledger row.
+            console.error(
+              `[approve-invoice] BECS charged (pi ${pi.id}) but no payments row was created — ` +
+                `commission for invoice ${invoiceId} will not be tax-invoiced.`,
+              becsRowErr,
+            );
+          }
+
           await supabase.from("recurring_invoices").update({
             status: "processing",
             approved_at: now,
@@ -284,6 +326,35 @@ Deno.serve(async (req: Request) => {
         ...fee.metadata,
       },
     });
+
+    // §7A ledger row for the Checkout path. No payment_record_id needed —
+    // stripe-webhook completes any payments row by matching
+    // stripe_checkout_session_id, then records the fee in its
+    // `type === 'recurring_invoice'` branch.
+    const cardRow: Insert<'payments'> = {
+      profile_id: recurringJob?.tradie_id ?? "",
+      payment_type: "recurring_invoice",
+      amount: totalCents,
+      status: "pending",
+      stripe_checkout_session_id: session.id,
+      ...fee.paymentColumns,
+      metadata: {
+        ...fee.metadata,
+        type: "recurring_invoice",
+        routing: "destination",
+        invoice_id: invoiceId,
+        recurring_job_id: invoice.recurring_job_id,
+        tradie_id: recurringJob?.tradie_id || "",
+      },
+    };
+    const { error: cardRowErr } = await supabase.from("payments").insert(cardRow);
+    if (cardRowErr) {
+      console.error(
+        `[approve-invoice] no payments row for checkout session ${session.id} — ` +
+          `commission for invoice ${invoiceId} will not be tax-invoiced.`,
+        cardRowErr,
+      );
+    }
 
     await supabase.from("recurring_invoices").update({
       status: "sent",

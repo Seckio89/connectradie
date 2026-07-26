@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { resolveTradieTier } from "../_shared/pricing.ts";
 import { resolveChargeFee } from "../_shared/feeContext.ts";
+import type { Insert } from "../_shared/dbTypes.ts";
 
 /*
   invoice-contact — bill an OFF-APP client_contact.
@@ -501,6 +502,43 @@ Deno.serve(async (req: Request) => {
       .select("id")
       .single();
     if (insertErr) { console.error("invoice-contact insert failed", insertErr); return json({ error: "Failed to record the invoice" }, 500); }
+
+    // §7A: this off-app recurring path had no payments row, so its commission
+    // could never be tax-invoiced (platform_fee_charges is keyed on payment_id).
+    //
+    // stripe-webhook completes the row by matching stripe_checkout_session_id
+    // and records the fee in its `type === 'recurring_invoice'` branch — which
+    // reads the fee off THIS ROW rather than the session metadata, precisely
+    // because the session above does not spread ...fee.metadata.
+    //
+    // profile_id is the TRADIE: this client is an off-app client_contact with no
+    // profiles row at all, and profile_id is NOT NULL.
+    const recurringRow: Insert<'payments'> = {
+      profile_id: job.tradie_id ?? "",
+      payment_type: "recurring_invoice",
+      amount: totalCents,
+      status: "pending",
+      stripe_checkout_session_id: checkoutSession.id,
+      ...fee.paymentColumns,
+      metadata: {
+        ...fee.metadata,
+        off_app: true,
+        type: "recurring_invoice",
+        routing: "destination",
+        recurring_job_id: recurringJobId,
+        client_contact_id: job.client_contact_id,
+        tradie_id: job.tradie_id ?? "",
+        invoice_id: invoice?.id ?? null,
+      },
+    };
+    const { error: recurringRowErr } = await supabase.from("payments").insert(recurringRow);
+    if (recurringRowErr) {
+      console.error(
+        `[invoice-contact] no payments row for session ${checkoutSession.id} — ` +
+          `commission will not be tax-invoiced.`,
+        recurringRowErr,
+      );
+    }
 
     await supabase.from("recurring_jobs").update({ last_invoiced_at: today }).eq("id", recurringJobId);
 

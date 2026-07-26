@@ -890,7 +890,21 @@ async function handleEvent(event: Stripe.Event) {
           // Done HERE rather than at charge time because BECS settles
           // asynchronously: booking commission when the debit is merely
           // submitted would book revenue on money that may never arrive.
-          const becsPaymentRecordId = pi.metadata?.payment_record_id;
+          // charge-becs-invoice threads payment_record_id through the PI metadata
+          // (it creates the row BEFORE the charge). approve-invoice cannot — its
+          // PI create sits in a try/catch that falls through to Checkout on
+          // failure, so it inserts the row AFTER the charge and keys it on the PI
+          // id instead. Accept either.
+          let becsPaymentRecordId: string | null = pi.metadata?.payment_record_id ?? null;
+          if (!becsPaymentRecordId) {
+            const { data: byPi } = await supabase
+              .from('payments')
+              .select('id')
+              .eq('stripe_payment_intent_id', pi.id)
+              .eq('payment_type', 'recurring_invoice')
+              .maybeSingle();
+            becsPaymentRecordId = byPi?.id ?? null;
+          }
           if (becsPaymentRecordId) {
             await supabase
               .from('payments')
@@ -1128,7 +1142,12 @@ async function handleEvent(event: Stripe.Event) {
               : null,
           })
           .eq('stripe_checkout_session_id', session.id)
-          .select('id');
+          // Fee columns come back too so the recurring_invoice branch below can
+          // write the §7A ledger row without re-reading. They are read off the
+          // ROW rather than session.metadata deliberately: invoice-contact's
+          // recurring session does not spread ...fee.metadata, so it carries no
+          // `commission` key — but fee.paymentColumns always populates these.
+          .select('id, commission_cents, materials_processing_cents, fee_rate_bps, fee_rate_type');
 
         if (paymentUpdateError) {
           console.error('Error updating payment record:', paymentUpdateError);
@@ -1236,6 +1255,30 @@ async function handleEvent(event: Stripe.Event) {
 
           // If this is a recurring_invoice payment, mark the invoice as paid and transfer to tradie
           if (session.metadata?.type === 'recurring_invoice') {
+            // §7A: record the commission for tax-invoicing. Covers all three
+            // Checkout-based recurring flows at once (approve-invoice's card
+            // path, generate-recurring-invoice, invoice-contact's off-app
+            // recurring invoice) because they all land here.
+            //
+            // Recurring invoices previously had no payments row at all, so
+            // platform_fee_charges — the only table issue-fee-invoices reads —
+            // had nothing to key on and the commission was never tax-invoiced.
+            //
+            // Best-effort: recordFeeCharge never throws and is idempotent on
+            // payment_id (23505), so redelivery is a no-op.
+            const recurringPaymentRow = updated?.[0];
+            if (recurringPaymentRow?.id) {
+              await recordFeeCharge(supabase, {
+                tradieProfileId: session.metadata?.tradie_id || null,
+                paymentId: recurringPaymentRow.id,
+                jobId: null, // a recurring invoice has no job
+                commissionCents: Number(recurringPaymentRow.commission_cents) || 0,
+                materialsProcessingCents: Number(recurringPaymentRow.materials_processing_cents) || 0,
+                feeRateBps: (recurringPaymentRow.fee_rate_bps as number | null) ?? null,
+                feeRateType: (recurringPaymentRow.fee_rate_type as string | null) ?? null,
+              });
+            }
+
             // Match by checkout session ID (payment_intent is null at session creation time)
             const { error: invoiceUpdateError } = await supabase
               .from('recurring_invoices')
