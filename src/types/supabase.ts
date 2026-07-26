@@ -3099,6 +3099,7 @@ export type Database = {
           external_pay_allowed: boolean
           fee_invoice_frequency: string
           full_name: string
+          has_phone: boolean | null
           id: string
           insurance_policy: boolean | null
           is_admin: boolean
@@ -3125,6 +3126,7 @@ export type Database = {
           phone: string | null
           platform_fee_override_bps: number | null
           postcode: string | null
+          public_suburb: string | null
           push_enabled: boolean | null
           push_subscription: Json | null
           rejection_reason: string | null
@@ -3173,6 +3175,7 @@ export type Database = {
           external_pay_allowed?: boolean
           fee_invoice_frequency?: string
           full_name?: string
+          has_phone?: boolean | null
           id: string
           insurance_policy?: boolean | null
           is_admin?: boolean
@@ -3199,6 +3202,7 @@ export type Database = {
           phone?: string | null
           platform_fee_override_bps?: number | null
           postcode?: string | null
+          public_suburb?: string | null
           push_enabled?: boolean | null
           push_subscription?: Json | null
           rejection_reason?: string | null
@@ -3247,6 +3251,7 @@ export type Database = {
           external_pay_allowed?: boolean
           fee_invoice_frequency?: string
           full_name?: string
+          has_phone?: boolean | null
           id?: string
           insurance_policy?: boolean | null
           is_admin?: boolean
@@ -3273,6 +3278,7 @@ export type Database = {
           phone?: string | null
           platform_fee_override_bps?: number | null
           postcode?: string | null
+          public_suburb?: string | null
           push_enabled?: boolean | null
           push_subscription?: Json | null
           rejection_reason?: string | null
@@ -5594,6 +5600,7 @@ export type Database = {
         Args: { member_id: string }
         Returns: undefined
       }
+      extract_suburb: { Args: { addr: string }; Returns: string }
       get_area_price_range: {
         Args: {
           p_lat?: number

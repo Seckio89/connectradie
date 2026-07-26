@@ -210,7 +210,7 @@ export default function Search() {
     const query = supabase
       .from('profiles')
       .select(`
-        id, full_name, email, phone, address, postcode, avatar_url,
+        id, full_name, public_suburb, has_phone, postcode, avatar_url,
         is_premium, role, verified_trades, declared_trades,
         verification_status, call_out_fee, show_callout_fee, callout_fee_waived_on_proceed,
         is_emergency_available,
@@ -359,7 +359,7 @@ export default function Search() {
         verification_status: a.verification_status,
         bio: a.tradie_details?.bio,
         avatar_url: a.avatar_url,
-        phone: a.phone,
+        has_phone: a.has_phone,
         postcode: a.postcode,
         tradie_details: a.tradie_details,
         averageRating: aRating.averageRating,
@@ -373,7 +373,7 @@ export default function Search() {
         verification_status: b.verification_status,
         bio: b.tradie_details?.bio,
         avatar_url: b.avatar_url,
-        phone: b.phone,
+        has_phone: b.has_phone,
         postcode: b.postcode,
         tradie_details: b.tradie_details,
         averageRating: bRating.averageRating,

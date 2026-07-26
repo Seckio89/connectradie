@@ -25,7 +25,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { TradieWithDetails } from '../types/database';
 import { getTradieRating, type TradieRating } from '../lib/reviews';
-import { redactName, extractSuburb } from '../lib/contactGating';
+import { redactName } from '../lib/contactGating';
 import UserTradeBadges from '../components/UserTradeBadges';
 import { CardSkeleton, ListSkeleton } from '../components/SkeletonLoader';
 import ReviewsList from '../components/ReviewsList';
@@ -69,7 +69,7 @@ export default function PublicTradieProfile() {
       supabase
         .from('profiles')
         .select(`
-          id, full_name, email, phone, address, postcode, avatar_url,
+          id, full_name, public_suburb, has_phone, postcode, avatar_url,
           is_premium, role, verified_trades, declared_trades,
           verification_status, bio, service_radius_km,
           is_emergency_available, team_size, call_out_fee,
@@ -112,7 +112,7 @@ export default function PublicTradieProfile() {
   const isPro = details?.subscription_tier === 'pro' || details?.subscription_tier === 'business' || tradie?.is_premium;
   const displayName = isPro ? (details?.business_name || redactName(tradie?.full_name)) : redactName(tradie?.full_name);
   const personalName = tradie?.full_name ? redactName(tradie.full_name) : null;
-  const suburb = tradie ? extractSuburb(tradie.address) : '';
+  const suburb = tradie?.public_suburb ?? '';
   const isIdentityVerified = details?.is_verified || tradie?.verification_status === 'verified';
   const tradeCategory = details?.trade_category;
   const avgRating = rating?.average_rating ?? 0;
