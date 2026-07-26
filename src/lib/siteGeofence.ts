@@ -168,31 +168,41 @@ export async function initSiteGeofencing(tradieId: string): Promise<boolean> {
       '@transistorsoft/capacitor-background-geolocation'
     );
 
+    // Plugin v9 takes a COMPOUND config — geolocation / app / http groups. The
+    // old flat shape still works but logs deprecation warnings natively, and
+    // `httpRootProperty` was renamed to `http.rootProperty`. Do not flatten this
+    // back: `Config` (v9) only types the grouped form.
     const state = await BackgroundGeolocation.ready({
-      desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
-      distanceFilter: 50,
-      // Keep running across app terminate / device reboot so a scheduled visit
-      // still auto-checks-in even if the tradie force-quit the app.
-      stopOnTerminate: false,
-      startOnBoot: true,
-      geofenceModeHighAccuracy: true,
-      // Native HTTP → our edge function. httpRootProperty wraps the record as
-      // { "location": <record> }, which the edge function expects.
-      url: `${supabaseUrl}/functions/v1/geofence-event`,
-      httpRootProperty: 'location',
-      autoSync: true,
-      headers: {
-        'X-Geofence-Token': token,
-        apikey: anonKey,
+      geolocation: {
+        desiredAccuracy: BackgroundGeolocation.DesiredAccuracy.High,
+        distanceFilter: 50,
+        geofenceModeHighAccuracy: true,
+        locationAuthorizationRequest: 'Always',
       },
-      backgroundPermissionRationale: {
-        title: 'Allow ConnecTradie to detect job-site arrivals?',
-        message:
-          'So we can automatically log when you arrive at and leave a booked job site, ' +
-          'ConnecTradie needs location access all the time (even in the background).',
-        positiveAction: 'Change to "Allow all the time"',
+      app: {
+        // Keep running across app terminate / device reboot so a scheduled visit
+        // still auto-checks-in even if the tradie force-quit the app.
+        stopOnTerminate: false,
+        startOnBoot: true,
+        backgroundPermissionRationale: {
+          title: 'Allow ConnecTradie to detect job-site arrivals?',
+          message:
+            'So we can automatically log when you arrive at and leave a booked job site, ' +
+            'ConnecTradie needs location access all the time (even in the background).',
+          positiveAction: 'Change to "Allow all the time"',
+        },
       },
-      locationAuthorizationRequest: 'Always',
+      http: {
+        // Native HTTP → our edge function. rootProperty wraps the record as
+        // { "location": <record> }, which the edge function expects.
+        url: `${supabaseUrl}/functions/v1/geofence-event`,
+        rootProperty: 'location',
+        autoSync: true,
+        headers: {
+          'X-Geofence-Token': token,
+          apikey: anonKey,
+        },
+      },
     });
 
     // ready() is the real initialisation signal — mark it done now so geofence
