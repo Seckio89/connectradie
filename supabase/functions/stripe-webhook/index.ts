@@ -2,7 +2,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@14.21.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
 import { resolveTradieTier } from '../_shared/pricing.ts';
-import { resolveChargeFee } from '../_shared/feeContext.ts';
+import { resolveChargeFee, recordFeeCharge } from '../_shared/feeContext.ts';
 import type { Insert, Update } from '../_shared/dbTypes.ts';
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
@@ -693,6 +693,16 @@ async function handleEvent(event: Stripe.Event) {
       const recurringJobId = paymentIntent.metadata.recurring_job_id;
       const homeownerId = paymentIntent.metadata.homeowner_id;
 
+      // Close off the payments row charge-becs-invoice created, or it leaks as
+      // permanently 'pending'. No fee is recorded — the money never arrived.
+      const failedPaymentRecordId = paymentIntent.metadata?.payment_record_id;
+      if (failedPaymentRecordId) {
+        await supabase
+          .from('payments')
+          .update({ status: 'failed' })
+          .eq('id', failedPaymentRecordId);
+      }
+
       if (invoiceId) {
         try {
           // Mark BECS as failed
@@ -868,6 +878,37 @@ async function handleEvent(event: Stripe.Event) {
             })
             .eq('id', invoiceId)
             .in('status', ['processing', 'sent', 'overdue']);
+
+          // §7A: complete the payments row charge-becs-invoice created, then
+          // record the commission for tax-invoicing.
+          //
+          // Recurring invoices previously had NO payments row at all, and
+          // platform_fee_charges (the only table issue-fee-invoices reads) is
+          // keyed on payment_id — so commission collected here was retained
+          // with no tax invoice ever issued for it.
+          //
+          // Done HERE rather than at charge time because BECS settles
+          // asynchronously: booking commission when the debit is merely
+          // submitted would book revenue on money that may never arrive.
+          const becsPaymentRecordId = pi.metadata?.payment_record_id;
+          if (becsPaymentRecordId) {
+            await supabase
+              .from('payments')
+              .update({ status: 'completed', completed_at: new Date().toISOString() })
+              .eq('id', becsPaymentRecordId);
+
+            // Never throws, idempotent on payment_id (23505) so webhook
+            // redelivery is a no-op. jobId is null — there is no job.
+            await recordFeeCharge(supabase, {
+              tradieProfileId: tradieId,
+              paymentId: becsPaymentRecordId,
+              jobId: null,
+              commissionCents: Number(pi.metadata?.commission) || 0,
+              materialsProcessingCents: Number(pi.metadata?.materials_processing) || 0,
+              feeRateBps: Number(pi.metadata?.fee_rate_bps) || null,
+              feeRateType: pi.metadata?.fee_rate_type ?? null,
+            });
+          }
 
           // Transfer to tradie via Connect
           if (tradieId) {

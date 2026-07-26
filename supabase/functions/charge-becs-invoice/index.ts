@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { resolveTradieTier } from "../_shared/pricing.ts";
 import { resolveChargeFee } from "../_shared/feeContext.ts";
+import type { Insert } from "../_shared/dbTypes.ts";
 import { hasServiceRole, getBearerUser } from "../_shared/serviceAuth.ts";
 
 const corsHeaders = {
@@ -154,6 +155,51 @@ Deno.serve(async (req: Request) => {
     // transfers to the tradie automatically as part of the destination charge.
     const applicationFeeCents = fee.applicationFeeAmount;
 
+    // §7A: recurring invoices had NO payments row, and platform_fee_charges
+    // (the only table issue-fee-invoices reads) is keyed on payment_id — so
+    // commission collected here was never tax-invoiced. Create the row now so
+    // the ledger has something to hang off.
+    //
+    //   profile_id = the TRADIE, deliberately diverging from job_funding rows
+    //   (where it is the payer). Off-app client_contacts have no profiles row,
+    //   so the payer cannot be used. Only src consumer of payment.profile_id is
+    //   Invoice.tsx:61, which serves job payments, not these.
+    //
+    //   payment_type 'recurring_invoice' keeps these OUT of earnings reporting:
+    //   Payouts.tsx filters payments to 'job_funding' and reads
+    //   recurring_invoices separately, so this cannot double-count.
+    //
+    //   status stays 'pending' — BECS settles asynchronously. The webhook flips
+    //   it to completed and records the fee only once Stripe confirms, so we
+    //   never book commission on money that was never collected.
+    const becsPaymentRow: Insert<'payments'> = {
+      profile_id: invoice.tradie_id,
+      payment_type: "recurring_invoice",
+      amount: chargeAmount,
+      status: "pending",
+      ...fee.paymentColumns,
+      metadata: {
+        ...fee.metadata,
+        type: "recurring_invoice_becs",
+        routing: "destination",
+        invoice_id: invoiceId,
+        recurring_job_id: recurringJobId,
+        tradie_id: invoice.tradie_id,
+        homeowner_id: invoice.homeowner_id,
+      },
+    };
+    const { data: becsPayment, error: becsPaymentErr } = await supabase
+      .from("payments")
+      .insert(becsPaymentRow)
+      .select("id")
+      .maybeSingle();
+    if (becsPaymentErr || !becsPayment?.id) {
+      // Fail BEFORE charging rather than debit a client with no ledger row —
+      // an untracked charge is worse than a deferred one.
+      console.error("[charge-becs-invoice] could not create payment row", becsPaymentErr);
+      return errorJson("Could not record this payment. Please try again.", 500);
+    }
+
     // Create off-session destination charge — funds settle to the tradie in one step.
     const paymentIntentParams: Stripe.PaymentIntentCreateParams = {
       amount: chargeAmount,
@@ -171,6 +217,8 @@ Deno.serve(async (req: Request) => {
       metadata: {
         type: "recurring_invoice_becs",
         routing: "destination",
+        // Lets the webhook find the row above to complete it and record the fee.
+        payment_record_id: becsPayment.id,
         invoice_id: invoiceId,
         recurring_job_id: recurringJobId,
         homeowner_id: invoice.homeowner_id,
