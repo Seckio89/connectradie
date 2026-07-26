@@ -129,40 +129,59 @@ Deno.serve(async (req: Request) => {
     let totalAmount = 0;
     const errors: string[] = [];
 
-    for (const job of completedJobs) {
-      if (disputedJobIds.has(job.id)) {
-        console.info(
-          `Skipping job ${job.id} — has open dispute`,
-        );
-        continue;
-      }
+    // Fetch every releasable job_funding payment for these jobs in one query.
+    //
+    // This used to be a per-job `.maybeSingle()`, which was a silent stall: a job
+    // can legitimately have MORE THAN ONE `job_funding` payment — create-job-deposit
+    // and pay-milestone both insert rows with that exact payment_type. Two matching
+    // rows makes PostgREST return an ERROR rather than a row, so every deposit job
+    // and every multi-milestone job failed here on every single cron tick. Because
+    // Connect accounts are on a manual payout schedule, that money then sat in the
+    // tradie's balance indefinitely with nothing else to sweep it up.
+    //
+    // Flattening to (job, payment) pairs fixes it without restructuring the loop
+    // body below, which already handles exactly one payment and carries its own
+    // per-payment idempotency keys.
+    const releasableJobIds = completedJobs
+      .filter((j) => !disputedJobIds.has(j.id))
+      .map((j) => j.id);
 
-      // Find the main job_funding payment that hasn't been transferred yet
-      const { data: payment, error: paymentError } = await supabase
-        .from("payments")
-        .select(
-          "id, amount, stripe_payment_intent_id, metadata, invoice_number, invoice_ref",
-        )
-        .eq("job_id", job.id)
-        .eq("payment_type", "job_funding")
-        .eq("status", "completed")
-        .maybeSingle();
+    // Bail before querying rather than passing an empty .in() list — a non-uuid
+    // placeholder would make PostgREST reject the whole query as invalid uuid
+    // syntax, turning "every completed job is disputed" into a hard failure.
+    if (releasableJobIds.length === 0) {
+      return jsonResponse({ released: 0, total_amount: 0, errors: [] });
+    }
 
-      if (paymentError) {
-        errors.push(`Job ${job.id}: failed to fetch payment — ${paymentError.message}`);
-        continue;
-      }
+    const { data: fundingPayments, error: paymentsError } = await supabase
+      .from("payments")
+      .select(
+        "id, job_id, amount, stripe_payment_intent_id, metadata, invoice_number, invoice_ref",
+      )
+      .in("job_id", releasableJobIds)
+      .eq("payment_type", "job_funding")
+      .eq("status", "completed");
 
-      if (!payment) {
-        // No completed job_funding payment yet — skip
-        continue;
-      }
+    if (paymentsError) {
+      return jsonResponse(
+        { released: 0, total_amount: 0, errors: [`Failed to fetch payments — ${paymentsError.message}`] },
+        500,
+      );
+    }
 
+    const jobById = new Map(completedJobs.map((j) => [j.id, j]));
+    const workItems: { job: typeof completedJobs[number]; payment: NonNullable<typeof fundingPayments>[number] }[] = [];
+    for (const payment of fundingPayments || []) {
       // Already released (transfer for legacy, payout for destination charges)
+      const meta = (payment.metadata || {}) as Record<string, unknown>;
+      if (meta.transfer_id || meta.payout_id) continue;
+      const job = jobById.get(payment.job_id);
+      if (!job) continue;
+      workItems.push({ job, payment });
+    }
+
+    for (const { job, payment } of workItems) {
       const existingMetadata = (payment.metadata || {}) as Record<string, unknown>;
-      if (existingMetadata.transfer_id || existingMetadata.payout_id) {
-        continue;
-      }
 
       // Determine payment flow: destination charges (new) vs custodial escrow
       // (legacy). Writers are inconsistent — accept-and-pay et al. stamp
