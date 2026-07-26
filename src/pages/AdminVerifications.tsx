@@ -196,9 +196,9 @@ export default function AdminVerifications() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout wide>
       <Breadcrumbs />
-      <div className="max-w-[1600px] mx-auto">
+      <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Verification Center</h1>

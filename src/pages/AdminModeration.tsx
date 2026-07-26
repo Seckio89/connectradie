@@ -246,9 +246,9 @@ export default function AdminModeration() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout wide>
       <Breadcrumbs />
-      <div className="max-w-[1600px] mx-auto">
+      <div>
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Content Moderation</h1>
           <p className="text-gray-600 mt-1">Review and moderate platform content, manage abuse reports</p>

@@ -277,8 +277,8 @@ export default function PerformanceInsights() {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="max-w-[1600px] mx-auto">
+      <DashboardLayout wide>
+        <div>
           <div className="flex items-center justify-center py-24">
             <div className="text-center">
               <Loader2 className="w-10 h-10 text-primary-600 animate-spin mx-auto mb-4" />
@@ -294,8 +294,8 @@ export default function PerformanceInsights() {
   // tradies see the full dashboard below.
   if (!isProUser) {
     return (
-      <DashboardLayout>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <DashboardLayout wide>
+        <div className="py-12">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-2xl mb-4">
               <TrendingUp className="w-8 h-8 text-emerald-600" />
@@ -343,8 +343,8 @@ export default function PerformanceInsights() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="max-w-[1600px] mx-auto">
+    <DashboardLayout wide>
+      <div>
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">

@@ -162,7 +162,7 @@ export default function AdminOverview() {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <DashboardLayout wide>
         <SectionErrorBoundary>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
@@ -173,9 +173,9 @@ export default function AdminOverview() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout wide>
       <SectionErrorBoundary>
-      <div className="max-w-[1600px] mx-auto">
+      <div>
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Platform Overview</h1>
           <p className="text-gray-600 mt-1">Key metrics and recent activity across the platform</p>

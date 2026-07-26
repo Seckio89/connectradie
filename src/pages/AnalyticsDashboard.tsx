@@ -306,7 +306,7 @@ export default function AnalyticsDashboard() {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <DashboardLayout wide>
         <DashboardStatsSkeleton />
         <div className="mt-6">
           <GridSkeleton count={4} />
@@ -316,8 +316,8 @@ export default function AnalyticsDashboard() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="max-w-[1600px] mx-auto">
+    <DashboardLayout wide>
+      <div>
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <div>

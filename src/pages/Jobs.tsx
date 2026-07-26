@@ -684,7 +684,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
 
   const content = (
     <>
-      <div className={`${embedded ? '' : 'max-w-5xl'} mx-auto`}>
+      <div>
         {paymentSuccess && (
           <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
             <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />

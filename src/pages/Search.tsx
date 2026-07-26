@@ -539,7 +539,7 @@ export default function Search() {
   const activeFilterCount = [ratingFilter > 0, contractorTypeFilter, postcodeFilter.trim(), emergencyFilter].filter(Boolean).length;
 
   const searchContent = (
-    <div className="max-w-[1600px] mx-auto">
+    <div>
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Find a Tradie</h1>
           <p className="text-sm text-gray-500 mt-1">Licensed professionals in your area, ready to quote</p>
@@ -1112,10 +1112,10 @@ export default function Search() {
 
   if (user) {
     return (
-      <DashboardLayout>
+      <DashboardLayout wide>
         <SEO title={seoTitle} description={seoDescription} canonical="/search" />
         {isClient && !isEngaged && (
-          <div className="max-w-[1600px] mx-auto mb-4">
+          <div className="mb-4">
             {remainingViews === DAILY_VIEW_LIMIT_VALUE ? (
               <div className="flex items-center gap-3 px-4 py-3 bg-secondary-50 border border-secondary-200 rounded-xl">
                 <Eye className="w-5 h-5 text-secondary-600 flex-shrink-0" />

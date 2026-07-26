@@ -887,8 +887,8 @@ export default function Payouts() {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="max-w-[1600px] mx-auto">
+      <DashboardLayout wide>
+        <div>
           <div className="flex items-center justify-center py-24">
             <div className="text-center">
               <Loader2 className="w-10 h-10 text-primary-600 animate-spin mx-auto mb-4" />
@@ -902,8 +902,8 @@ export default function Payouts() {
 
   if (error) {
     return (
-      <DashboardLayout>
-        <div className="max-w-[1600px] mx-auto space-y-6">
+      <DashboardLayout wide>
+        <div className="space-y-6">
           {/* Payment requests work without Stripe — many subcontractors are paid
               purely off-platform, so don't hide them behind a Connect failure. */}
           <PaymentRequestsSection />
@@ -930,8 +930,8 @@ export default function Payouts() {
   );
 
   return (
-    <DashboardLayout>
-      <div className="max-w-[1600px] mx-auto space-y-6">
+    <DashboardLayout wide>
+      <div className="space-y-6">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>

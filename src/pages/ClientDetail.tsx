@@ -353,7 +353,7 @@ export default function ClientDetail() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="space-y-6">
         {backLink}
 
         {loading ? (

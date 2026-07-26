@@ -300,7 +300,7 @@ export default function AdminFinancials() {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <DashboardLayout wide>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
         </div>
@@ -309,8 +309,8 @@ export default function AdminFinancials() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="max-w-[1600px] mx-auto">
+    <DashboardLayout wide>
+      <div>
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Financial Projections</h1>
           <p className="text-gray-600 mt-1">Real platform metrics and interactive revenue modelling</p>
