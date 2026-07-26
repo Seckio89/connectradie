@@ -55,7 +55,10 @@ interface PaymentRow {
   completed_at: string | null;
   invoice_number: number | null;
   invoice_ref: string | null;
-  jobs: { description: string } | null;
+  // tradie_id is needed as `against_user` when raising a dispute. Nullable
+  // because a job may not be assigned yet, and because the synthetic
+  // recurring-invoice rows below have no job at all.
+  jobs: { description: string; tradie_id: string | null } | null;
 }
 
 /** Use pre-formatted invoice_ref from payments table, falling back to UUID-based format */
@@ -249,7 +252,7 @@ export default function PaymentHistory() {
     try {
       let query = supabase
         .from('payments')
-        .select('*, jobs:jobs!payments_job_id_fkey(description)', { count: 'exact' })
+        .select('*, jobs:jobs!payments_job_id_fkey(description, tradie_id)', { count: 'exact' })
         .order('created_at', { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
@@ -312,7 +315,9 @@ export default function PaymentHistory() {
                 completed_at: (inv.paid_at as string) || null,
                 invoice_number: null,
                 invoice_ref: null,
-                jobs: { description: `[${label}] Service Invoice — ${sessions} session${sessions !== 1 ? 's' : ''} (${period})` },
+                // Synthetic row for a recurring invoice — there is no job, so no
+                // tradie to dispute against. The dispute action is hidden for these.
+                jobs: { description: `[${label}] Service Invoice — ${sessions} session${sessions !== 1 ? 's' : ''} (${period})`, tradie_id: null },
               };
             });
             extraCount = invoiceRows.length;
@@ -1494,7 +1499,19 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
 
           {/* Refund (client, completed) */}
           {!isTradie && payment.status === 'completed' && (
-            <RefundSection paymentId={payment.id} onSuccess={onPaymentUpdate} onError={(msg) => showToast(msg, true)} />
+            <div className="space-y-3">
+              <RefundSection paymentId={payment.id} onSuccess={onPaymentUpdate} onError={(msg) => showToast(msg, true)} />
+              {/* Only offered where a dispute is actually possible: a real job with
+                  an assigned tradie. Recurring-invoice rows have neither. */}
+              {payment.job_id && payment.jobs?.tradie_id && (
+                <DisputeSection
+                  jobId={payment.job_id}
+                  againstUser={payment.jobs.tradie_id}
+                  onSuccess={() => { showToast('Dispute raised — our team will review it.'); onPaymentUpdate(); }}
+                  onError={(msg) => showToast(msg, true)}
+                />
+              )}
+            </div>
           )}
 
           {/* Tradie views */}
@@ -1629,6 +1646,111 @@ function ReductionRequestSection({
             Send to tradie
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Raise a Dispute ───
+   The counterpart to RefundSection. Once a payment is released the refund is
+   refused (correctly — the funds are with the tradie), and process-refund's 409
+   tells the client to "raise a dispute". Until now there was no way to do that
+   anywhere in the app, so that instruction pointed at nothing.
+
+   An open dispute stops auto-release-payments from paying out further on the
+   job. It does NOT claw back an already-released payment — that stays a
+   deliberate admin action in Admin → Payments. */
+function DisputeSection({
+  jobId, againstUser, onSuccess, onError,
+}: { jobId: string; againstUser: string; onSuccess: () => void; onError: (msg: string) => void }) {
+  const [showForm, setShowForm] = useState(false);
+  const [detail, setDetail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const { user } = useAuth();
+
+  const handleRaise = async () => {
+    if (!detail.trim()) { onError('Please describe the problem so our team can review it.'); return; }
+    if (!user || submitting) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from('disputes').insert({
+        job_id: jobId,
+        opened_by: user.id,
+        against_user: againstUser,
+        reason: 'client_raised',
+        description: detail.trim(),
+      });
+      if (error) {
+        // 23505 = the partial unique index allowing one live dispute per job.
+        if ((error as { code?: string }).code === '23505') {
+          onError('You already have an open dispute for this job. Our team is reviewing it.');
+        } else {
+          onError(friendlyError(error, 'Could not raise the dispute. Please try again.'));
+        }
+        return;
+      }
+
+      // Tell the tradie — their payout is now frozen and they should know why.
+      // create_notification's shared-job branch authorises this pair.
+      try {
+        await supabase.rpc('create_notification', {
+          p_user_id: againstUser,
+          p_title: 'A client has raised a dispute',
+          p_message: 'A client has raised a dispute on one of your jobs. Payment for it is on hold while our team reviews.',
+          p_type: 'DISPUTE_RAISED',
+          p_job_id: jobId,
+        });
+      } catch { /* non-fatal: the dispute itself is recorded */ }
+
+      setShowForm(false);
+      setDetail('');
+      onSuccess();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!showForm) {
+    return (
+      <button
+        onClick={() => setShowForm(true)}
+        className="w-full px-4 py-2.5 text-amber-700 border border-amber-200 rounded-lg text-sm font-medium hover:bg-amber-50 transition-colors flex items-center justify-center gap-2"
+      >
+        <AlertTriangle className="w-4 h-4" /> Raise a Dispute
+      </button>
+    );
+  }
+
+  return (
+    <div className="border border-amber-200 rounded-lg p-4 bg-amber-50/50">
+      <p className="text-sm font-semibold text-gray-900">Raise a dispute</p>
+      <p className="text-xs text-gray-600 mt-1 mb-3">
+        Tell us what went wrong. Our team reviews disputes within 2–3 business days, and
+        payment on this job is held while we do.
+      </p>
+      <textarea
+        value={detail}
+        onChange={(e) => setDetail(e.target.value)}
+        rows={3}
+        placeholder="Describe the problem with the work…"
+        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-secondary-500 focus:border-transparent"
+      />
+      <div className="flex gap-2 mt-3">
+        <button
+          onClick={() => { setShowForm(false); setDetail(''); }}
+          disabled={submitting}
+          className="flex-1 px-3 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleRaise}
+          disabled={submitting || !detail.trim()}
+          className="flex-1 px-3 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 flex items-center justify-center gap-1.5"
+        >
+          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertTriangle className="w-4 h-4" />}
+          Submit dispute
+        </button>
       </div>
     </div>
   );
