@@ -11,14 +11,34 @@ import {
   Eye,
   Loader2,
   ExternalLink,
+  Sparkles,
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import Breadcrumbs from '../components/Breadcrumbs';
 import { supabase } from '../lib/supabase';
+import { friendlyError } from '../lib/utils';
 import type { Update } from '../types/database';
 import { useAuth } from '../contexts/AuthContext';
 
-type DisputeStatus = 'open' | 'under_review' | 'resolved_client' | 'resolved_tradie' | 'resolved_split' | 'dismissed';
+type DisputeStatus =
+  | 'open'
+  | 'under_review'
+  | 'direct_resolution'
+  | 'platform_review'
+  | 'resolved_client'
+  | 'resolved_tradie'
+  | 'resolved_split'
+  | 'dismissed';
+
+/** The outcomes a human may record. `resolved_split` is deliberately absent —
+ *  see the note above the decision buttons. */
+type Outcome = 'resolved_client' | 'resolved_tradie' | 'dismissed';
+
+/** The terminal statuses, in one place. This list used to be written out twice
+ *  (once to filter, once to decide whether to show the actions), which is how a
+ *  new status ends up handled in one spot and not the other. */
+const TERMINAL_STATUSES = ['resolved_client', 'resolved_tradie', 'resolved_split', 'dismissed'];
+const isTerminal = (status: string | null) => status !== null && TERMINAL_STATUSES.includes(status);
 
 interface Dispute {
   id: string;
@@ -35,14 +55,44 @@ interface Dispute {
   resolved_at: string | null;
   created_at: string;
   updated_at: string;
+  dispute_type: string | null;
+  respond_by: string | null;
+  platform_review_by: string | null;
   opener_name?: string;
   against_name?: string;
   job_description?: string;
 }
 
+/** The shape dispute-evidence-summary writes. The column is `jsonb`, so nothing
+ *  guarantees this at the type level — every read below is written to survive a
+ *  field being absent. */
+interface EvidenceSummary {
+  overview?: string;
+  agreed_scope?: string;
+  timeline?: { date?: string; event?: string; source?: string }[];
+  client_position?: string;
+  tradie_position?: string;
+  disputed_points?: string[];
+  evidence_gaps?: string[];
+  suggested_outcome?: {
+    outcome?: string;
+    rationale?: string;
+    confidence?: string;
+    split_client_pct?: number | null;
+  };
+}
+
+interface SummaryRecord {
+  summary: EvidenceSummary;
+  model: string;
+  created_at: string;
+}
+
 const STATUS_LABELS: Record<string, string | undefined> = {
   open: 'Open',
   under_review: 'Under Review',
+  direct_resolution: 'Parties Talking',
+  platform_review: 'Platform Review',
   resolved_client: 'Resolved (Client)',
   resolved_tradie: 'Resolved (Tradie)',
   resolved_split: 'Resolved (Split)',
@@ -52,20 +102,73 @@ const STATUS_LABELS: Record<string, string | undefined> = {
 const STATUS_COLORS: Record<string, string | undefined> = {
   open: 'bg-yellow-100 text-yellow-800',
   under_review: 'bg-secondary-100 text-secondary-800',
+  direct_resolution: 'bg-amber-100 text-amber-800',
+  platform_review: 'bg-secondary-100 text-secondary-800',
   resolved_client: 'bg-green-100 text-green-800',
   resolved_tradie: 'bg-green-100 text-green-800',
   resolved_split: 'bg-purple-100 text-purple-800',
   dismissed: 'bg-gray-100 text-gray-800',
 };
 
+/** Human labels for the AI's suggested outcome. Deliberately different wording
+ *  from STATUS_LABELS so a recommendation never reads like a status. */
+const SUGGESTION_LABELS: Record<string, string | undefined> = {
+  resolved_client: 'Favour the client',
+  resolved_tradie: 'Favour the tradie',
+  resolved_split: 'Split the funds',
+  dismissed: 'Dismiss the dispute',
+  insufficient_evidence: 'Not enough evidence to say',
+};
+
+const CONFIDENCE_COLORS: Record<string, string | undefined> = {
+  low: 'bg-red-100 text-red-700',
+  medium: 'bg-amber-100 text-amber-700',
+  high: 'bg-emerald-100 text-emerald-700',
+};
+
 const FILTER_TABS = [
   { key: 'all', label: 'All' },
   { key: 'open', label: 'Open' },
-  { key: 'under_review', label: 'Under Review' },
+  { key: 'in_review', label: 'In Review' },
   { key: 'resolved', label: 'Resolved' },
 ] as const;
 
 type FilterTab = (typeof FILTER_TABS)[number]['key'];
+
+/** "In Review" covers every live status that isn't a brand-new dispute. Widened
+ *  from the single `under_review` so the two statuses added for the assisted
+ *  flow cannot sit in the queue with no tab that shows them. */
+const IN_REVIEW_STATUSES = ['under_review', 'direct_resolution', 'platform_review'];
+
+/** Days until a deadline, or null when none is set. Nothing populates the
+ *  deadline columns yet, so this renders for no one today — it is written to
+ *  stay silent rather than show a fake countdown. */
+function daysUntil(iso: string | null): number | null {
+  if (!iso) return null;
+  const ms = new Date(iso).getTime() - Date.now();
+  if (Number.isNaN(ms)) return null;
+  return Math.ceil(ms / 86_400_000);
+}
+
+function DeadlinePill({ label, iso }: { label: string; iso: string | null }) {
+  const days = daysUntil(iso);
+  if (days === null) return null;
+  const overdue = days < 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+        overdue ? 'bg-red-100 text-red-700' : days <= 1 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'
+      }`}
+    >
+      <Clock className="w-3.5 h-3.5" />
+      {overdue
+        ? `${label} overdue by ${Math.abs(days)}d`
+        : days === 0
+          ? `${label} due today`
+          : `${label} in ${days}d`}
+    </span>
+  );
+}
 
 export default function AdminDisputes() {
   const { user } = useAuth();
@@ -76,6 +179,8 @@ export default function AdminDisputes() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
   const [updating, setUpdating] = useState<string | null>(null);
+  const [summaries, setSummaries] = useState<Record<string, SummaryRecord>>({});
+  const [decisionError, setDecisionError] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchDisputes();
@@ -92,7 +197,11 @@ export default function AdminDisputes() {
 
       if (error) throw error;
 
-      if (!disputesData) {
+      // Bail before the follow-up queries rather than sending an empty `.in()`
+      // list — PostgREST rejects `id=in.()` outright, so with no disputes the
+      // whole enrich step used to fail and get swallowed by the catch below.
+      if (!disputesData || disputesData.length === 0) {
+        setDisputes([]);
         setLoading(false);
         return;
       }
@@ -102,11 +211,30 @@ export default function AdminDisputes() {
       const againstIds = [...new Set(disputesData.map((d) => d.against_user))];
       const allUserIds = [...new Set([...openerIds, ...againstIds])];
       const jobIds = [...new Set(disputesData.map((d) => d.job_id))];
+      const disputeIds = disputesData.map((d) => d.id);
 
-      const [profilesRes, jobsRes] = await Promise.all([
+      const [profilesRes, jobsRes, summariesRes] = await Promise.all([
         supabase.from('profiles').select('id, full_name').in('id', allUserIds),
         supabase.from('jobs').select('id, description').in('id', jobIds),
+        supabase
+          .from('dispute_evidence_summaries')
+          .select('dispute_id, summary, model, created_at')
+          .in('dispute_id', disputeIds)
+          .order('created_at', { ascending: false }),
       ]);
+
+      // Newest summary per dispute. The table is append-only and a forced
+      // regeneration appends, so a dispute can legitimately have several.
+      const nextSummaries: Record<string, SummaryRecord> = {};
+      for (const row of summariesRes.data || []) {
+        if (nextSummaries[row.dispute_id]) continue;
+        nextSummaries[row.dispute_id] = {
+          summary: (row.summary ?? {}) as EvidenceSummary,
+          model: row.model,
+          created_at: row.created_at,
+        };
+      }
+      setSummaries(nextSummaries);
 
       const profileMap = new Map(
         (profilesRes.data || []).map((p) => [p.id, p.full_name])
@@ -129,12 +257,13 @@ export default function AdminDisputes() {
     setLoading(false);
   };
 
+  /* Non-terminal transitions only — moving a dispute along without deciding it.
+     Resolutions go through recordDecision, which cannot lose the audit row. */
   const updateDisputeStatus = async (disputeId: string, newStatus: DisputeStatus) => {
     if (!user) return;
     setUpdating(disputeId);
 
     const notes = adminNotes[disputeId] || null;
-    const isResolution = newStatus.startsWith('resolved_') || newStatus === 'dismissed';
 
     // Annotated, not `Record<string, unknown>`: the annotation is what makes
     // every key below column-checked. See the note on `Update` in
@@ -145,12 +274,6 @@ export default function AdminDisputes() {
       updated_at: new Date().toISOString(),
     };
 
-    if (isResolution) {
-      updateData.resolved_by = user.id;
-      updateData.resolved_at = new Date().toISOString();
-      updateData.resolution = notes;
-    }
-
     const { error } = await supabase
       .from('disputes')
       .update(updateData)
@@ -158,37 +281,74 @@ export default function AdminDisputes() {
 
     if (!error) {
       setDisputes((prev) =>
-        prev.map((d) =>
-          d.id === disputeId
-            ? {
-                ...d,
-                status: newStatus,
-                admin_notes: notes,
-                ...(isResolution
-                  ? {
-                      resolved_by: user.id,
-                      resolved_at: new Date().toISOString(),
-                      resolution: notes,
-                    }
-                  : {}),
-              }
-            : d
-        )
+        prev.map((d) => (d.id === disputeId ? { ...d, status: newStatus, admin_notes: notes } : d))
       );
     }
 
     setUpdating(null);
   };
 
+  /* Record the decision AND apply the outcome.
+     One RPC, so it is one transaction: the audit row and the status change
+     cannot come apart. Doing this as two round trips from here would allow a
+     resolved dispute with nothing recorded about who decided it or why — which
+     is the exact failure the append-only table exists to prevent.
+
+     `overridden` is the value that makes the AI accountable: it records that a
+     human saw the suggestion and went a different way. Computed here rather
+     than left to the officer to tick, because a self-reported override is the
+     first thing to get skipped. */
+  const recordDecision = async (dispute: Dispute, outcome: Outcome) => {
+    if (!user) return;
+    const reasoning = (adminNotes[dispute.id] || '').trim();
+    if (!reasoning) {
+      setDecisionError((prev) => ({ ...prev, [dispute.id]: 'Write the reason for this decision first.' }));
+      return;
+    }
+
+    setDecisionError((prev) => ({ ...prev, [dispute.id]: '' }));
+    setUpdating(dispute.id);
+
+    const suggestion = summaries[dispute.id]?.summary?.suggested_outcome ?? null;
+
+    const { error } = await supabase.rpc('resolve_dispute', {
+      p_dispute_id: dispute.id,
+      p_outcome: outcome,
+      p_reasoning: reasoning,
+      p_ai_suggestion: suggestion,
+      p_overridden: suggestion?.outcome != null && suggestion.outcome !== outcome,
+    });
+
+    if (error) {
+      setDecisionError((prev) => ({
+        ...prev,
+        [dispute.id]: friendlyError(error, 'Could not record the decision. Please try again.'),
+      }));
+      setUpdating(null);
+      return;
+    }
+
+    setDisputes((prev) =>
+      prev.map((d) =>
+        d.id === dispute.id
+          ? {
+              ...d,
+              status: outcome,
+              resolution: reasoning,
+              resolved_by: user.id,
+              resolved_at: new Date().toISOString(),
+            }
+          : d
+      )
+    );
+    setUpdating(null);
+  };
+
   const filteredDisputes = disputes.filter((d) => {
     // Filter by tab
     if (filter === 'open' && d.status !== 'open') return false;
-    if (filter === 'under_review' && d.status !== 'under_review') return false;
-    if (
-      filter === 'resolved' &&
-      !(d.status !== null && ['resolved_client', 'resolved_tradie', 'resolved_split', 'dismissed'].includes(d.status))
-    )
-      return false;
+    if (filter === 'in_review' && !(d.status !== null && IN_REVIEW_STATUSES.includes(d.status))) return false;
+    if (filter === 'resolved' && !isTerminal(d.status)) return false;
 
     // Filter by search
     if (searchQuery) {
@@ -210,7 +370,10 @@ export default function AdminDisputes() {
       case 'open':
         return <AlertTriangle className="w-4 h-4" />;
       case 'under_review':
+      case 'platform_review':
         return <Eye className="w-4 h-4" />;
+      case 'direct_resolution':
+        return <Clock className="w-4 h-4" />;
       case 'resolved_client':
       case 'resolved_tradie':
       case 'resolved_split':
@@ -302,7 +465,7 @@ export default function AdminDisputes() {
                     className="w-full flex items-center gap-4 p-5 text-left hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
                         <span
                           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
                             (dispute.status && STATUS_COLORS[dispute.status]) || ''
@@ -311,7 +474,19 @@ export default function AdminDisputes() {
                           {getStatusIcon(dispute.status)}
                           {(dispute.status && STATUS_LABELS[dispute.status]) || dispute.status}
                         </span>
-                        <span className="text-sm font-medium text-gray-900">{dispute.reason}</span>
+                        <span className="text-sm font-medium text-gray-900 mr-1">{dispute.reason}</span>
+                        {!isTerminal(dispute.status) && (
+                          <>
+                            <DeadlinePill label="Response" iso={dispute.respond_by} />
+                            <DeadlinePill label="Review" iso={dispute.platform_review_by} />
+                          </>
+                        )}
+                        {summaries[dispute.id] && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Summary ready
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-gray-600 truncate">
                         Job: {dispute.job_description}
@@ -337,6 +512,131 @@ export default function AdminDisputes() {
                   {/* Expanded details */}
                   {isExpanded && (
                     <div className="border-t border-gray-100 p-5 space-y-5">
+                      {(() => {
+                        const record = summaries[dispute.id];
+                        if (!record) return null;
+                        const s = record.summary;
+                        const suggestion = s.suggested_outcome;
+                        return (
+                          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                              <h4 className="text-sm font-semibold text-gray-700 inline-flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-gray-400" />
+                                AI evidence summary
+                              </h4>
+                              <span className="text-xs text-gray-400">
+                                {record.model} · {new Date(record.created_at).toLocaleString()}
+                              </span>
+                            </div>
+
+                            <p className="text-xs text-gray-500 mb-4">
+                              Generated from the job records. It decides nothing and moves no money — read it,
+                              then make your own call below.
+                            </p>
+
+                            {s.overview && (
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap mb-4">{s.overview}</p>
+                            )}
+
+                            {s.agreed_scope && (
+                              <div className="mb-4">
+                                <h5 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                                  Agreed scope
+                                </h5>
+                                <p className="text-sm text-gray-600">{s.agreed_scope}</p>
+                              </div>
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                              {s.client_position && (
+                                <div>
+                                  <h5 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                                    Client says
+                                  </h5>
+                                  <p className="text-sm text-gray-600">{s.client_position}</p>
+                                </div>
+                              )}
+                              {s.tradie_position && (
+                                <div>
+                                  <h5 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                                    Tradie says
+                                  </h5>
+                                  <p className="text-sm text-gray-600">{s.tradie_position}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {(s.disputed_points ?? []).length > 0 && (
+                              <div className="mb-4">
+                                <h5 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                                  What is actually disputed
+                                </h5>
+                                <ul className="list-disc list-inside space-y-0.5">
+                                  {(s.disputed_points ?? []).map((p, i) => (
+                                    <li key={i} className="text-sm text-gray-600">{p}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {(s.timeline ?? []).length > 0 && (
+                              <div className="mb-4">
+                                <h5 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                                  Timeline
+                                </h5>
+                                <ul className="space-y-1">
+                                  {(s.timeline ?? []).map((t, i) => (
+                                    <li key={i} className="text-sm text-gray-600 flex gap-2">
+                                      <span className="text-gray-400 whitespace-nowrap">{t.date}</span>
+                                      <span>{t.event}</span>
+                                      {t.source && <span className="text-xs text-gray-400">({t.source})</span>}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {(s.evidence_gaps ?? []).length > 0 && (
+                              <div className="mb-4">
+                                <h5 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                                  Missing evidence
+                                </h5>
+                                <ul className="list-disc list-inside space-y-0.5">
+                                  {(s.evidence_gaps ?? []).map((g, i) => (
+                                    <li key={i} className="text-sm text-gray-600">{g}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {suggestion?.outcome && (
+                              <div className="rounded-lg border border-gray-200 bg-white p-3">
+                                <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                    Suggested — not applied
+                                  </span>
+                                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                    {SUGGESTION_LABELS[suggestion.outcome] || suggestion.outcome}
+                                  </span>
+                                  {suggestion.confidence && (
+                                    <span
+                                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                        CONFIDENCE_COLORS[suggestion.confidence] || 'bg-gray-100 text-gray-600'
+                                      }`}
+                                    >
+                                      {suggestion.confidence} confidence
+                                    </span>
+                                  )}
+                                </div>
+                                {suggestion.rationale && (
+                                  <p className="text-sm text-gray-600">{suggestion.rationale}</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+
                       <div>
                         <h4 className="text-sm font-semibold text-gray-700 mb-2">Full Description</h4>
                         <p className="text-sm text-gray-600 whitespace-pre-wrap">
@@ -385,39 +685,53 @@ export default function AdminDisputes() {
                       )}
 
                       {/* Admin actions */}
-                      {!(dispute.status !== null && ['resolved_client', 'resolved_tradie', 'resolved_split', 'dismissed'].includes(
-                        dispute.status
-                      )) && (
+                      {!isTerminal(dispute.status) && (() => {
+                        const reasoning = (adminNotes[dispute.id] || '').trim();
+                        const busy = updating === dispute.id;
+                        const blocked = busy || reasoning.length === 0;
+                        const err = decisionError[dispute.id];
+                        return (
                         <div className="border-t border-gray-100 pt-5">
-                          <h4 className="text-sm font-semibold text-gray-700 mb-3">Admin Actions</h4>
+                          <h4 className="text-sm font-semibold text-gray-700 mb-3">Your decision</h4>
 
                           <div className="mb-4">
                             <label
                               htmlFor={`notes-${dispute.id}`}
                               className="block text-sm font-medium text-gray-600 mb-1.5"
                             >
-                              Admin Notes / Resolution
+                              Reason for this decision
                             </label>
                             <textarea {...proseInputProps}
                               id={`notes-${dispute.id}`}
                               value={adminNotes[dispute.id] || ''}
-                              onChange={(e) =>
-                                setAdminNotes((prev) => ({ ...prev, [dispute.id]: e.target.value }))
-                              }
+                              onChange={(e) => {
+                                setAdminNotes((prev) => ({ ...prev, [dispute.id]: e.target.value }));
+                                if (decisionError[dispute.id]) {
+                                  setDecisionError((prev) => ({ ...prev, [dispute.id]: '' }));
+                                }
+                              }}
                               rows={3}
-                              placeholder="Add notes about the investigation or resolution..."
+                              placeholder="What did you conclude, and what did you base it on? Both parties can be told this."
                               className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors resize-none text-sm"
                             />
+                            <p className="text-xs text-gray-500 mt-1.5">
+                              Required. Recorded permanently against your name, alongside the AI suggestion and
+                              whether you went a different way.
+                            </p>
                           </div>
+
+                          {err && (
+                            <p className="text-sm text-red-600 mb-3">{err}</p>
+                          )}
 
                           <div className="flex flex-wrap gap-2">
                             {dispute.status === 'open' && (
                               <button
                                 onClick={() => updateDisputeStatus(dispute.id, 'under_review')}
-                                disabled={updating === dispute.id}
+                                disabled={busy}
                                 className="inline-flex items-center gap-2 px-4 py-2 bg-secondary-600 text-white rounded-xl text-sm font-medium hover:bg-secondary-700 transition-colors disabled:opacity-50"
                               >
-                                {updating === dispute.id ? (
+                                {busy ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
                                   <Eye className="w-4 h-4" />
@@ -427,11 +741,11 @@ export default function AdminDisputes() {
                             )}
 
                             <button
-                              onClick={() => updateDisputeStatus(dispute.id, 'resolved_client')}
-                              disabled={updating === dispute.id}
+                              onClick={() => recordDecision(dispute, 'resolved_client')}
+                              disabled={blocked}
                               className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
                             >
-                              {updating === dispute.id ? (
+                              {busy ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
                               ) : (
                                 <CheckCircle className="w-4 h-4" />
@@ -440,11 +754,11 @@ export default function AdminDisputes() {
                             </button>
 
                             <button
-                              onClick={() => updateDisputeStatus(dispute.id, 'resolved_tradie')}
-                              disabled={updating === dispute.id}
+                              onClick={() => recordDecision(dispute, 'resolved_tradie')}
+                              disabled={blocked}
                               className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
                             >
-                              {updating === dispute.id ? (
+                              {busy ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
                               ) : (
                                 <CheckCircle className="w-4 h-4" />
@@ -453,11 +767,11 @@ export default function AdminDisputes() {
                             </button>
 
                             <button
-                              onClick={() => updateDisputeStatus(dispute.id, 'dismissed')}
-                              disabled={updating === dispute.id}
+                              onClick={() => recordDecision(dispute, 'dismissed')}
+                              disabled={blocked}
                               className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-xl text-sm font-medium hover:bg-gray-700 transition-colors disabled:opacity-50"
                             >
-                              {updating === dispute.id ? (
+                              {busy ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
                               ) : (
                                 <XCircle className="w-4 h-4" />
@@ -465,8 +779,19 @@ export default function AdminDisputes() {
                               Dismiss
                             </button>
                           </div>
+
+                          {/* No "Split the funds" button on purpose. `resolved_split` is a
+                              valid status and the RPC accepts it, but nothing implements a
+                              partial payout yet — offering it here would set a status that
+                              says the money was divided when none of it moved. It arrives
+                              with Phase 5. */}
+                          <p className="text-xs text-gray-500 mt-3">
+                            Resolving unfreezes this job&apos;s payout. It does not itself move money —
+                            a released payment is still clawed back from Admin → Payments.
+                          </p>
                         </div>
-                      )}
+                        );
+                      })()}
                     </div>
                   )}
                 </div>

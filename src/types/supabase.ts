@@ -5818,6 +5818,16 @@ export type Database = {
         Args: { p_employer: string }
         Returns: undefined
       }
+      resolve_dispute: {
+        Args: {
+          p_ai_suggestion?: Json
+          p_dispute_id: string
+          p_outcome: string
+          p_overridden?: boolean
+          p_reasoning: string
+        }
+        Returns: string
+      }
       search_businesses_by_name: {
         Args: { search_term: string }
         Returns: {
