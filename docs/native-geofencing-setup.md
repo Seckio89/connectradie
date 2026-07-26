@@ -73,9 +73,26 @@ npx cap sync android
 # open android/ in Android Studio → run on a physical device (geofencing needs real GPS)
 ```
 Test: create a job with coordinates, book a site visit as the tradie, then
-physically enter/leave the site radius (or use Android Studio's emulator route
-playback). Confirm rows land in `site_visit_events` and the client gets the
-"arrived on site" notification.
+physically enter/leave the site radius. To avoid actually travelling, use
+Android Studio's emulator route playback, Android developer options → "Select
+mock location app", or Xcode's GPX simulation. Confirm rows land in
+`site_visit_events` and the client gets the "arrived on site" notification.
+
+**Starting state is empty.** `site_visit_events` and `device_geofence_tokens`
+both have zero rows — this has never run on a real device, so the first row in
+either is the first ever. "No rows yet" before you start is expected, not a
+fault, and anything that appears is yours.
+
+Since the plugin v9 migration, also check:
+- **No flat-config deprecation warning** in the native log. v9 still accepts the
+  old flat config but warns; silence confirms the compound
+  (`geolocation`/`app`/`http`) config parsed.
+- **POST body is `{"location": <record>}`.** `httpRootProperty` became
+  `http.rootProperty` in v9 — that rename is the one thing that could break the
+  wire format, and `geofence-event` reads `body.location`. If it broke, events
+  4xx or insert nothing rather than failing loudly on the device.
+- **A row in `site_visit_events`** with `action` `ENTER`/`EXIT` is the
+  end-to-end proof; the client notification is the downstream half.
 
 ## Notes / gotchas
 - Windows: `npm install <pkg>` fails EBADPLATFORM on the pinned Linux rollup —
