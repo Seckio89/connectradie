@@ -11,6 +11,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "check:columns": "node scripts/check-db-columns.mjs",
+    "check:edge-docs": "node scripts/check-edge-fn-docs.mjs",
+    "check:edge-docs:fix": "node scripts/check-edge-fn-docs.mjs --fix",
     "test": "vitest",
     "test:run": "vitest run",
     "test:e2e": "playwright test",

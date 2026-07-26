@@ -57,6 +57,47 @@ jobs:
       # commit. Baseline: .edge-typecheck-baseline.json
       - run: node scripts/typecheck-edge.mjs
 
+  db-columns:
+    name: DB Columns
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # TypeScript structurally CANNOT catch an unknown column: postgrest-js
+      # binds the payload to a naked generic, inference erases object-literal
+      # freshness, and freshness is what drives excess-property checking. Edge
+      # functions aren't type-checked at all and create untyped clients, so
+      # nothing there is checked either — and those are the money paths.
+      #
+      # This scanner is the only column-level safety net. Five bugs of this
+      # class have already shipped silently (see the header of the script):
+      # bonus payments, the price-reduction flow, ABN-less tax invoices,
+      # admin moderation, and cancelled services rendering as active.
+      #
+      # Schema source is the generated src/types/supabase.ts — in-repo, no
+      # credentials. Regenerate it whenever migrations land.
+      - run: npm run check:columns
+
+  docs-edge-list:
+    name: Docs (edge function list)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # No `npm ci` — the script uses only Node builtins.
+      #
+      # CLAUDE.md claimed 20 edge functions and named 19 while the repo had 65,
+      # and the stale count had already been copied into task-router.md. Adding
+      # a function is exactly when nobody thinks about the docs, so the list is
+      # generated from disk and this fails when it drifts.
+      - run: node scripts/check-edge-fn-docs.mjs
+
   build:
     name: Build
     needs: [type-check, test]

@@ -29,19 +29,18 @@ check-license-expiry · client-request-reduction · complete-site-visit ·
 create-bonus-payment · create-checkout-session · create-job-deposit ·
 create-job-payment-checkout · create-payment-session · delete-user ·
 estimate-quote · generate-auto-invoices · generate-recommendations ·
-generate-recurring-invoice · generate-recurring-sessions ·
-geofence-event · google-calendar-import · google-calendar-oauth ·
-health · instant-payout · invoice-contact · issue-fee-invoices ·
-mark-invoice-paid · parse-invoice · pay-milestone · pay-price-increase ·
-payout-reconciliation · process-refund · public-quote ·
-reconcile-payments · release-escrow · remove-becs-payment ·
-respond-to-dispute · send-email · send-invoice-approval-nudge ·
-send-invoice-reminders · send-lead-reminders · send-recurring-reminders ·
-send-scheduled-notifications · send-sms · setup-becs-payment ·
-stripe-checkout · stripe-connect-account · stripe-connect-onboarding ·
-stripe-identity-verification · stripe-payout-settings · stripe-webhook ·
-submit-final-quote · sync-google-calendar · verify-abn · verify-license ·
-verify-payment
+generate-recurring-invoice · generate-recurring-sessions · geofence-event ·
+google-calendar-import · google-calendar-oauth · health · instant-payout ·
+invoice-contact · issue-fee-invoices · mark-invoice-paid · parse-invoice ·
+pay-milestone · pay-price-increase · payout-reconciliation ·
+process-refund · public-quote · reconcile-payments · release-escrow ·
+remove-becs-payment · respond-to-dispute · send-email ·
+send-invoice-approval-nudge · send-invoice-reminders · send-lead-reminders ·
+send-recurring-reminders · send-scheduled-notifications · send-sms ·
+setup-becs-payment · stripe-checkout · stripe-connect-account ·
+stripe-connect-onboarding · stripe-identity-verification ·
+stripe-payout-settings · stripe-webhook · submit-final-quote ·
+sync-google-calendar · verify-abn · verify-license · verify-payment
 
 Shared helpers live in `supabase/functions/_shared/` (not a function).
 
