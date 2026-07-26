@@ -48,7 +48,7 @@ export default function ClientDashboard() {
     const timer = setTimeout(() => setShowSlotsBanner(false), 15000);
     return () => clearTimeout(timer);
   }, [availableThisWeek, showSlotsBanner]);
-  const [, setUnreadTradieIds] = useState<Set<string>>(new Set());
+  const [unreadByTradie, setUnreadByTradie] = useState<Map<string, number>>(new Map());
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [trainingModeEnabled, setTrainingModeEnabled] = useState(false);
   const [toast, setToast] = useState<{ message: string; show: boolean; isError?: boolean }>({ message: '', show: false });
@@ -508,7 +508,7 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (user) {
       fetchSavedTradies();
-      fetchUnreadTradieIds();
+      fetchUnreadCounts();
       fetchTrainingMode();
       fetchRecurring();
       fetchInvoices();
@@ -608,7 +608,7 @@ export default function ClientDashboard() {
     }
   };
 
-  const fetchUnreadTradieIds = async () => {
+  const fetchUnreadCounts = async () => {
     if (!user) return;
     try {
       const { data } = await supabase
@@ -619,17 +619,24 @@ export default function ClientDashboard() {
         .is('deleted_at', null);
 
       if (data) {
-        setUnreadTradieIds(new Set(data.map((m) => m.sender_id)));
+        // One row per unread message, so tally per sender rather than collapsing
+        // to a set — the card badge shows the count.
+        const counts = new Map<string, number>();
+        for (const m of data) {
+          if (!m.sender_id) continue;
+          counts.set(m.sender_id, (counts.get(m.sender_id) ?? 0) + 1);
+        }
+        setUnreadByTradie(counts);
       }
     } catch (err) {
-      console.error('fetchUnreadTradieIds error:', err);
+      console.error('fetchUnreadCounts error:', err);
     }
   };
 
   const handleOpenChat = (tradie: TradieWithDetails) => {
     setChatTradie(tradie);
-    setUnreadTradieIds((prev) => {
-      const next = new Set(prev);
+    setUnreadByTradie((prev) => {
+      const next = new Map(prev);
       next.delete(tradie.id);
       return next;
     });
@@ -2129,6 +2136,7 @@ export default function ClientDashboard() {
                         onSave={handleRemoveTradie}
                         isSaved={true}
                         onRequestQuote={handleRequestQuote}
+                        unreadCount={unreadByTradie.get(tradie.id)}
                       />
                     ))}
                   </div>

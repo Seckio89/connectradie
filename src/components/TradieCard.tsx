@@ -14,9 +14,11 @@ interface TradieCardProps {
   onSave?: (tradie: TradieWithDetails) => void;
   isSaved?: boolean;
   onRequestQuote?: (tradie: TradieWithDetails) => void;
+  /** Unread messages from this tradie. Omit or 0 to hide the badge. */
+  unreadCount?: number;
 }
 
-export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isSaved, onRequestQuote }: TradieCardProps) {
+export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isSaved, onRequestQuote, unreadCount }: TradieCardProps) {
   const details = tradie.tradie_details;
   const availabilityHours = tradie.availability_hours;
   const hasSetAvailability = availabilityHours != null;
@@ -238,10 +240,18 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
           )}
           <button
             onClick={() => onChat(tradie)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors min-h-[44px]"
+            className="relative inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors min-h-[44px]"
           >
             <MessageCircle className="w-3.5 h-3.5" />
             Chat
+            {!!unreadCount && (
+              <span
+                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-warm-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 ring-2 ring-white"
+                aria-label={`${unreadCount} unread message${unreadCount === 1 ? '' : 's'}`}
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </button>
           <div className="flex items-center gap-2 ml-auto">
             <button

@@ -60,7 +60,6 @@ export default function RecommendedTradies() {
   const [items, setItems] = useState<RankedTradie[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTrades, setActiveTrades] = useState<string[]>([]);
-  const [, setSavedSet] = useState<Set<string>>(new Set());
   const [savingId, setSavingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -88,7 +87,6 @@ export default function RecommendedTradies() {
           .select('tradie_id')
           .eq('client_id', user.id);
         const savedIds = new Set((saved ?? []).map((s) => s.tradie_id));
-        setSavedSet(savedIds);
 
         const excludeIds = new Set([...currentTradieIds, ...savedIds, user.id]);
 
@@ -173,7 +171,9 @@ export default function RecommendedTradies() {
     setSavingId(tradieId);
     try {
       await supabase.from('my_trades').insert({ client_id: user.id, tradie_id: tradieId });
-      setSavedSet((prev) => new Set(prev).add(tradieId));
+      // Saved tradies are excluded from recommendations, so the feedback is the
+      // card leaving the list — TradieCard's filled-heart indicator covers the
+      // saved state everywhere a saved tradie is actually rendered.
       setItems((prev) => prev.filter((t) => t.id !== tradieId));
     } catch (err) {
       console.error('Save tradie error:', err);
