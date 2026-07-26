@@ -14,6 +14,10 @@ import {
   Info,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { processRefund } from '../lib/stripePayments';
+import { friendlyError } from '../lib/utils';
+import { useToast } from '../hooks/useToast';
+import ConfirmModal from '../components/ConfirmModal';
 import { PRICING_CONFIG } from '../config/pricing';
 import DashboardLayout from '../components/DashboardLayout';
 import Breadcrumbs from '../components/Breadcrumbs';
@@ -59,6 +63,35 @@ export default function AdminPayments() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Admin refund. process-refund already grants admins full refund power and
+  // handles destination charges correctly (reverse_transfer +
+  // refund_application_fee) — but until now NOTHING in the app called it as an
+  // admin. A client whose payment had already been released was refused (by
+  // design) and told to raise a dispute, and there was no screen anywhere that
+  // could resolve it. This is that screen.
+  const { showToast } = useToast();
+  const [refundTarget, setRefundTarget] = useState<PaymentRow | null>(null);
+  const [refunding, setRefunding] = useState(false);
+
+  const handleRefund = async () => {
+    // Guard against a double-tap: ConfirmModal has no disabled state, and a
+    // second refund on the same payment would be a second real Stripe call.
+    if (!refundTarget || refunding) return;
+    setRefunding(true);
+    try {
+      await processRefund(refundTarget.id, 'Refunded by admin from Admin → Payments');
+      showToast(`Refunded ${formatCurrency(refundTarget.amount)}`);
+      setRefundTarget(null);
+      await fetchData();
+    } catch (err) {
+      // friendlyError now passes through the server's own 4xx message, so a
+      // refusal explains itself instead of becoming a generic payment error.
+      showToast(friendlyError(err, 'Refund failed. Please try again.'), true);
+    } finally {
+      setRefunding(false);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -417,6 +450,7 @@ export default function AdminPayments() {
                           <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Amount Paid</th>
                           <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
                           <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -431,6 +465,23 @@ export default function AdminPayments() {
                             </td>
                             <td className="px-5 py-4">{getStatusBadge(payment.status)}</td>
                             <td className="px-5 py-4 text-sm text-gray-500">{formatDate(payment.created_at)}</td>
+                            <td className="px-5 py-4 text-right">
+                              {/* Only money that was actually collected can be sent back.
+                                  A 'released' payment IS refundable by an admin — that is
+                                  the whole point of this control — but it claws the funds
+                                  back off the tradie's Connect balance, so the confirm
+                                  copy says so. */}
+                              {['completed', 'released'].includes(payment.status) ? (
+                                <button
+                                  onClick={() => setRefundTarget(payment)}
+                                  className="text-red-600 hover:text-red-700 text-sm font-medium"
+                                >
+                                  Refund
+                                </button>
+                              ) : (
+                                <span className="text-xs text-gray-400">—</span>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -673,6 +724,22 @@ export default function AdminPayments() {
           )}
         </div>
       </div>
+
+      {refundTarget && (
+        <ConfirmModal
+          type="danger"
+          title={`Refund ${formatCurrency(refundTarget.amount)}?`}
+          message={
+            refundTarget.status === 'released'
+              ? `This payment has already been released to the tradie, so refunding it will claw the funds back off their Stripe balance. The platform commission is reversed too. This cannot be undone.`
+              : `This refunds ${formatCurrency(refundTarget.amount)} to ${refundTarget.profiles?.full_name || 'the client'}. The platform commission is reversed too. This cannot be undone.`
+          }
+          confirmText={refunding ? 'Refunding…' : 'Refund'}
+          cancelText="Cancel"
+          onConfirm={handleRefund}
+          onCancel={() => { if (!refunding) setRefundTarget(null); }}
+        />
+      )}
     </DashboardLayout>
   );
 }
