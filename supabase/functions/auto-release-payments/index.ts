@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { frozenCents } from "../_shared/feeContext.ts";
+import { frozenCents, recordFeeCharge } from "../_shared/feeContext.ts";
 
 function requireEnv(key: string): string {
   const val = Deno.env.get(key);
@@ -129,40 +129,59 @@ Deno.serve(async (req: Request) => {
     let totalAmount = 0;
     const errors: string[] = [];
 
-    for (const job of completedJobs) {
-      if (disputedJobIds.has(job.id)) {
-        console.info(
-          `Skipping job ${job.id} — has open dispute`,
-        );
-        continue;
-      }
+    // Fetch every releasable job_funding payment for these jobs in one query.
+    //
+    // This used to be a per-job `.maybeSingle()`, which was a silent stall: a job
+    // can legitimately have MORE THAN ONE `job_funding` payment — create-job-deposit
+    // and pay-milestone both insert rows with that exact payment_type. Two matching
+    // rows makes PostgREST return an ERROR rather than a row, so every deposit job
+    // and every multi-milestone job failed here on every single cron tick. Because
+    // Connect accounts are on a manual payout schedule, that money then sat in the
+    // tradie's balance indefinitely with nothing else to sweep it up.
+    //
+    // Flattening to (job, payment) pairs fixes it without restructuring the loop
+    // body below, which already handles exactly one payment and carries its own
+    // per-payment idempotency keys.
+    const releasableJobIds = completedJobs
+      .filter((j) => !disputedJobIds.has(j.id))
+      .map((j) => j.id);
 
-      // Find the main job_funding payment that hasn't been transferred yet
-      const { data: payment, error: paymentError } = await supabase
-        .from("payments")
-        .select(
-          "id, amount, stripe_payment_intent_id, metadata, invoice_number, invoice_ref",
-        )
-        .eq("job_id", job.id)
-        .eq("payment_type", "job_funding")
-        .eq("status", "completed")
-        .maybeSingle();
+    // Bail before querying rather than passing an empty .in() list — a non-uuid
+    // placeholder would make PostgREST reject the whole query as invalid uuid
+    // syntax, turning "every completed job is disputed" into a hard failure.
+    if (releasableJobIds.length === 0) {
+      return jsonResponse({ released: 0, total_amount: 0, errors: [] });
+    }
 
-      if (paymentError) {
-        errors.push(`Job ${job.id}: failed to fetch payment — ${paymentError.message}`);
-        continue;
-      }
+    const { data: fundingPayments, error: paymentsError } = await supabase
+      .from("payments")
+      .select(
+        "id, job_id, amount, stripe_payment_intent_id, metadata, invoice_number, invoice_ref, fee_rate_bps, fee_rate_type",
+      )
+      .in("job_id", releasableJobIds)
+      .eq("payment_type", "job_funding")
+      .eq("status", "completed");
 
-      if (!payment) {
-        // No completed job_funding payment yet — skip
-        continue;
-      }
+    if (paymentsError) {
+      return jsonResponse(
+        { released: 0, total_amount: 0, errors: [`Failed to fetch payments — ${paymentsError.message}`] },
+        500,
+      );
+    }
 
+    const jobById = new Map(completedJobs.map((j) => [j.id, j]));
+    const workItems: { job: typeof completedJobs[number]; payment: NonNullable<typeof fundingPayments>[number] }[] = [];
+    for (const payment of fundingPayments || []) {
       // Already released (transfer for legacy, payout for destination charges)
+      const meta = (payment.metadata || {}) as Record<string, unknown>;
+      if (meta.transfer_id || meta.payout_id) continue;
+      const job = jobById.get(payment.job_id);
+      if (!job) continue;
+      workItems.push({ job, payment });
+    }
+
+    for (const { job, payment } of workItems) {
       const existingMetadata = (payment.metadata || {}) as Record<string, unknown>;
-      if (existingMetadata.transfer_id || existingMetadata.payout_id) {
-        continue;
-      }
 
       // Determine payment flow: destination charges (new) vs custodial escrow
       // (legacy). Writers are inconsistent — accept-and-pay et al. stamp
@@ -195,11 +214,24 @@ Deno.serve(async (req: Request) => {
       // GST (metadata.gst, cents string) was routed to the tradie's balance on
       // destination charges — include it in the payout so it reaches their bank.
       let totalGst = Number(existingMetadata.gst) || 0;
+      // Commission / materials split, needed for the §7A fee ledger below.
+      // Mirrors release-escrow/index.ts:196-197 exactly.
+      let totalCommission = frozenCents(existingMetadata.commission);
+      let totalMaterialsProcessing = frozenCents(existingMetadata.materials_processing);
 
       for (const child of (childPayments || [])) {
         const childMeta = (child.metadata || {}) as Record<string, unknown>;
         totalPlatformFee += frozenCents(childMeta.platform_fee);
         totalGst += Number(childMeta.gst) || 0;
+        totalCommission += frozenCents(childMeta.commission);
+        totalMaterialsProcessing += frozenCents(childMeta.materials_processing);
+      }
+
+      // Pre-v2.1 rows carry only platform_fee. Attribute the whole of it to
+      // commission so the breakdown reconciles rather than showing $0.
+      // Same fallback as release-escrow/index.ts:213-215.
+      if (totalCommission === 0 && totalMaterialsProcessing === 0 && totalPlatformFee > 0) {
+        totalCommission = totalPlatformFee;
       }
 
       const totalBase = payment.amount + childTotal;
@@ -296,6 +328,30 @@ Deno.serve(async (req: Request) => {
               })
               .eq("id", child.id);
           }
+
+          // §7A: record the commission for tax-invoicing.
+          //
+          // This was missing entirely, and this is the DEFAULT release path —
+          // most clients never click "Approve & Release", so the 5-hour cron is
+          // what actually releases the money. Commission was collected via
+          // application_fee_amount but no platform_fee_charges row was written,
+          // and that table is the only thing issue-fee-invoices reads. Result:
+          // GST-inclusive commission retained with no tax invoice ever issued
+          // for it, and no input credit available to the tradie.
+          //
+          // Best-effort by design: recordFeeCharge never throws and is
+          // idempotent on payment_id (23505), so it cannot fail a payout that
+          // has already moved money, and it is safe if release-escrow raced us.
+          await recordFeeCharge(supabase, {
+            tradieProfileId: job.tradie_id,
+            paymentId: payment.id,
+            jobId: payment.job_id,
+            commissionCents: totalCommission,
+            materialsProcessingCents: totalMaterialsProcessing,
+            feeRateBps: (payment.fee_rate_bps as number | null) ?? (frozenCents(existingMetadata.fee_rate_bps) || null),
+            feeRateType: (payment.fee_rate_type as string | null)
+              ?? (typeof existingMetadata.fee_rate_type === "string" ? existingMetadata.fee_rate_type : null),
+          });
 
           const amountDollars = `$${(totalTransferAmount / 100).toFixed(2)}`;
           const jobTitle = job.title || "your job";
@@ -527,6 +583,18 @@ Deno.serve(async (req: Request) => {
             })
             .eq("id", child.id);
         }
+
+        // §7A: same commission ledger write as the destination path above.
+        await recordFeeCharge(supabase, {
+          tradieProfileId: job.tradie_id,
+          paymentId: payment.id,
+          jobId: payment.job_id,
+          commissionCents: totalCommission,
+          materialsProcessingCents: totalMaterialsProcessing,
+          feeRateBps: (payment.fee_rate_bps as number | null) ?? (frozenCents(existingMetadata.fee_rate_bps) || null),
+          feeRateType: (payment.fee_rate_type as string | null)
+            ?? (typeof existingMetadata.fee_rate_type === "string" ? existingMetadata.fee_rate_type : null),
+        });
 
         const amountDollars = `$${(totalTransferAmount / 100).toFixed(2)}`;
         const jobTitle = job.title || "your job";

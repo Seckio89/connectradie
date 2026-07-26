@@ -116,6 +116,26 @@ Deno.serve(async (req: Request) => {
     const pendingCents = audAmount((balance as { pending?: { amount: number; currency: string }[] }).pending);
     const instantAvailableCents = audAmount((balance as { instant_available?: { amount: number; currency: string }[] }).instant_available);
 
+    // ── Escrow reserve (CRITICAL) ────────────────────────────────────────────
+    // Escrow in this system IS the manual payout schedule. accept-and-pay uses a
+    // destination charge (transfer_data.destination), so a client's funds land in
+    // THIS tradie's Connect balance at charge time and sit in `available` exactly
+    // like earned money. Paying the raw available balance out would let a tradie
+    // take the client's escrowed funds before doing the work and before the
+    // homeowner approves release — and a later process-refund would then reverse
+    // against an empty balance, pushing the connected account negative and leaving
+    // the platform to cover it.
+    //
+    // Same query and reasoning as auto-release-recurring-payouts/index.ts:137-144.
+    // Released payments carry a non-escrow status, so they drop out of the filter.
+    const { data: escrowRows } = await supabase
+      .from("payments")
+      .select("amount")
+      .eq("metadata->>tradie_id", user.id)
+      .eq("metadata->>flow", "destination")
+      .in("status", ["completed", "funded", "paid"]);
+    const escrowReserveCents = (escrowRows || []).reduce((s, r) => s + (r.amount || 0), 0);
+
     // Resolve the external account the instant payout lands on. In AU an
     // instant-capable BANK account is valid (real-time payouts) — a debit card is
     // NOT required. Pick the AUD account that is default-for-currency and lists
@@ -144,8 +164,9 @@ Deno.serve(async (req: Request) => {
       }
     } catch { /* leave instantCapable=false → not eligible */ }
 
-    // The instant payout is drawn from cleared AVAILABLE funds.
-    const payoutBaseCents = availableCents;
+    // The instant payout is drawn from cleared AVAILABLE funds, LESS anything
+    // still held in escrow for jobs the homeowner hasn't released.
+    const payoutBaseCents = Math.max(0, availableCents - escrowReserveCents);
     const feeCents = payoutBaseCents > 0 ? Math.max(feeMinCents, Math.round(payoutBaseCents * feeBps / 10000)) : 0;
     const netCents = Math.max(0, payoutBaseCents - feeCents);
     const eligible = instantCapable && payoutBaseCents > 0 && netCents > 0;
@@ -153,6 +174,9 @@ Deno.serve(async (req: Request) => {
     let reason: string | null = null;
     if (!eligible) {
       if (!instantCapable) reason = "no_instant_method";
+      // Distinguish "held in escrow" from "no money": telling a tradie who can
+      // see a funded job that they have "no available funds" reads as a bug.
+      else if (payoutBaseCents <= 0 && escrowReserveCents > 0) reason = "escrow_held";
       else if (payoutBaseCents <= 0 && pendingCents > 0) reason = "funds_pending";
       else if (payoutBaseCents <= 0) reason = "no_funds";
       else reason = "below_fee";
@@ -166,6 +190,7 @@ Deno.serve(async (req: Request) => {
         availableCents,
         pendingCents,
         instantAvailableCents,
+        escrowReserveCents,
         feeCents,
         netCents,
         feeBps,
@@ -178,7 +203,9 @@ Deno.serve(async (req: Request) => {
     if (body.action === "payout") {
       if (!eligible) {
         const msg =
-          reason === "funds_pending"
+          reason === "escrow_held"
+            ? "Your available balance is held in escrow for jobs the client hasn't released yet. It becomes payable once the job is approved."
+            : reason === "funds_pending"
             ? "Your funds are still clearing. Instant payout will be available once they land — usually the next business day."
             : reason === "no_instant_method"
             ? "This payout account can't receive instant payouts. Add an instant-eligible debit card or bank account in Bank Settings."

@@ -239,19 +239,35 @@ Deno.serve(async (req: Request) => {
 
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
-    const refund = await stripe.refunds.create({
-      payment_intent: payment.stripe_payment_intent_id,
-      amount: totalRefundCents,
-      reason: "requested_by_customer",
-      metadata: {
-        type: "client_requested_reduction",
-        payment_id: paymentId,
-        job_id: payment.job_id,
-        original_amount: String(originalAmountCents),
-        final_amount: String(proposedAmountCents),
-        approved_by: user.id,
+    // Same destination-charge problem as adjust-quote-price: without
+    // reverse_transfer the refund comes out of the PLATFORM's balance while the
+    // tradie keeps the original amount. Mirrors process-refund/index.ts:213-215.
+    const isDestinationCharge =
+      (payment.metadata as Record<string, unknown> | null)?.flow === "destination" ||
+      (payment.metadata as Record<string, unknown> | null)?.routing === "destination";
+
+    const refund = await stripe.refunds.create(
+      {
+        payment_intent: payment.stripe_payment_intent_id,
+        amount: totalRefundCents,
+        reason: "requested_by_customer",
+        ...(isDestinationCharge
+          ? { reverse_transfer: true, refund_application_fee: true }
+          : {}),
+        metadata: {
+          type: "client_requested_reduction",
+          payment_id: paymentId,
+          job_id: payment.job_id,
+          original_amount: String(originalAmountCents),
+          final_amount: String(proposedAmountCents),
+          approved_by: user.id,
+          flow: isDestinationCharge ? "destination" : "custodial",
+        },
       },
-    });
+      // DERIVED. One pending reduction per payment, so this is stable across
+      // retries and across a double-tap racing the guard above.
+      { idempotencyKey: `price_reduction_refund_${paymentId}` },
+    );
 
     // Update payment — clear pending_reduction, set new amount, record adjustment history
     const cleanedMetadata = { ...existingMetadata };

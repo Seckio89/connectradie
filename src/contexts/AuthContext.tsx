@@ -43,14 +43,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = async (userId: string, retries = 3) => {
     try {
+      // base_latitude/base_longitude live in profile_private (they are a home
+      // address, and `profiles` is readable by every signed-in user). The embed
+      // resolves here because profile_private's RLS allows owner reads, and we
+      // flatten it back onto the profile object so consumers — QuoteEstimator,
+      // Leads — keep reading `profile.base_latitude` unchanged.
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('*')
+        // `is_admin` is named explicitly because postgrest-js does not include it
+        // in the type it infers for `*` — the same reason Messages.tsx:400 and
+        // ConversationSettingsModal.tsx:118 write `profiles(*, is_admin)`.
+        .select('*, is_admin, profile_private(base_latitude, base_longitude)')
         .eq('id', userId)
         .maybeSingle();
 
       if (profileData) {
-        setProfile(profileData as Profile);
+        const { profile_private: priv, ...rest } = profileData as typeof profileData & {
+          profile_private: { base_latitude: number | null; base_longitude: number | null } | null;
+        };
+        setProfile({
+          ...rest,
+          base_latitude: priv?.base_latitude ?? null,
+          base_longitude: priv?.base_longitude ?? null,
+        } as Profile);
 
         if ((profileData as Profile).role === 'tradie') {
           const { data: tradieData } = await supabase

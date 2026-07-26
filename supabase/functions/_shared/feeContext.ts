@@ -349,14 +349,96 @@ export async function resolveChargeFee(
     }
   }
 
-  const breakdown = calculateFeeV21({
+  const tierSchedule = resolveTierScheduleV21(input.tier);
+
+  let breakdown = calculateFeeV21({
     labourCents,
     materialsCents,
-    tier: resolveTierScheduleV21(input.tier),
+    tier: tierSchedule,
     isRepeatClient: isRepeat,
     materialsProcessingBps,
     overrideBps: effectiveOverrideBps,
   });
+
+  // ── Job-level fee cap (spec §5) ─────────────────────────────────────────────
+  // feeCapCents is documented as "Absolute cap on commission per JOB", and the
+  // pricing page promises "capped at $500 per job". But calculateFeeV21 only
+  // ever sees ONE charge, so the cap was re-applied in full to every instalment.
+  //
+  //   $20,000 all-labour job, free tier (800 bps, $500 cap, 250 bps floor):
+  //     paid in one charge   -> min(1600, max(500,500)) = $500   correct
+  //     paid as 4 x $5,000   -> min( 400, max(500,125)) = $400 each
+  //                             = $1,600 total, 3.2x the advertised cap
+  //
+  // So a tradie was charged more purely because the client paid in stages. Fixed
+  // by tracking what this job has already been charged and only ever allowing
+  // the remainder of the job's ceiling.
+  //
+  // The floor (2.5% of labour) is also a per-JOB quantity, so it is recomputed on
+  // cumulative labour — which is why this converges to exactly the single-charge
+  // answer in both the cap-bound and floor-bound cases:
+  //
+  //   $100,000 labour, free tier: single charge -> max(500, 2500) = $2,500;
+  //   4 x $25,000 -> 625 + 625 + 625 + 625      = $2,500          identical
+  //
+  // Done here rather than in calculateFeeV21 so the calculator stays a pure
+  // function, and centrally rather than per-caller so all 16 charge sites get it.
+  let jobCapApplied = false;
+  let jobCapLookupFailed = false;
+  if (input.jobId) {
+    try {
+      // Only charges where money was actually taken. A failed/cancelled attempt
+      // must not consume the job's cap headroom.
+      const { data: priorRows, error: priorError } = await supabase
+        .from("payments")
+        .select("commission_cents, labour_cents")
+        .eq("job_id", input.jobId)
+        .in("status", ["completed", "funded", "paid", "released"]);
+      if (priorError) throw priorError;
+
+      const priorRowsTyped = (priorRows || []) as Array<{
+        commission_cents: number | null;
+        labour_cents: number | null;
+      }>;
+      const priorCommission = priorRowsTyped.reduce(
+        (s: number, r) => s + (Number(r.commission_cents) || 0),
+        0,
+      );
+      const priorLabour = priorRowsTyped.reduce(
+        (s: number, r) => s + (Number(r.labour_cents) || 0),
+        0,
+      );
+
+      const hasOverride = effectiveOverrideBps != null && effectiveOverrideBps >= 0;
+      const cumulativeLabour = priorLabour + labourCents;
+      // An override bypasses the floor entirely, matching calculateFeeV21.
+      const jobFloorCents = hasOverride
+        ? 0
+        : Math.round((cumulativeLabour * tierSchedule.capFloorBps) / 10_000);
+      const jobCeilingCents = Math.max(tierSchedule.feeCapCents, jobFloorCents);
+      const allowedNowCents = Math.max(0, jobCeilingCents - priorCommission);
+
+      if (breakdown.commissionCents > allowedNowCents) {
+        const commissionCents = allowedNowCents;
+        const totalDeductionCents = commissionCents + breakdown.materialsProcessingCents;
+        breakdown = {
+          ...breakdown,
+          commissionCents,
+          gstComponentCents: Math.round(commissionCents / 11),
+          totalDeductionCents,
+          wasCapped: true,
+          netToTradieCents: labourCents + materialsCents - totalDeductionCents,
+        };
+        jobCapApplied = true;
+      }
+    } catch (err) {
+      // Never fail a charge over this. Falling through leaves the previous
+      // per-charge behaviour, which over-collects rather than under-collects —
+      // recoverable, and flagged in metadata for the daily fee audit.
+      console.error("[resolveChargeFee] job cap lookup failed for job", input.jobId, err);
+      jobCapLookupFailed = true;
+    }
+  }
 
   return {
     breakdown,
@@ -385,6 +467,12 @@ export async function resolveChargeFee(
       // tradie's current override — see check_v21_fee_invariants.
       override_bps_applied: effectiveOverrideBps === null ? "" : String(effectiveOverrideBps),
       ...(overrideLookupFailed ? { override_lookup_failed: "true" } : {}),
+      // Job-level cap forensics: whether this charge was trimmed because the
+      // job's cumulative commission had reached its ceiling, and whether the
+      // lookup that decides that failed (in which case the charge fell back to
+      // per-charge capping and may OVER-collect).
+      ...(jobCapApplied ? { job_cap_applied: "true" } : {}),
+      ...(jobCapLookupFailed ? { job_cap_lookup_failed: "true" } : {}),
       fee_model: "v2.1",
     },
     paymentColumns: {

@@ -4,7 +4,7 @@ import { BadgeCheck, Shield, FileCheck, Calendar, MessageCircle, Star, ShieldChe
 import ProBadge from './ProBadge';
 import type { TradieWithDetails } from '../types/database';
 import { getTradieRating, type TradieRating } from '../lib/reviews';
-import { redactName, extractSuburb } from '../lib/contactGating';
+import { redactName } from '../lib/contactGating';
 import UserTradeBadges from './UserTradeBadges';
 
 interface TradieCardProps {
@@ -28,7 +28,9 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
   // the highest-trust badge — gives clients a clear signal beyond ABN/licence.
   const isVerifiedPro = isPro && tradie.is_identity_verified === true;
   const displayName = isPro ? (details?.business_name || redactName(tradie.full_name)) : redactName(tradie.full_name);
-  const suburb = extractSuburb(tradie.address);
+  // `public_suburb` is a generated column — the same extractSuburb() logic, run
+  // in Postgres. Selecting it means the raw street address never leaves the DB.
+  const suburb = tradie.public_suburb ?? '';
 
   useEffect(() => {
     loadRating();
@@ -219,7 +221,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
         </div>
 
 
-        {tradie.phone && (
+        {tradie.has_phone && (
           <p className="mt-2 text-xs text-gray-400">
             Contact via chat
           </p>

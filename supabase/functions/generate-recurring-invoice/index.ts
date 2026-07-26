@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { resolveTradieTier } from "../_shared/pricing.ts";
 import { resolveChargeFee } from "../_shared/feeContext.ts";
+import type { Insert } from "../_shared/dbTypes.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -229,6 +230,46 @@ Deno.serve(async (req: Request) => {
     const platformFeeCents = fee.applicationFeeAmount;
     const processingFee = 0;
 
+    // §7A: recurring invoices had no payments row, and platform_fee_charges —
+    // the only table issue-fee-invoices reads — is keyed on payment_id, so the
+    // commission was never tax-invoiced. Both Checkout paths below need one, so
+    // it lives here as a helper.
+    //
+    // No payment_record_id: stripe-webhook completes any payments row by
+    // matching stripe_checkout_session_id, then records the fee in its
+    // `type === 'recurring_invoice'` branch.
+    //
+    // amount uses totalCents (what resolveChargeFee was given), NOT
+    // checkoutSession.amount_total — the line items are rounded independently
+    // and can differ by a cent or two, which would desync it from
+    // fee.paymentColumns.
+    const insertRecurringPaymentRow = async (sessionId: string, invoiceId: string | null) => {
+      const row: Insert<'payments'> = {
+        profile_id: job.tradie_id ?? "",
+        payment_type: "recurring_invoice",
+        amount: totalCents,
+        status: "pending",
+        stripe_checkout_session_id: sessionId,
+        ...fee.paymentColumns,
+        metadata: {
+          ...fee.metadata,
+          type: "recurring_invoice",
+          routing: "destination",
+          recurring_job_id: recurringJobId,
+          tradie_id: job.tradie_id ?? "",
+          ...(invoiceId ? { invoice_id: invoiceId } : {}),
+        },
+      };
+      const { error } = await supabase.from("payments").insert(row);
+      if (error) {
+        console.error(
+          `[generate-recurring-invoice] no payments row for session ${sessionId} — ` +
+            `commission will not be tax-invoiced.`,
+          error,
+        );
+      }
+    };
+
     // Build month label for invoice
     const periodStart = new Date(billingPeriodStart + "T00:00:00");
     const monthLabel = periodStart.toLocaleDateString("en-AU", {
@@ -397,6 +438,8 @@ Deno.serve(async (req: Request) => {
           })
           .eq("id", becsInvoice.id);
 
+        await insertRecurringPaymentRow(checkoutSession.id, becsInvoice.id);
+
         stripePaymentUrl = checkoutSession.url;
       }
     } else {
@@ -453,6 +496,8 @@ Deno.serve(async (req: Request) => {
         console.error("Failed to insert invoice:", insertError);
         return errorJson("Failed to create invoice record", 500);
       }
+
+      await insertRecurringPaymentRow(checkoutSession.id, cardInvoice?.id ?? null);
 
       invoice = cardInvoice;
       stripePaymentUrl = checkoutSession.url;

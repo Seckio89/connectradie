@@ -1043,6 +1043,7 @@ export type Database = {
           resolved_at: string | null
           resolved_by: string | null
           status: string
+          stripe_dispute_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1059,6 +1060,7 @@ export type Database = {
           resolved_at?: string | null
           resolved_by?: string | null
           status?: string
+          stripe_dispute_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1075,6 +1077,7 @@ export type Database = {
           resolved_at?: string | null
           resolved_by?: string | null
           status?: string
+          stripe_dispute_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3025,7 +3028,10 @@ export type Database = {
           bank_account_number: string | null
           bank_bsb: string | null
           bank_name: string | null
+          base_latitude: number | null
+          base_longitude: number | null
           profile_id: string
+          push_subscription: Json | null
           updated_at: string
         }
         Insert: {
@@ -3033,7 +3039,10 @@ export type Database = {
           bank_account_number?: string | null
           bank_bsb?: string | null
           bank_name?: string | null
+          base_latitude?: number | null
+          base_longitude?: number | null
           profile_id: string
+          push_subscription?: Json | null
           updated_at?: string
         }
         Update: {
@@ -3041,7 +3050,10 @@ export type Database = {
           bank_account_number?: string | null
           bank_bsb?: string | null
           bank_name?: string | null
+          base_latitude?: number | null
+          base_longitude?: number | null
           profile_id?: string
+          push_subscription?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -3099,6 +3111,8 @@ export type Database = {
           external_pay_allowed: boolean
           fee_invoice_frequency: string
           full_name: string
+          has_phone: boolean | null
+          has_push_subscription: boolean
           id: string
           insurance_policy: boolean | null
           is_admin: boolean
@@ -3125,6 +3139,7 @@ export type Database = {
           phone: string | null
           platform_fee_override_bps: number | null
           postcode: string | null
+          public_suburb: string | null
           push_enabled: boolean | null
           push_subscription: Json | null
           rejection_reason: string | null
@@ -3173,6 +3188,8 @@ export type Database = {
           external_pay_allowed?: boolean
           fee_invoice_frequency?: string
           full_name?: string
+          has_phone?: boolean | null
+          has_push_subscription?: boolean
           id: string
           insurance_policy?: boolean | null
           is_admin?: boolean
@@ -3199,6 +3216,7 @@ export type Database = {
           phone?: string | null
           platform_fee_override_bps?: number | null
           postcode?: string | null
+          public_suburb?: string | null
           push_enabled?: boolean | null
           push_subscription?: Json | null
           rejection_reason?: string | null
@@ -3247,6 +3265,8 @@ export type Database = {
           external_pay_allowed?: boolean
           fee_invoice_frequency?: string
           full_name?: string
+          has_phone?: boolean | null
+          has_push_subscription?: boolean
           id?: string
           insurance_policy?: boolean | null
           is_admin?: boolean
@@ -3273,6 +3293,7 @@ export type Database = {
           phone?: string | null
           platform_fee_override_bps?: number | null
           postcode?: string | null
+          public_suburb?: string | null
           push_enabled?: boolean | null
           push_subscription?: Json | null
           rejection_reason?: string | null
@@ -5593,6 +5614,11 @@ export type Database = {
       employer_remove_member: {
         Args: { member_id: string }
         Returns: undefined
+      }
+      extract_suburb: { Args: { addr: string }; Returns: string }
+      filter_tradies_by_service_area: {
+        Args: { p_lat: number; p_lng: number; p_tradie_ids: string[] }
+        Returns: string[]
       }
       get_area_price_range: {
         Args: {

@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { Loader2, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { saveBaseCoords } from '../../lib/profilePrivate';
 import AddressAutocomplete from '../AddressAutocomplete';
 
 export default function OnboardingWelcome() {
@@ -45,11 +46,16 @@ export default function OnboardingWelcome() {
           address: address.trim() || null,
           suburb: addr.suburb ?? null,
           postcode: addr.postcode ?? null,
-          base_latitude: addr.lat ?? null,
-          base_longitude: addr.lng ?? null,
           onboarding_stage: 2,
         };
     const { error: err } = await updateProfile(updates);
+
+    // Base coords are a home address — they live in profile_private, not on the
+    // world-readable profiles row, so they are a separate write.
+    if (!err && !isTradie && profile?.id) {
+      await saveBaseCoords(profile.id, addr.lat ?? null, addr.lng ?? null);
+    }
+
     if (err) {
       setError('Something went wrong. Please try again.');
       setSaving(false);

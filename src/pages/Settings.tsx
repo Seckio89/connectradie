@@ -4,6 +4,7 @@ import { User, Loader2, CheckCircle2, Shield, X, Zap, Crown, BadgeCheck, Wrench,
 import { useDarkMode } from '../hooks/useDarkMode';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { saveBaseCoords } from '../lib/profilePrivate';
 import type { Update } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
 import SubscriptionModal from '../components/SubscriptionModal';
@@ -367,20 +368,21 @@ export default function Settings() {
       postcode,
     };
 
-    // Only refresh base coords when a new address was actually picked this
-    // session — otherwise leave whatever's already stored untouched.
-    if (baseCoords) {
-      updates.base_latitude = baseCoords.lat;
-      updates.base_longitude = baseCoords.lng;
-    }
-
     try {
       const { error: updateError } = await supabase
         .from('profiles')
         .update(updates)
         .eq('id', user.id);
 
-      if (updateError) {
+      // Base coords are a home address and live in profile_private, so they are
+      // a separate write. Only refresh them when a new address was actually
+      // picked this session — otherwise leave whatever's already stored
+      // untouched.
+      const { error: coordsError } = baseCoords
+        ? await saveBaseCoords(user.id, baseCoords.lat, baseCoords.lng)
+        : { error: null };
+
+      if (updateError || coordsError) {
         setError('Failed to update profile. Please try again.');
       } else {
         // Save business name to tradie_details if tradie

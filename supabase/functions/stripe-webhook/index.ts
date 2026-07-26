@@ -2,7 +2,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@14.21.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
 import { resolveTradieTier } from '../_shared/pricing.ts';
-import { resolveChargeFee } from '../_shared/feeContext.ts';
+import { resolveChargeFee, recordFeeCharge } from '../_shared/feeContext.ts';
 import type { Insert, Update } from '../_shared/dbTypes.ts';
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
@@ -523,9 +523,81 @@ async function handleEvent(event: Stripe.Event) {
     const amount = dispute.amount;
     const reason = dispute.reason;
 
-    // Cannot insert a dispute record without job/user context from Stripe dispute alone
-    // Log for admin review and rely on the admin notification below
-    console.warn(`Stripe dispute ${dispute.id} received but cannot create DB record without job context. Charge: ${chargeId}, Amount: ${amount}, Reason: ${reason}`);
+    // Write a real disputes row (H5). This used to bail out with "cannot create
+    // DB record without job context" — but auto-release-payments builds its
+    // exclusion set ONLY from public.disputes, so a chargeback never blocked the
+    // 5-hour cron and the platform could pay the tradie money Stripe had already
+    // clawed back. The context IS derivable:
+    //   dispute.charge -> charge.payment_intent -> payments -> job -> both parties.
+    //
+    // Best-effort: a failure here must not 500 the webhook (Stripe would retry
+    // and the dedupe row is already claimed), so it falls through to the admin
+    // notification below, which is what used to be the only outcome.
+    try {
+      if (!chargeId) throw new Error("dispute has no charge id");
+
+      const charge = await stripe.charges.retrieve(chargeId);
+      const piId = typeof charge.payment_intent === "string"
+        ? charge.payment_intent
+        : (charge.payment_intent as Stripe.PaymentIntent | null)?.id;
+      if (!piId) throw new Error(`charge ${chargeId} has no payment_intent`);
+
+      const { data: disputedPayment } = await supabase
+        .from("payments")
+        .select("id, job_id, metadata")
+        .eq("stripe_payment_intent_id", piId)
+        .maybeSingle();
+      if (!disputedPayment?.job_id) throw new Error(`no payment/job for payment_intent ${piId}`);
+
+      const { data: disputedJob } = await supabase
+        .from("jobs")
+        .select("id, client_id, tradie_id")
+        .eq("id", disputedPayment.job_id)
+        .maybeSingle();
+      if (!disputedJob?.client_id || !disputedJob.tradie_id) {
+        throw new Error(`job ${disputedPayment.job_id} missing client or tradie`);
+      }
+
+      // status defaults to 'open', which is exactly what auto-release-payments
+      // excludes — that is the whole point of writing this row.
+      const disputeRow: Insert<'disputes'> = {
+        job_id: disputedJob.id,
+        opened_by: disputedJob.client_id,   // the cardholder raised the chargeback
+        against_user: disputedJob.tradie_id,
+        reason: `stripe_chargeback:${reason ?? "unknown"}`,
+        description:
+          `Automatic record of Stripe chargeback ${dispute.id} on charge ${chargeId}. ` +
+          `Amount ${(amount / 100).toFixed(2)} ${dispute.currency?.toUpperCase()}. ` +
+          `Raised by the card issuer, not in-app. Blocks auto-release until closed.`,
+        stripe_dispute_id: dispute.id,
+      };
+      const { error: disputeInsertError } = await supabase.from("disputes").insert(disputeRow);
+      // 23505 = this dispute is already recorded; redelivery is a no-op.
+      if (disputeInsertError && (disputeInsertError as { code?: string }).code !== "23505") {
+        throw disputeInsertError;
+      }
+
+      // Cross-reference on the payment so reconciliation can see it too.
+      await supabase
+        .from("payments")
+        .update({
+          metadata: {
+            ...((disputedPayment.metadata || {}) as Record<string, unknown>),
+            stripe_dispute_id: dispute.id,
+            disputed_at: new Date().toISOString(),
+          },
+        })
+        .eq("id", disputedPayment.id);
+
+      console.info(`Dispute ${dispute.id} linked to job ${disputedJob.id} — auto-release blocked.`);
+    } catch (err) {
+      // Loud, because the fallback leaves the payout UNBLOCKED.
+      console.error(
+        `CRITICAL: could not record Stripe dispute ${dispute.id} against a job — ` +
+          `auto-release is NOT blocked for it. Charge: ${chargeId}, Amount: ${amount}, Reason: ${reason}.`,
+        err,
+      );
+    }
 
     // Notify all admins
     const { data: admins } = await supabase
@@ -551,6 +623,66 @@ async function handleEvent(event: Stripe.Event) {
     return;
   }
 
+  // Handle charge.dispute.closed — release or confirm the block raised above.
+  //
+  // This is the necessary other half of dispute.created. disputes.status 'open'
+  // is what stops auto-release, so WITHOUT this a chargeback the tradie WINS
+  // would block their payout permanently — we would have turned a lost-money bug
+  // into a never-pay bug.
+  if (event.type === 'charge.dispute.closed') {
+    const dispute = event.data.object as Stripe.Dispute;
+
+    // won  -> the funds came back to us, so the tradie may be paid:
+    //         'resolved_tradie' is NOT in auto-release's exclusion list.
+    // lost  -> the money is gone; keep it excluded so we never pay it out again.
+    // other (warning_closed etc.) -> treat as dismissed, no longer blocking.
+    const mappedStatus = dispute.status === 'won'
+      ? 'resolved_tradie'
+      : dispute.status === 'lost'
+      ? 'resolved_client'
+      : 'dismissed';
+
+    const { error: closeError } = await supabase
+      .from('disputes')
+      .update({
+        status: mappedStatus,
+        resolution: `Stripe dispute ${dispute.id} closed with status "${dispute.status}".`,
+        resolved_at: new Date().toISOString(),
+      })
+      .eq('stripe_dispute_id', dispute.id);
+
+    if (closeError) {
+      console.error(`Failed to close dispute record for ${dispute.id}`, closeError);
+    } else {
+      console.info(`Dispute ${dispute.id} closed as ${dispute.status} -> ${mappedStatus}`);
+    }
+
+    // A LOST chargeback needs the PAYMENT closed too, not just the dispute row.
+    // auto-release only excludes 'open'/'under_review' disputes, so resolving to
+    // 'resolved_client' would UN-block the job and let the cron pay the tradie
+    // money the client has already taken back — the original H5 bug, just
+    // deferred to dispute-close time.
+    //
+    // 'refunded' is the honest status (the funds did go back to the cardholder)
+    // and it is already terminal everywhere that matters: auto-release requires
+    // 'completed', and reconcile-payments now refuses to downgrade a terminal
+    // status back to 'completed'.
+    if (dispute.status === 'lost') {
+      const { error: payErr } = await supabase
+        .from('payments')
+        .update({ status: 'refunded' })
+        .eq('metadata->>stripe_dispute_id', dispute.id);
+      if (payErr) {
+        console.error(
+          `CRITICAL: dispute ${dispute.id} was LOST but the payment could not be marked refunded — ` +
+            `auto-release may pay out clawed-back funds.`,
+          payErr,
+        );
+      }
+    }
+    return;
+  }
+
   // Handle payment_intent.payment_failed — one-time payment failure notification
   if (event.type === 'payment_intent.payment_failed') {
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
@@ -560,6 +692,16 @@ async function handleEvent(event: Stripe.Event) {
       const invoiceId = paymentIntent.metadata.invoice_id;
       const recurringJobId = paymentIntent.metadata.recurring_job_id;
       const homeownerId = paymentIntent.metadata.homeowner_id;
+
+      // Close off the payments row charge-becs-invoice created, or it leaks as
+      // permanently 'pending'. No fee is recorded — the money never arrived.
+      const failedPaymentRecordId = paymentIntent.metadata?.payment_record_id;
+      if (failedPaymentRecordId) {
+        await supabase
+          .from('payments')
+          .update({ status: 'failed' })
+          .eq('id', failedPaymentRecordId);
+      }
 
       if (invoiceId) {
         try {
@@ -736,6 +878,51 @@ async function handleEvent(event: Stripe.Event) {
             })
             .eq('id', invoiceId)
             .in('status', ['processing', 'sent', 'overdue']);
+
+          // §7A: complete the payments row charge-becs-invoice created, then
+          // record the commission for tax-invoicing.
+          //
+          // Recurring invoices previously had NO payments row at all, and
+          // platform_fee_charges (the only table issue-fee-invoices reads) is
+          // keyed on payment_id — so commission collected here was retained
+          // with no tax invoice ever issued for it.
+          //
+          // Done HERE rather than at charge time because BECS settles
+          // asynchronously: booking commission when the debit is merely
+          // submitted would book revenue on money that may never arrive.
+          // charge-becs-invoice threads payment_record_id through the PI metadata
+          // (it creates the row BEFORE the charge). approve-invoice cannot — its
+          // PI create sits in a try/catch that falls through to Checkout on
+          // failure, so it inserts the row AFTER the charge and keys it on the PI
+          // id instead. Accept either.
+          let becsPaymentRecordId: string | null = pi.metadata?.payment_record_id ?? null;
+          if (!becsPaymentRecordId) {
+            const { data: byPi } = await supabase
+              .from('payments')
+              .select('id')
+              .eq('stripe_payment_intent_id', pi.id)
+              .eq('payment_type', 'recurring_invoice')
+              .maybeSingle();
+            becsPaymentRecordId = byPi?.id ?? null;
+          }
+          if (becsPaymentRecordId) {
+            await supabase
+              .from('payments')
+              .update({ status: 'completed', completed_at: new Date().toISOString() })
+              .eq('id', becsPaymentRecordId);
+
+            // Never throws, idempotent on payment_id (23505) so webhook
+            // redelivery is a no-op. jobId is null — there is no job.
+            await recordFeeCharge(supabase, {
+              tradieProfileId: tradieId,
+              paymentId: becsPaymentRecordId,
+              jobId: null,
+              commissionCents: Number(pi.metadata?.commission) || 0,
+              materialsProcessingCents: Number(pi.metadata?.materials_processing) || 0,
+              feeRateBps: Number(pi.metadata?.fee_rate_bps) || null,
+              feeRateType: pi.metadata?.fee_rate_type ?? null,
+            });
+          }
 
           // Transfer to tradie via Connect
           if (tradieId) {
@@ -955,7 +1142,12 @@ async function handleEvent(event: Stripe.Event) {
               : null,
           })
           .eq('stripe_checkout_session_id', session.id)
-          .select('id');
+          // Fee columns come back too so the recurring_invoice branch below can
+          // write the §7A ledger row without re-reading. They are read off the
+          // ROW rather than session.metadata deliberately: invoice-contact's
+          // recurring session does not spread ...fee.metadata, so it carries no
+          // `commission` key — but fee.paymentColumns always populates these.
+          .select('id, commission_cents, materials_processing_cents, fee_rate_bps, fee_rate_type');
 
         if (paymentUpdateError) {
           console.error('Error updating payment record:', paymentUpdateError);
@@ -1063,6 +1255,30 @@ async function handleEvent(event: Stripe.Event) {
 
           // If this is a recurring_invoice payment, mark the invoice as paid and transfer to tradie
           if (session.metadata?.type === 'recurring_invoice') {
+            // §7A: record the commission for tax-invoicing. Covers all three
+            // Checkout-based recurring flows at once (approve-invoice's card
+            // path, generate-recurring-invoice, invoice-contact's off-app
+            // recurring invoice) because they all land here.
+            //
+            // Recurring invoices previously had no payments row at all, so
+            // platform_fee_charges — the only table issue-fee-invoices reads —
+            // had nothing to key on and the commission was never tax-invoiced.
+            //
+            // Best-effort: recordFeeCharge never throws and is idempotent on
+            // payment_id (23505), so redelivery is a no-op.
+            const recurringPaymentRow = updated?.[0];
+            if (recurringPaymentRow?.id) {
+              await recordFeeCharge(supabase, {
+                tradieProfileId: session.metadata?.tradie_id || null,
+                paymentId: recurringPaymentRow.id,
+                jobId: null, // a recurring invoice has no job
+                commissionCents: Number(recurringPaymentRow.commission_cents) || 0,
+                materialsProcessingCents: Number(recurringPaymentRow.materials_processing_cents) || 0,
+                feeRateBps: (recurringPaymentRow.fee_rate_bps as number | null) ?? null,
+                feeRateType: (recurringPaymentRow.fee_rate_type as string | null) ?? null,
+              });
+            }
+
             // Match by checkout session ID (payment_intent is null at session creation time)
             const { error: invoiceUpdateError } = await supabase
               .from('recurring_invoices')

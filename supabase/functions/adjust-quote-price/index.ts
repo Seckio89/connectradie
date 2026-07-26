@@ -238,19 +238,40 @@ Deno.serve(async (req: Request) => {
       const totalRefundCents = diffCents + gstRefundCents + processingFeeRefund;
 
       // Issue partial Stripe refund
-      const refund = await stripe.refunds.create({
-        payment_intent: payment.stripe_payment_intent_id,
-        amount: totalRefundCents,
-        reason: "requested_by_customer",
-        metadata: {
-          type: "price_adjustment",
-          quote_id: quoteId,
-          job_id: quote.job_id,
-          original_amount: String(originalAmountCents),
-          final_amount: String(finalPriceCents),
-          adjusted_by: user.id,
+      // This payment is the accept-and-pay job_funding row, which is a
+      // DESTINATION charge — the funds are already in the tradie's Connect
+      // balance. A refund without reverse_transfer is debited from the
+      // PLATFORM's balance while the tradie keeps the full original amount, so
+      // the platform silently eats every price reduction. Mirrors
+      // process-refund/index.ts:213-215.
+      const isDestinationCharge =
+        (payment.metadata as Record<string, unknown> | null)?.flow === "destination" ||
+        (payment.metadata as Record<string, unknown> | null)?.routing === "destination";
+
+      const refund = await stripe.refunds.create(
+        {
+          payment_intent: payment.stripe_payment_intent_id,
+          amount: totalRefundCents,
+          reason: "requested_by_customer",
+          ...(isDestinationCharge
+            ? { reverse_transfer: true, refund_application_fee: true }
+            : {}),
+          metadata: {
+            type: "price_adjustment",
+            quote_id: quoteId,
+            job_id: quote.job_id,
+            original_amount: String(originalAmountCents),
+            final_amount: String(finalPriceCents),
+            adjusted_by: user.id,
+            flow: isDestinationCharge ? "destination" : "custodial",
+          },
         },
-      });
+        // DERIVED, never caller-supplied. A quote can only be finalised once, so
+        // the quote id is a stable key: a retry (or a double-tap racing the
+        // read-then-write guard above) returns the SAME refund instead of
+        // issuing a second one.
+        { idempotencyKey: `price_adjust_refund_${quoteId}` },
+      );
 
       // Update quote with final price
       const { error: quoteUpdateError } = await supabase

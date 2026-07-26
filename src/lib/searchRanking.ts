@@ -128,7 +128,7 @@ export function buildScoringFactors(tradie: {
   verification_status?: string | null;
   bio?: string | null;
   avatar_url?: string | null;
-  phone?: string | null;
+  has_phone?: boolean | null;
   postcode?: string | null;
   tradie_details?: {
     bio?: string | null;
@@ -150,7 +150,7 @@ export function buildScoringFactors(tradie: {
     if (val !== null && val !== undefined && val !== '' && val !== false) completeness++;
   };
   check(tradie.avatar_url);
-  check(tradie.phone);
+  check(tradie.has_phone);
   check(tradie.postcode);
   check(tradie.tradie_details?.bio);
   check(tradie.tradie_details?.hourly_rate);

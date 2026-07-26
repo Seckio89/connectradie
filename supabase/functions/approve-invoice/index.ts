@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { resolveTradieTier } from "../_shared/pricing.ts";
 import { resolveChargeFee } from "../_shared/feeContext.ts";
+import type { Insert } from "../_shared/dbTypes.ts";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
@@ -92,6 +93,29 @@ Deno.serve(async (req: Request) => {
     if (invoice.status !== "pending_approval") {
       return errorJson(`Invoice status is '${invoice.status}', expected 'pending_approval'`, 400);
     }
+
+    // ATOMIC CLAIM. The check above is a read, and the status was previously not
+    // written until AFTER the charge — so two taps on "Approve" (or a client
+    // retry after a timeout) both passed it and both debited the client. A BECS
+    // reversal is manual and takes days.
+    //
+    // Moving off 'pending_approval' here, conditionally on it still being that,
+    // means exactly one request can proceed: the loser matches zero rows.
+    // Downstream still sets the real terminal status ('processing' for BECS,
+    // 'sent' for the Checkout fallback).
+    //
+    // Trade-off accepted: if this request dies later the invoice sits at
+    // 'processing' and needs an admin nudge — strictly better than charging a
+    // client twice.
+    const { data: claimed, error: claimErr } = await supabase
+      .from("recurring_invoices")
+      .update({ status: "processing", updated_at: new Date().toISOString() })
+      .eq("id", invoiceId)
+      .eq("status", "pending_approval")
+      .select("id")
+      .maybeSingle();
+    if (claimErr) return errorJson(`Could not claim invoice: ${claimErr.message}`, 500);
+    if (!claimed) return errorJson("This invoice is already being processed", 409);
 
     // Get the recurring job for trade info
     const { data: recurringJob } = await supabase
@@ -218,7 +242,53 @@ Deno.serve(async (req: Request) => {
               tradie_tier: tier,
               ...becsFee.metadata,
             },
-          });
+          },
+          // DERIVED, never caller-supplied — same reasoning as
+          // charge-becs-invoice:240. Belt-and-braces with the atomic claim
+          // above: if two requests ever did reach here, Stripe returns the FIRST
+          // PaymentIntent rather than debiting the client a second time.
+          { idempotencyKey: `approve-invoice:${invoiceId}` });
+
+          // §7A: recurring invoices had no payments row, and platform_fee_charges
+          // (the only table issue-fee-invoices reads) is keyed on payment_id — so
+          // commission collected here was never tax-invoiced.
+          //
+          // Inserted AFTER the PaymentIntent succeeds, unlike charge-becs-invoice
+          // which inserts first. The create above sits in a try/catch that
+          // SWALLOWS failures and falls through to the Checkout path below, so an
+          // insert-first would leave an orphaned pending row plus a second row
+          // from the fallback. Keyed on the PI id rather than threading
+          // payment_record_id through metadata, since the PI already exists.
+          //
+          // payment_type 'recurring_invoice' keeps this out of Payouts earnings
+          // and out of auto-release-payments; profile_id is the TRADIE because
+          // off-app payers have no profiles row.
+          const becsRow: Insert<'payments'> = {
+            profile_id: recurringJob?.tradie_id ?? "",
+            payment_type: "recurring_invoice",
+            amount: chargeAmount,
+            status: "pending", // the webhook completes it once BECS settles
+            stripe_payment_intent_id: pi.id,
+            ...becsFee.paymentColumns,
+            metadata: {
+              ...becsFee.metadata,
+              type: "recurring_invoice_becs",
+              routing: "destination",
+              invoice_id: invoiceId,
+              recurring_job_id: invoice.recurring_job_id,
+              tradie_id: recurringJob?.tradie_id || "",
+            },
+          };
+          const { error: becsRowErr } = await supabase.from("payments").insert(becsRow);
+          if (becsRowErr) {
+            // Loud but non-fatal: the client has already been debited, so failing
+            // the request here would be worse than a missing ledger row.
+            console.error(
+              `[approve-invoice] BECS charged (pi ${pi.id}) but no payments row was created — ` +
+                `commission for invoice ${invoiceId} will not be tax-invoiced.`,
+              becsRowErr,
+            );
+          }
 
           await supabase.from("recurring_invoices").update({
             status: "processing",
@@ -284,6 +354,35 @@ Deno.serve(async (req: Request) => {
         ...fee.metadata,
       },
     });
+
+    // §7A ledger row for the Checkout path. No payment_record_id needed —
+    // stripe-webhook completes any payments row by matching
+    // stripe_checkout_session_id, then records the fee in its
+    // `type === 'recurring_invoice'` branch.
+    const cardRow: Insert<'payments'> = {
+      profile_id: recurringJob?.tradie_id ?? "",
+      payment_type: "recurring_invoice",
+      amount: totalCents,
+      status: "pending",
+      stripe_checkout_session_id: session.id,
+      ...fee.paymentColumns,
+      metadata: {
+        ...fee.metadata,
+        type: "recurring_invoice",
+        routing: "destination",
+        invoice_id: invoiceId,
+        recurring_job_id: invoice.recurring_job_id,
+        tradie_id: recurringJob?.tradie_id || "",
+      },
+    };
+    const { error: cardRowErr } = await supabase.from("payments").insert(cardRow);
+    if (cardRowErr) {
+      console.error(
+        `[approve-invoice] no payments row for checkout session ${session.id} — ` +
+          `commission for invoice ${invoiceId} will not be tax-invoiced.`,
+        cardRowErr,
+      );
+    }
 
     await supabase.from("recurring_invoices").update({
       status: "sent",

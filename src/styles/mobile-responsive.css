@@ -660,6 +660,25 @@ body {
     flex: 0 0 auto !important;
   }
 
+  /* ── 16b. Tab rows that rule 16 misses ─────────────────────────
+     Rule 16 requires .border-b, .flex and .overflow-x-auto on the SAME
+     element. Two shipped tab rows don't match that shape, so rule 15 squashes
+     them to flex:1 and the rule above them clips the overflow — their labels
+     get cut off at 375px:
+
+       • Settings.tsx  — border-b is on the WRAPPER, flex/overflow on the child
+       • AnalyticsDashboard.tsx — uses `border`, not `border-b`
+
+     Additive override rather than rewriting rule 15, which is deliberately
+     scoped to the Hire-page role pills (All Roles / Apprentice / Qualified /
+     Senior) and should keep distributing those evenly. */
+  main .border-b > .flex.overflow-x-auto > button,
+  main .flex.overflow-x-auto.border > button {
+    flex: 0 0 auto !important;
+    min-width: auto !important;
+    overflow: visible !important;
+  }
+
   /* ── 17. Reduce Quick Stats card sizes on mobile ───────────────
      The vertical stat cards (flex-col items-center text-center) have
      oversized numbers and labels on small screens.  Compact padding,

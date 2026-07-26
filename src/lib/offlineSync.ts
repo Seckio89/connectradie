@@ -7,7 +7,15 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 export async function offlineAcceptJob(jobId: string, tradieId: string): Promise<{ online: boolean }> {
   try {
-    const { error, count } = await supabase
+    // `count` is only populated when `count: 'exact'` is passed as an update
+    // option — it isn't here, so it was ALWAYS null and this success branch was
+    // unreachable. Every accept fell through to the second update below, which
+    // matches 0 rows for an already-claimed job and — since a 0-row UPDATE is
+    // not an error — returned success anyway. Two tradies tapping Accept both
+    // saw the success banner; only one actually got the job.
+    //
+    // Use the rows the `.select('id')` actually returns.
+    const { error, data: claimedRows } = await supabase
       .from('jobs')
       .update({ tradie_id: tradieId, status: 'accepted' })
       .eq('id', jobId)
@@ -15,7 +23,7 @@ export async function offlineAcceptJob(jobId: string, tradieId: string): Promise
       .is('tradie_id', null)
       .select('id');
 
-    if (!error && count && count > 0) {
+    if (!error && claimedRows && claimedRows.length > 0) {
       await supabase.from('job_unlocks').insert({
         tradie_id: tradieId,
         job_id: jobId,
@@ -23,14 +31,16 @@ export async function offlineAcceptJob(jobId: string, tradieId: string): Promise
       return { online: true };
     }
 
-    const { error: assignedError } = await supabase
+    // Fallback: the job was already assigned to THIS tradie (a retry).
+    const { error: assignedError, data: assignedRows } = await supabase
       .from('jobs')
       .update({ status: 'accepted' })
       .eq('id', jobId)
       .eq('status', 'pending')
-      .eq('tradie_id', tradieId);
+      .eq('tradie_id', tradieId)
+      .select('id');
 
-    if (!assignedError) {
+    if (!assignedError && assignedRows && assignedRows.length > 0) {
       await supabase.from('job_unlocks').upsert(
         { tradie_id: tradieId, job_id: jobId },
         { onConflict: 'tradie_id,job_id' }
@@ -38,7 +48,13 @@ export async function offlineAcceptJob(jobId: string, tradieId: string): Promise
       return { online: true };
     }
 
-    throw new Error(assignedError.message);
+    // A 0-row update is NOT an error, so reaching here with no error means the
+    // job is no longer available — someone else claimed it, or it left 'pending'.
+    // Reporting success here is what made the UI lie.
+    throw new Error(
+      assignedError?.message ??
+        'That job is no longer available — another tradie accepted it first.',
+    );
   } catch (err) {
     if (!navigator.onLine) {
       const headers = await getAuthHeaders();

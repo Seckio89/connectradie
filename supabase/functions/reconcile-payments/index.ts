@@ -181,6 +181,33 @@ Deno.serve(async (req: Request) => {
       const mappedStatus = mapStripeStatus(stripeStatus);
       if (!mappedStatus) continue; // Unrecognised status — skip
 
+      // NEVER downgrade a terminal local status (CRITICAL).
+      //
+      // A Stripe PaymentIntent stays `succeeded` after it has been refunded —
+      // refunding does not change PI status, and there is no `refunded` PI status
+      // to map. So a refunded payment looks like a `succeeded` vs `refunded`
+      // "mismatch" and, without this guard, gets written back to `completed`.
+      // auto-release-payments then selects it (it wants status='completed' and
+      // only skips on transfer_id/payout_id, neither of which a refund sets) and
+      // pays the tradie money the client has already been refunded — the platform
+      // loses the refund AND the payout. The same path also reverted
+      // `released` -> `completed`.
+      //
+      // These states are decided by process-refund / release-escrow, which know
+      // things Stripe's PI status cannot express. Report the divergence; never
+      // overwrite it.
+      const TERMINAL_STATUSES = ["refunded", "released", "disputed"];
+      if (TERMINAL_STATUSES.includes(payment.status)) {
+        if (payment.status !== mappedStatus) {
+          mismatchesFound++;
+          errors.push(
+            `Payment ${payment.id}: local status '${payment.status}' is terminal; ` +
+              `Stripe reports '${stripeStatus}'. Left unchanged — review manually.`,
+          );
+        }
+        continue;
+      }
+
       if (payment.status !== mappedStatus) {
         mismatchesFound++;
 

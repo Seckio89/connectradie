@@ -1033,9 +1033,15 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
       const isRecurring = removeConfirmJob.id.startsWith('recurring-');
       if (isRecurring) {
         const sessionId = removeConfirmJob.id.replace('recurring-', '');
+        // 'cancelled' is NOT in the recurring_sessions status CHECK constraint
+        // (20260429100000:20 allows pending_confirmation | scheduled |
+        // awaiting_completion | completed | rescheduled | skipped | extra), so
+        // this 23514'd on every attempt and — because the catch below only
+        // console.error'd — the confirm dialog just sat there forever.
+        // 'skipped' is what recurringJobs.ts:1445 already uses to cancel a visit.
         const { error } = await supabase
           .from('recurring_sessions')
-          .update({ status: 'cancelled' })
+          .update({ status: 'skipped' })
           .eq('id', sessionId);
         if (error) throw error;
       } else {
@@ -1050,7 +1056,15 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
       if (selectedJob?.id === removeConfirmJob.id) setSelectedJob(null);
       await fetchData();
     } catch (err) {
+      // Close the dialog and TELL the user. Previously this only logged, and
+      // setRemoveConfirmJob(null) sits on the throwing path above, so a failure
+      // left the modal open with no explanation and no way to tell it had failed.
       console.error('Failed to remove job:', err);
+      setRemoveConfirmJob(null);
+      showToast(
+        err instanceof Error ? `Couldn't remove that visit: ${err.message}` : "Couldn't remove that visit",
+        true,
+      );
     } finally {
       setRemoveSaving(false);
     }

@@ -149,6 +149,9 @@ export default function Invoice() {
   const descClean = data.job.description.replace(/^\[[^\]]+\]\s*/, '');
   const jobLabel = data.job.title || category || 'Services rendered';
 
+  // Both conditions are required for the document to legally BE a tax invoice:
+  // GST registration, and an ABN to print on it.
+  const isValidTaxInvoice = Boolean(data.tradie.is_gst_registered && data.tradie.abn_number);
   const supplierName = data.tradie.abn_entity_name || data.tradie.full_name;
   const supplierLocation = [data.tradie.address, data.tradie.suburb].filter(Boolean).join(', ');
 
@@ -176,8 +179,14 @@ export default function Invoice() {
         {/* Header */}
         <div className="flex items-start justify-between pb-6 border-b border-gray-200">
           <div>
+            {/* An AU tax invoice for a supply over $82.50 MUST show the
+                supplier's ABN. This was driven by is_gst_registered alone while
+                the ABN line below is conditional, so a GST-registered tradie
+                with no ABN on file produced a document headed "Tax Invoice"
+                that showed "ABN N/A" — not a valid tax invoice. Fall back to
+                plain "Invoice" rather than issue an invalid one. */}
             <h1 className="text-2xl font-bold text-gray-900">
-              {data.tradie.is_gst_registered ? 'Tax Invoice' : 'Invoice'}
+              {isValidTaxInvoice ? 'Tax Invoice' : 'Invoice'}
             </h1>
             <p className="text-sm text-gray-500 mt-1">{invoiceNumber}</p>
           </div>
@@ -254,8 +263,10 @@ export default function Invoice() {
         {/* Footer note */}
         <div className="pt-6 border-t border-gray-200 text-xs text-gray-400">
           <p>
-            {data.tradie.is_gst_registered
-              ? `GST amount shown separately as required by the ATO. ABN ${data.tradie.abn_number || 'N/A'}.`
+            {isValidTaxInvoice
+              ? `GST amount shown separately as required by the ATO. ABN ${data.tradie.abn_number}.`
+              : data.tradie.is_gst_registered
+              ? 'Supplier is registered for GST but has no ABN on file, so this is not a valid tax invoice.'
               : 'Supplier is not registered for GST.'}
           </p>
           <p className="mt-1">Paid via ConnecTradie. Funds secured with Stripe.</p>
