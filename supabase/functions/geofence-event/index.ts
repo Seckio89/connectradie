@@ -14,7 +14,8 @@ import type { Insert } from "../_shared/dbTypes.ts";
   Deploy WITHOUT JWT verification (custom token auth):
     supabase functions deploy geofence-event --no-verify-jwt
 
-  Payload (transistorsoft default, httpRootProperty="location"):
+  Payload (set client-side by http.rootProperty="location" in src/lib/siteGeofence.ts
+  — named httpRootProperty before plugin v9; the wire format is unchanged):
     { "location": <record> }              // single
     { "location": [ <record>, ... ] }     // batchSync
   Each record: { coords:{latitude,longitude}, timestamp, geofence:{ identifier,
