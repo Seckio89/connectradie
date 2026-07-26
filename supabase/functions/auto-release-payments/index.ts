@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { frozenCents } from "../_shared/feeContext.ts";
+import { frozenCents, recordFeeCharge } from "../_shared/feeContext.ts";
 
 function requireEnv(key: string): string {
   const val = Deno.env.get(key);
@@ -156,7 +156,7 @@ Deno.serve(async (req: Request) => {
     const { data: fundingPayments, error: paymentsError } = await supabase
       .from("payments")
       .select(
-        "id, job_id, amount, stripe_payment_intent_id, metadata, invoice_number, invoice_ref",
+        "id, job_id, amount, stripe_payment_intent_id, metadata, invoice_number, invoice_ref, fee_rate_bps, fee_rate_type",
       )
       .in("job_id", releasableJobIds)
       .eq("payment_type", "job_funding")
@@ -214,11 +214,24 @@ Deno.serve(async (req: Request) => {
       // GST (metadata.gst, cents string) was routed to the tradie's balance on
       // destination charges — include it in the payout so it reaches their bank.
       let totalGst = Number(existingMetadata.gst) || 0;
+      // Commission / materials split, needed for the §7A fee ledger below.
+      // Mirrors release-escrow/index.ts:196-197 exactly.
+      let totalCommission = frozenCents(existingMetadata.commission);
+      let totalMaterialsProcessing = frozenCents(existingMetadata.materials_processing);
 
       for (const child of (childPayments || [])) {
         const childMeta = (child.metadata || {}) as Record<string, unknown>;
         totalPlatformFee += frozenCents(childMeta.platform_fee);
         totalGst += Number(childMeta.gst) || 0;
+        totalCommission += frozenCents(childMeta.commission);
+        totalMaterialsProcessing += frozenCents(childMeta.materials_processing);
+      }
+
+      // Pre-v2.1 rows carry only platform_fee. Attribute the whole of it to
+      // commission so the breakdown reconciles rather than showing $0.
+      // Same fallback as release-escrow/index.ts:213-215.
+      if (totalCommission === 0 && totalMaterialsProcessing === 0 && totalPlatformFee > 0) {
+        totalCommission = totalPlatformFee;
       }
 
       const totalBase = payment.amount + childTotal;
@@ -315,6 +328,30 @@ Deno.serve(async (req: Request) => {
               })
               .eq("id", child.id);
           }
+
+          // §7A: record the commission for tax-invoicing.
+          //
+          // This was missing entirely, and this is the DEFAULT release path —
+          // most clients never click "Approve & Release", so the 5-hour cron is
+          // what actually releases the money. Commission was collected via
+          // application_fee_amount but no platform_fee_charges row was written,
+          // and that table is the only thing issue-fee-invoices reads. Result:
+          // GST-inclusive commission retained with no tax invoice ever issued
+          // for it, and no input credit available to the tradie.
+          //
+          // Best-effort by design: recordFeeCharge never throws and is
+          // idempotent on payment_id (23505), so it cannot fail a payout that
+          // has already moved money, and it is safe if release-escrow raced us.
+          await recordFeeCharge(supabase, {
+            tradieProfileId: job.tradie_id,
+            paymentId: payment.id,
+            jobId: payment.job_id,
+            commissionCents: totalCommission,
+            materialsProcessingCents: totalMaterialsProcessing,
+            feeRateBps: (payment.fee_rate_bps as number | null) ?? (frozenCents(existingMetadata.fee_rate_bps) || null),
+            feeRateType: (payment.fee_rate_type as string | null)
+              ?? (typeof existingMetadata.fee_rate_type === "string" ? existingMetadata.fee_rate_type : null),
+          });
 
           const amountDollars = `$${(totalTransferAmount / 100).toFixed(2)}`;
           const jobTitle = job.title || "your job";
@@ -546,6 +583,18 @@ Deno.serve(async (req: Request) => {
             })
             .eq("id", child.id);
         }
+
+        // §7A: same commission ledger write as the destination path above.
+        await recordFeeCharge(supabase, {
+          tradieProfileId: job.tradie_id,
+          paymentId: payment.id,
+          jobId: payment.job_id,
+          commissionCents: totalCommission,
+          materialsProcessingCents: totalMaterialsProcessing,
+          feeRateBps: (payment.fee_rate_bps as number | null) ?? (frozenCents(existingMetadata.fee_rate_bps) || null),
+          feeRateType: (payment.fee_rate_type as string | null)
+            ?? (typeof existingMetadata.fee_rate_type === "string" ? existingMetadata.fee_rate_type : null),
+        });
 
         const amountDollars = `$${(totalTransferAmount / 100).toFixed(2)}`;
         const jobTitle = job.title || "your job";
