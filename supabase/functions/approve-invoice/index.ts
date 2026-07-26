@@ -94,6 +94,29 @@ Deno.serve(async (req: Request) => {
       return errorJson(`Invoice status is '${invoice.status}', expected 'pending_approval'`, 400);
     }
 
+    // ATOMIC CLAIM. The check above is a read, and the status was previously not
+    // written until AFTER the charge — so two taps on "Approve" (or a client
+    // retry after a timeout) both passed it and both debited the client. A BECS
+    // reversal is manual and takes days.
+    //
+    // Moving off 'pending_approval' here, conditionally on it still being that,
+    // means exactly one request can proceed: the loser matches zero rows.
+    // Downstream still sets the real terminal status ('processing' for BECS,
+    // 'sent' for the Checkout fallback).
+    //
+    // Trade-off accepted: if this request dies later the invoice sits at
+    // 'processing' and needs an admin nudge — strictly better than charging a
+    // client twice.
+    const { data: claimed, error: claimErr } = await supabase
+      .from("recurring_invoices")
+      .update({ status: "processing", updated_at: new Date().toISOString() })
+      .eq("id", invoiceId)
+      .eq("status", "pending_approval")
+      .select("id")
+      .maybeSingle();
+    if (claimErr) return errorJson(`Could not claim invoice: ${claimErr.message}`, 500);
+    if (!claimed) return errorJson("This invoice is already being processed", 409);
+
     // Get the recurring job for trade info
     const { data: recurringJob } = await supabase
       .from("recurring_jobs")
@@ -219,7 +242,12 @@ Deno.serve(async (req: Request) => {
               tradie_tier: tier,
               ...becsFee.metadata,
             },
-          });
+          },
+          // DERIVED, never caller-supplied — same reasoning as
+          // charge-becs-invoice:240. Belt-and-braces with the atomic claim
+          // above: if two requests ever did reach here, Stripe returns the FIRST
+          // PaymentIntent rather than debiting the client a second time.
+          { idempotencyKey: `approve-invoice:${invoiceId}` });
 
           // §7A: recurring invoices had no payments row, and platform_fee_charges
           // (the only table issue-fee-invoices reads) is keyed on payment_id — so
