@@ -1500,7 +1500,14 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
           {/* Refund (client, completed) */}
           {!isTradie && payment.status === 'completed' && (
             <div className="space-y-3">
-              <RefundSection paymentId={payment.id} onSuccess={onPaymentUpdate} onError={(msg) => showToast(msg, true)} />
+              <RefundSection
+                paymentId={payment.id}
+                jobId={payment.job_id}
+                againstUser={payment.jobs?.tradie_id ?? null}
+                onSuccess={onPaymentUpdate}
+                onEscalated={(msg) => { showToast(msg); onPaymentUpdate(); }}
+                onError={(msg) => showToast(msg, true)}
+              />
               {/* Only offered where a dispute is actually possible: a real job with
                   an assigned tradie. Recurring-invoice rows have neither. */}
               {payment.job_id && payment.jobs?.tradie_id && (
@@ -1651,6 +1658,45 @@ function ReductionRequestSection({
   );
 }
 
+/* Shared by the explicit "Raise a Dispute" button and by the refund path, which
+   auto-escalates when a refund is refused. One implementation so the two cannot
+   drift — this writes to a table that freezes payouts. */
+async function raiseDispute(
+  { jobId, againstUser, openedBy, description, reason }:
+  { jobId: string; againstUser: string; openedBy: string; description: string; reason: string },
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { error } = await supabase.from('disputes').insert({
+    job_id: jobId,
+    opened_by: openedBy,
+    against_user: againstUser,
+    reason,
+    description,
+  });
+
+  if (error) {
+    // 23505 = the one-live-dispute-per-job index. Not a failure from the
+    // client's point of view: their concern is already with the team.
+    if ((error as { code?: string }).code === '23505') {
+      return { ok: false, message: 'You already have an open dispute for this job. Our team is reviewing it.' };
+    }
+    return { ok: false, message: friendlyError(error, 'Could not raise the dispute. Please try again.') };
+  }
+
+  // Tell the tradie their payout is on hold and why. Non-fatal: a failed
+  // notification must never lose a recorded dispute.
+  try {
+    await supabase.rpc('create_notification', {
+      p_user_id: againstUser,
+      p_title: 'A client has raised a dispute',
+      p_message: 'A client has raised a dispute on one of your jobs. Payment for it is on hold while our team reviews.',
+      p_type: 'DISPUTE_RAISED',
+      p_job_id: jobId,
+    });
+  } catch { /* intentionally ignored */ }
+
+  return { ok: true };
+}
+
 /* ─── Raise a Dispute ───
    The counterpart to RefundSection. Once a payment is released the refund is
    refused (correctly — the funds are with the tradie), and process-refund's 409
@@ -1673,35 +1719,11 @@ function DisputeSection({
     if (!user || submitting) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('disputes').insert({
-        job_id: jobId,
-        opened_by: user.id,
-        against_user: againstUser,
-        reason: 'client_raised',
-        description: detail.trim(),
+      const result = await raiseDispute({
+        jobId, againstUser, openedBy: user.id,
+        description: detail.trim(), reason: 'client_raised',
       });
-      if (error) {
-        // 23505 = the partial unique index allowing one live dispute per job.
-        if ((error as { code?: string }).code === '23505') {
-          onError('You already have an open dispute for this job. Our team is reviewing it.');
-        } else {
-          onError(friendlyError(error, 'Could not raise the dispute. Please try again.'));
-        }
-        return;
-      }
-
-      // Tell the tradie — their payout is now frozen and they should know why.
-      // create_notification's shared-job branch authorises this pair.
-      try {
-        await supabase.rpc('create_notification', {
-          p_user_id: againstUser,
-          p_title: 'A client has raised a dispute',
-          p_message: 'A client has raised a dispute on one of your jobs. Payment for it is on hold while our team reviews.',
-          p_type: 'DISPUTE_RAISED',
-          p_job_id: jobId,
-        });
-      } catch { /* non-fatal: the dispute itself is recorded */ }
-
+      if (!result.ok) { onError(result.message); return; }
       setShowForm(false);
       setDetail('');
       onSuccess();
@@ -1757,10 +1779,18 @@ function DisputeSection({
 }
 
 /* ─── Refund Section ─── */
-function RefundSection({ paymentId, onSuccess, onError }: { paymentId: string; onSuccess: () => void; onError: (msg: string) => void }) {
+function RefundSection({ paymentId, jobId, againstUser, onSuccess, onEscalated, onError }: {
+  paymentId: string;
+  jobId: string | null;
+  againstUser: string | null;
+  onSuccess: () => void;
+  onEscalated: (msg: string) => void;
+  onError: (msg: string) => void;
+}) {
   const [showForm, setShowForm] = useState(false);
   const [reason, setReason] = useState('');
   const [processing, setProcessing] = useState(false);
+  const { user } = useAuth();
 
   const handleRefund = async () => {
     if (!reason.trim()) { onError('Please provide a reason for the refund request.'); return; }
@@ -1769,6 +1799,30 @@ function RefundSection({ paymentId, onSuccess, onError }: { paymentId: string; o
       await processRefund(paymentId, reason.trim());
       onSuccess();
     } catch (err) {
+      // A 409 means the refund was REFUSED, not that it errored — the funds are
+      // already with the tradie, so the client cannot claw them back directly.
+      //
+      // Previously we just showed the refusal and threw away what they wrote,
+      // leaving them to retype it into a separate dispute form. They have
+      // already told us the work was unsatisfactory and asked for their money
+      // back — that IS a dispute. Escalate it with the reason they gave, so the
+      // request actually reaches someone instead of dead-ending.
+      const status = (err as { status?: number }).status;
+      if (status === 409 && jobId && againstUser && user) {
+        const result = await raiseDispute({
+          jobId, againstUser, openedBy: user.id,
+          description: reason.trim(), reason: 'refund_request_escalated',
+        });
+        setProcessing(false);
+        if (result.ok) {
+          setShowForm(false);
+          setReason('');
+          onEscalated("We've sent this to our team to review. Payment on this job is on hold until they do.");
+          return;
+        }
+        onError(result.message);
+        return;
+      }
       onError(friendlyError(err, 'Unable to process refund. Please try again or contact support.'));
     } finally {
       setProcessing(false);
