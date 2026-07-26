@@ -1,11 +1,6 @@
 {
-  "total": 7,
+  "total": 2,
   "files": {
-    "src/components/JobDetailModal.tsx": 1,
-    "src/components/RecommendedTradies.tsx": 1,
-    "src/components/RecurringSessionCard.tsx": 1,
-    "src/lib/siteGeofence.ts": 2,
-    "src/pages/ClientDashboard.tsx": 1,
-    "src/pages/Payouts.tsx": 1
+    "src/lib/siteGeofence.ts": 2
   }
 }

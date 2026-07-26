@@ -116,7 +116,7 @@ export default function Payouts() {
   // release, so that money is simultaneously "held in escrow" here and sitting
   // in the Stripe balance — it must not be counted twice in total earnings.
   const [escrowInTradieBalance, setEscrowInTradieBalance] = useState(0);
-  const [escrowCount, setEscrowCount] = useState(0);
+  const [, setEscrowCount] = useState(0);
   // Portion of the held escrow the client has ALREADY approved — it isn't waiting
   // on anyone, just on the card payment settling. Shown differently to the tradie
   // so we never imply their client still has to act.
