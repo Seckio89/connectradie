@@ -52,9 +52,16 @@ jobs:
           node-version: 24
           cache: npm
       # Edge functions are Deno and are NOT covered by the TypeScript job above.
-      # They had never been type-checked anywhere; 8 of 65 currently fail, so
-      # this ratchets on a known-failing allowlist rather than blocking every
-      # commit. Baseline: .edge-typecheck-baseline.json
+      # They had never been type-checked anywhere, so this ratchets against an
+      # allowlist of known-failing functions rather than blocking every commit.
+      #
+      # That allowlist is currently EMPTY (9d3dab5 cleared it, along with the 4
+      # bugs the casts were hiding), so in practice this is now a hard check:
+      # any edge function that stops type-checking fails CI.
+      #
+      # Counts deliberately live in .edge-typecheck-baseline.json, not in this
+      # comment — the previous version claimed "8 of 65" long after both numbers
+      # had moved.
       - run: node scripts/typecheck-edge.mjs
 
   db-columns:
