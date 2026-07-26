@@ -1028,20 +1028,113 @@ export type Database = {
           },
         ]
       }
+      dispute_decisions: {
+        Row: {
+          ai_suggestion: Json | null
+          created_at: string
+          decided_by: string
+          dispute_id: string
+          id: string
+          outcome: string
+          overridden: boolean
+          reasoning: string
+        }
+        Insert: {
+          ai_suggestion?: Json | null
+          created_at?: string
+          decided_by: string
+          dispute_id: string
+          id?: string
+          outcome: string
+          overridden?: boolean
+          reasoning: string
+        }
+        Update: {
+          ai_suggestion?: Json | null
+          created_at?: string
+          decided_by?: string
+          dispute_id?: string
+          id?: string
+          outcome?: string
+          overridden?: boolean
+          reasoning?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispute_decisions_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispute_decisions_dispute_id_fkey"
+            columns: ["dispute_id"]
+            isOneToOne: false
+            referencedRelation: "disputes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dispute_evidence_summaries: {
+        Row: {
+          created_at: string
+          dispute_id: string
+          id: string
+          model: string
+          prompt_version: string
+          raw_input: Json
+          raw_output: string
+          summary: Json
+        }
+        Insert: {
+          created_at?: string
+          dispute_id: string
+          id?: string
+          model: string
+          prompt_version: string
+          raw_input: Json
+          raw_output: string
+          summary: Json
+        }
+        Update: {
+          created_at?: string
+          dispute_id?: string
+          id?: string
+          model?: string
+          prompt_version?: string
+          raw_input?: Json
+          raw_output?: string
+          summary?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispute_evidence_summaries_dispute_id_fkey"
+            columns: ["dispute_id"]
+            isOneToOne: false
+            referencedRelation: "disputes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       disputes: {
         Row: {
           admin_notes: string | null
           against_user: string
+          blocks_release: boolean | null
           created_at: string
           description: string
+          dispute_type: string
           evidence_urls: string[] | null
           id: string
           job_id: string
           opened_by: string
+          platform_review_by: string | null
           reason: string
           resolution: string | null
           resolved_at: string | null
           resolved_by: string | null
+          respond_by: string | null
           status: string
           stripe_dispute_id: string | null
           updated_at: string
@@ -1049,16 +1142,20 @@ export type Database = {
         Insert: {
           admin_notes?: string | null
           against_user: string
+          blocks_release?: boolean | null
           created_at?: string
           description: string
+          dispute_type?: string
           evidence_urls?: string[] | null
           id?: string
           job_id: string
           opened_by: string
+          platform_review_by?: string | null
           reason: string
           resolution?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
+          respond_by?: string | null
           status?: string
           stripe_dispute_id?: string | null
           updated_at?: string
@@ -1066,16 +1163,20 @@ export type Database = {
         Update: {
           admin_notes?: string | null
           against_user?: string
+          blocks_release?: boolean | null
           created_at?: string
           description?: string
+          dispute_type?: string
           evidence_urls?: string[] | null
           id?: string
           job_id?: string
           opened_by?: string
+          platform_review_by?: string | null
           reason?: string
           resolution?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
+          respond_by?: string | null
           status?: string
           stripe_dispute_id?: string | null
           updated_at?: string
@@ -3095,8 +3196,6 @@ export type Database = {
           address: string | null
           auto_complete_sessions: boolean
           avatar_url: string | null
-          base_latitude: number | null
-          base_longitude: number | null
           bio: string | null
           call_out_fee: number | null
           callout_fee_waived_on_proceed: boolean | null
@@ -3141,7 +3240,6 @@ export type Database = {
           postcode: string | null
           public_suburb: string | null
           push_enabled: boolean | null
-          push_subscription: Json | null
           rejection_reason: string | null
           role: string | null
           service_radius_km: number | null
@@ -3172,8 +3270,6 @@ export type Database = {
           address?: string | null
           auto_complete_sessions?: boolean
           avatar_url?: string | null
-          base_latitude?: number | null
-          base_longitude?: number | null
           bio?: string | null
           call_out_fee?: number | null
           callout_fee_waived_on_proceed?: boolean | null
@@ -3218,7 +3314,6 @@ export type Database = {
           postcode?: string | null
           public_suburb?: string | null
           push_enabled?: boolean | null
-          push_subscription?: Json | null
           rejection_reason?: string | null
           role?: string | null
           service_radius_km?: number | null
@@ -3249,8 +3344,6 @@ export type Database = {
           address?: string | null
           auto_complete_sessions?: boolean
           avatar_url?: string | null
-          base_latitude?: number | null
-          base_longitude?: number | null
           bio?: string | null
           call_out_fee?: number | null
           callout_fee_waived_on_proceed?: boolean | null
@@ -3295,7 +3388,6 @@ export type Database = {
           postcode?: string | null
           public_suburb?: string | null
           push_enabled?: boolean | null
-          push_subscription?: Json | null
           rejection_reason?: string | null
           role?: string | null
           service_radius_km?: number | null
