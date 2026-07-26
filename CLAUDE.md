@@ -5,7 +5,7 @@ Escrow via Stripe Connect (Stripe holds funds, NOT us — AFSL compliance critic
 
 ## Stack
 - React 18 · TypeScript strict · Tailwind CSS · Vite
-- Supabase: PostgreSQL + 65 Edge Functions (Deno) + RLS
+- Supabase: PostgreSQL + 66 Edge Functions (Deno) + RLS
 - Stripe Connect escrow · Google Maps API · Sentry
 
 ## Key Directories
@@ -15,11 +15,11 @@ src/components/     # 90+ components
 src/hooks/          # useAvailabilitySlots, useDashboardJobs, useToast, etc.
 src/lib/            # Supabase client, notifications, analytics, email templates
 src/contexts/       # AuthContext.tsx
-supabase/functions/ # 65 Edge Functions
+supabase/functions/ # 66 Edge Functions
 supabase/migrations/# 70+ migrations — never edit existing, always add new
 ```
 
-## Edge Functions (65)
+## Edge Functions (66)
 accept-and-pay · access-pin · adjust-quote-price ·
 analyse-description-keywords · approve-invoice · approve-price-reduction ·
 auto-confirm-sessions · auto-release-payments ·
@@ -28,19 +28,20 @@ calculate-job-fees · cancel-subscription · charge-becs-invoice ·
 check-license-expiry · client-request-reduction · complete-site-visit ·
 create-bonus-payment · create-checkout-session · create-job-deposit ·
 create-job-payment-checkout · create-payment-session · delete-user ·
-estimate-quote · generate-auto-invoices · generate-recommendations ·
-generate-recurring-invoice · generate-recurring-sessions · geofence-event ·
-google-calendar-import · google-calendar-oauth · health · instant-payout ·
-invoice-contact · issue-fee-invoices · mark-invoice-paid · parse-invoice ·
-pay-milestone · pay-price-increase · payout-reconciliation ·
-process-refund · public-quote · reconcile-payments · release-escrow ·
-remove-becs-payment · respond-to-dispute · send-email ·
-send-invoice-approval-nudge · send-invoice-reminders · send-lead-reminders ·
-send-recurring-reminders · send-scheduled-notifications · send-sms ·
-setup-becs-payment · stripe-checkout · stripe-connect-account ·
-stripe-connect-onboarding · stripe-identity-verification ·
-stripe-payout-settings · stripe-webhook · submit-final-quote ·
-sync-google-calendar · verify-abn · verify-license · verify-payment
+dispute-evidence-summary · estimate-quote · generate-auto-invoices ·
+generate-recommendations · generate-recurring-invoice ·
+generate-recurring-sessions · geofence-event · google-calendar-import ·
+google-calendar-oauth · health · instant-payout · invoice-contact ·
+issue-fee-invoices · mark-invoice-paid · parse-invoice · pay-milestone ·
+pay-price-increase · payout-reconciliation · process-refund · public-quote ·
+reconcile-payments · release-escrow · remove-becs-payment ·
+respond-to-dispute · send-email · send-invoice-approval-nudge ·
+send-invoice-reminders · send-lead-reminders · send-recurring-reminders ·
+send-scheduled-notifications · send-sms · setup-becs-payment ·
+stripe-checkout · stripe-connect-account · stripe-connect-onboarding ·
+stripe-identity-verification · stripe-payout-settings · stripe-webhook ·
+submit-final-quote · sync-google-calendar · verify-abn · verify-license ·
+verify-payment
 
 Shared helpers live in `supabase/functions/_shared/` (not a function).
 
