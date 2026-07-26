@@ -1665,13 +1665,17 @@ async function raiseDispute(
   { jobId, againstUser, openedBy, description, reason }:
   { jobId: string; againstUser: string; openedBy: string; description: string; reason: string },
 ): Promise<{ ok: true } | { ok: false; message: string }> {
-  const { error } = await supabase.from('disputes').insert({
-    job_id: jobId,
-    opened_by: openedBy,
-    against_user: againstUser,
-    reason,
-    description,
-  });
+  const { data: created, error } = await supabase
+    .from('disputes')
+    .insert({
+      job_id: jobId,
+      opened_by: openedBy,
+      against_user: againstUser,
+      reason,
+      description,
+    })
+    .select('id')
+    .single();
 
   if (error) {
     // 23505 = the one-live-dispute-per-job index. Not a failure from the
@@ -1693,6 +1697,16 @@ async function raiseDispute(
       p_job_id: jobId,
     });
   } catch { /* intentionally ignored */ }
+
+  // Kick off the AI evidence summary for whoever reviews this. Deliberately
+  // fire-and-forget and deliberately non-fatal: it only writes to
+  // dispute_evidence_summaries, it cannot move money, and the admin queue works
+  // without it. Making the client wait on a model call — or fail because one
+  // errored — would be trading a recorded dispute for a nice-to-have.
+  if (created?.id) {
+    void callEdgeFunction('dispute-evidence-summary', { disputeId: created.id })
+      .catch(() => { /* summary is an assist, not a dependency */ });
+  }
 
   return { ok: true };
 }
