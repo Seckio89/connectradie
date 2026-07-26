@@ -214,4 +214,27 @@ describe('TradieCard', () => {
     const link = screen.getByText('Smith Plumbing').closest('a');
     expect(link).toHaveAttribute('href', '/tradie/tradie-1');
   });
+
+  it('shows an unread badge on the chat button when there are unread messages', () => {
+    renderCard({ unreadCount: 3 });
+    expect(screen.getByLabelText('3 unread messages')).toHaveTextContent('3');
+  });
+
+  it('singularises the unread label for a single message', () => {
+    renderCard({ unreadCount: 1 });
+    expect(screen.getByLabelText('1 unread message')).toBeInTheDocument();
+  });
+
+  it('caps the unread badge at 9+', () => {
+    renderCard({ unreadCount: 25 });
+    expect(screen.getByLabelText('25 unread messages')).toHaveTextContent('9+');
+  });
+
+  it('hides the unread badge when there are none', () => {
+    renderCard({ unreadCount: 0 });
+    expect(screen.queryByLabelText(/unread message/)).not.toBeInTheDocument();
+
+    renderCard();
+    expect(screen.queryByLabelText(/unread message/)).not.toBeInTheDocument();
+  });
 });
