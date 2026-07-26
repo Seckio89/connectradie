@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import SearchableSelect from '../components/SearchableSelect';
 import AddressAutocomplete, { type AddressDetails } from '../components/AddressAutocomplete';
 import { supabase } from '../lib/supabase';
+import { saveBaseCoords } from '../lib/profilePrivate';
 import { CONSTRUCTION_CATEGORIES, HOSPITALITY_CATEGORIES } from '../lib/tradeCategories';
 
 type Step = 'role' | 'trade-type' | 'employment' | 'business-search' | 'employment-role' | 'details';
@@ -119,9 +120,6 @@ export default function Onboarding() {
         role: 'tradie' as const,
         postcode: addressDetails?.postcode || undefined,
         suburb: addressDetails?.suburb || undefined,
-        // Base coords for service-area matching (Google Places lat/lng).
-        base_latitude: addressDetails?.lat ?? undefined,
-        base_longitude: addressDetails?.lng ?? undefined,
         onboarding_completed: true,
         terms_accepted_at: new Date().toISOString(),
         tos_version: 'v1-2026-07',
@@ -133,6 +131,12 @@ export default function Onboarding() {
         profileUpdates.declared_trades = [tradeCategory];
       }
       const { error: profileError } = await updateProfile(profileUpdates);
+
+      // Base coords for service-area matching. They are a home address, so they
+      // live in profile_private rather than on the world-readable profiles row.
+      if (!profileError && user) {
+        await saveBaseCoords(user.id, addressDetails?.lat ?? null, addressDetails?.lng ?? null);
+      }
       if (profileError) throw new Error('Failed to save profile');
 
       const { error: tradieError } = await updateTradieDetails({
@@ -180,12 +184,18 @@ export default function Onboarding() {
     setError('');
 
     try {
-      const profileUpdates: Record<string, unknown> = { role: selectedRole, postcode: addressDetails?.postcode || undefined, suburb: addressDetails?.suburb || undefined, base_latitude: addressDetails?.lat ?? undefined, base_longitude: addressDetails?.lng ?? undefined, onboarding_completed: true, terms_accepted_at: new Date().toISOString(), tos_version: 'v1-2026-07' };
+      const profileUpdates: Record<string, unknown> = { role: selectedRole, postcode: addressDetails?.postcode || undefined, suburb: addressDetails?.suburb || undefined, onboarding_completed: true, terms_accepted_at: new Date().toISOString(), tos_version: 'v1-2026-07' };
       if (selectedRole === 'tradie' && tradeCategory) {
         profileUpdates.declared_trades = [tradeCategory];
       }
       const { error: profileError } = await updateProfile(profileUpdates);
       if (profileError) throw new Error('Failed to save your profile. Please try again.');
+
+      // Base coords for service-area matching — see the note above; these go to
+      // profile_private, not profiles.
+      if (user) {
+        await saveBaseCoords(user.id, addressDetails?.lat ?? null, addressDetails?.lng ?? null);
+      }
 
       if (selectedRole === 'tradie') {
         const { error: tradieError } = await updateTradieDetails({

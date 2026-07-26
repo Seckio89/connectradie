@@ -3025,7 +3025,10 @@ export type Database = {
           bank_account_number: string | null
           bank_bsb: string | null
           bank_name: string | null
+          base_latitude: number | null
+          base_longitude: number | null
           profile_id: string
+          push_subscription: Json | null
           updated_at: string
         }
         Insert: {
@@ -3033,7 +3036,10 @@ export type Database = {
           bank_account_number?: string | null
           bank_bsb?: string | null
           bank_name?: string | null
+          base_latitude?: number | null
+          base_longitude?: number | null
           profile_id: string
+          push_subscription?: Json | null
           updated_at?: string
         }
         Update: {
@@ -3041,7 +3047,10 @@ export type Database = {
           bank_account_number?: string | null
           bank_bsb?: string | null
           bank_name?: string | null
+          base_latitude?: number | null
+          base_longitude?: number | null
           profile_id?: string
+          push_subscription?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -3100,6 +3109,7 @@ export type Database = {
           fee_invoice_frequency: string
           full_name: string
           has_phone: boolean | null
+          has_push_subscription: boolean
           id: string
           insurance_policy: boolean | null
           is_admin: boolean
@@ -3176,6 +3186,7 @@ export type Database = {
           fee_invoice_frequency?: string
           full_name?: string
           has_phone?: boolean | null
+          has_push_subscription?: boolean
           id: string
           insurance_policy?: boolean | null
           is_admin?: boolean
@@ -3252,6 +3263,7 @@ export type Database = {
           fee_invoice_frequency?: string
           full_name?: string
           has_phone?: boolean | null
+          has_push_subscription?: boolean
           id?: string
           insurance_policy?: boolean | null
           is_admin?: boolean
@@ -5601,6 +5613,10 @@ export type Database = {
         Returns: undefined
       }
       extract_suburb: { Args: { addr: string }; Returns: string }
+      filter_tradies_by_service_area: {
+        Args: { p_lat: number; p_lng: number; p_tradie_ids: string[] }
+        Returns: string[]
+      }
       get_area_price_range: {
         Args: {
           p_lat?: number

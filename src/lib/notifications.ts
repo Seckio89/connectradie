@@ -2,7 +2,6 @@ import { supabase } from './supabase';
 import type { Job, Insert } from '../types/database';
 import { sendNotification } from './notificationService';
 import { NOTIFICATION_TYPES } from './notificationTypes';
-import { calculateDistance } from '../hooks/useGeolocation';
 
 /**
  * Narrow a list of tradie profile IDs to those whose service area covers the
@@ -13,21 +12,22 @@ async function filterTradiesByServiceArea(tradieIds: string[], job: Job): Promis
   if (tradieIds.length === 0) return tradieIds;
   if (job.latitude == null || job.longitude == null) return tradieIds;
 
-  const { data: profs, error } = await supabase
-    .from('profiles')
-    .select('id, base_latitude, base_longitude, service_radius_km')
-    .in('id', tradieIds);
-
-  if (error || !profs) return tradieIds; // fail open on query error
-
-  const byId = new Map(profs.map((p) => [p.id, p]));
-  return tradieIds.filter((id) => {
-    const p = byId.get(id);
-    if (!p || p.base_latitude == null || p.base_longitude == null) return true;
-    const radiusKm = p.service_radius_km ?? 20;
-    const distanceKm = calculateDistance(job.latitude!, job.longitude!, p.base_latitude, p.base_longitude);
-    return distanceKm <= radiusKm;
+  // Tradies' base coordinates are HOME ADDRESSES. They used to be selected here
+  // for the whole candidate list straight from the browser, which meant any
+  // signed-in user could read every tradie's home location. The distance test
+  // now runs inside a SECURITY DEFINER function so the coordinates never leave
+  // the database — it only filters the id list we already hold.
+  const { data: allowedIds, error } = await supabase.rpc('filter_tradies_by_service_area', {
+    p_tradie_ids: tradieIds,
+    p_lat: job.latitude,
+    p_lng: job.longitude,
   });
+
+  if (error || !allowedIds) return tradieIds; // fail open on query error
+
+  // Preserve the caller's ordering rather than the RPC's.
+  const allowed = new Set(allowedIds as string[]);
+  return tradieIds.filter((id) => allowed.has(id));
 }
 
 export async function requestPushPermission(): Promise<'granted' | 'denied' | 'default'> {
@@ -70,15 +70,25 @@ export async function savePushPreferences(
   try {
     // Ensure push_subscription is a plain object (not a class instance)
     const pushSubObj = subscription ? JSON.parse(JSON.stringify(subscription.toJSON())) : null;
-    const { error } = await supabase
+
+    // The subscription (endpoint + p256dh/auth keys) is a device secret and now
+    // lives in profile_private, which is owner-or-admin only. `push_enabled` is
+    // a harmless preference and stays on profiles. profiles.has_push_subscription
+    // is kept in sync by trg_sync_has_push_subscription — do not write it here.
+    const { error: prefError } = await supabase
       .from('profiles')
-      .update({
-        push_enabled: pushEnabled,
-        push_subscription: pushSubObj,
-      })
+      .update({ push_enabled: pushEnabled })
       .eq('id', userId);
 
-    return !error;
+    const privatePayload: Insert<'profile_private'> = {
+      profile_id: userId,
+      push_subscription: pushSubObj,
+    };
+    const { error: subError } = await supabase
+      .from('profile_private')
+      .upsert(privatePayload, { onConflict: 'profile_id' });
+
+    return !prefError && !subError;
   } catch (err) {
     console.error('Failed to save push preferences:', err);
     return false;
@@ -285,7 +295,7 @@ export async function notifyTradiesForUrgentJob(job: Job) {
   try {
     const { data: tradies } = await supabase
       .from('profiles')
-      .select('id, full_name, push_enabled, sms_alerts_enabled, push_subscription')
+      .select('id, full_name, push_enabled, sms_alerts_enabled, has_push_subscription')
       .eq('role', 'tradie');
 
     if (!tradies || tradies.length === 0) return { push: 0, sms: 0 };
@@ -306,7 +316,9 @@ export async function notifyTradiesForUrgentJob(job: Job) {
     let pushCount = 0;
     let smsCount = 0;
 
-    const pushEligible = tradies.filter((t) => t.push_enabled && t.push_subscription);
+    // has_push_subscription is a presence flag maintained by a trigger; the
+    // subscription itself is in profile_private and must not be selected here.
+    const pushEligible = tradies.filter((t) => t.push_enabled && t.has_push_subscription);
     if (pushEligible.length > 0) {
       pushCount = pushEligible.length;
     }
