@@ -113,13 +113,20 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ released: 0, total_amount: 0, errors: [] });
     }
 
-    // Get job IDs with open disputes — exclude them
+    // Get job IDs with a live dispute — exclude them.
+    //
+    // `blocks_release` is a GENERATED column on disputes; do NOT go back to
+    // enumerating statuses here. This used to be `.in("status", [...])`, and a
+    // status added to the CHECK constraint without also being added to that
+    // literal would silently fail to match — releasing escrow to the tradie
+    // while the dispute was still live. No error, no failing test, money gone.
+    // The column keeps the vocabulary and this query from drifting apart.
     const jobIds = completedJobs.map((j) => j.id);
     const { data: openDisputes } = await supabase
       .from("disputes")
       .select("job_id")
       .in("job_id", jobIds)
-      .in("status", ["open", "under_review"]);
+      .eq("blocks_release", true);
 
     const disputedJobIds = new Set(
       (openDisputes || []).map((d) => d.job_id),

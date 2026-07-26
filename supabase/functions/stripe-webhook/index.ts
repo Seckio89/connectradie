@@ -658,10 +658,10 @@ async function handleEvent(event: Stripe.Event) {
     }
 
     // A LOST chargeback needs the PAYMENT closed too, not just the dispute row.
-    // auto-release only excludes 'open'/'under_review' disputes, so resolving to
-    // 'resolved_client' would UN-block the job and let the cron pay the tradie
-    // money the client has already taken back — the original H5 bug, just
-    // deferred to dispute-close time.
+    // auto-release skips a job only while some dispute has blocks_release set,
+    // and 'resolved_client' clears it — so closing the dispute would UN-block
+    // the job and let the cron pay the tradie money the client has already
+    // taken back. The original H5 bug, just deferred to dispute-close time.
     //
     // 'refunded' is the honest status (the funds did go back to the cardholder)
     // and it is already terminal everywhere that matters: auto-release requires

@@ -205,7 +205,7 @@ Deno.serve(async (req: Request) => {
       supabase
         .from("disputes")
         .select("id, status")
-        .in("status", ["open", "under_review"]),
+        .eq("blocks_release", true),
       supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
