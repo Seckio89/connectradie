@@ -16,14 +16,14 @@ What fails the pub test is narrower and more specific:
    redirect now triggers on "launched as an app", not on screen width.
 2. **The browser tab said "ConnecTradie" on 24 of 58 routes**, including every
    SEO landing page you pay to rank. Fixed in this pass.
-3. **Six Stripe return URLs point at a route that eats their query string**, so
-   the app never learns the payment succeeded. Not fixed here — money path.
+3. **Five checkout flows never reached the payment-confirmation page**, and one
+   route through a redirect silently ate its query string. Fixed.
 
 | Pub-test question | Score | Note |
 |---|---|---|
 | 1. Where am I? | **was 3/10 → now 8/10** | 24 routes had no page name; fixed |
 | 2. How do I get out? | **8/10** | no true dead ends; two thin ones |
-| 3. Can I find it at all? | **7/10** | one orphan, three menu-absent, six query-drops |
+| 3. Can I find it at all? | **was 7/10 → now 9/10** | query-drops fixed; one orphan, three menu-absent |
 | 4. What do I do next? | **7/10** | expired-quote page offers nothing |
 | 5. Do I understand the words? | **6/10** | "Leads" vs "My Jobs" split personality |
 | 6. Does it work on my phone? | **was 4/10 → now 9/10** | sign-in wall fixed; tap-target floor repaired; no overflow anywhere |
@@ -61,19 +61,45 @@ submits, pays, sends or deletes — so pointing it at the real backend is safe.
 
 ### 1. Can I find it at all?
 
-**F1 — Six Stripe return URLs land on a redirect that drops their query string.**
-🔴 `src/lib/stripe.ts:96-97`, `src/lib/stripePayments.ts:100,101,121,122`
+**F1 — Stripe return URLs landed on a redirect that drops their query string.**
+✅ **Fixed**, and the underlying problem was bigger than the query string.
 
-Every one builds `${origin}/jobs?payment=success&job_id=…`. But `/jobs` is
-`<Navigate to="/work" replace />`, and React Router does not carry a query string
-through a redirect. The params are gone before `WorkHub` mounts, so after paying
-a deposit or a milestone the customer arrives at a generic work list with no
-confirmation that their money went anywhere.
+`src/lib/stripe.ts:96-97` and `src/lib/stripePayments.ts:100,101,121,122` built
+`${origin}/jobs?payment=success&job_id=…`, but `/jobs` is
+`<Navigate to="/work" replace />` and React Router does not carry a query string
+through a redirect.
 
-**Not fixed here.** It is on the money path, which CLAUDE.md puts at `xhigh`
-effort with mandatory execution verification against Stripe. Bundling it into a
-navigation cleanup would be the wrong call. It needs its own ticket, and the fix
-is one line per call site: point them at `/work?payment=…`.
+Investigating before fixing changed the answer twice:
+
+1. **Nothing reads `payment` anywhere in `src/`.** There is no
+   `searchParams.get('payment')` — `WorkHub` reads `tab`, `Jobs` reads `job`. So
+   simply repointing at `/work` would have preserved a parameter no code
+   consumes: a no-op dressed as a fix.
+2. **The app already has purpose-built result pages**, and they are the
+   convention — `/payment-success` and `/payment-cancelled` are used by
+   `approve-invoice`, `book-site-visit`, `generate-recurring-invoice` and by
+   `createJobPaymentCheckout` in this very file. `PaymentSuccess` confirms the
+   payment, fires `verify-payment` as a fallback for webhook lag, and returns the
+   user to the dashboard. `capacitor.config` already whitelists both for native
+   returns.
+
+So the real defect was not the dropped query string — it was that five legacy
+checkout flows never reached the confirmation page at all, and never fired the
+webhook-lag fallback. They were the last stragglers of a migration everything
+else had already completed.
+
+All five now match the convention: `acceptAndPay`, `createJobDeposit`,
+`payMilestone`, `payPriceIncrease` (`stripePayments.ts`) and
+`createPaymentSession` (`stripe.ts`). `payPriceIncrease` has a `paymentId` in
+scope, so it gets the full treatment including the `verify-payment` fallback.
+
+No edge-function change was needed: the validators (`isValidRedirectUrl` /
+`isAllowedRedirectUrl`) compare hostname only, not path.
+
+**Verified by execution**, as CLAUDE.md requires for money paths: the existing
+suites assert these URLs exactly — 71 payment tests pass, 605 across the repo.
+One assertion I wrote was wrong (guessed `pay-increase-1`; the fixture is
+`pay-orig-1`) and the suite caught it.
 
 **F2 — `/tax-invoice/:invoiceId` has zero inbound links.** 🟡 `src/App.tsx:299`
 
@@ -294,12 +320,11 @@ here because it is what a logged-out visitor actually sees.
 Verified: `npm run typecheck` clean, `npm run check:columns` clean, title
 behaviour confirmed in the browser across static, dynamic and SEO routes.
 
-Scanner went from 6 errors / 26 warnings / 25 info to **6 errors / 4 warnings /
-9 info**. The 6 errors are all F1, deliberately left for its own ticket.
+Scanner went from 6 errors / 26 warnings / 25 info to **0 errors / 4 warnings /
+9 info**.
 
 ## Needs its own ticket
 
-- [ ] **F1** — six Stripe return URLs bypass the `/jobs` redirect *(money path, `xhigh`)*
 - [ ] **F7** — react-helmet-async produces no output; 19 pages ship the homepage's meta
 - [ ] **F2** — give `/tax-invoice/:invoiceId` an entry point from Payouts
 - [ ] **F15 follow-up** — re-run the tap-target measurement on the authenticated pages once credentials exist; the sidebar-nav, supply-grid and calendar fixes are unverified

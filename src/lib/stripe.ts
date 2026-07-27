@@ -93,8 +93,8 @@ export async function createPaymentSession(paymentType: 'lead_unlock' | 'job_acc
       paymentType,
       jobId,
       idempotencyKey: generateIdempotencyKey(),
-      successUrl: `${window.location.origin}/jobs?payment=success&type=${paymentType}&job_id=${jobId}`,
-      cancelUrl: `${window.location.origin}/jobs?payment=cancelled`,
+      successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&type=${paymentType}&job_id=${jobId}`,
+      cancelUrl: `${window.location.origin}/payment-cancelled`,
     }),
   });
 
