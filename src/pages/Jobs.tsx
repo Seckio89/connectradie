@@ -815,7 +815,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
               title={
                 filter === 'pending' ? 'No pending jobs' :
                 filter === 'active' ? 'No active jobs' :
-                filter === 'completed' ? 'No completed jobs yet' :
+                filter === 'completed' ? 'Finished work lands here' :
                 'No jobs yet'
               }
               description={
@@ -823,11 +823,11 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                   ? filter === 'pending'
                     ? 'When clients book your services, their job requests will show up here.'
                     : filter === 'active'
-                    ? 'Jobs you\'ve won will appear here. Check Pending for new leads.'
+                    ? 'Jobs you\'ve won show up here. Check Pending for new requests waiting on you.'
                     : filter === 'completed'
-                    ? 'Completed jobs will appear here after you mark them as done.'
+                    ? 'Mark a job done and it moves here, ready to invoice and be reviewed.'
                     : 'When clients book your services, their job requests will show up here.'
-                  : 'You haven\'t posted any jobs yet. Post a job and tradies in your area will send you quotes.'
+                  : 'Post a job and licensed tradies nearby will send you quotes. No obligation to accept.'
               }
               actionLabel={
                 isTradie
