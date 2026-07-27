@@ -9,6 +9,8 @@ import {
 } from '../../lib/stripe';
 import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTradieEarnings } from '../../hooks/useTradieEarnings';
+import PayoutBreakdownRows from '../PayoutBreakdownRows';
 import { supabase } from '../../lib/supabase';
 
 // Bank details printed on invoices to clients who pay by bank transfer (the
@@ -152,11 +154,15 @@ const fmtAud = (cents: number) =>
 
 export default function PaymentSettings() {
   const { showToast } = useToast();
+  const { user } = useAuth();
   const [details, setDetails] = useState<ConnectAccountDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [bankLoading, setBankLoading] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
+  // Same hook the Payouts page uses — the two screens cannot report different
+  // numbers because they no longer work them out separately.
+  const earnings = useTradieEarnings(user?.id, details);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -295,20 +301,20 @@ export default function PaymentSettings() {
       {/* Bank details for external (bank-transfer) invoices */}
       <ExternalBankDetails />
 
-      {/* Balance */}
+      {/* Where the money is.
+          This used to show the raw Stripe balance ("Available" / "Pending"),
+          which shares not one figure with the Payouts page — so the two screens
+          read as contradictory accounts of the same money. Same rows, same
+          numbers, one source (useTradieEarnings) now. */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
-          <Wallet className="w-3.5 h-3.5" /> Stripe balance
-        </p>
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <div className="rounded-lg bg-gray-50 p-3">
-            <p className="text-lg font-bold text-gray-900">{fmtAud(details.balance?.available ?? 0)}</p>
-            <p className="text-xs text-gray-500 mt-0.5">Available</p>
-          </div>
-          <div className="rounded-lg bg-gray-50 p-3">
-            <p className="text-lg font-bold text-gray-900">{fmtAud(details.balance?.pending ?? 0)}</p>
-            <p className="text-xs text-gray-500 mt-0.5">Pending (clearing)</p>
-          </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+            <Wallet className="w-3.5 h-3.5" /> Your money
+          </p>
+          <p className="text-sm font-semibold text-gray-900 tabular-nums">{fmtAud(earnings.summary.earned)} earned</p>
+        </div>
+        <div className="mt-3">
+          <PayoutBreakdownRows summary={earnings.summary} />
         </div>
       </div>
 

@@ -5,7 +5,6 @@ import { RELEASE_WINDOW_MS, RELEASE_WINDOW_LABEL } from '../lib/releaseWindow';
 import {
   Wallet,
   DollarSign,
-  Clock,
   ExternalLink,
   Loader2,
   CheckCircle2,
@@ -23,9 +22,8 @@ import JobManagementModal from '../components/JobManagementModal';
 import PaymentRequestsSection from '../components/PaymentRequestsSection';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { isReleaseActioned } from '../lib/paymentRelease';
-import { buildPayoutSummary } from '../lib/payoutSummary';
-import type { EscrowPayment } from '../lib/payoutSummary';
+import PayoutBreakdownRows from '../components/PayoutBreakdownRows';
+import { useTradieEarnings } from '../hooks/useTradieEarnings';
 import { Capacitor } from '@capacitor/core';
 import { getConnectAccountDetails, createConnectOnboardingSession } from '../lib/stripe';
 import type { ConnectAccountDetails } from '../lib/stripe';
@@ -115,15 +113,6 @@ export default function Payouts() {
     setPayoutPref(value);
     try { await supabase.functions.invoke('instant-payout', { body: { action: 'preference', value } }); } catch { /* keep local */ }
   };
-  // Unreleased escrow rows. Kept whole rather than pre-summed: buildPayoutSummary
-  // needs to know which of them are destination-routed (already sitting in the
-  // Stripe balance, so they'd otherwise be counted in two rows at once) and which
-  // the client has already approved.
-  const [escrowRows, setEscrowRows] = useState<EscrowPayment[]>([]);
-  const [, setEscrowCount] = useState(0);
-  // Soonest completed_at (ms epoch) among unreleased completed jobs, for the
-  // live auto-release countdown. null when nothing is inside the 48h window.
-  const [escrowReleaseAt, setEscrowReleaseAt] = useState<number | null>(null);
   const [nowTs, setNowTs] = useState<number>(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNowTs(Date.now()), 60_000);
@@ -138,91 +127,18 @@ export default function Payouts() {
   const [customInvoiceTemplate, setCustomInvoiceTemplate] = useState<string | null>(null);
   const templateInputRef = useRef<HTMLInputElement>(null);
   const [recentPayments, setRecentPayments] = useState<RecentPaymentRow[]>([]);
-  // Externally-received (bank transfer / cash) invoice payments — kept separate
-  // from Stripe so the two can be shown apart and filtered.
-  const [externalPayments, setExternalPayments] = useState<{
-    id: string;
-    amount: number; // cents
-    paidAt: string;
-    clientName: string;
-    method: string | null;
-    reference: string | null;
-    service: string;
-  }[]>([]);
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'stripe' | 'external'>('all');
+
+  // Escrow, off-platform invoices and the summary all come from the one hook
+  // Settings > Payments uses, so the two screens can't report different money.
+  // `externalPayments` also feeds the payments list below.
+  const { summary, escrowReleaseAt, externalPayments } = useTradieEarnings(user?.id, accountDetails);
 
   const fetchEarnings = useCallback(async () => {
     if (!user) return;
     try {
-      // Fetch unreleased escrow payments (completed, no transfer_id).
-      // A paid price increase is escrow too — it's the same client money on the
-      // same job, held under the same release — so it must be counted here or it
-      // vanishes from "Secured, awaiting approval" until the job releases.
-      const { data: escrowData } = await supabase
-        .from('payments')
-        .select('amount, metadata, jobs!inner(tradie_id, status, completed_at)')
-        .eq('jobs.tradie_id', user.id)
-        .eq('status', 'completed')
-        .in('payment_type', ['job_funding', 'price_adjustment'])
-        .in('jobs.status', ['funded', 'in_progress', 'completed']);
-
-      const unreleased = (escrowData || []).filter(
-        (p) => !(p.metadata as Record<string, unknown>)?.transfer_id
-      );
-      setEscrowRows(
-        unreleased.map((p) => ({
-          amount: p.amount,
-          metadata: p.metadata as Record<string, unknown> | null,
-        })),
-      );
-      setEscrowCount(unreleased.length);
-
-      // The client has already approved some of this (the payout just hasn't
-      // settled yet). Those aren't "pending client review" and must not drive an
-      // auto-release countdown that has already been overtaken.
-      const isActioned = (p: { metadata: unknown }) =>
-        isReleaseActioned({ metadata: p.metadata as Record<string, unknown> | null });
-
-      // Only COMPLETED jobs STILL AWAITING THE CLIENT are inside the review
-      // window; the soonest completed_at drives the next auto-release countdown.
-      const completedTimes = unreleased
-        .filter((p) => !isActioned(p))
-        .map((p) => p.jobs as unknown as { status: string; completed_at: string | null })
-        .filter((j) => j.status === 'completed' && j.completed_at)
-        .map((j) => new Date(j.completed_at as string).getTime());
-      setEscrowReleaseAt(completedTimes.length ? Math.min(...completedTimes) : null);
-
-      // Externally-received payments: paid invoices marked settled off-platform.
-      const { data: extInv } = await supabase
-        .from('recurring_invoices')
-        .select('id, total, paid_at, created_at, external_payment_method, external_reference, client_contact_id, recurring_job:recurring_jobs!recurring_invoices_recurring_job_id_fkey(trade_category)')
-        .eq('tradie_id', user.id)
-        .eq('payment_method', 'external')
-        .eq('status', 'paid')
-        .order('paid_at', { ascending: false });
-      if (extInv && extInv.length > 0) {
-        const contactIds = [...new Set(extInv.map(i => i.client_contact_id).filter((x): x is string => !!x))];
-        let nameMap = new Map<string, string>();
-        if (contactIds.length > 0) {
-          const { data: contacts } = await supabase.from('client_contacts').select('id, full_name').in('id', contactIds);
-          nameMap = new Map((contacts || []).map(c => [c.id, c.full_name || 'Client']));
-        }
-        setExternalPayments(extInv.map(i => {
-          const rj = i.recurring_job as { trade_category?: string } | null;
-          const service = (rj?.trade_category || 'Service').replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
-          return {
-            id: i.id,
-            amount: Math.round(Number(i.total) * 100),
-            paidAt: i.paid_at || i.created_at,
-            clientName: (i.client_contact_id && nameMap.get(i.client_contact_id)) || 'Client',
-            method: i.external_payment_method,
-            reference: i.external_reference,
-            service,
-          };
-        }));
-      } else {
-        setExternalPayments([]);
-      }
+      // Escrow and off-platform invoices are fetched by useTradieEarnings, which
+      // Settings > Payments shares — this callback only loads the payments list.
 
       // Fetch recent job payments for this tradie (last 5 days)
       const fiveDaysAgo = new Date();
@@ -815,30 +731,6 @@ export default function Payouts() {
     return `Auto-releases in ${m}m`;
   })();
   const externalTotal = useMemo(() => externalPayments.reduce((s, p) => s + p.amount, 0), [externalPayments]);
-
-  // One source of truth for every figure on the summary card. `earned` is the
-  // sum of the three rows by construction, so the headline can't disagree with
-  // the breakdown under it — see src/lib/payoutSummary.ts for what each row
-  // includes and which double-counts it exists to prevent.
-  const summary = useMemo(
-    () =>
-      buildPayoutSummary({
-        availableCents: accountDetails?.balance?.available ?? 0,
-        pendingCents: accountDetails?.balance?.pending ?? 0,
-        payouts: accountDetails?.payouts ?? [],
-        escrow: escrowRows,
-        externalTotalCents: externalTotal,
-        isManualSchedule: accountDetails?.payoutSchedule?.interval === 'manual',
-      }),
-    [
-      accountDetails?.balance?.available,
-      accountDetails?.balance?.pending,
-      accountDetails?.payouts,
-      accountDetails?.payoutSchedule?.interval,
-      escrowRows,
-      externalTotal,
-    ],
-  );
   const methodLabel = (m: string | null) =>
     m ? (({ bank_transfer: 'Bank transfer', cash: 'Cash', cheque: 'Cheque', accountant: 'Accountant' } as Record<string, string>)[m] ?? m) : '';
 
@@ -1049,39 +941,8 @@ export default function Payouts() {
               <p className="text-sm text-gray-500">You’ve earned</p>
               <p className="text-4xl font-bold text-gray-900 mt-0.5 tabular-nums">{formatCurrency(summary.earned)}</p>
 
-              <div className="mt-5 space-y-2">
-                {/* 🟡 Pending client review — or already approved and just clearing */}
-                <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-100 px-4 py-3">
-                  <Clock className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-amber-900 tabular-nums">
-                      {formatCurrency(summary.awaitingClient)} — Secured, awaiting approval
-                    </p>
-                    <p className="text-xs text-amber-700">
-                      {summary.awaitingClient === 0
-                        ? 'Nothing waiting on a client'
-                        : `Held safely — released to you when your client approves · ${autoReleaseLabel}`}
-                    </p>
-                  </div>
-                </div>
-
-                {/* 🔵 Heading to the bank */}
-                <div className="flex items-center gap-3 rounded-xl bg-secondary-50 border border-secondary-100 px-4 py-3">
-                  <ExternalLink className="w-5 h-5 text-secondary-500 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-secondary-900 tabular-nums">{formatCurrency(summary.transit.amount)} — {summary.transit.title}</p>
-                    <p className="text-xs text-secondary-700">{summary.transit.detail}</p>
-                  </div>
-                </div>
-
-                {/* 🟢 In the account */}
-                <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-emerald-900 tabular-nums">{formatCurrency(summary.received)} — In your account</p>
-                    <p className="text-xs text-emerald-700">{summary.received > 0 ? '✓ Received' : 'Payouts land here once they clear'}</p>
-                  </div>
-                </div>
+              <div className="mt-5">
+                <PayoutBreakdownRows summary={summary} autoReleaseLabel={autoReleaseLabel} />
               </div>
 
               {/* ⚡ Opt-in instant payout.

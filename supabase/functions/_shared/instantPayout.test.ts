@@ -8,7 +8,13 @@
 
 // node:assert rather than jsr:@std/assert so this runs with no network access.
 import { strictEqual as assertEquals } from "node:assert/strict";
-import { computeInstantPayout } from "./instantPayout.ts";
+import {
+  classifyInstantFailure,
+  computeInstantPayout,
+  instantFailureMessage,
+  INSTANT_UNAVAILABLE_TTL_MS,
+  isUnavailableFlagFresh,
+} from "./instantPayout.ts";
 
 // Standard free-tier config: pricing_tiers.instant_payout_bps / _min_cents.
 const TIER = { feeBps: 150, feeMinCents: 200 };
@@ -92,4 +98,56 @@ Deno.test("a tier with no minimum fee still refuses a payout the fee would consu
   });
   assertEquals(q.reason, "below_fee");
   assertEquals(q.eligible, false);
+});
+
+// ── Failure classification ───────────────────────────────────────────────────
+// The reported production failure: "daily volume limit of $0.00 aud ... across
+// your connected accounts" — a platform entitlement, not this tradie's problem.
+
+Deno.test("treats the platform volume limit as platform-wide", () => {
+  assertEquals(classifyInstantFailure("instant_payouts_limit_exceeded"), "platform");
+  assertEquals(classifyInstantFailure("instant_payouts_config_disabled"), "platform");
+  assertEquals(classifyInstantFailure("instant_payouts_currency_disabled"), "platform");
+});
+
+Deno.test("treats an ineligible card as this account only", () => {
+  assertEquals(classifyInstantFailure("instant_payouts_unsupported"), "account");
+});
+
+Deno.test("does not guess at unrecognised failures", () => {
+  assertEquals(classifyInstantFailure("balance_insufficient"), "unknown");
+  assertEquals(classifyInstantFailure(null), "unknown");
+  assertEquals(classifyInstantFailure(undefined), "unknown");
+});
+
+Deno.test("never sends the tradie to Stripe support, and says nothing was charged", () => {
+  for (const scope of ["platform", "account", "unknown"] as const) {
+    const msg = instantFailureMessage(scope);
+    assertEquals(msg.includes("stripe.com"), false);
+    assertEquals(msg.toLowerCase().includes("charged"), true);
+  }
+});
+
+// ── Suppression window ───────────────────────────────────────────────────────
+// The flag MUST expire: Stripe's limits reset daily and can be raised at any
+// time, so a permanent flag would keep the feature off until someone deployed.
+
+Deno.test("suppresses the offer while a recent failure is on record", () => {
+  const now = Date.parse("2026-07-27T12:00:00Z");
+  assertEquals(isUnavailableFlagFresh("2026-07-27T11:00:00Z", now), true);
+  assertEquals(isUnavailableFlagFresh(new Date(now - INSTANT_UNAVAILABLE_TTL_MS + 1000).toISOString(), now), true);
+});
+
+Deno.test("re-probes once the record goes stale", () => {
+  const now = Date.parse("2026-07-27T12:00:00Z");
+  assertEquals(isUnavailableFlagFresh(new Date(now - INSTANT_UNAVAILABLE_TTL_MS - 1000).toISOString(), now), false);
+  assertEquals(isUnavailableFlagFresh("2026-07-25T12:00:00Z", now), false);
+});
+
+Deno.test("a missing or unparseable timestamp never suppresses the offer", () => {
+  const now = Date.parse("2026-07-27T12:00:00Z");
+  assertEquals(isUnavailableFlagFresh(undefined, now), false);
+  assertEquals(isUnavailableFlagFresh(null, now), false);
+  assertEquals(isUnavailableFlagFresh("not a date", now), false);
+  assertEquals(isUnavailableFlagFresh(12345, now), false);
 });
