@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Calendar,
   CalendarDays,
+  CalendarOff,
   Users,
   Clock,
   ChevronLeft,
@@ -53,6 +54,7 @@ import JobDescription from '../components/JobDescription';
 import QuoteInsightsWidget from '../components/QuoteInsightsWidget';
 import EmptyState from '../components/EmptyState';
 import SubscriptionModal from '../components/SubscriptionModal';
+import ConfirmModal from '../components/ConfirmModal';
 import CollapsibleSection from '../components/CollapsibleSection';
 import { isPro, FREE_LIMITS, getMonthlyJobAccepts, getMonthlyLeadUnlocks } from '../lib/subscription';
 import UserTradeBadges from '../components/UserTradeBadges';
@@ -214,6 +216,8 @@ export default function TradieDashboard() {
   // Calendar integration
   const [calendarIntegration, setCalendarIntegration] = useState<CalendarIntegration | null>(null);
   const [syncLoading, setSyncLoading] = useState(false);
+  const [unsyncLoading, setUnsyncLoading] = useState(false);
+  const [showUnsyncConfirm, setShowUnsyncConfirm] = useState(false);
 
   // Earnings
   const [earnings, setEarnings] = useState({ total: 0, thisMonth: 0, pendingJobs: 0 });
@@ -709,6 +713,38 @@ export default function TradieDashboard() {
       setSyncLoading(false);
     }
   }, [user, calendarIntegration, fetchCalendarIntegration, fetchSlots, showToast]);
+
+  // Unsync — strips every event ConnecTradie pushed into Google back out again,
+  // so the phone calendar returns to how it looked before syncing. The Google
+  // connection stays, so Sync can re-push whenever they want.
+  const handleUnsyncCalendar = useCallback(async () => {
+    if (!user || !calendarIntegration) return;
+    setShowUnsyncConfirm(false);
+    setUnsyncLoading(true);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-google-calendar`,
+        { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'unsync' }) }
+      );
+      const result = await res.json();
+      if (result.success) {
+        showToast(
+          result.removed === 0
+            ? 'Nothing to unsync — your Google Calendar has no ConnecTradie events.'
+            : `Removed ${result.removed} event${result.removed === 1 ? '' : 's'} from Google Calendar.${result.failed ? ` ${result.failed} could not be removed — try again.` : ''}`,
+          !!result.failed
+        );
+        await fetchSlots();
+      } else {
+        showToast(result.error || 'Could not unsync your calendar', true);
+      }
+    } catch {
+      showToast('Could not unsync your calendar', true);
+    } finally {
+      setUnsyncLoading(false);
+    }
+  }, [user, calendarIntegration, fetchSlots, showToast]);
 
   const handleEnablePush = async () => {
     if (!user) return;
@@ -1851,6 +1887,7 @@ export default function TradieDashboard() {
                     </button>
                   )}
                   {isProUser ? (
+                    <>
                     <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-gray-200 text-gray-700 text-[10px] sm:text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[32px] sm:min-h-[44px]">
                       {syncLoading ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">{calendarIntegration ? 'Syncing...' : 'Connecting...'}</span><span className="sm:hidden">Sync</span></>
@@ -1860,6 +1897,17 @@ export default function TradieDashboard() {
                         <><Calendar className="w-4 h-4" /><span className="hidden sm:inline">Connect Google Calendar</span><span className="sm:hidden">Connect</span></>
                       )}
                     </button>
+                    {/* Only offered once connected — nothing to strip out otherwise. */}
+                    {calendarIntegration && (
+                      <button onClick={() => setShowUnsyncConfirm(true)} disabled={unsyncLoading || syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-gray-200 text-gray-700 text-[10px] sm:text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[32px] sm:min-h-[44px]">
+                        {unsyncLoading ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">Unsyncing...</span><span className="sm:hidden">Unsync</span></>
+                        ) : (
+                          <><CalendarOff className="w-4 h-4" /><span className="hidden sm:inline">Unsync Google Calendar</span><span className="sm:hidden">Unsync</span></>
+                        )}
+                      </button>
+                    )}
+                    </>
                   ) : (
                     <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-warm-300 text-warm-700 text-[10px] sm:text-sm font-medium rounded-xl hover:bg-warm-50 transition-colors min-h-[32px] sm:min-h-[44px]">
                       <Calendar className="w-4 h-4" /><span className="hidden sm:inline">Google Calendar</span><span className="sm:hidden">Calendar</span><span className="text-xs font-bold bg-warm-100 text-warm-600 px-1.5 py-0.5 rounded">PRO</span>
@@ -2478,6 +2526,18 @@ export default function TradieDashboard() {
       )}
 
       <SubscriptionModal isOpen={showSubscriptionModal} onClose={() => setShowSubscriptionModal(false)} />
+
+      {showUnsyncConfirm && (
+        <ConfirmModal
+          type="warning"
+          title="Unsync Google Calendar?"
+          message="This removes every event ConnecTradie added to your Google Calendar — your availability slots and job bookings — so your phone calendar goes back to how it looked before. Your own events are not touched, and your slots stay here in ConnecTradie. You can press Sync again any time to put them back."
+          confirmText="Unsync"
+          cancelText="Keep synced"
+          onConfirm={handleUnsyncCalendar}
+          onCancel={() => setShowUnsyncConfirm(false)}
+        />
+      )}
 
 
       <style>{`

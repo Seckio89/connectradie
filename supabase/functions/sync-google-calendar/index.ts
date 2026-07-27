@@ -162,19 +162,84 @@ Deno.serve(async (req: Request) => {
     try { body = await req.json(); } catch { /* no body — normal sync */ }
     const deleteEventIds = Array.isArray(body.deleteEventIds) ? body.deleteEventIds as string[] : [];
 
+    // A 404 from Google means the user already deleted it by hand — that is the
+    // desired end state, so count it as removed rather than as a failure.
+    const deleteGoogleEvent = async (eventId: string): Promise<boolean> => {
+      try {
+        const delRes = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${integration.calendar_id}/events/${eventId}`,
+          { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        return delRes.ok || delRes.status === 404;
+      } catch {
+        return false;
+      }
+    };
+
     if (deleteEventIds.length > 0) {
       let deleted = 0;
       for (const eventId of deleteEventIds) {
-        try {
-          const delRes = await fetch(
-            `https://www.googleapis.com/calendar/v3/calendars/${integration.calendar_id}/events/${eventId}`,
-            { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } }
-          );
-          if (delRes.ok || delRes.status === 404) deleted++;
-        } catch { /* skip */ }
+        if (await deleteGoogleEvent(eventId)) deleted++;
       }
       return new Response(
         JSON.stringify({ success: true, message: `Deleted ${deleted} calendar event(s)`, deleted }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── UNSYNC: remove everything ConnecTradie pushed into Google ──────
+    // Scoped strictly to event ids WE created and stored — we never scan the
+    // user's calendar or match on title, so nothing they own can be deleted.
+    // The Google connection itself is left intact: pressing Sync again re-pushes.
+    if (body.action === "unsync") {
+      const [{ data: slotRows }, { data: jobRows }] = await Promise.all([
+        supabaseClient
+          .from("availability_slots")
+          .select("id, calendar_event_id")
+          .eq("tradie_id", user.id)
+          .not("calendar_event_id", "is", null),
+        supabaseClient
+          .from("jobs")
+          .select("id, calendar_event_id")
+          .eq("tradie_id", user.id)
+          .not("calendar_event_id", "is", null),
+      ]);
+
+      let removed = 0;
+      let failed = 0;
+      const clearedSlotIds: string[] = [];
+      const clearedJobIds: string[] = [];
+
+      for (const row of slotRows ?? []) {
+        if (await deleteGoogleEvent(row.calendar_event_id)) {
+          clearedSlotIds.push(row.id);
+          removed++;
+        } else failed++;
+      }
+      for (const row of jobRows ?? []) {
+        if (await deleteGoogleEvent(row.calendar_event_id)) {
+          clearedJobIds.push(row.id);
+          removed++;
+        } else failed++;
+      }
+
+      // Only clear the pointer for events actually gone from Google, so a retry
+      // can still find whichever ones failed instead of orphaning them.
+      if (clearedSlotIds.length > 0) {
+        await supabaseClient
+          .from("availability_slots")
+          .update({ calendar_event_id: null })
+          .in("id", clearedSlotIds);
+      }
+      if (clearedJobIds.length > 0) {
+        await supabaseClient
+          .from("jobs")
+          .update({ calendar_event_id: null })
+          .in("id", clearedJobIds);
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, removed, failed }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
