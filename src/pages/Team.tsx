@@ -568,7 +568,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
       </div>
     );
     if (embedded) return notAvailable;
-    return <DashboardLayout><SectionErrorBoundary>{notAvailable}</SectionErrorBoundary></DashboardLayout>;
+    return <DashboardLayout wide><SectionErrorBoundary>{notAvailable}</SectionErrorBoundary></DashboardLayout>;
   }
 
   const calDaysInMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 0).getDate();
@@ -594,11 +594,11 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
 
   const content = (
     <>
-      <div className="max-w-[1600px] mx-auto space-y-6">
+      <div className="space-y-6">
         <div className="flex items-start justify-between gap-3 sm:gap-4">
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Team</h1>
-            <p className="text-gray-500 mt-1 text-sm sm:text-base">Manage employees and subcontractors in your business</p>
+            <p className="text-gray-500 mt-1 text-sm sm:text-base">Add your crew, set their roles and rates, then assign them to jobs in seconds.</p>
           </div>
           <button
             onClick={() => { setEditMember(null); setShowAddModal(true); }}
@@ -694,9 +694,9 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                           {emp.tradie_details.trade_category}
                         </span>
                       )}
-                      <span className="flex items-center gap-1 text-sm text-gray-500">
-                        <Mail className="w-3.5 h-3.5" />
-                        {emp.email}
+                      <span className="flex items-center gap-1 text-sm text-gray-500 min-w-0">
+                        <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="truncate">{emp.email}</span>
                       </span>
                       {emp.phone && (
                         <span className="flex items-center gap-1 text-sm text-gray-500">
@@ -739,7 +739,8 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
         )}
 
         <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-          <div className="flex border-b border-gray-100 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="relative border-b border-gray-100">
+          <div className="flex overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
             {teamTabs.map(tab => (
               <button
                 key={tab.key}
@@ -763,6 +764,10 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
               </button>
             ))}
           </div>
+            {/* Fade on the right edge so the cut-off tab reads as "scroll me",
+                not as a broken layout. Mobile only — the row fits from sm up. */}
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent sm:hidden" />
+          </div>
 
           {loading ? (
             <div className="divide-y divide-gray-50">
@@ -782,9 +787,9 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                 <div className="w-16 h-16 bg-secondary-50 rounded-2xl flex items-center justify-center mb-4">
                   <UserCheck className="w-8 h-8 text-secondary-400" />
                 </div>
-                <h3 className="font-semibold text-gray-800 mb-1">Your team starts here</h3>
+                <h3 className="font-semibold text-gray-800 mb-1">Build your crew</h3>
                 <p className="text-sm text-gray-500 max-w-xs">
-                  Approve a join request and your workers appear here, ready to be assigned to jobs.
+                  Approve a join request or add someone manually — they'll appear here, ready to assign to jobs and clock on.
                 </p>
               </div>
             ) : (
@@ -1279,5 +1284,5 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
   );
 
   if (embedded) return content;
-  return <DashboardLayout><SectionErrorBoundary>{content}</SectionErrorBoundary></DashboardLayout>;
+  return <DashboardLayout wide><SectionErrorBoundary>{content}</SectionErrorBoundary></DashboardLayout>;
 }

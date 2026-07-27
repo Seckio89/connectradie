@@ -263,8 +263,8 @@ export default function Projects() {
           <div className="bg-white rounded-xl border border-gray-200">
             <EmptyState
               icon={FolderOpen}
-              title="No Projects Created"
-              description="Group related jobs together to keep everything organised and help your tradies coordinate their work."
+              title="Group your jobs into projects"
+              description="Bundle related jobs under one project so your crew can see what's connected and nothing slips through."
               actionLabel="Create Project"
               onAction={() => setShowCreateModal(true)}
             />

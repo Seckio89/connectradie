@@ -39,7 +39,7 @@ export default function WorkHub() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto">
+      <div>
         <nav className="flex items-center gap-1.5 text-xs text-gray-400 mb-3">
           <Link to="/dashboard" className="hover:text-gray-600 transition-colors">Dashboard</Link>
           <ChevronRight className="w-3 h-3" />
@@ -50,10 +50,10 @@ export default function WorkHub() {
 
         <h1 className="text-xl font-bold text-gray-900 mb-1">Work Hub</h1>
         <p className="text-sm text-gray-500 mb-4">
-          {activeTab === 'leads' && 'Browse new job requests, submit quotes, and track your responses'}
-          {activeTab === 'jobs' && 'Track jobs you\'ve been assigned and manage active work'}
-          {activeTab === 'services' && 'Manage ongoing client relationships, log visits, and generate invoices'}
-          {activeTab === 'hiring' && 'Post vacancies and find apprentices or qualified tradies to join your team'}
+          {activeTab === 'leads' && 'Fresh job requests near you — quote fast and track every response in one place'}
+          {activeTab === 'jobs' && 'Every job you\'ve won, from first site visit through to final payment'}
+          {activeTab === 'services' && 'Keep your regulars running — log visits, raise invoices and get paid on time'}
+          {activeTab === 'hiring' && 'Post a vacancy and reach apprentices and qualified tradies looking for work'}
         </p>
 
         <div className="flex items-center gap-0 border-b border-gray-200 mb-5 sm:overflow-x-auto sm:mx-0 scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>

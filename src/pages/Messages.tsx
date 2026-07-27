@@ -809,8 +809,8 @@ export default function Messages() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="max-w-[1600px] mx-auto">
+    <DashboardLayout wide>
+      <div>
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
           <button
@@ -857,7 +857,7 @@ export default function Messages() {
               ) : conversations.length === 0 ? (
                 <EmptyState
                   icon={MessageSquare}
-                  title="No Messages Yet"
+                  title="No messages yet"
                   description={
                     showArchivedFilter
                       ? 'No archived conversations to show.'

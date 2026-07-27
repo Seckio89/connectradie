@@ -778,8 +778,8 @@ export default function TradieDashboard() {
     <DashboardLayout>
       <WelcomeGuide role="tradie" userName={profile?.full_name} />
       {showOnboardedBanner && (
-        <div className="max-w-5xl mx-auto mb-4 -mx-4 sm:mx-auto">
-          <div className="bg-gradient-to-r from-primary-50 to-secondary-50 border-y sm:border border-x-0 sm:border-x border-primary-200 rounded-none sm:rounded-2xl p-5 px-4 sm:px-5">
+        <div className="mb-4">
+          <div className="bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-2xl p-5 px-4 sm:px-5">
             <h3 className="font-bold text-primary-900 mb-1">Welcome to ConnecTradie!</h3>
             <p className="text-sm text-primary-800">Your account is set up. Set your availability below so clients can find and book you for jobs.</p>
           </div>
@@ -787,8 +787,8 @@ export default function TradieDashboard() {
       )}
       {/* Join-a-business request pending — persists until the employer approves */}
       {isPendingEmployerApproval && (
-        <div className="max-w-5xl mx-auto mb-4 -mx-4 sm:mx-auto">
-          <div className="bg-amber-50 border-y sm:border border-x-0 sm:border-x border-amber-200 rounded-none sm:rounded-2xl p-4 sm:p-5 px-4 sm:px-5">
+        <div className="mb-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 px-4 sm:px-5">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Clock className="w-5 h-5 text-amber-600" />
@@ -808,9 +808,9 @@ export default function TradieDashboard() {
           </div>
         </div>
       )}
-      <div className="max-w-5xl mx-auto overflow-x-hidden">
+      <div>
         {/* Header */}
-        <div className="mb-3 md:mb-6 bg-navy-900 rounded-none sm:rounded-2xl p-4 sm:p-6 md:p-8 border-b sm:border border-x-0 sm:border-x border-navy-800 -mx-4 sm:mx-0 px-4 sm:px-6 md:px-8">
+        <div className="mb-3 md:mb-6 bg-navy-900 rounded-2xl p-4 sm:p-6 md:p-8 border border-navy-800 px-4 sm:px-6 md:px-8">
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-white mb-1">Your Business Hub</h1>
           <p className="text-navy-300">Manage your schedule, jobs, and conversations in one place</p>
           {profile && (
@@ -825,7 +825,7 @@ export default function TradieDashboard() {
 
         {/* Pro Member Banner */}
         {showPayoutBanner && (
-          <div className="mt-3 sm:mt-6 flex items-center gap-2 sm:gap-2 px-4 py-3 bg-white sm:bg-green-50 border-y sm:border border-gray-100 sm:border-green-200 rounded-none sm:rounded-xl -mx-4 sm:mx-0">
+          <div className="mt-3 sm:mt-6 flex items-center gap-2 sm:gap-2 px-4 py-3 bg-white sm:bg-green-50 border border-gray-100 sm:border-green-200 rounded-xl">
             <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
             <span className="text-sm font-semibold text-green-800">Pro Member<span className="hidden sm:inline"> — Lowest Fees</span></span>
             <span className="text-sm text-green-600 flex-1 hidden sm:inline">You're keeping more of every job with Pro.</span>
@@ -840,7 +840,7 @@ export default function TradieDashboard() {
 
         {/* License Expired Banner */}
         {isLicenseExpired && (
-          <div className="mb-6 bg-red-50 border-y-2 sm:border-2 border-x-0 sm:border-x-2 border-red-300 rounded-none sm:rounded-2xl p-5 -mx-4 sm:mx-0">
+          <div className="mb-6 bg-red-50 border-2 border-red-300 rounded-2xl p-5">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
                 <ShieldAlert className="w-6 h-6 text-red-600" />
@@ -868,7 +868,7 @@ export default function TradieDashboard() {
 
         {/* Free Tier Usage */}
         {!isProUser && (
-          <div className="mb-2 sm:mb-6 bg-white rounded-none sm:rounded-2xl sm:shadow-sm p-3 sm:p-4 border-y sm:border border-x-0 sm:border-x border-gray-100 -mx-4 sm:mx-0 px-4 sm:px-6">
+          <div className="mb-2 sm:mb-6 bg-white rounded-2xl shadow-sm p-3 sm:p-4 border border-gray-100 px-4 sm:px-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-semibold text-gray-900">Free Plan Usage</h3>
               <button onClick={() => setShowSubscriptionModal(true)} className="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors">
@@ -915,7 +915,7 @@ export default function TradieDashboard() {
 
         {/* First-Time Guidance — shown when tradie has no jobs and no availability */}
         {jobs.length === 0 && slots.length === 0 && !slotsLoading && (
-          <div className="mb-3 sm:mb-6 bg-gradient-to-r from-warm-50 to-secondary-50 border-y sm:border border-x-0 sm:border-x border-warm-200 rounded-none sm:rounded-2xl p-4 sm:p-5 -mx-4 sm:mx-0">
+          <div className="mb-3 sm:mb-6 bg-gradient-to-r from-warm-50 to-secondary-50 border border-warm-200 rounded-2xl p-4 sm:p-5">
             <h3 className="font-bold text-gray-900 mb-1">What to do first</h3>
             <p className="text-sm text-gray-600 mb-4">Complete these three steps to start getting work — most tradies are set up in under 5 minutes.</p>
             <div className="grid sm:grid-cols-3 gap-3">
@@ -968,7 +968,7 @@ export default function TradieDashboard() {
           const pendingConfirmations = recurringSessions.filter(s => s.status === 'pending_confirmation');
           if (pendingConfirmations.length === 0) return null;
           return (
-            <div className="bg-white rounded-none sm:rounded-xl border-y-2 sm:border-2 border-x-0 sm:border-x-2 border-amber-300 shadow-sm p-5 mt-6 mb-4 -mx-4 sm:mx-0">
+            <div className="bg-white rounded-xl border-2 border-amber-300 shadow-sm p-5 mt-6 mb-4">
               <div className="flex items-center gap-2 mb-3">
                 <AlertCircle className="w-5 h-5 text-amber-500" />
                 <h3 className="text-sm font-bold text-gray-900">New Service Request{pendingConfirmations.length !== 1 ? 's' : ''} Awaiting Your Response</h3>
@@ -1048,7 +1048,7 @@ export default function TradieDashboard() {
           const unreadConvos = conversations.filter(c => c.messages.some(m => m.receiver_id === user?.id && !m.read_at));
           const pendingConfirmations = recurringSessions.filter(s => s.status === 'pending_confirmation');
           if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0 && newLeads.length === 0) return (
-            <div className="bg-emerald-50 border-y sm:border border-x-0 sm:border-x rounded-none sm:rounded-2xl py-2 px-4 sm:p-3 mt-2 sm:mt-4 mb-1 -mx-4 sm:mx-0 sm:px-5" style={{ borderBottom: '0.5px solid #d1fae5' }}>
+            <div className="bg-emerald-50 border rounded-2xl py-2 px-4 sm:p-3 mt-2 sm:mt-4 mb-1 sm:px-5" style={{ borderBottom: '0.5px solid #d1fae5' }}>
               <div className="flex items-center gap-2 text-emerald-700">
                 <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                 <span className="text-xs sm:text-sm font-medium">All caught up</span>
@@ -1057,7 +1057,7 @@ export default function TradieDashboard() {
           );
           if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0) return null;
           return (
-            <div className="bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 p-3 sm:p-4 mt-2 sm:mt-4 mb-1 -mx-4 sm:mx-0 px-4 sm:px-6">
+            <div className="bg-white rounded-2xl border border-gray-200 p-3 sm:p-4 mt-2 sm:mt-4 mb-1 px-4 sm:px-6">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs md:text-sm font-semibold text-gray-900 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-500" />
@@ -1145,7 +1145,7 @@ export default function TradieDashboard() {
 
         {/* Invoices ready to send */}
         {pendingInvoiceCount > 0 && (
-          <div className="bg-amber-50 border-y sm:border border-x-0 sm:border-x border-amber-200 rounded-none sm:rounded-2xl px-5 py-4 flex items-center justify-between gap-4 flex-wrap -mx-4 sm:mx-0">
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <FileText className="w-5 h-5 text-amber-700" />
@@ -1233,14 +1233,14 @@ export default function TradieDashboard() {
                       tabIndex={0}
                       onClick={() => navigate(`/work?job=${lead.id}`)}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/work?job=${lead.id}`); } }}
-                      className={`md:rounded-2xl overflow-hidden transition-all cursor-pointer ${
+                      className={`rounded-2xl overflow-hidden transition-all cursor-pointer ${
                         isFlashActive
                           ? 'border border-warm-200 bg-white md:shadow-md hover:shadow-xl ring-1 ring-warm-100'
                           : isUrgent
                           ? 'border border-red-200 bg-white md:shadow-md hover:shadow-xl'
                           : isInvited
-                          ? 'border border-secondary-200 bg-white md:shadow-sm hover:shadow-md'
-                          : 'border border-gray-200 bg-white md:shadow-sm hover:shadow-lg hover:border-gray-300'
+                          ? 'border border-secondary-200 bg-white shadow-sm hover:shadow-md'
+                          : 'border border-gray-200 bg-white shadow-sm hover:shadow-lg hover:border-gray-300'
                       }`}
                     >
                       <div className="flex">
@@ -1352,7 +1352,7 @@ export default function TradieDashboard() {
         })()}
 
         {/* Tabbed Content */}
-        <div className="bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 mb-3 sm:mb-6 shadow-sm mt-3 sm:mt-6 sm:ring-1 ring-primary-100/50 -mx-4 sm:mx-0" data-tour="jobs-tab">
+        <div className="bg-white rounded-2xl border border-gray-200 mb-3 sm:mb-6 shadow-sm mt-3 sm:mt-6 sm:ring-1 ring-primary-100/50" data-tour="jobs-tab">
           <div className="border-b border-gray-200">
             <div className="flex justify-center sm:justify-start gap-2 sm:gap-2 px-3 py-2 sm:p-4">
               {(['jobs', 'messages'] as TabType[]).map((tab) => {
@@ -1460,7 +1460,7 @@ export default function TradieDashboard() {
                           <Link
                             key={item.key}
                             to="/work?tab=services"
-                            className="flex items-center p-3 bg-white border-b sm:border border-gray-200 rounded-none sm:rounded-xl border-x-0 sm:border-x hover:border-emerald-200 hover:bg-emerald-50/30 transition-colors group -mx-4 sm:mx-0 px-4 sm:px-3"
+                            className="flex items-center p-3 bg-white border border-gray-200 rounded-xl hover:border-emerald-200 hover:bg-emerald-50/30 transition-colors group px-4 sm:px-3"
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-xs flex items-center justify-center flex-shrink-0">
@@ -1506,10 +1506,10 @@ export default function TradieDashboard() {
                 {(() => {
                   const hasOngoing = agreements.length > 0 || recurringJobs.length > 0;
                   const heading = hasOngoing ? 'One-Off Jobs' : 'Active Jobs';
-                  const emptyTitle = hasOngoing ? 'No One-Off Jobs' : 'No Active Jobs';
+                  const emptyTitle = hasOngoing ? 'No one-off jobs right now' : 'Get found by local clients';
                   const emptyDesc = hasOngoing
-                    ? "You have ongoing services above. No one-off jobs in the pipeline right now."
-                    : 'Set up your calendar so clients can find and book you for their next project.';
+                    ? "Your ongoing services are above. One-off jobs will show up here as they come in."
+                    : 'Set your availability so clients can find you and book their next job straight into your calendar.';
                   return (
                     <>
                       <div className="flex items-center justify-between mb-2 sm:mb-4 pl-1 sm:pl-0">
@@ -1553,7 +1553,7 @@ export default function TradieDashboard() {
                           tabIndex={0}
                           onClick={() => { if (!isLicenseExpired) { setSelectedJob(job.id); setShowJobManagement(true); } }}
                           onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !isLicenseExpired) { e.preventDefault(); setSelectedJob(job.id); setShowJobManagement(true); } }}
-                          className={`border-b sm:border rounded-none sm:rounded-xl border-x-0 sm:border-x overflow-hidden transition-all hover:shadow-sm cursor-pointer -mx-4 sm:mx-0 ${
+                          className={`border rounded-xl overflow-hidden transition-all hover:shadow-sm cursor-pointer ${
                             job.priority === 'high' ? 'border-orange-200 bg-gradient-to-r from-orange-50/40 to-white' : 'border-gray-200 hover:border-primary-200'
                           }`}
                         >
@@ -1755,7 +1755,7 @@ export default function TradieDashboard() {
                 {conversations.length === 0 ? (
                   <EmptyState
                     icon={MessageSquare}
-                    title="No Messages Yet"
+                    title="No messages yet"
                     description="When clients message you about jobs, their conversations will appear here."
                     actionLabel="Browse Leads"
                     onAction={() => navigate('/work')}
@@ -1813,7 +1813,7 @@ export default function TradieDashboard() {
         </div>
 
         {/* Calendar */}
-        <div className="mt-6 bg-white rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-gray-200 shadow-sm px-4 py-3 sm:p-6 sm:ring-1 ring-primary-100/50 -mx-4 sm:mx-0" data-tour="calendar">
+        <div className="mt-6 bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3 sm:p-6 sm:ring-1 ring-primary-100/50" data-tour="calendar">
           <div className="grid lg:grid-cols-3 gap-4 sm:gap-8 max-w-full overflow-hidden">
             {/* Calendar */}
             <div className="lg:col-span-2 min-w-0">
@@ -1955,7 +1955,7 @@ export default function TradieDashboard() {
                   const hours = Array.from({ length: 15 }, (_, i) => i + 6);
                   return (
                     <div>
-                      <div className="overflow-x-auto overflow-y-hidden sm:mx-0 sm:px-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                      <div className="overflow-x-auto overflow-y-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
                         <div className="min-w-[480px]">
                           <div className="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[80px_repeat(7,1fr)] border border-gray-200 rounded-t-xl overflow-hidden">
                             <div className="bg-gray-50 border-r border-b border-gray-200 p-2" />
@@ -2146,7 +2146,7 @@ export default function TradieDashboard() {
         </div>
 
         {/* Quick Stats */}
-        <div data-tour="quick-stats" className="[&>div]:rounded-none [&>div]:sm:rounded-xl [&>div]:border-x-0 [&>div]:sm:border-x -mx-4 sm:mx-0">
+        <div data-tour="quick-stats" className="[&>div]:rounded-xl">
         <CollapsibleSection
           title="Quick Stats"
           defaultOpen={true}
@@ -2220,7 +2220,7 @@ export default function TradieDashboard() {
         {/* Recent Reviews — compact rows: avatar + name + stars + date on one
             line, with a one-line comment preview only when there's text. */}
         {recentReviews.length > 0 && (
-          <div className="mt-5 bg-white rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-gray-200 px-4 sm:px-5 py-4 mx-0">
+          <div className="mt-5 bg-white rounded-2xl border border-gray-200 px-4 sm:px-5 py-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2.5">
                 <div className="p-1.5 bg-yellow-50 rounded-lg">
@@ -2273,7 +2273,7 @@ export default function TradieDashboard() {
 
         {/* Push Notification Banner — dismissible */}
         {showPushBanner && pushStatus !== 'granted' && pushStatus !== 'unsupported' && (
-          <div className="bg-gradient-to-r from-primary-50 to-warm-50 rounded-none sm:rounded-2xl border-y sm:border border-x-0 sm:border-x border-primary-200 p-5 mb-6 mt-6 -mx-4 sm:mx-0">
+          <div className="bg-gradient-to-r from-primary-50 to-warm-50 rounded-2xl border border-primary-200 p-5 mb-6 mt-6">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">

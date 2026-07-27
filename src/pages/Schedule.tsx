@@ -57,8 +57,8 @@ export default function Schedule() {
   const breadcrumbLabel = tabs.find(t => t.key === activeTab)?.label || 'Calendar';
 
   return (
-    <DashboardLayout>
-      <div className="max-w-[1600px] mx-auto">
+    <DashboardLayout wide>
+      <div>
         <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-4">
           <Link to="/dashboard" className="hover:text-primary-600 transition-colors">Dashboard</Link>
           <ChevronRight className="w-3 h-3" />

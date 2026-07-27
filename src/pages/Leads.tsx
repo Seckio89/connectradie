@@ -2057,8 +2057,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         return (
           <EmptyState
             icon={FileText}
-            title="No Quotes Submitted"
-            description="You haven't submitted any quotes yet. Browse available leads and start quoting."
+            title="Your next job starts with a quote"
+            description="Browse the leads in your area and send your first quote — it takes about a minute."
           />
         );
       }
@@ -2201,7 +2201,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
   const content = (
     <>
-      <div className={`${embedded ? '' : 'max-w-5xl'} mx-auto`}>
+      <div>
         {quoteAcceptedBanner === 'success' && (
           <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4">
             <div className="flex items-center gap-3 mb-1">
@@ -2384,28 +2384,28 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             (filter === 'active' || filter === 'all') ? (
               <EmptyState
                 icon={Briefcase}
-                title="No Active Jobs"
-                description="You don't have any active jobs right now. Post one and tradies in your area will start quoting."
+                title="Get quotes from local tradies"
+                description="Post a job and licensed tradies nearby can start quoting on it. No obligation to accept."
                 actionLabel="Post a Job"
                 onAction={() => navigate('/post-lead')}
               />
             ) : filter === 'completed' ? (
               <EmptyState
                 icon={CheckCircle2}
-                title="No Completed Jobs"
-                description="Finished jobs will appear here. You can leave reviews and export invoices."
+                title="Finished work lands here"
+                description="Once a job wraps up you can leave a review and export the invoice for your records."
               />
             ) : filter === 'archived' ? (
               <EmptyState
                 icon={Archive}
-                title="No Archived Jobs"
+                title="Nothing archived yet"
                 description="Archived, cancelled, and declined jobs will appear here."
               />
             ) : (
               <EmptyState
                 icon={Briefcase}
-                title="No Jobs Found"
-                description="No jobs match this filter."
+                title="No jobs match this filter"
+                description="Try a different filter to see more of your jobs."
               />
             )
           ) : filter === 'completed' ? (

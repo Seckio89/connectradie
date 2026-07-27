@@ -88,7 +88,7 @@ export default function QuoteInsightsWidget() {
 
   if (stats.totalQuotes === 0) {
     return (
-      <div className="bg-white rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-gray-200 px-4 sm:px-6 py-4 sm:py-6">
+      <div className="bg-white rounded-2xl border border-gray-200 px-4 sm:px-6 py-4 sm:py-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
             <FileText className="w-5 h-5 text-secondary-600" />
@@ -109,7 +109,7 @@ export default function QuoteInsightsWidget() {
   }
 
   return (
-    <div className="bg-white rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-gray-200 px-4 sm:px-5 py-4">
+    <div className="bg-white rounded-2xl border border-gray-200 px-4 sm:px-5 py-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-secondary-100 rounded-lg flex items-center justify-center">

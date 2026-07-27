@@ -2123,23 +2123,27 @@ export default function ClientServicesTab() {
                                     <span className={`text-sm whitespace-nowrap ${isOverdue ? 'text-red-700 font-medium' : 'text-gray-700'}`}>{date}</span>
                                     <ChevronDown className={`w-3.5 h-3.5 text-gray-400 flex-shrink-0 ml-0.5 transition-transform ${isExpandedVisit ? 'rotate-180' : ''}`} />
                                   </div>
-                                  {/* Price | Status | Payment | Method — fixed widths for alignment */}
-                                  <div className="flex items-center gap-1 flex-shrink-0">
-                                    <span className={`w-[58px] text-right text-xs font-medium ${isOverdue ? 'text-red-600' : 'text-gray-600'}`}>
+                                  {/* Price | Status | Payment | Method — fixed widths align the columns from
+                                      sm up. Below that the four widths total 308px, which
+                                      overflowed a 286px row and got silently clipped by
+                                      main's overflow-x:clip, so on mobile they size to
+                                      content and wrap. */}
+                                  <div className="flex items-center gap-1 flex-wrap justify-end sm:flex-nowrap sm:flex-shrink-0 min-w-0">
+                                    <span className={`sm:w-[58px] text-right text-xs font-medium ${isOverdue ? 'text-red-600' : 'text-gray-600'}`}>
                                       {(isCompleted || isOverdue) && job.agreed_price != null && job.agreed_price > 0
                                         ? `$${job.agreed_price.toFixed(2)}` : ''}
                                     </span>
-                                    <span className={`w-[78px] text-center px-1 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
+                                    <span className={`sm:w-[78px] text-center px-1 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
                                       isOverdue ? 'bg-red-100 text-red-700' : isCompleted ? 'bg-secondary-100 text-secondary-700' : 'bg-gray-100 text-gray-500'
                                     }`}>
                                       {isOverdue ? 'Not Completed' : isCompleted ? 'Completed' : 'Skipped'}
                                     </span>
-                                    <span className={`w-[88px] text-center px-1 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
+                                    <span className={`sm:w-[88px] text-center px-1 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
                                       isOverdue ? 'bg-red-100 text-red-700' : isCompleted && paymentStatus ? paymentStatus.style : 'bg-transparent text-transparent'
                                     }`}>
                                       {isOverdue ? 'Awaiting Action' : isCompleted && paymentStatus ? paymentStatus.label : '-'}
                                     </span>
-                                    <span className={`w-[72px] text-center px-1 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
+                                    <span className={`sm:w-[72px] text-center px-1 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
                                       isCompleted && paymentStatus?.method ? 'bg-gray-100 text-gray-500' : 'bg-transparent text-transparent'
                                     }`}>
                                       {isCompleted && paymentStatus?.method ? paymentStatus.method : '-'}

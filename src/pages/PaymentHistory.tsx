@@ -616,8 +616,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
   if (loading && payments.length === 0) {
     return (
-      <DashboardLayout>
-        <div className="max-w-[1600px] mx-auto space-y-6">
+      <DashboardLayout wide>
+        <div className="space-y-6">
           <div className="h-8 bg-surface-200 rounded w-48 animate-pulse" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[1,2,3,4].map(i => <div key={i} className="h-28 bg-white rounded-2xl border border-surface-200 animate-pulse" />)}
@@ -629,9 +629,9 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout wide>
       <SectionErrorBoundary>
-      <div className="max-w-[1600px] mx-auto space-y-6">
+      <div className="space-y-6">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>

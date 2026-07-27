@@ -497,9 +497,9 @@ export default function Notifications() {
               title={activeTab === 'unread' ? 'All caught up!' : 'No notifications'}
               description={
                 activeTab === 'unread'
-                  ? 'You have no unread notifications.'
+                  ? 'Nothing needs your attention right now.'
                   : activeTab === 'all'
-                    ? "You don't have any notifications yet."
+                    ? "Job updates, new quotes and payment alerts will land here."
                     : `No ${FILTER_TABS.find(t => t.key === activeTab)?.label.toLowerCase()} notifications.`
               }
             />

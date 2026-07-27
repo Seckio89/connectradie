@@ -201,7 +201,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
 
   const content = (
     <>
-      <div className="max-w-[1600px] mx-auto space-y-6">
+      <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Recruitment</h1>
@@ -313,8 +313,8 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
           viewTab === 'my_listings' ? (
             <EmptyState
               icon={HardHat}
-              title="No listings yet"
-              description="Post your first vacancy to start finding skilled workers for your team."
+              title="Hire your next tradie"
+              description="Post a vacancy and reach apprentices and qualified tradies looking for work in your area."
               actionLabel="Post a Vacancy"
               onAction={() => { setEditVacancy(null); setShowPostModal(true); }}
             />
@@ -379,5 +379,5 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
   );
 
   if (embedded) return content;
-  return <DashboardLayout>{content}</DashboardLayout>;
+  return <DashboardLayout wide>{content}</DashboardLayout>;
 }

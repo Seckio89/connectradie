@@ -16,7 +16,7 @@ export default function VerificationGateModal({ isOpen, onClose, reason = 'unver
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
+      <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden max-h-[85vh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 transition-colors"

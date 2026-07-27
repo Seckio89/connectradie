@@ -42,13 +42,6 @@ body {
 }
 
 @media (max-width: 768px) {
-  /* Contain width on full-height wrappers — but do NOT set overflow-x
-     on layout containers. Android WebView turns overflow-x:hidden into
-     overflow:hidden (both axes), killing vertical scroll. */
-  .min-h-screen {
-    max-width: 100vw !important;
-  }
-
   /* Direct children of main: constrain width only */
   main > * {
     max-width: 100% !important;
@@ -85,11 +78,6 @@ body {
   [data-tour="calendar"] .mt-4.flex-wrap {
     margin-top: 0.5rem !important;
     gap: 0.5rem !important;
-  }
-
-  /* Kill any element that tries to be wider than the screen */
-  * {
-    max-width: 100vw;
   }
 }
 
@@ -380,20 +368,10 @@ body {
     padding-right: 0.5rem;
   }
 
-  /* Dashboard calendar card: full-bleed AND symmetric on mobile.
-     The card uses -mx-4 to go edge-to-edge, but an earlier max-width:100% rule
-     capped it to the parent width — so it couldn't widen on the right and ended
-     up shifted left (32px gap on the right), which also pulled the "Upcoming
-     Slots" card inside it off-centre. max-width:none lets the negative margins
-     actually reach both viewport edges; even 1rem gutters replace the old
-     padding-left:5% centering hack. `main [data-tour]` outranks the Tailwind
-     -mx-4 / bare [data-tour] rules so these win. */
+  /* Dashboard calendar card: the grid can be wider than its container on very
+     narrow screens, so clip rather than let it push the page sideways. The card
+     itself is centred by the shell container — no negative margins here. */
   main [data-tour="calendar"] {
-    margin-left: -1rem !important;
-    margin-right: -1rem !important;
-    max-width: none !important;
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
     overflow-x: hidden !important;
   }
 }
@@ -437,17 +415,8 @@ body {
 }
 
 /* =============================================================================
-   Mobile-flush cards & Android safe-area fixes
+   Android safe-area fixes
    ============================================================================= */
-
-/* Utility: flush card edges to viewport on mobile */
-.mobile-flush {
-  border-radius: 0 !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  border-left: none !important;
-  border-right: none !important;
-}
 
 /* --- Sidebar safe-area for Android status bar --- */
 @media (max-width: 1023px) {
@@ -487,73 +456,18 @@ body {
 }
 
 /* =============================================================================
-   MOBILE FLUSH CARDS — Comprehensive nuclear overrides for native-app feel
-   Every card-like container in <main> becomes edge-to-edge on mobile.
-   Only targets base Tailwind classes (.rounded-2xl), NOT responsive variants
-   (sm:rounded-2xl) — so pages already using the flush pattern are unaffected.
+   MOBILE DENSITY — spacing and type compaction for small screens
+
+   NOTE: this block used to contain a "flush cards" layer that forced every card
+   in <main> edge-to-edge with `margin: 0 -1rem`, stripped border-radius,
+   shadows and side borders, and neutralised every page's `max-w-* mx-auto`.
+   Those rules stacked with each other (and with hand-rolled -mx-4 in
+   TradieDashboard/SiteCalendar), so cards ended up shifted left with a gutter
+   on the right. Centering is now owned by the single container in
+   DashboardLayout; cards keep their radius, border and shadow on mobile.
+   Only the density rules below remain.
    ============================================================================= */
 @media (max-width: 639px) {
-
-  /* ── 1. Square corners on ALL card containers ────────────────────
-     Excludes interactive / inline elements that also use rounding, and
-     :not(.fixed):not(.fixed *) excludes modals/overlays (a fixed dialog or a
-     card inside a fixed overlay) — those must keep their rounded corners. */
-  main .rounded-2xl:not(button):not(a):not(label):not(input):not(select):not(textarea):not(span):not(.fixed):not(.fixed *),
-  main .rounded-xl:not(button):not(a):not(label):not(input):not(select):not(textarea):not(span):not(.fixed):not(.fixed *) {
-    border-radius: 0 !important;
-  }
-
-  /* ── 2. Remove shadows from card containers ──────────────────── */
-  main .shadow-sm:not(button):not(a),
-  main .shadow:not(button):not(a),
-  main .shadow-md:not(button):not(a),
-  main .shadow-lg:not(button):not(a) {
-    box-shadow: none !important;
-  }
-
-  /* ── 3. Remove side borders from rounded containers ──────────── */
-  main div.rounded-2xl[class*="border"]:not(.fixed):not(.fixed *),
-  main div.rounded-xl[class*="border"]:not(.fixed):not(.fixed *),
-  main section.rounded-2xl[class*="border"]:not(.fixed):not(.fixed *),
-  main section.rounded-xl[class*="border"]:not(.fixed):not(.fixed *) {
-    border-left-width: 0 !important;
-    border-right-width: 0 !important;
-  }
-
-  /* ── 4. Stretch TOP-LEVEL cards to screen edges ──────────────────
-     Negative margins (-1rem) counteract main's px-4 padding.
-     :not(.rounded-2xl *) prevents cards nested INSIDE other cards
-     from double-stretching past the viewport. */
-  main .rounded-2xl:not(button):not(a):not(.rounded-2xl *):not(.fixed):not(.fixed *) {
-    margin-left: -1rem !important;
-    margin-right: -1rem !important;
-  }
-
-  main .rounded-xl:not(button):not(a):not(label):not(input):not(select):not(textarea):not(span):not(.rounded-2xl *):not(.rounded-xl *):not(.fixed):not(.fixed *) {
-    margin-left: -1rem !important;
-    margin-right: -1rem !important;
-  }
-
-  /* ── 5. Max-width wrappers → full width on mobile ──────────── */
-  main [class*="max-w-"][class*="mx-auto"] {
-    max-width: 100% !important;
-  }
-
-  /* ── 6. Targeted overrides for already-flush card patterns ──── */
-  [data-tour="jobs-tab"] > div > div > div[class*="border-b"],
-  [data-tour="jobs-tab"] > div > div > div[class*="rounded-none"] {
-    border-radius: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    border-left-width: 0 !important;
-    border-right-width: 0 !important;
-  }
-
-  main [class*="border-b"][class*="border-x-0"] {
-    border-radius: 0 !important;
-    border-left: none !important;
-    border-right: none !important;
-  }
 
   /* ── 7. Compact vertical spacing between sections ──────────── */
   main .mb-6 { margin-bottom: 0.5rem !important; }
@@ -573,37 +487,6 @@ body {
     padding-bottom: 0.5rem !important;
     margin-top: 0.5rem !important;
     margin-bottom: 0.25rem !important;
-  }
-
-  /* ── 10. Grid / flex children → reset negative margins ─────────
-     Grid and flex containers manage their own item positioning.
-     Children should NOT get the -1rem stretch — only the cosmetic
-     overrides (rounding, shadow, borders) apply.
-     Uses #main-content ID for higher specificity than rule 4. */
-  main#main-content .grid > .rounded-2xl,
-  main#main-content .grid > .rounded-xl,
-  main#main-content .flex > .rounded-2xl:not(:only-child),
-  main#main-content .flex > .rounded-xl:not(:only-child) {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-  }
-
-  /* Also reset for items nested inside already-flush cards */
-  main#main-content .rounded-2xl .grid .rounded-xl,
-  main#main-content .rounded-2xl .grid .rounded-lg,
-  main#main-content .rounded-2xl .flex .rounded-xl,
-  main#main-content .rounded-2xl .grid .rounded-2xl {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-  }
-
-  /* ── 11. Single-column grids on mobile → flush the wrapper ───
-     When a grid collapses to 1 column, push the wrapper flush
-     so its children span the screen width. */
-  main > div > .grid.grid-cols-1:not(.rounded-2xl),
-  main > div > div > .grid.grid-cols-1:not(.rounded-2xl) {
-    margin-left: -1rem !important;
-    margin-right: -1rem !important;
   }
 
   /* ── 12. Force CollapsibleSection headings to center on mobile ──
@@ -705,32 +588,25 @@ body {
     height: 1.25rem !important;
   }
 
-  /* ── 17b. Restore Quick Stats card borders ────────────────────
-     Flush-card rules 1 & 3 strip border-radius and side borders
-     from all rounded containers.  Quick Stats cards need their
-     full primary-200 border and rounded corners intact. */
-  [data-tour="quick-stats"] .grid > .rounded-2xl {
-    border-left-width: 1px !important;
-    border-right-width: 1px !important;
-    border-radius: 0.75rem !important;
-  }
+  /* ── 18. Reduce large text ~10% on mobile ─────────────────────
+     Tailwind's text-* utilities set font-size AND line-height together.
+     Overriding font-size alone left the original leading attached, so every
+     heading gained slack: text-3xl went from a 1.20 ratio to 1.32, text-lg
+     from 1.56 to 1.75. Each step now carries a matching line-height.
 
-  /* ── 18. Reduce Quote Insights numbers on mobile ──────────────
-     Shrink all large/medium text sizes by ~10% so Quote Insights
-     stats and similar numbers fit comfortably on small screens.
-     text-3xl 1.875rem → 1.7rem | text-2xl 1.5rem → 1.35rem
-     text-xl  1.25rem  → 1.125rem | text-lg 1.125rem → 1rem */
+     text-lg is deliberately left alone: shrinking it to 1rem made it identical
+     to text-base and erased that step of the scale on mobile. */
   main .text-3xl {
     font-size: 1.7rem !important;
+    line-height: 2.05rem !important;
   }
   main .text-2xl {
     font-size: 1.35rem !important;
+    line-height: 1.8rem !important;
   }
   main .text-xl {
     font-size: 1.125rem !important;
-  }
-  main .text-lg {
-    font-size: 1rem !important;
+    line-height: 1.575rem !important;
   }
 }
 
@@ -756,14 +632,15 @@ body {
    MOBILE FIXES — Payment truncation & Calendar clipping
    ============================================================================= */
 @media (max-width: 639px) {
-  /* Widen payment job names on mobile — remove inline max-width constraints
-     that cause "Office Clean" → "Office Clea..." truncation */
-  main [class*="max-w-["] {
+  /* Widen payment job names on mobile — release the inline max-width that
+     causes "Office Clean" → "Office Clea..." truncation.
+     Scoped to inline text nodes: a blanket `main [class*="max-w-["]` also hit
+     the shell's max-w-[1600px] container and the toasts' max-w-[calc(100vw-2rem)]
+     clamp, so it is deliberately narrow. */
+  main span[class*="max-w-["],
+  main p[class*="max-w-["] {
     max-width: none !important;
   }
-
-  /* Calendar grid right-edge clipping — now handled by the consolidated
-     padding rule in the toggle/calendar section below */
 }
 
 /* =============================================================================
@@ -832,13 +709,18 @@ body {
    Several pages hide action buttons behind group-hover:opacity-100 which is
    inaccessible on touch devices. Show them at reduced opacity on mobile. */
 @media (pointer: coarse) {
-  /* Notifications delete button */
-  .group .opacity-0.group-hover\:opacity-100 {
+  /* Scoped to button/a/[role=button] for the same reason as section AB below:
+     an unscoped selector also reveals full-bleed image scrims (the `absolute
+     inset-0 bg-black/50` overlays), permanently darkening the images. */
+  .group button.opacity-0.group-hover\:opacity-100,
+  .group a.opacity-0.group-hover\:opacity-100,
+  .group [role="button"].opacity-0.group-hover\:opacity-100 {
     opacity: 0.6 !important;
   }
 
-  /* Team page remove button */
-  .group .opacity-0.group-hover\:opacity-100:hover {
+  .group button.opacity-0.group-hover\:opacity-100:hover,
+  .group a.opacity-0.group-hover\:opacity-100:hover,
+  .group [role="button"].opacity-0.group-hover\:opacity-100:hover {
     opacity: 1 !important;
   }
 }
@@ -884,8 +766,10 @@ body {
     justify-content: flex-end !important;
   }
 
-  /* Team member remove button: always visible on mobile */
-  .divide-y.divide-gray-100 > div .opacity-0.group-hover\:opacity-100 {
+  /* Team member remove button: always visible on mobile.
+     Scoped to controls, consistent with sections A and AB. */
+  .divide-y.divide-gray-100 > div button.opacity-0.group-hover\:opacity-100,
+  .divide-y.divide-gray-100 > div a.opacity-0.group-hover\:opacity-100 {
     opacity: 0.7 !important;
   }
 }
@@ -1068,15 +952,6 @@ body {
   }
 }
 
-/* ── R. Recent reviews section — flush on mobile ──────────────────────────────── */
-@media (max-width: 639px) {
-  /* Reviews section: flush edges */
-  main > div > .bg-white.rounded-none.border-x-0 {
-    margin-left: -1rem !important;
-    margin-right: -1rem !important;
-  }
-}
-
 /* ── S. Messages page — proper mobile layout ──────────────────────────────────── */
 @media (max-width: 639px) {
   /* Ensure message input area doesn't get squished */
@@ -1189,9 +1064,16 @@ body {
 
 /* -- AB. Global -- hover-only buttons visible on touch devices --------------- */
 @media (pointer: coarse) {
-  /* Make opacity-0 group-hover elements always visible on touch devices
-     unless they have already been fixed with sm:opacity-0 pattern */
-  [class*="opacity-0"][class*="group-hover"]:not([class*="sm:opacity-0"]) {
+  /* Reveal hover-only ACTION CONTROLS on touch, where there is no hover.
+
+     Scoped to button/a deliberately. The previous selector matched any element
+     with both classes, which also caught full-bleed image scrims — the
+     `absolute inset-0 bg-black/50` overlay in RequestVariationModal and the
+     `bg-gradient-to-t from-black/70` one on PublicTradieProfile were pinned at
+     0.7 on every phone, permanently darkening the images they sit over. */
+  button[class*="opacity-0"][class*="group-hover"]:not([class*="sm:opacity-0"]),
+  a[class*="opacity-0"][class*="group-hover"]:not([class*="sm:opacity-0"]),
+  [role="button"][class*="opacity-0"][class*="group-hover"]:not([class*="sm:opacity-0"]) {
     opacity: 0.7 !important;
   }
 }
@@ -1210,13 +1092,6 @@ body {
 }
 
 /* -- AD. FAB button prominence -- ensure raised center button stands out ----- */
-@media (max-width: 1023px) {
-  /* The center Post Job button in bottom nav: ensure ring is visible */
-  nav.fixed.bottom-0 .grid.grid-cols-5 a:nth-child(3) > div.rounded-full {
-    box-shadow: 0 -2px 10px rgba(29, 158, 117, 0.3), 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-  }
-}
-minence — ensure raised center button stands out ──────── */
 @media (max-width: 1023px) {
   /* The center Post Job button in bottom nav: ensure ring is visible */
   nav.fixed.bottom-0 .grid.grid-cols-5 a:nth-child(3) > div.rounded-full {
@@ -1313,26 +1188,8 @@ minence — ensure raised center button stands out ──────── */
   }
 }
 
-/* ── AC. Global — hover-only buttons visible on touch devices ───────────────── */
-@media (pointer: coarse) {
-  /* Make opacity-0 group-hover elements always visible on touch devices */
-  [class*="opacity-0"][class*="group-hover"]:not([class*="sm:opacity-0"]) {
-    opacity: 0.7 !important;
-  }
-}
-
-/* ── AD. PaymentHistory — filter inputs full width on mobile ────────────────── */
-@media (max-width: 639px) {
-  /* Filter panel date inputs and selects: full width */
-  main .flex.flex-wrap.items-center.gap-3 > div {
-    width: 100% !important;
-  }
-
-  main .flex.flex-wrap.items-center.gap-3 select,
-  main .flex.flex-wrap.items-center.gap-3 input[type="date"] {
-    width: 100% !important;
-  }
-}
+/* Duplicates of sections AB and AC above were removed here — this block was a
+   verbatim re-paste of the same two rules under colliding letters. */
 
 /* =============================================================================
    AE. Invoice page — force white background on mobile (override any green)
@@ -1350,7 +1207,11 @@ minence — ensure raised center button stands out ──────── */
    AF. Completed jobs table — shrink text and buttons 10% on mobile
    ============================================================================= */
 @media (max-width: 639px) {
-  /* Completed jobs table compact */
-  main details .text-sm { font-size: 0.7rem !important; }
-  main details button { font-size: 0.65rem !important; padding: 0.25rem 0.5rem !important; }
+  /* Was 0.7rem / 0.65rem, which rendered 11.2px — below the 12px legibility
+     floor — and stripped the buttons' padding while the coarse-pointer rule
+     still forced them 44px tall. This selector also hits every <details> in the
+     app (ReviewsList month accordions, AvailabilityCalendar, AdminRecommendations),
+     not just the completed-jobs table, so it stays at a readable size. */
+  main details .text-sm { font-size: 0.8125rem !important; }
+  main details button { font-size: 0.75rem !important; }
 }

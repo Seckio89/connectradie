@@ -158,9 +158,12 @@ interface NavItem {
 
 interface DashboardLayoutProps {
   children: ReactNode;
+  /** Opt into the wide container for data-table pages (Schedule, Messages,
+      Payouts, Admin). Everything else gets the default max-w-5xl. */
+  wide?: boolean;
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, wide = false }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -1087,9 +1090,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         <main id="main-content" className="px-4 py-3 sm:p-6 lg:p-8 flex-1 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-8">
-          <PlatformUpdateBanner />
-          <PageHelpCard />
-          {children}
+          {/* Single centred container for every page in the app shell. Pages no
+              longer set their own max-w/mx-auto — they opt into `wide` instead. */}
+          <div className={`w-full mx-auto ${wide ? 'max-w-[1600px]' : 'max-w-5xl'}`}>
+            <PlatformUpdateBanner />
+            <PageHelpCard />
+            {children}
+          </div>
         </main>
 
         {/* Mobile bottom navigation bar — hidden when sidebar is open */}

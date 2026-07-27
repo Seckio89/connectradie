@@ -40,8 +40,11 @@ export default function Modal({ isOpen, onClose, children, maxWidth = '2xl', clo
         if (closeOnBackdrop && e.target === e.currentTarget) onClose();
       }}
     >
+      {/* On mobile this is a bottom sheet (items-end + rounded-t-2xl), so
+          pb-[env(safe-area-inset-bottom)] keeps the last row — usually the
+          primary buttons — clear of the home indicator on notched phones. */}
       <div
-        className={`bg-white rounded-t-2xl sm:rounded-2xl ${maxWidthClass} w-full max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-xl`}
+        className={`bg-white rounded-t-2xl sm:rounded-2xl ${maxWidthClass} w-full max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-xl pb-[env(safe-area-inset-bottom)] sm:pb-0`}
         style={{
           transform: 'translateZ(0)',
           willChange: 'transform',

@@ -112,8 +112,8 @@ export default function MyTrades() {
   const tradeCategories = [...new Set(savedTradies.map((t) => t.tradie_details?.trade_category))].filter(Boolean);
 
   return (
-    <DashboardLayout>
-      <div className="max-w-[1600px] mx-auto">
+    <DashboardLayout wide>
+      <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">My Trades</h1>
@@ -196,12 +196,12 @@ export default function MyTrades() {
               <Search className="w-8 h-8 text-gray-400" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {savedTradies.length === 0 ? 'No saved tradies yet' : 'No tradies match this filter'}
+              {savedTradies.length === 0 ? 'Build your go-to trade list' : 'No tradies match this filter'}
             </h3>
             <p className="text-gray-500 mb-6 max-w-sm mx-auto">
               {savedTradies.length === 0
-                ? 'Start building your personal trade team by saving your favourite tradies'
-                : 'Try a different filter or add more tradies to your list'}
+                ? 'Save the tradies you rate and they\u2019ll be one tap away next time something needs doing'
+                : 'Try a different filter, or save a few more tradies to your list'}
             </p>
             <Link
               to="/search"

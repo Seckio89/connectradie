@@ -420,7 +420,7 @@ export default function ConversationSettingsModal({
                         >
                           <div>
                             <p className="font-medium text-gray-900">{user.full_name}</p>
-                            <p className="text-sm text-gray-500">{user.email}</p>
+                            <p className="text-sm text-gray-500"><span className="break-words">{user.email}</span></p>
                           </div>
                           <UserPlus className="w-5 h-5 text-primary-600" />
                         </button>

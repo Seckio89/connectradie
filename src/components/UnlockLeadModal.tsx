@@ -53,7 +53,7 @@ export default function UnlockLeadModal({ isOpen, onClose, onUnlock, clientName,
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 modal-sheet-overlay">
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-2xl transform transition-all modal-sheet">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-2xl transform transition-all modal-sheet pb-[env(safe-area-inset-bottom)] sm:pb-0">
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <h3 className="text-xl font-bold text-gray-900">Unlock Lead Details</h3>
           <button

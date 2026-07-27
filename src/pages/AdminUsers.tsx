@@ -422,10 +422,10 @@ export default function AdminUsers() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout wide>
       <SectionErrorBoundary>
       <Breadcrumbs />
-      <div className="max-w-[1600px] mx-auto">
+      <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
@@ -490,7 +490,7 @@ export default function AdminUsers() {
                           <p className="font-semibold text-gray-900">
                             {removal.full_name || 'Unknown User'}
                           </p>
-                          <p className="text-sm text-gray-500">{removal.email}</p>
+                          <p className="text-sm text-gray-500 break-words">{removal.email}</p>
                           <div className="mt-2 space-y-1">
                             <p className="text-sm text-red-600">
                               <span className="font-medium">Reason:</span> {removal.reason}
