@@ -977,11 +977,12 @@ export default function Payouts() {
                   >
                     {instantBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '⚡'} Send {formatCurrency(instantStatus.netCents)} now
                   </button>
-                  {/* The fee is withheld from this transfer, not charged: it stays
-                      in the Stripe balance and leaves on the next standard payout.
-                      Saying "fee" without saying that overstates what it costs. */}
+                  {/* The fee IS charged: Stripe's platform pricing scheme collects
+                      it as an application fee on the instant payout. The tradie
+                      never has to take it — standard payouts remain free — so say
+                      that plainly rather than burying the choice. */}
                   <p className="mt-1.5 text-[11px] text-gray-500">
-                    The {formatCurrency(instantStatus.feeCents)} stays in your balance and goes out with your next standard payout.
+                    Only charged if you choose instant. Waiting costs nothing — standard payouts are always free.
                   </p>
                   {instantError && <p className="mt-1.5 text-xs text-red-600">{instantError}</p>}
                 </div>

@@ -29,6 +29,8 @@ import { hasServiceRole } from "../_shared/serviceAuth.ts";
 import Stripe from "npm:stripe@14.21.0";
 import { resolveTradieTier } from "../_shared/pricing.ts";
 import { resolveChargeFee } from "../_shared/feeContext.ts";
+import { sumEscrowReserveCents } from "../_shared/escrowReserve.ts";
+import type { EscrowRow } from "../_shared/escrowReserve.ts";
 
 // Invoices paid at/after this instant get an automatic BANK PAYOUT (Stripe
 // balance → bank) once their funds settle. Tradie accounts are on MANUAL payouts
@@ -134,13 +136,38 @@ Deno.serve(async (req: Request) => {
       // available balance. Paying them out would release escrow early, so we always
       // hold them back (plus any caller-supplied reserve). This makes the endpoint
       // safe even if invoked with reserveCents=0.
-      const { data: escrowRows } = await supabase
-        .from("payments")
-        .select("amount")
-        .eq("metadata->>tradie_id", tradieId)
-        .eq("metadata->>flow", "destination")
-        .in("status", ["completed", "funded", "paid"]);
-      const escrowReserve = (escrowRows || []).reduce((s, r) => s + (r.amount || 0), 0);
+      //
+      // TWO anchor queries, because payment rows anchor differently depending on
+      // who paid. accept-and-pay and pay-price-increase stamp metadata.tradie_id;
+      // public-quote and invoice-contact serve off-app clients with no profile at
+      // all, so those rows carry NO tradie_id and route via metadata.routing
+      // rather than metadata.flow. The previous single metadata-anchored,
+      // flow-only query matched neither, so escrow for a job funded through a
+      // public quote was reserved as $0 and this endpoint would have paid the
+      // client's money straight out. Shared with instant-payout — see
+      // _shared/escrowReserve.ts.
+      const [jobAnchored, metaAnchored] = await Promise.all([
+        supabase
+          .from("payments")
+          .select("id, amount, metadata, jobs!inner(tradie_id)")
+          .eq("jobs.tradie_id", tradieId)
+          .eq("status", "completed"),
+        supabase
+          .from("payments")
+          .select("id, amount, metadata")
+          .eq("metadata->>tradie_id", tradieId)
+          .eq("status", "completed"),
+      ]);
+      // A failed reserve query must never read as "no escrow held" — that would
+      // pay out client funds. Refuse rather than guess.
+      if (jobAnchored.error || metaAnchored.error) {
+        console.error("balance_release escrow reserve query failed:", jobAnchored.error ?? metaAnchored.error);
+        return errorJson("Could not confirm the escrow reserve — no payout was made.", 503);
+      }
+      const escrowReserve = sumEscrowReserveCents([
+        ...((jobAnchored.data ?? []) as EscrowRow[]),
+        ...((metaAnchored.data ?? []) as EscrowRow[]),
+      ]);
       const reserveCents = callerReserve + escrowReserve;
 
       const bal = await stripe.balance.retrieve({ stripeAccount: prof.stripe_connect_account_id });
