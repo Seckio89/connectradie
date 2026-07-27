@@ -1,6 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
+import { sumEscrowReserveCents } from "../_shared/escrowReserve.ts";
+import type { EscrowRow } from "../_shared/escrowReserve.ts";
+import {
+  classifyInstantFailure,
+  computeInstantPayout,
+  instantFailureMessage,
+  isUnavailableFlagFresh,
+} from "../_shared/instantPayout.ts";
 
 /*
   instant-payout — opt-in Stripe Instant Payout of the tradie's AVAILABLE
@@ -11,13 +19,21 @@ import Stripe from "npm:stripe@14.21.0";
   explicitly asks (per-payout button or "always instant" preference).
 
   Actions (POST { action }):
-    status  -> { eligible, instantAvailable, feeCents, netCents, cardLast4, feeBps, feeMinCents }
+    status  -> { eligible, reason, instantAvailable, feeCents, netCents, minBaseCents,
+                 cardLast4, feeBps, feeMinCents }
+              instantAvailable is the CLEARED balance less escrow; it is only
+              offered once it reaches minBaseCents, so the flat minimum fee can
+              never dominate the payout.
     payout  -> executes the instant payout of the full instant-available balance
     preference { value } -> saves tradie_details.payout_speed_preference
 
   Deploy WITH gateway JWT (caller = the logged-in tradie):
     supabase functions deploy instant-payout
 */
+
+// app_settings row recording whether the platform can do instant payouts at all.
+// Same key/jsonb store that holds training_mode_enabled.
+const INSTANT_STATUS_KEY = "instant_payouts_status";
 
 const ALLOWED_ORIGINS = [
   Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -104,6 +120,22 @@ Deno.serve(async (req: Request) => {
     const feeBps = tier?.instant_payout_bps ?? 150;
     const feeMinCents = tier?.instant_payout_min_cents ?? 200;
 
+    // ── Is the feature working at all? ───────────────────────────────────────
+    // Stripe grants each PLATFORM a daily instant-payout volume limit across all
+    // its connected accounts, and ours has been $0.00 AUD — every attempt fails
+    // no matter whose account it is. There's no API to ask, so we remember the
+    // last failure and stop offering it. The record expires (see
+    // INSTANT_UNAVAILABLE_TTL_MS) so the feature switches itself back on the
+    // moment Stripe raises the limit, with no deploy.
+    const { data: capability } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", INSTANT_STATUS_KEY)
+      .maybeSingle();
+    const capabilityValue = (capability?.value ?? null) as { available?: boolean; checked_at?: string } | null;
+    const platformInstantDown =
+      capabilityValue?.available === false && isUnavailableFlagFresh(capabilityValue?.checked_at, Date.now());
+
     // ── Balance: cleared (available) vs still settling (pending) ──────────────
     // Instant payouts run against AVAILABLE (cleared) funds. `instant_available`
     // can transiently reflect funds that are still pending for standard payouts, so
@@ -117,24 +149,43 @@ Deno.serve(async (req: Request) => {
     const instantAvailableCents = audAmount((balance as { instant_available?: { amount: number; currency: string }[] }).instant_available);
 
     // ── Escrow reserve (CRITICAL) ────────────────────────────────────────────
-    // Escrow in this system IS the manual payout schedule. accept-and-pay uses a
-    // destination charge (transfer_data.destination), so a client's funds land in
-    // THIS tradie's Connect balance at charge time and sit in `available` exactly
-    // like earned money. Paying the raw available balance out would let a tradie
-    // take the client's escrowed funds before doing the work and before the
-    // homeowner approves release — and a later process-refund would then reverse
-    // against an empty balance, pushing the connected account negative and leaving
-    // the platform to cover it.
+    // See _shared/escrowReserve.ts for why this number exists at all.
     //
-    // Same query and reasoning as auto-release-recurring-payouts/index.ts:137-144.
-    // Released payments carry a non-escrow status, so they drop out of the filter.
-    const { data: escrowRows } = await supabase
-      .from("payments")
-      .select("amount")
-      .eq("metadata->>tradie_id", user.id)
-      .eq("metadata->>flow", "destination")
-      .in("status", ["completed", "funded", "paid"]);
-    const escrowReserveCents = (escrowRows || []).reduce((s, r) => s + (r.amount || 0), 0);
+    // TWO anchor queries, because payment rows anchor differently depending on
+    // who paid. accept-and-pay and pay-price-increase stamp metadata.tradie_id;
+    // public-quote and invoice-contact serve off-app clients who have no profile
+    // at all, so those rows carry NO tradie_id and route via metadata.routing
+    // instead of metadata.flow. The old single metadata-anchored, flow-only
+    // query matched neither condition, so a job funded through a public quote
+    // left the client's escrow completely unreserved — and therefore offered up
+    // as instantly payable balance. The job-anchored query is what catches them;
+    // the metadata-anchored one is kept so nothing previously reserved is lost.
+    //
+    // Status: only "completed" is ever written to payments.status for held
+    // escrow — the previous ["completed","funded","paid"] list also carried a
+    // jobs status and a recurring_invoices status, neither of which can match.
+    const [jobAnchored, metaAnchored] = await Promise.all([
+      supabase
+        .from("payments")
+        .select("id, amount, metadata, jobs!inner(tradie_id)")
+        .eq("jobs.tradie_id", user.id)
+        .eq("status", "completed"),
+      supabase
+        .from("payments")
+        .select("id, amount, metadata")
+        .eq("metadata->>tradie_id", user.id)
+        .eq("status", "completed"),
+    ]);
+    // A failed reserve query must never read as "no escrow" — that would pay out
+    // client funds. Refuse instead.
+    if (jobAnchored.error || metaAnchored.error) {
+      console.error("instant-payout escrow reserve query failed:", jobAnchored.error ?? metaAnchored.error);
+      return json({ error: "Could not confirm your available balance. Please try again shortly." }, 503);
+    }
+    const escrowReserveCents = sumEscrowReserveCents([
+      ...((jobAnchored.data ?? []) as EscrowRow[]),
+      ...((metaAnchored.data ?? []) as EscrowRow[]),
+    ]);
 
     // Resolve the external account the instant payout lands on. In AU an
     // instant-capable BANK account is valid (real-time payouts) — a debit card is
@@ -165,22 +216,21 @@ Deno.serve(async (req: Request) => {
     } catch { /* leave instantCapable=false → not eligible */ }
 
     // The instant payout is drawn from cleared AVAILABLE funds, LESS anything
-    // still held in escrow for jobs the homeowner hasn't released.
-    const payoutBaseCents = Math.max(0, availableCents - escrowReserveCents);
-    const feeCents = payoutBaseCents > 0 ? Math.max(feeMinCents, Math.round(payoutBaseCents * feeBps / 10000)) : 0;
-    const netCents = Math.max(0, payoutBaseCents - feeCents);
-    const eligible = instantCapable && payoutBaseCents > 0 && netCents > 0;
-
-    let reason: string | null = null;
-    if (!eligible) {
-      if (!instantCapable) reason = "no_instant_method";
-      // Distinguish "held in escrow" from "no money": telling a tradie who can
-      // see a funded job that they have "no available funds" reads as a bug.
-      else if (payoutBaseCents <= 0 && escrowReserveCents > 0) reason = "escrow_held";
-      else if (payoutBaseCents <= 0 && pendingCents > 0) reason = "funds_pending";
-      else if (payoutBaseCents <= 0) reason = "no_funds";
-      else reason = "below_fee";
-    }
+    // still held in escrow for jobs the homeowner hasn't released. See
+    // _shared/instantPayout.ts for the fee floor and why it exists.
+    const quote = computeInstantPayout({
+      availableCents,
+      pendingCents,
+      escrowReserveCents,
+      feeBps,
+      feeMinCents,
+      instantCapable,
+    });
+    const { payoutBaseCents, feeCents, netCents, minBaseCents } = quote;
+    // A platform outage outranks every per-account reason: there is no point
+    // telling someone to add a debit card for a feature nobody can use.
+    const eligible = quote.eligible && !platformInstantDown;
+    const reason = platformInstantDown ? "instant_unavailable" : quote.reason;
 
     if (body.action === "status") {
       return json({
@@ -193,6 +243,7 @@ Deno.serve(async (req: Request) => {
         escrowReserveCents,
         feeCents,
         netCents,
+        minBaseCents,
         feeBps,
         feeMinCents,
         cardLast4,
@@ -203,12 +254,16 @@ Deno.serve(async (req: Request) => {
     if (body.action === "payout") {
       if (!eligible) {
         const msg =
-          reason === "escrow_held"
+          reason === "instant_unavailable"
+            ? instantFailureMessage("platform")
+            : reason === "escrow_held"
             ? "Your available balance is held in escrow for jobs the client hasn't released yet. It becomes payable once the job is approved."
             : reason === "funds_pending"
             ? "Your funds are still clearing. Instant payout will be available once they land — usually the next business day."
             : reason === "no_instant_method"
             ? "This payout account can't receive instant payouts. Add an instant-eligible debit card or bank account in Bank Settings."
+            : reason === "below_minimum"
+            ? `Instant payout is available from $${(minBaseCents / 100).toFixed(2)}. Below that the $${(feeMinCents / 100).toFixed(2)} minimum fee takes too much of it — your balance is on its way free of charge.`
             : reason === "below_fee"
             ? "Your available balance is too small to cover the instant payout fee."
             : "You have no available funds to pay out right now.";
@@ -219,28 +274,87 @@ Deno.serve(async (req: Request) => {
       // The fee remainder stays in the Stripe balance and follows the normal (free)
       // payout schedule — the tradie is never short-changed; the disclosed net is
       // exactly what arrives now.
-      const payout = await stripe.payouts.create(
-        {
-          amount: netCents,
-          currency: "aud",
-          method: "instant",
-          ...(destinationId ? { destination: destinationId } : {}),
-          metadata: {
-            tradie_id: user.id,
-            instant_fee_cents: String(feeCents),
-            fee_bps: String(feeBps),
+      let payout: Stripe.Payout;
+      try {
+        payout = await stripe.payouts.create(
+          {
+            amount: netCents,
+            currency: "aud",
+            method: "instant",
+            ...(destinationId ? { destination: destinationId } : {}),
+            metadata: {
+              tradie_id: user.id,
+              instant_fee_cents: String(feeCents),
+              fee_bps: String(feeBps),
+            },
           },
-        },
-        {
-          stripeAccount: acct,
-          // Idempotency guards the concurrent-request race (two taps before the
-          // first settles): both would see instant_available > 0 and could each
-          // create a payout. A per-user+amount+minute key makes Stripe return the
-          // first payout instead of paying twice. (Retry-after-success is already
-          // blocked separately — the balance drops to 0 and eligibility fails.)
-          idempotencyKey: `instant-payout:${user.id}:${netCents}:${Math.floor(Date.now() / 60000)}`,
-        },
-      );
+          {
+            stripeAccount: acct,
+            // Idempotency guards the concurrent-request race (two taps before the
+            // first settles): both would see instant_available > 0 and could each
+            // create a payout. A per-user+amount+minute key makes Stripe return the
+            // first payout instead of paying twice. (Retry-after-success is already
+            // blocked separately — the balance drops to 0 and eligibility fails.)
+            idempotencyKey: `instant-payout:${user.id}:${netCents}:${Math.floor(Date.now() / 60000)}`,
+          },
+        );
+      } catch (payoutErr) {
+        const code = (payoutErr as { raw?: { code?: string }; code?: string })?.raw?.code ??
+          (payoutErr as { code?: string })?.code ?? null;
+        const scope = classifyInstantFailure(code);
+        const rawMessage = (payoutErr as { raw?: { message?: string } })?.raw?.message ?? null;
+        console.error("instant-payout create failed:", JSON.stringify({ code, scope, rawMessage }));
+
+        // Unknown failures keep the old behaviour — Stripe's own message is
+        // usually written for the account holder and is what made these
+        // debuggable in the first place.
+        if (scope === "unknown") {
+          return json({ error: rawMessage || instantFailureMessage("unknown"), reason: "payout_failed" }, 500);
+        }
+
+        if (scope === "platform") {
+          // Remember it so nobody else is offered a button that cannot work.
+          // Service role, so RLS (admin-only writes) doesn't apply.
+          await supabase
+            .from("app_settings")
+            .upsert(
+              {
+                key: INSTANT_STATUS_KEY,
+                value: {
+                  available: false,
+                  code,
+                  detail: rawMessage,
+                  checked_at: new Date().toISOString(),
+                },
+              },
+              { onConflict: "key" },
+            )
+            .then(
+              () => {},
+              (e: unknown) => console.error("Could not record instant payout status:", e),
+            );
+
+          // The tradie can't fix a platform entitlement — we can. Tell the team.
+          try {
+            const { data: admins } = await supabase.from("profiles").select("id").eq("role", "admin");
+            for (const a of admins ?? []) {
+              await supabase.from("notifications").insert({
+                user_id: a.id,
+                type: "instant_payout_unavailable",
+                title: "Instant payouts are failing",
+                message:
+                  `Stripe rejected an instant payout platform-wide (${code}). ` +
+                  `Instant payouts are now hidden from tradies until this clears. ` +
+                  `Ask Stripe to raise the AUD Instant Payouts limit for the platform.`,
+                read: false,
+                metadata: { code, detail: rawMessage, tradie_id: user.id },
+              });
+            }
+          } catch (e) { console.error("Failed to alert admins:", e); }
+        }
+
+        return json({ error: instantFailureMessage(scope), reason: "instant_unavailable" }, 400);
+      }
 
       // Notify: money on its way in minutes.
       const dollars = (netCents / 100).toFixed(2);
