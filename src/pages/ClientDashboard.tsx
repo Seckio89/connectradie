@@ -882,8 +882,8 @@ export default function ClientDashboard() {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-3 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-3 min-w-0 space-y-8">
             {/* My Recent Jobs */}
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -898,45 +898,53 @@ export default function ClientDashboard() {
                 </div>
               </div>
 
-              {/* Job tabs */}
-              <div className="flex items-center gap-1 mb-4 overflow-x-auto -mx-1 px-1 flex-nowrap" style={{ WebkitOverflowScrolling: 'touch' }}>
-                {([
-                  { key: 'active' as const, label: 'Active', count: recentJobs.filter(j => !j.archived_at && j.status === 'pending').length },
-                  { key: 'accepted' as const, label: 'Accepted', count: recentJobs.filter(j => !j.archived_at && !recurringJobIds.has(j.id) && ((j.status !== null && ['accepted', 'funded', 'in_progress'].includes(j.status)) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))).length },
-                  { key: 'completed' as const, label: 'Completed', count: recentJobs.filter(j => !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)).length },
-                ]).map(tab => {
-                  const isActive = jobTab === tab.key;
-                  // Amber underbar on the Accepted tab when there are active jobs sitting
-                  // in it — visual nudge so the client doesn't forget about a paid job
-                  // they need to release or review.
-                  const needsAttention = tab.key === 'accepted' && tab.count > 0;
-                  return (
+              {/* Job tabs — underline style, matching the client My Jobs page (/leads)
+                  and every other tab strip in the app. */}
+              <div className="overflow-x-auto -mx-1 px-1 border-b border-gray-200 mb-4 scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <div className="flex items-center gap-3 sm:gap-6 flex-nowrap">
+                  {([
+                    { key: 'active' as const, label: 'Active', count: recentJobs.filter(j => !j.archived_at && j.status === 'pending').length },
+                    { key: 'accepted' as const, label: 'Accepted', count: recentJobs.filter(j => !j.archived_at && !recurringJobIds.has(j.id) && ((j.status !== null && ['accepted', 'funded', 'in_progress'].includes(j.status)) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))).length },
+                    { key: 'completed' as const, label: 'Completed', count: recentJobs.filter(j => !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)).length },
+                  ]).map(tab => {
+                    // Archived is a peer tab, so a tab is only current when we aren't
+                    // showing the archive — otherwise Active and Archived both highlight.
+                    const isActive = jobTab === tab.key && !showArchived;
+                    // Amber underline on the Accepted tab when there are active jobs
+                    // sitting in it — visual nudge so the client doesn't forget about a
+                    // paid job they need to release or review. The active warm underline
+                    // takes precedence once the tab is selected.
+                    const needsAttention = tab.key === 'accepted' && tab.count > 0;
+                    return (
+                      <button
+                        key={tab.key}
+                        onClick={() => { setJobTab(tab.key); setShowArchived(false); }}
+                        className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                          isActive
+                            ? 'border-warm-500 text-warm-600'
+                            : needsAttention
+                              ? 'border-amber-300 text-gray-400 hover:text-gray-600'
+                              : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                        }`}
+                      >
+                        {tab.label} {tab.count > 0 && `(${tab.count})`}
+                      </button>
+                    );
+                  })}
+                  {recentJobs.some(j => j.archived_at) && (
                     <button
-                      key={tab.key}
-                      onClick={() => { setJobTab(tab.key); setShowArchived(false); }}
-                      className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
-                        isActive
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                      } ${needsAttention ? 'shadow-[inset_0_-3px_0_0_#fde68a]' : ''}`}
+                      onClick={() => { setShowArchived(!showArchived); setJobTab('active'); }}
+                      className={`inline-flex items-center gap-1.5 pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                        showArchived
+                          ? 'border-warm-500 text-warm-600'
+                          : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                      }`}
                     >
-                      {tab.label} {tab.count > 0 && `(${tab.count})`}
+                      <Archive className="w-3.5 h-3.5" />
+                      Archived ({recentJobs.filter(j => j.archived_at).length})
                     </button>
-                  );
-                })}
-                {recentJobs.some(j => j.archived_at) && (
-                  <button
-                    onClick={() => { setShowArchived(!showArchived); setJobTab('active'); }}
-                    className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
-                      showArchived
-                        ? 'bg-warm-50 text-warm-700 border border-warm-200'
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Archive className="w-3.5 h-3.5" />
-                    Archived ({recentJobs.filter(j => j.archived_at).length})
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
 
               {recentJobs.filter(j => showArchived
@@ -962,7 +970,7 @@ export default function ClientDashboard() {
                   <p className="text-gray-600 mb-6 max-w-lg">
                     Post a job to get quotes from verified tradies, or browse and save tradies you like.
                   </p>
-                  <div className="grid sm:grid-cols-2 gap-4 mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                     <Link
                       to="/post-lead"
                       data-tour="post-job"
@@ -2126,7 +2134,7 @@ export default function ClientDashboard() {
                     <ListSkeleton rows={4} />
                   </div>
                 ) : (
-                  <div className="grid md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {savedTradies.map((tradie) => (
                       <TradieCard
                         key={tradie.id}
@@ -2146,7 +2154,7 @@ export default function ClientDashboard() {
 
             {/* Three-up summary row — pulled out of the sidebar so the boxes
                 aren't buried below the fold on tall screens. */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* This Week — personal upcoming-events feed (replaced the old
                   global Platform Activity widget). */}
               <SectionErrorBoundary fallbackTitle="Timeline failed to load">
@@ -2160,7 +2168,7 @@ export default function ClientDashboard() {
             </div>
           </div>
 
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 min-w-0 space-y-6">
             {trainingModeEnabled && (
               <button
                 onClick={() => setShowSubscriptionModal(true)}

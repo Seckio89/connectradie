@@ -43,7 +43,7 @@ export function ListSkeleton({ rows = 5 }: { rows?: number }) {
 
 export function GridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {Array.from({ length: count }).map((_, i) => (
         <CardSkeleton key={i} />
       ))}
@@ -53,7 +53,7 @@ export function GridSkeleton({ count = 6 }: { count?: number }) {
 
 export function DashboardStatsSkeleton() {
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="bg-white rounded-2xl border border-gray-200 p-6">
           <div className="flex items-center gap-4">

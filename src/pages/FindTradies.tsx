@@ -349,7 +349,7 @@ export default function FindTradies() {
           </div>
         </section>
 
-        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Left column — tradie list + cost guide + FAQs */}
           <div className="lg:col-span-2 space-y-6">
             {/* Tradie list */}
@@ -402,7 +402,7 @@ export default function FindTradies() {
               <h2 className="text-xl font-bold text-gray-900 mb-4">
                 What {tradeLabelPlural.toLowerCase()} in {suburb.name} typically do
               </h2>
-              <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2.5">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
                 {content.whatTheyDo.map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />

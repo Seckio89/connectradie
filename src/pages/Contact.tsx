@@ -73,7 +73,7 @@ export default function Contact() {
           Have a question or need help? We'd love to hear from you.
         </p>
 
-        <div className="grid md:grid-cols-5 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
           <div className="md:col-span-3">
             {submitted ? (
               <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">

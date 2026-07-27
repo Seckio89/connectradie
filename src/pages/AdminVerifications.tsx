@@ -387,7 +387,7 @@ export default function AdminVerifications() {
                     {isExpanded && (
                       <div className="px-5 pb-5">
                         <div className="bg-gray-50 rounded-xl p-5 space-y-4">
-                          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div className="bg-white rounded-lg p-3 border border-gray-200">
                               <div className="flex items-center gap-2 mb-1">
                                 <FileText className="w-4 h-4 text-gray-400" />

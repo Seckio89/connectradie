@@ -353,7 +353,7 @@ export default function VerificationCenter() {
           <p className="text-green-700">
             Your identity and credentials have been verified. You can accept all jobs including urgent leads.
           </p>
-          <div className="mt-6 grid sm:grid-cols-3 gap-3">
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="p-3 bg-white rounded-xl border border-green-200">
               <FileText className="w-5 h-5 text-green-600 mb-1" />
               <p className="text-sm font-medium text-green-800">ABN: {profile?.abn_number}</p>
@@ -592,7 +592,7 @@ export default function VerificationCenter() {
             </div>
           </div>
           <div className="p-5 space-y-4">
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">License Number</label>
                 <div className="relative">

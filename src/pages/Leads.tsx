@@ -2178,7 +2178,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             <p className="text-gray-600 text-sm mb-5 max-w-sm mx-auto">
               New jobs are posted every day. While you wait, here are some things you can do to get more leads:
             </p>
-            <div className="grid sm:grid-cols-3 gap-3 max-w-lg mx-auto mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto mb-6">
               <Link to="/settings" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gray-50 hover:bg-primary-50 border border-gray-200 hover:border-primary-200 transition-all text-center">
                 <User className="w-5 h-5 text-primary-600" />
                 <span className="text-xs font-medium text-gray-700">Complete profile</span>

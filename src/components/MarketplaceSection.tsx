@@ -30,7 +30,7 @@ export default function MarketplaceSection() {
   return (
     <section id="marketplace" className="py-20 lg:py-28 bg-navy-900 border-t border-navy-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           <div>
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-navy-800 text-gray-300 border border-navy-700 rounded-full text-sm font-semibold mb-6">
               <Handshake className="w-4 h-4 text-warm-400" />

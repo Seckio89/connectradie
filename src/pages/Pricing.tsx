@@ -194,7 +194,7 @@ export default function Pricing() {
         </p>
 
         {/* Tier cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
           {tiers.map((t) => {
             const popular = t.id === 'pro';
             return (
@@ -403,7 +403,7 @@ export default function Pricing() {
         </div>
 
         {/* The promise */}
-        <div className="max-w-3xl mx-auto grid sm:grid-cols-3 gap-4 mb-14">
+        <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4 mb-14">
           <div className="bg-gray-50 rounded-xl border border-gray-200 p-5 text-center">
             <Percent className="w-6 h-6 text-warm-500 mx-auto mb-2" />
             <h3 className="font-semibold text-gray-900 mb-1 text-sm">One fee, capped</h3>
