@@ -1955,6 +1955,11 @@ export default function TradieDashboard() {
                   const hours = Array.from({ length: 15 }, (_, i) => i + 6);
                   return (
                     <div>
+                      {/* The grid is 480px wide against ~328px of usable width on
+                          a 360px phone, and mobile scrollbars are invisible at
+                          rest, so Thu-Sun were unreachable-looking. The fade marks
+                          the cut edge as scrollable. */}
+                      <div className="relative">
                       <div className="overflow-x-auto overflow-y-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
                         <div className="min-w-[480px]">
                           <div className="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[80px_repeat(7,1fr)] border border-gray-200 rounded-t-xl overflow-hidden">
@@ -1998,6 +2003,8 @@ export default function TradieDashboard() {
                             })}
                           </div>
                         </div>
+                      </div>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent sm:hidden" />
                       </div>
                       <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-gray-700">
                         <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded flex-shrink-0" /><span className="font-medium">Available</span></div>
@@ -2155,7 +2162,7 @@ export default function TradieDashboard() {
           {/* Compact one-row stat strip: small icon on top, prominent number,
               tiny label. One subtle background, no per-card borders — the whole
               section stays ~100px instead of four stacked full-width cards. */}
-          <div className="grid grid-cols-4 gap-2 bg-gray-50 rounded-xl px-2 py-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-gray-50 rounded-xl px-2 py-3">
             <div className="flex flex-col items-center gap-1 text-center p-1">
               <Clock className="w-5 h-5 text-primary-500" />
               <p className="text-2xl sm:text-[28px] font-bold text-navy-900 leading-tight tabular-nums">{totalAvailableHours.toFixed(0)}</p>
@@ -2189,7 +2196,7 @@ export default function TradieDashboard() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900">Earnings Summary</h3>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4" data-earnings-grid>
             <div className="bg-secondary-50 rounded-xl p-2 sm:p-4 text-center">
               <Calendar className="w-5 h-5 text-secondary-600 mx-auto mb-1" />
               {earnings.thisMonth > 0 ? (

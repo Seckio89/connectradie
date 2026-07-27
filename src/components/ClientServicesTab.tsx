@@ -258,7 +258,7 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2" data-supplies-grid>
               <div>
                 <label className="block text-[10px] font-medium text-emerald-700 uppercase tracking-wide mb-1">Supplied By</label>
                 <select
