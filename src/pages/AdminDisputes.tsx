@@ -12,10 +12,12 @@ import {
   Loader2,
   ExternalLink,
   Sparkles,
+  Scale,
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import Breadcrumbs from '../components/Breadcrumbs';
 import { supabase } from '../lib/supabase';
+import { callEdgeFunction } from '../lib/edgeFn';
 import { friendlyError } from '../lib/utils';
 import type { Update } from '../types/database';
 import { useAuth } from '../contexts/AuthContext';
@@ -140,6 +142,12 @@ type FilterTab = (typeof FILTER_TABS)[number]['key'];
  *  flow cannot sit in the queue with no tab that shows them. */
 const IN_REVIEW_STATUSES = ['under_review', 'direct_resolution', 'platform_review'];
 
+/** Cents → "$1,234.56". Local rather than shared: the codebase has no cents
+ *  formatter, and inventing a global one is not this ticket. */
+function formatAud(cents: number): string {
+  return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(cents / 100);
+}
+
 /** Days until a deadline, or null when none is set. Nothing populates the
  *  deadline columns yet, so this renders for no one today — it is written to
  *  stay silent rather than show a fake countdown. */
@@ -181,6 +189,10 @@ export default function AdminDisputes() {
   const [updating, setUpdating] = useState<string | null>(null);
   const [summaries, setSummaries] = useState<Record<string, SummaryRecord>>({});
   const [decisionError, setDecisionError] = useState<Record<string, string>>({});
+  /** job_id → refundable total in cents, for jobs whose escrow can still be split. */
+  const [splittable, setSplittable] = useState<Record<string, number>>({});
+  /** dispute_id → the dollar amount the officer typed for the client's share. */
+  const [splitAmount, setSplitAmount] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchDisputes();
@@ -213,7 +225,7 @@ export default function AdminDisputes() {
       const jobIds = [...new Set(disputesData.map((d) => d.job_id))];
       const disputeIds = disputesData.map((d) => d.id);
 
-      const [profilesRes, jobsRes, summariesRes] = await Promise.all([
+      const [profilesRes, jobsRes, summariesRes, paymentsRes] = await Promise.all([
         supabase.from('profiles').select('id, full_name').in('id', allUserIds),
         supabase.from('jobs').select('id, description').in('id', jobIds),
         supabase
@@ -221,6 +233,15 @@ export default function AdminDisputes() {
           .select('dispute_id, summary, model, created_at')
           .in('dispute_id', disputeIds)
           .order('created_at', { ascending: false }),
+        // A split is only possible while the money is still in the tradie's
+        // Stripe balance — status 'completed', not yet paid out. Same filter the
+        // edge function applies, so the control never offers what it can't do.
+        supabase
+          .from('payments')
+          .select('job_id, amount, processing_fee, metadata')
+          .in('job_id', jobIds)
+          .eq('payment_type', 'job_funding')
+          .eq('status', 'completed'),
       ]);
 
       // Newest summary per dispute. The table is append-only and a forced
@@ -235,6 +256,20 @@ export default function AdminDisputes() {
         };
       }
       setSummaries(nextSummaries);
+
+      // Refundable total mirrors process-refund: base + GST + processing fee.
+      // Legacy custodial payments are excluded — the edge function refuses them,
+      // so offering the control would be a dead end.
+      const nextSplittable: Record<string, number> = {};
+      for (const row of paymentsRes.data || []) {
+        // job_id is nullable on payments — recurring-invoice rows carry none.
+        if (!row.job_id) continue;
+        const m = (row.metadata ?? {}) as { flow?: string; gst?: string | number };
+        if (m.flow !== 'destination') continue;
+        const gst = Number(m.gst ?? 0) || 0;
+        nextSplittable[row.job_id] = (row.amount || 0) + gst + (row.processing_fee || 0);
+      }
+      setSplittable(nextSplittable);
 
       const profileMap = new Map(
         (profilesRes.data || []).map((p) => [p.id, p.full_name])
@@ -341,6 +376,68 @@ export default function AdminDisputes() {
           : d
       )
     );
+    setUpdating(null);
+  };
+
+  /* A split moves money, so it goes through the edge function — NOT the
+     resolve_dispute RPC directly. The function refunds the client's share
+     first, pays the tradie the remainder, and only then resolves the dispute.
+     Resolving first would clear blocks_release and let the auto-release cron
+     pay out the FULL amount before the split had finished. */
+  const recordSplit = async (dispute: Dispute) => {
+    if (!user) return;
+    const reasoning = (adminNotes[dispute.id] || '').trim();
+    if (!reasoning) {
+      setDecisionError((prev) => ({ ...prev, [dispute.id]: 'Write the reason for this decision first.' }));
+      return;
+    }
+
+    const total = splittable[dispute.job_id];
+    const dollars = Number((splitAmount[dispute.id] || '').trim());
+    if (!Number.isFinite(dollars) || dollars <= 0) {
+      setDecisionError((prev) => ({ ...prev, [dispute.id]: 'Enter the amount to return to the client.' }));
+      return;
+    }
+    const cents = Math.round(dollars * 100);
+    if (total != null && cents >= total) {
+      setDecisionError((prev) => ({
+        ...prev,
+        [dispute.id]: `That is the whole payment. Use "Resolve for Client" for a full refund, or enter less than ${formatAud(total)}.`,
+      }));
+      return;
+    }
+
+    setDecisionError((prev) => ({ ...prev, [dispute.id]: '' }));
+    setUpdating(dispute.id);
+
+    const suggestion = summaries[dispute.id]?.summary?.suggested_outcome ?? null;
+    try {
+      const res = await callEdgeFunction<{ warning?: string }>('resolve-dispute-split', {
+        disputeId: dispute.id,
+        refundCents: cents,
+        reasoning,
+        aiSuggestion: suggestion,
+        overridden: suggestion?.outcome != null && suggestion.outcome !== 'resolved_split',
+      });
+
+      setDisputes((prev) =>
+        prev.map((d) =>
+          d.id === dispute.id
+            ? { ...d, status: 'resolved_split', resolution: reasoning, resolved_by: user.id, resolved_at: new Date().toISOString() }
+            : d
+        )
+      );
+      // A partial payout failure still counts as resolved — the client has been
+      // refunded — but the admin needs to know the tradie's share is stranded.
+      if (res?.warning) {
+        setDecisionError((prev) => ({ ...prev, [dispute.id]: res.warning as string }));
+      }
+    } catch (err) {
+      setDecisionError((prev) => ({
+        ...prev,
+        [dispute.id]: friendlyError(err, 'Could not split this payment. Please try again.'),
+      }));
+    }
     setUpdating(null);
   };
 
@@ -780,14 +877,60 @@ export default function AdminDisputes() {
                             </button>
                           </div>
 
-                          {/* No "Split the funds" button on purpose. `resolved_split` is a
-                              valid status and the RPC accepts it, but nothing implements a
-                              partial payout yet — offering it here would set a status that
-                              says the money was divided when none of it moved. It arrives
-                              with Phase 5. */}
+                          {/* Split. Shown only where the money is still in the tradie's
+                              Stripe balance (a completed job_funding destination charge) —
+                              the same filter the edge function applies, so the control
+                              never offers something it cannot carry out. */}
+                          {splittable[dispute.job_id] != null && (
+                            <div className="mt-4 pt-4 border-t border-gray-100">
+                              <h5 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                                Or split the payment
+                              </h5>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    inputMode="decimal"
+                                    value={splitAmount[dispute.id] || ''}
+                                    onChange={(e) => {
+                                      setSplitAmount((prev) => ({ ...prev, [dispute.id]: e.target.value }));
+                                      if (decisionError[dispute.id]) {
+                                        setDecisionError((prev) => ({ ...prev, [dispute.id]: '' }));
+                                      }
+                                    }}
+                                    placeholder="0.00"
+                                    aria-label="Amount to return to the client"
+                                    className="w-36 pl-7 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => recordSplit(dispute)}
+                                  disabled={blocked}
+                                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+                                >
+                                  {busy ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Scale className="w-4 h-4" />
+                                  )}
+                                  Return this to the client
+                                </button>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-2">
+                                {formatAud(splittable[dispute.job_id])} is held for this job. The client is
+                                refunded the amount above and the tradie is paid the rest, less our fee on
+                                their share only. This moves money immediately and cannot be undone here.
+                              </p>
+                            </div>
+                          )}
+
                           <p className="text-xs text-gray-500 mt-3">
-                            Resolving unfreezes this job&apos;s payout. It does not itself move money —
-                            a released payment is still clawed back from Admin → Payments.
+                            Resolving unfreezes this job&apos;s payout. Other than a split, it does not
+                            itself move money — a released payment is still clawed back from
+                            Admin → Payments.
                           </p>
                         </div>
                         );
