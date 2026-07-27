@@ -223,7 +223,7 @@ export default function JobTracking() {
 
           {latest ? (
             <>
-              <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-center">
                 <div className="rounded-xl bg-gray-50 p-3">
                   <p className="text-[11px] text-gray-500 uppercase tracking-wide">Check-in</p>
                   <p className="text-base font-bold text-gray-900 mt-0.5 tabular-nums">{formatTime(latest.arrivedAt)}</p>

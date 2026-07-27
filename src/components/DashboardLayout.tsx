@@ -738,7 +738,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                             <Link
                               key={child.name}
                               to={child.href}
-                              className={`flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors min-h-[36px] ${
+                              className={`flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors min-h-[44px] lg:min-h-[36px] ${
                                 isChildActive
                                   ? 'bg-warm-500/15 text-warm-400'
                                   : 'text-navy-400 hover:bg-navy-800 hover:text-white'

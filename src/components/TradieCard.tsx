@@ -114,7 +114,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
           {onSave && (
             <button
               onClick={() => onSave(tradie)}
-              className={`p-2 rounded-xl transition-all min-w-[36px] min-h-[36px] flex items-center justify-center ${
+              className={`p-2 rounded-xl transition-all min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center ${
                 isSaved
                   ? 'bg-primary-50 text-primary-600 ring-1 ring-primary-200'
                   : 'bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600'

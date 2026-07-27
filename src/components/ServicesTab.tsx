@@ -1115,17 +1115,17 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
                     </td>
                     <td className="px-2 py-2.5">
                       {item.stock_level != null ? (
-                        <div className="flex items-center justify-center gap-1">
+                        <div className="flex items-center justify-center gap-2 sm:gap-1">
                           <button
                             onClick={() => handleUpdateStock(item.id, Math.max(0, (item.stock_level ?? 0) - 1))}
-                            className="w-8 h-8 sm:w-6 sm:h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center transition-colors min-w-[32px] min-h-[32px]"
+                            className="w-11 h-11 sm:w-6 sm:h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center transition-colors min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px]"
                           >−</button>
                           <span className={`text-xs font-bold min-w-[24px] text-center ${isLow ? 'text-amber-700' : 'text-gray-800'}`}>
                             {item.stock_level}
                           </span>
                           <button
                             onClick={() => handleUpdateStock(item.id, (item.stock_level ?? 0) + 1)}
-                            className="w-8 h-8 sm:w-6 sm:h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center transition-colors min-w-[32px] min-h-[32px]"
+                            className="w-11 h-11 sm:w-6 sm:h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center transition-colors min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px]"
                           >+</button>
                         </div>
                       ) : (

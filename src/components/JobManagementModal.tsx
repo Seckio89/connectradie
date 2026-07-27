@@ -1232,7 +1232,7 @@ export default function JobManagementModal({
                     </div>
 
                     {completionPhotos.length > 0 && (
-                      <div className="grid grid-cols-5 gap-1.5 mb-3">
+                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 mb-3">
                         {completionPhotos.map((photo, i) => (
                           <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
                             <img src={photo.preview} alt="" className="w-full h-full object-cover" />

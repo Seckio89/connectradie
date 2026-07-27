@@ -1390,7 +1390,7 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
     <div className="space-y-3">
       {/* Summary Banner */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="grid grid-cols-3 gap-3 text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-center">
           <div>
             <p className="text-xs text-gray-500 mb-0.5">Approved</p>
             <p className="text-sm font-bold text-green-700">
