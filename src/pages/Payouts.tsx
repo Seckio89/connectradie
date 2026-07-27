@@ -283,10 +283,18 @@ export default function Payouts() {
           }
           const isCancelledRecurring = recurringStatus === 'cancelled' || recurringStatus === 'ended';
 
+          // A dispute split refunds part of this payment to the client, so
+          // `amount` stops being what the tradie received. Show the net, or the
+          // list and the week/month totals derived from it overstate earnings by
+          // the refunded portion. The escrow-held figures above need no such
+          // adjustment: they filter status='completed' and a split is
+          // 'released', so it drops out of them entirely.
+          const splitRefund = Number(meta?.split_refund_cents ?? 0) || 0;
+
           return {
             id: p.id,
             job_id: p.job_id ?? '',
-            amount: p.amount,
+            amount: p.amount - splitRefund,
             status: p.status,
             created_at: p.created_at,
             metadata: meta,

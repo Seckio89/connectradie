@@ -1509,8 +1509,13 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
                 onError={(msg) => showToast(msg, true)}
               />
               {/* Only offered where a dispute is actually possible: a real job with
-                  an assigned tradie. Recurring-invoice rows have neither. */}
-              {payment.job_id && payment.jobs?.tradie_id && (
+                  an assigned tradie, paid into escrow. Recurring-invoice rows have
+                  no job or tradie; `job_funding` is what makes it escrow — a
+                  destination charge (create-job-payment-checkout) sends the money
+                  straight to the tradie, so there is nothing for us to hold and
+                  nothing a dispute could freeze. The database enforces the same
+                  rule, so this only saves the user hitting the error. */}
+              {payment.job_id && payment.jobs?.tradie_id && payment.payment_type === 'job_funding' && (
                 <DisputeSection
                   jobId={payment.job_id}
                   againstUser={payment.jobs.tradie_id}
@@ -1682,6 +1687,13 @@ async function raiseDispute(
     // client's point of view: their concern is already with the team.
     if ((error as { code?: string }).code === '23505') {
       return { ok: false, message: 'You already have an open dispute for this job. Our team is reviewing it.' };
+    }
+    // 23514 = the escrow-required trigger. Its message is written for the user,
+    // so pass it through rather than replacing it with something vaguer. This
+    // is reachable even though the button is hidden for non-escrow payments —
+    // the refund path escalates automatically and does not check first.
+    if ((error as { code?: string }).code === '23514') {
+      return { ok: false, message: (error as { message?: string }).message || 'Disputes are only available on jobs paid through ConnecTradie.' };
     }
     return { ok: false, message: friendlyError(error, 'Could not raise the dispute. Please try again.') };
   }
