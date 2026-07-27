@@ -58,7 +58,7 @@ export default function HowItWorksSection() {
         <div className="relative">
           <div className="hidden lg:block absolute top-[52px] left-[12.5%] right-[12.5%] border-t-2 border-dashed border-navy-700" />
 
-          <div className="grid lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {tradieSteps.map((step, index) => {
               const Icon = step.icon;
               const colors = colorClasses[step.color as keyof typeof colorClasses];

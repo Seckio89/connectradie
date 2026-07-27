@@ -357,7 +357,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
               <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <button

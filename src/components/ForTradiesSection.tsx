@@ -45,7 +45,7 @@ export default function ForTradiesSection() {
           </p>
         </div>
 
-        <div className="mt-12 grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+        <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
           <div>
             <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Common problems we solve</p>
             <div className="space-y-3">

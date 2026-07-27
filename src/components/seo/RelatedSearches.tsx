@@ -43,7 +43,7 @@ export default function RelatedSearches({
     .filter((n): n is { slug: string; suburb: NonNullable<ReturnType<typeof getSuburb>> } => !!n.suburb);
 
   return (
-    <section className="grid md:grid-cols-2 gap-6">
+    <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Same trade, nearby suburbs */}
       {neighbours.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-200 p-6">

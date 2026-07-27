@@ -364,7 +364,7 @@ export default function PerformanceInsights() {
             <BarChart3 className="w-5 h-5 text-gray-500" />
             <h2 className="text-lg font-bold text-white">Health Check</h2>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <HealthCard
               icon={Target}
               label="Quote Win Rate"
@@ -445,7 +445,7 @@ export default function PerformanceInsights() {
             <h2 className="text-lg font-bold text-white">Strengths & Focus Areas</h2>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-navy-800 rounded-2xl border border-navy-700 p-6">
               <div className="flex items-center gap-2 mb-5">
                 <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">

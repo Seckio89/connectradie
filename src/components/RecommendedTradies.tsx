@@ -182,7 +182,7 @@ export default function RecommendedTradies() {
     }
   };
 
-  const headerLabel = profile?.postcode ? 'Tradies near you' : 'Tradies you might like';
+  const headerLabel = profile?.postcode ? 'Tradies near' : 'Tradies you might like';
 
   // Pre-filtered Search link — actually applies the trade if we know it.
   const viewAllHref = activeTrades.length === 1
@@ -194,7 +194,7 @@ export default function RecommendedTradies() {
       <h3 className="font-semibold text-gray-900 mb-4">
         {headerLabel}
         {profile?.postcode && (
-          <span className="text-gray-400 font-normal"> · {profile.postcode}</span>
+          <span className="text-gray-400 font-normal"> {profile.postcode}</span>
         )}
       </h3>
       {!profile?.postcode && (
@@ -234,14 +234,14 @@ export default function RecommendedTradies() {
                   </span>
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="flex items-center gap-1.5 min-w-0">
                     <Link to={`/tradie/${tradie.id}`} className="font-medium text-gray-900 text-sm truncate hover:text-primary-600 transition-colors">
                       {displayName}
                     </Link>
                     {isPro && <Crown className="w-3 h-3 text-amber-500 flex-shrink-0" />}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-600">
-                    <span className="capitalize truncate">{prettyTrade(tradie.tradie_details?.trade_category)}</span>
+                  <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-600 min-w-0">
+                    <span className="capitalize whitespace-nowrap flex-shrink-0">{prettyTrade(tradie.tradie_details?.trade_category)}</span>
                     {tradie.__totalReviews > 0 && (
                       <>
                         <span className="text-gray-300">·</span>
@@ -255,7 +255,7 @@ export default function RecommendedTradies() {
                     {tradie.__distanceLabel && (
                       <>
                         <span className="text-gray-300">·</span>
-                        <span>{tradie.__distanceLabel}</span>
+                        <span className="truncate">{tradie.__distanceLabel}</span>
                       </>
                     )}
                   </div>

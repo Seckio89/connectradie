@@ -882,8 +882,8 @@ export default function ClientDashboard() {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-3 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-3 min-w-0 space-y-8">
             {/* My Recent Jobs */}
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -962,7 +962,7 @@ export default function ClientDashboard() {
                   <p className="text-gray-600 mb-6 max-w-lg">
                     Post a job to get quotes from verified tradies, or browse and save tradies you like.
                   </p>
-                  <div className="grid sm:grid-cols-2 gap-4 mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                     <Link
                       to="/post-lead"
                       data-tour="post-job"
@@ -2126,7 +2126,7 @@ export default function ClientDashboard() {
                     <ListSkeleton rows={4} />
                   </div>
                 ) : (
-                  <div className="grid md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {savedTradies.map((tradie) => (
                       <TradieCard
                         key={tradie.id}
@@ -2146,7 +2146,7 @@ export default function ClientDashboard() {
 
             {/* Three-up summary row — pulled out of the sidebar so the boxes
                 aren't buried below the fold on tall screens. */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* This Week — personal upcoming-events feed (replaced the old
                   global Platform Activity widget). */}
               <SectionErrorBoundary fallbackTitle="Timeline failed to load">
@@ -2160,7 +2160,7 @@ export default function ClientDashboard() {
             </div>
           </div>
 
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 min-w-0 space-y-6">
             {trainingModeEnabled && (
               <button
                 onClick={() => setShowSubscriptionModal(true)}

@@ -918,7 +918,7 @@ export default function TradieDashboard() {
           <div className="mb-3 sm:mb-6 bg-gradient-to-r from-warm-50 to-secondary-50 border border-warm-200 rounded-2xl p-4 sm:p-5">
             <h3 className="font-bold text-gray-900 mb-1">What to do first</h3>
             <p className="text-sm text-gray-600 mb-4">Complete these three steps to start getting work — most tradies are set up in under 5 minutes.</p>
-            <div className="grid sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
                 onClick={() => {
                   const calEl = document.querySelector('[data-tour="calendar"]');
@@ -1814,7 +1814,7 @@ export default function TradieDashboard() {
 
         {/* Calendar */}
         <div className="mt-6 bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3 sm:p-6 sm:ring-1 ring-primary-100/50" data-tour="calendar">
-          <div className="grid lg:grid-cols-3 gap-4 sm:gap-8 max-w-full overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8 max-w-full overflow-hidden">
             {/* Calendar */}
             <div className="lg:col-span-2 min-w-0">
               <div className="flex flex-col gap-3 mb-6">
@@ -1834,8 +1834,7 @@ export default function TradieDashboard() {
                     {(['day', 'week', 'month'] as const).map(v => (
                       <button key={v} onClick={() => setCalendarView(v)}
                         className={`px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${calendarView === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                        <span className="sm:hidden">{v === 'month' ? 'Mo' : v.charAt(0).toUpperCase() + v.slice(1)}</span>
-                        <span className="hidden sm:inline">{v.charAt(0).toUpperCase() + v.slice(1)}</span>
+                        <span>{v.charAt(0).toUpperCase() + v.slice(1)}</span>
                       </button>
                     ))}
                   </div>

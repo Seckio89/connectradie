@@ -160,7 +160,7 @@ export default function CareerDetailPublic() {
             <ArrowLeft className="w-4 h-4" /> All trade jobs
           </button>
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main */}
             <div className="lg:col-span-2">
               <div className="flex items-center gap-2 mb-3">

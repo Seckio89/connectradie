@@ -827,7 +827,7 @@ export default function Messages() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="grid md:grid-cols-[340px_1fr] h-[calc(100dvh-14rem)] overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] h-[calc(100dvh-14rem)] overflow-hidden">
             <div className={`border-r border-gray-200 overflow-y-auto flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`} style={{ scrollbarWidth: 'thin', scrollbarColor: '#DDD0CC #F5F0EF' }}>
               <div className="px-4 pt-4 pb-3">
                 <div className="relative">

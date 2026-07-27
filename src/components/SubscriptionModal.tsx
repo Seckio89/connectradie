@@ -407,7 +407,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
               </div>
             </div>
 
-            <div className="p-8 pt-4 grid md:grid-cols-2 gap-6 max-w-2xl mx-auto w-full">
+            <div className="p-8 pt-4 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto w-full">
               {/* Free */}
               <div className={`border-2 rounded-2xl p-6 relative flex flex-col ${
                 currentTier === 'free' ? 'border-primary-200 bg-primary-50/30' : 'border-gray-200'

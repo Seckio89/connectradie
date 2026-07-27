@@ -16,7 +16,7 @@ export default function HeroSection() {
       <div className="absolute inset-0 bg-navy-900" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div className="text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-warm-500/10 text-warm-400 rounded-full text-sm font-semibold mb-6 border border-warm-500/20">
               <Wallet className="w-4 h-4" />
