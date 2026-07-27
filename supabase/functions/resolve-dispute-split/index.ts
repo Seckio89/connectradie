@@ -240,9 +240,44 @@ Deno.serve(async (req: Request) => {
     // A DISTINCT idempotency key from `release_payout_${paymentId}`, which
     // release-escrow and auto-release-payments have already bound to the FULL
     // amount — reusing it with a different amount makes Stripe reject.
+    //
+    // PRE-FLIGHT THE BALANCE FIRST. On destination charges the remainder is in
+    // the tradie's Stripe balance but stays PENDING until the original charge
+    // settles (~2 business days on AU cards). Release opens 5 hours after
+    // completion, so a promptly-resolved dispute will normally find $0.00
+    // available — measured on a real account: $0.00 available, $64.90 pending,
+    // three days after the charge. Attempting anyway just returns
+    // "insufficient funds" and buries a genuine failure among expected ones.
+    //
+    // When it cannot run now we DEFER rather than fail: the money stays in the
+    // tradie's balance and auto-release-payments' sweep pays it out once the
+    // funds clear, under this same idempotency key.
     let payoutId: string | null = null;
     let payoutError: string | null = null;
+    let payoutDeferred = false;
+
     if (split.tradiePayoutCents > 0) {
+      try {
+        const bal = await stripe.balance.retrieve({
+          stripeAccount: tradie.stripe_connect_account_id,
+        });
+        const availableAud = (bal.available || [])
+          .filter((b) => b.currency === "aud")
+          .reduce((s, b) => s + b.amount, 0);
+        if (availableAud < split.tradiePayoutCents) {
+          payoutDeferred = true;
+          console.info(
+            `dispute split ${disputeId}: deferring tradie payout — available ${availableAud}c < owed ${split.tradiePayoutCents}c (funds still settling). The auto-release sweep will complete it.`,
+          );
+        }
+      } catch (balErr) {
+        // Can't read the balance — try the payout anyway rather than deferring
+        // money on the strength of a failed lookup.
+        console.warn("dispute split: balance lookup failed, attempting payout anyway", balErr);
+      }
+    }
+
+    if (split.tradiePayoutCents > 0 && !payoutDeferred) {
       try {
         const payout = await stripe.payouts.create(
           {
@@ -268,10 +303,11 @@ Deno.serve(async (req: Request) => {
         // DELIBERATE: we do NOT leave status='completed' for the cron to retry,
         // which is what release-escrow:289 does. The cron would pay the FULL
         // amount, not the remainder — and the client has already been refunded.
-        // Mark it released so nothing can double-pay; the tradie's remainder
-        // stays in their Stripe balance and needs a manual payout.
+        // Mark it released so nothing can double-pay. The remainder stays in the
+        // tradie's balance and auto-release-payments' split sweep completes it,
+        // under this same idempotency key.
         console.error(
-          "dispute split: refund SUCCEEDED but payout FAILED. Tradie remainder is stranded in their Stripe balance and needs a manual payout.",
+          "dispute split: refund SUCCEEDED but payout FAILED. Remainder left in the tradie's balance for the auto-release sweep to complete.",
           JSON.stringify({ disputeId, paymentId: payment.id, tradieId, amount: split.tradiePayoutCents, error: payoutError }),
         );
       }
@@ -291,7 +327,16 @@ Deno.serve(async (req: Request) => {
           split_refund_id: refundId,
           released_at: now,
           released_by: user.id,
-          ...(payoutId ? { payout_id: payoutId } : { payout_pending: true, payout_last_error: payoutError }),
+          // No payout_id yet → the sweep in auto-release-payments looks for
+          // exactly this shape (split_payout_cents present, payout_id absent).
+          ...(payoutId
+            ? { payout_id: payoutId }
+            : {
+                payout_pending: true,
+                ...(payoutDeferred
+                  ? { payout_deferred_reason: "funds_not_yet_settled" }
+                  : { payout_last_error: payoutError }),
+              }),
           platform_fee_deducted: split.applicationFeeCents,
           commission_deducted: split.retainedCommissionCents,
           materials_processing_deducted: split.retainedMaterialsProcessingCents,
@@ -350,9 +395,15 @@ Deno.serve(async (req: Request) => {
         payoutId,
         refundCents: split.refundCents,
         payoutCents: split.tradiePayoutCents,
-        ...(payoutError
-          ? { warning: "The client's refund went through, but the tradie's share could not be paid out automatically and needs a manual payout." }
-          : {}),
+        payoutDeferred,
+        // Deferral is the EXPECTED outcome for a recently-charged job, so it is
+        // reported as a normal note rather than a warning — the tradie's share
+        // is safe in their Stripe balance and the sweep pays it on settlement.
+        ...(payoutDeferred
+          ? { note: "The client has been refunded. The tradie's share is still clearing with Stripe and will be paid out automatically once it settles — usually within a couple of business days." }
+          : payoutError
+            ? { warning: "The client's refund went through, but the tradie's share could not be paid out yet. It stays in their Stripe balance and will be retried automatically." }
+            : {}),
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

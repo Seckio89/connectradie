@@ -726,10 +726,104 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // ── Sweep: finish dispute splits whose payout leg could not run yet ──────
+    //
+    // A split refunds the client and then pays the tradie their remainder. On
+    // destination charges that remainder sits in the tradie's Stripe balance —
+    // and it is PENDING until the original charge settles (~2 business days on
+    // AU cards). Release becomes possible 5 hours after completion, so a
+    // promptly-resolved dispute will normally find $0.00 AVAILABLE and the
+    // payout leg fails with "insufficient funds". Measured on acct_1TtSLp2…:
+    // $0.00 available against $64.90 pending, three days after the charge.
+    //
+    // That is the COMMON case, not an edge case. And the main loop above cannot
+    // recover it: it only rescans status='completed', while a split deliberately
+    // writes 'released' so nothing can double-pay the full amount. Without this
+    // sweep the tradie's share is stranded until a human notices.
+    //
+    // The idempotency key is the same one resolve-dispute-split uses, so a retry
+    // can never produce a second payout for the same dispute.
+    let splitsCompleted = 0;
+    try {
+      const { data: pendingSplits } = await supabase
+        .from("payments")
+        .select("id, job_id, metadata")
+        .eq("status", "released")
+        .not("metadata->>split_payout_cents", "is", null)
+        .is("metadata->>payout_id", null)
+        .limit(50);
+
+      for (const row of (pendingSplits || [])) {
+        const sm = (row.metadata || {}) as Record<string, unknown>;
+        const owed = frozenCents(sm.split_payout_cents);
+        const disputeId = typeof sm.split_dispute_id === "string" ? sm.split_dispute_id : null;
+        if (owed <= 0 || !disputeId) continue;
+
+        const { data: sJob } = await supabase
+          .from("jobs").select("tradie_id").eq("id", row.job_id).maybeSingle();
+        const sTradieId = (sJob as { tradie_id: string | null } | null)?.tradie_id;
+        if (!sTradieId) continue;
+
+        const { data: sProfile } = await supabase
+          .from("profiles").select("stripe_connect_account_id").eq("id", sTradieId).maybeSingle();
+        const acct = (sProfile as { stripe_connect_account_id: string | null } | null)
+          ?.stripe_connect_account_id;
+        if (!acct) continue;
+
+        // Only attempt when the funds are actually AVAILABLE. Firing blindly
+        // just re-logs the same failure every six hours and buries real ones.
+        try {
+          const bal = await stripe.balance.retrieve({ stripeAccount: acct });
+          const availableAud = (bal.available || [])
+            .filter((b) => b.currency === "aud")
+            .reduce((s, b) => s + b.amount, 0);
+          if (availableAud < owed) continue;
+
+          const payout = await stripe.payouts.create(
+            {
+              amount: owed,
+              currency: "aud",
+              metadata: {
+                payment_id: row.id,
+                job_id: row.job_id ?? "",
+                dispute_id: disputeId,
+                flow: "destination",
+                leg: "dispute_split_payout_retry",
+              },
+            },
+            { stripeAccount: acct, idempotencyKey: `dispute_split_payout_${disputeId}` },
+          );
+
+          const { payout_pending: _cleared, payout_last_error: _err, ...restMeta } = sm;
+          await supabase
+            .from("payments")
+            .update({
+              metadata: {
+                ...restMeta,
+                payout_id: payout.id,
+                split_payout_completed_at: new Date().toISOString(),
+              },
+            })
+            .eq("id", row.id);
+
+          splitsCompleted++;
+          console.info(`Completed stranded dispute-split payout ${payout.id} (${owed}c) for payment ${row.id}`);
+        } catch (splitErr) {
+          const m = splitErr instanceof Error ? splitErr.message : String(splitErr);
+          console.error(`Split payout retry failed for payment ${row.id}:`, m);
+          errors.push(`Split payout ${row.id}: ${m}`);
+        }
+      }
+    } catch (sweepErr) {
+      // Never let the sweep break the primary release run.
+      console.error("Split payout sweep failed:", sweepErr);
+    }
+
     return jsonResponse({
       released,
       total_amount: totalAmount,
       total_amount_dollars: `$${(totalAmount / 100).toFixed(2)}`,
+      split_payouts_completed: splitsCompleted,
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (err) {
