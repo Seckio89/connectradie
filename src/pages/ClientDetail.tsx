@@ -388,8 +388,8 @@ export default function ClientDetail() {
                     </div>
                     <div className="mt-2 space-y-1">
                       {contact.email && (
-                        <p className="flex items-center gap-1.5 text-sm text-gray-600 truncate">
-                          <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" /> {contact.email}
+                        <p className="flex items-center gap-1.5 text-sm text-gray-600 min-w-0">
+                          <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" /> <span className="truncate">{contact.email}</span>
                         </p>
                       )}
                       {contact.phone && (

@@ -588,22 +588,25 @@ body {
     height: 1.25rem !important;
   }
 
-  /* ── 18. Reduce Quote Insights numbers on mobile ──────────────
-     Shrink all large/medium text sizes by ~10% so Quote Insights
-     stats and similar numbers fit comfortably on small screens.
-     text-3xl 1.875rem → 1.7rem | text-2xl 1.5rem → 1.35rem
-     text-xl  1.25rem  → 1.125rem | text-lg 1.125rem → 1rem */
+  /* ── 18. Reduce large text ~10% on mobile ─────────────────────
+     Tailwind's text-* utilities set font-size AND line-height together.
+     Overriding font-size alone left the original leading attached, so every
+     heading gained slack: text-3xl went from a 1.20 ratio to 1.32, text-lg
+     from 1.56 to 1.75. Each step now carries a matching line-height.
+
+     text-lg is deliberately left alone: shrinking it to 1rem made it identical
+     to text-base and erased that step of the scale on mobile. */
   main .text-3xl {
     font-size: 1.7rem !important;
+    line-height: 2.05rem !important;
   }
   main .text-2xl {
     font-size: 1.35rem !important;
+    line-height: 1.8rem !important;
   }
   main .text-xl {
     font-size: 1.125rem !important;
-  }
-  main .text-lg {
-    font-size: 1rem !important;
+    line-height: 1.575rem !important;
   }
 }
 
@@ -706,13 +709,18 @@ body {
    Several pages hide action buttons behind group-hover:opacity-100 which is
    inaccessible on touch devices. Show them at reduced opacity on mobile. */
 @media (pointer: coarse) {
-  /* Notifications delete button */
-  .group .opacity-0.group-hover\:opacity-100 {
+  /* Scoped to button/a/[role=button] for the same reason as section AB below:
+     an unscoped selector also reveals full-bleed image scrims (the `absolute
+     inset-0 bg-black/50` overlays), permanently darkening the images. */
+  .group button.opacity-0.group-hover\:opacity-100,
+  .group a.opacity-0.group-hover\:opacity-100,
+  .group [role="button"].opacity-0.group-hover\:opacity-100 {
     opacity: 0.6 !important;
   }
 
-  /* Team page remove button */
-  .group .opacity-0.group-hover\:opacity-100:hover {
+  .group button.opacity-0.group-hover\:opacity-100:hover,
+  .group a.opacity-0.group-hover\:opacity-100:hover,
+  .group [role="button"].opacity-0.group-hover\:opacity-100:hover {
     opacity: 1 !important;
   }
 }
@@ -758,8 +766,10 @@ body {
     justify-content: flex-end !important;
   }
 
-  /* Team member remove button: always visible on mobile */
-  .divide-y.divide-gray-100 > div .opacity-0.group-hover\:opacity-100 {
+  /* Team member remove button: always visible on mobile.
+     Scoped to controls, consistent with sections A and AB. */
+  .divide-y.divide-gray-100 > div button.opacity-0.group-hover\:opacity-100,
+  .divide-y.divide-gray-100 > div a.opacity-0.group-hover\:opacity-100 {
     opacity: 0.7 !important;
   }
 }
@@ -1054,9 +1064,16 @@ body {
 
 /* -- AB. Global -- hover-only buttons visible on touch devices --------------- */
 @media (pointer: coarse) {
-  /* Make opacity-0 group-hover elements always visible on touch devices
-     unless they have already been fixed with sm:opacity-0 pattern */
-  [class*="opacity-0"][class*="group-hover"]:not([class*="sm:opacity-0"]) {
+  /* Reveal hover-only ACTION CONTROLS on touch, where there is no hover.
+
+     Scoped to button/a deliberately. The previous selector matched any element
+     with both classes, which also caught full-bleed image scrims — the
+     `absolute inset-0 bg-black/50` overlay in RequestVariationModal and the
+     `bg-gradient-to-t from-black/70` one on PublicTradieProfile were pinned at
+     0.7 on every phone, permanently darkening the images they sit over. */
+  button[class*="opacity-0"][class*="group-hover"]:not([class*="sm:opacity-0"]),
+  a[class*="opacity-0"][class*="group-hover"]:not([class*="sm:opacity-0"]),
+  [role="button"][class*="opacity-0"][class*="group-hover"]:not([class*="sm:opacity-0"]) {
     opacity: 0.7 !important;
   }
 }
@@ -1171,26 +1188,8 @@ body {
   }
 }
 
-/* ── AC. Global — hover-only buttons visible on touch devices ───────────────── */
-@media (pointer: coarse) {
-  /* Make opacity-0 group-hover elements always visible on touch devices */
-  [class*="opacity-0"][class*="group-hover"]:not([class*="sm:opacity-0"]) {
-    opacity: 0.7 !important;
-  }
-}
-
-/* ── AD. PaymentHistory — filter inputs full width on mobile ────────────────── */
-@media (max-width: 639px) {
-  /* Filter panel date inputs and selects: full width */
-  main .flex.flex-wrap.items-center.gap-3 > div {
-    width: 100% !important;
-  }
-
-  main .flex.flex-wrap.items-center.gap-3 select,
-  main .flex.flex-wrap.items-center.gap-3 input[type="date"] {
-    width: 100% !important;
-  }
-}
+/* Duplicates of sections AB and AC above were removed here — this block was a
+   verbatim re-paste of the same two rules under colliding letters. */
 
 /* =============================================================================
    AE. Invoice page — force white background on mobile (override any green)
@@ -1208,7 +1207,11 @@ body {
    AF. Completed jobs table — shrink text and buttons 10% on mobile
    ============================================================================= */
 @media (max-width: 639px) {
-  /* Completed jobs table compact */
-  main details .text-sm { font-size: 0.7rem !important; }
-  main details button { font-size: 0.65rem !important; padding: 0.25rem 0.5rem !important; }
+  /* Was 0.7rem / 0.65rem, which rendered 11.2px — below the 12px legibility
+     floor — and stripped the buttons' padding while the coarse-pointer rule
+     still forced them 44px tall. This selector also hits every <details> in the
+     app (ReviewsList month accordions, AvailabilityCalendar, AdminRecommendations),
+     not just the completed-jobs table, so it stays at a readable size. */
+  main details .text-sm { font-size: 0.8125rem !important; }
+  main details button { font-size: 0.75rem !important; }
 }

@@ -490,7 +490,7 @@ export default function AdminUsers() {
                           <p className="font-semibold text-gray-900">
                             {removal.full_name || 'Unknown User'}
                           </p>
-                          <p className="text-sm text-gray-500">{removal.email}</p>
+                          <p className="text-sm text-gray-500 break-words">{removal.email}</p>
                           <div className="mt-2 space-y-1">
                             <p className="text-sm text-red-600">
                               <span className="font-medium">Reason:</span> {removal.reason}

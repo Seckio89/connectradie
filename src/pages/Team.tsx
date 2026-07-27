@@ -694,9 +694,9 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                           {emp.tradie_details.trade_category}
                         </span>
                       )}
-                      <span className="flex items-center gap-1 text-sm text-gray-500">
-                        <Mail className="w-3.5 h-3.5" />
-                        {emp.email}
+                      <span className="flex items-center gap-1 text-sm text-gray-500 min-w-0">
+                        <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="truncate">{emp.email}</span>
                       </span>
                       {emp.phone && (
                         <span className="flex items-center gap-1 text-sm text-gray-500">

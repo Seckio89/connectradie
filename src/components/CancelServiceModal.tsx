@@ -77,7 +77,7 @@ export default function CancelServiceModal({
         if (e.target === e.currentTarget && !submitting) onCancel();
       }}
     >
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-xl">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-xl max-h-[85vh] overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:pb-0">
         <div className="flex items-start justify-between p-6 pb-2">
           <div className="flex items-start gap-3">
             <div className="p-2.5 bg-red-50 rounded-full flex-shrink-0">

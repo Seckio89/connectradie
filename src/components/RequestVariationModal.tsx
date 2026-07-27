@@ -152,7 +152,7 @@ export default function RequestVariationModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-xl max-h-[90vh] flex flex-col pb-[env(safe-area-inset-bottom)] sm:pb-0">
         <div className="flex items-center justify-between p-5 border-b border-gray-100 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">

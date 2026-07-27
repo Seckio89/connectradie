@@ -116,7 +116,7 @@ export default function ReviewModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50 modal-sheet-overlay">
-      <div className="bg-white rounded-t-2xl sm:rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto modal-sheet">
+      <div className="bg-white rounded-t-2xl sm:rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto modal-sheet pb-[env(safe-area-inset-bottom)] sm:pb-0">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
           <h2 className="text-lg font-bold text-gray-900">Rate Your Experience</h2>

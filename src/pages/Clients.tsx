@@ -199,8 +199,8 @@ export default function Clients() {
                       </div>
                       <div className="mt-1.5 space-y-1">
                         {c.email && (
-                          <p className="flex items-center gap-1.5 text-xs text-gray-600 truncate">
-                            <Mail className="w-3.5 h-3.5 flex-shrink-0" /> {c.email}
+                          <p className="flex items-center gap-1.5 text-xs text-gray-600 min-w-0">
+                            <Mail className="w-3.5 h-3.5 flex-shrink-0" /> <span className="truncate">{c.email}</span>
                           </p>
                         )}
                         {c.phone && (

@@ -46,7 +46,7 @@ export default function ConfirmModal({
 
   return (
     <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black bg-opacity-40 flex items-end sm:items-center justify-center z-[70] p-0 sm:p-4 animate-fade-in modal-sheet-overlay" onClick={onCancel}>
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-2xl animate-scale-in modal-sheet" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-2xl animate-scale-in modal-sheet pb-[env(safe-area-inset-bottom)] sm:pb-0" onClick={(e) => e.stopPropagation()}>
         <div className="p-6">
           <div className="flex items-start gap-4">
             <div className={`p-3 ${colors.bg} rounded-full flex-shrink-0`}>
