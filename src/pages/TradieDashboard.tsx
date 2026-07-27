@@ -729,11 +729,19 @@ export default function TradieDashboard() {
       );
       const result = await res.json();
       if (result.success) {
+        // "Nothing to unsync" is only true when nothing failed either —
+        // removed: 0 with failures means every delete was rejected, which is
+        // the opposite of there being nothing to remove.
+        const removed: number = result.removed ?? 0;
+        const failed: number = result.failed ?? 0;
+        const s = (n: number) => (n === 1 ? '' : 's');
         showToast(
-          result.removed === 0
+          removed === 0 && failed === 0
             ? 'Nothing to unsync — your Google Calendar has no ConnecTradie events.'
-            : `Removed ${result.removed} event${result.removed === 1 ? '' : 's'} from Google Calendar.${result.failed ? ` ${result.failed} could not be removed — try again.` : ''}`,
-          !!result.failed
+            : removed === 0
+              ? `Could not remove ${failed} event${s(failed)} from Google Calendar — try again.`
+              : `Removed ${removed} event${s(removed)} from Google Calendar.${failed ? ` ${failed} could not be removed — try again.` : ''}`,
+          failed > 0
         );
         await fetchSlots();
       } else {
