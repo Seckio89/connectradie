@@ -271,9 +271,21 @@ Deno.serve(async (req: Request) => {
       }
 
       // Pay out the NET amount instantly to the instant-capable external account.
-      // The fee remainder stays in the Stripe balance and follows the normal (free)
-      // payout schedule — the tradie is never short-changed; the disclosed net is
-      // exactly what arrives now.
+      //
+      // NET, not the base, and that is deliberate. Stripe's platform pricing
+      // scheme (Connect settings → Instant payouts, AUD: 1.5% min $2) collects
+      // our fee as an application fee, and it takes that fee FROM THE BALANCE —
+      // not out of the payout — refusing any payout where amount + fee exceeds
+      // the available balance. So requesting netCents means Stripe moves
+      // netCents + feeCents = payoutBaseCents in total, leaving the escrow
+      // reserve untouched and landing exactly the disclosed net in the bank.
+      // Requesting payoutBaseCents here would leave nothing for the fee and the
+      // payout would be rejected.
+      //
+      // feeBps/feeMinCents come from pricing_tiers; the Stripe scheme is
+      // configured separately and there is no API to read it back. THE TWO MUST
+      // BE KEPT IN STEP — if they diverge, the fee we disclose is not the fee
+      // Stripe charges.
       let payout: Stripe.Payout;
       try {
         payout = await stripe.payouts.create(
