@@ -781,6 +781,8 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                   <button
                     type="button"
                     onClick={() => setIsRecurring((v) => !v)}
+                    role="switch"
+                    aria-checked={isRecurring}
                     aria-label={isRecurring ? 'Turn off recurring' : 'Turn on recurring'}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isRecurring ? 'bg-warm-500' : 'bg-gray-300'}`}
                   >

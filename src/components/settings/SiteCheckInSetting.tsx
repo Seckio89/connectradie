@@ -64,6 +64,8 @@ export default function SiteCheckInSetting() {
         <button
           type="button"
           onClick={handleToggle}
+          role="switch"
+          aria-checked={enabled}
           aria-label={enabled ? 'Turn off automatic job-site check-in' : 'Turn on automatic job-site check-in'}
           className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 flex-shrink-0 cursor-pointer ${enabled ? 'bg-warm-500' : 'bg-gray-300'}`}
         >

@@ -1,30 +1,40 @@
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
 
+// Labels must match what the sidebar calls the same destination — a page named
+// one thing in the menu and another in the breadcrumb reads as two places.
+// Segments of routes that only redirect are deliberately absent: the crumb can
+// never render for them.
 const ROUTE_LABELS: Record<string, string> = {
   'dashboard': 'Dashboard',
   'admin': 'Admin',
   'overview': 'Overview',
-  'users': 'Users',
+  'users': 'User Management',
   'verifications': 'Verifications',
   'payments': 'Payments',
+  'financials': 'Financials',
   'moderation': 'Moderation',
   'disputes': 'Disputes',
-  'jobs': 'Jobs',
+  'custom-tasks': 'Custom Tasks',
+  'updates': 'Updates',
   'projects': 'Projects',
   'messages': 'Messages',
   'settings': 'Settings',
   'my-profile': 'My Profile',
-  'my-trades': 'My Trades',
+  'my-trades': 'Saved Tradies',
   'schedule': 'Schedule',
   'work': 'Work Hub',
-  'analytics': 'Analytics',
+  'clients': 'Clients',
+  'analytics': 'My Stats',
   'performance': 'Performance',
   'payouts': 'Payouts',
   'notifications': 'Notifications',
-  'leads': 'Leads',
-  'post-lead': 'Post Lead',
-  'team': 'Team',
+  'leads': 'My Jobs',
+  'post-lead': 'Post a Job',
+  'tracking': 'Job Tracking',
+  'invoice': 'Invoice',
+  'tax-invoice': 'Tax Invoice',
+  'review': 'Leave a Review',
 };
 
 export default function Breadcrumbs() {

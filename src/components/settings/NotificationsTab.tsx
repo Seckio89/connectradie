@@ -46,6 +46,8 @@ export default function NotificationsTab({ pushEnabled, pushPermission, notifSav
             type="button"
             onClick={() => onTogglePush(!pushEnabled)}
             disabled={notifSaving || pushPermission === 'denied' || pushPermission === 'unsupported'}
+            role="switch"
+            aria-checked={pushEnabled}
             aria-label={pushEnabled ? 'Disable push notifications' : 'Enable push notifications'}
             className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${pushEnabled ? 'bg-warm-500' : 'bg-gray-300'} ${(notifSaving || pushPermission === 'denied' || pushPermission === 'unsupported') ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
@@ -88,6 +90,8 @@ export default function NotificationsTab({ pushEnabled, pushPermission, notifSav
             type="button"
             onClick={() => onToggleSms(!smsEnabled)}
             disabled={notifSaving}
+            role="switch"
+            aria-checked={smsEnabled}
             aria-label={smsEnabled ? 'Disable SMS alerts' : 'Enable SMS alerts'}
             className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${smsEnabled ? 'bg-warm-500' : 'bg-gray-300'} ${notifSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
@@ -114,6 +118,8 @@ export default function NotificationsTab({ pushEnabled, pushPermission, notifSav
             type="button"
             onClick={() => onToggleSiteArrival(!siteArrivalEnabled)}
             disabled={notifSaving}
+            role="switch"
+            aria-checked={siteArrivalEnabled}
             aria-label={siteArrivalEnabled ? 'Disable job-site arrival alerts' : 'Enable job-site arrival alerts'}
             className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${siteArrivalEnabled ? 'bg-warm-500' : 'bg-gray-300'} ${notifSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >

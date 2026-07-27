@@ -623,6 +623,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
     { name: 'Financials', href: '/admin/financials', icon: TrendingUp },
     { name: 'Moderation', href: '/admin/moderation', icon: Flag },
     { name: 'Disputes', href: '/admin/disputes', icon: AlertTriangle },
+    { name: 'Custom Tasks', href: '/admin/custom-tasks', icon: ClipboardList },
     { name: 'Updates', href: '/admin/updates', icon: Zap },
     { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Messages', href: '/messages', icon: MessageCircle },

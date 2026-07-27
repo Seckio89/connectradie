@@ -141,8 +141,46 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// RouteTracker is the single source of truth for document.title.
+//
+// Nineteen pages also render <SEO>, which sets a title through react-helmet —
+// but helmet is not currently taking effect (verified in the browser: /pricing
+// keeps index.html's static title even though SEO.tsx asks for "Pricing"). So
+// leaving those routes alone does NOT hand them a good title, it hands them the
+// homepage's. Until helmet is fixed, every route gets its title from here.
+const slugWords = (slug: string) =>
+  slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+/** 'sydney-nsw-2000' → 'Sydney NSW'. Drops the postcode, shouts the state. */
+const suburbName = (slug: string) => {
+  const parts = slug.split('-');
+  if (parts.length >= 3 && /^\d{4}$/.test(parts[parts.length - 1])) {
+    const state = parts[parts.length - 2].toUpperCase();
+    return `${slugWords(parts.slice(0, -2).join('-'))} ${state}`;
+  }
+  return slugWords(slug);
+};
+
+// Routes with a slug or id in the path can never match an exact-pathname
+// lookup, so they need patterns or they all fall through to the bare fallback.
+const DYNAMIC_TITLES: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
+  [/^\/find\/([^/]+)\/([^/]+)$/, (m) => `${slugWords(m[1])} in ${suburbName(m[2])} | ConnecTradie`],
+  [/^\/find\/([^/]+)$/, (m) => `Find a ${slugWords(m[1])} | ConnecTradie`],
+  [/^\/find-in\/([^/]+)$/, (m) => `Tradies in ${suburbName(m[1])} | ConnecTradie`],
+  [/^\/costs\/([^/]+)$/, (m) => `${slugWords(m[1])} Costs | ConnecTradie`],
+  [/^\/tradie\/[^/]+$/, () => 'Tradie Profile | ConnecTradie'],
+  [/^\/careers\/[^/]+$/, () => 'Trade Job | ConnecTradie'],
+  [/^\/quote\/[^/]+$/, () => 'Your Quote | ConnecTradie'],
+  [/^\/invoice\/[^/]+$/, () => 'Invoice | ConnecTradie'],
+  [/^\/tax-invoice\/[^/]+$/, () => 'Tax Invoice | ConnecTradie'],
+  [/^\/tracking\/[^/]+$/, () => 'Job Tracking | ConnecTradie'],
+  [/^\/review\/[^/]+$/, () => 'Leave a Review | ConnecTradie'],
+  [/^\/clients\/[^/]+$/, () => 'Client | ConnecTradie'],
+];
+
 const PAGE_TITLES: Record<string, string> = {
   '/': 'ConnecTradie — Find Trusted Local Tradies',
+  '/hire': 'Hire a Tradie | ConnecTradie',
   '/login': 'Sign In | ConnecTradie',
   '/register': 'Register | ConnecTradie',
   '/onboarding': 'Get Started | ConnecTradie',
@@ -152,29 +190,31 @@ const PAGE_TITLES: Record<string, string> = {
   '/search': 'Search Tradies | ConnecTradie',
   '/my-trades': 'Saved Tradies | ConnecTradie',
   '/projects': 'Projects | ConnecTradie',
-  '/jobs': 'Active Jobs | ConnecTradie',
   '/messages': 'Messages | ConnecTradie',
   '/notifications': 'Notifications | ConnecTradie',
   '/settings': 'Settings | ConnecTradie',
-  '/payments': 'Payments | ConnecTradie',
-  '/review': 'Leave a Review | ConnecTradie',
+  '/payments': 'Invoices & Payments | ConnecTradie',
   '/payouts': 'Payouts | ConnecTradie',
   '/schedule': 'Schedule | ConnecTradie',
   '/calendar-import': 'Import from Google Calendar | ConnecTradie',
   '/work': 'Work Hub | ConnecTradie',
   '/my-profile': 'My Profile | ConnecTradie',
+  '/clients': 'Clients | ConnecTradie',
+  '/payment-success': 'Payment Successful | ConnecTradie',
+  '/payment-cancelled': 'Payment Cancelled | ConnecTradie',
+  '/analytics': 'My Stats | ConnecTradie',
+  '/performance': 'Performance | ConnecTradie',
   '/explore': 'Explore | ConnecTradie',
   '/careers': 'Trade Jobs & Apprenticeships | ConnecTradie',
   '/contact': 'Contact | ConnecTradie',
   '/help': 'Help & FAQ | ConnecTradie',
   '/pricing': 'Pricing | ConnecTradie',
   '/how-fees-work': 'How fees work | ConnecTradie',
-  '/tax-invoice': 'Tax Invoice | ConnecTradie',
   '/terms': 'Terms of Service | ConnecTradie',
   '/privacy': 'Privacy Policy | ConnecTradie',
-  '/analytics': 'Analytics | ConnecTradie',
-  '/performance': 'Performance Insights | ConnecTradie',
-  '/admin': 'Admin | ConnecTradie',
+  '/admin/overview': 'Overview | ConnecTradie Admin',
+  '/admin/custom-tasks': 'Custom Tasks | ConnecTradie Admin',
+  '/admin/updates': 'Updates | ConnecTradie Admin',
   '/admin/verifications': 'Verifications | ConnecTradie Admin',
   '/admin/users': 'Users | ConnecTradie Admin',
   '/admin/payments': 'Payments | ConnecTradie Admin',
@@ -187,7 +227,19 @@ function RouteTracker() {
   const location = useLocation();
   useEffect(() => {
     trackPageView(location.pathname + location.search);
-    document.title = PAGE_TITLES[location.pathname] || 'ConnecTradie';
+    const exact = PAGE_TITLES[location.pathname];
+    if (exact) {
+      document.title = exact;
+      return;
+    }
+    for (const [rx, build] of DYNAMIC_TITLES) {
+      const m = location.pathname.match(rx);
+      if (m) {
+        document.title = build(m);
+        return;
+      }
+    }
+    document.title = 'ConnecTradie';
   }, [location]);
   return null;
 }
