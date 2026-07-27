@@ -726,9 +726,17 @@ body {
 
 /* ── I. Jobs/Leads — action button rows wrap on mobile ────────────────────────── */
 @media (max-width: 639px) {
-  /* Action button groups that contain Accept/Decline/Quote buttons */
-  main .flex.items-center.gap-2:has(> button + button),
-  main .flex.items-center.gap-3:has(> button + button) {
+  /* Action button groups that contain Accept/Decline/Quote buttons.
+
+     The :not() guards matter. Without them this also matched every horizontal
+     TAB STRIP built as `flex items-center gap-2/gap-3 … overflow-x-auto`, and
+     forced it to wrap — overriding an explicit `flex-nowrap` in the markup.
+     That is what broke the client My Jobs tabs ("Archived" stranded on a second
+     line under a detached active underline), the client Notifications filters,
+     and the tradie Settings tabs ("Pay | Admin" orphaned below). A scroller is
+     meant to scroll, so exclude anything that declares itself one. */
+  main .flex.items-center.gap-2:has(> button + button):not(.overflow-x-auto):not(.flex-nowrap),
+  main .flex.items-center.gap-3:has(> button + button):not(.overflow-x-auto):not(.flex-nowrap) {
     flex-wrap: wrap !important;
   }
 
