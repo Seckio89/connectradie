@@ -378,6 +378,54 @@ Deno.serve(async (req: Request) => {
     // Calendar events for any that don't already have a calendar_event_id.
     let jobsExported = 0;
     try {
+      // Idempotence guard, built once and used by BOTH export loops below.
+      // jobs.calendar_event_id has never persisted either, so without this the
+      // job export re-creates every upcoming job's event on every sync, exactly
+      // as the slot export did. Keyed by start time, per kind, so an
+      // availability block never suppresses a job event at the same hour.
+      //
+      // The window runs a year forward because the job query has no upper bound
+      // on scheduled_date — a 30-day window would miss a job further out and
+      // duplicate it.
+      const existingStarts = { availability: new Set<string>(), job: new Set<string>() };
+      try {
+        const dedupTo = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+        let dedupToken: string | undefined;
+        let dedupPages = 0;
+        do {
+          const dedupUrl = new URL(
+            `https://www.googleapis.com/calendar/v3/calendars/${integration.calendar_id}/events`
+          );
+          dedupUrl.searchParams.set("timeMin", timeMin);
+          dedupUrl.searchParams.set("timeMax", dedupTo);
+          dedupUrl.searchParams.set("singleEvents", "true");
+          dedupUrl.searchParams.set("maxResults", "250");
+          if (dedupToken) dedupUrl.searchParams.set("pageToken", dedupToken);
+
+          const dedupRes = await fetch(dedupUrl.toString(), {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          if (!dedupRes.ok) break;
+          const dedupData = await dedupRes.json();
+          for (const ev of dedupData.items || []) {
+            const start = ev.start?.dateTime;
+            if (!start) continue;
+            const iso = new Date(start).toISOString();
+            const ext = ev.extendedProperties?.private?.connectradie;
+            const summary = typeof ev.summary === "string" ? ev.summary : "";
+            if (ext === "availability" || summary === "✅ Available — ConnecTradie") {
+              existingStarts.availability.add(iso);
+            } else if (ext === "job" || summary.startsWith("🔧 ")) {
+              existingStarts.job.add(iso);
+            }
+          }
+          dedupToken = dedupData.nextPageToken;
+          dedupPages++;
+        } while (dedupToken && dedupPages < 10);
+      } catch (e) {
+        console.error("Could not list existing events for dedup:", e);
+      }
+
       const { data: upcomingJobs } = await supabaseClient
         .from("jobs")
         .select("id, title, description, scheduled_date, start_time, location_address, status")
@@ -387,6 +435,7 @@ Deno.serve(async (req: Request) => {
         .gte("scheduled_date", new Date().toISOString().split("T")[0])
         .is("calendar_event_id", null);
 
+      let jobsSkipped = 0;
       for (const job of upcomingJobs || []) {
         try {
           const category = job.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, " ") || "";
@@ -398,6 +447,8 @@ Deno.serve(async (req: Request) => {
           const startDateTime = `${jobDate}T${startHour.padStart(2, "0")}:${startMin.padStart(2, "0")}:00+10:00`;
           const endHour = String(Number(startHour) + 2).padStart(2, "0");
           const endDateTime = `${jobDate}T${endHour}:${startMin.padStart(2, "0")}:00+10:00`;
+
+          if (existingStarts.job.has(new Date(startDateTime).toISOString())) { jobsSkipped++; continue; }
 
           const eventBody = {
             summary: `🔧 ${summary}`,
@@ -450,40 +501,11 @@ Deno.serve(async (req: Request) => {
         .lte("start_time", timeMax)
         .is("calendar_event_id", null);
 
-      // Idempotence guard. The write-back below has never persisted, so every
-      // sync re-selected the same slots and created a fresh event for each —
-      // that is what stacked hundreds of duplicate "Available" blocks on the
-      // calendar. Ask Google what we already put there and skip those, so the
-      // export stops multiplying even if the write-back is still broken.
-      const alreadyThere = new Set<string>();
-      try {
-        const existingUrl = new URL(
-          `https://www.googleapis.com/calendar/v3/calendars/${integration.calendar_id}/events`
-        );
-        existingUrl.searchParams.set("timeMin", timeMin);
-        existingUrl.searchParams.set("timeMax", timeMax);
-        existingUrl.searchParams.set("singleEvents", "true");
-        existingUrl.searchParams.set("maxResults", "250");
-        const existingRes = await fetch(existingUrl.toString(), {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        if (existingRes.ok) {
-          const existingData = await existingRes.json();
-          for (const ev of existingData.items || []) {
-            const ext = ev.extendedProperties?.private?.connectradie;
-            const isAvail = ext === "availability" || ev.summary === "✅ Available — ConnecTradie";
-            if (isAvail && ev.start?.dateTime) alreadyThere.add(new Date(ev.start.dateTime).toISOString());
-          }
-        }
-      } catch (e) {
-        console.error("Could not list existing events for dedup:", e);
-      }
-
       let slotsExported = 0;
       let slotsSkipped = 0;
       for (const slot of slotsToExport || []) {
         try {
-          if (alreadyThere.has(new Date(slot.start_time).toISOString())) { slotsSkipped++; continue; }
+          if (existingStarts.availability.has(new Date(slot.start_time).toISOString())) { slotsSkipped++; continue; }
           const slotBody = {
             summary: "✅ Available — ConnecTradie",
             description: "Open availability slot on ConnecTradie",
@@ -520,7 +542,9 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      if (slotsSkipped > 0) console.log(`Export: skipped ${slotsSkipped} slot(s) already present in Google`);
+      if (slotsSkipped > 0 || jobsSkipped > 0) {
+        console.log(`Export: skipped ${slotsSkipped} slot(s) and ${jobsSkipped} job(s) already present in Google`);
+      }
       jobsExported += slotsExported;
     } catch (exportErr) {
       console.error("Export to Google Calendar failed:", exportErr);
