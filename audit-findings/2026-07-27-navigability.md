@@ -101,6 +101,21 @@ suites assert these URLs exactly — 71 payment tests pass, 605 across the repo.
 One assertion I wrote was wrong (guessed `pay-increase-1`; the fixture is
 `pay-orig-1`) and the suite caught it.
 
+The landing was then confirmed in a browser against the exact URL the code now
+emits: `/payment-success?session_id=cs_test_…&payment_id=…` keeps its query
+string, titles correctly, renders the confirmation, and swallows a failed
+`verify-payment` without stranding the user (`callEdgeFunction` throws before any
+network call when there is no session — `edgeFn.ts:50`).
+
+**Still unverified, and cannot be done from here: a real Stripe round trip.**
+The production project's Stripe secret is a **LIVE key** — every
+`stripe_checkout_session_id` in `payments` is `cs_live_`, four of them between
+2026-07-23 and 2026-07-26, with no `cs_test_` row ever recorded. So a checkout
+through the deployed edge functions is a real charge, not a test. The only safe
+alternative, the `.env.e2e` project, has no schema and no users. Until one of
+those changes, the Stripe-side redirect is confirmed by Stripe's contract and by
+the four other flows already using these pages, not by observation.
+
 **F2 — `/tax-invoice/:invoiceId` has zero inbound links.** 🟡 `src/App.tsx:299`
 
 The ConnecTradie → tradie commission invoice required by ATO s.29-70. A tradie
