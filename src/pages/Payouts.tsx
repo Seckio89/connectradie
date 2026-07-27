@@ -805,8 +805,14 @@ export default function Payouts() {
   };
 
   const totalPayoutCount = accountDetails?.payouts?.length ?? 0;
+  // Only `paid` means the money actually reached the bank. This used to sum every
+  // payout object, so a payout still `pending`/`in_transit` was reported to the
+  // tradie as "In your account ✓ Received" while simultaneously showing in the
+  // transit row below — the same $64.90 twice. `failed`/`canceled` counted too.
   const totalPaidOut = useMemo(() => {
-    return (accountDetails?.payouts || []).reduce((s, p) => s + p.amount, 0);
+    return (accountDetails?.payouts || [])
+      .filter((p) => p.status === 'paid')
+      .reduce((s, p) => s + p.amount, 0);
   }, [accountDetails?.payouts]);
   const escrowAmount = escrowHeld;
   const autoReleaseLabel = (() => {
@@ -889,7 +895,12 @@ export default function Payouts() {
   // both double-counted every live job — a $70 job read as ~$135 of earnings.
   // Only escrow we genuinely still hold (legacy custodial flow) is added here.
   const escrowNotYetInBalance = Math.max(0, escrowAmount - escrowInTradieBalance);
-  const computedTotalEarned = escrowNotYetInBalance + onItsWay + totalPaidOut + externalTotal;
+  // `inFlightTotal` is counted explicitly because in-flight money sits in NEITHER
+  // input: Stripe deducts it from the balance when the payout is created (so it's
+  // out of `onItsWay`), and it isn't `paid` yet (so it's out of `totalPaidOut`).
+  // Without this term, earnings drop by the value of every payout still in transit.
+  const computedTotalEarned =
+    escrowNotYetInBalance + onItsWay + inFlightTotal + totalPaidOut + externalTotal;
   const methodLabel = (m: string | null) =>
     m ? (({ bank_transfer: 'Bank transfer', cash: 'Cash', cheque: 'Cheque', accountant: 'Accountant' } as Record<string, string>)[m] ?? m) : '';
 
