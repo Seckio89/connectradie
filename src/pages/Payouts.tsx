@@ -24,6 +24,8 @@ import PaymentRequestsSection from '../components/PaymentRequestsSection';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { isReleaseActioned } from '../lib/paymentRelease';
+import { buildPayoutSummary } from '../lib/payoutSummary';
+import type { EscrowPayment } from '../lib/payoutSummary';
 import { Capacitor } from '@capacitor/core';
 import { getConnectAccountDetails, createConnectOnboardingSession } from '../lib/stripe';
 import type { ConnectAccountDetails } from '../lib/stripe';
@@ -66,6 +68,9 @@ export default function Payouts() {
     availableCents?: number; pendingCents?: number;
     feeCents: number; netCents: number; cardLast4: string | null;
     destinationLabel?: string | null;
+    // Smallest balance we'll offer instant on, and the tier's fee config —
+    // read from the response so the UI can't drift from pricing_tiers.
+    minBaseCents?: number; feeBps?: number; feeMinCents?: number;
   } | null>(null);
   const [instantBusy, setInstantBusy] = useState(false);
   const [instantDone, setInstantDone] = useState<string | null>(null);
@@ -110,17 +115,12 @@ export default function Payouts() {
     setPayoutPref(value);
     try { await supabase.functions.invoke('instant-payout', { body: { action: 'preference', value } }); } catch { /* keep local */ }
   };
-  const [escrowHeld, setEscrowHeld] = useState(0);
-  // The portion of escrowHeld that Stripe has ALREADY moved into the tradie's
-  // Connect balance. Destination charges route funds at payment time, not at
-  // release, so that money is simultaneously "held in escrow" here and sitting
-  // in the Stripe balance — it must not be counted twice in total earnings.
-  const [escrowInTradieBalance, setEscrowInTradieBalance] = useState(0);
+  // Unreleased escrow rows. Kept whole rather than pre-summed: buildPayoutSummary
+  // needs to know which of them are destination-routed (already sitting in the
+  // Stripe balance, so they'd otherwise be counted in two rows at once) and which
+  // the client has already approved.
+  const [escrowRows, setEscrowRows] = useState<EscrowPayment[]>([]);
   const [, setEscrowCount] = useState(0);
-  // Portion of the held escrow the client has ALREADY approved — it isn't waiting
-  // on anyone, just on the card payment settling. Shown differently to the tradie
-  // so we never imply their client still has to act.
-  const [escrowClearing, setEscrowClearing] = useState(0);
   // Soonest completed_at (ms epoch) among unreleased completed jobs, for the
   // live auto-release countdown. null when nothing is inside the 48h window.
   const [escrowReleaseAt, setEscrowReleaseAt] = useState<number | null>(null);
@@ -154,37 +154,34 @@ export default function Payouts() {
   const fetchEarnings = useCallback(async () => {
     if (!user) return;
     try {
-      // Fetch unreleased escrow payments (completed job_funding with no transfer_id)
+      // Fetch unreleased escrow payments (completed, no transfer_id).
+      // A paid price increase is escrow too — it's the same client money on the
+      // same job, held under the same release — so it must be counted here or it
+      // vanishes from "Secured, awaiting approval" until the job releases.
       const { data: escrowData } = await supabase
         .from('payments')
         .select('amount, metadata, jobs!inner(tradie_id, status, completed_at)')
         .eq('jobs.tradie_id', user.id)
         .eq('status', 'completed')
-        .eq('payment_type', 'job_funding')
+        .in('payment_type', ['job_funding', 'price_adjustment'])
         .in('jobs.status', ['funded', 'in_progress', 'completed']);
 
       const unreleased = (escrowData || []).filter(
         (p) => !(p.metadata as Record<string, unknown>)?.transfer_id
       );
-      setEscrowHeld(unreleased.reduce((s, r) => s + (r.amount || 0), 0));
-      setEscrowCount(unreleased.length);
-      // Destination-charge rows are already reflected in the Connect balance.
-      // Legacy (platform-custodial) rows are not — those funds really are still
-      // held by us, so they still belong in the earnings total.
-      setEscrowInTradieBalance(
-        unreleased
-          .filter((p) => (p.metadata as Record<string, unknown>)?.flow === 'destination')
-          .reduce((s, r) => s + (r.amount || 0), 0),
+      setEscrowRows(
+        unreleased.map((p) => ({
+          amount: p.amount,
+          metadata: p.metadata as Record<string, unknown> | null,
+        })),
       );
+      setEscrowCount(unreleased.length);
 
-      // Split the held escrow: the client has already approved some of it (the
-      // payout just hasn't settled yet). Those aren't "pending client review" and
-      // must not drive an auto-release countdown that has already been overtaken.
+      // The client has already approved some of this (the payout just hasn't
+      // settled yet). Those aren't "pending client review" and must not drive an
+      // auto-release countdown that has already been overtaken.
       const isActioned = (p: { metadata: unknown }) =>
         isReleaseActioned({ metadata: p.metadata as Record<string, unknown> | null });
-      setEscrowClearing(
-        unreleased.filter(isActioned).reduce((s, r) => s + (r.amount || 0), 0),
-      );
 
       // Only COMPLETED jobs STILL AWAITING THE CLIENT are inside the review
       // window; the soonest completed_at drives the next auto-release countdown.
@@ -805,10 +802,6 @@ export default function Payouts() {
   };
 
   const totalPayoutCount = accountDetails?.payouts?.length ?? 0;
-  const totalPaidOut = useMemo(() => {
-    return (accountDetails?.payouts || []).reduce((s, p) => s + p.amount, 0);
-  }, [accountDetails?.payouts]);
-  const escrowAmount = escrowHeld;
   const autoReleaseLabel = (() => {
     if (!escrowReleaseAt) return `Auto-releases after ${RELEASE_WINDOW_LABEL}`;
     const ms = escrowReleaseAt + RELEASE_WINDOW_MS - nowTs;
@@ -821,75 +814,31 @@ export default function Payouts() {
     if (h > 0) return `Auto-releases in ${h}h ${m}m`;
     return `Auto-releases in ${m}m`;
   })();
-  const onItsWay = (accountDetails?.balance?.available ?? 0) + (accountDetails?.balance?.pending ?? 0);
-
-  // Money that is genuinely in flight = Stripe payout objects that haven't landed
-  // yet. Stripe deducts a payout from the Connect balance the moment it's created,
-  // so these never double-count against `available`/`pending` below.
-  const inFlightPayouts = (accountDetails?.payouts || []).filter(
-    (p) => p.status === 'pending' || p.status === 'in_transit'
-  );
-  const inFlightTotal = inFlightPayouts.reduce((s, p) => s + p.amount, 0);
-  // Earliest date Stripe itself has committed to. Never a guess.
-  const inFlightArrival = inFlightPayouts.length
-    ? Math.min(...inFlightPayouts.map((p) => p.arrival_date).filter(Boolean))
-    : null;
-
-  const availableCents = accountDetails?.balance?.available ?? 0;
-  const clearingCents = accountDetails?.balance?.pending ?? 0;
-  const isManualSchedule = accountDetails?.payoutSchedule?.interval === 'manual';
-
-  // These are three genuinely different states. They used to be collapsed into a
-  // single "Heading to your bank" line paired with a rolling `today + 3 business
-  // days` estimate — which recomputed on every render, so the date appeared to
-  // slide forward one business day every day regardless of what the payout was
-  // actually doing. It carried no information about the payout at all.
-  //
-  //   in flight  -> a real payout exists; show Stripe's own arrival_date
-  //   available  -> settled, but tradie accounts default to a MANUAL payout
-  //                 schedule (see stripe-connect-onboarding), so this sits in
-  //                 the Stripe balance until a release creates a payout
-  //   clearing   -> still settling inside Stripe; no arrival date exists yet
-  const transitState: { amount: number; title: string; detail: string } = (() => {
-    if (inFlightTotal > 0) {
-      return {
-        amount: inFlightTotal,
-        title: 'Heading to your bank',
-        detail: inFlightArrival
-          ? `Should arrive by ${new Date(inFlightArrival * 1000).toLocaleDateString('en-AU', {
-              weekday: 'short',
-              day: 'numeric',
-              month: 'short',
-            })}`
-          : 'Arrival date pending from Stripe',
-      };
-    }
-    if (availableCents > 0) {
-      return {
-        amount: availableCents,
-        title: isManualSchedule ? 'Ready to pay out' : 'Scheduled for your next payout',
-        detail: isManualSchedule
-          ? 'Cleared and waiting — not sent to your bank yet'
-          : 'Will be sent on your next scheduled payout',
-      };
-    }
-    if (clearingCents > 0) {
-      return {
-        amount: clearingCents,
-        title: 'Clearing with Stripe',
-        detail: 'Still settling — no bank date yet',
-      };
-    }
-    return { amount: 0, title: 'Heading to your bank', detail: 'Nothing in transit' };
-  })();
   const externalTotal = useMemo(() => externalPayments.reduce((s, p) => s + p.amount, 0), [externalPayments]);
-  // Destination charges put the money in the tradie's Stripe balance at PAYMENT
-  // time, so a funded-but-unreleased job appears in BOTH escrowAmount (gross,
-  // from the payments table) and onItsWay (net, from the Stripe balance). Adding
-  // both double-counted every live job — a $70 job read as ~$135 of earnings.
-  // Only escrow we genuinely still hold (legacy custodial flow) is added here.
-  const escrowNotYetInBalance = Math.max(0, escrowAmount - escrowInTradieBalance);
-  const computedTotalEarned = escrowNotYetInBalance + onItsWay + totalPaidOut + externalTotal;
+
+  // One source of truth for every figure on the summary card. `earned` is the
+  // sum of the three rows by construction, so the headline can't disagree with
+  // the breakdown under it — see src/lib/payoutSummary.ts for what each row
+  // includes and which double-counts it exists to prevent.
+  const summary = useMemo(
+    () =>
+      buildPayoutSummary({
+        availableCents: accountDetails?.balance?.available ?? 0,
+        pendingCents: accountDetails?.balance?.pending ?? 0,
+        payouts: accountDetails?.payouts ?? [],
+        escrow: escrowRows,
+        externalTotalCents: externalTotal,
+        isManualSchedule: accountDetails?.payoutSchedule?.interval === 'manual',
+      }),
+    [
+      accountDetails?.balance?.available,
+      accountDetails?.balance?.pending,
+      accountDetails?.payouts,
+      accountDetails?.payoutSchedule?.interval,
+      escrowRows,
+      externalTotal,
+    ],
+  );
   const methodLabel = (m: string | null) =>
     m ? (({ bank_transfer: 'Bank transfer', cash: 'Cash', cheque: 'Cheque', accountant: 'Accountant' } as Record<string, string>)[m] ?? m) : '';
 
@@ -1098,87 +1047,98 @@ export default function Payouts() {
                 they've earned, where the money is, and when it arrives. */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
               <p className="text-sm text-gray-500">You’ve earned</p>
-              <p className="text-4xl font-bold text-gray-900 mt-0.5 tabular-nums">{formatCurrency(computedTotalEarned)}</p>
+              <p className="text-4xl font-bold text-gray-900 mt-0.5 tabular-nums">{formatCurrency(summary.earned)}</p>
 
               <div className="mt-5 space-y-2">
                 {/* 🟡 Pending client review — or already approved and just clearing */}
-                {(() => {
-                  // This row is ONLY money still waiting on the client to approve.
-                  // Once they've released it, it belongs to the transit row below —
-                  // showing it in both places made a single $70 job read as $70
-                  // "pending" AND $64.90 "clearing", i.e. the same money twice.
-                  const awaitingClient = Math.max(0, escrowAmount - escrowClearing);
-                  return (
-                    <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-100 px-4 py-3">
-                      <Clock className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-amber-900 tabular-nums">
-                          {formatCurrency(awaitingClient)} — Secured, awaiting approval
-                        </p>
-                        <p className="text-xs text-amber-700">
-                          {awaitingClient === 0
-                            ? 'Nothing waiting on a client'
-                            : `Held safely — released to you when your client approves · ${autoReleaseLabel}`}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })()}
+                <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-100 px-4 py-3">
+                  <Clock className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-amber-900 tabular-nums">
+                      {formatCurrency(summary.awaitingClient)} — Secured, awaiting approval
+                    </p>
+                    <p className="text-xs text-amber-700">
+                      {summary.awaitingClient === 0
+                        ? 'Nothing waiting on a client'
+                        : `Held safely — released to you when your client approves · ${autoReleaseLabel}`}
+                    </p>
+                  </div>
+                </div>
 
                 {/* 🔵 Heading to the bank */}
-                <div className="rounded-xl bg-secondary-50 border border-secondary-100 px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <ExternalLink className="w-5 h-5 text-secondary-500 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-secondary-900 tabular-nums">{formatCurrency(transitState.amount)} — {transitState.title}</p>
-                      <p className="text-xs text-secondary-700">{transitState.detail}</p>
-                    </div>
+                <div className="flex items-center gap-3 rounded-xl bg-secondary-50 border border-secondary-100 px-4 py-3">
+                  <ExternalLink className="w-5 h-5 text-secondary-500 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-secondary-900 tabular-nums">{formatCurrency(summary.transit.amount)} — {summary.transit.title}</p>
+                    <p className="text-xs text-secondary-700">{summary.transit.detail}</p>
                   </div>
-
-                  {/* ⚡ Opt-in instant payout — shown only when Stripe says the
-                      account is eligible AND there's an instant-available balance.
-                      Standard (free) stays the default; this is a per-payout choice. */}
-                  {instantDone ? (
-                    <p className="mt-2.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
-                      💰 {instantDone}
-                    </p>
-                  ) : instantStatus?.eligible && instantStatus.netCents > 0 ? (
-                    <div className="mt-2.5 rounded-lg bg-white border border-secondary-200 px-3 py-2.5">
-                      <p className="text-xs text-gray-600">
-                        Payout: <span className="font-semibold">{formatCurrency(instantStatus.instantAvailable)}</span>
-                        {' — '}Instant fee: <span className="font-semibold">{formatCurrency(instantStatus.feeCents)}</span>
-                        {' — '}You receive: <span className="font-semibold text-gray-900">{formatCurrency(instantStatus.netCents)}</span>
-                        {' — '}arrives in minutes{instantStatus.destinationLabel ? ` on ${instantStatus.destinationLabel}` : ''}
-                      </p>
-                      <button
-                        onClick={runInstantPayout}
-                        disabled={instantBusy}
-                        className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-600 text-white text-xs font-semibold rounded-lg hover:bg-secondary-700 disabled:opacity-50 transition-colors"
-                      >
-                        {instantBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '⚡'} Get it now — instant payout
-                      </button>
-                      {instantError && <p className="mt-1.5 text-xs text-red-600">{instantError}</p>}
-                    </div>
-                  ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'funds_pending' ? (
-                    <p className="mt-2.5 text-[11px] text-gray-500">
-                      Instant payout available once funds clear (usually next business day).
-                    </p>
-                  ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'no_instant_method' && onItsWay > 0 && payoutPref !== 'standard' ? (
-                    <p className="mt-2.5 text-[11px] text-gray-500">
-                      This payout account can’t receive instant payouts — add an instant-eligible debit card or bank in Bank Settings.
-                    </p>
-                  ) : null}
                 </div>
 
                 {/* 🟢 In the account */}
                 <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-emerald-900 tabular-nums">{formatCurrency(totalPaidOut)} — In your account</p>
-                    <p className="text-xs text-emerald-700">{totalPaidOut > 0 ? '✓ Received' : 'Payouts land here once they clear'}</p>
+                    <p className="text-sm font-semibold text-emerald-900 tabular-nums">{formatCurrency(summary.received)} — In your account</p>
+                    <p className="text-xs text-emerald-700">{summary.received > 0 ? '✓ Received' : 'Payouts land here once they clear'}</p>
                   </div>
                 </div>
               </div>
+
+              {/* ⚡ Opt-in instant payout.
+                  Deliberately NOT nested inside the transit row: this acts on the
+                  cleared Connect balance, never on a payout Stripe has already
+                  sent. Sitting inside that row, it read as "get the $64.90 heading
+                  to your bank now" while actually offering $3.50. */}
+              {instantDone ? (
+                <p className="mt-3 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+                  💰 {instantDone}
+                </p>
+              ) : instantStatus?.eligible && instantStatus.netCents > 0 ? (
+                <div className="mt-3 rounded-xl bg-white border border-secondary-200 px-4 py-3">
+                  <p className="text-sm font-semibold text-gray-900 tabular-nums">
+                    {formatCurrency(instantStatus.instantAvailable)} available now
+                  </p>
+                  <p className="mt-0.5 text-xs text-gray-600">
+                    Instant transfer fee{' '}
+                    <span className="font-semibold">{formatCurrency(instantStatus.feeCents)}</span>
+                    {instantStatus.instantAvailable > 0
+                      ? ` (${((instantStatus.feeCents / instantStatus.instantAvailable) * 100).toFixed(1)}%)`
+                      : ''}
+                    {' — you receive '}
+                    <span className="font-semibold text-gray-900">{formatCurrency(instantStatus.netCents)}</span>
+                    {' in minutes'}
+                    {instantStatus.destinationLabel ? ` on ${instantStatus.destinationLabel}` : ''}
+                  </p>
+                  <button
+                    onClick={runInstantPayout}
+                    disabled={instantBusy}
+                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-600 text-white text-xs font-semibold rounded-lg hover:bg-secondary-700 disabled:opacity-50 transition-colors"
+                  >
+                    {instantBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '⚡'} Send {formatCurrency(instantStatus.netCents)} now
+                  </button>
+                  {/* The fee is withheld from this transfer, not charged: it stays
+                      in the Stripe balance and leaves on the next standard payout.
+                      Saying "fee" without saying that overstates what it costs. */}
+                  <p className="mt-1.5 text-[11px] text-gray-500">
+                    The {formatCurrency(instantStatus.feeCents)} stays in your balance and goes out with your next standard payout.
+                  </p>
+                  {instantError && <p className="mt-1.5 text-xs text-red-600">{instantError}</p>}
+                </div>
+              ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'below_minimum' ? (
+                <p className="mt-3 text-[11px] text-gray-500">
+                  Instant payout is available from {formatCurrency(instantStatus.minBaseCents ?? 0)} — below that the{' '}
+                  {formatCurrency(instantStatus.feeMinCents ?? 0)} minimum fee takes too much of it. Your{' '}
+                  {formatCurrency(instantStatus.instantAvailable)} is on its way free of charge.
+                </p>
+              ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'funds_pending' ? (
+                <p className="mt-3 text-[11px] text-gray-500">
+                  Instant payout available once funds clear (usually next business day).
+                </p>
+              ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'no_instant_method' && summary.transit.amount > 0 && payoutPref !== 'standard' ? (
+                <p className="mt-3 text-[11px] text-gray-500">
+                  This payout account can’t receive instant payouts — add an instant-eligible debit card or bank in Bank Settings.
+                </p>
+              ) : null}
 
               {/* The payout breakdown and the explainer use the same wording, so a
                   tradie can reconcile what they read with what they were paid. */}
@@ -1244,7 +1204,14 @@ export default function Payouts() {
                     className="px-2.5 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="standard">Standard — free (2–3 business days)</option>
-                    <option value="instant">Instant — 1.5% fee, min $2 (minutes)</option>
+                    {/* Rates come from pricing_tiers via the status response; the
+                        label used to be hardcoded and would silently lie if a
+                        tier's rate changed. */}
+                    <option value="instant">
+                      {instantStatus?.feeBps != null && instantStatus.feeMinCents != null
+                        ? `Instant — ${(instantStatus.feeBps / 100).toFixed(2).replace(/\.?0+$/, '')}%, min ${formatCurrency(instantStatus.feeMinCents)} (minutes)`
+                        : 'Instant — minutes, small fee'}
+                    </option>
                     <option value="ask">Ask me each time</option>
                   </select>
                 </label>

@@ -1,6 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
+import { sumEscrowReserveCents } from "../_shared/escrowReserve.ts";
+import type { EscrowRow } from "../_shared/escrowReserve.ts";
+import { computeInstantPayout } from "../_shared/instantPayout.ts";
 
 /*
   instant-payout — opt-in Stripe Instant Payout of the tradie's AVAILABLE
@@ -11,7 +14,11 @@ import Stripe from "npm:stripe@14.21.0";
   explicitly asks (per-payout button or "always instant" preference).
 
   Actions (POST { action }):
-    status  -> { eligible, instantAvailable, feeCents, netCents, cardLast4, feeBps, feeMinCents }
+    status  -> { eligible, reason, instantAvailable, feeCents, netCents, minBaseCents,
+                 cardLast4, feeBps, feeMinCents }
+              instantAvailable is the CLEARED balance less escrow; it is only
+              offered once it reaches minBaseCents, so the flat minimum fee can
+              never dominate the payout.
     payout  -> executes the instant payout of the full instant-available balance
     preference { value } -> saves tradie_details.payout_speed_preference
 
@@ -117,24 +124,43 @@ Deno.serve(async (req: Request) => {
     const instantAvailableCents = audAmount((balance as { instant_available?: { amount: number; currency: string }[] }).instant_available);
 
     // ── Escrow reserve (CRITICAL) ────────────────────────────────────────────
-    // Escrow in this system IS the manual payout schedule. accept-and-pay uses a
-    // destination charge (transfer_data.destination), so a client's funds land in
-    // THIS tradie's Connect balance at charge time and sit in `available` exactly
-    // like earned money. Paying the raw available balance out would let a tradie
-    // take the client's escrowed funds before doing the work and before the
-    // homeowner approves release — and a later process-refund would then reverse
-    // against an empty balance, pushing the connected account negative and leaving
-    // the platform to cover it.
+    // See _shared/escrowReserve.ts for why this number exists at all.
     //
-    // Same query and reasoning as auto-release-recurring-payouts/index.ts:137-144.
-    // Released payments carry a non-escrow status, so they drop out of the filter.
-    const { data: escrowRows } = await supabase
-      .from("payments")
-      .select("amount")
-      .eq("metadata->>tradie_id", user.id)
-      .eq("metadata->>flow", "destination")
-      .in("status", ["completed", "funded", "paid"]);
-    const escrowReserveCents = (escrowRows || []).reduce((s, r) => s + (r.amount || 0), 0);
+    // TWO anchor queries, because payment rows anchor differently depending on
+    // who paid. accept-and-pay and pay-price-increase stamp metadata.tradie_id;
+    // public-quote and invoice-contact serve off-app clients who have no profile
+    // at all, so those rows carry NO tradie_id and route via metadata.routing
+    // instead of metadata.flow. The old single metadata-anchored, flow-only
+    // query matched neither condition, so a job funded through a public quote
+    // left the client's escrow completely unreserved — and therefore offered up
+    // as instantly payable balance. The job-anchored query is what catches them;
+    // the metadata-anchored one is kept so nothing previously reserved is lost.
+    //
+    // Status: only "completed" is ever written to payments.status for held
+    // escrow — the previous ["completed","funded","paid"] list also carried a
+    // jobs status and a recurring_invoices status, neither of which can match.
+    const [jobAnchored, metaAnchored] = await Promise.all([
+      supabase
+        .from("payments")
+        .select("id, amount, metadata, jobs!inner(tradie_id)")
+        .eq("jobs.tradie_id", user.id)
+        .eq("status", "completed"),
+      supabase
+        .from("payments")
+        .select("id, amount, metadata")
+        .eq("metadata->>tradie_id", user.id)
+        .eq("status", "completed"),
+    ]);
+    // A failed reserve query must never read as "no escrow" — that would pay out
+    // client funds. Refuse instead.
+    if (jobAnchored.error || metaAnchored.error) {
+      console.error("instant-payout escrow reserve query failed:", jobAnchored.error ?? metaAnchored.error);
+      return json({ error: "Could not confirm your available balance. Please try again shortly." }, 503);
+    }
+    const escrowReserveCents = sumEscrowReserveCents([
+      ...((jobAnchored.data ?? []) as EscrowRow[]),
+      ...((metaAnchored.data ?? []) as EscrowRow[]),
+    ]);
 
     // Resolve the external account the instant payout lands on. In AU an
     // instant-capable BANK account is valid (real-time payouts) — a debit card is
@@ -165,22 +191,16 @@ Deno.serve(async (req: Request) => {
     } catch { /* leave instantCapable=false → not eligible */ }
 
     // The instant payout is drawn from cleared AVAILABLE funds, LESS anything
-    // still held in escrow for jobs the homeowner hasn't released.
-    const payoutBaseCents = Math.max(0, availableCents - escrowReserveCents);
-    const feeCents = payoutBaseCents > 0 ? Math.max(feeMinCents, Math.round(payoutBaseCents * feeBps / 10000)) : 0;
-    const netCents = Math.max(0, payoutBaseCents - feeCents);
-    const eligible = instantCapable && payoutBaseCents > 0 && netCents > 0;
-
-    let reason: string | null = null;
-    if (!eligible) {
-      if (!instantCapable) reason = "no_instant_method";
-      // Distinguish "held in escrow" from "no money": telling a tradie who can
-      // see a funded job that they have "no available funds" reads as a bug.
-      else if (payoutBaseCents <= 0 && escrowReserveCents > 0) reason = "escrow_held";
-      else if (payoutBaseCents <= 0 && pendingCents > 0) reason = "funds_pending";
-      else if (payoutBaseCents <= 0) reason = "no_funds";
-      else reason = "below_fee";
-    }
+    // still held in escrow for jobs the homeowner hasn't released. See
+    // _shared/instantPayout.ts for the fee floor and why it exists.
+    const { payoutBaseCents, feeCents, netCents, minBaseCents, eligible, reason } = computeInstantPayout({
+      availableCents,
+      pendingCents,
+      escrowReserveCents,
+      feeBps,
+      feeMinCents,
+      instantCapable,
+    });
 
     if (body.action === "status") {
       return json({
@@ -193,6 +213,7 @@ Deno.serve(async (req: Request) => {
         escrowReserveCents,
         feeCents,
         netCents,
+        minBaseCents,
         feeBps,
         feeMinCents,
         cardLast4,
@@ -209,6 +230,8 @@ Deno.serve(async (req: Request) => {
             ? "Your funds are still clearing. Instant payout will be available once they land — usually the next business day."
             : reason === "no_instant_method"
             ? "This payout account can't receive instant payouts. Add an instant-eligible debit card or bank account in Bank Settings."
+            : reason === "below_minimum"
+            ? `Instant payout is available from $${(minBaseCents / 100).toFixed(2)}. Below that the $${(feeMinCents / 100).toFixed(2)} minimum fee takes too much of it — your balance is on its way free of charge.`
             : reason === "below_fee"
             ? "Your available balance is too small to cover the instant payout fee."
             : "You have no available funds to pay out right now.";
