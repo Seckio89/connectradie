@@ -189,6 +189,9 @@ export default function AdminDisputes() {
   const [updating, setUpdating] = useState<string | null>(null);
   const [summaries, setSummaries] = useState<Record<string, SummaryRecord>>({});
   const [decisionError, setDecisionError] = useState<Record<string, string>>({});
+  /** Neutral outcome messages — e.g. a payout deferred until funds settle.
+   *  Separate from decisionError so an expected result isn't shown in red. */
+  const [decisionNote, setDecisionNote] = useState<Record<string, string>>({});
   /** job_id → refundable total in cents, for jobs whose escrow can still be split. */
   const [splittable, setSplittable] = useState<Record<string, number>>({});
   /** dispute_id → the dollar amount the officer typed for the client's share. */
@@ -412,7 +415,7 @@ export default function AdminDisputes() {
 
     const suggestion = summaries[dispute.id]?.summary?.suggested_outcome ?? null;
     try {
-      const res = await callEdgeFunction<{ warning?: string }>('resolve-dispute-split', {
+      const res = await callEdgeFunction<{ warning?: string; note?: string }>('resolve-dispute-split', {
         disputeId: dispute.id,
         refundCents: cents,
         reasoning,
@@ -427,8 +430,12 @@ export default function AdminDisputes() {
             : d
         )
       );
-      // A partial payout failure still counts as resolved — the client has been
-      // refunded — but the admin needs to know the tradie's share is stranded.
+      // A deferred payout is the EXPECTED outcome on a recently-charged job —
+      // the funds are still clearing with Stripe. Report it plainly, not as a
+      // failure, or every normal split looks like something went wrong.
+      if (res?.note) {
+        setDecisionNote((prev) => ({ ...prev, [dispute.id]: res.note as string }));
+      }
       if (res?.warning) {
         setDecisionError((prev) => ({ ...prev, [dispute.id]: res.warning as string }));
       }
@@ -779,6 +786,16 @@ export default function AdminDisputes() {
                             {dispute.resolution}
                           </p>
                         </div>
+                      )}
+
+                      {/* Outcome note — deliberately OUTSIDE the actions block
+                          below, which unmounts the moment a dispute becomes
+                          terminal. A split resolves it, so a note rendered in
+                          there would vanish at the exact moment it mattered. */}
+                      {decisionNote[dispute.id] && (
+                        <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
+                          {decisionNote[dispute.id]}
+                        </p>
                       )}
 
                       {/* Admin actions */}
