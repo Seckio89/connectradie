@@ -629,7 +629,7 @@ export default function Settings() {
                     {(tradieDetails?.subscription_tier === 'pro' || profile?.is_premium) ? (
                       <button
                         onClick={() => setShowSubscriptionModal(true)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 text-sm font-medium rounded-full border border-green-200 hover:bg-green-100 transition-colors"
+                        className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-1 bg-green-50 text-green-700 text-sm font-medium rounded-full border border-green-200 hover:bg-green-100 transition-colors"
                       >
                         <Crown className="w-3.5 h-3.5" />
                         Pro Member — Manage
@@ -637,7 +637,7 @@ export default function Settings() {
                     ) : (
                       <button
                         onClick={() => setShowSubscriptionModal(true)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 text-warm-600 text-sm font-medium rounded-full border border-warm-200 hover:bg-warm-100 transition-colors"
+                        className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-1 text-warm-600 text-sm font-medium rounded-full border border-warm-200 hover:bg-warm-100 transition-colors"
                       >
                         <Crown className="w-3.5 h-3.5" />
                         Upgrade to Pro

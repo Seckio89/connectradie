@@ -47,7 +47,7 @@ export default function EmptyState({
       {actionLabel && onAction && (
         <button
           onClick={onAction}
-          className={`inline-flex items-center gap-2 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 active:scale-[0.97] transition-all ${
+          className={`inline-flex items-center justify-center gap-2 min-h-[44px] bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 active:scale-[0.97] transition-all ${
             compact ? 'px-4 py-1.5 text-sm mt-2 sm:mt-4' : 'px-6 py-3 mt-5'
           }`}
         >

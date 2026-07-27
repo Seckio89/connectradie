@@ -977,13 +977,18 @@ body {
 
 /* -- AC. PaymentHistory -- filter inputs full width on mobile ---------------- */
 @media (max-width: 639px) {
-  /* Filter panel date inputs and selects: full width */
-  main .flex.flex-wrap.items-center.gap-3 > div {
+  /* Scoped to the PaymentHistory filter panel (.bg-surface-50). Unscoped, this
+     matched EVERY `flex flex-wrap items-center gap-3` row in main and forced its
+     div children to 100% — which is what stretched the Schedule segmented
+     control ("Site Calendar | My Team") to full width despite its `w-fit`,
+     leaving a slab of empty grey beside the tabs. Same failure mode as section
+     I. The :not() guard keeps anything that sizes itself out of it. */
+  main .bg-surface-50 .flex.flex-wrap.items-center.gap-3 > div:not(.w-fit):not([class*="max-w-"]) {
     width: 100% !important;
   }
 
-  main .flex.flex-wrap.items-center.gap-3 select,
-  main .flex.flex-wrap.items-center.gap-3 input[type="date"] {
+  main .bg-surface-50 .flex.flex-wrap.items-center.gap-3 select,
+  main .bg-surface-50 .flex.flex-wrap.items-center.gap-3 input[type="date"] {
     width: 100% !important;
   }
 }

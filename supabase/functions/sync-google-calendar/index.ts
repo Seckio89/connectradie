@@ -238,8 +238,80 @@ Deno.serve(async (req: Request) => {
           .in("id", clearedJobIds);
       }
 
+      // ── RECLAIM: events we created but never recorded ────────────────
+      // calendar_event_id has never persisted (0 rows set, database-wide), so
+      // every past sync re-exported the same slots and created fresh duplicates.
+      // Deleting strictly by stored id therefore finds nothing. Sweep the
+      // calendar for events that are unmistakably ours and remove those too.
+      //
+      // "Unmistakably ours" means the extendedProperties stamp we now write, or
+      // — for the untracked backlog — an EXACT legacy marker. Never a fuzzy or
+      // free-text match: a user's own event must never be a candidate.
+      const isOurs = (ev: Record<string, unknown>): boolean => {
+        const ext = ev.extendedProperties as { private?: Record<string, string> } | undefined;
+        if (ext?.private?.connectradie) return true;
+        const summary = typeof ev.summary === "string" ? ev.summary : "";
+        const description = typeof ev.description === "string" ? ev.description : "";
+        if (summary === "✅ Available — ConnecTradie") return true;
+        if (summary.startsWith("🔧 ") && description.startsWith("ConnecTradie job")) return true;
+        return false;
+      };
+
+      // Bound the work: an earlier sync already took 47s, and there may be
+      // hundreds of duplicates. Delete up to MAX_DELETES per call and report
+      // what is left so the caller can run it again — never truncate silently.
+      const MAX_DELETES = 150;
+      const listFrom = integration.created_at
+        ? new Date(integration.created_at).toISOString()
+        : new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+      const listTo = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+
+      let pageToken: string | undefined;
+      let remaining = 0;
+      let scanned = 0;
+      let pages = 0;
+
+      do {
+        const listUrl = new URL(
+          `https://www.googleapis.com/calendar/v3/calendars/${integration.calendar_id}/events`
+        );
+        listUrl.searchParams.set("timeMin", listFrom);
+        listUrl.searchParams.set("timeMax", listTo);
+        listUrl.searchParams.set("singleEvents", "true");
+        listUrl.searchParams.set("maxResults", "250");
+        if (pageToken) listUrl.searchParams.set("pageToken", pageToken);
+
+        const listRes = await fetch(listUrl.toString(), {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!listRes.ok) {
+          console.error("Unsync: failed to list events", listRes.status, await listRes.text());
+          break;
+        }
+        const listData = await listRes.json();
+        const items: Record<string, unknown>[] = listData.items || [];
+        scanned += items.length;
+        pageToken = listData.nextPageToken;
+        pages++;
+
+        for (const ev of items) {
+          if (!isOurs(ev)) continue;
+          const evId = ev.id as string;
+          if (!evId) continue;
+          if (removed + failed >= MAX_DELETES) { remaining++; continue; }
+          if (await deleteGoogleEvent(evId)) removed++;
+          else failed++;
+        }
+        // Stop paging once the budget is spent; the caller will run again.
+      } while (pageToken && pages < 20 && removed + failed < MAX_DELETES);
+
+      // More pages may hold more of ours — flag that this wasn't the whole job.
+      if (pageToken && removed + failed >= MAX_DELETES) remaining = Math.max(remaining, 1);
+
+      console.log(`Unsync: scanned ${scanned} events, removed ${removed}, failed ${failed}, remaining ${remaining}`);
+
       return new Response(
-        JSON.stringify({ success: true, removed, failed }),
+        JSON.stringify({ success: true, removed, failed, remaining, scanned }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -306,6 +378,54 @@ Deno.serve(async (req: Request) => {
     // Calendar events for any that don't already have a calendar_event_id.
     let jobsExported = 0;
     try {
+      // Idempotence guard, built once and used by BOTH export loops below.
+      // jobs.calendar_event_id has never persisted either, so without this the
+      // job export re-creates every upcoming job's event on every sync, exactly
+      // as the slot export did. Keyed by start time, per kind, so an
+      // availability block never suppresses a job event at the same hour.
+      //
+      // The window runs a year forward because the job query has no upper bound
+      // on scheduled_date — a 30-day window would miss a job further out and
+      // duplicate it.
+      const existingStarts = { availability: new Set<string>(), job: new Set<string>() };
+      try {
+        const dedupTo = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+        let dedupToken: string | undefined;
+        let dedupPages = 0;
+        do {
+          const dedupUrl = new URL(
+            `https://www.googleapis.com/calendar/v3/calendars/${integration.calendar_id}/events`
+          );
+          dedupUrl.searchParams.set("timeMin", timeMin);
+          dedupUrl.searchParams.set("timeMax", dedupTo);
+          dedupUrl.searchParams.set("singleEvents", "true");
+          dedupUrl.searchParams.set("maxResults", "250");
+          if (dedupToken) dedupUrl.searchParams.set("pageToken", dedupToken);
+
+          const dedupRes = await fetch(dedupUrl.toString(), {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          if (!dedupRes.ok) break;
+          const dedupData = await dedupRes.json();
+          for (const ev of dedupData.items || []) {
+            const start = ev.start?.dateTime;
+            if (!start) continue;
+            const iso = new Date(start).toISOString();
+            const ext = ev.extendedProperties?.private?.connectradie;
+            const summary = typeof ev.summary === "string" ? ev.summary : "";
+            if (ext === "availability" || summary === "✅ Available — ConnecTradie") {
+              existingStarts.availability.add(iso);
+            } else if (ext === "job" || summary.startsWith("🔧 ")) {
+              existingStarts.job.add(iso);
+            }
+          }
+          dedupToken = dedupData.nextPageToken;
+          dedupPages++;
+        } while (dedupToken && dedupPages < 10);
+      } catch (e) {
+        console.error("Could not list existing events for dedup:", e);
+      }
+
       const { data: upcomingJobs } = await supabaseClient
         .from("jobs")
         .select("id, title, description, scheduled_date, start_time, location_address, status")
@@ -315,6 +435,7 @@ Deno.serve(async (req: Request) => {
         .gte("scheduled_date", new Date().toISOString().split("T")[0])
         .is("calendar_event_id", null);
 
+      let jobsSkipped = 0;
       for (const job of upcomingJobs || []) {
         try {
           const category = job.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, " ") || "";
@@ -327,6 +448,8 @@ Deno.serve(async (req: Request) => {
           const endHour = String(Number(startHour) + 2).padStart(2, "0");
           const endDateTime = `${jobDate}T${endHour}:${startMin.padStart(2, "0")}:00+10:00`;
 
+          if (existingStarts.job.has(new Date(startDateTime).toISOString())) { jobsSkipped++; continue; }
+
           const eventBody = {
             summary: `🔧 ${summary}`,
             description: `ConnecTradie job\n${job.description?.replace(/^\[[^\]]+\]\s*/, "") || ""}\n\nStatus: ${job.status}`,
@@ -334,6 +457,9 @@ Deno.serve(async (req: Request) => {
             end: { dateTime: endDateTime, timeZone: "Australia/Sydney" },
             location: job.location_address || undefined,
             colorId: "10",
+            // Stamp so cleanup can identify our events without depending on the
+            // title, which the tradie can edit in Google.
+            extendedProperties: { private: { connectradie: "job" } },
           };
 
           const createRes = await fetch(
@@ -350,10 +476,14 @@ Deno.serve(async (req: Request) => {
 
           if (createRes.ok) {
             const created = await createRes.json();
-            await supabaseClient
+            // The result of this write-back was previously discarded, which is
+            // why a total failure to persist went unnoticed long enough to fill
+            // the calendar with duplicates. Log it.
+            const { error: backErr } = await supabaseClient
               .from("jobs")
               .update({ calendar_event_id: created.id })
               .eq("id", job.id);
+            if (backErr) console.error(`calendar_event_id write-back failed for job ${job.id}:`, backErr.message, backErr.details, backErr.hint);
             jobsExported++;
           }
         } catch (e) {
@@ -372,8 +502,10 @@ Deno.serve(async (req: Request) => {
         .is("calendar_event_id", null);
 
       let slotsExported = 0;
+      let slotsSkipped = 0;
       for (const slot of slotsToExport || []) {
         try {
+          if (existingStarts.availability.has(new Date(slot.start_time).toISOString())) { slotsSkipped++; continue; }
           const slotBody = {
             summary: "✅ Available — ConnecTradie",
             description: "Open availability slot on ConnecTradie",
@@ -381,6 +513,7 @@ Deno.serve(async (req: Request) => {
             end: { dateTime: slot.end_time, timeZone: "Australia/Sydney" },
             colorId: "2",
             transparency: "transparent",
+            extendedProperties: { private: { connectradie: "availability" } },
           };
 
           const createRes = await fetch(
@@ -397,10 +530,11 @@ Deno.serve(async (req: Request) => {
 
           if (createRes.ok) {
             const created = await createRes.json();
-            await supabaseClient
+            const { error: backErr } = await supabaseClient
               .from("availability_slots")
               .update({ calendar_event_id: created.id })
               .eq("id", slot.id);
+            if (backErr) console.error(`calendar_event_id write-back failed for slot ${slot.id}:`, backErr.message, backErr.details, backErr.hint);
             slotsExported++;
           }
         } catch (e) {
@@ -408,6 +542,9 @@ Deno.serve(async (req: Request) => {
         }
       }
 
+      if (slotsSkipped > 0 || jobsSkipped > 0) {
+        console.log(`Export: skipped ${slotsSkipped} slot(s) and ${jobsSkipped} job(s) already present in Google`);
+      }
       jobsExported += slotsExported;
     } catch (exportErr) {
       console.error("Export to Google Calendar failed:", exportErr);

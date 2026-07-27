@@ -204,7 +204,7 @@ export default function MyProfile() {
               {!profile?.cover_photo_url && (
                 <button
                   onClick={() => setEditCoverPhoto(true)}
-                  className="absolute top-4 left-4 inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white/70 text-xs font-medium rounded-lg hover:bg-white/25 hover:text-white transition-colors"
+                  className="absolute top-4 left-4 inline-flex items-center justify-center gap-2 min-h-[44px] px-3 py-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white/70 text-xs font-medium rounded-lg hover:bg-white/25 hover:text-white transition-colors"
                 >
                   <Camera className="w-3.5 h-3.5" />
                   Add Cover Photo
