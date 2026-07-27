@@ -843,7 +843,7 @@ export default function Messages() {
                 <div className="flex justify-end mt-2">
                   <button
                     onClick={() => setShowNewGroupModal(true)}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-secondary-600 hover:text-secondary-700 transition-colors"
+                    className="inline-flex items-center gap-1.5 min-h-[44px] px-2 -mx-2 text-xs font-medium text-secondary-600 hover:text-secondary-700 transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" /> New Group
                   </button>

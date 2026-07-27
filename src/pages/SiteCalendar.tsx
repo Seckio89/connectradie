@@ -1235,11 +1235,11 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
             <div className="flex border border-gray-200 rounded-xl overflow-hidden">
               <button
                 onClick={() => setView('week')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${view === 'week' ? 'bg-warm-500 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                className={`px-4 py-2 min-h-[44px] text-sm font-medium transition-colors ${view === 'week' ? 'bg-warm-500 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
               >Week</button>
               <button
                 onClick={() => setView('month')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${view === 'month' ? 'bg-warm-500 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                className={`px-4 py-2 min-h-[44px] text-sm font-medium transition-colors ${view === 'month' ? 'bg-warm-500 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
               >Month</button>
             </div>
           </div>
@@ -1247,7 +1247,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
 
         <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-4 md:px-5 py-3 md:py-4 border-b border-gray-100">
-            <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={() => navigate(-1)} className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
               <ChevronLeft className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3">
@@ -1255,7 +1255,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
               <h2 className="font-semibold text-gray-900">{getTitle()}</h2>
               <button onClick={() => setCurrentDate(new Date())} className="text-xs text-primary-600 font-medium hover:underline">Today</button>
             </div>
-            <button onClick={() => navigate(1)} className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={() => navigate(1)} className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
@@ -1636,7 +1636,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                   </div>
                   <Link
                     to="/dashboard"
-                    className="flex items-center justify-between mt-3.5 pt-3.5 border-t border-gray-100 text-sm font-semibold text-emerald-700 active:opacity-70"
+                    className="flex items-center justify-between min-h-[44px] mt-3.5 pt-3.5 border-t border-gray-100 text-sm font-semibold text-emerald-700 active:opacity-70"
                   >
                     <span>Edit availability on Dashboard</span>
                     <ChevronRight className="w-4 h-4" />

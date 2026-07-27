@@ -734,13 +734,16 @@ export default function TradieDashboard() {
         // the opposite of there being nothing to remove.
         const removed: number = result.removed ?? 0;
         const failed: number = result.failed ?? 0;
+        // Deleting is capped per call so the function can't time out on a large
+        // backlog. Say so rather than letting a partial run look complete.
+        const more: boolean = (result.remaining ?? 0) > 0;
         const s = (n: number) => (n === 1 ? '' : 's');
         showToast(
           removed === 0 && failed === 0
             ? 'Nothing to unsync — your Google Calendar has no ConnecTradie events.'
             : removed === 0
               ? `Could not remove ${failed} event${s(failed)} from Google Calendar — try again.`
-              : `Removed ${removed} event${s(removed)} from Google Calendar.${failed ? ` ${failed} could not be removed — try again.` : ''}`,
+              : `Removed ${removed} event${s(removed)} from Google Calendar.${failed ? ` ${failed} could not be removed.` : ''}${more ? ' There are more — press Unsync again to continue.' : ''}`,
           failed > 0
         );
         await fetchSlots();
@@ -1862,22 +1865,26 @@ export default function TradieDashboard() {
             {/* Calendar */}
             <div className="lg:col-span-2 min-w-0">
               <div className="flex flex-col gap-3 mb-6">
-                <div className="flex items-center justify-between">
+                {/* Wraps rather than overflowing: with full Day/Week/Month labels
+                    the row is ~10px too wide for a 360px screen. gap-x-2/gap-y-2
+                    instead of gap-2 keeps it clear of the section I selector,
+                    which keys on the bare .gap-2 class. */}
+                <div className="flex items-center justify-between gap-x-2 gap-y-2 flex-wrap">
                   <div className="flex items-center gap-1 sm:gap-4">
-                    <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1)); setSelectedDay(null); }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
+                    <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1)); setSelectedDay(null); }} className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
                       <ChevronLeft className="w-5 h-5 text-gray-600" />
                     </button>
                     <h2 className="text-sm sm:text-lg font-semibold text-gray-900 whitespace-nowrap">
                       {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                     </h2>
-                    <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1)); setSelectedDay(null); }} className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
+                    <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1)); setSelectedDay(null); }} className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
                       <ChevronRight className="w-5 h-5 text-gray-600" />
                     </button>
                   </div>
                   <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
                     {(['day', 'week', 'month'] as const).map(v => (
                       <button key={v} onClick={() => setCalendarView(v)}
-                        className={`px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${calendarView === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                        className={`px-2 sm:px-3 py-1.5 min-h-[44px] text-xs font-medium rounded-md transition-colors ${calendarView === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                         <span>{v.charAt(0).toUpperCase() + v.slice(1)}</span>
                       </button>
                     ))}
@@ -1922,7 +1929,7 @@ export default function TradieDashboard() {
                     </button>
                   )}
                   <div className="relative flex-shrink-0">
-                    <button onClick={() => setShowManageMenu(!showManageMenu)} className="p-2 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors">
+                    <button onClick={() => setShowManageMenu(!showManageMenu)} className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors">
                       <MoreVertical className="w-5 h-5" />
                     </button>
                     {showManageMenu && (
