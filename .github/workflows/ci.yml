@@ -89,6 +89,29 @@ jobs:
       # credentials. Regenerate it whenever migrations land.
       - run: npm run check:columns
 
+  navigability:
+    name: Navigability
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # No `npm ci` — the script uses only Node builtins.
+      #
+      # A route can be perfectly implemented, type-checked and RLS-correct and
+      # still be unfindable, and nothing else in this pipeline notices. This
+      # catches links that resolve to nothing, routes no menu points at,
+      # breadcrumbs labelled for routes that were deleted, pages whose browser
+      # tab has no name, and redirects that silently eat a query string — which
+      # is how six Stripe return URLs ended up losing their payment result.
+      #
+      # Baselined like the typecheck ratchet: the findings already triaged into
+      # audit-findings/2026-07-27-navigability.md do not block the build, a NEW
+      # one does. Run `npm run check:nav -- --verbose` locally for the full
+      # route map, and only ever re-baseline deliberately.
+      - run: npm run check:nav:ci
+
   docs-edge-list:
     name: Docs (edge function list)
     runs-on: ubuntu-latest

@@ -73,8 +73,8 @@ export async function acceptAndPay(
     quoteId,
     idempotencyKey,
     agreedPrice,
-    successUrl: `${window.location.origin}/leads?payment=success&job_id=${jobId}`,
-    cancelUrl: `${window.location.origin}/leads?payment=cancelled&job_id=${jobId}`,
+    successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&job_id=${jobId}`,
+    cancelUrl: `${window.location.origin}/payment-cancelled`,
   });
 
   if (!result.url) {
@@ -97,8 +97,8 @@ export async function createJobDeposit(
     jobId,
     amountCents,
     idempotencyKey,
-    successUrl: `${window.location.origin}/jobs?payment=success&job_id=${jobId}`,
-    cancelUrl: `${window.location.origin}/jobs?payment=cancelled&job_id=${jobId}`,
+    successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&job_id=${jobId}`,
+    cancelUrl: `${window.location.origin}/payment-cancelled`,
   });
 
   if (!result.url) {
@@ -118,8 +118,8 @@ export async function payMilestone(
   const result = await callEdgeFunction<{ url: string }>('pay-milestone', {
     milestoneId,
     idempotencyKey,
-    successUrl: `${window.location.origin}/jobs?payment=success&milestone_id=${milestoneId}`,
-    cancelUrl: `${window.location.origin}/jobs?payment=cancelled&milestone_id=${milestoneId}`,
+    successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&milestone_id=${milestoneId}`,
+    cancelUrl: `${window.location.origin}/payment-cancelled`,
   });
 
   if (!result.url) {
@@ -220,8 +220,10 @@ export async function payPriceIncrease(
   const result = await callEdgeFunction<{ url: string; paymentId: string }>('pay-price-increase', {
     paymentId,
     idempotencyKey,
-    successUrl: `${window.location.origin}/leads?payment=success&job_id=${jobId}`,
-    cancelUrl: `${window.location.origin}/leads?payment=cancelled&job_id=${jobId}`,
+    // paymentId is known here, so this flow gets the full treatment: PaymentSuccess
+    // fires verify-payment as a fallback when the webhook lags.
+    successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&payment_id=${paymentId}&job_id=${jobId}`,
+    cancelUrl: `${window.location.origin}/payment-cancelled`,
   });
 
   if (!result.url) {

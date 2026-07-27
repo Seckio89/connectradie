@@ -61,15 +61,18 @@ export default function Footer() {
 
             <div>
               <h4 className="text-white font-semibold mb-4">For Tradies</h4>
-              <ul className="space-y-3">
+              {/* No space-y here: the links carry py-2.5 instead, which turns a
+                  24px row + 12px gap into a real 44px tap target at roughly the
+                  same visual rhythm. */}
+              <ul>
                 {footerLinks.tradies.map((link) => (
                   <li key={link.name}>
                     {link.isHash ? (
-                      <a href={link.href} className="text-gray-400 hover:text-white transition-colors">
+                      <a href={link.href} className="block py-2.5 text-gray-400 hover:text-white transition-colors">
                         {link.name}
                       </a>
                     ) : (
-                      <Link to={link.href} className="text-gray-400 hover:text-white transition-colors">
+                      <Link to={link.href} className="block py-2.5 text-gray-400 hover:text-white transition-colors">
                         {link.name}
                       </Link>
                     )}
@@ -80,15 +83,18 @@ export default function Footer() {
 
             <div>
               <h4 className="text-white font-semibold mb-4">For Homeowners</h4>
-              <ul className="space-y-3">
+              {/* No space-y here: the links carry py-2.5 instead, which turns a
+                  24px row + 12px gap into a real 44px tap target at roughly the
+                  same visual rhythm. */}
+              <ul>
                 {footerLinks.homeowners.map((link) => (
                   <li key={link.name}>
                     {link.isHash ? (
-                      <a href={link.href} className="text-gray-400 hover:text-white transition-colors">
+                      <a href={link.href} className="block py-2.5 text-gray-400 hover:text-white transition-colors">
                         {link.name}
                       </a>
                     ) : (
-                      <Link to={link.href} className="text-gray-400 hover:text-white transition-colors">
+                      <Link to={link.href} className="block py-2.5 text-gray-400 hover:text-white transition-colors">
                         {link.name}
                       </Link>
                     )}
@@ -99,10 +105,13 @@ export default function Footer() {
 
             <div>
               <h4 className="text-white font-semibold mb-4">Support</h4>
-              <ul className="space-y-3">
+              {/* No space-y here: the links carry py-2.5 instead, which turns a
+                  24px row + 12px gap into a real 44px tap target at roughly the
+                  same visual rhythm. */}
+              <ul>
                 {footerLinks.support.map((link) => (
                   <li key={link.name}>
-                    <Link to={link.href} className="text-gray-400 hover:text-white transition-colors">
+                    <Link to={link.href} className="block py-2.5 text-gray-400 hover:text-white transition-colors">
                       {link.name}
                     </Link>
                   </li>
@@ -112,10 +121,13 @@ export default function Footer() {
 
             <div>
               <h4 className="text-white font-semibold mb-4">Legal</h4>
-              <ul className="space-y-3">
+              {/* No space-y here: the links carry py-2.5 instead, which turns a
+                  24px row + 12px gap into a real 44px tap target at roughly the
+                  same visual rhythm. */}
+              <ul>
                 {footerLinks.legal.map((link) => (
                   <li key={link.name}>
-                    <Link to={link.href} className="text-gray-400 hover:text-white transition-colors">
+                    <Link to={link.href} className="block py-2.5 text-gray-400 hover:text-white transition-colors">
                       {link.name}
                     </Link>
                   </li>
@@ -131,9 +143,9 @@ export default function Footer() {
               &copy; 2026 Connec<span className="text-warm-500">Tradie</span> Australia. All rights reserved.
             </p>
             <div className="flex items-center gap-6 text-sm text-gray-500">
-              <Link to="/terms" className="hover:text-gray-300 transition-colors">Terms</Link>
-              <Link to="/privacy" className="hover:text-gray-300 transition-colors">Privacy</Link>
-              <Link to="/contact" className="hover:text-gray-300 transition-colors">Contact</Link>
+              <Link to="/terms" className="py-3 hover:text-gray-300 transition-colors">Terms</Link>
+              <Link to="/privacy" className="py-3 hover:text-gray-300 transition-colors">Privacy</Link>
+              <Link to="/contact" className="py-3 hover:text-gray-300 transition-colors">Contact</Link>
             </div>
           </div>
         </div>

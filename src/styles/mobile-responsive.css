@@ -81,7 +81,24 @@ body {
   }
 }
 
-/* --- Touch target sizing (WCAG 2.5.5 — 44×44px minimum) --- */
+/* --- Touch target sizing (WCAG 2.5.5 — 44×44px minimum) ---
+   Gated on `pointer: coarse` ON PURPOSE: a desktop browser narrowed to 375px is
+   not a touch device and does not need 44px. The consequence is that measuring
+   tap targets by resizing a desktop window is MEANINGLESS — none of this
+   applies. Measure with touch emulation (Playwright `devices['iPhone 13']`,
+   which sets hasTouch) or you will "find" hundreds of false failures.
+
+   KNOWN LIMIT: `min-height` has no effect on a non-replaced INLINE box, so a
+   bare `<a>` with no display class is untouched by this rule no matter what.
+   Note that a link which is a FLEX ITEM is blockified by CSS and so is covered
+   — most link grids in this app are flex children and are fine. The ones that
+   are not are links sitting in a plain block container, e.g. `<li><a>` in the
+   footer, which measured 20px; those need `block` + vertical padding at the
+   component.
+
+   Fixing it globally is not an option: inline links inside running text are
+   explicitly exempt from the minimum (WCAG 2.5.5/2.5.8), and forcing them to
+   44px would break line flow mid-sentence. */
 @media (pointer: coarse) {
   button,
   a,
@@ -335,12 +352,14 @@ body {
     min-height: 0 !important;
   }
 
-  /* Tighter nav items in sidebar */
+  /* Tighter nav items in sidebar. Padding is reduced, but the 44px floor is
+     kept — this rule carries !important, so anything less silently beat the
+     global minimum for every sidebar item in the app. */
   aside[class*="fixed"][class*="z-50"] nav a,
   aside[class*="fixed"][class*="z-50"] nav button {
     padding-top: 0.5rem !important;
     padding-bottom: 0.5rem !important;
-    min-height: 40px !important;
+    min-height: 44px !important;
   }
 
   /* Compact sidebar bottom section — ensure sign-out always visible */
@@ -493,11 +512,16 @@ body {
    Smaller calendar day cells on mobile
    ============================================================================= */
 @media (max-width: 639px) {
-  /* Smaller calendar day cells */
+  /* Smaller calendar day cells. `min-width: 0` is required — seven 44px columns
+     do not fit a 375px screen — but the grid gives each cell ~45px anyway, so
+     the width minimum is satisfied in practice. The HEIGHT minimum is not
+     negotiable and is restored here, since `min-width: 0` alone used to take
+     the whole floor down with it. */
   main .grid-cols-7 > div,
   main .grid-cols-7 > button {
     width: auto !important;
     min-width: 0 !important;
+    min-height: 44px !important;
     padding: 0.25rem !important;
     font-size: 0.75rem !important;
   }
@@ -526,42 +550,30 @@ body {
    MOBILE FIXES — Toggle touch targets & Calendar selected-state clipping
    ============================================================================= */
 
-/* Undo the blanket 44px min-height on toggle switches (rounded-full buttons)
-   — it distorts the track. The ::before pseudo below provides the 44px
-   touch target invisibly instead. */
+/* A toggle switch's track is a deliberate size and 44px would distort it, so
+   the floor is lifted for switches ONLY — matched by ARIA role, not by shape.
+   Adding role="switch" to a track is what opts it out.
+
+   This used to say `button.rounded-full`, which took every pill and icon button
+   in the app with it and left them with no minimum at all. The compensating
+   trick was a ::before halo inset -8px/-4px, but in a tight flex-wrap (the
+   Pricing Helper trade/property/condition/access pills) those halos overlapped
+   their neighbours and taps fired the wrong pill — pills felt "locked". That
+   was patched with `pointer-events: none`, which made the halo inert: it took
+   no taps and had no visual styling, so it did nothing whatsoever, and the
+   pills stayed genuinely undersized. Both the over-broad selector and the dead
+   halo are gone.
+
+   The lesson survives in `.tap-expand` near the top of this file: expand by at
+   most half the gap, and prove it with elementFromPoint rather than assuming. */
 @media (pointer: coarse) {
-  button.rounded-full {
+  [role="switch"] {
     min-height: unset !important;
     min-width: unset !important;
   }
 }
 
 @media (max-width: 639px) {
-  /* Expand toggle switch tap area without visual distortion.
-     The button already has position:relative from Tailwind, so the
-     ::before absolute positioning works relative to the toggle. */
-  button.rounded-full {
-    z-index: 1 !important;
-    overflow: visible !important;
-  }
-
-  button.rounded-full::before {
-    content: '' !important;
-    position: absolute !important;
-    top: -8px !important;
-    bottom: -8px !important;
-    left: -4px !important;
-    right: -4px !important;
-    /* CRITICAL: this halo extends beyond the button and, for rows of pill
-       buttons (rounded-full) in a tight flex-wrap — e.g. the Pricing Helper
-       trade/property/condition/access selectors — it overlaps neighbouring
-       pills. Because the halo belongs to its own button, taps landing in the
-       overlap fire the wrong pill, making pills feel "locked" on mobile.
-       pointer-events:none lets the halo stay (visual only) without stealing
-       taps, so each pill receives its own taps. Toggle switches remain
-       tappable on their real box. */
-    pointer-events: none !important;
-  }
 
   /* Fix calendar today/selected ring clipping — the blanket
      button { overflow: hidden } (rule 14) clips ring-2 and
@@ -694,10 +706,12 @@ body {
     grid-template-columns: repeat(2, 1fr) !important;
   }
 
-  /* Supply quantity +/- buttons: ensure 44px tap targets */
+  /* Supply quantity +/- buttons: ensure 44px tap targets.
+     This said 36px while claiming 44 in its own comment. The grid drops to two
+     columns just above, so ~80px of width per column — 44px fits comfortably. */
   main .grid.grid-cols-4.gap-2 button {
-    min-width: 36px !important;
-    min-height: 36px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
   }
 }
 

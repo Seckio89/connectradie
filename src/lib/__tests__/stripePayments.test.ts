@@ -124,8 +124,8 @@ describe('stripePayments', () => {
       expect(callEdgeFunction).toHaveBeenCalledWith('create-job-deposit', expect.objectContaining({
         jobId: 'job-456',
         amountCents: 25000,
-        successUrl: 'https://app.connectradie.com.au/jobs?payment=success&job_id=job-456',
-        cancelUrl: 'https://app.connectradie.com.au/jobs?payment=cancelled&job_id=job-456',
+        successUrl: 'https://app.connectradie.com.au/payment-success?session_id={CHECKOUT_SESSION_ID}&job_id=job-456',
+        cancelUrl: 'https://app.connectradie.com.au/payment-cancelled',
       }));
       expect(result).toEqual({ url: mockUrl });
     });
@@ -166,8 +166,8 @@ describe('stripePayments', () => {
 
       expect(callEdgeFunction).toHaveBeenCalledWith('pay-milestone', expect.objectContaining({
         milestoneId: 'milestone-100',
-        successUrl: 'https://app.connectradie.com.au/jobs?payment=success&milestone_id=milestone-100',
-        cancelUrl: 'https://app.connectradie.com.au/jobs?payment=cancelled&milestone_id=milestone-100',
+        successUrl: 'https://app.connectradie.com.au/payment-success?session_id={CHECKOUT_SESSION_ID}&milestone_id=milestone-100',
+        cancelUrl: 'https://app.connectradie.com.au/payment-cancelled',
       }));
       expect(result).toEqual({ url: mockUrl });
     });

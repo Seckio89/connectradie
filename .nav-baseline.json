@@ -1,0 +1,18 @@
+{
+  "generated": 58,
+  "findings": [
+    "N11|Verification.tsx has no route and nothing imports it — dead file|src/pages/Verification.tsx",
+    "N4|Route \"/tax-invoice/:invoiceId\" has no inbound links anywhere in src/|src/App.tsx:322",
+    "N5|\"/calendar-import\" is in no navigation menu — only reachable from one link inside a page|src/App.tsx:469",
+    "N5|\"/careers/:id\" is in no navigation menu — only reachable from 2 links inside a page|src/App.tsx:303",
+    "N5|\"/clients/:id\" is in no navigation menu — only reachable from 2 links inside a page|src/App.tsx:485",
+    "N5|\"/explore\" is in no navigation menu — only reachable from one link inside a page|src/App.tsx:301",
+    "N5|\"/how-fees-work\" is in no navigation menu — only reachable from 3 links inside a page|src/App.tsx:316",
+    "N5|\"/invoice/:paymentId\" is in no navigation menu — only reachable from 2 links inside a page|src/App.tsx:319",
+    "N5|\"/review/:jobId\" is in no navigation menu — only reachable from 20 links inside a page|src/App.tsx:541",
+    "N5|\"/tradie/:id\" is in no navigation menu — only reachable from 23 links inside a page|src/App.tsx:300",
+    "N7|19 pages render <SEO> (react-helmet) as well as being titled by RouteTracker|src/App.tsx:181",
+    "N9|\"escrow\" appears in 1 heading/button|src/pages/Pricing.tsx:419",
+    "N9|\"lead\" appears in 8 headings/buttons|src/components/UnlockLeadModal.tsx:58"
+  ]
+}

@@ -408,6 +408,12 @@ export default function Explore() {
                     </div>
                   </div>
 
+                  {/* These chips are flex items, so CSS blockifies them and the
+                      44px floor in mobile-responsive.css already applies on a
+                      touch device — they measure 44px on a phone despite the
+                      34px their padding implies. Do not "fix" them from a
+                      resized desktop window; that viewport has no coarse
+                      pointer and shows the 34px. */}
                   <div className="flex flex-wrap gap-2">
                     {category.services.map((service) => (
                       <Link

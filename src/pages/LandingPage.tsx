@@ -12,39 +12,56 @@ import CareersSection from '../components/CareersSection';
 import Footer from '../components/Footer';
 import SEO from '../components/SEO';
 
-/** Returns true when viewport is below the md breakpoint (768px). */
-function useIsMobile(breakpoint = 768) {
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth < breakpoint : false
-  );
-
-  useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
-    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    setIsMobile(mql.matches);
-    mql.addEventListener('change', onChange);
-    return () => mql.removeEventListener('change', onChange);
-  }, [breakpoint]);
-
-  return isMobile;
-}
-
 /**
  * True when running inside the native Android/iOS Capacitor shell.
  * This is a synchronous, zero-cost check — safe to call at module level.
  */
 const isNativePlatform = Capacitor.isNativePlatform();
 
+/**
+ * True when the page was LAUNCHED AS AN APP rather than opened in a browser
+ * tab — the Capacitor shell, or an installed PWA running standalone. Those
+ * users have already chosen the product and want the dashboard, not a pitch.
+ *
+ * Viewport width is deliberately NOT part of this. It used to be
+ * (`innerWidth < 768`), which meant every homeowner who arrived on a phone
+ * browser was redirected to the sign-in form and never saw the marketing site
+ * at all — including people landing from the /find and /costs search pages,
+ * which exist to acquire exactly those homeowners.
+ *
+ * `start_url` in manifest.webmanifest is "/", so an installed PWA opens here;
+ * without the standalone check it would launch into the marketing page.
+ */
+const APP_DISPLAY_MODES = ['standalone', 'fullscreen', 'minimal-ui'];
+
+function detectAppLaunch() {
+  if (isNativePlatform) return true;
+  if (typeof window === 'undefined') return false;
+  if (APP_DISPLAY_MODES.some((mode) => window.matchMedia(`(display-mode: ${mode})`).matches)) return true;
+  // iOS home-screen apps predate display-mode and still report this instead.
+  return (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+}
+
+function useIsAppLaunch() {
+  const [isAppLaunch, setIsAppLaunch] = useState(detectAppLaunch);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(display-mode: standalone)');
+    const onChange = () => setIsAppLaunch(detectAppLaunch());
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+
+  return isAppLaunch;
+}
+
 export default function LandingPage() {
   const { user, loading } = useAuth();
-  const isMobile = useIsMobile();
+  const shouldSkipLanding = useIsAppLaunch();
 
-  // On native app OR mobile browser, skip the marketing landing page entirely.
-  // Capacitor.isNativePlatform() is the reliable check — viewport width alone
-  // can't be trusted inside a WebView (tablets, split-screen, etc.).
-  const shouldSkipLanding = isNativePlatform || isMobile;
-
-  // Still resolving auth state — show spinner so we don't flash wrong content
+  // Still resolving auth state — show spinner so we don't flash wrong content.
+  // Only ever reached in app-launch mode; a browser tab renders the marketing
+  // page immediately and never waits on auth.
   if (shouldSkipLanding && loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-navy-900">
@@ -53,12 +70,12 @@ export default function LandingPage() {
     );
   }
 
-  // Logged in on native/mobile → straight to dashboard
+  // Launched as an app, signed in → straight to dashboard
   if (shouldSkipLanding && user) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Logged out on native/mobile → straight to login
+  // Launched as an app, signed out → straight to login
   if (shouldSkipLanding && !user) {
     return <Navigate to="/login" replace />;
   }
