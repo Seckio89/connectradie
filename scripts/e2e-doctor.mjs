@@ -92,7 +92,12 @@ console.log('\n3. Schema');
 const needed = ['profiles', 'jobs', 'quotes', 'payments', 'pricing_tiers', 'platform_fee_charges'];
 const absent = [];
 for (const t of needed) {
-  const { error } = await admin.from(t).select('*', { count: 'exact', head: true });
+  // NOT `select('*', { head: true })`. That form returns 200 for a table that
+  // does not exist — verified against a deliberately bogus name — so this check
+  // used to PASS against a completely empty database and send you off fixing
+  // "missing v2.1 columns" when there was no schema at all. A real row read is
+  // what surfaces PGRST205.
+  const { error } = await admin.from(t).select('*').limit(1);
   if (error) absent.push(t);
 }
 if (absent.length) {
@@ -112,6 +117,51 @@ if (v21Err) {
   next('re-dump the schema', '  Your dump was taken before the v2.1 migrations. Repeat step 3.');
 }
 pass('v2.1 columns present');
+
+// ── 3b. Dispute + split readiness ────────────────────────────────────────────
+// The split E2E exercises resolve-dispute-split, which needs the whole Phase 1–5
+// surface. Checked as a GROUP and reported in full rather than one-at-a-time:
+// the fix is a single schema catch-up, so naming one missing object at a time
+// would mean five round trips to load one file.
+console.log('\n3b. Dispute + split objects');
+const missing = [];
+
+for (const t of ['disputes', 'dispute_evidence_summaries', 'dispute_decisions']) {
+  // Real row read, not head:true — see the note in section 3.
+  const { error } = await admin.from(t).select('*').limit(1);
+  if (error) missing.push(`table ${t}`);
+}
+
+// blocks_release is the generated column the whole freeze/unfreeze rule hangs
+// off. Selecting it is the only way to know it exists — PostgREST gives no
+// catalogue access.
+const { error: brErr } = await admin.from('disputes').select('blocks_release').limit(1);
+if (brErr) missing.push('disputes.blocks_release (generated column)');
+
+const { error: dtErr } = await admin.from('disputes').select('dispute_type, respond_by, platform_review_by').limit(1);
+if (dtErr) missing.push('disputes.dispute_type / respond_by / platform_review_by');
+
+// RPCs: PGRST202 means "function not found". Any OTHER error means it exists and
+// simply rejected our deliberately-empty arguments, which is what we want.
+for (const [fn, args] of [
+  ['resolve_dispute', { p_dispute_id: '00000000-0000-0000-0000-000000000000', p_outcome: 'dismissed', p_reasoning: 'probe' }],
+  ['job_has_platform_escrow', { p_job_id: '00000000-0000-0000-0000-000000000000' }],
+]) {
+  const { error } = await admin.rpc(fn, args);
+  if (error && error.code === 'PGRST202') missing.push(`function ${fn}()`);
+}
+
+if (missing.length) {
+  missing.forEach((m) => fail(`${m} missing`));
+  next(
+    'load the dispute schema into the test project',
+    '  Paste scripts/e2e-dispute-catchup.sql into the TEST project SQL editor:\n' +
+      '  https://supabase.com/dashboard/project/tsbmwlopcpghpctgmpmf/sql/new',
+    'The test project predates the dispute work (PRs #125-#131). This file is\n' +
+      'idempotent — safe to run more than once.',
+  );
+}
+pass('disputes, audit tables, blocks_release and both RPCs present');
 
 // ── 4. Rates ─────────────────────────────────────────────────────────────────
 console.log('\n4. Rates');
