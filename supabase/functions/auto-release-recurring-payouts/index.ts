@@ -31,6 +31,7 @@ import { resolveTradieTier } from "../_shared/pricing.ts";
 import { resolveChargeFee } from "../_shared/feeContext.ts";
 import { sumEscrowReserveCents } from "../_shared/escrowReserve.ts";
 import type { EscrowRow } from "../_shared/escrowReserve.ts";
+import { createReleasePayout } from "../_shared/instantPayout.ts";
 
 // Invoices paid at/after this instant get an automatic BANK PAYOUT (Stripe
 // balance → bank) once their funds settle. Tradie accounts are on MANUAL payouts
@@ -369,12 +370,14 @@ Deno.serve(async (req: Request) => {
         released++;
         totalAmount += transferAmount;
 
-        // Notify tradie that the held payout has now landed.
+        // The transfer moved the money into the tradie's Stripe BALANCE. No bank
+        // payout exists yet — the stage below sends it — so this is the card's
+        // "Ready to pay out" state, not "In your account".
         try {
           await supabase.from("notifications").insert({
             user_id: inv.tradie_id,
-            title: "Payout Released",
-            message: `A previously held payout of $${(transferAmount / 100).toFixed(2)} for a recurring service invoice has been released to your account.`,
+            title: "Payment Ready To Pay Out",
+            message: `A previously held payment of $${(transferAmount / 100).toFixed(2)} for a recurring service invoice is now ready to pay out and will be sent to your bank shortly.`,
             type: "payment_received",
             read: false,
             metadata: { invoice_id: inv.id, transfer_id: transfer.id, recurring_job_id: inv.recurring_job_id },
@@ -408,7 +411,7 @@ Deno.serve(async (req: Request) => {
     // reaches the bank. Gated to paid_at >= BANK_PAYOUT_CUTOVER so historical
     // 'transferred' invoices are never re-paid; 'transferred' → 'paid_out' with a
     // per-invoice idempotency key as belt-and-suspenders.
-    const bankPayouts: { invoice_id: string; outcome: string; amount_cents?: number; payout_id?: string; reason?: string }[] = [];
+    const bankPayouts: { invoice_id: string; outcome: string; amount_cents?: number; payout_id?: string; reason?: string; method?: string }[] = [];
     let bankPaidCount = 0;
     let bankPaidAmount = 0;
 
@@ -485,17 +488,26 @@ Deno.serve(async (req: Request) => {
         if (netCents <= 0) { bankPayouts.push({ invoice_id: inv.id, outcome: "skipped", reason: "non-positive net" }); continue; }
 
         try {
-          const payout = await stripe.payouts.create(
-            { amount: netCents, currency: "aud", description: "ConnecTradie recurring invoice", metadata: { type: "recurring_invoice_bank_payout", invoice_id: inv.id, tradie_id: inv.tradie_id, recurring_job_id: inv.recurring_job_id ?? "" } },
-            { stripeAccount: meta.connectId, idempotencyKey: `bank_payout_${inv.id}` },
-          );
+          // Honours tradie_details.payout_speed_preference; falls back to a
+          // standard payout for the full amount if instant is rejected.
+          const outcome = await createReleasePayout({
+            stripe,
+            supabase,
+            tradieId: inv.tradie_id,
+            connectAccountId: meta.connectId,
+            amountCents: netCents,
+            description: "ConnecTradie recurring invoice",
+            metadata: { type: "recurring_invoice_bank_payout", invoice_id: inv.id, tradie_id: inv.tradie_id, recurring_job_id: inv.recurring_job_id ?? "" },
+            idempotencyKeyBase: `bank_payout_${inv.id}`,
+          });
+          const payout = outcome.payout;
           await supabase
             .from("recurring_invoices")
             .update({ payout_status: "paid_out", payout_error_message: null })
             .eq("id", inv.id);
-          bankPayouts.push({ invoice_id: inv.id, outcome: "paid_out", amount_cents: netCents, payout_id: payout.id });
+          bankPayouts.push({ invoice_id: inv.id, outcome: "paid_out", amount_cents: payout.amount, payout_id: payout.id, method: outcome.method });
           bankPaidCount++;
-          bankPaidAmount += netCents;
+          bankPaidAmount += payout.amount;
         } catch (payErr) {
           const msg = payErr instanceof Error ? payErr.message : String(payErr);
           const code = (payErr as { code?: string } | undefined)?.code;

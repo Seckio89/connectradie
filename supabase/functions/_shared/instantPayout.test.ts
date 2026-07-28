@@ -14,6 +14,8 @@ import {
   instantFailureMessage,
   INSTANT_UNAVAILABLE_TTL_MS,
   isUnavailableFlagFresh,
+  planReleasePayout,
+  canFallBackToStandard,
 } from "./instantPayout.ts";
 
 // Standard free-tier config: pricing_tiers.instant_payout_bps / _min_cents.
@@ -150,4 +152,92 @@ Deno.test("a missing or unparseable timestamp never suppresses the offer", () =>
   assertEquals(isUnavailableFlagFresh(null, now), false);
   assertEquals(isUnavailableFlagFresh("not a date", now), false);
   assertEquals(isUnavailableFlagFresh(12345, now), false);
+});
+
+// ── planReleasePayout ────────────────────────────────────────────────────────
+// release-escrow and auto-release-payments share one idempotency key and MUST
+// agree on method and amount, so this has to be a pure function of stable
+// inputs — never of the live balance.
+
+const REL = { feeBps: 150, feeMinCents: 200, platformInstantDown: false };
+
+Deno.test("standard preference pays the full amount, no fee, plain key", () => {
+  const p = planReleasePayout({ ...REL, preference: "standard", amountCents: 50_000 });
+  assertEquals(p.method, "standard");
+  assertEquals(p.payoutCents, 50_000);
+  assertEquals(p.feeCents, 0);
+  assertEquals(p.idempotencySuffix, "");
+  assertEquals(p.declineReason, "not_requested");
+});
+
+Deno.test("'ask' stays standard — an unattended release has nobody to ask", () => {
+  const p = planReleasePayout({ ...REL, preference: "ask", amountCents: 50_000 });
+  assertEquals(p.method, "standard");
+  assertEquals(p.declineReason, "not_requested");
+});
+
+Deno.test("a missing preference stays standard", () => {
+  assertEquals(planReleasePayout({ ...REL, preference: null, amountCents: 50_000 }).method, "standard");
+  assertEquals(planReleasePayout({ ...REL, preference: undefined, amountCents: 50_000 }).method, "standard");
+});
+
+Deno.test("instant reduces the request by exactly the fee", () => {
+  // Stripe takes the fee from the balance, so the request must leave room.
+  const p = planReleasePayout({ ...REL, preference: "instant", amountCents: 50_000 });
+  assertEquals(p.method, "instant");
+  assertEquals(p.feeCents, 750); // 1.5%
+  assertEquals(p.payoutCents, 49_250);
+  assertEquals(p.payoutCents + p.feeCents, 50_000);
+  assertEquals(p.idempotencySuffix, ":instant");
+  assertEquals(p.declineReason, null);
+});
+
+Deno.test("instant honours the $20 floor", () => {
+  assertEquals(planReleasePayout({ ...REL, preference: "instant", amountCents: 1_999 }).method, "standard");
+  assertEquals(planReleasePayout({ ...REL, preference: "instant", amountCents: 1_999 }).declineReason, "below_minimum");
+  assertEquals(planReleasePayout({ ...REL, preference: "instant", amountCents: 2_000 }).method, "instant");
+});
+
+Deno.test("a known platform outage keeps the release standard", () => {
+  const p = planReleasePayout({ ...REL, preference: "instant", amountCents: 50_000, platformInstantDown: true });
+  assertEquals(p.method, "standard");
+  assertEquals(p.payoutCents, 50_000);
+  assertEquals(p.declineReason, "platform_down");
+});
+
+Deno.test("a declined instant always pays the FULL amount, never a reduced one", () => {
+  // A tradie must never be short-changed by a fee that was not charged.
+  for (const input of [
+    { preference: "standard", amountCents: 50_000, platformInstantDown: false },
+    { preference: "instant", amountCents: 1_000, platformInstantDown: false },
+    { preference: "instant", amountCents: 50_000, platformInstantDown: true },
+  ]) {
+    const p = planReleasePayout({ feeBps: 150, feeMinCents: 200, ...input });
+    assertEquals(p.method, "standard");
+    assertEquals(p.payoutCents, input.amountCents);
+    assertEquals(p.feeCents, 0);
+  }
+});
+
+Deno.test("the two idempotency suffixes never collide", () => {
+  const std = planReleasePayout({ ...REL, preference: "standard", amountCents: 50_000 });
+  const ins = planReleasePayout({ ...REL, preference: "instant", amountCents: 50_000 });
+  assertEquals(std.idempotencySuffix === ins.idempotencySuffix, false);
+});
+
+// ── canFallBackToStandard ────────────────────────────────────────────────────
+// Falling back after a network error could pay the tradie twice.
+
+Deno.test("falls back on a deterministic Stripe rejection", () => {
+  assertEquals(canFallBackToStandard({ raw: { code: "instant_payouts_limit_exceeded" } }), true);
+  assertEquals(canFallBackToStandard({ code: "instant_payouts_unsupported" }), true);
+  assertEquals(canFallBackToStandard({ raw: { type: "invalid_request_error" } }), true);
+});
+
+Deno.test("never falls back on a network or unknown error", () => {
+  assertEquals(canFallBackToStandard(new Error("socket hang up")), false);
+  assertEquals(canFallBackToStandard({ type: "api_connection_error" }), false);
+  assertEquals(canFallBackToStandard({ raw: { type: "api_error" } }), false);
+  assertEquals(canFallBackToStandard(null), false);
+  assertEquals(canFallBackToStandard(undefined), false);
 });

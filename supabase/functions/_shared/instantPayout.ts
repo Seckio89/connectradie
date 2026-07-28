@@ -145,3 +145,278 @@ export function isUnavailableFlagFresh(checkedAt: unknown, nowMs: number): boole
   if (!Number.isFinite(ts)) return false;
   return nowMs - ts < INSTANT_UNAVAILABLE_TTL_MS;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Honouring tradie_details.payout_speed_preference on release
+//
+// THE CONSTRAINT: release-escrow and auto-release-payments create the SAME
+// payout under the SAME deterministic idempotency key (`release_payout_<id>`),
+// because a homeowner approving while the cron runs is a real race. Stripe
+// rejects an idempotent replay whose parameters differ, so the two callers must
+// never disagree about whether a payout is instant or how much it is for.
+//
+// That is why this is a PURE function of the preference, the amount and the tier
+// config — never of the live Stripe balance, which differs between the two
+// moments. Everything here is deterministic and both callers reach the same
+// answer.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ReleasePayoutPlanInput {
+  /** tradie_details.payout_speed_preference. Anything but "instant" → standard. */
+  preference: string | null | undefined;
+  /** What a standard payout for this release would be, in cents. */
+  amountCents: number;
+  feeBps: number;
+  feeMinCents: number;
+  /** A known-fresh platform failure (see the app_settings flag). */
+  platformInstantDown: boolean;
+}
+
+export interface ReleasePayoutPlan {
+  method: "standard" | "instant";
+  /** The amount to REQUEST. Reduced by the fee when instant — Stripe takes the
+   *  fee from the balance and rejects a payout where amount + fee exceeds it. */
+  payoutCents: number;
+  feeCents: number;
+  /** Appended to the idempotency key so an instant attempt and a standard
+   *  fallback can never collide on one key. */
+  idempotencySuffix: string;
+  /** Why instant was declined, for logging. null when instant is planned. */
+  declineReason: "not_requested" | "platform_down" | "below_minimum" | "fee_exceeds_amount" | null;
+}
+
+function standardPlan(amountCents: number, declineReason: ReleasePayoutPlan["declineReason"]): ReleasePayoutPlan {
+  return { method: "standard", payoutCents: amountCents, feeCents: 0, idempotencySuffix: "", declineReason };
+}
+
+export function planReleasePayout(input: ReleasePayoutPlanInput): ReleasePayoutPlan {
+  const { preference, amountCents, feeBps, feeMinCents, platformInstantDown } = input;
+
+  // "ask" means "ask me per payout" — that IS the button on the Payouts page.
+  // An unattended release has nobody to ask, so it stays standard and free.
+  if (preference !== "instant") return standardPlan(amountCents, "not_requested");
+  if (platformInstantDown) return standardPlan(amountCents, "platform_down");
+
+  const minBaseCents = feeMinCents * MAX_FEE_SHARE_DIVISOR;
+  if (amountCents < minBaseCents) return standardPlan(amountCents, "below_minimum");
+
+  const feeCents = Math.max(feeMinCents, Math.round((amountCents * feeBps) / 10000));
+  const payoutCents = amountCents - feeCents;
+  if (payoutCents <= 0) return standardPlan(amountCents, "fee_exceeds_amount");
+
+  return { method: "instant", payoutCents, feeCents, idempotencySuffix: ":instant", declineReason: null };
+}
+
+/**
+ * Whether a failed instant payout may be retried as a standard one.
+ *
+ * ONLY for deterministic rejections. A network error or timeout might mean the
+ * instant payout actually succeeded, and retrying under a different idempotency
+ * key would pay the tradie twice — so those must leave the payment retryable
+ * instead, exactly as the release paths already handle a failed payout.
+ */
+export function canFallBackToStandard(err: unknown): boolean {
+  const e = err as { type?: string; code?: string; raw?: { type?: string; code?: string } } | null;
+  const code = e?.raw?.code ?? e?.code ?? null;
+  const type = e?.raw?.type ?? e?.type ?? null;
+  if (code && classifyInstantFailure(code) !== "unknown") return true;
+  // Stripe rejected the request outright — it never created a payout.
+  return type === "invalid_request_error";
+}
+
+/**
+ * The tradie's instant fee config, from the tier they are actually charged on.
+ * Shared so a release path and the instant-payout button can never quote
+ * different rates for the same tradie.
+ */
+// deno-lint-ignore no-explicit-any
+type SupabaseLike = any;
+
+export async function resolveInstantFeeConfig(
+  supabase: SupabaseLike,
+  tradieId: string,
+): Promise<{ feeBps: number; feeMinCents: number }> {
+  try {
+    const { data: sub } = await supabase
+      .from("tradie_subscriptions")
+      .select("tier_id, status, grace_until")
+      .eq("profile_id", tradieId)
+      .neq("status", "canceled")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let tierId = "free";
+    if (sub && (sub.tier_id === "pro" || sub.tier_id === "pm")) {
+      if (sub.status === "active") tierId = sub.tier_id;
+      else if (sub.status === "past_due" && sub.grace_until && new Date(sub.grace_until) > new Date()) {
+        tierId = sub.tier_id;
+      }
+    }
+
+    const { data: tier } = await supabase
+      .from("pricing_tiers")
+      .select("instant_payout_bps, instant_payout_min_cents")
+      .eq("id", tierId)
+      .maybeSingle();
+
+    return {
+      feeBps: tier?.instant_payout_bps ?? 150,
+      feeMinCents: tier?.instant_payout_min_cents ?? 200,
+    };
+  } catch {
+    return { feeBps: 150, feeMinCents: 200 };
+  }
+}
+
+/** app_settings key recording whether the platform can do instant payouts. */
+export const INSTANT_STATUS_KEY = "instant_payouts_status";
+
+/** Records a platform-wide instant-payout failure so nothing offers it again
+ *  until the record goes stale. Never throws — this is bookkeeping on an error
+ *  path and must not mask the original failure. */
+export async function recordPlatformInstantFailure(
+  supabase: SupabaseLike,
+  code: string | null,
+  detail: string | null,
+): Promise<void> {
+  try {
+    await supabase.from("app_settings").upsert(
+      {
+        key: INSTANT_STATUS_KEY,
+        value: { available: false, code, detail, checked_at: new Date().toISOString() },
+      },
+      { onConflict: "key" },
+    );
+  } catch (e) {
+    console.error("Could not record instant payout status:", e);
+  }
+}
+
+/** Reads the platform flag. Any doubt resolves to "not down" — a release must
+ *  never be blocked by this lookup; the worst case is one failed instant
+ *  attempt that falls back to standard. */
+export async function isPlatformInstantDown(supabase: SupabaseLike, nowMs: number): Promise<boolean> {
+  try {
+    const { data } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", INSTANT_STATUS_KEY)
+      .maybeSingle();
+    const value = (data?.value ?? null) as { available?: boolean; checked_at?: string } | null;
+    return value?.available === false && isUnavailableFlagFresh(value?.checked_at, nowMs);
+  } catch {
+    return false;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// createReleasePayout — the one way a release turns into a payout.
+//
+// Shared by release-escrow and auto-release-payments so the two racing callers
+// behave identically (see the idempotency note on planReleasePayout), and by
+// the recurring bank-payout stage.
+//
+// Instant is strictly an ENHANCEMENT. A release must never fail because instant
+// failed: any deterministic rejection falls straight back to a standard payout
+// for the full amount. The tradie always gets paid.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface CreateReleasePayoutArgs {
+  // deno-lint-ignore no-explicit-any
+  stripe: any;
+  supabase: SupabaseLike;
+  tradieId: string;
+  connectAccountId: string;
+  /** What a standard payout for this release would be, in cents. */
+  amountCents: number;
+  currency?: string;
+  metadata?: Record<string, string>;
+  /** Suffixed for the instant attempt so it can't collide with the fallback. */
+  idempotencyKeyBase: string;
+  description?: string;
+}
+
+export interface ReleasePayoutOutcome {
+  // deno-lint-ignore no-explicit-any
+  payout: any;
+  method: "standard" | "instant";
+  /** The instant fee Stripe collects. 0 for standard payouts. */
+  feeCents: number;
+  /** Set when instant was attempted and rejected — the payout is standard. */
+  instantFellBack: boolean;
+}
+
+export async function createReleasePayout(args: CreateReleasePayoutArgs): Promise<ReleasePayoutOutcome> {
+  const {
+    stripe, supabase, tradieId, connectAccountId, amountCents,
+    currency = "aud", metadata = {}, idempotencyKeyBase, description,
+  } = args;
+
+  const createStandard = async () => {
+    const payout = await stripe.payouts.create(
+      { amount: amountCents, currency, ...(description ? { description } : {}), metadata },
+      { stripeAccount: connectAccountId, idempotencyKey: idempotencyKeyBase },
+    );
+    return { payout, method: "standard" as const, feeCents: 0, instantFellBack: false };
+  };
+
+  // Resolving the preference must never block a release. Any failure here means
+  // a standard payout — the free, always-available path.
+  let plan: ReleasePayoutPlan;
+  try {
+    const [{ data: details }, feeConfig, platformInstantDown] = await Promise.all([
+      supabase.from("tradie_details").select("payout_speed_preference").eq("profile_id", tradieId).maybeSingle(),
+      resolveInstantFeeConfig(supabase, tradieId),
+      isPlatformInstantDown(supabase, Date.now()),
+    ]);
+    plan = planReleasePayout({
+      preference: details?.payout_speed_preference ?? null,
+      amountCents,
+      feeBps: feeConfig.feeBps,
+      feeMinCents: feeConfig.feeMinCents,
+      platformInstantDown,
+    });
+  } catch (e) {
+    console.warn("Could not resolve payout speed preference — defaulting to standard:", e);
+    return await createStandard();
+  }
+
+  if (plan.method === "standard") return await createStandard();
+
+  try {
+    const payout = await stripe.payouts.create(
+      {
+        amount: plan.payoutCents,
+        currency,
+        method: "instant",
+        ...(description ? { description } : {}),
+        metadata: { ...metadata, instant_fee_cents: String(plan.feeCents), payout_speed: "instant" },
+      },
+      {
+        stripeAccount: connectAccountId,
+        idempotencyKey: `${idempotencyKeyBase}${plan.idempotencySuffix}`,
+      },
+    );
+    return { payout, method: "instant", feeCents: plan.feeCents, instantFellBack: false };
+  } catch (err) {
+    const code = (err as { raw?: { code?: string }; code?: string })?.raw?.code ??
+      (err as { code?: string })?.code ?? null;
+
+    // Might have succeeded (network/timeout) — a second payout under the plain
+    // key would pay the tradie TWICE. Surface it and let the caller keep the
+    // payment retryable, exactly as it already does for a failed payout.
+    if (!canFallBackToStandard(err)) throw err;
+
+    console.warn(`Instant release payout rejected (${code}) — falling back to standard.`);
+    if (classifyInstantFailure(code) === "platform") {
+      await recordPlatformInstantFailure(
+        supabase,
+        code,
+        (err as { raw?: { message?: string } })?.raw?.message ?? null,
+      );
+    }
+    const fallback = await createStandard();
+    return { ...fallback, instantFellBack: true };
+  }
+}
