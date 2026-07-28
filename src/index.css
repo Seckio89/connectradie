@@ -975,8 +975,14 @@ html:not(.dark) .theme-aware .bg-navy-900 {
   background-color: #FAFBFC !important;
 }
 
+/* Opaque, not 97%. This token is only used by the two sticky headers
+   (DashboardLayout, Navbar), and at 97% page content scrolling underneath
+   showed through them — text ghosting up into the status-bar area. Same
+   colour, just solid. The dark-mode value stays translucent: outside
+   .theme-aware the header really is dark navy and its backdrop-blur is
+   doing visible work, so the markup is deliberately left alone. */
 html:not(.dark) .theme-aware .bg-navy-900\/95 {
-  background-color: rgba(255, 255, 255, 0.97) !important;
+  background-color: #FFFFFF !important;
 }
 
 html:not(.dark) .theme-aware .bg-navy-800 {
