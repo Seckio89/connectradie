@@ -38,6 +38,9 @@ type FeeCharge = {
   fee_rate_bps: number | null;
   fee_rate_type: string | null;
   charged_at: string;
+  /** 'commission' | 'instant_payout'. A tax invoice has to describe what it
+   *  actually bills — an instant transfer fee is not commission on labour. */
+  kind: string;
 };
 
 // Adjustment notes carry negative amounts. Render them as −$5.00, not $-5.00 —
@@ -77,7 +80,7 @@ export default function TaxInvoice() {
         const [{ data: lines }, { data: profile }] = await Promise.all([
           supabase
             .from('platform_fee_charges')
-            .select('id, commission_cents, ex_gst_cents, fee_rate_bps, fee_rate_type, charged_at')
+            .select('id, commission_cents, ex_gst_cents, fee_rate_bps, fee_rate_type, charged_at, kind')
             .eq('invoice_id', invoiceId)
             .order('charged_at', { ascending: true }),
           supabase
@@ -207,12 +210,23 @@ export default function TaxInvoice() {
                   <tr key={c.id}>
                     <td className="py-3">
                       <p className="text-gray-900">
-                        Platform commission
-                        {c.fee_rate_bps ? ` — ${(c.fee_rate_bps / 100).toFixed(c.fee_rate_bps % 100 === 0 ? 0 : 1)}% of labour` : ''}
+                        {c.kind === 'instant_payout' ? (
+                          <>
+                            Instant transfer fee
+                            {c.fee_rate_bps ? ` — ${(c.fee_rate_bps / 100).toFixed(c.fee_rate_bps % 100 === 0 ? 0 : 1)}% of the payout` : ''}
+                          </>
+                        ) : (
+                          <>
+                            Platform commission
+                            {c.fee_rate_bps ? ` — ${(c.fee_rate_bps / 100).toFixed(c.fee_rate_bps % 100 === 0 ? 0 : 1)}% of labour` : ''}
+                          </>
+                        )}
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5">
                         {shortDate(c.charged_at)}
-                        {c.fee_rate_type === 'repeat_client' ? ' · repeat-client rate' : ''}
+                        {c.kind === 'instant_payout'
+                          ? ' · you chose instant'
+                          : c.fee_rate_type === 'repeat_client' ? ' · repeat-client rate' : ''}
                       </p>
                     </td>
                     <td className="py-3 text-right text-gray-900">{money(c.ex_gst_cents)}</td>
@@ -242,7 +256,9 @@ export default function TaxInvoice() {
         {/* What this does and doesn't cover — same wording as the explainer */}
         <div className="rounded-lg bg-gray-50 border border-gray-100 px-4 py-3">
           <p className="text-xs text-gray-600 leading-relaxed">
-            This covers our commission on your labour only — we charge nothing on your materials.
+            {charges.some((c) => c.kind === 'instant_payout')
+              ? 'This covers our commission on your labour, plus any instant transfer fees you chose to pay — we charge nothing on your materials.'
+              : 'This covers our commission on your labour only — we charge nothing on your materials.'}{' '}
             Card processing on materials is passed through at cost and is not part of this invoice.
           </p>
         </div>

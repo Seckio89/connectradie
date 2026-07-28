@@ -45,6 +45,8 @@ interface Charge {
   gst_cents: number;
   ex_gst_cents: number;
   charged_at: string;
+  /** 'commission' | 'instant_payout' — what the tradie is being billed for. */
+  kind: string;
 }
 
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
@@ -99,7 +101,7 @@ Deno.serve(async (req: Request) => {
     // (recordFeeCharge skips them), so fee-exempt accounts get no empty invoice.
     let q = supabase
       .from("platform_fee_charges")
-      .select("id, tradie_profile_id, commission_cents, gst_cents, ex_gst_cents, charged_at")
+      .select("id, tradie_profile_id, commission_cents, gst_cents, ex_gst_cents, charged_at, kind")
       .is("invoice_id", null)
       .order("charged_at", { ascending: true });
     if (onlyTradie) q = q.eq("tradie_profile_id", onlyTradie);
@@ -243,7 +245,12 @@ Deno.serve(async (req: Request) => {
                 body:
                   `Here's your tax invoice for ConnecTradie platform fees (${periodLabel}).\n\n` +
                   `Fees ex GST: ${money(subtotal)}\nGST: ${money(gst)}\nTotal: ${money(total)}\n\n` +
-                  `This covers our commission only — we charge nothing on your materials.\n` +
+                  // The old line said "commission only" unconditionally. Once an
+                  // instant transfer fee can appear on the same invoice that is
+                  // false, and a tax invoice must describe what it actually bills.
+                  (group.some((c) => c.kind === "instant_payout")
+                    ? `This covers our commission on your labour plus any instant transfer fees you chose — we charge nothing on your materials.\n`
+                    : `This covers our commission only — we charge nothing on your materials.\n`) +
                   `If you're GST-registered you can claim the GST back on your BAS.\n\n` +
                   `View or download it: ${siteUrl}/tax-invoice/${invoice.id}`,
                 notificationType: "FEE_TAX_INVOICE",

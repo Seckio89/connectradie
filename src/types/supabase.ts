@@ -2769,8 +2769,10 @@ export type Database = {
           id: string
           invoice_id: string | null
           job_id: string | null
+          kind: string
           materials_processing_cents: number
-          payment_id: string
+          payment_id: string | null
+          payout_id: string | null
           tradie_profile_id: string
         }
         Insert: {
@@ -2784,8 +2786,10 @@ export type Database = {
           id?: string
           invoice_id?: string | null
           job_id?: string | null
+          kind?: string
           materials_processing_cents?: number
-          payment_id: string
+          payment_id?: string | null
+          payout_id?: string | null
           tradie_profile_id: string
         }
         Update: {
@@ -2799,8 +2803,10 @@ export type Database = {
           id?: string
           invoice_id?: string | null
           job_id?: string | null
+          kind?: string
           materials_processing_cents?: number
-          payment_id?: string
+          payment_id?: string | null
+          payout_id?: string | null
           tradie_profile_id?: string
         }
         Relationships: [
