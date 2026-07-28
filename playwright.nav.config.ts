@@ -65,11 +65,29 @@ const authed = (p: keyof typeof PERSONAS) => Boolean(PERSONAS[p].email && PERSON
 const desktop = devices['Desktop Chrome'];
 const mobile = devices['iPhone 13'];
 
+// Sandboxes and CI images often ship a pinned Chromium that does not match the
+// build @playwright/test wants, and block the download that would fix it. Opt in
+// with PW_CHROMIUM_PATH; hardcoding a path would be wrong everywhere else.
+//
+// browserName comes along for the ride on purpose. devices['iPhone 13'] carries
+// defaultBrowserType: 'webkit', so the mobile personas would otherwise try to
+// launch WebKit from a Chromium binary and die at startup. Emulating iPhone
+// metrics under Chromium is the normal fallback when WebKit isn't available;
+// without PW_CHROMIUM_PATH the projects keep their real engines.
+const engine = E.PW_CHROMIUM_PATH
+  ? { browserName: 'chromium' as const, launchOptions: { executablePath: E.PW_CHROMIUM_PATH } }
+  : {};
+
 /** anon needs no sign-in; the rest depend on the setup project. */
 function persona(name: string, device: typeof desktop, storageState?: string) {
   return {
     name,
-    use: { ...device, ...(storageState ? { storageState } : {}) },
+    // testMatch matters: testDir is ./e2e, so without it every persona also ran
+    // auth.spec/public-pages.spec/search-flow.spec. auth.spec submits login forms
+    // with deliberately wrong credentials, which is neither a navigability
+    // finding nor the "strictly read-only" crawl this config promises.
+    testMatch: /navigability\.spec\.ts/,
+    use: { ...device, ...engine, ...(storageState ? { storageState } : {}) },
     ...(storageState ? { dependencies: ['setup'] } : {}),
   };
 }
