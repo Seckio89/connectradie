@@ -215,6 +215,9 @@ export default function TradieDashboard() {
 
   // Calendar integration
   const [calendarIntegration, setCalendarIntegration] = useState<CalendarIntegration | null>(null);
+  // Whether we actually know the connection state — null alone can't distinguish
+  // "not connected" from "the lookup failed".
+  const [calendarStatus, setCalendarStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
   const [syncLoading, setSyncLoading] = useState(false);
   const [unsyncLoading, setUnsyncLoading] = useState(false);
   const [showUnsyncConfirm, setShowUnsyncConfirm] = useState(false);
@@ -407,8 +410,14 @@ export default function TradieDashboard() {
 
   // ─── Handlers (declared before effects that use them) ─────
 
+  // "Not connected" and "we couldn't find out" are different states and must not
+  // render the same. Previously the error was swallowed and calendarIntegration
+  // stayed null, so a failed lookup showed "Connect Google Calendar" to a tradie
+  // who was already connected — and pressing it started a fresh OAuth consent
+  // round-trip instead of syncing, so no sync request was ever sent.
   const fetchCalendarIntegration = useCallback(async () => {
     if (!user) return;
+    setCalendarStatus('loading');
     try {
       const { data, error } = await supabase
         .from('calendar_integrations')
@@ -418,8 +427,10 @@ export default function TradieDashboard() {
         .maybeSingle();
       if (error) throw error;
       setCalendarIntegration(data as CalendarIntegration | null);
+      setCalendarStatus('loaded');
     } catch (err) {
       console.error('Failed to fetch calendar integration:', err);
+      setCalendarStatus('error');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
@@ -651,6 +662,18 @@ export default function TradieDashboard() {
 
   const handleSyncCalendar = useCallback(async () => {
     if (!user) return;
+
+    // Never fall through to the connect flow on an unknown state — that is what
+    // sent an already-connected tradie back to Google consent instead of syncing.
+    // Re-check first; only offer to connect once we know there is nothing there.
+    if (calendarStatus !== 'loaded') {
+      setSyncLoading(true);
+      await fetchCalendarIntegration();
+      setSyncLoading(false);
+      showToast('Checked your Google Calendar connection — tap again to sync.');
+      return;
+    }
+
     setSyncLoading(true);
 
     try {
@@ -712,7 +735,7 @@ export default function TradieDashboard() {
       showToast('Failed to sync calendar', true);
       setSyncLoading(false);
     }
-  }, [user, calendarIntegration, fetchCalendarIntegration, fetchSlots, showToast]);
+  }, [user, calendarIntegration, calendarStatus, fetchCalendarIntegration, fetchSlots, showToast]);
 
   // Unsync — strips every event ConnecTradie pushed into Google back out again,
   // so the phone calendar returns to how it looked before syncing. The Google
@@ -1904,8 +1927,16 @@ export default function TradieDashboard() {
                   {isProUser ? (
                     <>
                     <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-gray-200 text-gray-700 text-[10px] sm:text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[32px] sm:min-h-[44px]">
+                      {/* Three states, not two. Offering "Connect" while the lookup
+                          is unresolved told an already-connected tradie they were
+                          disconnected, and sent them to Google consent instead of
+                          syncing. Only claim "not connected" once we know. */}
                       {syncLoading ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">{calendarIntegration ? 'Syncing...' : 'Connecting...'}</span><span className="sm:hidden">Sync</span></>
+                        <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">{calendarStatus !== 'loaded' ? 'Checking...' : calendarIntegration ? 'Syncing...' : 'Connecting...'}</span><span className="sm:hidden">Sync</span></>
+                      ) : calendarStatus === 'loading' ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">Checking connection...</span><span className="sm:hidden">Sync</span></>
+                      ) : calendarStatus === 'error' ? (
+                        <><RefreshCw className="w-4 h-4" /><span className="hidden sm:inline">Check calendar connection</span><span className="sm:hidden">Retry</span></>
                       ) : calendarIntegration ? (
                         <><RefreshCw className="w-4 h-4" /><span className="hidden sm:inline">Sync Google Calendar</span><span className="sm:hidden">Sync</span></>
                       ) : (
