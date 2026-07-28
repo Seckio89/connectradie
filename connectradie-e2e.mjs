@@ -18,7 +18,6 @@
 import { readFileSync, existsSync } from "node:fs";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { chromium } from "playwright";
 
 // Config comes from .env.e2e (preferred) then .env. No dependency; real env vars
 // always win, so any single value can be overridden inline.
@@ -27,7 +26,7 @@ for (const file of [".env.e2e", ".env"]) {
   for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
     const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
     if (m && process.env[m[1]] === undefined) {
-      process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
+      process.env[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
     }
   }
 }
@@ -117,18 +116,112 @@ async function callFn(path, jwt, body) {
   return { status: r.status, json };
 }
 
-async function completeCheckout(url) {
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  await page.goto(url, { waitUntil: "domcontentloaded" });
-  // Stripe hosted Checkout — fill the test card. Selectors are Stripe's stable field names.
-  await page.fill('input[name="cardNumber"]', "4242424242424242");
-  await page.fill('input[name="cardExpiry"]', "12 / 34");
-  await page.fill('input[name="cardCvc"]', "123");
-  const name = await page.$('input[name="billingName"]'); if (name) await page.fill('input[name="billingName"]', "Test Client");
-  await page.click('button[type="submit"]');
-  await page.waitForURL(/pay\/success|checkout|connectradie/i, { timeout: 30000 }).catch(() => {});
-  await browser.close();
+/**
+ * Fund the escrow with a PaymentIntent instead of driving Stripe's hosted page.
+ *
+ * WHY NOT THE BROWSER
+ * This used to fill `input[name="cardNumber"]` on checkout.stripe.com. That
+ * selector is long gone: Checkout now renders card fields inside Elements
+ * IFRAMES, behind a payment-method accordion, with hCaptcha loading alongside.
+ * Automating a payment form through bot detection is not something a test suite
+ * should be doing, and paying the session over the API is impossible too —
+ * `session.payment_intent` stays null until a real customer interacts with the
+ * hosted page, so there is nothing to confirm.
+ *
+ * So the money is moved with a PaymentIntent carrying the metadata
+ * stripe-webhook's job_funding fallback matches on. That exercises the real
+ * webhook, the real payments row and the real release-escrow path. The only
+ * thing it skips is Stripe's own checkout UI, which is not our code.
+ *
+ * Every figure is READ BACK from what accept-and-pay actually computed rather
+ * than recomputed here. If the app's amount and this test's amount ever
+ * disagree, release-escrow's payout maths is wrong and the run must fail rather
+ * than quietly paper over it.
+ */
+async function fundViaPaymentIntent(paymentId) {
+  const { data: row, error } = await admin
+    .from("payments")
+    .select("id, stripe_checkout_session_id, metadata")
+    .eq("id", paymentId)
+    .single();
+  if (error || !row) throw new Error(`payments row ${paymentId} not readable: ${error?.message}`);
+  if (!row.stripe_checkout_session_id) throw new Error("accept-and-pay did not record a checkout session id");
+
+  // amount_total is the authoritative charge the application built.
+  const session = await stripe.checkout.sessions.retrieve(row.stripe_checkout_session_id);
+  const destination = row.metadata?.tradie_stripe_account;
+  const applicationFee = row.metadata?.platform_fee;
+  if (!destination) throw new Error("payments.metadata.tradie_stripe_account missing");
+  if (typeof applicationFee !== "number") {
+    throw new Error(`payments.metadata.platform_fee is ${typeof applicationFee}, expected number`);
+  }
+
+  const pi = await stripe.paymentIntents.create({
+    amount: session.amount_total,
+    currency: session.currency ?? "aud",
+    payment_method_types: ["card"], // avoids redirect-based methods, so no return_url dance
+    // bypassPending, not pm_card_visa: funds land as AVAILABLE rather than
+    // pending on the connected account. With a plain test card the balance is
+    // still settling when release-escrow runs, payouts.create fails with
+    // "insufficient funds", and the run never reaches the successful-payout
+    // path — which is the part of release-escrow most worth testing.
+    payment_method: "pm_card_bypassPending",
+    confirm: true,
+    transfer_data: { destination },
+    application_fee_amount: applicationFee,
+    // These two keys are what the webhook's job_funding fallback matches on.
+    metadata: {
+      payment_record_id: row.id,
+      payment_type: "job_funding",
+      flow: "destination",
+      job_id: row.metadata?.job_id ?? "",
+      tradie_id: row.metadata?.tradie_id ?? "",
+    },
+  });
+
+  if (pi.status !== "succeeded") throw new Error(`PaymentIntent ${pi.id} status=${pi.status}`);
+
+  // The hosted session is now orphaned — close it so the test account does not
+  // accumulate open sessions.
+  await stripe.checkout.sessions.expire(row.stripe_checkout_session_id).catch(() => {});
+
+  return { pi, successUrl: session.success_url, destination, payoutCents: session.amount_total - applicationFee };
+}
+
+/**
+ * TEST-ONLY: make sure the connected account has enough AVAILABLE balance for
+ * release-escrow's payout to succeed.
+ *
+ * A destination charge credits the connected account, but those funds sit in
+ * `pending` on that account's own settlement schedule — `pm_card_bypassPending`
+ * on the platform charge does not change that. Without available funds,
+ * payouts.create fails with "insufficient funds", release-escrow correctly falls
+ * back to its retryable branch, and the run never reaches the path that actually
+ * matters: status='released', payout_id recorded, and the 409 duplicate guard.
+ *
+ * So top the account up directly with a bypassPending charge. This exists purely
+ * so the payout branch is reachable in test; it has no production counterpart.
+ */
+async function ensureAvailableBalance(destination, neededCents) {
+  const balance = await stripe.balance.retrieve({ stripeAccount: destination });
+  const available = balance.available.find((b) => b.currency === "aud")?.amount ?? 0;
+  if (available >= neededCents) return { toppedUp: 0, available };
+
+  const shortfall = neededCents - available;
+  await stripe.paymentIntents.create(
+    {
+      amount: shortfall,
+      currency: "aud",
+      payment_method_types: ["card"],
+      payment_method: "pm_card_bypassPending", // lands as AVAILABLE, not pending
+      confirm: true,
+      description: "E2E balance top-up (test only)",
+    },
+    { stripeAccount: destination },
+  );
+
+  const after = await stripe.balance.retrieve({ stripeAccount: destination });
+  return { toppedUp: shortfall, available: after.available.find((b) => b.currency === "aud")?.amount ?? 0 };
 }
 
 async function waitForPaymentStatus(paymentId, target, tries = 30) {
@@ -154,8 +247,15 @@ async function waitForPaymentStatus(paymentId, target, tries = 30) {
   ok(`accept-and-pay → paymentId ${paymentId}`);
 
   // 2. Pay with test card on hosted Checkout
-  await completeCheckout(accept.json.url);
-  ok("checkout completed with test card 4242");
+  const { pi, successUrl, destination, payoutCents } = await fundViaPaymentIntent(paymentId);
+  ok(`escrow funded via PaymentIntent ${pi.id} (test card)`);
+  // Proves accept-and-pay passes successUrl through to Stripe VERBATIM, which is
+  // the mechanism behind the /payment-success fix. Note this echoes the URL THIS
+  // harness supplied (CFG.SUCCESS_URL), not the app's own default — the frontend
+  // value is asserted by src/lib/__tests__/paymentFlows.test.ts.
+  successUrl === CFG.SUCCESS_URL
+    ? ok(`success_url reached Stripe unaltered → ${successUrl}`)
+    : fail(`success_url was rewritten: sent ${CFG.SUCCESS_URL}, Stripe has ${successUrl}`);
 
   // 3. Webhook should flip payment → completed
   const paid = await waitForPaymentStatus(paymentId, "completed");
@@ -189,6 +289,12 @@ async function waitForPaymentStatus(paymentId, target, tries = 30) {
     ? ok("platform_fee stored as a number (release-escrow reads it correctly)")
     : fail(`platform_fee stored as ${typeof paid.metadata?.platform_fee} — release-escrow's typeof guard will read it as 0 and pay out the full amount`);
 
+  // Test-only: give the connected account available funds so the payout branch
+  // is reachable. See ensureAvailableBalance().
+  const bal = await ensureAvailableBalance(destination, payoutCents);
+  ok(bal.toppedUp ? `connected balance topped up ${money(bal.toppedUp)} → ${money(bal.available)} available (test-only)`
+                  : `connected balance already sufficient (${money(bal.available)} available)`);
+
   // 4. Release escrow → destination payout to the tradie
   const rel = await callFn("release-escrow", jwt, { paymentId, idempotencyKey: "e2e_release_" + paymentId });
   if (rel.status !== 200) return fail("release-escrow: " + JSON.stringify(rel.json));
@@ -206,10 +312,63 @@ async function waitForPaymentStatus(paymentId, target, tries = 30) {
                                  : fail(`hot-water split mismatch: tradie nets ${money(base+gst-pf)}, expected $2,305.12`);
   }
 
-  // 5. Duplicate-release must NOT create a second payout (double-transfer guard)
+  // 5. Duplicate-release guard.
+  //
+  // 409 is only correct once release-escrow has actually recorded a payout_id or
+  // transfer_id. It has TWO legitimate outcomes and the assertion must follow the
+  // one that happened, or it cries wolf:
+  //
+  //   payout succeeded  → status='released' + payout_id → the guard at
+  //                       release-escrow/index.ts:163 must return 409
+  //   payout failed     → status stays 'completed' with payout_pending, ON
+  //                       PURPOSE, so auto-release-payments (which only rescans
+  //                       'completed') can retry. Marking it 'released' with no
+  //                       payout_id would strand the tradie's funds forever, so
+  //                       a repeat call returning 200 is correct, not a bug.
+  //
+  // Asserting 409 unconditionally reds every run where funds haven't settled.
+  // Don't reinstate that.
+  const { data: afterRelease } = await admin
+    .from("payments")
+    .select("status, metadata")
+    .eq("id", paymentId)
+    .maybeSingle();
+  const releaseRecorded = Boolean(afterRelease?.metadata?.payout_id || afterRelease?.metadata?.transfer_id);
+
   const rel2 = await callFn("release-escrow", jwt, { paymentId, idempotencyKey: "e2e_release_" + paymentId });
-  rel2.status === 409 ? ok("duplicate release blocked (409) — no double payout")
-                      : fail(`duplicate release returned ${rel2.status} (expected 409). Double-transfer risk — see findings.`);
+
+  if (releaseRecorded) {
+    afterRelease?.status === "released"
+      ? ok(`payout recorded (${afterRelease.metadata.payout_id || afterRelease.metadata.transfer_id}), status='released'`)
+      : fail(`payout id recorded but status='${afterRelease?.status}' — expected 'released'`);
+    // Blocked is what matters, not the exact code. Two guards can stop it and
+    // they return different statuses:
+    //   :102 status !== 'completed'          → 400 (fires first once released)
+    //   :163 transfer_id/payout_id present   → 409
+    // So 409 is effectively unreachable on the destination path. Asserting 409
+    // specifically reports a double-payout risk that does not exist.
+    rel2.status >= 400 && rel2.status < 500
+      ? ok(`duplicate release blocked (${rel2.status}: ${rel2.json?.error ?? "no body"})`)
+      : fail(`duplicate release returned ${rel2.status} after a recorded payout — it must be rejected`);
+
+    // The money invariant behind that assertion: exactly one payout, ever.
+    const payouts = await stripe.payouts.list(
+      { limit: 20 },
+      { stripeAccount: afterRelease.metadata.tradie_stripe_account },
+    );
+    const mine = payouts.data.filter((p) => p.metadata?.payment_id === paymentId);
+    mine.length === 1
+      ? ok(`exactly one payout exists for this payment (${mine[0].id})`)
+      : fail(`${mine.length} payouts reference payment ${paymentId} — expected exactly 1`);
+  } else {
+    // Retryable branch. Assert it is genuinely retryable rather than silently passing.
+    afterRelease?.status === "completed" && afterRelease?.metadata?.payout_pending === true
+      ? ok(`payout deferred (${String(afterRelease.metadata.payout_last_error).slice(0, 60)}…) — left retryable for auto-release-payments, as designed`)
+      : fail(`payout not recorded and the payment is not retryable: status='${afterRelease?.status}', payout_pending=${afterRelease?.metadata?.payout_pending}`);
+    rel2.status === 200
+      ? ok("repeat release still 200 — correct while the payout is pending retry")
+      : fail(`repeat release returned ${rel2.status}; a pending-retry payment must stay releasable`);
+  }
 
   // 6. Refund + duplicate-refund (refund-DB-failure guard)
   const ref = await callFn("process-refund", jwt, { paymentId, reason: "e2e test", idempotencyKey: "e2e_refund_" + paymentId });
