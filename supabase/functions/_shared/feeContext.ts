@@ -176,6 +176,7 @@ export async function recordFeeCharge(
       materials_processing_cents: Math.round(input.materialsProcessingCents ?? 0),
       fee_rate_bps: input.feeRateBps ?? null,
       fee_rate_type: input.feeRateType === "repeat_client" ? "repeat_client" : "standard",
+      kind: "commission",
     });
     // 23505 = already recorded for this payment; that's the idempotent path.
     if (error && (error as { code?: string }).code !== "23505") {
@@ -183,6 +184,66 @@ export async function recordFeeCharge(
     }
   } catch (err) {
     console.error("[recordFeeCharge] threw (payout unaffected)", err);
+  }
+}
+
+/**
+ * Records the Stripe instant-payout fee as platform revenue.
+ *
+ * Stripe's platform pricing scheme collects this as an application fee, so it is
+ * money we actually receive — unlike materials processing, which is Stripe's
+ * cost passed through at cost and deliberately never invoiced. It therefore
+ * belongs on the tradie's tax invoice, as its own line.
+ *
+ * Same contract as recordFeeCharge: BEST-EFFORT. The payout has already left
+ * Stripe by the time this runs; failing to write paperwork must never make the
+ * caller believe the payout failed.
+ *
+ * Idempotent via the partial UNIQUE index on payout_id. Stripe payout ids are
+ * globally unique, which is what lets the balance-anchored button path (no
+ * payments row at all) be recorded safely.
+ *
+ * feeCents is GST-INCLUSIVE — it is exactly what the tradie was shown and what
+ * Stripe collected — so gst = round(fee / 11), matching commission.
+ */
+export async function recordInstantPayoutFee(
+  supabase: SupabaseLike,
+  input: {
+    tradieProfileId: string | null | undefined;
+    /** Stripe payout id — the idempotency anchor. */
+    payoutId: string;
+    feeCents: number;
+    /** Set when the payout came from releasing a specific payment. */
+    paymentId?: string | null;
+    jobId?: string | null;
+    feeRateBps?: number | null;
+  },
+): Promise<void> {
+  try {
+    if (!input.tradieProfileId || !input.payoutId || !(input.feeCents > 0)) return; // nothing billable
+    const fee = Math.round(input.feeCents);
+    const gst = Math.round(fee / 11);
+    const { error } = await supabase.from("platform_fee_charges").insert({
+      tradie_profile_id: input.tradieProfileId,
+      payment_id: input.paymentId ?? null,
+      payout_id: input.payoutId,
+      job_id: input.jobId ?? null,
+      kind: "instant_payout",
+      commission_cents: fee, // the amount column, whatever the kind
+      gst_cents: gst,
+      ex_gst_cents: fee - gst,
+      materials_processing_cents: 0,
+      fee_rate_bps: input.feeRateBps ?? null,
+      // Not a commission rate. The CHECK only allows standard|repeat_client, and
+      // 'standard' is the honest reading: this tradie's configured instant rate.
+      fee_rate_type: "standard",
+    });
+    // 23505 = already recorded for this payout; that's the idempotent path.
+    if (error && (error as { code?: string }).code !== "23505") {
+      console.error("[recordInstantPayoutFee] failed (payout unaffected)", input.payoutId, error);
+    }
+  } catch (err) {
+    console.error("[recordInstantPayoutFee] threw (payout unaffected)", err);
   }
 }
 
@@ -206,10 +267,16 @@ export async function recordFeeRefund(
   paymentId: string,
 ): Promise<void> {
   try {
+    // kind='commission' is REQUIRED, not decorative. Uniqueness on this table is
+    // now (payment_id, kind), so a payment released instantly carries a second
+    // instant_payout row — and .maybeSingle() errors when a query matches more
+    // than one. Refunding a job's commission must not be affected by, or reverse,
+    // a separate instant transfer fee the tradie chose to pay.
     const { data: charge, error } = await supabase
       .from("platform_fee_charges")
       .select("id, tradie_profile_id, commission_cents, gst_cents, ex_gst_cents, invoice_id")
       .eq("payment_id", paymentId)
+      .eq("kind", "commission")
       .maybeSingle();
 
     if (error || !charge) return; // nothing was ever billed for this payment

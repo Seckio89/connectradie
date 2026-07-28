@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { fetchEscrowReserveCents } from "../_shared/escrowReserve.ts";
+import { recordInstantPayoutFee } from "../_shared/feeContext.ts";
 import {
   classifyInstantFailure,
   computeInstantPayout,
@@ -356,6 +357,16 @@ Deno.serve(async (req: Request) => {
 
         return json({ error: instantFailureMessage(scope), reason: "instant_unavailable" }, 400);
       }
+
+      // Record the fee as revenue. Anchored on the payout id, because this path
+      // pays out the cleared BALANCE — there is no payment row to key on.
+      // Best-effort: the money has already moved.
+      await recordInstantPayoutFee(supabase, {
+        tradieProfileId: user.id,
+        payoutId: payout.id,
+        feeCents,
+        feeRateBps: feeBps,
+      });
 
       // Notify: money on its way in minutes.
       const dollars = (netCents / 100).toFixed(2);

@@ -8,6 +8,8 @@
 // whether the net was above zero.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { recordInstantPayoutFee } from "./feeContext.ts";
+
 /**
  * The instant fee may never exceed 1/MAX_FEE_SHARE_DIVISOR of the payout.
  * With the standard $2 minimum fee this puts the floor at $20.
@@ -398,6 +400,15 @@ export async function createReleasePayout(args: CreateReleasePayoutArgs): Promis
         idempotencyKey: `${idempotencyKeyBase}${plan.idempotencySuffix}`,
       },
     );
+    // Record the fee as revenue. Best-effort by contract — the money has already
+    // moved, so bookkeeping must never turn a successful payout into a failure.
+    await recordInstantPayoutFee(supabase, {
+      tradieProfileId: tradieId,
+      payoutId: payout.id,
+      feeCents: plan.feeCents,
+      paymentId: metadata.payment_id ?? null,
+      jobId: metadata.job_id || null,
+    });
     return { payout, method: "instant", feeCents: plan.feeCents, instantFellBack: false };
   } catch (err) {
     const code = (err as { raw?: { code?: string }; code?: string })?.raw?.code ??
