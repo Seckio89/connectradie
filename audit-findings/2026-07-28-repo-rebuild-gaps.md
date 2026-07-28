@@ -18,8 +18,8 @@ systematically.
 | Functions | 3 | ✅ `20260728043000` |
 | Tables | 3 | ✅ `20260728044500` |
 | Constraint values | 1 | ✅ `20260728093000` |
-| **Columns** | **11** across 6 tables | ❌ |
-| **RLS policies** | **26** across 15 tables | ❌ |
+| Columns | 11 across 6 tables | ✅ `20260728101500` |
+| RLS policies | 26 across 15 tables | ✅ `20260728102000` |
 | Triggers, indexes, defaults, enums, views | **unknown — not checked** | — |
 
 ## Root cause
@@ -88,11 +88,12 @@ have RLS enabled and no way in.
 
 ## Recommended fix
 
-1. **Two migrations** — one adding the 11 columns with prod's exact types,
-   defaults and nullability; one recreating the 26 policies from prod's
-   `pg_policies` definitions. Both idempotent (`ADD COLUMN IF NOT EXISTS`,
-   `DROP POLICY IF EXISTS` + `CREATE`), so both are no-ops against production.
-   Follow the pattern of the three already landed.
+1. ~~Two migrations for the columns and policies.~~ **Done** —
+   `20260728101500` and `20260728102000`. Verified: the prod-vs-rebuild column
+   diff now reports 94/94 tables identical, and the policies were checked
+   behaviourally rather than assumed (a tradie can write their own
+   quote_template, another tradie's row is refused with 42501, and
+   profile_private is readable by its owner).
 2. **Cover the unchecked classes** — triggers, indexes, defaults, enums, views.
    Requires SQL access to a rebuilt database; the cheapest route is installing
    Docker so `supabase db dump` works, then diffing two dumps directly.
