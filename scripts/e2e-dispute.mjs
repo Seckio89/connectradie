@@ -174,7 +174,53 @@ async function fundWithDisputeCard(paymentId) {
   if (pi.status !== "succeeded") throw new Error(`PaymentIntent ${pi.id} status=${pi.status}`);
 
   await stripe.checkout.sessions.expire(row.stripe_checkout_session_id).catch(() => {});
-  return { pi, jobId: row.job_id, destination };
+  return { pi, jobId: row.job_id, destination, payoutCents: session.amount_total - applicationFee };
+}
+
+/**
+ * TEST-ONLY: give the connected account enough AVAILABLE balance for the payout
+ * to succeed. Ported from connectradie-e2e.mjs, and NOT optional here.
+ *
+ * A destination charge credits the connected account, but those funds sit in
+ * `pending` on that account's own settlement schedule. Without this the release
+ * fails with "insufficient funds" — which looks identical to "the dispute is
+ * still blocking the payout" if you only assert on the released count. Topping
+ * up first is what makes both probes below measure the dispute logic rather
+ * than the test account's balance.
+ */
+async function ensureAvailableBalance(destination, neededCents) {
+  const read = async () => {
+    const b = await stripe.balance.retrieve({ stripeAccount: destination });
+    return b.available.find((x) => x.currency === "aud")?.amount ?? 0;
+  };
+  let available = await read();
+  if (available >= neededCents) return { toppedUp: 0, available };
+
+  // Top up the shortfall PLUS a margin. A charge does not credit its full face
+  // value — processing is deducted — so funding exactly the shortfall lands
+  // just under and the payout still fails. Loop, because the margin is an
+  // estimate, not a guarantee.
+  let toppedUp = 0;
+  for (let attempt = 0; attempt < 3 && available < neededCents; attempt++) {
+    const amount = Math.ceil((neededCents - available) * 1.05) + 500;
+    await stripe.paymentIntents.create(
+      {
+        amount,
+        currency: "aud",
+        payment_method_types: ["card"],
+        payment_method: "pm_card_bypassPending", // lands as AVAILABLE, not pending
+        confirm: true,
+        description: "E2E dispute balance top-up (test only)",
+      },
+      { stripeAccount: destination },
+    );
+    toppedUp += amount;
+    available = await read();
+  }
+  if (available < neededCents) {
+    throw new Error(`could not fund the connected account: ${available} available, need ${neededCents}`);
+  }
+  return { toppedUp, available };
 }
 
 /**
@@ -211,7 +257,7 @@ async function makeJobReleasable(jobId) {
   const paymentId = accept.json.paymentId;
   ok(`accept-and-pay → paymentId ${paymentId}`);
 
-  const { pi, jobId } = await fundWithDisputeCard(paymentId);
+  const { pi, jobId, destination, payoutCents } = await fundWithDisputeCard(paymentId);
   if (!jobId) return fail("payments row has no job_id — dispute.created cannot derive job context");
   ok(`escrow funded via ${pi.id} using ${DISPUTE_TOKEN} (job ${jobId})`);
 
@@ -252,17 +298,38 @@ async function makeJobReleasable(jobId) {
   // THE COUPLING: charge.dispute.closed matches the payment on this field, and
   // only charge.dispute.created writes it. Missing here == the closed handler
   // will update zero rows later and still report success.
-  const { data: payAfterCreate } = await admin.from("payments").select("metadata,status").eq("id", paymentId).maybeSingle();
-  payAfterCreate?.metadata?.stripe_dispute_id === disputeRow.stripe_dispute_id
-    ? ok("payments.metadata.stripe_dispute_id cross-referenced — dispute.closed can find this payment")
-    : fail("payments.metadata.stripe_dispute_id NOT set — charge.dispute.closed will silently match zero rows");
+  // POLL, don't single-read: the handler inserts the disputes row BEFORE it
+  // updates payments.metadata, so a read fired the moment the row appears
+  // races the second write and fails intermittently.
+  try {
+    await poll("payments.metadata.stripe_dispute_id", async () => {
+      const { data } = await admin.from("payments").select("metadata").eq("id", paymentId).maybeSingle();
+      return data?.metadata?.stripe_dispute_id === disputeRow.stripe_dispute_id ? data : null;
+    }, { tries: 15 });
+    ok("payments.metadata.stripe_dispute_id cross-referenced — dispute.closed can find this payment");
+  } catch {
+    fail("payments.metadata.stripe_dispute_id NOT set — charge.dispute.closed will silently match zero rows");
+  }
 
   // 4. Probe auto-release WHILE the dispute is live. Must not release.
+  //
+  // Top up FIRST. Without available funds the release fails with "insufficient
+  // funds" and released=0 either way — so the probe would pass without proving
+  // the dispute blocked anything. Asserting on `errors` as well as `released`
+  // is what separates "correctly excluded" from "attempted and failed".
   await makeJobReleasable(jobId);
+  const bal = await ensureAvailableBalance(destination, payoutCents);
+  info(bal.toppedUp
+    ? `connected balance topped up ${money(bal.toppedUp)} → ${money(bal.available)} available (test-only)`
+    : `connected balance already sufficient (${money(bal.available)} available)`);
+
   const whileOpen = await tryAutoRelease(jobId);
-  whileOpen.released === 0
-    ? ok("auto-release refused while the dispute is open (released=0)")
-    : fail(`auto-release released ${whileOpen.released} job(s) DESPITE a live dispute — money left escrow during a chargeback`);
+  const openErrs = whileOpen.errors ?? [];
+  whileOpen.released === 0 && openErrs.length === 0
+    ? ok("auto-release excluded the job while the dispute is open (released=0, no attempt)")
+    : whileOpen.released > 0
+      ? fail(`auto-release released ${whileOpen.released} job(s) DESPITE a live dispute — money left escrow during a chargeback`)
+      : fail(`auto-release ATTEMPTED the release and failed rather than excluding the job: ${JSON.stringify(openErrs)}`);
 
   // 5. Force the outcome. In test mode Stripe resolves a dispute on evidence
   //    submission, using these magic strings.
@@ -303,14 +370,19 @@ async function makeJobReleasable(jobId) {
 
   // 7. Probe auto-release AFTER the close. Opposite expectations per outcome.
   const afterClose = await tryAutoRelease(jobId);
+  const closeErrs = afterClose.errors ?? [];
   if (CFG.OUTCOME === "lost") {
-    afterClose.released === 0
-      ? ok("auto-release still refuses after a LOST chargeback — clawed-back funds stay put")
-      : fail(`auto-release released ${afterClose.released} job(s) after a LOST chargeback — the platform just paid out money the client took back`);
+    // Funds ARE available by now, so released=0 can only mean the refunded
+    // status excluded the payment — not that the payout merely failed.
+    afterClose.released === 0 && closeErrs.length === 0
+      ? ok("auto-release excluded the job after a LOST chargeback — clawed-back funds stay put")
+      : afterClose.released > 0
+        ? fail(`auto-release released ${afterClose.released} job(s) after a LOST chargeback — the platform just paid out money the client took back`)
+        : fail(`auto-release attempted the release after a LOST chargeback and only failed by accident: ${JSON.stringify(closeErrs)}`);
   } else {
     afterClose.released > 0
       ? ok(`auto-release paid the tradie after a WON chargeback (${money(afterClose.total_amount || 0)})`)
-      : fail("auto-release released nothing after a WON chargeback — the payout is still frozen");
+      : fail(`auto-release released nothing after a WON chargeback — the payout is still frozen. errors: ${JSON.stringify(closeErrs)}`);
   }
 
   console.log(process.exitCode ? "\n── FAILED ──" : "\n── PASSED ──");
