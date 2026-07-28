@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 
 /**
@@ -122,18 +122,11 @@ Deno.serve(async (req: Request) => {
       const name = tradie.full_name || tradie.email || tradie.id;
 
       try {
-        // Retrieve current account to check existing payout schedule
+        // Retrieve current account to check existing payout schedule.
+        // A deleted or unknown account makes this throw a 404 — the catch below
+        // records it in `results.failed`. (Stripe types `Account.deleted` as
+        // `void` for exactly that reason: a retrieved account is never deleted.)
         const account = await stripe.accounts.retrieve(accountId);
-
-        if (!account || account.deleted) {
-          results.failed.push({
-            accountId,
-            name,
-            error: "Account deleted or not found on Stripe",
-          });
-          console.warn(`Skipping ${name} (${accountId}): account deleted/not found`);
-          continue;
-        }
 
         // Check if already on manual payouts
         const currentInterval = account.settings?.payouts?.schedule?.interval;
