@@ -22,6 +22,22 @@ systematically.
 | RLS policies | 26 across 15 tables | ✅ `20260728102000` |
 | Triggers, indexes, defaults, enums, views | unknown at the time | now covered by `npm run check:drift` |
 
+## Postscript — it recurred during this audit
+
+`20260728092722_fee_charge_kind_and_payout_anchor` was applied to production
+**while this audit was being written**, via the same route, and existed in no git
+branch. Recovered verbatim from the ledger and committed (md5 verified against
+`statements[1]`, 1,782 chars).
+
+The ledger names the route beyond doubt: `created_by = admin@hpcleaning.com.au`
+on **105 of 337** rows, each with a migration name and a single-element
+`statements` array — the signature of MCP `apply_migration`. The dashboard SQL
+editor writes no ledger row, and `db push` records differently. The remaining 232
+rows have a null `created_by` and are older, CLI-era.
+
+So the drift is not mysterious and not external: it is assistant sessions writing
+DDL straight to production and never writing the file.
+
 ## Root cause
 
 Production's migration history has **331 applied versions**; the repo has **311
