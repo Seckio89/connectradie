@@ -6,7 +6,7 @@
 // funds, so the cases that matter most are the ones it used to MISS.
 
 import { strictEqual as assertEquals } from "node:assert/strict";
-import { creditedToBalanceCents, sumEscrowReserveCents } from "./escrowReserve.ts";
+import { creditedToBalanceCents, fetchEscrowReserveCents, sumEscrowReserveCents } from "./escrowReserve.ts";
 
 Deno.test("reserves off-app funded jobs, which stamp routing and no tradie_id", () => {
   // public-quote / invoice-contact rows. The old `flow`-only filter skipped
@@ -55,4 +55,67 @@ Deno.test("falls back to gross when fee metadata is missing or unusable", () => 
 
 Deno.test("never returns a negative credit", () => {
   assertEquals(creditedToBalanceCents({ amount: 100, metadata: { platform_fee: 500, gst: "0" } }), 0);
+});
+
+// ── fetchEscrowReserveCents ──────────────────────────────────────────────────
+// The union of the two anchor queries, and the fail-closed contract. A query
+// error read as "no escrow held" is how client funds get paid out.
+
+/** Minimal thenable stand-in for the supabase builder. Each `.from()` call
+ *  shifts the next queued result off the list. */
+function stubClient(results: Array<{ data?: unknown[]; error?: unknown }>) {
+  const calls: string[] = [];
+  return {
+    calls,
+    from() {
+      const result = results.shift() ?? { data: [] };
+      const builder: Record<string, unknown> = {
+        select(cols: string) { calls.push(cols); return builder; },
+        eq() { return builder; },
+        then(resolve: (v: unknown) => unknown) { return Promise.resolve(result).then(resolve); },
+      };
+      return builder;
+    },
+  };
+}
+
+Deno.test("unions both anchors and de-duplicates the overlap", async () => {
+  // The same payment matched by BOTH queries must be counted once.
+  const shared = { id: "a", amount: 7_000, metadata: { flow: "destination", tradie_id: "t1", platform_fee: 0, gst: "0" } };
+  const client = stubClient([
+    { data: [shared] },
+    { data: [{ ...shared }] },
+  ]);
+  assertEquals(await fetchEscrowReserveCents(client, "t1"), 7_000);
+});
+
+Deno.test("catches escrow only the job anchor can see", async () => {
+  // public-quote / invoice-contact rows: routing, off_app, no tradie_id.
+  const client = stubClient([
+    { data: [{ id: "a", amount: 10_000, metadata: { routing: "destination", off_app: true, platform_fee: 510, gst: "0" } }] },
+    { data: [] },
+  ]);
+  assertEquals(await fetchEscrowReserveCents(client, "t1"), 9_490);
+});
+
+Deno.test("throws when either query fails — never reports zero", async () => {
+  for (const results of [
+    [{ error: { message: "boom" } }, { data: [] }],
+    [{ data: [] }, { error: { message: "boom" } }],
+  ]) {
+    let threw = false;
+    try {
+      await fetchEscrowReserveCents(stubClient(results), "t1");
+    } catch {
+      threw = true;
+    }
+    assertEquals(threw, true);
+  }
+});
+
+Deno.test("queries the job anchor and the metadata anchor", async () => {
+  const client = stubClient([{ data: [] }, { data: [] }]);
+  await fetchEscrowReserveCents(client, "t1");
+  assertEquals(client.calls.length, 2);
+  assertEquals(client.calls[0].includes("jobs!inner(tradie_id)"), true);
 });

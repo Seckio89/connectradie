@@ -1,8 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-import { sumEscrowReserveCents } from "../_shared/escrowReserve.ts";
-import type { EscrowRow } from "../_shared/escrowReserve.ts";
+import { fetchEscrowReserveCents } from "../_shared/escrowReserve.ts";
 import {
   classifyInstantFailure,
   computeInstantPayout,
@@ -167,28 +166,15 @@ Deno.serve(async (req: Request) => {
     // Status: only "completed" is ever written to payments.status for held
     // escrow — the previous ["completed","funded","paid"] list also carried a
     // jobs status and a recurring_invoices status, neither of which can match.
-    const [jobAnchored, metaAnchored] = await Promise.all([
-      supabase
-        .from("payments")
-        .select("id, amount, metadata, jobs!inner(tradie_id)")
-        .eq("jobs.tradie_id", user.id)
-        .eq("status", "completed"),
-      supabase
-        .from("payments")
-        .select("id, amount, metadata")
-        .eq("metadata->>tradie_id", user.id)
-        .eq("status", "completed"),
-    ]);
     // A failed reserve query must never read as "no escrow" — that would pay out
     // client funds. Refuse instead.
-    if (jobAnchored.error || metaAnchored.error) {
-      console.error("instant-payout escrow reserve query failed:", jobAnchored.error ?? metaAnchored.error);
+    let escrowReserveCents: number;
+    try {
+      escrowReserveCents = await fetchEscrowReserveCents(supabase, user.id);
+    } catch (e) {
+      console.error("instant-payout escrow reserve query failed:", e);
       return json({ error: "Could not confirm your available balance. Please try again shortly." }, 503);
     }
-    const escrowReserveCents = sumEscrowReserveCents([
-      ...((jobAnchored.data ?? []) as EscrowRow[]),
-      ...((metaAnchored.data ?? []) as EscrowRow[]),
-    ]);
 
     // Resolve the external account the instant payout lands on. In AU an
     // instant-capable BANK account is valid (real-time payouts) — a debit card is

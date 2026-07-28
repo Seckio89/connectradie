@@ -29,8 +29,7 @@ import { hasServiceRole } from "../_shared/serviceAuth.ts";
 import Stripe from "npm:stripe@14.21.0";
 import { resolveTradieTier } from "../_shared/pricing.ts";
 import { resolveChargeFee } from "../_shared/feeContext.ts";
-import { sumEscrowReserveCents } from "../_shared/escrowReserve.ts";
-import type { EscrowRow } from "../_shared/escrowReserve.ts";
+import { fetchEscrowReserveCents } from "../_shared/escrowReserve.ts";
 import { createReleasePayout } from "../_shared/instantPayout.ts";
 
 // Invoices paid at/after this instant get an automatic BANK PAYOUT (Stripe
@@ -147,28 +146,15 @@ Deno.serve(async (req: Request) => {
       // public quote was reserved as $0 and this endpoint would have paid the
       // client's money straight out. Shared with instant-payout — see
       // _shared/escrowReserve.ts.
-      const [jobAnchored, metaAnchored] = await Promise.all([
-        supabase
-          .from("payments")
-          .select("id, amount, metadata, jobs!inner(tradie_id)")
-          .eq("jobs.tradie_id", tradieId)
-          .eq("status", "completed"),
-        supabase
-          .from("payments")
-          .select("id, amount, metadata")
-          .eq("metadata->>tradie_id", tradieId)
-          .eq("status", "completed"),
-      ]);
       // A failed reserve query must never read as "no escrow held" — that would
       // pay out client funds. Refuse rather than guess.
-      if (jobAnchored.error || metaAnchored.error) {
-        console.error("balance_release escrow reserve query failed:", jobAnchored.error ?? metaAnchored.error);
+      let escrowReserve: number;
+      try {
+        escrowReserve = await fetchEscrowReserveCents(supabase, tradieId);
+      } catch (e) {
+        console.error("balance_release escrow reserve query failed:", e);
         return errorJson("Could not confirm the escrow reserve — no payout was made.", 503);
       }
-      const escrowReserve = sumEscrowReserveCents([
-        ...((jobAnchored.data ?? []) as EscrowRow[]),
-        ...((metaAnchored.data ?? []) as EscrowRow[]),
-      ]);
       const reserveCents = callerReserve + escrowReserve;
 
       const bal = await stripe.balance.retrieve({ stripeAccount: prof.stripe_connect_account_id });
@@ -426,6 +412,37 @@ Deno.serve(async (req: Request) => {
     if (awaitingErr) {
       console.error("Failed to fetch awaiting-bank-payout invoices:", awaitingErr);
     } else {
+      // ── Unreserved-balance budget (per tradie, per run) ───────────────────
+      // These payouts draw on the SHARED Connect balance, which also holds
+      // escrow for one-off jobs the homeowner hasn't approved. Paying an
+      // invoice whose own funds are still settling would quietly fund it from
+      // that escrow. Stripe won't stop us — it sees one pooled balance — so we
+      // budget each tradie to (available − escrow) and defer anything that
+      // doesn't fit. Deferring is free: the invoice stays 'transferred' and the
+      // next hourly run retries once its funds land.
+      const budgetCache = new Map<string, number | null>();
+      const unreservedBudget = async (tradieId: string, connectId: string): Promise<number | null> => {
+        if (budgetCache.has(tradieId)) return budgetCache.get(tradieId) ?? null;
+        let budget: number | null = null;
+        try {
+          const [bal, reserve] = await Promise.all([
+            stripe.balance.retrieve({ stripeAccount: connectId }),
+            fetchEscrowReserveCents(supabase, tradieId),
+          ]);
+          const availableAud = (bal.available ?? [])
+            .filter((b: { currency: string }) => b.currency === "aud")
+            .reduce((s: number, b: { amount: number }) => s + b.amount, 0);
+          budget = Math.max(0, availableAud - reserve);
+        } catch (e) {
+          // Fail CLOSED. An unknown balance must not authorise a payout that
+          // might come out of escrow.
+          console.error(`Could not determine unreserved balance for ${tradieId}:`, e);
+          budget = null;
+        }
+        budgetCache.set(tradieId, budget);
+        return budget;
+      };
+
       const tradieCache = new Map<string, { connectId: string | null; onboarded: boolean; tier: ReturnType<typeof resolveTradieTier>; overrideBps: number | null }>();
       for (const inv of awaiting || []) {
         if (!inv.tradie_id) { bankPayouts.push({ invoice_id: inv.id, outcome: "skipped", reason: "no tradie_id" }); continue; }
@@ -487,6 +504,20 @@ Deno.serve(async (req: Request) => {
         const netCents = Math.round(totalDollars * 100) - platformFeeCents;
         if (netCents <= 0) { bankPayouts.push({ invoice_id: inv.id, outcome: "skipped", reason: "non-positive net" }); continue; }
 
+        // Only pay from money that is genuinely this tradie's. Multiple invoices
+        // for one tradie draw on the same budget, so it is decremented per payout
+        // rather than re-read — otherwise each would independently believe the
+        // whole balance was available.
+        const budget = await unreservedBudget(inv.tradie_id, meta.connectId);
+        if (budget === null) {
+          bankPayouts.push({ invoice_id: inv.id, outcome: "deferred", reason: "balance unavailable" });
+          continue;
+        }
+        if (budget < netCents) {
+          bankPayouts.push({ invoice_id: inv.id, outcome: "deferred", reason: "insufficient unreserved balance" });
+          continue;
+        }
+
         try {
           // Honours tradie_details.payout_speed_preference; falls back to a
           // standard payout for the full amount if instant is rejected.
@@ -505,6 +536,8 @@ Deno.serve(async (req: Request) => {
             .from("recurring_invoices")
             .update({ payout_status: "paid_out", payout_error_message: null })
             .eq("id", inv.id);
+          // An instant payout also costs the fee out of the same balance.
+          budgetCache.set(inv.tradie_id, Math.max(0, budget - payout.amount - outcome.feeCents));
           bankPayouts.push({ invoice_id: inv.id, outcome: "paid_out", amount_cents: payout.amount, payout_id: payout.id, method: outcome.method });
           bankPaidCount++;
           bankPaidAmount += payout.amount;
