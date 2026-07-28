@@ -699,14 +699,22 @@ body {
   }
 }
 
-/* ── F. ServicesTab supply grid — responsive columns ──────────────────────────── */
+/* ── F. 4-col button grids — responsive columns ───────────────────────────────── */
 @media (max-width: 479px) {
-  /* 4-col supply grids → 2-col on very narrow screens */
-  main .grid.grid-cols-4.gap-2 {
+  /* :has(button) is doing real work here. The old heading said "ServicesTab
+     supply grid", but ServicesTab is `grid-cols-2 sm:grid-cols-4 gap-2` and has
+     never matched — `sm:grid-cols-4` compiles to a different class name. What
+     this rule actually caught was BonusModal, JobCompletionModal, and the
+     AnalyticsDashboard "Seasonal Trends" heat map, which is
+     `grid-cols-4 sm:grid-cols-6 gap-2` with aspect-square tiles. Halving its
+     columns doubled every tile, turning 12 months into a screenful of scroll.
+     The button grids need the extra width for 44px tap targets; the heat map
+     has no buttons and keeps its 4 columns. */
+  main .grid.grid-cols-4.gap-2:has(button) {
     grid-template-columns: repeat(2, 1fr) !important;
   }
 
-  /* Supply quantity +/- buttons: ensure 44px tap targets.
+  /* Quantity +/- buttons: ensure 44px tap targets.
      This said 36px while claiming 44 in its own comment. The grid drops to two
      columns just above, so ~80px of width per column — 44px fits comfortably. */
   main .grid.grid-cols-4.gap-2 button {
@@ -726,6 +734,17 @@ body {
     display: block !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* ...but `display: block` makes a table shrink-to-fit, so `w-full` stops
+     applying and a narrow table sits in a puddle of empty card. 11 of the 28
+     tables already have their own `overflow-x-auto` wrapper and never needed
+     the fallback — those lay out as real tables at full width. That is what
+     was squashing "Win Rate by Quote Price" into half its card. */
+  main .overflow-x-auto > table {
+    display: table !important;
+    width: 100% !important;
+    overflow-x: visible !important;
   }
 }
 
