@@ -20,6 +20,12 @@ export interface EscrowRow {
   metadata?: Record<string, unknown> | null;
 }
 
+/** Minimal structural type — avoids importing the Supabase SDK here, matching
+ *  the convention in feeContext.ts. */
+// deno-lint-ignore no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SupabaseLike = any;
+
 /**
  * Two writers, two key names, one meaning. accept-and-pay / pay-price-increase
  * stamp `metadata.flow`; invoice-contact / public-quote / the BECS + recurring
@@ -86,4 +92,45 @@ export function sumEscrowReserveCents(rows: EscrowRow[]): number {
     total += creditedToBalanceCents(row);
   }
   return total;
+}
+
+/**
+ * Runs the two anchor queries and returns the tradie's held escrow.
+ *
+ * Rows anchor differently depending on who paid: accept-and-pay and
+ * pay-price-increase stamp metadata.tradie_id, while public-quote and
+ * invoice-contact serve off-app clients with no profile, so those rows carry no
+ * tradie_id and are only reachable through the job. Missing either anchor leaves
+ * client escrow unreserved and payable.
+ *
+ * THROWS if either query fails. Callers must not treat an error as "no escrow
+ * held" — that is how you pay out client funds.
+ */
+export async function fetchEscrowReserveCents(
+  supabase: SupabaseLike,
+  tradieId: string,
+): Promise<number> {
+  const [jobAnchored, metaAnchored] = await Promise.all([
+    supabase
+      .from("payments")
+      .select("id, amount, metadata, jobs!inner(tradie_id)")
+      .eq("jobs.tradie_id", tradieId)
+      .eq("status", "completed"),
+    supabase
+      .from("payments")
+      .select("id, amount, metadata")
+      .eq("metadata->>tradie_id", tradieId)
+      .eq("status", "completed"),
+  ]);
+
+  if (jobAnchored.error || metaAnchored.error) {
+    throw new Error(
+      `escrow reserve query failed: ${JSON.stringify(jobAnchored.error ?? metaAnchored.error)}`,
+    );
+  }
+
+  return sumEscrowReserveCents([
+    ...((jobAnchored.data ?? []) as EscrowRow[]),
+    ...((metaAnchored.data ?? []) as EscrowRow[]),
+  ]);
 }
