@@ -2,6 +2,9 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { frozenCents, recordFeeCharge } from "../_shared/feeContext.ts";
+import { createReleasePayout } from "../_shared/instantPayout.ts";
+
+const formatAud = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
 function requireEnv(key: string): string {
   const val = Deno.env.get(key);
@@ -277,27 +280,30 @@ Deno.serve(async (req: Request) => {
         // MUST match release-escrow's amount — shared idempotency key.
         const destinationPayoutCents = totalTransferAmount + totalGst;
         try {
-          const payout = await stripe.payouts.create(
-            {
-              amount: destinationPayoutCents,
-              currency: "aud",
-              metadata: {
-                payment_id: payment.id,
-                job_id: job.id,
-                client_id: job.client_id,
-                tradie_id: job.tradie_id,
-                auto_released: "true",
-                gst: String(totalGst),
-                flow: "destination",
-              },
+          // Honours tradie_details.payout_speed_preference. The decision is a
+          // pure function of the preference and the amount, so a client release
+          // racing this cron reaches the same answer and the shared idempotency
+          // key stays valid — see _shared/instantPayout.ts.
+          const outcome = await createReleasePayout({
+            stripe,
+            supabase,
+            tradieId: job.tradie_id,
+            connectAccountId: tradieProfile.stripe_connect_account_id,
+            amountCents: destinationPayoutCents,
+            metadata: {
+              payment_id: payment.id,
+              job_id: job.id,
+              client_id: job.client_id,
+              tradie_id: job.tradie_id,
+              auto_released: "true",
+              gst: String(totalGst),
+              flow: "destination",
             },
-            {
-              stripeAccount: tradieProfile.stripe_connect_account_id,
-              // Deterministic key shared with release-escrow so a cron run racing a
-              // client release can't create two payouts for one payment.
-              idempotencyKey: `release_payout_${payment.id}`,
-            },
-          );
+            // Deterministic key shared with release-escrow so a cron run racing a
+            // client release can't create two payouts for one payment.
+            idempotencyKeyBase: `release_payout_${payment.id}`,
+          });
+          const payout = outcome.payout;
 
           // Update main payment metadata with payout info. Drop pending_increase.
           const releasedAt = new Date().toISOString();
@@ -314,6 +320,10 @@ Deno.serve(async (req: Request) => {
                 released_at: releasedAt,
                 auto_released: true,
                 flow: "destination",
+                // See release-escrow: an instant payout lands less than the
+                // released amount because Stripe collects the fee.
+                payout_method: outcome.method,
+                ...(outcome.feeCents > 0 ? { instant_fee_cents: outcome.feeCents } : {}),
               },
             })
             .eq("id", payment.id);
@@ -426,8 +436,14 @@ Deno.serve(async (req: Request) => {
           try {
             await supabase.from("notifications").insert({
               user_id: job.tradie_id,
-              title: "Payment Received",
-              message: `Payment of ${amountDollars} for ${jobTitle} (${invoiceNumber}) has been released to your account.`,
+              // Wording tracks the Payouts card: a payout has just been CREATED,
+              // so this money is "Heading to your bank", not "In your account".
+              // Saying "released to your account" here had tradies expecting
+              // money that was still 2-3 business days away.
+              title: outcome.method === "instant" ? "Payout On Its Way — Instant" : "Payout On Its Way",
+              message: outcome.method === "instant"
+                ? `${jobTitle} (${invoiceNumber}) approved — ${formatAud(payout.amount)} is heading to your bank now and should arrive within minutes. Instant transfer fee: ${formatAud(outcome.feeCents)}.`
+                : `${jobTitle} (${invoiceNumber}) approved — ${amountDollars} is heading to your bank, arriving in 2-3 business days.`,
               type: "payment_received",
               read: false,
               metadata: {
@@ -456,8 +472,12 @@ Deno.serve(async (req: Request) => {
                 },
                 body: JSON.stringify({
                   to: tradieProfile.email,
-                  subject: `Payment of ${amountDollars} Released — Funds on the Way (${invoiceNumber})`,
-                  body: `Hi ${tradieProfile.full_name || "there"},\n\nGreat news! Payment of ${amountDollars} for "${jobTitle}" (Invoice: ${invoiceNumber}) has been released to your account.\n\nFunds will appear in your bank account within 2-3 business days.\n\nKeep up the great work!`,
+                  subject: `${amountDollars} approved — heading to your bank (${invoiceNumber})`,
+                  body: `Hi ${tradieProfile.full_name || "there"},\n\nGreat news! Payment of ${amountDollars} for "${jobTitle}" (Invoice: ${invoiceNumber}) has been approved and is now heading to your bank.\n\n${
+                    outcome.method === "instant"
+                      ? `You're on instant payouts, so ${formatAud(payout.amount)} should arrive within minutes (instant transfer fee: ${formatAud(outcome.feeCents)}).`
+                      : "It should arrive within 2-3 business days."
+                  }\n\nKeep up the great work!`,
                   notificationType: "PAYMENT_RECEIVED",
                   metadata: { amount: amountDollars, job_id: job.id },
                 }),
@@ -669,8 +689,12 @@ Deno.serve(async (req: Request) => {
         try {
           await supabase.from("notifications").insert({
             user_id: job.tradie_id,
-            title: "Payment Received",
-            message: `Payment of ${amountDollars} for ${jobTitle} (${invoiceNumber}) has been released to your account.`,
+            // LEGACY CUSTODIAL branch: the money moved by transfer into the
+            // tradie's Stripe BALANCE — no payout exists, so nothing is on its
+            // way to a bank yet. The card calls this state "Ready to pay out";
+            // "released to your account" implied it had already landed.
+            title: "Payment Approved",
+            message: `${jobTitle} (${invoiceNumber}) approved — ${amountDollars} is ready to pay out and will be sent to your bank on your next payout.`,
             type: "payment_received",
             read: false,
             metadata: {
@@ -699,8 +723,8 @@ Deno.serve(async (req: Request) => {
               },
               body: JSON.stringify({
                 to: tradieProfile.email,
-                subject: `Payment of ${amountDollars} Released — Funds on the Way (${invoiceNumber})`,
-                body: `Hi ${tradieProfile.full_name || "there"},\n\nGreat news! Payment of ${amountDollars} for "${jobTitle}" (Invoice: ${invoiceNumber}) has been released to your account.\n\nFunds will appear in your bank account within 2-3 business days.\n\nKeep up the great work!`,
+                subject: `${amountDollars} approved and ready to pay out (${invoiceNumber})`,
+                body: `Hi ${tradieProfile.full_name || "there"},\n\nGreat news! Payment of ${amountDollars} for "${jobTitle}" (Invoice: ${invoiceNumber}) has been approved and is now ready to pay out.\n\nIt'll be sent to your bank on your next payout.\n\nKeep up the great work!`,
                 notificationType: "PAYMENT_RECEIVED",
                 metadata: { amount: amountDollars, job_id: job.id },
               }),

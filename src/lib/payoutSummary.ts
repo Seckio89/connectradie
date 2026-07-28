@@ -154,12 +154,23 @@ function transitCopy(args: {
   }
 
   if (freeAvailable > 0) {
-    const detail = isManualSchedule
-      ? 'Cleared and waiting — not sent to your bank yet'
-      : 'Will be sent on your next scheduled payout';
+    // Only title the row "Ready to pay out" when the WHOLE amount is ready.
+    // With money in both states it read "$4.50 — Ready to pay out / Cleared and
+    // waiting · $1.00 still clearing", claiming $4.50 was cleared and
+    // contradicting itself in the next breath. Name each part instead.
+    if (freeClearing > 0) {
+      return {
+        title: 'On its way to your bank',
+        detail: `${fmt(freeAvailable)} ${
+          isManualSchedule ? 'cleared and waiting' : 'cleared, on your next payout'
+        } · ${fmt(freeClearing)} still clearing`,
+      };
+    }
     return {
       title: isManualSchedule ? 'Ready to pay out' : 'Scheduled for your next payout',
-      detail: freeClearing > 0 ? `${detail} · ${fmt(freeClearing)} still clearing` : detail,
+      detail: isManualSchedule
+        ? 'Cleared and waiting — not sent to your bank yet'
+        : 'Will be sent on your next scheduled payout',
     };
   }
 

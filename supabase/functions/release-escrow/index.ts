@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
 import { frozenCents, recordFeeCharge } from "../_shared/feeContext.ts";
+import { createReleasePayout } from "../_shared/instantPayout.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -234,6 +235,8 @@ Deno.serve(async (req: Request) => {
       let payoutId: string | null = null;
       let payoutAmount: number | null = null;
       let payoutError: string | null = null;
+      let payoutMethod: "standard" | "instant" = "standard";
+      let instantFeeCents = 0;
 
       // Attempt to move the funds from the tradie's Stripe balance to their bank.
       // If it fails (e.g. balance still settling) we keep the payment retryable
@@ -245,29 +248,33 @@ Deno.serve(async (req: Request) => {
       // key, so a differing amount would make Stripe reject the racing retry.
       const destinationPayoutCents = transferAmount + totalGst;
       try {
-        const payout = await stripe.payouts.create(
-          {
-            amount: destinationPayoutCents,
-            currency: "aud",
-            metadata: {
-              payment_id: paymentId,
-              job_id: payment.job_id,
-              client_id: user.id,
-              tradie_id: job.tradie_id,
-              platform_fee: String(platformFeeCents),
-              gst: String(totalGst),
-              flow: "destination",
-            },
+        // Honours tradie_details.payout_speed_preference. The instant/standard
+        // decision is a pure function of the preference and the amount (see
+        // _shared/instantPayout.ts), so the cron racing this call reaches the
+        // same answer and the shared idempotency key stays valid.
+        const outcome = await createReleasePayout({
+          stripe,
+          supabase,
+          tradieId: job.tradie_id,
+          connectAccountId: tradieProfile.stripe_connect_account_id,
+          amountCents: destinationPayoutCents,
+          metadata: {
+            payment_id: paymentId,
+            job_id: payment.job_id,
+            client_id: user.id,
+            tradie_id: job.tradie_id,
+            platform_fee: String(platformFeeCents),
+            gst: String(totalGst),
+            flow: "destination",
           },
-          {
-            stripeAccount: tradieProfile.stripe_connect_account_id,
-            // Deterministic key shared with auto-release-payments so a client
-            // release racing the cron can't create two payouts for one payment.
-            idempotencyKey: `release_payout_${paymentId}`,
-          },
-        );
-        payoutId = payout.id;
-        payoutAmount = payout.amount;
+          // Deterministic key shared with auto-release-payments so a client
+          // release racing the cron can't create two payouts for one payment.
+          idempotencyKeyBase: `release_payout_${paymentId}`,
+        });
+        payoutId = outcome.payout.id;
+        payoutAmount = outcome.payout.amount;
+        payoutMethod = outcome.method;
+        instantFeeCents = outcome.feeCents;
       } catch (payoutErr) {
         payoutError = payoutErr instanceof Error ? payoutErr.message : String(payoutErr);
         console.warn(
@@ -294,7 +301,16 @@ Deno.serve(async (req: Request) => {
           metadata: {
             ...cleanMetadata,
             ...(payoutId
-              ? { payout_id: payoutId, payout_amount: payoutAmount, released_at: releasedAt }
+              ? {
+                payout_id: payoutId,
+                payout_amount: payoutAmount,
+                released_at: releasedAt,
+                // Audit trail for the tradie's chosen payout speed: an instant
+                // payout lands less than the released amount because Stripe
+                // collects the fee, and that difference must be explicable.
+                payout_method: payoutMethod,
+                ...(instantFeeCents > 0 ? { instant_fee_cents: instantFeeCents } : {}),
+              }
               : { payout_pending: true, payout_last_error: payoutError }),
             platform_fee_deducted: platformFeeCents,
             // v2.1: keep the two components visible on the released record so a

@@ -16,7 +16,10 @@ import {
   fee (pricing_tiers.instant_payout_bps, min instant_payout_min_cents).
 
   Standard payouts stay free and default — this only ever runs when the tradie
-  explicitly asks (per-payout button or "always instant" preference).
+  explicitly asks via the per-payout button. The "always instant" preference is
+  honoured on RELEASE, by _shared/instantPayout.ts's createReleasePayout (used
+  by release-escrow, auto-release-payments and auto-release-recurring-payouts) —
+  not here.
 
   Actions (POST { action }):
     status  -> { eligible, reason, instantAvailable, feeCents, netCents, minBaseCents,

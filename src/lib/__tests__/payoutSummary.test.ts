@@ -143,3 +143,32 @@ describe('buildPayoutSummary', () => {
     expect(s.transit.amount).toBe(4_000);
   });
 });
+
+describe('transit row wording', () => {
+  it('never claims money is cleared while also saying it is still clearing', () => {
+    // The reported contradiction: "$4.50 — Ready to pay out / Cleared and
+    // waiting… · $1.00 still clearing". Only $3.50 was actually cleared.
+    const s = buildPayoutSummary({ ...base, availableCents: 350, pendingCents: 100 });
+
+    expect(s.transit.amount).toBe(450);
+    expect(s.transit.title).toBe('On its way to your bank');
+    expect(s.transit.detail).toBe('$3.50 cleared and waiting · $1.00 still clearing');
+    // The old title must not appear alongside a "still clearing" detail.
+    expect(s.transit.title).not.toBe('Ready to pay out');
+  });
+
+  it('still says "Ready to pay out" when the whole amount is cleared', () => {
+    const s = buildPayoutSummary({ ...base, availableCents: 450 });
+
+    expect(s.transit.title).toBe('Ready to pay out');
+    expect(s.transit.detail).toBe('Cleared and waiting — not sent to your bank yet');
+  });
+
+  it('every figure in the detail is accounted for on a mixed scheduled account', () => {
+    const s = buildPayoutSummary({ ...base, availableCents: 350, pendingCents: 100, isManualSchedule: false });
+
+    expect(s.transit.title).toBe('On its way to your bank');
+    expect(s.transit.detail).toContain('$3.50');
+    expect(s.transit.detail).toContain('$1.00');
+  });
+});
