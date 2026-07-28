@@ -20,7 +20,7 @@ systematically.
 | Constraint values | 1 | ✅ `20260728093000` |
 | Columns | 11 across 6 tables | ✅ `20260728101500` |
 | RLS policies | 26 across 15 tables | ✅ `20260728102000` |
-| Triggers, indexes, defaults, enums, views | **unknown — not checked** | — |
+| Triggers, indexes, defaults, enums, views | unknown at the time | now covered by `npm run check:drift` |
 
 ## Root cause
 
@@ -94,14 +94,21 @@ have RLS enabled and no way in.
    behaviourally rather than assumed (a tradie can write their own
    quote_template, another tradie's row is refused with 42501, and
    profile_private is readable by its owner).
-2. **Cover the unchecked classes** — triggers, indexes, defaults, enums, views.
-   Requires SQL access to a rebuilt database; the cheapest route is installing
-   Docker so `supabase db dump` works, then diffing two dumps directly.
-3. **Stop the recurrence.** The gap exists because objects reached prod without a
-   migration file. A drift check comparing prod's catalogs to a rebuilt database
-   would catch it, but it needs prod credentials, so it belongs as a scheduled or
-   manual script rather than a CI job. Without something like it, this recurs
-   every time someone edits schema outside a migration.
+2. ~~Cover the unchecked classes.~~ **Done** — `scripts/check-schema-drift.mjs`
+   fingerprints 11 object classes on both databases, including the triggers,
+   indexes, defaults, enums and views this audit could not reach. Docker turned
+   out not to be needed: it reads through the Management API instead.
+3. ~~Stop the recurrence.~~ **Done** — same script, `npm run check:drift`.
+   Deliberately NOT in CI: it needs a `SUPABASE_ACCESS_TOKEN` and reaches
+   production, so it belongs in a release checklist or on a schedule.
+
+   **The first live run is still outstanding.** The fingerprint SQL is validated
+   against production (2,482 objects across 11 classes) and the differ is
+   validated by `--self-test`, but the two have not yet been run together —
+   that needs a token, which is a human step. Expect a handful of *rebuild-only*
+   objects on the first run (recent migrations not yet applied to prod, e.g.
+   `payments_invoice_number_seq`); those are reported and do not fail. The
+   failing direction is production holding something the repo cannot produce.
 
 ## Why this matters beyond DR
 
