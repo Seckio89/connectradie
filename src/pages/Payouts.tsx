@@ -731,6 +731,17 @@ export default function Payouts() {
     return `Auto-releases in ${m}m`;
   })();
   const externalTotal = useMemo(() => externalPayments.reduce((s, p) => s + p.amount, 0), [externalPayments]);
+
+  // Reasons instant can NEVER run for this tradie right now, as opposed to
+  // "not this time": a platform-wide outage, or no instant-eligible payout
+  // account. Offering the preference in those cases promises minutes and
+  // silently delivers the standard 2-3 days.
+  const instantPreferenceBlocked: 'instant_unavailable' | 'no_instant_method' | null =
+    instantStatus && !instantStatus.eligible &&
+    (instantStatus.reason === 'instant_unavailable' || instantStatus.reason === 'no_instant_method')
+      ? instantStatus.reason
+      : null;
+
   const methodLabel = (m: string | null) =>
     m ? (({ bank_transfer: 'Bank transfer', cash: 'Cash', cheque: 'Cheque', accountant: 'Accountant' } as Record<string, string>)[m] ?? m) : '';
 
@@ -1058,25 +1069,43 @@ export default function Payouts() {
                     Bank Settings
                   </a>
                 )}
-                <label className="flex items-center gap-2 text-xs text-gray-500">
-                  Payout speed:
-                  <select
-                    value={payoutPref}
-                    onChange={(e) => savePayoutPref(e.target.value as 'standard' | 'instant' | 'ask')}
-                    className="px-2.5 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="standard">Standard — free (2–3 business days)</option>
-                    {/* Rates come from pricing_tiers via the status response; the
-                        label used to be hardcoded and would silently lie if a
-                        tier's rate changed. */}
-                    <option value="instant">
-                      {instantStatus?.feeBps != null && instantStatus.feeMinCents != null
-                        ? `Instant — ${(instantStatus.feeBps / 100).toFixed(2).replace(/\.?0+$/, '')}%, min ${formatCurrency(instantStatus.feeMinCents)} (minutes)`
-                        : 'Instant — minutes, small fee'}
-                    </option>
-                    <option value="ask">Ask me each time</option>
-                  </select>
-                </label>
+                <div className="flex flex-col gap-1">
+                  <label className="flex items-center gap-2 text-xs text-gray-500">
+                    Payout speed:
+                    <select
+                      value={payoutPref}
+                      onChange={(e) => savePayoutPref(e.target.value as 'standard' | 'instant' | 'ask')}
+                      className="px-2.5 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="standard">Standard — free (2–3 business days)</option>
+                      {/* Rates come from pricing_tiers via the status response; the
+                          label used to be hardcoded and would silently lie if a
+                          tier's rate changed.
+                          Disabled when instant genuinely can't run — a platform-wide
+                          outage or no instant-eligible account. Choosing it then
+                          would promise minutes and silently deliver the standard
+                          2-3 days. Transient reasons (balance below the minimum,
+                          funds still clearing) must NOT disable it: they say
+                          nothing about future payouts. */}
+                      <option value="instant" disabled={instantPreferenceBlocked !== null}>
+                        {instantStatus?.feeBps != null && instantStatus.feeMinCents != null
+                          ? `Instant — ${(instantStatus.feeBps / 100).toFixed(2).replace(/\.?0+$/, '')}%, min ${formatCurrency(instantStatus.feeMinCents)} (minutes)`
+                          : 'Instant — minutes, small fee'}
+                        {instantPreferenceBlocked ? ' — unavailable' : ''}
+                      </option>
+                      {/* Nothing prompts per payout — the instant button above IS
+                          the ask — so this is described as what it actually does. */}
+                      <option value="ask">Only when I ask — free by default</option>
+                    </select>
+                  </label>
+                  {instantPreferenceBlocked && payoutPref === 'instant' && (
+                    <p className="text-[11px] text-gray-500 max-w-sm">
+                      {instantPreferenceBlocked === 'no_instant_method'
+                        ? 'Instant needs an instant-eligible debit card or bank account — add one in Bank Settings. Until then your payouts go out free on the standard schedule.'
+                        : 'Instant payouts aren’t available right now. Your payouts go out free on the standard schedule until they are.'}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
