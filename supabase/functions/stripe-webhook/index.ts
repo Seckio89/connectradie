@@ -668,14 +668,39 @@ async function handleEvent(event: Stripe.Event) {
     // 'completed', and reconcile-payments now refuses to downgrade a terminal
     // status back to 'completed'.
     if (dispute.status === 'lost') {
-      const { error: payErr } = await supabase
-        .from('payments')
-        .update({ status: 'refunded' })
-        .eq('metadata->>stripe_dispute_id', dispute.id);
-      if (payErr) {
+      // Resolve the payment the SAME reliable way charge.dispute.created did —
+      // charge -> payment_intent -> payments.stripe_payment_intent_id — instead
+      // of matching metadata->>stripe_dispute_id. That metadata stamp is written
+      // by the created handler and the dispute E2E proved it does not always
+      // persist; a match on it can silently hit ZERO rows, leaving a clawed-back
+      // payment as 'completed' for auto-release to pay out. This is the exact
+      // money-loss the comment below warns about, so it must not hinge on one
+      // best-effort field.
+      let piId: string | null = null;
+      try {
+        const dChargeId = typeof dispute.charge === 'string'
+          ? dispute.charge
+          : (dispute.charge as Stripe.Charge | null)?.id;
+        if (dChargeId) {
+          const ch = await stripe.charges.retrieve(dChargeId);
+          piId = typeof ch.payment_intent === 'string'
+            ? ch.payment_intent
+            : (ch.payment_intent as Stripe.PaymentIntent | null)?.id ?? null;
+        }
+      } catch (e) {
+        console.error(`Could not resolve payment_intent for lost dispute ${dispute.id}`, e);
+      }
+
+      const updateRefunded = () => supabase.from('payments').update({ status: 'refunded' }, { count: 'exact' });
+      const { error: payErr, count } = piId
+        ? await updateRefunded().eq('stripe_payment_intent_id', piId)
+        // Fallback to the old metadata match only if the PI could not be resolved.
+        : await updateRefunded().eq('metadata->>stripe_dispute_id', dispute.id);
+
+      if (payErr || !count) {
         console.error(
-          `CRITICAL: dispute ${dispute.id} was LOST but the payment could not be marked refunded — ` +
-            `auto-release may pay out clawed-back funds.`,
+          `CRITICAL: dispute ${dispute.id} was LOST but the payment could not be marked refunded ` +
+            `(matched ${count ?? 0} rows) — auto-release may pay out clawed-back funds.`,
           payErr,
         );
       }
