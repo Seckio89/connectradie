@@ -279,7 +279,22 @@ export async function recordFeeRefund(
       .eq("kind", "commission")
       .maybeSingle();
 
-    if (error || !charge) return; // nothing was ever billed for this payment
+    // "Nothing was billed" and "the lookup failed" are NOT the same thing, and
+    // collapsing them into one silent return is how commission stays billed on a
+    // refunded job with nobody noticing until reconciliation. The realistic
+    // trigger: .maybeSingle() errors when a query matches more than one row, and
+    // this table now allows a commission AND an instant_payout row per payment —
+    // so a copy of this file deployed without the kind filter above would fail
+    // exactly here, silently, on every refund of an instantly-released job.
+    if (error) {
+      console.error(
+        "[recordFeeRefund] COULD NOT LOAD THE CHARGE — commission may remain billed on a refunded payment",
+        paymentId,
+        error,
+      );
+      return;
+    }
+    if (!charge) return; // nothing was ever billed for this payment
 
     // Not yet invoiced → no tax document references it. Drop the ledger row so
     // the next invoicing run doesn't bill a commission that was refunded.
