@@ -7,7 +7,7 @@
 // and recording must never be able to fail a payout that already happened.
 
 import { strictEqual as assertEquals } from "node:assert/strict";
-import { recordInstantPayoutFee } from "./feeContext.ts";
+import { recordFeeRefund, recordInstantPayoutFee } from "./feeContext.ts";
 
 /** Captures the row an insert would write. */
 function stubClient(result: { error?: unknown } = {}) {
@@ -106,4 +106,47 @@ Deno.test("never throws — the payout has already happened", async () => {
     { from() { throw new Error("connection reset"); } },
     { tradieProfileId: "t1", payoutId: "po_1", feeCents: 200 },
   );
+});
+
+// ── recordFeeRefund: a failed lookup must be LOUD ────────────────────────────
+// .maybeSingle() errors when more than one row matches, and this table now
+// allows a commission AND an instant_payout row per payment. A copy of
+// feeContext deployed without the kind filter fails exactly there — silently,
+// on every refund of an instantly-released job, leaving commission billed.
+
+function refundStub(result: { data?: unknown; error?: unknown }) {
+  const builder: Record<string, unknown> = {
+    select() { return builder; },
+    eq() { return builder; },
+    maybeSingle() { return Promise.resolve(result); },
+    delete() { return builder; },
+    is() { return Promise.resolve({ error: null }); },
+    insert() { return Promise.resolve({ error: null }); },
+  };
+  return { from() { return builder; } };
+}
+
+/** Captures console.error without swallowing real failures. */
+async function withCapturedErrors(fn: () => Promise<void>): Promise<string[]> {
+  const lines: string[] = [];
+  const original = console.error;
+  console.error = (...args: unknown[]) => { lines.push(args.map(String).join(" ")); };
+  try { await fn(); } finally { console.error = original; }
+  return lines;
+}
+
+Deno.test("a failed charge lookup is logged, not silently swallowed", async () => {
+  const logged = await withCapturedErrors(() =>
+    recordFeeRefund(refundStub({ error: { code: "PGRST116", message: "multiple rows returned" } }), "pay_1")
+  );
+  assertEquals(logged.length, 1);
+  assertEquals(logged[0].includes("pay_1"), true);
+  assertEquals(logged[0].includes("COULD NOT LOAD THE CHARGE"), true);
+});
+
+Deno.test("no charge at all stays quiet — nothing was ever billed", async () => {
+  const logged = await withCapturedErrors(() =>
+    recordFeeRefund(refundStub({ data: null }), "pay_2")
+  );
+  assertEquals(logged.length, 0);
 });
