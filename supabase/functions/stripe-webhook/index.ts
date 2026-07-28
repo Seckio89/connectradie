@@ -857,6 +857,51 @@ async function handleEvent(event: Stripe.Event) {
       return;
     }
 
+    // ── Job funding (escrow) — fallback path ──
+    // Mirrors the site_visit_fee fallback directly above: job funding is normally
+    // completed by checkout.session.completed, and this covers the case where
+    // that event is delayed, dropped, or never delivered. Both events fire for
+    // every hosted-checkout payment, so this runs in production too and MUST be
+    // idempotent.
+    //
+    // It deliberately does LESS than the checkout handler. accept-and-pay already
+    // writes the entire v2.1 fee breakdown onto the payments row at creation
+    // (platform_fee as a NUMBER, commission, materials_processing, fee_model),
+    // so completing the payment needs nothing from session metadata — only the
+    // status flip. User-facing notifications and emails stay with the checkout
+    // handler alone, so a redelivery can never double-notify.
+    //
+    // Ordering is safe either way. `.eq('status', 'pending')` means whichever
+    // event lands first wins and the other updates zero rows; the checkout
+    // handler has no status filter, so if this one wins it still runs its
+    // notification side of things afterwards.
+    if (pi.metadata?.payment_type === 'job_funding' && pi.metadata?.payment_record_id) {
+      const paymentRecordId = pi.metadata.payment_record_id;
+      try {
+        const { data: completed, error: fundingErr } = await supabase
+          .from('payments')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+            stripe_payment_intent_id: pi.id,
+          })
+          .eq('id', paymentRecordId)
+          .eq('status', 'pending')
+          .select('id');
+
+        if (fundingErr) {
+          console.error('job_funding payment_intent.succeeded update failed:', fundingErr);
+        } else if (completed && completed.length > 0) {
+          console.info(`job_funding completed via payment_intent.succeeded fallback: payment=${paymentRecordId} pi=${pi.id}`);
+        } else {
+          console.info(`job_funding ${paymentRecordId} already completed; PI fallback skipped (idempotent).`);
+        }
+      } catch (err) {
+        console.error('Failed to process job_funding payment_intent.succeeded:', err);
+      }
+      return;
+    }
+
     if (pi.metadata?.type === 'recurring_invoice_becs') {
       const invoiceId = pi.metadata.invoice_id;
       const recurringJobId = pi.metadata.recurring_job_id;

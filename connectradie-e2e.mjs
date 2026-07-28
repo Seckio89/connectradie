@@ -18,7 +18,6 @@
 import { readFileSync, existsSync } from "node:fs";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { chromium } from "playwright";
 
 // Config comes from .env.e2e (preferred) then .env. No dependency; real env vars
 // always win, so any single value can be overridden inline.
@@ -27,7 +26,7 @@ for (const file of [".env.e2e", ".env"]) {
   for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
     const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
     if (m && process.env[m[1]] === undefined) {
-      process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
+      process.env[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
     }
   }
 }
@@ -117,18 +116,71 @@ async function callFn(path, jwt, body) {
   return { status: r.status, json };
 }
 
-async function completeCheckout(url) {
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  await page.goto(url, { waitUntil: "domcontentloaded" });
-  // Stripe hosted Checkout — fill the test card. Selectors are Stripe's stable field names.
-  await page.fill('input[name="cardNumber"]', "4242424242424242");
-  await page.fill('input[name="cardExpiry"]', "12 / 34");
-  await page.fill('input[name="cardCvc"]', "123");
-  const name = await page.$('input[name="billingName"]'); if (name) await page.fill('input[name="billingName"]', "Test Client");
-  await page.click('button[type="submit"]');
-  await page.waitForURL(/pay\/success|checkout|connectradie/i, { timeout: 30000 }).catch(() => {});
-  await browser.close();
+/**
+ * Fund the escrow with a PaymentIntent instead of driving Stripe's hosted page.
+ *
+ * WHY NOT THE BROWSER
+ * This used to fill `input[name="cardNumber"]` on checkout.stripe.com. That
+ * selector is long gone: Checkout now renders card fields inside Elements
+ * IFRAMES, behind a payment-method accordion, with hCaptcha loading alongside.
+ * Automating a payment form through bot detection is not something a test suite
+ * should be doing, and paying the session over the API is impossible too —
+ * `session.payment_intent` stays null until a real customer interacts with the
+ * hosted page, so there is nothing to confirm.
+ *
+ * So the money is moved with a PaymentIntent carrying the metadata
+ * stripe-webhook's job_funding fallback matches on. That exercises the real
+ * webhook, the real payments row and the real release-escrow path. The only
+ * thing it skips is Stripe's own checkout UI, which is not our code.
+ *
+ * Every figure is READ BACK from what accept-and-pay actually computed rather
+ * than recomputed here. If the app's amount and this test's amount ever
+ * disagree, release-escrow's payout maths is wrong and the run must fail rather
+ * than quietly paper over it.
+ */
+async function fundViaPaymentIntent(paymentId) {
+  const { data: row, error } = await admin
+    .from("payments")
+    .select("id, stripe_checkout_session_id, metadata")
+    .eq("id", paymentId)
+    .single();
+  if (error || !row) throw new Error(`payments row ${paymentId} not readable: ${error?.message}`);
+  if (!row.stripe_checkout_session_id) throw new Error("accept-and-pay did not record a checkout session id");
+
+  // amount_total is the authoritative charge the application built.
+  const session = await stripe.checkout.sessions.retrieve(row.stripe_checkout_session_id);
+  const destination = row.metadata?.tradie_stripe_account;
+  const applicationFee = row.metadata?.platform_fee;
+  if (!destination) throw new Error("payments.metadata.tradie_stripe_account missing");
+  if (typeof applicationFee !== "number") {
+    throw new Error(`payments.metadata.platform_fee is ${typeof applicationFee}, expected number`);
+  }
+
+  const pi = await stripe.paymentIntents.create({
+    amount: session.amount_total,
+    currency: session.currency ?? "aud",
+    payment_method_types: ["card"], // avoids redirect-based methods, so no return_url dance
+    payment_method: "pm_card_visa",
+    confirm: true,
+    transfer_data: { destination },
+    application_fee_amount: applicationFee,
+    // These two keys are what the webhook's job_funding fallback matches on.
+    metadata: {
+      payment_record_id: row.id,
+      payment_type: "job_funding",
+      flow: "destination",
+      job_id: row.metadata?.job_id ?? "",
+      tradie_id: row.metadata?.tradie_id ?? "",
+    },
+  });
+
+  if (pi.status !== "succeeded") throw new Error(`PaymentIntent ${pi.id} status=${pi.status}`);
+
+  // The hosted session is now orphaned — close it so the test account does not
+  // accumulate open sessions.
+  await stripe.checkout.sessions.expire(row.stripe_checkout_session_id).catch(() => {});
+
+  return { pi, successUrl: session.success_url };
 }
 
 async function waitForPaymentStatus(paymentId, target, tries = 30) {
@@ -154,8 +206,15 @@ async function waitForPaymentStatus(paymentId, target, tries = 30) {
   ok(`accept-and-pay → paymentId ${paymentId}`);
 
   // 2. Pay with test card on hosted Checkout
-  await completeCheckout(accept.json.url);
-  ok("checkout completed with test card 4242");
+  const { pi, successUrl } = await fundViaPaymentIntent(paymentId);
+  ok(`escrow funded via PaymentIntent ${pi.id} (test card)`);
+  // Proves accept-and-pay passes successUrl through to Stripe VERBATIM, which is
+  // the mechanism behind the /payment-success fix. Note this echoes the URL THIS
+  // harness supplied (CFG.SUCCESS_URL), not the app's own default — the frontend
+  // value is asserted by src/lib/__tests__/paymentFlows.test.ts.
+  successUrl === CFG.SUCCESS_URL
+    ? ok(`success_url reached Stripe unaltered → ${successUrl}`)
+    : fail(`success_url was rewritten: sent ${CFG.SUCCESS_URL}, Stripe has ${successUrl}`);
 
   // 3. Webhook should flip payment → completed
   const paid = await waitForPaymentStatus(paymentId, "completed");
