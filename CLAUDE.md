@@ -63,6 +63,13 @@ npx supabase gen types typescript --project-id uoqygmizupdpanplpvor --schema pub
 # Edge functions are Deno, NOT covered by npm run typecheck. Deno isn't installed
 # locally; check them without installing it:
 npx deno@2 check --node-modules-dir=auto supabase/functions/<name>/index.ts
+
+# Does this repo still rebuild production? Compares prod against a database
+# actually rebuilt from supabase/migrations, across 11 object classes. NOT in CI
+# — it reaches prod, so it needs SUPABASE_ACCESS_TOKEN (a personal access token).
+# Run before a release, or after anyone touches schema outside a migration.
+npm run check:drift
+npm run check:drift -- --self-test   # verifies the differ, no token needed
 ```
 
 ⚠️ Do NOT use `npx tsc --noEmit` — the root tsconfig.json is solution-style
