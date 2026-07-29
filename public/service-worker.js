@@ -9,8 +9,9 @@
 //        /workforce/invite, /workforce/claim).
 //   v6 — employment_type fix rehashed the Onboarding and Team chunks.
 //   v7 — Workforce nav entry rehashed DashboardLayout, which every page uses.
-const CACHE_NAME = 'connecttradie-v7';
-const API_CACHE_NAME = 'connecttradie-api-v7';
+//   v8 — compliance states reworked (not_recorded vs expired, not_required).
+const CACHE_NAME = 'connecttradie-v8';
+const API_CACHE_NAME = 'connecttradie-api-v8';
 const API_CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 const APP_SHELL = [
   '/',

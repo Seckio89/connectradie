@@ -5614,6 +5614,55 @@ export type Database = {
           },
         ]
       }
+      worker_credential_exemptions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          credential_type_id: string
+          id: string
+          reason: string | null
+          team_member_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          credential_type_id: string
+          id?: string
+          reason?: string | null
+          team_member_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          credential_type_id?: string
+          id?: string
+          reason?: string | null
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_credential_exemptions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worker_credential_exemptions_credential_type_id_fkey"
+            columns: ["credential_type_id"]
+            isOneToOne: false
+            referencedRelation: "credential_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worker_credential_exemptions_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "business_team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       worker_credential_notifications: {
         Row: {
           created_at: string

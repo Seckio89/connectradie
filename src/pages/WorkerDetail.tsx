@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  ArrowLeft, CalendarDays, FileText, Loader2, Plus, ShieldCheck, Trash2, Upload,
+  ArrowLeft, Ban, CalendarDays, FileText, Loader2, Plus, RotateCcw, ShieldCheck, Trash2, Upload,
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
@@ -24,6 +24,11 @@ import {
   requiredCredentialTypes, ROSTER_STATUS_META, VERIFICATION_META,
   type CredentialType, type WorkerCredential,
 } from '../lib/compliance';
+
+interface ExemptionRow {
+  credential_type_id: string;
+  reason: string | null;
+}
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const ACCEPTED = 'image/jpeg,image/png,image/webp,application/pdf';
@@ -67,6 +72,7 @@ export default function WorkerDetail() {
   const [worker, setWorker] = useState<WorkerRow | null>(null);
   const [types, setTypes] = useState<CredentialType[]>([]);
   const [credentials, setCredentials] = useState<WorkerCredential[]>([]);
+  const [exemptions, setExemptions] = useState<ExemptionRow[]>([]);
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
   const [trade, setTrade] = useState<string | null>(null);
 
@@ -82,7 +88,7 @@ export default function WorkerDetail() {
     setLoading(true);
     setError('');
     try {
-      const [workerRes, typesRes, credRes, assignRes, tradeRes] = await Promise.all([
+      const [workerRes, typesRes, credRes, assignRes, tradeRes, exemptRes] = await Promise.all([
         supabase
           .from('business_team_members')
           .select('id, business_owner_id, invite_name, invite_email, invite_phone, employment_type, role, status, started_at, member_profile_id, trade_specialty')
@@ -103,6 +109,10 @@ export default function WorkerDetail() {
           .order('scheduled_date', { ascending: false })
           .limit(25),
         supabase.from('tradie_details').select('trade_category').eq('profile_id', user.id).maybeSingle(),
+        supabase
+          .from('worker_credential_exemptions')
+          .select('credential_type_id, reason')
+          .eq('team_member_id', workerId),
       ]);
 
       if (workerRes.error) throw workerRes.error;
@@ -115,6 +125,7 @@ export default function WorkerDetail() {
       setCredentials((credRes.data ?? []) as WorkerCredential[]);
       setAssignments((assignRes.data ?? []) as AssignmentRow[]);
       setTrade(tradeRes.data?.trade_category ?? null);
+      setExemptions((exemptRes.data ?? []) as ExemptionRow[]);
     } catch (e) {
       console.error('WorkerDetail: load failed', e);
       setError('We could not load this worker. Please try again.');
@@ -127,7 +138,14 @@ export default function WorkerDetail() {
 
   const state = (profile as { license_state?: string | null } | null)?.license_state ?? null;
   const required = useMemo(() => requiredCredentialTypes(types, trade, state), [types, trade, state]);
-  const compliance = useMemo(() => assessWorker(required, credentials), [required, credentials]);
+  const exemptIds = useMemo(
+    () => new Set(exemptions.map((e) => e.credential_type_id)),
+    [exemptions],
+  );
+  const compliance = useMemo(
+    () => assessWorker(required, credentials, new Date(), exemptIds),
+    [required, credentials, exemptIds],
+  );
 
   // Required credentials first (that is the compliance picture), then any extras
   // the business has recorded voluntarily.
@@ -137,11 +155,11 @@ export default function WorkerDetail() {
       .filter((c) => !requiredIds.has(c.credential_type_id))
       .map((c) => {
         const type = types.find((t) => t.id === c.credential_type_id);
-        return type ? assessCredential(type, c) : null;
+        return type ? assessCredential(type, c, new Date(), exemptIds.has(type.id)) : null;
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
     return [...compliance.assessments, ...extras];
-  }, [compliance.assessments, credentials, required, types]);
+  }, [compliance.assessments, credentials, required, types, exemptIds]);
 
   const handleAdd = async () => {
     if (!worker || !form.credentialTypeId) return;
@@ -164,6 +182,34 @@ export default function WorkerDetail() {
       showToast('Could not add that credential', true);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // The seeded credential set is a trade-level default, not a determination — we
+  // cannot know whether this worker goes on construction sites or near children.
+  // Waiving drops the credential out of the rollup; deleting the row restores it.
+  const handleSetRequired = async (typeId: string, requiredNow: boolean) => {
+    if (!worker) return;
+    try {
+      if (requiredNow) {
+        const { error: delError } = await supabase
+          .from('worker_credential_exemptions')
+          .delete()
+          .eq('team_member_id', worker.id)
+          .eq('credential_type_id', typeId);
+        if (delError) throw delError;
+        showToast('Tracking this credential again');
+      } else {
+        const { error: insError } = await supabase
+          .from('worker_credential_exemptions')
+          .insert({ team_member_id: worker.id, credential_type_id: typeId, created_by: user?.id ?? null });
+        if (insError) throw insError;
+        showToast('Marked as not required');
+      }
+      await load();
+    } catch (e) {
+      console.error('WorkerDetail: exemption change failed', e);
+      showToast('Could not update that credential', true);
     }
   };
 
@@ -304,7 +350,7 @@ export default function WorkerDetail() {
             ) : (
               <ul className="divide-y divide-gray-200">
                 {rows.map(({ type, credential, state: credState, daysUntilExpiry }) => (
-                  <li key={type.id} className="px-6 py-4">
+                  <li key={type.id} className={`px-6 py-4 ${credState === 'not_required' ? 'opacity-60' : ''}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -312,23 +358,34 @@ export default function WorkerDetail() {
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${COMPLIANCE_META[credState].badgeClass}`}>
                             {COMPLIANCE_META[credState].label}
                           </span>
-                          {credential && (
+                          {credential && credState !== 'not_required' && (
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${VERIFICATION_META[credential.verification_status].badgeClass}`}>
                               {VERIFICATION_META[credential.verification_status].label}
                             </span>
                           )}
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          {credential
-                            ? [
-                                credential.reference_number ? `Ref ${credential.reference_number}` : null,
-                                type.requires_expiry ? expiryHint(daysUntilExpiry) : 'No expiry',
-                              ].filter(Boolean).join(' · ')
-                            : 'Not recorded yet'}
+                          {credState === 'not_required'
+                            ? "You've marked this as not needed for this worker"
+                            : credential
+                              ? [
+                                  credential.reference_number ? `Ref ${credential.reference_number}` : null,
+                                  type.requires_expiry ? expiryHint(daysUntilExpiry) : 'No expiry',
+                                ].filter(Boolean).join(' · ')
+                              : 'Not recorded yet'}
                         </p>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 shrink-0">
+                        {credState === 'not_required' ? (
+                          <button
+                            onClick={() => void handleSetRequired(type.id, true)}
+                            className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+                          >
+                            <RotateCcw className="w-4 h-4" /> Track again
+                          </button>
+                        ) : (
+                          <>
                         {credential?.document_path && (
                           <button
                             onClick={() => void handleView(credential)}
@@ -370,6 +427,18 @@ export default function WorkerDetail() {
                           >
                             <Plus className="w-4 h-4" /> Record
                           </button>
+                        )}
+                        {/* Only offered where nothing has been recorded — waiving a
+                            credential you already hold would just hide it. */}
+                        {!credential && (
+                          <button
+                            onClick={() => void handleSetRequired(type.id, false)}
+                            className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] text-gray-500 hover:text-gray-700 text-sm font-medium"
+                          >
+                            <Ban className="w-4 h-4" /> Not required
+                          </button>
+                        )}
+                          </>
                         )}
                       </div>
                     </div>

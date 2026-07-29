@@ -25,9 +25,9 @@ import {
   requiredCredentialTypes,
   ROSTER_STATUS_META,
   daysUntil,
-  type ComplianceState,
   type CredentialType,
   type WorkerCompliance,
+  type WorkerComplianceState,
   type WorkerCredential,
 } from '../lib/compliance';
 
@@ -49,6 +49,18 @@ interface RosterEntry {
 
 const STATUS_FILTERS = ['all', 'active', 'invited', 'inactive'] as const;
 
+/**
+ * "Nothing recorded" is a prompt, not an alarm. Saying "No expiry recorded" for a
+ * worker nobody has filled in yet is technically true and useless — tell them how
+ * much is left to do instead.
+ */
+function nextExpiryLabel(c: WorkerCompliance): string {
+  if (c.state === 'not_tracked') {
+    return c.notRecordedCount > 0 ? `${c.notRecordedCount} to record` : 'Nothing to track';
+  }
+  return expiryHint(daysUntil(c.soonestExpiry));
+}
+
 export default function Workforce() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -58,7 +70,7 @@ export default function Workforce() {
   const [entries, setEntries] = useState<RosterEntry[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>('all');
-  const [complianceFilter, setComplianceFilter] = useState<ComplianceState | 'all'>('all');
+  const [complianceFilter, setComplianceFilter] = useState<WorkerComplianceState | 'all'>('all');
 
   useEffect(() => {
     if (!user) return;
@@ -93,26 +105,48 @@ export default function Workforce() {
         const state = (profile as { license_state?: string | null } | null)?.license_state ?? null;
         const required = requiredCredentialTypes(types, trade, state);
 
-        let credentials: WorkerCredential[] = [];
+        let credentials: (WorkerCredential & { team_member_id: string })[] = [];
+        let exemptions: { team_member_id: string; credential_type_id: string }[] = [];
         if (members.length > 0) {
-          const { data: credData, error: credError } = await supabase
-            .from('worker_credentials')
-            .select('id, team_member_id, credential_type_id, reference_number, issued_at, expires_at, document_path, verification_status, verified_at')
-            .in('team_member_id', members.map((m) => m.id));
-          if (credError) throw credError;
-          credentials = (credData ?? []) as (WorkerCredential & { team_member_id: string })[];
+          const memberIds = members.map((m) => m.id);
+          const [credRes, exemptRes] = await Promise.all([
+            supabase
+              .from('worker_credentials')
+              .select('id, team_member_id, credential_type_id, reference_number, issued_at, expires_at, document_path, verification_status, verified_at')
+              .in('team_member_id', memberIds),
+            supabase
+              .from('worker_credential_exemptions')
+              .select('team_member_id, credential_type_id')
+              .in('team_member_id', memberIds),
+          ]);
+          if (credRes.error) throw credRes.error;
+          if (exemptRes.error) throw exemptRes.error;
+          credentials = (credRes.data ?? []) as (WorkerCredential & { team_member_id: string })[];
+          exemptions = exemptRes.data ?? [];
         }
 
         const byMember = new Map<string, WorkerCredential[]>();
-        for (const c of credentials as (WorkerCredential & { team_member_id: string })[]) {
+        for (const c of credentials) {
           const list = byMember.get(c.team_member_id) ?? [];
           list.push(c);
           byMember.set(c.team_member_id, list);
         }
 
+        const exemptByMember = new Map<string, Set<string>>();
+        for (const e of exemptions) {
+          const set = exemptByMember.get(e.team_member_id) ?? new Set<string>();
+          set.add(e.credential_type_id);
+          exemptByMember.set(e.team_member_id, set);
+        }
+
         const built = members.map((worker) => ({
           worker,
-          compliance: assessWorker(required, byMember.get(worker.id) ?? []),
+          compliance: assessWorker(
+            required,
+            byMember.get(worker.id) ?? [],
+            new Date(),
+            exemptByMember.get(worker.id) ?? new Set<string>(),
+          ),
         }));
 
         if (!cancelled) setEntries(built);
@@ -141,9 +175,10 @@ export default function Workforce() {
   }, [entries, search, statusFilter, complianceFilter]);
 
   const counts = useMemo(() => ({
-    expired_or_missing: entries.filter((e) => e.compliance.state === 'expired_or_missing').length,
+    expired: entries.filter((e) => e.compliance.state === 'expired').length,
     expiring_soon: entries.filter((e) => e.compliance.state === 'expiring_soon').length,
     compliant: entries.filter((e) => e.compliance.state === 'compliant').length,
+    not_tracked: entries.filter((e) => e.compliance.state === 'not_tracked').length,
   }), [entries]);
 
   return (
@@ -169,8 +204,8 @@ export default function Workforce() {
 
           {/* Compliance summary — constrained, never full width */}
           {!loading && entries.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {(['expired_or_missing', 'expiring_soon', 'compliant'] as ComplianceState[]).map((state) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {(['expired', 'expiring_soon', 'compliant', 'not_tracked'] as WorkerComplianceState[]).map((state) => (
                 <button
                   key={state}
                   onClick={() => setComplianceFilter(complianceFilter === state ? 'all' : state)}
@@ -277,7 +312,7 @@ export default function Workforce() {
                         {ROSTER_STATUS_META[worker.status]?.label ?? worker.status}
                       </span>
                       <span className="text-xs text-gray-500">
-                        {expiryHint(daysUntil(compliance.soonestExpiry))}
+                        {nextExpiryLabel(compliance)}
                       </span>
                     </div>
                   </Link>
@@ -324,7 +359,7 @@ export default function Workforce() {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-600">
-                            {expiryHint(daysUntil(compliance.soonestExpiry))}
+                            {nextExpiryLabel(compliance)}
                           </td>
                         </tr>
                       ))}
