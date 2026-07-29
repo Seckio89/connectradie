@@ -642,21 +642,19 @@ async function handleEvent(event: Stripe.Event) {
       ? 'resolved_client'
       : 'dismissed';
 
-    const { error: closeError } = await supabase
-      .from('disputes')
-      .update({
-        status: mappedStatus,
-        resolution: `Stripe dispute ${dispute.id} closed with status "${dispute.status}".`,
-        resolved_at: new Date().toISOString(),
-      })
-      .eq('stripe_dispute_id', dispute.id);
-
-    if (closeError) {
-      console.error(`Failed to close dispute record for ${dispute.id}`, closeError);
-    } else {
-      console.info(`Dispute ${dispute.id} closed as ${dispute.status} -> ${mappedStatus}`);
-    }
-
+    // ORDER MATTERS — settle the MONEY first, clear the block second.
+    //
+    // `blocks_release` is GENERATED from disputes.status, so writing
+    // 'resolved_client' below makes the job releasable the instant it lands. The
+    // payments row is the only thing left stopping auto-release paying out
+    // clawed-back funds, so it must already say 'refunded' by then.
+    //
+    // This used to run the other way round, and the gap was real: the dispute
+    // E2E watched auto-release pay out $2,329 on a LOST chargeback that had just
+    // been closed. The window was always there, but resolving the PaymentIntent
+    // below puts a Stripe round-trip inside it, which widened it from negligible
+    // to reliably lost. Refunding first means a crash between the two steps
+    // leaves the dispute OPEN and the payout blocked — failing closed.
     // A LOST chargeback needs the PAYMENT closed too, not just the dispute row.
     // auto-release skips a job only while some dispute has blocks_release set,
     // and 'resolved_client' clears it — so closing the dispute would UN-block
@@ -704,6 +702,22 @@ async function handleEvent(event: Stripe.Event) {
           payErr,
         );
       }
+    }
+
+    // Only now clear the block. Everything above has settled the money state.
+    const { error: closeError } = await supabase
+      .from('disputes')
+      .update({
+        status: mappedStatus,
+        resolution: `Stripe dispute ${dispute.id} closed with status "${dispute.status}".`,
+        resolved_at: new Date().toISOString(),
+      })
+      .eq('stripe_dispute_id', dispute.id);
+
+    if (closeError) {
+      console.error(`Failed to close dispute record for ${dispute.id}`, closeError);
+    } else {
+      console.info(`Dispute ${dispute.id} closed as ${dispute.status} -> ${mappedStatus}`);
     }
     return;
   }
