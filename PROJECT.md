@@ -13,17 +13,22 @@ ConnecTradie is a two-sided marketplace connecting Australian homeowners with li
 ## Project Structure
 ```
 src/
-├── components/          # 58 reusable UI components
+├── components/          # 114 reusable UI components
 │   └── profile-editor/  # Profile editing modals (bio, cover, details, portfolio)
 ├── contexts/            # AuthContext (Supabase auth, role detection)
-├── hooks/               # 5 custom hooks (availability, jobs, conversations, toast, categories)
-├── lib/                 # 17 utility modules (stripe, reviews, subscription, notifications, etc.)
-├── pages/               # 25 page components
-└── types/               # TypeScript types (database.ts — all DB interfaces)
+├── hooks/               # 12 custom hooks (availability, dashboard jobs, toast, etc.)
+├── lib/                 # 54 utility modules (stripe, reviews, subscription, notifications, etc.)
+├── pages/               # 62 page components, ~63 routes registered in App.tsx
+└── types/               # TypeScript types (supabase.ts — generated DB types)
 supabase/
-├── functions/           # 14 Edge Functions (Deno runtime)
-└── migrations/          # 102 SQL migrations
+├── functions/           # 68 Edge Functions (Deno runtime)
+└── migrations/          # 314 SQL migrations
 ```
+
+> Counts above are file counts as of 2026-07-29. They had drifted badly (this
+> block previously claimed 14 Edge Functions, 102 migrations and 25 pages), so
+> re-check with `ls` rather than trusting them after a few months of changes.
+> `CLAUDE.md` is the day-to-day reference for conventions and commands.
 
 ## Completed Features
 
