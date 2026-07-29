@@ -118,7 +118,7 @@ Deno.serve(async (req: Request) => {
     // Verify user is the client on the associated job, or an admin
     const { data: job, error: jobError } = await supabase
       .from("jobs")
-      .select("id, client_id, tradie_id, status")
+      .select("id, client_id, tradie_id, status, title")
       .eq("id", payment.job_id)
       .maybeSingle();
 
@@ -247,6 +247,53 @@ Deno.serve(async (req: Request) => {
         },
       })
       .eq("id", paymentId);
+
+    // ── End the job ──────────────────────────────────────────────────────
+    // A refund that got past the guard above is a pre-delivery cancellation:
+    // the money has gone back and nobody is working on this any more. Leaving
+    // the job 'accepted'/'funded' is how it used to read as still live in both
+    // dashboards after a refund — the client believed they'd cancelled while
+    // the tradie still had it booked in.
+    //
+    // Skipped when the job is already completed. Only an admin can reach here
+    // in that state (the guard blocks everyone else), and an admin refunding a
+    // finished job has not un-finished it.
+    //
+    // Best-effort, like the paperwork below: the money has already moved, and
+    // failing here must not report a completed refund as failed.
+    if (job.status !== "completed") {
+      const { error: jobStatusError } = await supabase
+        .from("jobs")
+        .update({ status: "cancelled" })
+        .eq("id", job.id);
+
+      if (jobStatusError) {
+        console.error("Refund succeeded but job status update failed:", jobStatusError);
+      }
+
+      const jobTitle = (job.title || "the job").replace(/_/g, " ");
+
+      // Tell whoever didn't press the button. The tradie is the one who thinks
+      // they still have work booked, so they matter most.
+      const recipients: string[] = [];
+      if (job.tradie_id && job.tradie_id !== user.id) recipients.push(job.tradie_id);
+      if (job.client_id && job.client_id !== user.id) recipients.push(job.client_id);
+
+      for (const recipient of recipients) {
+        const { error: notifyError } = await supabase.from("notifications").insert({
+          user_id: recipient,
+          type: "job_cancelled",
+          title: "Job cancelled",
+          message: `${jobTitle} has been cancelled. Money held in escrow has been returned to the client in full.`,
+          job_id: job.id,
+          metadata: { refund_id: refund.id, cancelled_by: user.id },
+        });
+
+        if (notifyError) {
+          console.error("Refund succeeded but cancellation notice failed:", notifyError);
+        }
+      }
+    }
 
     // §7A: the commission was refunded too (refund_application_fee), so any tax
     // invoice raised for it must be offset by an adjustment note. Best-effort —
