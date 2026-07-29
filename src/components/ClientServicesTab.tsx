@@ -31,6 +31,8 @@ import SavedPaymentMethod from './SavedPaymentMethod';
 import { useToast } from '../hooks/useToast';
 import { callEdgeFunction } from '../lib/edgeFn';
 import { acceptAndPay } from '../lib/stripePayments';
+import { acceptCancellationTerms } from '../lib/cancellationPolicy';
+import CancellationTerms from './CancellationTerms';
 import { notifyTradiesForNewLead } from '../lib/notifications';
 import type { Job } from '../types/database';
 
@@ -1837,12 +1839,25 @@ export default function ClientServicesTab() {
                               )}
                             </div>
 
+                            {/* Accepting records agreement to these terms, so
+                                they belong above the button, not behind it. */}
+                            <CancellationTerms
+                              className="mt-4 ml-13"
+                              acceptanceLabel="Accepting this quote records that you've read and accepted these cancellation terms for this job."
+                            />
+
                             {/* Actions */}
                             <div className="flex items-center gap-2 mt-4 ml-13">
                               <button
                                 onClick={async () => {
                                   setAcceptingQuoteId(qInfo.quoteId);
                                   try {
+                                    // Agreement to the cancellation terms, recorded
+                                    // before any money is taken. Non-fatal: a consent
+                                    // row must never block a payment.
+                                    await acceptCancellationTerms(qInfo.originalJobId).catch((e) =>
+                                      console.error('Failed to record cancellation terms acceptance:', e),
+                                    );
                                     const { url } = await acceptAndPay(qInfo.quoteId, qInfo.originalJobId, qInfo.topPrice);
                                     window.location.href = url;
                                   } catch (err) {

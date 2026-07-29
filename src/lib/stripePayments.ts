@@ -209,6 +209,27 @@ export async function adjustQuotePrice(
 }
 
 /**
+ * Start approving a job variation.
+ *
+ * Does NOT approve it. The server prices the variation and stamps a pending
+ * increase on the job's funding payment, returning the payment id to send
+ * through `payPriceIncrease`. The variation only becomes approved — and the
+ * job's budget only rises — once Stripe confirms the money landed, so the
+ * job can never be worth more than has been funded.
+ */
+export async function approveVariation(
+  variationId: string,
+): Promise<{ paymentId: string; jobId: string; diffCents: number; totalCents: number }> {
+  return callEdgeFunction<{
+    paymentId: string;
+    jobId: string;
+    diffCents: number;
+    gstCents: number;
+    totalCents: number;
+  }>('approve-variation', { variationId });
+}
+
+/**
  * Pay the additional amount for a price increase after site inspection.
  * Creates a Stripe Checkout session for the difference.
  */

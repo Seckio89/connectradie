@@ -1592,8 +1592,63 @@ async function handleEvent(event: Stripe.Event) {
                 console.info(`Cleared pending_increase from parent payment ${parentId}`);
               }
 
-              // Update job budget_amount to the final price from the quote
-              if (session.metadata?.job_id) {
+              const variationId = session.metadata?.variation_id;
+
+              if (variationId && session.metadata?.job_id) {
+                // A job variation. This is the ONLY place a variation becomes
+                // approved — approve-variation deliberately leaves it pending
+                // so the job's value can never exceed what's been funded.
+                // There is no accepted quote to read a final price from, so the
+                // budget moves by the variation's own amount.
+                const { data: variation } = await supabase
+                  .from('job_variations')
+                  .select('id, additional_amount, status, job_id')
+                  .eq('id', variationId)
+                  .maybeSingle();
+
+                if (!variation) {
+                  console.error(`Variation ${variationId} not found for completed payment`);
+                } else if (variation.status === 'approved') {
+                  // Stripe retries webhooks. Approving twice would raise the
+                  // budget twice for one payment.
+                  console.info(`Variation ${variationId} already approved — skipping`);
+                } else if (variation.job_id !== session.metadata.job_id) {
+                  console.error(
+                    `Variation ${variationId} belongs to job ${variation.job_id}, not ${session.metadata.job_id} — refusing`,
+                  );
+                } else {
+                  const { error: varErr } = await supabase
+                    .from('job_variations')
+                    .update({ status: 'approved' })
+                    .eq('id', variationId)
+                    .eq('status', 'pending');
+
+                  if (varErr) {
+                    console.error(`Failed to approve variation ${variationId}:`, varErr);
+                  } else {
+                    const { data: jobRow } = await supabase
+                      .from('jobs')
+                      .select('budget_amount')
+                      .eq('id', session.metadata.job_id)
+                      .maybeSingle();
+
+                    // budget_amount and additional_amount are both DOLLARS.
+                    const newBudget = Number(jobRow?.budget_amount || 0) +
+                      Number(variation.additional_amount || 0);
+
+                    await supabase
+                      .from('jobs')
+                      .update({ budget_amount: newBudget })
+                      .eq('id', session.metadata.job_id);
+
+                    console.info(
+                      `Approved variation ${variationId}; job ${session.metadata.job_id} budget now ${newBudget}`,
+                    );
+                  }
+                }
+              } else if (session.metadata?.job_id) {
+                // Quote adjustment after a site inspection — the final price
+                // lives on the accepted quote.
                 const { data: acceptedQuote } = await supabase
                   .from('quotes')
                   .select('final_price')
