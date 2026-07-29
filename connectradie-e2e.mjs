@@ -141,7 +141,7 @@ async function callFn(path, jwt, body) {
 async function fundViaPaymentIntent(paymentId) {
   const { data: row, error } = await admin
     .from("payments")
-    .select("id, stripe_checkout_session_id, metadata")
+    .select("id, job_id, stripe_checkout_session_id, metadata")
     .eq("id", paymentId)
     .single();
   if (error || !row) throw new Error(`payments row ${paymentId} not readable: ${error?.message}`);
@@ -174,7 +174,9 @@ async function fundViaPaymentIntent(paymentId) {
       payment_record_id: row.id,
       payment_type: "job_funding",
       flow: "destination",
-      job_id: row.metadata?.job_id ?? "",
+      // job_id is a COLUMN on payments, not a metadata key — reading it from
+      // metadata alone shipped an empty string on every happy-path PI.
+      job_id: row.job_id ?? row.metadata?.job_id ?? "",
       tradie_id: row.metadata?.tradie_id ?? "",
     },
   });
