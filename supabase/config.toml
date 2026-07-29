@@ -396,6 +396,15 @@ verify_jwt = false
 [functions.estimate-quote]
 verify_jwt = false
 
+# A browser sending a CSP violation report cannot attach a JWT — the report is
+# fired by the user agent itself, not by page code. verify_jwt MUST be false or
+# every report is rejected before the function sees it, which would recreate the
+# exact problem it exists to fix (a report-only policy reporting to nobody).
+# The function writes nothing to the database and only logs a fixed, truncated
+# set of fields, so being open costs a log line at worst.
+[functions.csp-report]
+verify_jwt = false
+
 # ── Workforce & Compliance module ───────────────────────────────────────────
 # All four verify their caller in-function and keep verify_jwt at the CLI
 # default of true, so these entries are documentation of intent rather than
