@@ -17,9 +17,7 @@ import {
   ChevronRight,
   Camera,
   X,
-  Briefcase,
   RefreshCw,
-  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -318,9 +316,13 @@ export default function PostLead() {
   const inviteTradieId = searchParams.get('tradie');
   const prefillCategory = searchParams.get('category') || searchParams.get('trade') || '';
 
-  // Skip selection screen if deep-linked with assignee or category
+  // Deep links (assignee, category, invited tradie) are always a one-off job,
+  // so the chooser is hidden — they've already made the choice.
   const skipSelection = Boolean(assigneeId || prefillCategory || inviteTradieId);
-  const [jobType, setJobType] = useState<'oneoff' | null>(skipSelection ? 'oneoff' : null);
+  // Defaults to 'oneoff' so the form is visible immediately. Picking
+  // 'ongoing' swaps the form for a hand-off panel rather than navigating on
+  // the toggle itself — a control that silently changes page is hostile.
+  const [jobType, setJobType] = useState<'oneoff' | 'ongoing'>('oneoff');
 
   const [category, setCategory] = useState(() => {
     if (!prefillCategory) return '';
@@ -685,74 +687,66 @@ export default function PostLead() {
     );
   }
 
-  // ── Job Type Selection Screen ──
-  if (!jobType) {
-    return (
-      <DashboardLayout>
-        <div className="max-w-xl mx-auto py-8">
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-secondary-500 flex items-center justify-center shadow-sm">
-              <Sparkles className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">Post a Job</h1>
-            <p className="text-sm text-gray-600 mt-1">Tell us what you need and we’ll connect you with the right tradie.</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* One-off Job */}
-            <button
-              onClick={() => setJobType('oneoff')}
-              className="group relative flex sm:flex-col items-start gap-4 text-left rounded-2xl border border-secondary-100 border-l-4 border-l-secondary-500 bg-gradient-to-br from-secondary-50 to-white p-5 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]"
-            >
-              <ChevronRight className="absolute top-4 right-4 w-5 h-5 text-secondary-400 transition-transform group-hover:translate-x-0.5" />
-              <div className="w-14 h-14 rounded-2xl bg-secondary-500 flex items-center justify-center shadow-sm flex-shrink-0">
-                <Briefcase className="w-7 h-7 text-white" />
-              </div>
-              <div className="min-w-0 pr-6 sm:pr-0">
-                <h2 className="text-base font-semibold text-gray-900">One-off Job</h2>
-                <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                  A one-time job — an end-of-lease or deep clean, a repair, or a small project. Describe it and get quotes from local tradies.
-                </p>
-              </div>
-            </button>
-
-            {/* Ongoing Work */}
-            <button
-              onClick={() => navigate('/leads?tab=services', { state: { openScheduleForm: true } })}
-              className="group relative flex sm:flex-col items-start gap-4 text-left rounded-2xl border border-emerald-100 border-l-4 border-l-emerald-500 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]"
-            >
-              <ChevronRight className="absolute top-4 right-4 w-5 h-5 text-emerald-400 transition-transform group-hover:translate-x-0.5" />
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-sm flex-shrink-0">
-                <RefreshCw className="w-7 h-7 text-white" />
-              </div>
-              <div className="min-w-0 pr-6 sm:pr-0">
-                <h2 className="text-base font-semibold text-gray-900">Ongoing Work</h2>
-                <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                  Regular work — weekly, fortnightly, or monthly cleaning or maintenance. Set it up once and it repeats automatically.
-                </p>
-              </div>
-            </button>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout>
       <JobPostGuide />
       <div className="max-w-2xl mx-auto">
         {!skipSelection && (
-          <button
-            type="button"
-            onClick={() => setJobType(null)}
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors"
+          <div
+            role="group"
+            aria-label="Job type"
+            className="inline-flex gap-1 mb-6 p-1 rounded-xl border border-gray-200 bg-gray-50"
           >
-            <ChevronLeft className="w-4 h-4" />
-            Back
-          </button>
+            {([
+              { value: 'oneoff', label: 'One-off job' },
+              { value: 'ongoing', label: 'Ongoing / recurring' },
+            ] as const).map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={jobType === option.value}
+                onClick={() => setJobType(option.value)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+                  jobType === option.value
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         )}
-        <div className="mb-8">
+
+        {jobType === 'ongoing' && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <RefreshCw className="w-5 h-5 text-emerald-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900">Ongoing work</h1>
+            </div>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Regular work that repeats — weekly, fortnightly or monthly cleaning or
+              maintenance. You set the schedule once and each visit is created for you,
+              so you're not re-posting the same job every month.
+            </p>
+            <p className="text-sm text-gray-600 leading-relaxed mt-3">
+              Recurring work is set up on your services page, where you can see the
+              schedule and every upcoming visit in one place.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/leads?tab=services', { state: { openScheduleForm: true } })}
+              className="inline-flex items-center gap-2 mt-5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors min-h-[44px]"
+            >
+              Set up recurring work
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        <div className={jobType === 'ongoing' ? 'hidden' : 'mb-8'}>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-warm-100 rounded-xl flex items-center justify-center">
               <Zap className="w-5 h-5 text-warm-600" />
@@ -764,7 +758,9 @@ export default function PostLead() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Hidden rather than unmounted, so switching to Ongoing and back
+            doesn't discard anything already typed. */}
+        <form onSubmit={handleSubmit} className={jobType === 'ongoing' ? 'hidden' : 'space-y-5'}>
           {/* ── Section 1: Job Details ── */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
             <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-5">Job Details</h2>
