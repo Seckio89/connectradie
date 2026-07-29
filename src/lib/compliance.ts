@@ -1,10 +1,22 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Workforce compliance logic — the single place that decides whether a worker
-// reads as compliant, expiring soon, or expired/missing.
+// Workforce compliance logic — the single place that decides how a worker reads.
 //
 // The roster's compliance column is the whole product, so this must be the only
 // implementation. Both the roster and the worker detail page read it, and the
 // invite flow reuses requiredCredentialTypes() to pre-fill what a role needs.
+//
+// TWO RULES EARNED THE HARD WAY:
+//
+//   1. RED MEANS LAPSED, NOT UNSTARTED. A credential nobody has entered yet has
+//      not expired — there is simply nothing there. The first version collapsed
+//      both into "Expired or missing", so a worker invited two minutes ago showed
+//      five red badges. An indicator that cries wolf gets ignored, and then it is
+//      worth nothing on the day something genuinely does expire.
+//
+//   2. THE SEEDED SET IS A DEFAULT, NOT A DETERMINATION. We cannot know whether a
+//      given cleaner works on construction sites (White Card) or around children
+//      (WWCC). Businesses waive what does not apply via worker_credential_exemptions,
+//      and an exemption drops the credential out of the rollup entirely.
 //
 // PRIVACY: nothing here touches identity data. A credential is an outcome plus an
 // expiry — see the worker_credentials migration.
@@ -13,7 +25,30 @@
 /** A credential inside this window counts as "expiring soon" rather than compliant. */
 export const EXPIRING_SOON_DAYS = 30;
 
-export type ComplianceState = 'compliant' | 'expiring_soon' | 'expired_or_missing';
+/**
+ * State of ONE credential.
+ *
+ * `not_recorded` and `not_required` are both neutral: nothing is wrong, there is
+ * just nothing to report. Only `expired` is red.
+ */
+export type ComplianceState =
+  | 'compliant'
+  | 'expiring_soon'
+  | 'expired'
+  | 'not_recorded'
+  | 'not_required';
+
+/**
+ * Rolled-up state of a WORKER.
+ *
+ * `not_tracked` means nothing has been recorded at all — a new worker, not a
+ * problem. It is deliberately not a member of the red/amber scale.
+ */
+export type WorkerComplianceState =
+  | 'compliant'
+  | 'expiring_soon'
+  | 'expired'
+  | 'not_tracked';
 
 export type VerificationStatus =
   | 'unverified'
@@ -44,7 +79,7 @@ export interface WorkerCredential {
   verified_at: string | null;
 }
 
-/** Per-required-credential outcome, used to build the worker-level rollup. */
+/** Per-credential outcome, used to build the worker-level rollup. */
 export interface CredentialAssessment {
   type: CredentialType;
   credential: WorkerCredential | null;
@@ -53,24 +88,30 @@ export interface CredentialAssessment {
 }
 
 export interface WorkerCompliance {
-  state: ComplianceState;
-  /** Soonest expiry across required credentials. Drives the roster's default sort. */
+  state: WorkerComplianceState;
+  /** Soonest expiry across tracked credentials. Drives the roster's default sort. */
   soonestExpiry: string | null;
-  missingCount: number;
+  /** Applicable but never entered. Prompts, but does not alarm. */
+  notRecordedCount: number;
   expiringCount: number;
   expiredCount: number;
+  /** Waived by the business — shown muted, excluded from every other count. */
+  notRequiredCount: number;
   assessments: CredentialAssessment[];
 }
 
-/** Ordering used to roll individual credentials up to a worst-case worker state. */
-const SEVERITY: Record<ComplianceState, number> = {
+/**
+ * Rollup ordering. Only the three ACTIONABLE states appear here — `not_recorded`
+ * and `not_required` never escalate a worker's badge, which is the whole point.
+ */
+const SEVERITY: Record<'compliant' | 'expiring_soon' | 'expired', number> = {
   compliant: 0,
   expiring_soon: 1,
-  expired_or_missing: 2,
+  expired: 2,
 };
 
 export const COMPLIANCE_META: Record<
-  ComplianceState,
+  ComplianceState | 'not_tracked',
   { label: string; badgeClass: string; dotClass: string }
 > = {
   compliant: {
@@ -83,10 +124,25 @@ export const COMPLIANCE_META: Record<
     badgeClass: 'bg-amber-100 text-amber-700',
     dotClass: 'bg-amber-500',
   },
-  expired_or_missing: {
-    label: 'Expired or missing',
+  expired: {
+    label: 'Expired',
     badgeClass: 'bg-red-100 text-red-700',
     dotClass: 'bg-red-500',
+  },
+  not_recorded: {
+    label: 'Not recorded',
+    badgeClass: 'bg-gray-100 text-gray-600',
+    dotClass: 'bg-gray-400',
+  },
+  not_required: {
+    label: 'Not required',
+    badgeClass: 'bg-gray-100 text-gray-500',
+    dotClass: 'bg-gray-300',
+  },
+  not_tracked: {
+    label: 'Not tracked',
+    badgeClass: 'bg-gray-100 text-gray-600',
+    dotClass: 'bg-gray-400',
   },
 };
 
@@ -151,29 +207,39 @@ export function latestOfType(
 /**
  * State of one credential against its type.
  *
- * Amber covers two situations that both mean "someone must act soon": the expiry
+ * `not_recorded` is NOT `expired`. Nothing has lapsed — there is simply nothing
+ * there yet. Collapsing the two is what made a brand-new worker show a wall of
+ * red, and it is the reason this distinction exists at all.
+ *
+ * Amber covers the two situations that mean "someone must act soon": the expiry
  * is close, or the credential exists but nobody has verified it yet.
  */
 export function assessCredential(
   type: CredentialType,
   credential: WorkerCredential | null,
   today = new Date(),
+  exempt = false,
 ): CredentialAssessment {
+  // The business has said this does not apply. Nothing else matters.
+  if (exempt) {
+    return { type, credential, state: 'not_required', daysUntilExpiry: null };
+  }
   if (!credential) {
-    return { type, credential: null, state: 'expired_or_missing', daysUntilExpiry: null };
+    return { type, credential: null, state: 'not_recorded', daysUntilExpiry: null };
   }
 
   const days = daysUntil(credential.expires_at, today);
 
   if (credential.verification_status === 'rejected' || credential.verification_status === 'expired') {
-    return { type, credential, state: 'expired_or_missing', daysUntilExpiry: days };
+    return { type, credential, state: 'expired', daysUntilExpiry: days };
   }
   if (type.requires_expiry) {
     if (days === null) {
-      // An expiry is required but none was recorded — treat as incomplete, not compliant.
-      return { type, credential, state: 'expired_or_missing', daysUntilExpiry: null };
+      // The record exists but is incomplete — an expiry was required and left
+      // blank. Amber, not red: nothing has lapsed, it just needs finishing.
+      return { type, credential, state: 'expiring_soon', daysUntilExpiry: null };
     }
-    if (days < 0) return { type, credential, state: 'expired_or_missing', daysUntilExpiry: days };
+    if (days < 0) return { type, credential, state: 'expired', daysUntilExpiry: days };
     if (days <= EXPIRING_SOON_DAYS) return { type, credential, state: 'expiring_soon', daysUntilExpiry: days };
   }
   if (credential.verification_status !== 'verified') {
@@ -182,44 +248,80 @@ export function assessCredential(
   return { type, credential, state: 'compliant', daysUntilExpiry: days };
 }
 
-/** Roll a worker's required credentials up to one worst-case state. */
+/**
+ * Roll a worker's credentials up to one state.
+ *
+ * Only credentials that were actually RECORDED can move the badge. A worker with
+ * nothing on file reads `not_tracked` — neutral, because a new worker is not a
+ * compliance failure. Waived credentials are excluded entirely.
+ */
 export function assessWorker(
   requiredTypes: CredentialType[],
   credentials: WorkerCredential[],
   today = new Date(),
+  exemptTypeIds: ReadonlySet<string> = new Set(),
 ): WorkerCompliance {
   const assessments = requiredTypes.map((type) =>
-    assessCredential(type, latestOfType(credentials, type.id), today),
+    assessCredential(type, latestOfType(credentials, type.id), today, exemptTypeIds.has(type.id)),
   );
 
-  let worst: ComplianceState = 'compliant';
-  let missingCount = 0;
+  let worst: 'compliant' | 'expiring_soon' | 'expired' | null = null;
+  let notRecordedCount = 0;
   let expiringCount = 0;
   let expiredCount = 0;
+  let notRequiredCount = 0;
   let soonestExpiry: string | null = null;
 
   for (const a of assessments) {
-    if (SEVERITY[a.state] > SEVERITY[worst]) worst = a.state;
-    if (a.state === 'expired_or_missing') {
-      if (a.credential) expiredCount++;
-      else missingCount++;
-    } else if (a.state === 'expiring_soon') {
-      expiringCount++;
+    switch (a.state) {
+      case 'not_required':
+        notRequiredCount++;
+        continue; // never counted, never escalates, no expiry contribution
+      case 'not_recorded':
+        notRecordedCount++;
+        continue; // prompts on the detail page, but does not colour the worker
+      case 'expired':
+        expiredCount++;
+        break;
+      case 'expiring_soon':
+        expiringCount++;
+        break;
     }
+
+    if (worst === null || SEVERITY[a.state] > SEVERITY[worst]) worst = a.state;
+
     const exp = a.credential?.expires_at ?? null;
     if (exp && (soonestExpiry === null || exp < soonestExpiry)) soonestExpiry = exp;
   }
 
-  return { state: worst, soonestExpiry, missingCount, expiringCount, expiredCount, assessments };
+  return {
+    state: worst ?? 'not_tracked',
+    soonestExpiry,
+    notRecordedCount,
+    expiringCount,
+    expiredCount,
+    notRequiredCount,
+    assessments,
+  };
 }
 
+/** Rollup severity including the neutral bucket, for sorting only. */
+const WORKER_SEVERITY: Record<WorkerComplianceState, number> = {
+  not_tracked: -1, // sorts last: nothing to act on
+  compliant: 0,
+  expiring_soon: 1,
+  expired: 2,
+};
+
 /**
- * Roster sort: soonest expiry first, because that is the column that costs money.
- * Workers with something already expired or missing outrank any future date, and
- * a worker with no expiry-bearing credentials sorts last rather than first.
+ * Roster sort: most urgent first, then soonest expiry — that is the column that
+ * costs money. Untracked workers sort last rather than first, so the top of the
+ * list is always the things that actually need doing.
  */
 export function compareByUrgency(a: WorkerCompliance, b: WorkerCompliance): number {
-  if (SEVERITY[a.state] !== SEVERITY[b.state]) return SEVERITY[b.state] - SEVERITY[a.state];
+  if (WORKER_SEVERITY[a.state] !== WORKER_SEVERITY[b.state]) {
+    return WORKER_SEVERITY[b.state] - WORKER_SEVERITY[a.state];
+  }
   if (a.soonestExpiry && b.soonestExpiry) return a.soonestExpiry.localeCompare(b.soonestExpiry);
   if (a.soonestExpiry) return -1;
   if (b.soonestExpiry) return 1;

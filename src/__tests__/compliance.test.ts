@@ -61,17 +61,25 @@ describe('daysUntil', () => {
 });
 
 describe('assessCredential', () => {
-  it('flags a missing credential as expired_or_missing', () => {
-    expect(assessCredential(type(), null, TODAY).state).toBe('expired_or_missing');
+  // The distinction this whole module turns on: nothing entered is NOT expired.
+  it('flags a never-entered credential as not_recorded, never as expired', () => {
+    const a = assessCredential(type(), null, TODAY);
+    expect(a.state).toBe('not_recorded');
+    expect(a.state).not.toBe('expired');
   });
 
   it('treats a verified, far-future credential as compliant', () => {
     expect(assessCredential(type(), cred(), TODAY).state).toBe('compliant');
   });
 
-  it('treats a past expiry as expired_or_missing even when still marked verified', () => {
+  it('treats a past expiry as expired even when still marked verified', () => {
     const a = assessCredential(type(), cred({ expires_at: iso(-1) }), TODAY);
-    expect(a.state).toBe('expired_or_missing');
+    expect(a.state).toBe('expired');
+  });
+
+  it('returns not_required when the business has waived it, whatever the record says', () => {
+    expect(assessCredential(type(), null, TODAY, true).state).toBe('not_required');
+    expect(assessCredential(type(), cred({ expires_at: iso(-99) }), TODAY, true).state).toBe('not_required');
   });
 
   it('uses an inclusive boundary at EXPIRING_SOON_DAYS', () => {
@@ -88,16 +96,16 @@ describe('assessCredential', () => {
       .toBe('expiring_soon');
   });
 
-  it('treats rejected and expired statuses as expired_or_missing regardless of date', () => {
+  it('treats rejected and expired statuses as expired regardless of date', () => {
     expect(assessCredential(type(), cred({ verification_status: 'rejected' }), TODAY).state)
-      .toBe('expired_or_missing');
+      .toBe('expired');
     expect(assessCredential(type(), cred({ verification_status: 'expired' }), TODAY).state)
-      .toBe('expired_or_missing');
+      .toBe('expired');
   });
 
-  it('requires an expiry when the type demands one', () => {
+  it('is amber, not red, when a required expiry was left blank — incomplete, not lapsed', () => {
     expect(assessCredential(type({ requires_expiry: true }), cred({ expires_at: null }), TODAY).state)
-      .toBe('expired_or_missing');
+      .toBe('expiring_soon');
   });
 
   it('ignores a null expiry when the type does not require one (White Card never expires)', () => {
@@ -156,7 +164,7 @@ describe('latestOfType', () => {
 });
 
 describe('assessWorker', () => {
-  it('rolls up to the worst state across required credentials', () => {
+  it('rolls up to the worst state across recorded credentials', () => {
     const t1 = type({ id: 't1' });
     const t2 = type({ id: 't2' });
     const result = assessWorker(
@@ -164,16 +172,69 @@ describe('assessWorker', () => {
       [cred({ credential_type_id: 't1' }), cred({ credential_type_id: 't2', expires_at: iso(-5) })],
       TODAY,
     );
-    expect(result.state).toBe('expired_or_missing');
+    expect(result.state).toBe('expired');
     expect(result.expiredCount).toBe(1);
   });
 
-  it('counts a missing credential separately from an expired one', () => {
+  // The bug that started this: a worker invited two minutes ago showed a wall of red.
+  it('reads not_tracked — never expired — when nothing has been recorded at all', () => {
+    const result = assessWorker([type({ id: 't1' }), type({ id: 't2' })], [], TODAY);
+    expect(result.state).toBe('not_tracked');
+    expect(result.notRecordedCount).toBe(2);
+    expect(result.expiredCount).toBe(0);
+  });
+
+  it('does not let un-recorded credentials drag a compliant worker down', () => {
+    const t1 = type({ id: 't1' });
+    const t2 = type({ id: 't2' });
+    const result = assessWorker([t1, t2], [cred({ credential_type_id: 't1' })], TODAY);
+    expect(result.state).toBe('compliant');
+    expect(result.notRecordedCount).toBe(1);
+  });
+
+  it('counts a not-recorded credential separately from an expired one', () => {
     const t1 = type({ id: 't1' });
     const t2 = type({ id: 't2' });
     const result = assessWorker([t1, t2], [cred({ credential_type_id: 't1', expires_at: iso(-5) })], TODAY);
     expect(result.expiredCount).toBe(1);
-    expect(result.missingCount).toBe(1);
+    expect(result.notRecordedCount).toBe(1);
+  });
+
+  it('excludes waived credentials from the rollup entirely', () => {
+    const t1 = type({ id: 't1' });
+    const t2 = type({ id: 't2' });
+    // t2 is expired, but the business said it does not apply to this worker.
+    const result = assessWorker(
+      [t1, t2],
+      [cred({ credential_type_id: 't1' }), cred({ credential_type_id: 't2', expires_at: iso(-5) })],
+      TODAY,
+      new Set(['t2']),
+    );
+    expect(result.state).toBe('compliant');
+    expect(result.expiredCount).toBe(0);
+    expect(result.notRequiredCount).toBe(1);
+  });
+
+  it('waiving everything leaves the worker not_tracked, not compliant-by-default', () => {
+    const result = assessWorker([type({ id: 't1' })], [], TODAY, new Set(['t1']));
+    expect(result.state).toBe('not_tracked');
+    expect(result.notRequiredCount).toBe(1);
+    expect(result.notRecordedCount).toBe(0);
+  });
+
+  it('ignores a waived credential when picking the soonest expiry', () => {
+    const t1 = type({ id: 't1' });
+    const t2 = type({ id: 't2' });
+    const result = assessWorker(
+      [t1, t2],
+      [
+        cred({ credential_type_id: 't1', expires_at: iso(200) }),
+        cred({ credential_type_id: 't2', expires_at: iso(3) }),
+      ],
+      TODAY,
+      new Set(['t2']),
+    );
+    expect(result.soonestExpiry).toBe(iso(200));
   });
 
   it('reports the soonest expiry across all required credentials', () => {
@@ -190,20 +251,30 @@ describe('assessWorker', () => {
     expect(result.soonestExpiry).toBe(iso(40));
   });
 
-  it('is compliant when nothing is required', () => {
-    expect(assessWorker([], [], TODAY).state).toBe('compliant');
+  it('is not_tracked when nothing is required at all', () => {
+    expect(assessWorker([], [], TODAY).state).toBe('not_tracked');
   });
 });
 
 describe('compareByUrgency', () => {
-  it('puts expired/missing workers above merely expiring ones', () => {
-    const expired = assessWorker([type({ id: 't1' })], [], TODAY);
+  it('puts expired workers above merely expiring ones', () => {
+    const expired = assessWorker(
+      [type({ id: 't1' })],
+      [cred({ credential_type_id: 't1', expires_at: iso(-5) })],
+      TODAY,
+    );
     const expiring = assessWorker(
       [type({ id: 't1' })],
       [cred({ credential_type_id: 't1', expires_at: iso(5) })],
       TODAY,
     );
     expect(compareByUrgency(expired, expiring)).toBeLessThan(0);
+  });
+
+  it('sinks untracked workers below everything actionable', () => {
+    const untracked = assessWorker([type({ id: 't1' })], [], TODAY);
+    const compliant = assessWorker([type({ id: 't1' })], [cred({ credential_type_id: 't1' })], TODAY);
+    expect(compareByUrgency(compliant, untracked)).toBeLessThan(0);
   });
 
   it('sorts soonest expiry first within the same state', () => {
