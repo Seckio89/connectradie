@@ -36,6 +36,14 @@ export default {
           mute: 'rgb(var(--mute-c) / <alpha-value>)',
           'mute-2': 'rgb(var(--mute-2-c) / <alpha-value>)',
           placeholder: 'var(--placeholder)',
+          'line-soft': 'rgb(var(--line-soft-c) / <alpha-value>)',
+          // The light band — the landing page's comparison section
+          // inverts to --paper. AA-corrected; see src/index.css.
+          'paper-2': 'rgb(var(--paper-2-c) / <alpha-value>)',
+          'ink-on-paper': 'rgb(var(--ink-on-paper-c) / <alpha-value>)',
+          'mute-on-paper': 'rgb(var(--mute-on-paper-c) / <alpha-value>)',
+          'teal-ink': 'rgb(var(--teal-ink-c) / <alpha-value>)',
+          'amber-ink': 'rgb(var(--amber-ink-c) / <alpha-value>)',
         },
 
         // ── Legacy (v1) — being migrated, do not use for new work ──

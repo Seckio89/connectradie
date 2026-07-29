@@ -172,6 +172,26 @@ variables do not resolve.
 Tinted fills: `--teal-dim`, `--amber-dim`, `--rose-dim`. The semantic
 colours never carry meaning at full strength on a surface — use the dim
 form for fills, the solid form for text, icons and borders.
+`--line-soft` is one step softer than `--line`, for dividers inside a card.
+
+### v2 · The light band
+
+The system is dark, with **one** deliberate exception: the landing page's
+comparison section inverts to `--paper`. Text on that band needs its own
+values — the dark-surface tokens are unreadable on it. Do not invert any
+other section.
+
+| Token | Tailwind | Use | On `--paper` |
+|---|---|---|---|
+| `--ink-on-paper` | `ct-ink-on-paper` | body text | 16.57:1 |
+| `--mute-on-paper` | `ct-mute-on-paper` | muted text, table headers, fineprint | 4.69:1 |
+| `--teal-ink` | `ct-teal-ink` | teal **text** on paper | 5.53:1 |
+| `--amber-ink` | `ct-amber-ink` | amber **text** on paper | 5.09:1 |
+| `--paper-2` | `ct-paper-2` | dividers on the light band | — |
+
+`--teal-deep` keeps its non-text jobs only (hover borders on dark,
+decorative rules). It measures **3.83:1** on `--paper` and fails AA for
+text — use `--teal-ink` instead.
 
 **The semantic rule is enforced, not advisory.**
 
@@ -244,6 +264,14 @@ These do as much work as the visual tokens.
   `--surface-2` 4.76:1 — all pass, the last one narrowly.
 - Placeholder text uses `--placeholder` (4.59:1). Do not use the
   reference file's `#4E635E`; it measures 3.00:1 and fails AA.
+
+⚠️ **Do not lift colour literals out of the two reference HTML files.**
+Both predate this contrast pass and six of their values fail AA:
+`#4E635E` (3.00:1), `#98A8A5` (2.28:1), `#0A8C79` as text (3.83:1),
+`#B07D12` (3.34:1), `#6B827D` (3.78:1), `#5C7772` (4.45:1). The tokens
+in `src/index.css` are the corrected set and are the only source.
+`connectradie-landing.html` also ships a corrupted `--line-soft`
+(`#16292४`, trailing U+096A) that is silently overridden one line later.
 
 ---
 
