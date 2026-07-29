@@ -79,12 +79,19 @@ npx supabase functions deploy --project-ref <TEST_REF>
 Stripe (**test mode**) → Developers → Webhooks → Add endpoint:
 
 - **URL:** `https://<TEST_REF>.functions.supabase.co/stripe-webhook`
-- **Events:** `checkout.session.completed`, `payment_intent.succeeded`
+- **Events:** the same set the live destination carries. At minimum
+  `checkout.session.completed` and `payment_intent.succeeded` for `e2e:run`, **plus
+  `charge.dispute.created` and `charge.dispute.closed`** for `e2e:dispute`.
 
 Copy the signing secret and re-run step 4 with the real `whsec_…`.
 
 > Skip this and the run hangs at *"never reached status='completed'"* — the
 > webhook is what flips the payment.
+
+> Do not trim this list back to the two funding events. `e2e:dispute` proves the
+> chargeback path, and without the two dispute events it hangs at *"timed out
+> waiting for disputes row from charge.dispute.created"* — the harness looks
+> broken when the subscription is what is missing.
 
 ### ☐ 7. Create the test accounts
 
