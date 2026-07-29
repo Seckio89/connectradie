@@ -396,6 +396,29 @@ verify_jwt = false
 [functions.estimate-quote]
 verify_jwt = false
 
+# ── Workforce & Compliance module ───────────────────────────────────────────
+# All four verify their caller in-function and keep verify_jwt at the CLI
+# default of true, so these entries are documentation of intent rather than
+# overrides. worker-invite and worker-claim-profile resolve the caller with
+# auth.getUser(); credential-verify and credential-expiry-sweep additionally
+# probe for a real service-role capability via _shared/serviceAuth.hasServiceRole
+# (a byte-shape check like startsWith("Bearer ey") passes every user's JWT).
+#
+# credential-expiry-sweep is driven by pg_cron, which presents the service-role
+# key as a normal Bearer token — so it satisfies verify_jwt = true and must NOT
+# be flipped to false.
+[functions.worker-invite]
+verify_jwt = true
+
+[functions.worker-claim-profile]
+verify_jwt = true
+
+[functions.credential-verify]
+verify_jwt = true
+
+[functions.credential-expiry-sweep]
+verify_jwt = true
+
 # Experimental features may be deprecated any time
 [experimental]
 # Configures Postgres storage engine to use OrioleDB (S3)

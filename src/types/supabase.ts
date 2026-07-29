@@ -372,9 +372,15 @@ export type Database = {
       }
       business_team_members: {
         Row: {
+          archived_at: string | null
+          available_for_overflow: boolean
           business_owner_id: string
+          claim_token_expires_at: string | null
+          claim_token_hash: string | null
+          claim_token_used_at: string | null
           color: string | null
           created_at: string
+          employment_type: string
           hourly_rate: number | null
           id: string
           invite_email: string | null
@@ -384,15 +390,23 @@ export type Database = {
           joined_at: string | null
           member_profile_id: string | null
           notes: string | null
+          portable_profile_enabled: boolean
           role: string
+          started_at: string | null
           status: string
           trade_specialty: string | null
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
+          available_for_overflow?: boolean
           business_owner_id: string
+          claim_token_expires_at?: string | null
+          claim_token_hash?: string | null
+          claim_token_used_at?: string | null
           color?: string | null
           created_at?: string
+          employment_type?: string
           hourly_rate?: number | null
           id?: string
           invite_email?: string | null
@@ -402,15 +416,23 @@ export type Database = {
           joined_at?: string | null
           member_profile_id?: string | null
           notes?: string | null
+          portable_profile_enabled?: boolean
           role?: string
+          started_at?: string | null
           status?: string
           trade_specialty?: string | null
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
+          available_for_overflow?: boolean
           business_owner_id?: string
+          claim_token_expires_at?: string | null
+          claim_token_hash?: string | null
+          claim_token_used_at?: string | null
           color?: string | null
           created_at?: string
+          employment_type?: string
           hourly_rate?: number | null
           id?: string
           invite_email?: string | null
@@ -420,7 +442,9 @@ export type Database = {
           joined_at?: string | null
           member_profile_id?: string | null
           notes?: string | null
+          portable_profile_enabled?: boolean
           role?: string
+          started_at?: string | null
           status?: string
           trade_specialty?: string | null
           updated_at?: string
@@ -894,6 +918,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      credential_types: {
+        Row: {
+          applies_to_trades: string[] | null
+          category: string
+          code: string
+          created_at: string
+          id: string
+          label: string
+          requires_document: boolean
+          requires_expiry: boolean
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          applies_to_trades?: string[] | null
+          category: string
+          code: string
+          created_at?: string
+          id?: string
+          label: string
+          requires_document?: boolean
+          requires_expiry?: boolean
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          applies_to_trades?: string[] | null
+          category?: string
+          code?: string
+          created_at?: string
+          id?: string
+          label?: string
+          requires_document?: boolean
+          requires_expiry?: boolean
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       custom_task_suggestions: {
         Row: {
@@ -1784,6 +1847,7 @@ export type Database = {
           start_time: string | null
           status: string
           team_member_id: string
+          unassigned_at: string | null
           updated_at: string
         }
         Insert: {
@@ -1798,6 +1862,7 @@ export type Database = {
           start_time?: string | null
           status?: string
           team_member_id: string
+          unassigned_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -1812,6 +1877,7 @@ export type Database = {
           start_time?: string | null
           status?: string
           team_member_id?: string
+          unassigned_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2827,7 +2893,7 @@ export type Database = {
           {
             foreignKeyName: "platform_fee_charges_payment_id_fkey"
             columns: ["payment_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "payments"
             referencedColumns: ["id"]
           },
@@ -5548,6 +5614,108 @@ export type Database = {
           },
         ]
       }
+      worker_credential_notifications: {
+        Row: {
+          created_at: string
+          expires_on: string
+          id: string
+          sent_on: string
+          threshold_days: number
+          worker_credential_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_on: string
+          id?: string
+          sent_on?: string
+          threshold_days: number
+          worker_credential_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_on?: string
+          id?: string
+          sent_on?: string
+          threshold_days?: number
+          worker_credential_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_credential_notifications_worker_credential_id_fkey"
+            columns: ["worker_credential_id"]
+            isOneToOne: false
+            referencedRelation: "worker_credentials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      worker_credentials: {
+        Row: {
+          created_at: string
+          credential_type_id: string
+          document_path: string | null
+          expires_at: string | null
+          id: string
+          issued_at: string | null
+          reference_number: string | null
+          team_member_id: string
+          updated_at: string
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          credential_type_id: string
+          document_path?: string | null
+          expires_at?: string | null
+          id?: string
+          issued_at?: string | null
+          reference_number?: string | null
+          team_member_id: string
+          updated_at?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          credential_type_id?: string
+          document_path?: string | null
+          expires_at?: string | null
+          id?: string
+          issued_at?: string | null
+          reference_number?: string | null
+          team_member_id?: string
+          updated_at?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_credentials_credential_type_id_fkey"
+            columns: ["credential_type_id"]
+            isOneToOne: false
+            referencedRelation: "credential_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worker_credentials_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "business_team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worker_credentials_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       public_vacancies: {
@@ -5672,6 +5840,7 @@ export type Database = {
     }
     Functions: {
       auto_complete_ended_projects: { Args: never; Returns: undefined }
+      can_access_worker_credential: { Args: { path: string }; Returns: boolean }
       can_read_job_attachment: { Args: { path: string }; Returns: boolean }
       can_view_job_tracking: {
         Args: { p_job_id: string; p_uid: string }
@@ -5819,6 +5988,7 @@ export type Database = {
         Returns: boolean
       }
       is_tradie_verified: { Args: { p_user_id: string }; Returns: boolean }
+      job_has_platform_escrow: { Args: { p_job_id: string }; Returns: boolean }
       notify_approaching_reminders: { Args: never; Returns: undefined }
       refresh_open_vacancy_employer_snapshot: {
         Args: { p_employer: string }

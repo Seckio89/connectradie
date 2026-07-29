@@ -15,4 +15,4 @@ Route tasks by keyword:
 Priority order for multi-domain tasks:
 1. Bugs/safety → 2. Database → 3. Payments → 4. UI → 5. Deploy
 
-Context: React 18 + TypeScript + Tailwind + Supabase + Stripe. Two-sided marketplace for Australian homeowners and tradespeople. 68 Edge Functions. Escrow payments via Stripe Connect.
+Context: React 18 + TypeScript + Tailwind + Supabase + Stripe. Two-sided marketplace for Australian homeowners and tradespeople. 72 Edge Functions. Escrow payments via Stripe Connect.
