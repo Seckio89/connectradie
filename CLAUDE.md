@@ -5,7 +5,7 @@ Escrow via Stripe Connect (Stripe holds funds, NOT us — AFSL compliance critic
 
 ## Stack
 - React 18 · TypeScript strict · Tailwind CSS · Vite
-- Supabase: PostgreSQL + 73 Edge Functions (Deno) + RLS
+- Supabase: PostgreSQL + 74 Edge Functions (Deno) + RLS
 - Stripe Connect escrow · Google Maps API · Sentry
 
 ## Key Directories
@@ -15,11 +15,11 @@ src/components/     # 90+ components
 src/hooks/          # useAvailabilitySlots, useDashboardJobs, useToast, etc.
 src/lib/            # Supabase client, notifications, analytics, email templates
 src/contexts/       # AuthContext.tsx
-supabase/functions/ # 73 Edge Functions
+supabase/functions/ # 74 Edge Functions
 supabase/migrations/# 70+ migrations — never edit existing, always add new
 ```
 
-## Edge Functions (73)
+## Edge Functions (74)
 accept-and-pay · access-pin · adjust-quote-price ·
 analyse-description-keywords · approve-invoice · approve-price-reduction ·
 approve-variation · auto-confirm-sessions · auto-release-payments ·
@@ -28,7 +28,7 @@ calculate-job-fees · cancel-subscription · charge-becs-invoice ·
 check-license-expiry · client-request-reduction · complete-site-visit ·
 create-bonus-payment · create-checkout-session · create-job-deposit ·
 create-job-payment-checkout · create-payment-session ·
-credential-expiry-sweep · credential-verify · delete-user ·
+credential-expiry-sweep · credential-verify · csp-report · delete-user ·
 dispute-evidence-summary · estimate-quote · generate-auto-invoices ·
 generate-recommendations · generate-recurring-invoice ·
 generate-recurring-sessions · geofence-event · google-calendar-import ·
