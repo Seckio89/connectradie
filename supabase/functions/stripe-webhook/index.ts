@@ -642,6 +642,69 @@ async function handleEvent(event: Stripe.Event) {
       ? 'resolved_client'
       : 'dismissed';
 
+    // ORDER MATTERS — settle the MONEY first, clear the block second.
+    //
+    // `blocks_release` is GENERATED from disputes.status, so writing
+    // 'resolved_client' below makes the job releasable the instant it lands. The
+    // payments row is the only thing left stopping auto-release paying out
+    // clawed-back funds, so it must already say 'refunded' by then.
+    //
+    // This used to run the other way round, and the gap was real: the dispute
+    // E2E watched auto-release pay out $2,329 on a LOST chargeback that had just
+    // been closed. The window was always there, but resolving the PaymentIntent
+    // below puts a Stripe round-trip inside it, which widened it from negligible
+    // to reliably lost. Refunding first means a crash between the two steps
+    // leaves the dispute OPEN and the payout blocked — failing closed.
+    // A LOST chargeback needs the PAYMENT closed too, not just the dispute row.
+    // auto-release skips a job only while some dispute has blocks_release set,
+    // and 'resolved_client' clears it — so closing the dispute would UN-block
+    // the job and let the cron pay the tradie money the client has already
+    // taken back. The original H5 bug, just deferred to dispute-close time.
+    //
+    // 'refunded' is the honest status (the funds did go back to the cardholder)
+    // and it is already terminal everywhere that matters: auto-release requires
+    // 'completed', and reconcile-payments now refuses to downgrade a terminal
+    // status back to 'completed'.
+    if (dispute.status === 'lost') {
+      // Resolve the payment the SAME reliable way charge.dispute.created did —
+      // charge -> payment_intent -> payments.stripe_payment_intent_id — instead
+      // of matching metadata->>stripe_dispute_id. That metadata stamp is written
+      // by the created handler and the dispute E2E proved it does not always
+      // persist; a match on it can silently hit ZERO rows, leaving a clawed-back
+      // payment as 'completed' for auto-release to pay out. This is the exact
+      // money-loss the comment below warns about, so it must not hinge on one
+      // best-effort field.
+      let piId: string | null = null;
+      try {
+        const dChargeId = typeof dispute.charge === 'string'
+          ? dispute.charge
+          : (dispute.charge as Stripe.Charge | null)?.id;
+        if (dChargeId) {
+          const ch = await stripe.charges.retrieve(dChargeId);
+          piId = typeof ch.payment_intent === 'string'
+            ? ch.payment_intent
+            : (ch.payment_intent as Stripe.PaymentIntent | null)?.id ?? null;
+        }
+      } catch (e) {
+        console.error(`Could not resolve payment_intent for lost dispute ${dispute.id}`, e);
+      }
+
+      const updateRefunded = () => supabase.from('payments').update({ status: 'refunded' }, { count: 'exact' });
+      const { error: payErr, count } = piId
+        ? await updateRefunded().eq('stripe_payment_intent_id', piId)
+        // Fallback to the old metadata match only if the PI could not be resolved.
+        : await updateRefunded().eq('metadata->>stripe_dispute_id', dispute.id);
+
+      if (payErr || !count) {
+        console.error(
+          `CRITICAL: dispute ${dispute.id} was LOST but the payment could not be marked refunded ` +
+            `(matched ${count ?? 0} rows) — auto-release may pay out clawed-back funds.`,
+          payErr,
+        );
+      }
+    }
+
+    // Only now clear the block. Everything above has settled the money state.
     const { error: closeError } = await supabase
       .from('disputes')
       .update({
@@ -655,30 +718,6 @@ async function handleEvent(event: Stripe.Event) {
       console.error(`Failed to close dispute record for ${dispute.id}`, closeError);
     } else {
       console.info(`Dispute ${dispute.id} closed as ${dispute.status} -> ${mappedStatus}`);
-    }
-
-    // A LOST chargeback needs the PAYMENT closed too, not just the dispute row.
-    // auto-release skips a job only while some dispute has blocks_release set,
-    // and 'resolved_client' clears it — so closing the dispute would UN-block
-    // the job and let the cron pay the tradie money the client has already
-    // taken back. The original H5 bug, just deferred to dispute-close time.
-    //
-    // 'refunded' is the honest status (the funds did go back to the cardholder)
-    // and it is already terminal everywhere that matters: auto-release requires
-    // 'completed', and reconcile-payments now refuses to downgrade a terminal
-    // status back to 'completed'.
-    if (dispute.status === 'lost') {
-      const { error: payErr } = await supabase
-        .from('payments')
-        .update({ status: 'refunded' })
-        .eq('metadata->>stripe_dispute_id', dispute.id);
-      if (payErr) {
-        console.error(
-          `CRITICAL: dispute ${dispute.id} was LOST but the payment could not be marked refunded — ` +
-            `auto-release may pay out clawed-back funds.`,
-          payErr,
-        );
-      }
     }
     return;
   }
