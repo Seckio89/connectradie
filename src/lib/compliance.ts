@@ -226,6 +226,27 @@ export function compareByUrgency(a: WorkerCompliance, b: WorkerCompliance): numb
   return 0;
 }
 
+/**
+ * Derive `employment_type` from the roster `role` when a caller only collects
+ * the latter.
+ *
+ * The two columns are deliberately independent — `role` is the long-standing
+ * employee/subcontractor/apprentice vocabulary that ~20 call sites and
+ * get_service_worker_details depend on, while `employment_type` is the finer
+ * basis the workforce module displays. But a write that sets only `role` takes
+ * the `employee_full_time` DEFAULT, which would render someone the business
+ * declared a Subcontractor as "Employee — full time". The platform must never
+ * recharacterise a worker's employment basis, so any path that captures role
+ * must derive this alongside it.
+ *
+ * Mapping matches the backfill in 20260728205103 exactly. 'apprentice' is a role,
+ * not an employment basis, so it falls to full-time; the business can refine it
+ * to part-time or casual on the worker's detail page.
+ */
+export function employmentTypeForRosterRole(role: string | null | undefined): string {
+  return role === 'subcontractor' ? 'subcontractor' : 'employee_full_time';
+}
+
 export const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
   employee_full_time: 'Employee — full time',
   employee_part_time: 'Employee — part time',

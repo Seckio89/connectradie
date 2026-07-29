@@ -4,6 +4,8 @@ import {
   assessWorker,
   compareByUrgency,
   daysUntil,
+  EMPLOYMENT_TYPE_LABELS,
+  employmentTypeForRosterRole,
   EXPIRING_SOON_DAYS,
   expiryHint,
   latestOfType,
@@ -214,6 +216,44 @@ describe('compareByUrgency', () => {
     const dated = assessWorker([type({ id: 't1' })], [cred({ credential_type_id: 't1', expires_at: iso(100) })], TODAY);
     const undated = assessWorker([], [], TODAY);
     expect(compareByUrgency(dated, undated)).toBeLessThan(0);
+  });
+});
+
+describe('employmentTypeForRosterRole', () => {
+  // The DB CHECK constraint is the real contract; TypeScript cannot see it,
+  // because postgrest binds insert payloads to a naked generic. A typo here
+  // would only surface as a runtime constraint violation.
+  const ALLOWED = ['employee_full_time', 'employee_part_time', 'employee_casual', 'subcontractor'];
+
+  it('never recharacterises a declared subcontractor', () => {
+    expect(employmentTypeForRosterRole('subcontractor')).toBe('subcontractor');
+  });
+
+  it('maps employee to full time', () => {
+    expect(employmentTypeForRosterRole('employee')).toBe('employee_full_time');
+  });
+
+  it('maps apprentice to full time — apprentice is a role, not an employment basis', () => {
+    expect(employmentTypeForRosterRole('apprentice')).toBe('employee_full_time');
+  });
+
+  it('is safe for null, undefined and unknown roles', () => {
+    expect(employmentTypeForRosterRole(null)).toBe('employee_full_time');
+    expect(employmentTypeForRosterRole(undefined)).toBe('employee_full_time');
+    expect(employmentTypeForRosterRole('something-else')).toBe('employee_full_time');
+  });
+
+  it('only ever emits a value the CHECK constraint accepts', () => {
+    for (const role of ['employee', 'subcontractor', 'apprentice', '', 'bogus']) {
+      expect(ALLOWED).toContain(employmentTypeForRosterRole(role));
+    }
+    expect(ALLOWED).toContain(employmentTypeForRosterRole(null));
+  });
+
+  it('emits values the roster can label — no "unknown" cells', () => {
+    for (const role of ['employee', 'subcontractor', 'apprentice', null]) {
+      expect(EMPLOYMENT_TYPE_LABELS[employmentTypeForRosterRole(role)]).toBeTruthy();
+    }
   });
 });
 

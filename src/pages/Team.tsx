@@ -9,6 +9,7 @@ import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import ConfirmModal from '../components/ConfirmModal';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { employmentTypeForRosterRole } from '../lib/compliance';
 
 interface LinkedEmployee {
   id: string;
@@ -502,16 +503,23 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
 
   const handleSaveManual = async (memberData: Partial<TeamMember>) => {
     if (!user) return;
+    // This form collects `role` only. Left alone, `employment_type` takes its
+    // employee_full_time DEFAULT and a member added as a Subcontractor would
+    // render as "Employee — full time" on the workforce roster — the platform
+    // recharacterising an employment basis the business declared.
+    const employmentType = memberData.role
+      ? { employment_type: employmentTypeForRosterRole(memberData.role) }
+      : {};
     if (editMember) {
       const { error } = await supabase
         .from('business_team_members')
-        .update({ ...memberData, updated_at: new Date().toISOString() })
+        .update({ ...memberData, ...employmentType, updated_at: new Date().toISOString() })
         .eq('id', editMember.id);
       if (error) throw new Error(error.message);
     } else {
       const { error } = await supabase
         .from('business_team_members')
-        .insert({ ...memberData, business_owner_id: user.id, status: 'active' });
+        .insert({ ...memberData, ...employmentType, business_owner_id: user.id, status: 'active' });
       if (error) throw new Error(error.message);
     }
     await fetchManualMembers();
