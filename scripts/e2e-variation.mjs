@@ -307,10 +307,17 @@ const budgetOf = async (jobId) => {
   }, { tries: 60 });
   ok("webhook approved the variation");
 
-  const budgetAfter = await budgetOf(jobId);
+  // Polled, not read once. The variation flip and the budget update are two
+  // separate writes inside applyPriceAdjustment, so 'approved' becoming visible
+  // does not mean the budget has landed yet.
   const expectedBudget = budgetBefore + CFG.VARIATION_AMOUNT;
-  if (Math.abs(budgetAfter - expectedBudget) > 0.005) {
-    fail(`budget is ${budgetAfter}, expected ${expectedBudget} (was ${budgetBefore} + ${CFG.VARIATION_AMOUNT})`);
+  const budgetAfter = await poll("budget to rise", async () => {
+    const b = await budgetOf(jobId);
+    return Math.abs(b - expectedBudget) <= 0.005 ? b : null;
+  }, { tries: 15, delayMs: 1000 }).catch(() => null);
+
+  if (budgetAfter === null) {
+    fail(`budget is ${await budgetOf(jobId)}, expected ${expectedBudget} (was ${budgetBefore} + ${CFG.VARIATION_AMOUNT})`);
   } else {
     ok(`budget rose by exactly the variation amount → ${expectedBudget}`);
   }
@@ -321,6 +328,57 @@ const budgetOf = async (jobId) => {
     fail("pending_increase still set after completion — the next variation would 409 forever");
   } else {
     ok("pending_increase cleared");
+  }
+
+  // 7. Reconciler recovery — the safety net for a webhook that never arrives.
+  //
+  // Rewind to exactly the stranded state: payment 'pending' with no PI id (only
+  // the webhook writes that column), variation back to 'pending', budget back,
+  // pending_increase re-held. That is what a dropped checkout.session.completed
+  // leaves behind, and until now nothing could see it — reconcile-payments
+  // filters on `stripe_payment_intent_id is not null`, so the row was invisible
+  // to the very job meant to catch it.
+  const topUpPiId = topUpPi.id;
+  await admin.from("payments")
+    .update({ status: "pending", completed_at: null, stripe_payment_intent_id: null })
+    .eq("id", topUpPaymentId);
+  await admin.from("job_variations").update({ status: "pending" }).eq("id", variation.id);
+  await admin.from("jobs").update({ budget_amount: budgetBefore }).eq("id", jobId);
+  const { data: parentNow } = await admin.from("payments").select("metadata").eq("id", approve.json.paymentId).single();
+  const rewound = { ...(parentNow.metadata || {}) };
+  delete rewound.increase_completed;
+  delete rewound.increase_completed_at;
+  rewound.pending_increase = {
+    diff_cents: expectedCents,
+    additional_gst: approve.json.gstCents ?? 0,
+    additional_processing_fee: 0,
+    additional_platform_fee: 0,
+    requested_at: new Date().toISOString(),
+    variation_id: variation.id,
+  };
+  await admin.from("payments").update({ metadata: rewound }).eq("id", approve.json.paymentId);
+  info(`rewound to the stranded state (payment pending, PI id cleared, budget ${budgetBefore})`);
+
+  const rec = await callFn("reconcile-payments", CFG.SUPABASE_SERVICE_KEY, {});
+  if (rec.status !== 200) {
+    fail(`reconcile-payments ${rec.status}: ${JSON.stringify(rec.json)}`);
+  } else {
+    const { data: recPay } = await admin.from("payments").select("status, stripe_payment_intent_id").eq("id", topUpPaymentId).single();
+    const { data: recVar } = await admin.from("job_variations").select("status").eq("id", variation.id).single();
+    const recBudget = await budgetOf(jobId);
+    const { data: recParent } = await admin.from("payments").select("metadata").eq("id", approve.json.paymentId).single();
+
+    if (recPay.status !== "completed" || recPay.stripe_payment_intent_id !== topUpPiId) {
+      fail(`reconciler left payment status='${recPay.status}' pi=${recPay.stripe_payment_intent_id}`);
+    } else if (recVar.status !== "approved") {
+      fail(`reconciler completed the payment but left the variation '${recVar.status}' — the wedge would be hidden, not fixed`);
+    } else if (Math.abs(recBudget - expectedBudget) > 0.005) {
+      fail(`reconciler left budget at ${recBudget}, expected ${expectedBudget}`);
+    } else if (recParent?.metadata?.pending_increase) {
+      fail("reconciler did not clear pending_increase — future increases would still 409");
+    } else {
+      ok("reconciler recovered a stranded adjustment: payment completed, variation approved, budget raised, slot released");
+    }
   }
 
   console.log(approved && process.exitCode ? "\n── FAILED ──" : "\n── PASSED ──");

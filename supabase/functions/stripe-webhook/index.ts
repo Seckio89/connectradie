@@ -4,6 +4,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
 import { resolveTradieTier } from '../_shared/pricing.ts';
 import { resolveChargeFee, recordFeeCharge } from '../_shared/feeContext.ts';
 import type { Insert, Update } from '../_shared/dbTypes.ts';
+import { applyPriceAdjustment } from "../_shared/priceAdjustment.ts";
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
@@ -225,108 +226,6 @@ async function markSiteVisitFeePaid(
     });
   }
   console.info(`Site-visit fee paid; quote ${quoteId} -> site_visit_scheduled`);
-}
-
-/**
- * Everything that must happen once a price_adjustment payment has settled:
- * release the pending_increase slot, then apply the increase.
- *
- * Shared by checkout.session.completed and the payment_intent.succeeded
- * fallback, because the two must not drift. Idempotent throughout — Stripe
- * fires both events for every hosted checkout and retries each of them.
- *
- * Two shapes of increase arrive here. A VARIATION carries variation_id and
- * moves the budget by the variation's own amount; there is no accepted quote to
- * read a final price from. A quote adjustment after a site inspection has no
- * variation_id and takes the final price off the accepted quote.
- */
-async function applyPriceAdjustment(
-  { parentPaymentId, jobId, variationId }:
-  { parentPaymentId: string | null; jobId: string | null; variationId: string | null },
-) {
-  if (parentPaymentId) {
-    const { data: parentPayment } = await supabase
-      .from('payments')
-      .select('metadata')
-      .eq('id', parentPaymentId)
-      .maybeSingle();
-
-    if (parentPayment) {
-      const meta = { ...(parentPayment.metadata || {}) };
-      // Leaving this set would 409 every future increase on the job.
-      delete meta.pending_increase;
-      meta.increase_completed = true;
-      meta.increase_completed_at = new Date().toISOString();
-
-      await supabase.from('payments').update({ metadata: meta }).eq('id', parentPaymentId);
-      console.info(`Cleared pending_increase from parent payment ${parentPaymentId}`);
-    }
-  }
-
-  if (!jobId) return;
-
-  if (variationId) {
-    const { data: variation } = await supabase
-      .from('job_variations')
-      .select('id, additional_amount, status, job_id')
-      .eq('id', variationId)
-      .maybeSingle();
-
-    if (!variation) {
-      console.error(`Variation ${variationId} not found for completed payment`);
-      return;
-    }
-    if (variation.status === 'approved') {
-      console.info(`Variation ${variationId} already approved — skipping`);
-      return;
-    }
-    if (variation.job_id !== jobId) {
-      console.error(`Variation ${variationId} belongs to job ${variation.job_id}, not ${jobId} — refusing`);
-      return;
-    }
-
-    // The status filter is the idempotency guard: approving twice would raise
-    // the budget twice for one payment.
-    const { data: flipped, error: varErr } = await supabase
-      .from('job_variations')
-      .update({ status: 'approved' })
-      .eq('id', variationId)
-      .eq('status', 'pending')
-      .select('id');
-
-    if (varErr) {
-      console.error(`Failed to approve variation ${variationId}:`, varErr);
-      return;
-    }
-    if (!flipped || flipped.length === 0) {
-      console.info(`Variation ${variationId} was approved concurrently — budget left alone`);
-      return;
-    }
-
-    const { data: jobRow } = await supabase
-      .from('jobs')
-      .select('budget_amount')
-      .eq('id', jobId)
-      .maybeSingle();
-
-    // budget_amount and additional_amount are both DOLLARS.
-    const newBudget = Number(jobRow?.budget_amount || 0) + Number(variation.additional_amount || 0);
-    await supabase.from('jobs').update({ budget_amount: newBudget }).eq('id', jobId);
-    console.info(`Approved variation ${variationId}; job ${jobId} budget now ${newBudget}`);
-    return;
-  }
-
-  const { data: acceptedQuote } = await supabase
-    .from('quotes')
-    .select('final_price')
-    .eq('job_id', jobId)
-    .eq('status', 'accepted')
-    .maybeSingle();
-
-  if (acceptedQuote?.final_price) {
-    await supabase.from('jobs').update({ budget_amount: acceptedQuote.final_price }).eq('id', jobId);
-    console.info(`Updated job ${jobId} budget to ${acceptedQuote.final_price}`);
-  }
 }
 
 // A bank payout bounced (or a transfer was reversed): Stripe returns the money to
@@ -1080,7 +979,7 @@ async function handleEvent(event: Stripe.Event) {
         // it must NOT be skipped when the payment was already completed — the
         // checkout handler may have completed the payment and then failed
         // before applying the increase.
-        await applyPriceAdjustment({
+        await applyPriceAdjustment(supabase, {
           parentPaymentId: pi.metadata.parent_payment_id ?? null,
           jobId: pi.metadata.job_id ?? null,
           variationId: pi.metadata.variation_id ?? null,
@@ -1721,7 +1620,7 @@ async function handleEvent(event: Stripe.Event) {
           // fallback so the two cannot drift.
           if (session.metadata?.payment_type === 'price_adjustment' && session.metadata?.parent_payment_id) {
             try {
-              await applyPriceAdjustment({
+              await applyPriceAdjustment(supabase, {
                 parentPaymentId: session.metadata.parent_payment_id,
                 jobId: session.metadata.job_id ?? null,
                 variationId: session.metadata.variation_id ?? null,
