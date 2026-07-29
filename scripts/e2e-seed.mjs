@@ -161,6 +161,64 @@ Bootstrap complete. Export these once:
 Now run:  node scripts/e2e-seed.mjs --quote`);
 }
 
+// Mirrors accept-and-pay's gate: a FREE-tier tradie may hold 5 jobs per calendar
+// month in these statuses. Keep both numbers in step.
+const MAX_JOBS_PER_MONTH = 5;
+const COUNTED_STATUSES = ['accepted', 'in_progress', 'completed'];
+const SEEDED_TITLE = 'E2E hot water replacement';
+
+/**
+ * Free a job slot so the next run can be accepted.
+ *
+ * Every run permanently consumes one of the tradie's 5 monthly slots, so after
+ * five runs accept-and-pay starts refusing with "reached their free tier limit"
+ * and the harness looks broken when it is only out of quota. Spent runs are
+ * finished business, so they get retired to 'cancelled', which drops them out of
+ * the count.
+ *
+ * Deliberately NOT solved by making the tradie Pro: pro tier is 0% commission,
+ * which would silently change the fee model under test and invalidate the
+ * hot-water assertions.
+ *
+ * Only ever touches jobs this script created (matched on title). It cancels
+ * rather than deletes, so dispute rows, payments and fee charges from earlier
+ * runs stay intact as evidence.
+ */
+async function recycleJobSlots(tradieId) {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+  const { data: counted, error } = await admin
+    .from('jobs')
+    .select('id, created_at, title')
+    .eq('tradie_id', tradieId)
+    .in('status', COUNTED_STATUSES)
+    .gte('created_at', startOfMonth)
+    .order('created_at', { ascending: true });
+  if (error) throw new Error(`could not count this month's jobs: ${error.message}`);
+
+  // The run about to happen consumes one, so leave at least one slot spare.
+  const surplus = (counted?.length ?? 0) - (MAX_JOBS_PER_MONTH - 1);
+  if (surplus <= 0) return 0;
+
+  const recyclable = (counted ?? []).filter((j) => j.title === SEEDED_TITLE).slice(0, surplus);
+  if (!recyclable.length) {
+    console.warn(
+      `⚠️  ${counted.length}/${MAX_JOBS_PER_MONTH} monthly job slots used and none were created by this ` +
+        `script, so none can be recycled. accept-and-pay will refuse the next run.`,
+    );
+    return 0;
+  }
+
+  const { error: cancelErr } = await admin
+    .from('jobs')
+    .update({ status: 'cancelled' })
+    .in('id', recyclable.map((j) => j.id));
+  if (cancelErr) throw new Error(`could not retire spent jobs: ${cancelErr.message}`);
+
+  return recyclable.length;
+}
+
 async function seedQuote() {
   const { data: client } = await admin.from('profiles').select('id').eq('email', CFG.clientEmail).maybeSingle();
   const { data: tradie } = await admin.from('profiles').select('id').eq('email', CFG.tradieEmail).maybeSingle();
@@ -168,6 +226,9 @@ async function seedQuote() {
     console.error('Client/tradie profile missing — run --bootstrap first.');
     process.exit(1);
   }
+
+  const recycled = await recycleJobSlots(tradie.id);
+  if (recycled) ok(`retired ${recycled} spent E2E job(s) to free a free-tier slot`);
 
   // The spec's flagship case: $2,400 total = $800 labour + $1,600 materials.
   // Free tier, standard rate → commission $64.00, materials processing $30.88,

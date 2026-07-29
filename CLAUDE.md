@@ -70,6 +70,28 @@ npm run check:edge-drift          # confirms prod matches origin/master
 deploying (are you about to clobber something prod has that master doesn't?) and
 after (did every consumer actually get the new helper?).
 
+### Stripe versions — pinned deliberately, do not bump casually
+
+All 40 `new Stripe(...)` call sites pin `apiVersion: "2023-10-16"`, and every
+import is `npm:stripe@14.21.0`. That is uniform across the fleet; keep it that
+way. An unpinned `npm:stripe@14` would float onto a new minor without a deploy.
+
+The **webhook destinations render payloads at `2026-01-28.clover`**, so inbound
+events arrive newer than the SDK types describe them. That skew is real but it
+is **known-good**: the money paths are E2E-covered against exactly this
+combination (funding, release, refund, and both chargeback outcomes).
+
+Do not "fix" it by bumping one side alone:
+
+- Raising the SDK/apiVersion changes request AND response shapes across all 40
+  call sites at once.
+- Lowering the destination's `api_version` to match the SDK changes the payload
+  shapes the webhook has been verified against.
+
+Either is a deliberate migration with a full `npm run e2e:run` **and**
+`E2E_DISPUTE_OUTCOME=lost|won npm run e2e:dispute` afterwards — not a one-line
+version edit.
+
 ## Commands
 ```bash
 npm run dev                        # dev server
