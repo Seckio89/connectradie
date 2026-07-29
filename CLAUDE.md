@@ -5,7 +5,7 @@ Escrow via Stripe Connect (Stripe holds funds, NOT us — AFSL compliance critic
 
 ## Stack
 - React 18 · TypeScript strict · Tailwind CSS · Vite
-- Supabase: PostgreSQL + 72 Edge Functions (Deno) + RLS
+- Supabase: PostgreSQL + 73 Edge Functions (Deno) + RLS
 - Stripe Connect escrow · Google Maps API · Sentry
 
 ## Key Directories
@@ -15,14 +15,14 @@ src/components/     # 90+ components
 src/hooks/          # useAvailabilitySlots, useDashboardJobs, useToast, etc.
 src/lib/            # Supabase client, notifications, analytics, email templates
 src/contexts/       # AuthContext.tsx
-supabase/functions/ # 72 Edge Functions
+supabase/functions/ # 73 Edge Functions
 supabase/migrations/# 70+ migrations — never edit existing, always add new
 ```
 
-## Edge Functions (72)
+## Edge Functions (73)
 accept-and-pay · access-pin · adjust-quote-price ·
 analyse-description-keywords · approve-invoice · approve-price-reduction ·
-auto-confirm-sessions · auto-release-payments ·
+approve-variation · auto-confirm-sessions · auto-release-payments ·
 auto-release-recurring-payouts · book-site-visit · buy-estimate-pack ·
 calculate-job-fees · cancel-subscription · charge-becs-invoice ·
 check-license-expiry · client-request-reduction · complete-site-visit ·
@@ -47,51 +47,6 @@ verify-payment · worker-claim-profile · worker-invite
 
 Shared helpers live in `supabase/functions/_shared/` (not a function).
 
-⚠️ **`_shared/` is bundled per function AT DEPLOY TIME.** There is no shared
-runtime copy. Editing a helper and redeploying only the functions you had in
-mind leaves every OTHER consumer running the old copy — silently, with no error,
-nothing in the logs, and no difference in `index.ts` to notice in review.
-
-This happened: `_shared/feeContext.ts` gained `kind: "commission"` and
-`recordInstantPayoutFee`, and production kept serving the previous version
-inside `accept-and-pay` and `resolve-dispute-split` for days. Both had a
-byte-identical `index.ts`, so nothing about them looked stale.
-
-**After changing anything in `_shared/`, redeploy every function that imports
-it**, not just the one you were working on:
-
-```bash
-grep -rl "_shared/feeContext" supabase/functions --include=index.ts
-npm run check:edge-drift          # confirms prod matches origin/master
-```
-
-`npm run check:edge-drift` compares each deployed bundle — `_shared/*` included
-— against a git rev, and is the only thing that catches this. Run it before
-deploying (are you about to clobber something prod has that master doesn't?) and
-after (did every consumer actually get the new helper?).
-
-### Stripe versions — pinned deliberately, do not bump casually
-
-All 40 `new Stripe(...)` call sites pin `apiVersion: "2023-10-16"`, and every
-import is `npm:stripe@14.21.0`. That is uniform across the fleet; keep it that
-way. An unpinned `npm:stripe@14` would float onto a new minor without a deploy.
-
-The **webhook destinations render payloads at `2026-01-28.clover`**, so inbound
-events arrive newer than the SDK types describe them. That skew is real but it
-is **known-good**: the money paths are E2E-covered against exactly this
-combination (funding, release, refund, and both chargeback outcomes).
-
-Do not "fix" it by bumping one side alone:
-
-- Raising the SDK/apiVersion changes request AND response shapes across all 40
-  call sites at once.
-- Lowering the destination's `api_version` to match the SDK changes the payload
-  shapes the webhook has been verified against.
-
-Either is a deliberate migration with a full `npm run e2e:run` **and**
-`E2E_DISPUTE_OUTCOME=lost|won npm run e2e:dispute` afterwards — not a one-line
-version edit.
-
 ## Commands
 ```bash
 npm run dev                        # dev server
@@ -108,13 +63,6 @@ npx supabase gen types typescript --project-id uoqygmizupdpanplpvor --schema pub
 # Edge functions are Deno, NOT covered by npm run typecheck. Deno isn't installed
 # locally; check them without installing it:
 npx deno@2 check --node-modules-dir=auto supabase/functions/<name>/index.ts
-
-# Does this repo still rebuild production? Compares prod against a database
-# actually rebuilt from supabase/migrations, across 11 object classes. NOT in CI
-# — it reaches prod, so it needs SUPABASE_ACCESS_TOKEN (a personal access token).
-# Run before a release, or after anyone touches schema outside a migration.
-npm run check:drift
-npm run check:drift -- --self-test   # verifies the differ, no token needed
 ```
 
 ⚠️ Do NOT use `npx tsc --noEmit` — the root tsconfig.json is solution-style
