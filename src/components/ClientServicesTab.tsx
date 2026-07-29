@@ -31,6 +31,7 @@ import SavedPaymentMethod from './SavedPaymentMethod';
 import { useToast } from '../hooks/useToast';
 import { callEdgeFunction } from '../lib/edgeFn';
 import { acceptAndPay } from '../lib/stripePayments';
+import { acceptCancellationTerms } from '../lib/cancellationPolicy';
 import { notifyTradiesForNewLead } from '../lib/notifications';
 import type { Job } from '../types/database';
 
@@ -1843,6 +1844,12 @@ export default function ClientServicesTab() {
                                 onClick={async () => {
                                   setAcceptingQuoteId(qInfo.quoteId);
                                   try {
+                                    // Agreement to the cancellation terms, recorded
+                                    // before any money is taken. Non-fatal: a consent
+                                    // row must never block a payment.
+                                    await acceptCancellationTerms(qInfo.originalJobId).catch((e) =>
+                                      console.error('Failed to record cancellation terms acceptance:', e),
+                                    );
                                     const { url } = await acceptAndPay(qInfo.quoteId, qInfo.originalJobId, qInfo.topPrice);
                                     window.location.href = url;
                                   } catch (err) {

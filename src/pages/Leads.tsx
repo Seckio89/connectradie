@@ -66,6 +66,7 @@ import { getSignedUrl } from '../lib/storage';
 import { sendNotification } from '../lib/notificationService';
 import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
 import { acceptAndPay, verifyPayment, releaseEscrow, payPriceIncrease } from '../lib/stripePayments';
+import { acceptCancellationTerms } from '../lib/cancellationPolicy';
 import { getJobHints } from '../lib/jobDescriptionHints';
 import ClientServicesTab from '../components/ClientServicesTab';
 
@@ -1166,6 +1167,12 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
   const handleAcceptQuote = async (quoteId: string, jobId: string, agreedPrice?: number) => {
     try {
+      // Record the client's agreement to the cancellation terms before any
+      // money is taken. Non-fatal — a consent row must never be the reason a
+      // payment fails, and the terms were shown alongside the accept button.
+      await acceptCancellationTerms(jobId).catch((e) =>
+        console.error('Failed to record cancellation terms acceptance:', e),
+      );
       const { url } = await acceptAndPay(quoteId, jobId, agreedPrice);
       window.location.href = url;
     } catch (err) {
