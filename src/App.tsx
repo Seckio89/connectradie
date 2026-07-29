@@ -55,6 +55,10 @@ const Clients = lazy(() => import('./pages/Clients'));
 const ClientDetail = lazy(() => import('./pages/ClientDetail'));
 const PublicQuote = lazy(() => import('./pages/PublicQuote'));
 const WorkHub = lazy(() => import('./pages/WorkHub'));
+const Workforce = lazy(() => import('./pages/Workforce'));
+const WorkerDetail = lazy(() => import('./pages/WorkerDetail'));
+const WorkforceInvite = lazy(() => import('./pages/WorkforceInvite'));
+const WorkforceClaim = lazy(() => import('./pages/WorkforceClaim'));
 const PerformanceInsights = lazy(() => import('./pages/PerformanceInsights'));
 const Payouts = lazy(() => import('./pages/Payouts'));
 const PublicTradieProfile = lazy(() => import('./pages/PublicTradieProfile'));
@@ -198,6 +202,9 @@ const PAGE_TITLES: Record<string, string> = {
   '/schedule': 'Schedule | ConnecTradie',
   '/calendar-import': 'Import from Google Calendar | ConnecTradie',
   '/work': 'Work Hub | ConnecTradie',
+  '/workforce': 'Workforce | ConnecTradie',
+  '/workforce/invite': 'Add a worker | ConnecTradie',
+  '/workforce/claim': 'Accept your invite | ConnecTradie',
   '/my-profile': 'My Profile | ConnecTradie',
   '/clients': 'Clients | ConnecTradie',
   '/payment-success': 'Payment Successful | ConnecTradie',
@@ -495,6 +502,36 @@ function AppRoutes() {
         element={
           <ProtectedRoute requireTradie>
             <WorkHub />
+          </ProtectedRoute>
+        }
+      />
+      {/* Workforce & Compliance. No nav entry yet — reachable by direct URL until
+          it is surfaced. /workforce/claim is declared before the dynamic
+          :workerId route for readability; React Router ranks the static segment
+          higher regardless of order. The claim page is deliberately NOT
+          requireTradie: an invited worker may hold any role, or none yet. */}
+      <Route
+        path="/workforce"
+        element={
+          <ProtectedRoute requireTradie>
+            <Workforce />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/workforce/invite"
+        element={
+          <ProtectedRoute requireTradie>
+            <WorkforceInvite />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/workforce/claim" element={<WorkforceClaim />} />
+      <Route
+        path="/workforce/:workerId"
+        element={
+          <ProtectedRoute requireTradie>
+            <WorkerDetail />
           </ProtectedRoute>
         }
       />
