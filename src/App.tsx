@@ -178,6 +178,9 @@ const DYNAMIC_TITLES: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
   [/^\/invoice\/[^/]+$/, () => 'Invoice | ConnecTradie'],
   [/^\/tax-invoice\/[^/]+$/, () => 'Tax Invoice | ConnecTradie'],
   [/^\/tracking\/[^/]+$/, () => 'Job Tracking | ConnecTradie'],
+  // Safe as a catch-all: PAGE_TITLES is consulted first (see the exact lookup
+  // below), so /workforce/invite and /workforce/claim never reach this pattern.
+  [/^\/workforce\/[^/]+$/, () => 'Worker | ConnecTradie'],
   [/^\/review\/[^/]+$/, () => 'Leave a Review | ConnecTradie'],
   [/^\/clients\/[^/]+$/, () => 'Client | ConnecTradie'],
 ];

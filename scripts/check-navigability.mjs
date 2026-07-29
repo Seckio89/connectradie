@@ -308,6 +308,7 @@ const BY_DESIGN = {
   '/payment-success': 'Stripe redirects here after checkout',
   '/payment-cancelled': 'Stripe redirects here when checkout is abandoned',
   '/quote/:token': 'tokenised link emailed to the client',
+  '/workforce/claim': 'tokenised invite link emailed/SMSed to the worker by worker-invite',
   '/onboarding': 'ProtectedRoute redirects here until onboarding completes',
   '/find/:trade/:locationSlug': 'SEO landing page — entered from search results',
   '/find/:trade': 'SEO landing page — entered from search results',
