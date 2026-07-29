@@ -47,6 +47,29 @@ verify-payment · worker-claim-profile · worker-invite
 
 Shared helpers live in `supabase/functions/_shared/` (not a function).
 
+⚠️ **`_shared/` is bundled per function AT DEPLOY TIME.** There is no shared
+runtime copy. Editing a helper and redeploying only the functions you had in
+mind leaves every OTHER consumer running the old copy — silently, with no error,
+nothing in the logs, and no difference in `index.ts` to notice in review.
+
+This happened: `_shared/feeContext.ts` gained `kind: "commission"` and
+`recordInstantPayoutFee`, and production kept serving the previous version
+inside `accept-and-pay` and `resolve-dispute-split` for days. Both had a
+byte-identical `index.ts`, so nothing about them looked stale.
+
+**After changing anything in `_shared/`, redeploy every function that imports
+it**, not just the one you were working on:
+
+```bash
+grep -rl "_shared/feeContext" supabase/functions --include=index.ts
+npm run check:edge-drift          # confirms prod matches origin/master
+```
+
+`npm run check:edge-drift` compares each deployed bundle — `_shared/*` included
+— against a git rev, and is the only thing that catches this. Run it before
+deploying (are you about to clobber something prod has that master doesn't?) and
+after (did every consumer actually get the new helper?).
+
 ## Commands
 ```bash
 npm run dev                        # dev server
