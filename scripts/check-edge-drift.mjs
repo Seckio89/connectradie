@@ -34,18 +34,28 @@ const PROD_REF = process.env.SUPABASE_PROJECT_REF || "uoqygmizupdpanplpvor";
 // Default set: anything that moves money or gates access. These are the ones
 // where "prod is running something else" is a money or security problem rather
 // than a cosmetic one. --all covers the rest.
-const MONEY_PATH = [
-  "stripe-webhook",
-  "accept-and-pay",
-  "release-escrow",
-  "auto-release-payments",
-  "auto-release-recurring-payouts",
-  "process-refund",
-  "instant-payout",
-  "issue-fee-invoices",
-  "resolve-dispute-split",
-  "respond-to-dispute",
-];
+// DERIVED, not hand-listed. A hand-maintained list goes stale silently: the
+// original one omitted reconcile-payments, so the default run reported all-clear
+// while production was still on a floating `npm:stripe@14` import.
+//
+// Anything importing a money-shaped shared helper is money path by definition,
+// and that set updates itself as imports change. MONEY_EXTRAS covers the few
+// that move money without importing one of those helpers.
+const MONEY_HELPERS = ["feeContext", "pricing", "escrowReserve", "instantPayout"];
+const MONEY_EXTRAS = ["issue-fee-invoices", "respond-to-dispute", "reconcile-payments"];
+
+function moneyPathSlugs() {
+  const dir = join(repoRoot, "supabase", "functions");
+  const found = new Set(MONEY_EXTRAS);
+  for (const slug of readdirSync(dir)) {
+    if (slug.startsWith("_")) continue;
+    const entry = join(dir, slug, "index.ts");
+    if (!existsSync(entry)) continue;
+    const src = readFileSync(entry, "utf8");
+    if (MONEY_HELPERS.some((h) => src.includes(`_shared/${h}`))) found.add(slug);
+  }
+  return [...found].sort();
+}
 
 const argv = process.argv.slice(2);
 const has = (f) => argv.includes(f);
@@ -63,7 +73,7 @@ function allSlugs() {
     .sort();
 }
 
-const slugs = slugArgs.length ? slugArgs : has("--all") ? allSlugs() : MONEY_PATH;
+const slugs = slugArgs.length ? slugArgs : has("--all") ? allSlugs() : moneyPathSlugs();
 
 // Slugs reach a shell on Windows (see the download call below), so they must be
 // exactly what a Supabase function slug can be — nothing else.
