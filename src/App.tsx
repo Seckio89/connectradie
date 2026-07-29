@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import * as Sentry from '@sentry/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useDarkMode } from './hooks/useDarkMode';
 import { replayOnReconnect } from './lib/serviceWorker';
@@ -10,15 +9,13 @@ import OfflineBanner from './components/OfflineBanner';
 import ErrorBoundary from './components/ErrorBoundary';
 import { isPlatformAdmin } from './lib/subscription';
 
-if (import.meta.env.VITE_SENTRY_DSN) {
-  Sentry.init({
-    dsn: import.meta.env.VITE_SENTRY_DSN,
-    environment: import.meta.env.MODE,
-    tracesSampleRate: 0.1,
-    replaysSessionSampleRate: 0,
-    replaysOnErrorSampleRate: 1.0,
-  });
-}
+// Sentry is initialised ONCE, in main.tsx. There used to be a second init here
+// with a different config (no browserTracing, no replay integration). Both ran:
+// main.tsx imports this module, so ES module evaluation ran THIS init first and
+// main.tsx's second, and in Sentry v10 a second init() replaces the client on
+// the current scope. The fuller config happened to win — but only because of
+// import order, and reordering the imports would silently have downgraded
+// production to no tracing and no session replay with nothing to notice.
 
 // Eagerly loaded — these are entry points visitors hit first
 import LandingPage from './pages/LandingPage';
