@@ -1,13 +1,15 @@
 // Bump on any deploy that must invalidate stale caches. The `activate` handler
 // deletes every cache not in the keep-list, so raising the version purges old
 // hashed assets that could otherwise pin an installed app to a broken bundle.
-// v5 — Workforce & Compliance added 4 lazy routes (/workforce, /workforce/:id,
-// /workforce/invite, /workforce/claim), which changes the content-hashed chunk
-// graph. Without a version change this file is byte-identical, no SW update is
-// detected, and an open tab keeps its old chunk map until a 404 trips the
-// one-shot recovery in main.tsx. Bumping makes the reload proactive instead.
-const CACHE_NAME = 'connecttradie-v5';
-const API_CACHE_NAME = 'connecttradie-api-v5';
+// Any deploy that rehashes chunks qualifies: without a version change this file
+// is byte-identical, no SW update is detected, and an open tab keeps its old
+// chunk map until a 404 trips the one-shot recovery in main.tsx. Bumping makes
+// that reload proactive instead of reactive.
+//   v5 — Workforce & Compliance added 4 lazy routes (/workforce, /workforce/:id,
+//        /workforce/invite, /workforce/claim).
+//   v6 — employment_type fix rehashed the Onboarding and Team chunks.
+const CACHE_NAME = 'connecttradie-v6';
+const API_CACHE_NAME = 'connecttradie-api-v6';
 const API_CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 const APP_SHELL = [
   '/',

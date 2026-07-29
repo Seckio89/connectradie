@@ -7,6 +7,7 @@ import AddressAutocomplete, { type AddressDetails } from '../components/AddressA
 import { supabase } from '../lib/supabase';
 import { saveBaseCoords } from '../lib/profilePrivate';
 import { CONSTRUCTION_CATEGORIES, HOSPITALITY_CATEGORIES } from '../lib/tradeCategories';
+import { employmentTypeForRosterRole } from '../lib/compliance';
 
 type Step = 'role' | 'trade-type' | 'employment' | 'business-search' | 'employment-role' | 'details';
 
@@ -112,6 +113,10 @@ export default function Onboarding() {
         invite_email: profile.email,
         trade_specialty: tradeCategory,
         role: employmentRole,
+        // Derived, not defaulted: without this the column takes its
+        // employee_full_time DEFAULT and someone who just declared themselves a
+        // Subcontractor renders as "Employee — full time" on the workforce roster.
+        employment_type: employmentTypeForRosterRole(employmentRole),
         status: 'invited',
         joined_at: null,
       }, { onConflict: 'business_owner_id,member_profile_id' }).throwOnError();
