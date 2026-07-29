@@ -41,3 +41,6 @@ src.zip
 
 # E2E test config (test-project keys only)
 .env.e2e
+
+# audit:nav output — regenerated on every run (raw JSON + per-route screenshots)
+audit-findings/nav/

@@ -103,7 +103,11 @@ for (const persona of ['anon', 'client', 'tradie'] as const) {
   const routes = routesFor(persona);
 
   test.describe(`${persona}`, () => {
-    test.skip((_fixtures, testInfo) => !testInfo.project.name.startsWith(persona), 'other persona');
+    // test.info(), not a testInfo parameter. Playwright reads a callback's first
+    // parameter as a fixture request — it inspects the source text, so a plain
+    // identifier is rejected outright since 1.59 — and the modifier callback no
+    // longer receives testInfo as a second argument, so it arrives undefined.
+    test.skip(() => !test.info().project.name.startsWith(persona), 'other persona');
 
     for (const route of routes) {
       test(`${route.path}`, async ({ page }, testInfo) => {
@@ -188,10 +192,26 @@ for (const persona of ['anon', 'client', 'tradie'] as const) {
           // The `mobile` project uses devices['iPhone 13'], which sets hasTouch,
           // so this path is correct. Do not measure this from *-desktop.
           const small = await page.evaluate(() => {
+            // WCAG 2.5.8 has an explicit inline exception: a target sitting in a
+            // sentence, sized by the surrounding line-height, is exempt. Without
+            // this the audit reports every "Contact us" and mailto: in the Terms
+            // and Privacy prose, and the only way to "fix" those is to wreck the
+            // paragraph they live in. Standalone links and buttons still count.
+            const inSentence = (el: Element): boolean => {
+              const p = el.parentElement;
+              if (!p) return false;
+              if (!/^(P|LI|SPAN|EM|STRONG|LABEL|BLOCKQUOTE|TD|SMALL)$/.test(p.tagName)) return false;
+              // Prose = the parent holds real text besides this link.
+              const own = (el.textContent || '').trim();
+              const all = (p.textContent || '').trim();
+              return all.length > own.length + 1;
+            };
+
             const out: string[] = [];
             for (const el of document.querySelectorAll('a, button, [role="button"]')) {
               const r = el.getBoundingClientRect();
               if (r.width === 0 || r.height === 0) continue;
+              if (inSentence(el)) continue;
               if (r.height < 44) {
                 out.push(`${el.tagName.toLowerCase()}"${(el.textContent || '').trim().slice(0, 24)}" ${Math.round(r.height)}px`);
               }
@@ -271,7 +291,7 @@ for (const persona of ['client', 'tradie'] as const) {
   });
 }
 
-test.afterAll(async (_fixtures, testInfo) => {
+test.afterAll(async ({}, testInfo) => {
   if (!findings.length) return;
   mkdirSync('audit-findings/nav', { recursive: true });
   writeFileSync(

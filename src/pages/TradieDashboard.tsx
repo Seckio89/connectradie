@@ -1599,7 +1599,7 @@ export default function TradieDashboard() {
                             onAction={() => setShowAddSlot(true)}
                           />
                           <div className="text-center -mt-1 sm:mt-1 pb-1">
-                            <Link to="/work?tab=recruitment" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
+                            <Link to="/work?tab=recruitment" className="inline-flex items-center justify-center min-h-[44px] px-2 text-xs text-primary-600 hover:text-primary-700 font-medium">
                               Or post a vacancy to find staff &rarr;
                             </Link>
                           </div>

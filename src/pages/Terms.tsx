@@ -489,7 +489,7 @@ export default function Terms() {
               <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
                 <p className="font-semibold text-gray-900">ConnecTradie Pty Ltd</p>
                 <p className="text-gray-600 mt-1.5">
-                  <a href="mailto:admin@connectradie.com" className="text-primary-600 hover:text-primary-700 font-medium underline decoration-primary-300 underline-offset-2">admin@connectradie.com</a>
+                  <a href="mailto:admin@connectradie.com" className="inline-flex items-center min-h-[44px] text-primary-600 hover:text-primary-700 font-medium underline decoration-primary-300 underline-offset-2">admin@connectradie.com</a>
                 </p>
                 <p className="text-sm text-gray-500 mt-1">ABN: 75 655 516 546</p>
               </div>
