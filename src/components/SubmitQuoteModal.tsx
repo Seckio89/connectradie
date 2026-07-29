@@ -23,6 +23,8 @@ import { supabase } from '../lib/supabase';
 import { proseInputProps } from '../lib/proseInput';
 import { useAuth } from '../contexts/AuthContext';
 import QuoteFeeDisclosure from './QuoteFeeDisclosure';
+import CancellationTerms from './CancellationTerms';
+import { acceptCancellationTerms } from '../lib/cancellationPolicy';
 import type { Job } from '../types/database';
 import { extractSuburb } from '../lib/contactGating';
 import { QUOTE_MESSAGE_OPTIONS, resolveMessageOptionsKey } from '../lib/recurringJobs';
@@ -388,6 +390,18 @@ export default function SubmitQuoteModal({
       setModalState('form');
       return;
     }
+
+    // Record that this tradie agreed to the cancellation terms, which the modal
+    // showed them above the submit button. Must run AFTER the insert: the RPC
+    // identifies a quoting tradie by their quote, and jobs.tradie_id is still
+    // null at this point.
+    //
+    // Non-fatal. The quote already exists and is the thing the tradie came to
+    // do; failing it because a consent row didn't write would be the wrong
+    // trade. Logged loudly so a systematic failure is visible.
+    await acceptCancellationTerms(job.id).catch((e) =>
+      console.error('Failed to record cancellation terms acceptance:', e),
+    );
 
     // A site-inspection quote moves this job onto the 3-stage flow (book visit →
     // final quote → pay), so the client books a paid site visit instead of
@@ -1057,6 +1071,10 @@ export default function SubmitQuoteModal({
                   {profile?.verification_status === 'verified' && ' (Verified)'}
                 </span>
               </div>
+
+              <CancellationTerms
+                acceptanceLabel="Submitting this quote records that you've read and accepted these cancellation terms for this job."
+              />
 
               <button
                 onClick={handleSubmit}
