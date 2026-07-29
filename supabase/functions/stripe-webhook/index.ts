@@ -4,6 +4,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
 import { resolveTradieTier } from '../_shared/pricing.ts';
 import { resolveChargeFee, recordFeeCharge } from '../_shared/feeContext.ts';
 import type { Insert, Update } from '../_shared/dbTypes.ts';
+import { applyPriceAdjustment } from "../_shared/priceAdjustment.ts";
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
@@ -941,6 +942,54 @@ async function handleEvent(event: Stripe.Event) {
       return;
     }
 
+    // ── Price adjustment — fallback path ──
+    // Same reasoning as the job_funding fallback above, and it was missing.
+    // job_funding and site_visit_fee both had one; price_adjustment did not, so
+    // a delayed or dropped checkout.session.completed left a client who had
+    // ALREADY BEEN CHARGED with a variation stuck 'pending' and a budget that
+    // never moved — and, because pending_increase was never cleared, every
+    // later increase on that job rejected with a 409.
+    //
+    // Both events fire for every hosted checkout, so this runs in production
+    // too and must be idempotent. applyPriceAdjustment is; the status filter on
+    // the payment update is what makes the completion half safe.
+    if (pi.metadata?.payment_type === 'price_adjustment' && pi.metadata?.payment_record_id) {
+      const paymentRecordId = pi.metadata.payment_record_id;
+      try {
+        const { data: completed, error: adjErr } = await supabase
+          .from('payments')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+            stripe_payment_intent_id: pi.id,
+          })
+          .eq('id', paymentRecordId)
+          .eq('status', 'pending')
+          .select('id');
+
+        if (adjErr) {
+          console.error('price_adjustment payment_intent.succeeded update failed:', adjErr);
+        } else if (completed && completed.length > 0) {
+          console.info(`price_adjustment completed via payment_intent.succeeded fallback: payment=${paymentRecordId} pi=${pi.id}`);
+        } else {
+          console.info(`price_adjustment ${paymentRecordId} already completed; PI fallback continuing (idempotent).`);
+        }
+
+        // Runs whichever event won the race. Everything inside is guarded, and
+        // it must NOT be skipped when the payment was already completed — the
+        // checkout handler may have completed the payment and then failed
+        // before applying the increase.
+        await applyPriceAdjustment(supabase, {
+          parentPaymentId: pi.metadata.parent_payment_id ?? null,
+          jobId: pi.metadata.job_id ?? null,
+          variationId: pi.metadata.variation_id ?? null,
+        });
+      } catch (err) {
+        console.error('Failed to process price_adjustment payment_intent.succeeded:', err);
+      }
+      return;
+    }
+
     if (pi.metadata?.type === 'recurring_invoice_becs') {
       const invoiceId = pi.metadata.invoice_id;
       const recurringJobId = pi.metadata.recurring_job_id;
@@ -1566,105 +1615,16 @@ async function handleEvent(event: Stripe.Event) {
             }
           }
 
-          // If this is a price_adjustment payment (additional charge after site visit),
-          // clear the pending_increase from the parent payment and update job budget
+          // Price adjustment settled — a job variation, or a quote adjusted
+          // after a site inspection. Shared with the payment_intent.succeeded
+          // fallback so the two cannot drift.
           if (session.metadata?.payment_type === 'price_adjustment' && session.metadata?.parent_payment_id) {
             try {
-              const parentId = session.metadata.parent_payment_id;
-
-              const { data: parentPayment } = await supabase
-                .from('payments')
-                .select('metadata')
-                .eq('id', parentId)
-                .maybeSingle();
-
-              if (parentPayment) {
-                const meta = { ...(parentPayment.metadata || {}) };
-                delete meta.pending_increase;
-                meta.increase_completed = true;
-                meta.increase_completed_at = new Date().toISOString();
-
-                await supabase
-                  .from('payments')
-                  .update({ metadata: meta })
-                  .eq('id', parentId);
-
-                console.info(`Cleared pending_increase from parent payment ${parentId}`);
-              }
-
-              const variationId = session.metadata?.variation_id;
-
-              if (variationId && session.metadata?.job_id) {
-                // A job variation. This is the ONLY place a variation becomes
-                // approved — approve-variation deliberately leaves it pending
-                // so the job's value can never exceed what's been funded.
-                // There is no accepted quote to read a final price from, so the
-                // budget moves by the variation's own amount.
-                const { data: variation } = await supabase
-                  .from('job_variations')
-                  .select('id, additional_amount, status, job_id')
-                  .eq('id', variationId)
-                  .maybeSingle();
-
-                if (!variation) {
-                  console.error(`Variation ${variationId} not found for completed payment`);
-                } else if (variation.status === 'approved') {
-                  // Stripe retries webhooks. Approving twice would raise the
-                  // budget twice for one payment.
-                  console.info(`Variation ${variationId} already approved — skipping`);
-                } else if (variation.job_id !== session.metadata.job_id) {
-                  console.error(
-                    `Variation ${variationId} belongs to job ${variation.job_id}, not ${session.metadata.job_id} — refusing`,
-                  );
-                } else {
-                  const { error: varErr } = await supabase
-                    .from('job_variations')
-                    .update({ status: 'approved' })
-                    .eq('id', variationId)
-                    .eq('status', 'pending');
-
-                  if (varErr) {
-                    console.error(`Failed to approve variation ${variationId}:`, varErr);
-                  } else {
-                    const { data: jobRow } = await supabase
-                      .from('jobs')
-                      .select('budget_amount')
-                      .eq('id', session.metadata.job_id)
-                      .maybeSingle();
-
-                    // budget_amount and additional_amount are both DOLLARS.
-                    const newBudget = Number(jobRow?.budget_amount || 0) +
-                      Number(variation.additional_amount || 0);
-
-                    await supabase
-                      .from('jobs')
-                      .update({ budget_amount: newBudget })
-                      .eq('id', session.metadata.job_id);
-
-                    console.info(
-                      `Approved variation ${variationId}; job ${session.metadata.job_id} budget now ${newBudget}`,
-                    );
-                  }
-                }
-              } else if (session.metadata?.job_id) {
-                // Quote adjustment after a site inspection — the final price
-                // lives on the accepted quote.
-                const { data: acceptedQuote } = await supabase
-                  .from('quotes')
-                  .select('final_price')
-                  .eq('job_id', session.metadata.job_id)
-                  .eq('status', 'accepted')
-                  .maybeSingle();
-
-                if (acceptedQuote?.final_price) {
-                  await supabase
-                    .from('jobs')
-                    .update({ budget_amount: acceptedQuote.final_price })
-                    .eq('id', session.metadata.job_id);
-
-                  console.info(`Updated job ${session.metadata.job_id} budget to ${acceptedQuote.final_price}`);
-                }
-              }
+              await applyPriceAdjustment(supabase, {
+                parentPaymentId: session.metadata.parent_payment_id,
+                jobId: session.metadata.job_id ?? null,
+                variationId: session.metadata.variation_id ?? null,
+              });
             } catch (adjErr) {
               console.error('Error handling price_adjustment completion:', adjErr);
             }
