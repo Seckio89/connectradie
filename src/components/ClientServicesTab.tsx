@@ -32,6 +32,7 @@ import { useToast } from '../hooks/useToast';
 import { callEdgeFunction } from '../lib/edgeFn';
 import { acceptAndPay } from '../lib/stripePayments';
 import { acceptCancellationTerms } from '../lib/cancellationPolicy';
+import CancellationTerms from './CancellationTerms';
 import { notifyTradiesForNewLead } from '../lib/notifications';
 import type { Job } from '../types/database';
 
@@ -1837,6 +1838,13 @@ export default function ClientServicesTab() {
                                 </span>
                               )}
                             </div>
+
+                            {/* Accepting records agreement to these terms, so
+                                they belong above the button, not behind it. */}
+                            <CancellationTerms
+                              className="mt-4 ml-13"
+                              acceptanceLabel="Accepting this quote records that you've read and accepted these cancellation terms for this job."
+                            />
 
                             {/* Actions */}
                             <div className="flex items-center gap-2 mt-4 ml-13">

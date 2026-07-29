@@ -23,6 +23,7 @@ import QuoteStatusBadge from './QuoteStatusBadge';
 import TrustSignals from './TrustSignals';
 import ProBadge from './ProBadge';
 import Modal from './Modal';
+import CancellationTerms from './CancellationTerms';
 import {
   getClientActions,
   finalPriceExceedsAdvisory,
@@ -463,6 +464,18 @@ export default function QuoteComparisonView({
             You've accepted a quote from {formatTradieDisplayName(acceptedQuote)}
           </span>
         </div>
+      )}
+
+      {/* Accepting a quote records the client's agreement to these terms, so
+          they have to be on screen before the accept buttons below. Two of the
+          three accept paths (site-inspection and firm-price) go straight to
+          Stripe with no confirmation step, so this is the only place the client
+          would see them. */}
+      {!acceptedQuote && sortedQuotes.length > 0 && (
+        <CancellationTerms
+          className="mb-4"
+          acceptanceLabel="Accepting a quote records that you've read and accepted these cancellation terms for this job."
+        />
       )}
 
       <div className="space-y-2.5">

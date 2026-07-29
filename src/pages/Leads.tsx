@@ -67,6 +67,7 @@ import { sendNotification } from '../lib/notificationService';
 import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
 import { acceptAndPay, verifyPayment, releaseEscrow, payPriceIncrease } from '../lib/stripePayments';
 import { acceptCancellationTerms } from '../lib/cancellationPolicy';
+import CancellationTerms from '../components/CancellationTerms';
 import { getJobHints } from '../lib/jobDescriptionHints';
 import ClientServicesTab from '../components/ClientServicesTab';
 
@@ -3257,6 +3258,10 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 </p>
               </div>
             )}
+            <CancellationTerms
+              acceptanceLabel="Confirming records that you've read and accepted these cancellation terms for this job."
+            />
+
             <div className="flex justify-end gap-3 pt-2">
               <button
                 onClick={() => setPriceConfirm(null)}
