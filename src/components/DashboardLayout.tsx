@@ -49,6 +49,7 @@ import PlatformUpdateBanner from './PlatformUpdateBanner';
 import HelpButton from './help/HelpButton';
 import PageHelpCard from './help/PageHelpCard';
 import { isPro, isPlatformAdmin } from '../lib/subscription';
+import { buttonClasses } from './ui';
 import { isReleaseActioned } from '../lib/paymentRelease';
 
 function relativeTime(dateStr: string): string {
@@ -78,16 +79,16 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
   switch (type) {
     case 'QUOTE_RECEIVED':
     case 'quote_received':
-      return { icon: MessageCircle, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
+      return { icon: MessageCircle, bgClass: 'bg-ct-teal/15', iconClass: 'text-ct-teal' };
     case 'JOB_ACCEPTED':
     case 'job_update':
-      return { icon: CheckCircle2, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
+      return { icon: CheckCircle2, bgClass: 'bg-ct-teal/15', iconClass: 'text-ct-teal' };
     case 'new_job':
     case 'new_lead':
     case 'booking_request':
-      return { icon: Briefcase, bgClass: 'bg-secondary-500/15', iconClass: 'text-secondary-400' };
+      return { icon: Briefcase, bgClass: 'bg-ct-surface-2', iconClass: 'text-ct-mute-2' };
     case 'quote_reminder':
-      return { icon: Clock, bgClass: 'bg-amber-500/15', iconClass: 'text-amber-400' };
+      return { icon: Clock, bgClass: 'bg-ct-amber/15', iconClass: 'text-ct-amber' };
     case 'payment':
     case 'PAYMENT_RECEIVED':
     case 'invoice_ready':
@@ -101,45 +102,45 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
     case 'payment_received':
     case 'payment_sent':
     case 'becs_charge_initiated':
-      return { icon: DollarSign, bgClass: 'bg-emerald-500', iconClass: 'text-white' };
+      return { icon: DollarSign, bgClass: 'bg-ct-teal', iconClass: 'text-ct-ink' };
     case 'session_reminder':
     case 'session_rescheduled':
     case 'session_skipped':
     case 'extra_session_added':
     case 'BOOKING_REMINDER':
-      return { icon: CalendarDays, bgClass: 'bg-purple-500/15', iconClass: 'text-purple-400' };
+      return { icon: CalendarDays, bgClass: 'bg-ct-surface-2', iconClass: 'text-ct-mute-2' };
     case 'vacancy_application':
     case 'team':
-      return { icon: Users, bgClass: 'bg-secondary-500/15', iconClass: 'text-secondary-400' };
+      return { icon: Users, bgClass: 'bg-ct-surface-2', iconClass: 'text-ct-mute-2' };
     case 'vacancy_match':
-      return { icon: Briefcase, bgClass: 'bg-warm-500/15', iconClass: 'text-warm-400' };
+      return { icon: Briefcase, bgClass: 'bg-ct-teal/15', iconClass: 'text-ct-teal' };
     case 'service_assignment':
-      return { icon: Users, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
+      return { icon: Users, bgClass: 'bg-ct-teal/15', iconClass: 'text-ct-teal' };
     case 'price_increase_requested':
-      return { icon: DollarSign, bgClass: 'bg-amber-500/15', iconClass: 'text-amber-400' };
+      return { icon: DollarSign, bgClass: 'bg-ct-amber/15', iconClass: 'text-ct-amber' };
     case 'price_adjusted':
-      return { icon: CheckCircle2, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
+      return { icon: CheckCircle2, bgClass: 'bg-ct-teal/15', iconClass: 'text-ct-teal' };
     case 'JOB_DECLINED':
-      return { icon: XCircle, bgClass: 'bg-red-500/15', iconClass: 'text-red-400' };
+      return { icon: XCircle, bgClass: 'bg-ct-rose/15', iconClass: 'text-ct-rose' };
     case 'JOB_COMPLETED':
-      return { icon: CheckCircle2, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
+      return { icon: CheckCircle2, bgClass: 'bg-ct-teal/15', iconClass: 'text-ct-teal' };
     case 'REVIEW_RECEIVED':
-      return { icon: Star, bgClass: 'bg-amber-500/15', iconClass: 'text-amber-400' };
+      return { icon: Star, bgClass: 'bg-ct-amber/15', iconClass: 'text-ct-amber' };
     case 'project_update':
-      return { icon: FileText, bgClass: 'bg-secondary-500/15', iconClass: 'text-secondary-400' };
+      return { icon: FileText, bgClass: 'bg-ct-surface-2', iconClass: 'text-ct-mute-2' };
     case 'job_reminder_day_before':
-      return { icon: CalendarDays, bgClass: 'bg-secondary-500/15', iconClass: 'text-secondary-400' };
+      return { icon: CalendarDays, bgClass: 'bg-ct-surface-2', iconClass: 'text-ct-mute-2' };
     case 'job_reminder_two_hours':
     case 'tradie_en_route':
-      return { icon: Clock, bgClass: 'bg-amber-500/15', iconClass: 'text-amber-400' };
+      return { icon: Clock, bgClass: 'bg-ct-amber/15', iconClass: 'text-ct-amber' };
     case 'quote_accepted':
-      return { icon: CheckCircle2, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
+      return { icon: CheckCircle2, bgClass: 'bg-ct-teal/15', iconClass: 'text-ct-teal' };
     case 'job_completed':
-      return { icon: CheckCircle2, bgClass: 'bg-emerald-500/15', iconClass: 'text-emerald-400' };
+      return { icon: CheckCircle2, bgClass: 'bg-ct-teal/15', iconClass: 'text-ct-teal' };
     case 'recurring_cancelled':
-      return { icon: XCircle, bgClass: 'bg-red-500/15', iconClass: 'text-red-400' };
+      return { icon: XCircle, bgClass: 'bg-ct-rose/15', iconClass: 'text-ct-rose' };
     default:
-      return { icon: Bell, bgClass: 'bg-navy-700', iconClass: 'text-navy-300' };
+      return { icon: Bell, bgClass: 'bg-ct-surface-2', iconClass: 'text-ct-mute' };
   }
 }
 
@@ -655,7 +656,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
   };
 
   return (
-    <div className="min-h-screen bg-navy-900 flex flex-col max-w-[100vw]">
+    <div className="min-h-screen bg-ct-ink flex flex-col max-w-[100vw]">
       {/* Native background-location disclosure — no-op on web / for non-tradies. */}
       <SiteGeofenceConsent />
       {/* One-time reassurance when geofencing first goes live for a job. */}
@@ -672,20 +673,20 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
 
       <aside
         ref={sidebarRef}
-        className={`fixed top-0 left-0 z-50 h-full w-64 bg-navy-900 border-r border-navy-800 transform transition-transform lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 h-full w-64 bg-ct-ink border-r border-ct-line transform transition-transform lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)' }}
       >
         <div className="flex flex-col h-full overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-navy-800 flex-shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-ct-line flex-shrink-0">
             <Link to="/" className="flex items-center">
-              <span className="text-2xl font-extrabold tracking-tight">
-                <span className="text-white">Connec</span><span className="text-warm-500">Tradie</span>
+              <span className="font-ct-display text-2xl font-bold tracking-tight">
+                <span className="text-ct-paper">Connec</span><span className="text-ct-teal">Tradie</span>
               </span>
             </Link>
             <button
-              className="lg:hidden p-2 text-navy-400 hover:text-white"
+              className="lg:hidden p-2 text-ct-mute hover:text-ct-paper"
               onClick={() => setSidebarOpen(false)}
               aria-label="Close sidebar"
             >
@@ -699,7 +700,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
               <Link
                 to="/post-lead"
                 data-tour="get-quote"
-                className="flex items-center justify-center gap-2 px-4 py-2.5 mb-2 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+                className={`${buttonClasses('primary', 'default', true)} mb-2`}
                 onClick={() => setSidebarOpen(false)}
               >
                 <Zap className="w-5 h-5" />
@@ -724,10 +725,10 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                   <div key={item.name}>
                     <button
                       onClick={() => setExpandedNav(isExpanded ? null : item.name)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors min-h-[40px] ${
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-ct-md font-medium transition-colors min-h-[40px] ${
                         childActive
-                          ? 'bg-warm-500/15 text-warm-400 border-l-[3px] border-warm-500'
-                          : 'text-navy-300 hover:bg-navy-800 hover:text-white'
+                          ? 'bg-ct-teal/[0.14] text-ct-teal'
+                          : 'text-ct-mute-2 hover:bg-ct-surface hover:text-ct-paper'
                       }`}
                     >
                       <Icon className="w-5 h-5" />
@@ -735,7 +736,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                       <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                     </button>
                     {isExpanded && (
-                      <div className="ml-5 pl-4 border-l border-navy-700 space-y-0.5 mt-0.5">
+                      <div className="ml-5 pl-4 border-l border-ct-line space-y-0.5 mt-0.5">
                         {item.children!.map((child) => {
                           const ChildIcon = child.icon;
                           const isChildActive = location.pathname + location.search === child.href || (location.pathname === child.href && !location.search);
@@ -743,10 +744,10 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                             <Link
                               key={child.name}
                               to={child.href}
-                              className={`flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors min-h-[44px] lg:min-h-[36px] ${
+                              className={`flex items-center gap-3 px-3 py-1.5 rounded-ct-md text-sm font-medium transition-colors min-h-[44px] lg:min-h-[36px] ${
                                 isChildActive
-                                  ? 'bg-warm-500/15 text-warm-400'
-                                  : 'text-navy-400 hover:bg-navy-800 hover:text-white'
+                                  ? 'bg-ct-teal/[0.14] text-ct-teal'
+                                  : 'text-ct-mute hover:bg-ct-surface hover:text-ct-paper'
                               }`}
                               onClick={() => setSidebarOpen(false)}
                             >
@@ -766,10 +767,10 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                   key={item.name}
                   to={item.href}
                   state={item.state}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors min-h-[40px] ${
+                  className={`flex items-center gap-3 px-3 py-2 rounded-ct-md font-medium transition-colors min-h-[40px] ${
                     isActive
-                      ? 'bg-warm-500/15 text-warm-400 border-l-[3px] border-warm-500'
-                      : 'text-navy-300 hover:bg-navy-800 hover:text-white'
+                      ? 'bg-ct-teal/[0.14] text-ct-teal'
+                      : 'text-ct-mute-2 hover:bg-ct-surface hover:text-ct-paper'
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
@@ -777,7 +778,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                   {item.name}
                   {item.name === 'Dashboard' && pendingReleaseCount > 0 && (
                     <span
-                      className={`ml-auto w-2 h-2 rounded-full transition-colors ${isActive ? 'bg-amber-400 animate-pulse' : 'bg-amber-400/70'}`}
+                      className={`ml-auto w-2 h-2 rounded-full transition-colors ${isActive ? 'bg-ct-amber animate-pulse' : 'bg-ct-amber/70'}`}
                       onClick={(e) => {
                         if (isActive) {
                           e.preventDefault();
@@ -793,39 +794,39 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
             </div>
           </nav>
 
-          <div className="px-3 py-2 border-t border-navy-800 flex-shrink-0">
+          <div className="px-3 py-2 border-t border-ct-line flex-shrink-0">
             {isTradie && !isPro(tradieDetails?.subscription_tier, profile?.is_premium) && (
               <button
                 onClick={() => setShowSubscriptionModal(true)}
-                className="w-full flex items-center gap-2 px-3 py-2 mb-2 bg-warm-500/10 border border-warm-500/20 text-warm-400 rounded-lg text-sm font-medium hover:bg-warm-500/20 transition-all min-h-[40px]"
+                className="w-full flex items-center gap-2 px-3 py-2 mb-2 bg-ct-teal/10 border border-ct-teal/20 text-ct-teal rounded-ct-sm text-sm font-medium hover:bg-ct-teal/20 transition-all min-h-[40px]"
               >
-                <Crown className="w-4 h-4 text-warm-400" />
+                <Crown className="w-4 h-4 text-ct-teal" />
                 Upgrade to Pro
               </button>
             )}
 
             {isTradie && isPro(tradieDetails?.subscription_tier, profile?.is_premium) && (
-              <div className="flex items-center gap-2 px-3 py-1.5 mb-2 bg-warm-500/10 border border-warm-500/20 rounded-lg">
-                <BadgeCheck className="w-4 h-4 text-warm-400" />
-                <span className="text-xs font-medium text-warm-300">Pro Member</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 mb-2 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-xs">
+                <BadgeCheck className="w-4 h-4 text-ct-teal" />
+                <span className="text-xs font-medium text-ct-teal">Pro Member</span>
               </div>
             )}
 
-            <div className="flex items-center gap-2.5 p-2 bg-navy-800 rounded-lg">
-              <div className="w-8 h-8 bg-navy-700 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-bold text-warm-400">
+            <div className="flex items-center gap-2.5 p-2 bg-ct-surface rounded-ct-md">
+              <div className="w-8 h-8 bg-ct-surface-2 border border-ct-line rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="font-ct-mono text-sm font-bold text-ct-mute-2">
                   {profile?.full_name?.charAt(0) || 'U'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{profile?.full_name}</p>
-                <p className="text-[11px] text-navy-400 capitalize truncate">
+                <p className="text-sm font-medium text-ct-paper truncate">{profile?.full_name}</p>
+                <p className="text-[11px] text-ct-mute capitalize truncate">
                   {profile?.role}{isTradie && tradieDetails?.trade_category ? ` \u00B7 ${tradieDetails.trade_category}` : ''}
                 </p>
               </div>
               <button
                 onClick={handleSignOut}
-                className="p-2 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors flex-shrink-0"
+                className="p-2 text-ct-rose hover:bg-ct-rose/10 rounded-ct-sm transition-colors flex-shrink-0"
                 title="Sign Out"
               >
                 <LogOut className="w-4 h-4" />
@@ -836,10 +837,10 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
       </aside>
 
       <div className="lg:pl-64 theme-aware flex-1 flex flex-col">
-        <header className="sticky top-0 z-30 bg-navy-900/95 backdrop-blur-sm border-b border-navy-800" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+        <header className="sticky top-0 z-30 bg-ct-ink-2/95 backdrop-blur-sm border-b border-ct-line" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
           <div className="flex items-center justify-between px-4 py-3">
             <button
-              className="lg:hidden flex items-center gap-1.5 p-2 text-gray-300 hover:text-white hover:bg-navy-800 rounded-lg min-h-[44px]"
+              className="lg:hidden flex items-center gap-1.5 p-2 text-ct-mute-2 hover:text-ct-paper hover:bg-ct-surface rounded-ct-sm min-h-[44px]"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu className="w-6 h-6" />
@@ -860,7 +861,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                       handleMarkAllRead();
                     }
                   }}
-                  className="relative p-2.5 text-gray-300 hover:text-white hover:bg-navy-800 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  className="relative p-2.5 text-ct-mute-2 hover:text-ct-paper hover:bg-ct-surface rounded-ct-sm min-w-[44px] min-h-[44px] flex items-center justify-center"
                   aria-label="Open notifications"
                 >
                   <Bell className="w-5 h-5" />
@@ -868,7 +869,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                     const unreadCount = notifications.filter(n => !n.read_at).length;
                     if (unreadCount === 0) return null;
                     return (
-                      <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1 ring-2 ring-navy-900">
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-ct-rose text-ct-ink text-xs font-bold rounded-full flex items-center justify-center px-1 ring-2 ring-ct-ink-2">
                         {unreadCount > 9 ? '9+' : unreadCount}
                       </span>
                     );
@@ -876,15 +877,15 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                 </button>
 
                 {notificationsOpen && (
-                  <div role="dialog" aria-label="Notifications" className="fixed inset-x-0 top-14 mx-2 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:mx-0 sm:w-96 bg-navy-800 rounded-xl shadow-lg border border-navy-700 z-50 max-h-[80vh] sm:max-h-96 flex flex-col">
-                    <div className="p-3 px-4 border-b border-navy-700 flex items-center justify-between flex-shrink-0">
+                  <div role="dialog" aria-label="Notifications" className="fixed inset-x-0 top-14 mx-2 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:mx-0 sm:w-96 bg-ct-surface rounded-ct-lg shadow-lg border border-ct-line z-50 max-h-[80vh] sm:max-h-96 flex flex-col">
+                    <div className="p-3 px-4 border-b border-ct-line flex items-center justify-between flex-shrink-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-white text-sm">Notifications</h3>
+                        <h3 className="font-ct-display font-semibold text-ct-paper text-sm">Notifications</h3>
                         {(() => {
                           const unread = notifications.filter(n => !n.read_at).length;
                           if (unread === 0) return null;
                           return (
-                            <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold text-white bg-red-500 rounded-full">
+                            <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold text-ct-ink bg-ct-rose rounded-full">
                               {unread > 9 ? '9+' : unread}
                             </span>
                           );
@@ -893,7 +894,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                       {notifications.some(n => !n.read_at) && (
                         <button
                           onClick={handleMarkAllRead}
-                          className="text-xs font-medium text-warm-400 hover:text-warm-300 transition-colors"
+                          className="text-xs font-medium text-ct-teal hover:brightness-110 transition-colors"
                         >
                           Mark all read
                         </button>
@@ -903,12 +904,12 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                     <div className="overflow-y-auto flex-1">
                       {notifications.length === 0 ? (
                         <div className="p-8 text-center">
-                          <Bell className="w-10 h-10 text-navy-600 mx-auto mb-2" />
-                          <p className="text-sm font-medium text-gray-400">You're all caught up!</p>
-                          <p className="text-xs text-gray-500 mt-1">No new notifications</p>
+                          <Bell className="w-10 h-10 text-ct-mute/60 mx-auto mb-2" />
+                          <p className="text-sm font-medium text-ct-mute-2">You're all caught up!</p>
+                          <p className="text-xs text-ct-mute mt-1">No new notifications</p>
                         </div>
                       ) : (
-                        <div className="divide-y divide-navy-700/50">
+                        <div className="divide-y divide-ct-line-soft">
                           {notifications.map((notification) => {
                             const style = getNotifStyle(notification.type);
                             const NotifIcon = style.icon;
@@ -918,26 +919,26 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                               <div
                                 key={notification.id}
                                 onClick={() => handleNotificationClick(notification)}
-                                className={`flex items-start gap-3 p-3 px-4 hover:bg-navy-700/50 transition-colors cursor-pointer ${
-                                  isUnread ? 'bg-warm-500/5' : ''
+                                className={`flex items-start gap-3 p-3 px-4 hover:bg-ct-surface-2 transition-colors cursor-pointer ${
+                                  isUnread ? 'bg-ct-teal/5' : ''
                                 }`}
                               >
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${style.bgClass}`}>
                                   <NotifIcon className={`w-4 h-4 ${style.iconClass}`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className={`text-sm leading-tight truncate ${isUnread ? 'font-semibold text-white' : 'font-medium text-gray-300'}`}>
+                                  <p className={`text-sm leading-tight truncate ${isUnread ? 'font-semibold text-ct-paper' : 'font-medium text-ct-mute-2'}`}>
                                     {notification.title}
                                   </p>
-                                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">
+                                  <p className="text-xs text-ct-mute-2 mt-0.5 line-clamp-2 leading-relaxed">
                                     {notification.message}
                                   </p>
-                                  <p className="text-[11px] text-gray-500 mt-1">
+                                  <p className="font-ct-mono text-[11px] text-ct-mute mt-1">
                                     {relativeTime(notification.created_at)}
                                   </p>
                                 </div>
                                 {isUnread && (
-                                  <div className="w-2 h-2 bg-warm-500 rounded-full flex-shrink-0 mt-2" />
+                                  <div className="w-2 h-2 bg-ct-teal rounded-full flex-shrink-0 mt-2" />
                                 )}
                               </div>
                             );
@@ -949,7 +950,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                     <Link
                       to="/notifications"
                       onClick={() => setNotificationsOpen(false)}
-                      className="block p-2.5 text-center text-xs font-medium text-warm-400 hover:text-warm-300 hover:bg-navy-700/50 border-t border-navy-700 transition-colors flex-shrink-0"
+                      className="block p-2.5 text-center text-xs font-medium text-ct-teal hover:brightness-110 hover:bg-ct-surface-2 border-t border-ct-line transition-colors flex-shrink-0"
                     >
                       View all notifications
                     </Link>
@@ -957,19 +958,19 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                 )}
               </div>
 
-              <div className="relative hidden sm:block pl-3 border-l border-navy-700" ref={profileDropdownRef}>
+              <div className="relative hidden sm:block pl-3 border-l border-ct-line" ref={profileDropdownRef}>
                 <button
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className="flex items-center gap-3 hover:bg-navy-800 rounded-lg px-3 py-2 transition-colors"
+                  className="flex items-center gap-3 hover:bg-ct-surface rounded-ct-sm px-3 py-2 transition-colors"
                 >
-                  <span className="font-medium text-white">{profile?.full_name}</span>
+                  <span className="font-medium text-ct-paper">{profile?.full_name}</span>
                 </button>
 
                 {profileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-navy-800 rounded-xl shadow-lg border border-navy-700 z-50 py-2">
-                    <div className="px-4 py-3 border-b border-navy-700">
-                      <p className="font-medium text-white">{profile?.full_name}</p>
-                      <p className="text-sm text-gray-400 capitalize">{profile?.role}</p>
+                  <div className="absolute right-0 mt-2 w-56 bg-ct-surface rounded-ct-lg shadow-lg border border-ct-line z-50 py-2">
+                    <div className="px-4 py-3 border-b border-ct-line">
+                      <p className="font-medium text-ct-paper">{profile?.full_name}</p>
+                      <p className="text-sm text-ct-mute capitalize">{profile?.role}</p>
                     </div>
 
                     <div className="py-2">
@@ -978,7 +979,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                           <Link
                             to="/dashboard"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-navy-700 hover:text-white transition-colors"
+                            className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                           >
                             <Home className="w-4 h-4" />
                             Dashboard
@@ -986,7 +987,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                           <Link
                             to="/my-profile"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-navy-700 hover:text-white transition-colors"
+                            className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                           >
                             <UserCircle className="w-4 h-4" />
                             My Profile
@@ -994,7 +995,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                           <Link
                             to="/work"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-navy-700 hover:text-white transition-colors"
+                            className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                           >
                             <ClipboardList className="w-4 h-4" />
                             Work Hub
@@ -1002,7 +1003,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                           <Link
                             to="/schedule"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-navy-700 hover:text-white transition-colors"
+                            className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                           >
                             <CalendarDays className="w-4 h-4" />
                             Schedule
@@ -1010,7 +1011,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                           <Link
                             to="/analytics"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-navy-700 hover:text-white transition-colors"
+                            className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                           >
                             <BarChart3 className="w-4 h-4" />
                             My Stats
@@ -1018,7 +1019,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                           <Link
                             to="/performance"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-navy-700 hover:text-white transition-colors"
+                            className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                           >
                             <TrendingUp className="w-4 h-4" />
                             Performance
@@ -1026,7 +1027,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                           <Link
                             to="/payouts"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-navy-700 hover:text-white transition-colors"
+                            className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                           >
                             <Wallet className="w-4 h-4" />
                             Payouts
@@ -1034,7 +1035,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                           <Link
                             to="/messages"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-navy-700 hover:text-white transition-colors"
+                            className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                           >
                             <MessageCircle className="w-4 h-4" />
                             Messages
@@ -1045,7 +1046,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                           <Link
                             to="/dashboard"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-navy-700 hover:text-white transition-colors"
+                            className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                           >
                             <Home className="w-4 h-4" />
                             Dashboard
@@ -1053,7 +1054,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                           <Link
                             to="/leads"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-navy-700 hover:text-white transition-colors"
+                            className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                           >
                             <Briefcase className="w-4 h-4" />
                             My Jobs
@@ -1061,7 +1062,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                           <Link
                             to="/messages"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-navy-700 hover:text-white transition-colors"
+                            className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                           >
                             <MessageCircle className="w-4 h-4" />
                             Messages
@@ -1071,17 +1072,17 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                       <Link
                         to="/settings"
                         onClick={() => setProfileDropdownOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-navy-700 hover:text-white transition-colors"
+                        className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                       >
                         <Settings className="w-4 h-4" />
                         Settings
                       </Link>
                     </div>
 
-                    <div className="border-t border-navy-700 pt-2">
+                    <div className="border-t border-ct-line pt-2">
                       <button
                         onClick={handleSignOut}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-red-900/20 transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-2 text-ct-rose hover:bg-ct-rose/10 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
                         Sign Out
@@ -1106,14 +1107,14 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
 
         {/* Mobile bottom navigation bar — hidden when sidebar is open */}
         {!isAdmin && !sidebarOpen && (
-          <nav className={`fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-navy-900 border-t border-navy-800 pb-[env(safe-area-inset-bottom)] transition-transform duration-300 ${bottomNavHidden ? 'translate-y-full' : 'translate-y-0'}`}>
+          <nav className={`fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-ct-ink-2 border-t border-ct-line pb-[env(safe-area-inset-bottom)] transition-transform duration-300 ${bottomNavHidden ? 'translate-y-full' : 'translate-y-0'}`}>
             <div className="grid grid-cols-5 h-16">
               {isTradie ? (
                 <>
                   <Link
                     to="/dashboard"
                     className={`flex flex-col items-center justify-center gap-1 ${
-                      location.pathname === '/dashboard' ? 'text-[#1D9E75]' : 'text-gray-400'
+                      location.pathname === '/dashboard' ? 'text-ct-teal' : 'text-ct-mute'
                     }`}
                   >
                     <Home className="w-5 h-5" />
@@ -1122,7 +1123,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                   <Link
                     to="/work"
                     className={`flex flex-col items-center justify-center gap-1 ${
-                      location.pathname === '/work' ? 'text-[#1D9E75]' : 'text-gray-400'
+                      location.pathname === '/work' ? 'text-ct-teal' : 'text-ct-mute'
                     }`}
                   >
                     <Briefcase className="w-5 h-5" />
@@ -1131,7 +1132,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                   <Link
                     to="/schedule"
                     className={`flex flex-col items-center justify-center gap-1 ${
-                      location.pathname === '/schedule' ? 'text-[#1D9E75]' : 'text-gray-400'
+                      location.pathname === '/schedule' ? 'text-ct-teal' : 'text-ct-mute'
                     }`}
                   >
                     <CalendarDays className="w-5 h-5" />
@@ -1140,7 +1141,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                   <Link
                     to="/messages"
                     className={`flex flex-col items-center justify-center gap-1 ${
-                      location.pathname === '/messages' ? 'text-[#1D9E75]' : 'text-gray-400'
+                      location.pathname === '/messages' ? 'text-ct-teal' : 'text-ct-mute'
                     }`}
                   >
                     <MessageCircle className="w-5 h-5" />
@@ -1148,7 +1149,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                   </Link>
                   <button
                     onClick={() => setSidebarOpen(true)}
-                    className="flex flex-col items-center justify-center gap-1 text-gray-400"
+                    className="flex flex-col items-center justify-center gap-1 text-ct-mute"
                   >
                     <Menu className="w-5 h-5" />
                     <span className="text-[10px]">More</span>
@@ -1159,7 +1160,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                   <Link
                     to="/dashboard"
                     className={`flex flex-col items-center justify-center gap-1 ${
-                      location.pathname === '/dashboard' ? 'text-[#1D9E75]' : 'text-gray-400'
+                      location.pathname === '/dashboard' ? 'text-ct-teal' : 'text-ct-mute'
                     }`}
                   >
                     <Home className="w-5 h-5" />
@@ -1168,7 +1169,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                   <Link
                     to="/leads"
                     className={`flex flex-col items-center justify-center gap-1 ${
-                      location.pathname === '/leads' ? 'text-[#1D9E75]' : 'text-gray-400'
+                      location.pathname === '/leads' ? 'text-ct-teal' : 'text-ct-mute'
                     }`}
                   >
                     <Briefcase className="w-5 h-5" />
@@ -1178,15 +1179,15 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                     to="/post-lead"
                     className="flex flex-col items-center justify-center gap-1"
                   >
-                    <div className="bg-[#1D9E75] text-white rounded-full w-14 h-14 flex items-center justify-center -mt-6 shadow-xl ring-4 ring-navy-900">
+                    <div className="bg-ct-teal text-ct-ink rounded-full w-14 h-14 flex items-center justify-center -mt-6 shadow-xl ring-4 ring-ct-ink-2">
                       <Plus className="w-7 h-7" strokeWidth={2.5} />
                     </div>
-                    <span className="text-[10px] font-semibold text-[#1D9E75] -mt-1">Post Job</span>
+                    <span className="text-[10px] font-semibold text-ct-teal -mt-1">Post Job</span>
                   </Link>
                   <Link
                     to="/messages"
                     className={`flex flex-col items-center justify-center gap-1 ${
-                      location.pathname === '/messages' ? 'text-[#1D9E75]' : 'text-gray-400'
+                      location.pathname === '/messages' ? 'text-ct-teal' : 'text-ct-mute'
                     }`}
                   >
                     <MessageCircle className="w-5 h-5" />
@@ -1194,7 +1195,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                   </Link>
                   <button
                     onClick={() => setSidebarOpen(true)}
-                    className="flex flex-col items-center justify-center gap-1 text-gray-400"
+                    className="flex flex-col items-center justify-center gap-1 text-ct-mute"
                   >
                     <Menu className="w-5 h-5" />
                     <span className="text-[10px]">More</span>
@@ -1212,7 +1213,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
           style={{ animation: 'slideDown 0.3s ease-out' }}
         >
           <div
-            className="flex items-start gap-3 px-4 py-3.5 bg-navy-800 border border-navy-600 rounded-lg shadow-lg cursor-pointer hover:bg-navy-750 transition-colors"
+            className="flex items-start gap-3 px-4 py-3.5 bg-ct-surface border border-ct-line rounded-ct-md shadow-lg cursor-pointer hover:bg-ct-surface-2 transition-colors"
             onClick={() => {
               handleNotificationClick(toastNotification);
               setToastNotification(null);
@@ -1228,13 +1229,13 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
               );
             })()}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white leading-tight">{toastNotification.title}</p>
-              <p className="text-xs text-gray-400 truncate mt-0.5">{toastNotification.message}</p>
-              <p className="text-[10px] text-warm-400 font-medium mt-1">Click to view</p>
+              <p className="text-sm font-medium text-ct-paper leading-tight">{toastNotification.title}</p>
+              <p className="text-xs text-ct-mute-2 truncate mt-0.5">{toastNotification.message}</p>
+              <p className="text-[10px] text-ct-teal font-medium mt-1">Click to view</p>
             </div>
             <button
               onClick={(e) => { e.stopPropagation(); setToastNotification(null); }}
-              className="p-0.5 text-gray-500 hover:text-gray-300 flex-shrink-0"
+              className="p-0.5 text-ct-mute hover:text-ct-paper flex-shrink-0"
             >
               <X className="w-3.5 h-3.5" />
             </button>
