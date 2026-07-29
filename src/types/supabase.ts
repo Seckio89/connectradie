@@ -516,6 +516,39 @@ export type Database = {
           },
         ]
       }
+      cancellation_policies: {
+        Row: {
+          created_at: string
+          effective_from: string
+          id: string
+          is_current: boolean
+          notice_hours: number
+          summary: string
+          terms: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          effective_from?: string
+          id?: string
+          is_current?: boolean
+          notice_hours?: number
+          summary: string
+          terms: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string
+          id?: string
+          is_current?: boolean
+          notice_hours?: number
+          summary?: string
+          terms?: string
+          version?: number
+        }
+        Relationships: []
+      }
       client_contacts: {
         Row: {
           address: string | null
@@ -1676,6 +1709,57 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: true
             referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_cancellation_agreements: {
+        Row: {
+          client_accepted_at: string | null
+          created_at: string
+          id: string
+          job_id: string
+          policy_id: string
+          policy_version: number
+          terms_snapshot: string
+          tradie_accepted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_accepted_at?: string | null
+          created_at?: string
+          id?: string
+          job_id: string
+          policy_id: string
+          policy_version: number
+          terms_snapshot: string
+          tradie_accepted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_accepted_at?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string
+          policy_id?: string
+          policy_version?: number
+          terms_snapshot?: string
+          tradie_accepted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_cancellation_agreements_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_cancellation_agreements_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "cancellation_policies"
             referencedColumns: ["id"]
           },
         ]
@@ -5888,6 +5972,26 @@ export type Database = {
       }
     }
     Functions: {
+      accept_cancellation_terms: {
+        Args: { p_job_id: string }
+        Returns: {
+          client_accepted_at: string | null
+          created_at: string
+          id: string
+          job_id: string
+          policy_id: string
+          policy_version: number
+          terms_snapshot: string
+          tradie_accepted_at: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "job_cancellation_agreements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       auto_complete_ended_projects: { Args: never; Returns: undefined }
       can_access_worker_credential: { Args: { path: string }; Returns: boolean }
       can_read_job_attachment: { Args: { path: string }; Returns: boolean }
