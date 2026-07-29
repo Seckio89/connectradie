@@ -3,8 +3,18 @@ name: CI
 on:
   push:
     branches: [master]
+  # No `branches:` filter — CI runs on EVERY pull request, whatever it targets.
+  #
+  # It used to be `branches: [master]`, which silently skipped stacked PRs. #169
+  # changed stripe-webhook, the reconciler and a new _shared helper on the money
+  # path, and because it targeted another feature branch the only checks that
+  # ran were Vercel's. No typecheck, no tests, no Deno ratchet, no DB Columns —
+  # on 1,291 lines of payment code. It read as "checks passed".
+  #
+  # Edge functions aren't covered by `npm run typecheck` at all, so DB Columns
+  # is their only column-level safety net. Skipping it on stacked work is
+  # exactly where it is least affordable.
   pull_request:
-    branches: [master]
 
 jobs:
   type-check:
