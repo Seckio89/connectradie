@@ -171,7 +171,167 @@ targets tsconfig.app.json.
 
 ---
 
-## ConnecTradie Design System — Always Follow These Rules
+## ConnecTradie Design System
+
+⚠️ **Two systems are live at once during the rollout.** v2 is the target;
+v1 is what most screens still render. Read "Which system applies" before
+styling anything.
+
+### Which system applies
+
+| Situation | Use |
+|---|---|
+| Building a new shared primitive (Phase 2) | **v2** |
+| Editing a screen already migrated to v2 (carries `ct-` classes) | **v2** |
+| Editing any other existing screen | **v1** — match what's there |
+| The three prioritised marketplace gaps | **v1** — they ship before the rollout reaches them |
+
+Do not opportunistically migrate a screen while doing unrelated work. The
+rollout is sequenced per primitive (Phase 2b), and a half-migrated screen
+is worse than an unmigrated one.
+
+---
+
+## Design System v2 — target
+
+Tokens are defined once as CSS custom properties in `src/index.css` and
+mapped onto Tailwind under the `ct-` namespace. The marketing site does
+not run Tailwind and consumes the same variables directly.
+
+**Never hard-code a hex value.** The only place a colour literal may
+appear is the token block in `src/index.css`. The sole exception is
+PDF/print/email HTML-string generators (`LicenseCertificate.tsx`,
+`InvoiceViewModal.tsx`, `Payouts.tsx`, `PaymentHistory.tsx`,
+`Leads.tsx`, `JobTracking.tsx`), which render outside the DOM where CSS
+variables do not resolve.
+
+### v2 · Colour
+
+| Token | Value | Tailwind | Meaning |
+|---|---|---|---|
+| `--ink` | `#07100F` | `ct-ink` | page background |
+| `--ink-2` | `#0C1A17` | `ct-ink-2` | raised surface |
+| `--surface` | `#0F211D` | `ct-surface` | cards |
+| `--surface-2` | `#132A25` | `ct-surface-2` | hover / inset |
+| `--line` | `#1B322C` | `ct-line` | borders, dividers |
+| `--teal` | `#12D3B4` | `ct-teal` | primary action, money as agreed |
+| `--teal-deep` | `#0A8C79` | `ct-teal-deep` | teal on light backgrounds |
+| `--amber` | `#F5A524` | `ct-amber` | awaiting a human decision |
+| `--rose` | `#F2617A` | `ct-rose` | error, declined, failed |
+| `--paper` | `#F3F6F5` | `ct-paper` | primary text |
+| `--mute` | `#7F958F` | `ct-mute` | tertiary text, meta |
+| `--mute-2` | `#A9BDB8` | `ct-mute-2` | secondary text |
+
+Tinted fills: `--teal-dim`, `--amber-dim`, `--rose-dim`. The semantic
+colours never carry meaning at full strength on a surface — use the dim
+form for fills, the solid form for text, icons and borders.
+`--line-soft` is one step softer than `--line`, for dividers inside a card.
+
+### v2 · The light band
+
+The system is dark, with **one** deliberate exception: the landing page's
+comparison section inverts to `--paper`. Text on that band needs its own
+values — the dark-surface tokens are unreadable on it. Do not invert any
+other section.
+
+| Token | Tailwind | Use | On `--paper` |
+|---|---|---|---|
+| `--ink-on-paper` | `ct-ink-on-paper` | body text | 16.57:1 |
+| `--mute-on-paper` | `ct-mute-on-paper` | muted text, table headers, fineprint | 4.69:1 |
+| `--teal-ink` | `ct-teal-ink` | teal **text** on paper | 5.53:1 |
+| `--amber-ink` | `ct-amber-ink` | amber **text** on paper | 5.09:1 |
+| `--paper-2` | `ct-paper-2` | dividers on the light band | — |
+
+`--teal-deep` keeps its non-text jobs only (hover borders on dark,
+decorative rules). It measures **3.83:1** on `--paper` and fails AA for
+text — use `--teal-ink` instead.
+
+**The semantic rule is enforced, not advisory.**
+
+- **Teal** — money moving as agreed, or the action to take.
+- **Amber** — blocked on a person.
+- **Rose** — failed or declined.
+
+A component must not use a colour outside its meaning. This is what makes
+a variation legible at a glance across a list of jobs. If amber starts
+appearing decoratively, the signal dies. Rose exists because amber was
+previously carrying both "waiting on you" and "something's wrong", which
+are different states requiring different responses.
+
+`ct-` colours support opacity modifiers (`bg-ct-teal/20`).
+
+### v2 · Radius
+
+| Token | Value | Tailwind | Use |
+|---|---|---|---|
+| `--r-xs` | 6px | `rounded-ct-xs` | chips, tags, small inline elements |
+| `--r-sm` | 9px | `rounded-ct-sm` | buttons, pills, badges |
+| `--r-md` | 12px | `rounded-ct-md` | inputs, selects, inline blocks, segmented controls |
+| `--r-lg` | 14px | `rounded-ct-lg` | cards, tiles, list groups |
+| `--r-xl` | 18px | `rounded-ct-xl` | modals, sheets, app shell |
+
+**Nesting rule:** a nested element always steps down one level — a 9px
+button inside a 14px card. Never equal to its parent, never larger. This
+is what stops soft corners reading as mushy.
+
+No arbitrary radius values. If something doesn't fit the scale, the scale
+wins.
+
+### v2 · Typography
+
+- **Space Grotesk** (`font-ct-display`) — headings, card titles, button
+  labels. Weight 600, letter-spacing −0.025em to −0.03em at display sizes.
+- **Inter** (`font-sans`) — all body text, labels, form fields, help text.
+- **JetBrains Mono** (`font-ct-mono`) — every dollar figure, job
+  reference, date, and uppercase meta label (letter-spacing 0.1em–0.14em,
+  ~10–11px).
+
+The mono rule is not stylistic. Quotes, variations and invoices are
+numeric documents, and mono makes amounts align and scan in tables —
+which matters most on property manager screens with twelve properties in
+view.
+
+### v2 · Interface copy
+
+These do as much work as the visual tokens.
+
+1. **A button names what happens, and keeps that name.** `Release payment`
+   produces a toast reading `Payment released`. Same verb through the
+   whole flow.
+2. **Sentence case everywhere.** Not Title Case, not ALL CAPS — except
+   mono meta labels.
+3. **Empty states name the next action.** Not "No data" — "When a tradie
+   needs to change the scope or price, the request lands here for you to
+   approve," with a button.
+4. **Errors say what failed and how to fix it.** Never "Something went
+   wrong." Never apologise.
+5. **Name things as the user recognises them.** "Payment schedule", not
+   "escrow milestone array".
+
+### v2 · Accessibility
+
+- Keyboard focus visible on every interactive element.
+- `prefers-reduced-motion` respected.
+- Body text meets WCAG AA on both `--ink` and `--surface`.
+  Measured: `--mute` on `--surface` 5.25:1, on `--ink` 6.05:1, on
+  `--surface-2` 4.76:1 — all pass, the last one narrowly.
+- Placeholder text uses `--placeholder` (4.59:1). Do not use the
+  reference file's `#4E635E`; it measures 3.00:1 and fails AA.
+
+⚠️ **Do not lift colour literals out of the two reference HTML files.**
+Both predate this contrast pass and six of their values fail AA:
+`#4E635E` (3.00:1), `#98A8A5` (2.28:1), `#0A8C79` as text (3.83:1),
+`#B07D12` (3.34:1), `#6B827D` (3.78:1), `#5C7772` (4.45:1). The tokens
+in `src/index.css` are the corrected set and are the only source.
+`connectradie-landing.html` also ships a corrupted `--line-soft`
+(`#16292४`, trailing U+096A) that is silently overridden one line later.
+
+---
+
+## Design System v1 — legacy, being migrated
+
+Still correct for every screen not yet migrated. Match it when editing
+existing screens; do not use it for new shared primitives.
 
 ### Colours
 - Primary action: teal/emerald — use Tailwind `emerald-500` (#06D6A0)
@@ -184,6 +344,10 @@ targets tsconfig.app.json.
 - Borders: `gray-200` only — no heavy borders
 - Status badges: use existing pill pattern only
 - Rule: emerald = positive/action/success, secondary = info/interactive/pending
+
+⚠️ `tailwind.config.js` remaps Tailwind's built-in `teal`, `emerald` and
+`green` ramps to #06D6A0. `teal-500` is **not** `--teal`. Do not assume
+built-in Tailwind colour values.
 
 ### Layout & Spacing
 - Page wrapper: `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8`

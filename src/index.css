@@ -4,6 +4,122 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKENS (v2) — single source of truth
+   ───────────────────────────────────────────────────────────────
+   Shared verbatim between the app and the marketing site. The
+   marketing site does not run Tailwind, so every token is usable
+   as plain CSS: `color: var(--paper)`.
+
+   Each colour is declared once as an RGB channel triplet (`--x-c`)
+   and re-exported as a ready-to-use colour (`--x`). Tailwind binds
+   to the triplet so opacity modifiers work (`bg-ct-teal/20`); raw
+   CSS binds to the derived value. One source, no drift.
+
+   NOTHING CONSUMES THESE YET. Phase 1 is additive by design —
+   adding them must produce zero visual change. Components migrate
+   onto them in Phase 2.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Colour: channel triplets (Tailwind binds here) ── */
+  --ink-c:       7 16 15;        /* page background            */
+  --ink-2-c:     12 26 23;       /* raised surface             */
+  --surface-c:   15 33 29;       /* cards                      */
+  --surface-2-c: 19 42 37;       /* hover / inset              */
+  --line-c:      27 50 44;       /* borders, dividers          */
+  --teal-c:      18 211 180;     /* money as agreed / action   */
+  --teal-deep-c: 10 140 121;     /* teal on light backgrounds  */
+  --amber-c:     245 165 36;     /* awaiting a human decision  */
+  --rose-c:      242 97 122;     /* error, declined, failed    */
+  --paper-c:     243 246 245;    /* primary text               */
+  --mute-c:      127 149 143;    /* tertiary text, meta        */
+  --mute-2-c:    169 189 184;    /* secondary text             */
+
+  /* ── Colour: derived values (raw CSS binds here) ── */
+  --ink:       rgb(var(--ink-c));
+  --ink-2:     rgb(var(--ink-2-c));
+  --surface:   rgb(var(--surface-c));
+  --surface-2: rgb(var(--surface-2-c));
+  --line:      rgb(var(--line-c));
+  --teal:      rgb(var(--teal-c));
+  --teal-deep: rgb(var(--teal-deep-c));
+  --amber:     rgb(var(--amber-c));
+  --rose:      rgb(var(--rose-c));
+  --paper:     rgb(var(--paper-c));
+  --mute:      rgb(var(--mute-c));
+  --mute-2:    rgb(var(--mute-2-c));
+
+  /* ── Tinted fills. The semantic colours never carry meaning at
+        full strength on a surface — these are their fill forms. ── */
+  --teal-dim:  rgb(var(--teal-c) / 0.14);
+  --amber-dim: rgb(var(--amber-c) / 0.13);
+  --rose-dim:  rgb(var(--rose-c) / 0.13);
+
+  /* Placeholder text. Deliberately lighter than the reference
+     file's #4E635E, which measures 3.00:1 on --ink and fails
+     WCAG AA. This is 4.59:1 in the same hue family. */
+  --placeholder: #6B807B;
+
+  /* ── The light band ──────────────────────────────────────────
+     The system is dark, with one deliberate exception: the
+     landing page's comparison section inverts to --paper. Text
+     on that band needs its own values — the dark-surface tokens
+     are unreadable on it.
+
+     Every value here is corrected for WCAG AA against --paper.
+     The reference file's originals all fail, and this is the
+     section carrying the competitor comparison and its ACL
+     disclaimer, so it is the last place to ship unreadable text:
+       #98A8A5 "No" column      2.28:1  → --mute-on-paper 4.69:1
+       #0A8C79 "Yes" column     3.83:1  → --teal-ink      5.53:1
+       #B07D12 "Varies"         3.34:1  → --amber-ink     5.09:1
+       #6B827D fineprint        3.78:1  → --mute-on-paper 4.69:1
+       #5C7772 table headers    4.45:1  → --mute-on-paper 4.69:1
+     ────────────────────────────────────────────────────────── */
+  --paper-2-c:      228 234 232;  /* dividers on the light band  */
+  --ink-on-paper-c:  11  25  23;  /* body text on paper          */
+  --mute-on-paper-c: 95 114 110;  /* muted text on paper         */
+  --teal-ink-c:       7 112  95;  /* teal TEXT on paper          */
+  --amber-ink-c:    138  97   9;  /* amber TEXT on paper         */
+
+  --paper-2:      rgb(var(--paper-2-c));
+  --ink-on-paper: rgb(var(--ink-on-paper-c));
+  --mute-on-paper:rgb(var(--mute-on-paper-c));
+  --teal-ink:     rgb(var(--teal-ink-c));
+  --amber-ink:    rgb(var(--amber-ink-c));
+
+  /* --teal-deep stays at its spec value and keeps its non-text
+     jobs (hover borders on dark, decorative rules). Use
+     --teal-ink for teal text on paper — --teal-deep fails AA
+     there, which is the only job the spec gives it. */
+
+  /* Inset dividers on dark, one step softer than --line. The
+     reference file declares this twice; the first is corrupted
+     (#16292४ — trailing Devanagari digit U+096A) and silently
+     overridden by the second. This is the intended value. */
+  --line-soft-c: 22 41 36;
+  --line-soft:   rgb(var(--line-soft-c));
+
+  /* ── Type ── */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, monospace;
+
+  /* ── Radius. A nested element always steps down one level:
+        a 9px button inside a 14px card. Never equal, never larger. ── */
+  --r-xs: 6px;   /* chips, tags, small inline elements          */
+  --r-sm: 9px;   /* buttons, pills, badges                      */
+  --r-md: 12px;  /* inputs, selects, inline blocks, segmented   */
+  --r-lg: 14px;  /* cards, tiles, list groups                   */
+  --r-xl: 18px;  /* modals, sheets, app shell                   */
+
+  /* ── Layout ── */
+  --sidebar: 238px;                   /* app shell sidebar      */
+  --maxw: 1240px;                     /* marketing content width */
+  --gut: clamp(20px, 4vw, 64px);      /* marketing side gutter   */
+}
+
 html {
   font-size: 16px;
 }
