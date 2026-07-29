@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "check:columns": "node scripts/check-db-columns.mjs",
     "check:drift": "node scripts/check-schema-drift.mjs",
+    "check:edge-drift": "node scripts/check-edge-drift.mjs",
     "check:nav": "node scripts/check-navigability.mjs",
     "check:nav:ci": "node scripts/check-navigability.mjs --baseline",
     "check:nav:baseline": "node scripts/check-navigability.mjs --update-baseline",
