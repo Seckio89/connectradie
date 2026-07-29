@@ -13,6 +13,8 @@ import { redactContactInfo } from '../lib/redaction';
 import { useSignedUrls } from '../hooks/useSignedUrl';
 import { getSignedUrl } from '../lib/storage';
 import { approveVariation, payPriceIncrease, humanizePaymentError } from '../lib/stripePayments';
+import { Pill, VariationBlock, VariationAction, VariationAmount, formatAud } from './ui';
+import type { PillTone } from './ui';
 
 const RequestVariationModal = lazy(() => import('./RequestVariationModal'));
 const CreateInvoiceModal = lazy(() => import('./CreateInvoiceModal'));
@@ -467,22 +469,26 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
     return { totalPaid, totalBudget: job.budget_amount, percentage: Math.min(percentage, 100) };
   };
 
+  // Tones follow the semantic rule, not the old palette: anything where money
+  // is moving as agreed is teal, a job still waiting on a person is amber, a
+  // declined one is rose. Sentence case throughout.
   const getStatusBadge = () => {
-    const styles: Record<string, string> = {
-      pending: 'bg-warm-100 text-warm-700',
-      accepted: 'bg-green-100 text-green-700',
-      in_progress: 'bg-secondary-100 text-secondary-700',
-      completed: 'bg-secondary-100 text-secondary-700',
-      declined: 'bg-red-100 text-red-700',
+    const tones: Record<string, PillTone> = {
+      pending: 'amber',
+      accepted: 'teal',
+      in_progress: 'teal',
+      completed: 'teal',
+      declined: 'rose',
+      cancelled: 'grey',
     };
     const labels: Record<string, string> = {
-      pending: 'Pending', accepted: 'Accepted', in_progress: 'In Progress',
-      completed: 'Completed', declined: 'Declined',
+      pending: 'Pending', accepted: 'Accepted', in_progress: 'In progress',
+      completed: 'Completed', declined: 'Declined', cancelled: 'Cancelled',
     };
     return (
-      <span className={`px-3 py-1 text-sm font-medium rounded-full ${(job.status && styles[job.status]) || 'bg-gray-100 text-gray-700'}`}>
+      <Pill tone={(job.status && tones[job.status]) || 'grey'}>
         {(job.status && labels[job.status]) || job.status}
-      </span>
+      </Pill>
     );
   };
 
@@ -517,11 +523,11 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
   const nextMilestoneAmount = nextPendingMilestone ? Number(nextPendingMilestone.amount) : null;
 
   return (
-    <div className="bg-gray-50 rounded-2xl overflow-hidden">
+    <div className="bg-ct-ink rounded-ct-xl overflow-hidden">
       {offlineQueued && (
-        <div className="m-4 flex items-center gap-3 px-4 py-3 bg-warm-50 border border-warm-200 rounded-xl">
-          <WifiOff className="w-5 h-5 text-warm-600 flex-shrink-0" />
-          <p className="text-sm font-medium text-warm-800">Action queued offline. It will sync when you're back online.</p>
+        <div className="m-4 flex items-center gap-3 px-4 py-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md">
+          <WifiOff className="w-5 h-5 text-ct-amber flex-shrink-0" />
+          <p className="text-sm font-medium text-ct-paper">Action queued offline. It will sync when you're back online.</p>
         </div>
       )}
 
@@ -529,36 +535,34 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-lg font-semibold text-gray-900">Service Request</h3>
+            <h3 className="font-ct-display text-lg font-semibold tracking-tight text-ct-paper">Service request</h3>
+            {/* Complexity is a property of the job, not a state anyone is
+                blocked on — grey, so it can't be mistaken for "needs you". */}
             {job.job_complexity === 'emergency' && (
-              <span className="px-3 py-1 bg-red-100 text-red-700 text-sm font-medium rounded-full flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" />Emergency
-              </span>
+              <Pill tone="rose"><AlertTriangle className="w-3 h-3 inline mr-1" />Emergency</Pill>
             )}
             {job.job_complexity === 'complex' && (
-              <span className="px-3 py-1 bg-warm-100 text-warm-700 text-sm font-medium rounded-full flex items-center gap-1">
-                <Zap className="w-3 h-3" />Complex
-              </span>
+              <Pill tone="grey"><Zap className="w-3 h-3 inline mr-1" />Complex</Pill>
             )}
             {job.job_complexity === 'standard' && (
-              <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">Standard</span>
+              <Pill tone="grey">Standard</Pill>
             )}
           </div>
           {getStatusBadge()}
         </div>
 
         {job.is_emergency && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0" />
-            <p className="text-sm font-medium text-red-800">Emergency Job - Immediate Attention Required</p>
+          <div className="bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md p-3 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-ct-rose flex-shrink-0" />
+            <p className="text-sm font-medium text-ct-paper">Emergency job — needs immediate attention</p>
           </div>
         )}
 
         {/* ─── SECTION 1: JOB DETAILS ─── */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5 space-y-4">
           <div>
-            <p className="text-sm font-medium text-gray-500 mb-1.5">Description</p>
-            <p className="text-gray-900 leading-relaxed whitespace-pre-wrap">
+            <p className="text-sm font-medium text-ct-mute mb-1.5">Description</p>
+            <p className="text-ct-paper leading-relaxed whitespace-pre-wrap">
               {canSeeContactDetails ? job.description : redactContactInfo(job.description)}
             </p>
           </div>
@@ -566,13 +570,13 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
           <div className="flex flex-wrap gap-x-6 gap-y-3">
             {job.location_address && (
               <div className="flex items-center gap-2 text-sm">
-                <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <MapPin className="w-4 h-4 text-ct-mute flex-shrink-0" />
                 {canSeeContactDetails ? (
-                  <span className="text-gray-700">{job.location_address}</span>
+                  <span className="text-ct-mute-2">{job.location_address}</span>
                 ) : (
-                  <span className="text-gray-700">
+                  <span className="text-ct-mute-2">
                     {extractSuburb(job.location_address) || 'Suburb area'}
-                    <span className="inline-flex items-center gap-1 ml-1.5 px-1.5 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full">
+                    <span className="inline-flex items-center gap-1 ml-1.5 px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute text-xs rounded-ct-xs">
                       <Lock className="w-3 h-3" />Full address after accept
                     </span>
                   </span>
@@ -581,32 +585,32 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
             )}
             {job.scheduled_time && (
               <div className="flex items-center gap-2 text-sm">
-                <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <span className="text-gray-700">{formatScheduledDate()}</span>
+                <Calendar className="w-4 h-4 text-ct-mute flex-shrink-0" />
+                <span className="text-ct-mute-2">{formatScheduledDate()}</span>
               </div>
             )}
             {job.estimated_duration && !job.scheduled_time && (
               <div className="flex items-center gap-2 text-sm">
-                <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <span className="text-gray-700">{job.estimated_duration}</span>
+                <Clock className="w-4 h-4 text-ct-mute flex-shrink-0" />
+                <span className="text-ct-mute-2">{job.estimated_duration}</span>
               </div>
             )}
             {job.parking_available !== null && job.parking_available !== undefined && (
               <div className="flex items-center gap-2 text-sm">
-                <Car className={`w-4 h-4 flex-shrink-0 ${job.parking_available ? 'text-emerald-500' : 'text-gray-400'}`} />
-                <span className="text-gray-700">{job.parking_available ? 'Parking available on site' : 'No parking on site'}</span>
+                <Car className={`w-4 h-4 flex-shrink-0 ${job.parking_available ? 'text-ct-teal' : 'text-ct-mute'}`} />
+                <span className="text-ct-mute-2">{job.parking_available ? 'Parking available on site' : 'No parking on site'}</span>
               </div>
             )}
           </div>
 
           {budgetInfo && (
-            <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center ${budgetInfo.type === 'quote' ? 'bg-warm-100' : 'bg-green-100'}`}>
-                <DollarSign className={`w-4 h-4 ${budgetInfo.type === 'quote' ? 'text-warm-600' : 'text-green-600'}`} />
+            <div className="flex items-center gap-3 bg-ct-surface-2 rounded-ct-md p-3">
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center ${budgetInfo.type === 'quote' ? 'bg-ct-amber/[0.13]' : 'bg-ct-teal/[0.14]'}`}>
+                <DollarSign className={`w-4 h-4 ${budgetInfo.type === 'quote' ? 'text-ct-amber' : 'text-ct-teal'}`} />
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500">{budgetInfo.label}</p>
-                <p className={`text-sm font-semibold ${budgetInfo.type === 'quote' ? 'text-warm-700' : 'text-green-700'}`}>
+                <p className="text-xs font-medium text-ct-mute">{budgetInfo.label}</p>
+                <p className={`text-sm font-semibold ${budgetInfo.type === 'quote' ? 'text-ct-amber' : 'text-ct-teal'} font-ct-mono`}>
                   {budgetInfo.value}
                 </p>
               </div>
@@ -620,14 +624,14 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
           {job.images_url && job.images_url.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <ImageIcon className="w-4 h-4 text-gray-400" />
-                <p className="text-xs font-medium text-gray-500">Attached Photos</p>
+                <ImageIcon className="w-4 h-4 text-ct-mute" />
+                <p className="text-xs font-medium text-ct-mute">Attached Photos</p>
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {job.images_url.map((_, index) => {
                   const signedUrl = photoSignedUrls[index];
                   return (
-                    <div key={index} className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                    <div key={index} className="w-20 h-20 rounded-lg overflow-hidden bg-ct-surface-2 border border-ct-line flex-shrink-0">
                       {signedUrl ? (
                         <img
                           src={signedUrl}
@@ -638,7 +642,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
                           onClick={() => setLightboxUrl(signedUrl)}
                         />
                       ) : (
-                        <div className="w-full h-full bg-gray-100" />
+                        <div className="w-full h-full bg-ct-surface-2" />
                       )}
                     </div>
                   );
@@ -648,37 +652,37 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
           )}
 
           {showClientDetails && (
-            <div className="border-t border-gray-100 pt-4">
-              <p className="text-xs font-medium text-gray-500 mb-2">Contact Details</p>
+            <div className="border-t border-ct-line-soft pt-4">
+              <p className="text-xs font-medium text-ct-mute mb-2">Contact Details</p>
               {canSeeContactDetails ? (
                 <div className="flex flex-wrap gap-x-5 gap-y-2">
                   <div className="flex items-center gap-2 text-sm">
-                    <User className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="text-gray-800">{job.contact_name || client?.full_name || 'Client'}</span>
+                    <User className="w-3.5 h-3.5 text-ct-mute" />
+                    <span className="text-ct-mute-2">{job.contact_name || client?.full_name || 'Client'}</span>
                   </div>
                   {(job.contact_phone || client?.phone) && (
                     <div className="flex items-center gap-2 text-sm">
-                      <Phone className="w-3.5 h-3.5 text-gray-400" />
-                      <a href={`tel:${job.contact_phone || client?.phone}`} className="text-warm-600 hover:text-warm-700">
+                      <Phone className="w-3.5 h-3.5 text-ct-mute" />
+                      <a href={`tel:${job.contact_phone || client?.phone}`} className="text-ct-teal hover:brightness-110">
                         {job.contact_phone || client?.phone}
                       </a>
                     </div>
                   )}
                   {client?.email && (
                     <div className="flex items-center gap-2 text-sm">
-                      <Mail className="w-3.5 h-3.5 text-gray-400" />
-                      <a href={`mailto:${client.email}`} className="text-warm-600 hover:text-warm-700">{client.email}</a>
+                      <Mail className="w-3.5 h-3.5 text-ct-mute" />
+                      <a href={`mailto:${client.email}`} className="text-ct-teal hover:brightness-110">{client.email}</a>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="bg-warm-50 border border-warm-200 rounded-lg p-3 flex items-start gap-3">
-                  <div className="w-8 h-8 bg-warm-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <User className="w-4 h-4 text-warm-600" />
+                <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md p-3 flex items-start gap-3">
+                  <div className="w-8 h-8 bg-ct-surface rounded-full flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-ct-mute-2" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-warm-800">{job.contact_name || client?.full_name || 'Client'}</p>
-                    <p className="text-xs text-warm-700 mt-0.5">Full contact details will be revealed once you accept this job.</p>
+                    <p className="text-sm font-medium text-ct-paper">{job.contact_name || client?.full_name || 'Client'}</p>
+                    <p className="text-xs text-ct-mute mt-0.5">Full contact details will be revealed once you accept this job.</p>
                   </div>
                 </div>
               )}
@@ -688,30 +692,30 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
 
         {/* Job Group Timeline */}
         {project && projectJobs.length > 0 && showClientDetails && (
-          <div className="bg-white rounded-xl border border-secondary-200 p-5">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 bg-secondary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Package className="w-4 h-4 text-secondary-600" />
+              <div className="w-9 h-9 bg-ct-surface-2 rounded-ct-md flex items-center justify-center flex-shrink-0">
+                <Package className="w-4 h-4 text-ct-mute-2" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
-                  <h4 className="font-semibold text-secondary-900 text-sm">Job Group Timeline</h4>
-                  <span className="text-xs bg-secondary-100 text-secondary-700 px-2 py-0.5 rounded-full">{project.title}</span>
+                  <h4 className="font-ct-display font-semibold text-ct-paper text-sm">Job Group Timeline</h4>
+                  <span className="text-xs bg-ct-surface-2 text-ct-mute-2 px-2 py-0.5 rounded-ct-xs">{project.title}</span>
                 </div>
                 <div className="space-y-1.5">
                   {projectJobs.map((pJob) => (
-                    <div key={pJob.id} className="bg-secondary-50/50 rounded-lg p-2.5 border border-secondary-100">
+                    <div key={pJob.id} className="bg-ct-surface-2 rounded-ct-md p-2.5 border border-ct-line">
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <span className="text-sm font-medium text-gray-900">{pJob.tradie_details?.trade_category || 'Tradie'}</span>
+                          <span className="text-sm font-medium text-ct-paper">{pJob.tradie_details?.trade_category || 'Tradie'}</span>
                           <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            pJob.status === 'completed' ? 'bg-green-100 text-green-700' :
-                            pJob.status === 'in_progress' ? 'bg-secondary-100 text-secondary-700' :
-                            'bg-yellow-100 text-yellow-700'
+                            pJob.status === 'completed' ? 'bg-ct-teal/[0.14] text-ct-teal' :
+                            pJob.status === 'in_progress' ? 'bg-ct-teal/[0.14] text-ct-teal' :
+                            'bg-ct-amber/[0.13] text-ct-amber'
                           }`}>{pJob.status.replace('_', ' ')}</span>
-                          {pJob.is_delayed && <span className="px-2 py-0.5 bg-warm-100 text-warm-700 rounded text-xs font-medium">Delayed</span>}
+                          {pJob.is_delayed && <span className="px-2 py-0.5 bg-ct-amber/[0.13] text-ct-amber rounded-ct-xs text-xs font-medium">Delayed</span>}
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <div className="flex items-center gap-1 text-xs text-ct-mute">
                           <Calendar className="w-3 h-3" />
                           {pJob.scheduled_time ? new Date(pJob.scheduled_time).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : 'TBD'}
                         </div>
@@ -719,7 +723,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
                     </div>
                   ))}
                 </div>
-                <div className="mt-2 flex items-start gap-1.5 text-xs text-secondary-600">
+                <div className="mt-2 flex items-start gap-1.5 text-xs text-ct-mute">
                   <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                   <p>Coordinate your work timing with other tradies in this group.</p>
                 </div>
@@ -730,23 +734,30 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
 
         {/* Pending Progress Payment Requests */}
         {variations.filter(v => v.status === 'pending').map((variation) => (
-          <div key={variation.id} className="bg-warm-50 border border-warm-200 rounded-xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-warm-700" />
-                <p className="font-semibold text-warm-900">Additional Cost Requested</p>
-              </div>
-              {variation.reason_category && (
-                <span className="px-3 py-1 bg-warm-100 text-warm-700 text-xs font-medium rounded-full capitalize">
-                  {variation.reason_category.replace('_', ' ')}
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-warm-800">{variation.description}</p>
+          <VariationBlock
+            key={variation.id}
+            actions={!showClientDetails ? (
+              <>
+                <VariationAction primary onClick={() => handleApproveVariation(variation.id)}>
+                  Approve &amp; fund
+                </VariationAction>
+                <VariationAction onClick={() => handleRejectVariation(variation.id)}>
+                  Decline
+                </VariationAction>
+              </>
+            ) : undefined}
+          >
+            {variation.reason_category && (
+              <Pill tone="amber" className="mb-2">
+                {variation.reason_category.replace('_', ' ')}
+              </Pill>
+            )}
+            <p>{variation.description}</p>
+
             {variation.photo_urls && variation.photo_urls.length > 0 && (
-              <div className="flex gap-1.5 overflow-x-auto pb-1">
+              <div className="flex gap-1.5 overflow-x-auto pb-1 mt-2">
                 {variation.photo_urls.map((url, idx) => (
-                  <div key={idx} className="w-16 h-16 rounded-lg overflow-hidden bg-warm-100 border border-warm-200 flex-shrink-0">
+                  <div key={idx} className="w-16 h-16 rounded-ct-xs overflow-hidden bg-ct-surface-2 border border-ct-line flex-shrink-0">
                     <img src={url} alt={`Evidence ${idx + 1}`} loading="lazy" decoding="async"
                       className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
                       onClick={() => setLightboxUrl(url)} />
@@ -754,33 +765,28 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
                 ))}
               </div>
             )}
-            <div className="flex items-center justify-between">
-              <p className="text-lg font-bold text-warm-700">+${variation.additional_amount.toFixed(2)}</p>
+
+            <p className="mt-2">
+              <VariationAmount amountCents={Math.round(variation.additional_amount * 100)} />
               {job.budget_amount != null && job.budget_amount > 0 && (
-                <p className="text-xs text-warm-600">
-                  New total: ${((job.budget_amount || 0) + approvedVariationsTotal + variation.additional_amount).toLocaleString('en-AU', { minimumFractionDigits: 2 })}
-                </p>
+                <span className="text-ct-mute">
+                  {' · new total '}
+                  <span className="font-ct-mono">
+                    {formatAud(Math.round(((job.budget_amount || 0) + approvedVariationsTotal + variation.additional_amount) * 100))}
+                  </span>
+                </span>
               )}
-            </div>
+            </p>
+
+            {/* Rose, not amber: amber is "waiting on a person", and a failed
+                approval is a different state needing a different response. */}
             {!showClientDetails && variationError && (
-              <p className="text-sm text-red-600 mb-2">{variationError}</p>
-            )}
-            {!showClientDetails && (
-              <div className="flex gap-2">
-                <button onClick={() => handleApproveVariation(variation.id)} disabled={loading}
-                  className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:bg-gray-400 flex items-center justify-center gap-2 text-sm font-medium transition-colors">
-                  <CheckCircle className="w-4 h-4" />Approve & Fund
-                </button>
-                <button onClick={() => handleRejectVariation(variation.id)} disabled={loading}
-                  className="flex-1 px-4 py-2.5 bg-white border border-red-300 text-red-600 rounded-xl hover:bg-red-50 disabled:bg-gray-100 flex items-center justify-center gap-2 text-sm font-medium transition-colors">
-                  <XCircle className="w-4 h-4" />Decline
-                </button>
-              </div>
+              <p className="mt-2 text-sm text-ct-rose">{variationError}</p>
             )}
             {showClientDetails && (
-              <span className="inline-flex px-3 py-1 bg-warm-100 text-warm-700 text-sm font-medium rounded-full">Awaiting Client Approval</span>
+              <Pill tone="amber" className="mt-3">Awaiting client approval</Pill>
             )}
-          </div>
+          </VariationBlock>
         ))}
 
         <VariationsHistory
@@ -791,37 +797,37 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
 
         {/* ─── SECTION 2: PAYMENT SCHEDULE ─── */}
         {isAcceptedOrBeyond && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-gray-700" />
-                <h4 className="font-semibold text-gray-900">Payment Schedule</h4>
+                <CreditCard className="w-5 h-5 text-ct-mute-2" />
+                <h4 className="font-ct-display font-semibold tracking-tight text-ct-paper">Payment Schedule</h4>
               </div>
               {showClientDetails && isProUser && (
                 <button onClick={() => setShowAddMilestone(!showAddMilestone)}
-                  className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 flex items-center gap-1.5">
+                  className="px-3 py-1.5 bg-ct-teal text-ct-ink font-ct-display text-sm font-semibold rounded-ct-sm hover:brightness-110 flex items-center gap-1.5">
                   <Plus className="w-4 h-4" />Add Progress Payment
                 </button>
               )}
               {showClientDetails && !isProUser && (
                 <button onClick={() => setShowSubscriptionModal(true)}
-                  className="px-3 py-1.5 bg-gradient-to-r from-warm-500 to-warm-600 text-white text-sm rounded-lg hover:from-warm-600 hover:to-warm-700 flex items-center gap-1.5">
+                  className="px-3 py-1.5 bg-ct-teal text-ct-ink font-ct-display text-sm font-semibold rounded-ct-sm hover:brightness-110 flex items-center gap-1.5">
                   <Crown className="w-4 h-4" />Payments
-                  <span className="text-xs font-bold bg-white/20 px-1.5 py-0.5 rounded">PRO</span>
+                  <span className="text-xs font-bold bg-ct-ink/20 px-1.5 py-0.5 rounded-ct-xs">PRO</span>
                 </button>
               )}
             </div>
 
             {paymentProgress && milestones.length > 0 && (
-              <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="mb-4 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md p-3">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-medium text-green-800">Payment Progress</span>
-                  <span className="text-xs font-semibold text-green-700">
+                  <span className="text-xs font-medium text-ct-teal">Payment Progress</span>
+                  <span className="font-ct-mono text-xs font-semibold text-ct-teal">
                     ${paymentProgress.totalPaid.toFixed(2)} / ${paymentProgress.totalBudget.toFixed(2)}
                   </span>
                 </div>
-                <div className="w-full bg-green-100 rounded-full h-2 overflow-hidden">
-                  <div className="bg-green-600 h-2 rounded-full transition-all duration-500" style={{ width: `${paymentProgress.percentage}%` }} />
+                <div className="w-full bg-ct-surface-2 rounded-full h-2 overflow-hidden">
+                  <div className="bg-ct-teal h-2 rounded-full transition-all duration-500" style={{ width: `${paymentProgress.percentage}%` }} />
                 </div>
               </div>
             )}
@@ -860,7 +866,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
 
             {/* Payment Timeline */}
             {milestones.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-6">
+              <p className="text-sm text-ct-mute text-center py-6">
                 {showClientDetails ? 'No payments scheduled yet. Add your first progress payment above.' : 'No payment schedule has been set up yet.'}
               </p>
             ) : (
@@ -888,10 +894,10 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
 
         {/* ─── SECTION 3: PROOF OF WORK & ACTIONS ─── */}
         {showClientDetails && job.status === 'in_progress' && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
             <button
               onClick={() => setShowVariationModal(true)}
-              className="w-full px-4 py-3 border-2 border-dashed border-gray-300 text-gray-700 rounded-xl hover:border-primary-400 hover:bg-primary-50/50 hover:text-primary-700 flex items-center justify-center gap-2 font-medium transition-colors"
+              className="w-full px-4 py-3 border border-dashed border-ct-line text-ct-mute-2 rounded-ct-md hover:border-ct-teal hover:text-ct-teal flex items-center justify-center gap-2 font-medium transition-colors"
             >
               <Plus className="w-5 h-5" />
               Additional Cost
@@ -1012,10 +1018,10 @@ function PaymentTimelineItem({
   const isApproved = milestone.status === 'approved';
   const isSubcontractor = milestone.payment_type === 'subcontractor';
 
-  const iconColor = isPaid ? 'text-green-600' : isApproved ? 'text-secondary-600' : 'text-gray-400';
-  const lineColor = isPaid ? 'bg-green-300' : 'bg-gray-200';
+  const iconColor = isPaid ? 'text-ct-teal' : isApproved ? 'text-ct-mute-2' : 'text-ct-mute';
+  const lineColor = isPaid ? 'bg-ct-teal/40' : 'bg-ct-line';
   const statusLabel = isPaid ? 'Paid' : isApproved ? 'Awaiting Payment' : 'Awaiting Approval';
-  const statusStyle = isPaid ? 'text-green-700 bg-green-50' : isApproved ? 'text-secondary-700 bg-secondary-50' : 'text-warm-700 bg-warm-50';
+  const statusStyle = isPaid ? 'text-ct-teal bg-ct-teal/[0.14]' : isApproved ? 'text-ct-mute-2 bg-ct-surface-2' : 'text-ct-amber bg-ct-amber/[0.13]';
 
   return (
     <div className="flex gap-3">
@@ -1034,17 +1040,17 @@ function PaymentTimelineItem({
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-0.5">
-              <span className="font-semibold text-gray-900 text-sm">{milestone.title}</span>
+              <span className="font-ct-display font-semibold tracking-tight text-ct-paper text-sm">{milestone.title}</span>
               {isSubcontractor && (
-                <span className="px-1.5 py-0.5 bg-primary-100 text-navy-600 text-xs font-medium rounded flex items-center gap-1">
+                <span className="px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded flex items-center gap-1">
                   <Building2 className="w-3 h-3" />Sub
                 </span>
               )}
               <span className={`px-3 py-1 text-xs font-medium rounded-full ${statusStyle}`}>{statusLabel}</span>
             </div>
-            <p className="text-lg font-bold text-gray-800">${Number(milestone.amount).toFixed(2)}</p>
+            <p className="text-lg font-bold text-ct-mute-2">${Number(milestone.amount).toFixed(2)}</p>
             {milestone.due_date && (
-              <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+              <p className="text-xs text-ct-mute mt-0.5 flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 Due: {new Date(milestone.due_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
               </p>
@@ -1055,13 +1061,13 @@ function PaymentTimelineItem({
             <div className="flex flex-col gap-1.5">
               {milestone.status === 'pending' && (
                 <button onClick={onApprove} disabled={loading}
-                  className="px-3 py-1.5 bg-warm-500 text-white text-xs rounded-lg hover:bg-warm-600 disabled:bg-gray-400 flex items-center gap-1.5 font-medium whitespace-nowrap">
+                  className="px-3 py-1.5 bg-ct-amber/[0.13]0 text-ct-ink text-xs rounded-ct-sm hover:bg-ct-amber disabled:opacity-50 flex items-center gap-1.5 font-medium whitespace-nowrap">
                   <CheckCircle className="w-3.5 h-3.5" />Approve
                 </button>
               )}
               {milestone.status === 'approved' && (
                 <button onClick={onMarkPaid} disabled={loading}
-                  className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 disabled:bg-gray-400 flex items-center gap-1.5 font-medium whitespace-nowrap">
+                  className="px-3 py-1.5 bg-ct-teal text-ct-ink text-xs rounded-ct-sm hover:brightness-110 disabled:opacity-50 flex items-center gap-1.5 font-medium whitespace-nowrap">
                   Mark as Paid
                 </button>
               )}
@@ -1073,26 +1079,26 @@ function PaymentTimelineItem({
         {isSubcontractor && (milestone.subcontractors?.length ?? 0) > 0 && (
           <div className="mt-2 space-y-1">
             {milestone.subcontractors!.map((sub) => (
-              <div key={sub.id} className="flex items-center justify-between gap-2 bg-gray-50 rounded-lg px-3 py-1.5 text-xs">
+              <div key={sub.id} className="flex items-center justify-between gap-2 bg-ct-surface-2 rounded-ct-md px-3 py-1.5 text-xs">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <Building2 className="w-3 h-3 text-navy-400 flex-shrink-0" />
-                  <span className="font-medium text-navy-700 truncate">{sub.business_name}</span>
-                  {sub.invoice_number && <span className="text-navy-400">({sub.invoice_number})</span>}
+                  <Building2 className="w-3 h-3 text-ct-mute flex-shrink-0" />
+                  <span className="font-medium text-ct-paper truncate">{sub.business_name}</span>
+                  {sub.invoice_number && <span className="text-ct-mute">({sub.invoice_number})</span>}
                   {sub.invoice_id && (
                     <button onClick={() => onViewInvoice(sub.invoice_id!)}
-                      className="text-secondary-600 hover:text-secondary-700 font-medium flex items-center gap-0.5 flex-shrink-0">
+                      className="text-ct-mute-2 hover:text-ct-mute-2 font-medium flex items-center gap-0.5 flex-shrink-0">
                       <Eye className="w-3 h-3" />View
                     </button>
                   )}
                 </div>
-                <span className="font-semibold text-navy-700">${Number(sub.amount).toFixed(2)}</span>
+                <span className="font-semibold text-ct-paper">${Number(sub.amount).toFixed(2)}</span>
               </div>
             ))}
           </div>
         )}
 
         {isSubcontractor && (milestone.subcontractors?.length ?? 0) === 0 && milestone.subcontractor_business_name && (
-          <div className="mt-2 flex items-center gap-3 text-xs text-navy-600">
+          <div className="mt-2 flex items-center gap-3 text-xs text-ct-mute-2">
             <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{milestone.subcontractor_business_name}</span>
             {milestone.invoice_number && <span className="flex items-center gap-1"><Receipt className="w-3 h-3" />Ref: {milestone.invoice_number}</span>}
           </div>
@@ -1100,9 +1106,9 @@ function PaymentTimelineItem({
 
         {/* Proof of Work */}
         {(milestone.proof_images?.length > 0 || showClientDetails) && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="mt-3 pt-3 border-t border-ct-line-soft">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-gray-500 flex items-center gap-1.5">
+              <span className="text-xs font-medium text-ct-mute flex items-center gap-1.5">
                 <ImageIcon className="w-3.5 h-3.5" />
                 Proof of Work {milestone.proof_images?.length > 0 && `(${milestone.proof_images.length})`}
               </span>
@@ -1111,7 +1117,7 @@ function PaymentTimelineItem({
                   <input type="file" multiple accept="image/*"
                     onChange={(e) => e.target.files && onUploadProof(e.target.files)}
                     disabled={uploadingProof === milestone.id} className="hidden" />
-                  <div className="flex items-center gap-1 px-2.5 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-medium text-gray-600 transition-colors">
+                  <div className="flex items-center gap-1 px-2.5 py-1 bg-ct-surface-2 hover:bg-ct-line rounded-ct-sm text-xs font-medium text-ct-mute-2 transition-colors">
                     <Upload className="w-3 h-3" />
                     {uploadingProof === milestone.id ? 'Uploading...' : 'Add Photos'}
                   </div>
@@ -1121,13 +1127,13 @@ function PaymentTimelineItem({
             {milestone.proof_images?.length > 0 ? (
               <div className="flex gap-1.5 overflow-x-auto pb-1">
                 {milestone.proof_images.map((imageUrl, imgIndex) => (
-                  <div key={imgIndex} className="relative group w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                  <div key={imgIndex} className="relative group w-16 h-16 rounded-ct-sm overflow-hidden bg-ct-surface-2 flex-shrink-0">
                     <img src={imageUrl} alt={`Proof ${imgIndex + 1}`} loading="lazy" decoding="async"
                       className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
                       onClick={() => onViewProof(milestone.proof_images, imgIndex)} />
                     {showClientDetails && milestone.status !== 'paid' && (
                       <button onClick={(e) => { e.stopPropagation(); onRemoveProof(imageUrl); }}
-                        className="absolute top-0.5 right-0.5 p-0.5 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700">
+                        className="absolute top-0.5 right-0.5 p-0.5 bg-ct-rose text-ct-ink rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-ct-rose">
                         <X className="w-2.5 h-2.5" />
                       </button>
                     )}
@@ -1135,7 +1141,7 @@ function PaymentTimelineItem({
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-gray-400 text-center py-2">
+              <p className="text-xs text-ct-mute text-center py-2">
                 {showClientDetails ? 'Upload photos to show proof of work completion' : 'No proof images uploaded yet'}
               </p>
             )}
@@ -1182,48 +1188,48 @@ function AddPaymentForm({
   setViewingInvoiceId, loading, handleAddMilestone, onCancel,
 }: AddPaymentFormProps) {
   return (
-    <div className="mb-4 bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
+    <div className="mb-4 bg-ct-surface-2 rounded-ct-md p-4 border border-ct-line space-y-3">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+        <label className="block text-sm font-medium text-ct-mute-2 mb-1">Title</label>
         <input type="text" value={milestoneTitle} onChange={(e) => setMilestoneTitle(e.target.value)}
           placeholder={milestonePaymentType === 'subcontractor' ? 'e.g., Electrical rough-in, Plumbing fit-off' : 'e.g., Deposit, Materials, Final Payment'}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm" />
+          className="w-full px-3 py-2 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-transparent text-sm" />
       </div>
 
       {milestonePaymentType === 'subcontractor' && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="block text-sm font-medium text-gray-700">Subcontractors</label>
+            <label className="block text-sm font-medium text-ct-mute-2">Subcontractors</label>
             <button type="button" onClick={() => setSubcontractors([...subcontractors, { business_name: '', invoice_number: '', amount: '', gst: '' }])}
-              className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
+              className="text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 flex items-center gap-1">
               <Plus className="w-3 h-3" />Add Another
             </button>
           </div>
           {subcontractors.map((sub, idx) => (
-            <div key={idx} className="bg-white rounded-lg border border-secondary-200 p-3 space-y-2">
+            <div key={idx} className="bg-ct-surface rounded-ct-sm border border-ct-line p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-secondary-600 uppercase tracking-wide">Subcontractor {idx + 1}</span>
+                <span className="text-xs font-semibold text-ct-mute-2 uppercase tracking-wide">Subcontractor {idx + 1}</span>
                 <div className="flex items-center gap-1">
                   {sub.invoice_id && (
                     <button type="button" onClick={() => setViewingInvoiceId(sub.invoice_id!)}
-                      className="p-1 text-secondary-500 hover:text-secondary-700 hover:bg-secondary-50 rounded transition-colors" title="View Invoice">
+                      className="p-1 text-ct-mute-2 hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded transition-colors" title="View Invoice">
                       <Eye className="w-3.5 h-3.5" />
                     </button>
                   )}
                   {subcontractors.length > 1 && (
                     <button type="button" onClick={() => setSubcontractors(subcontractors.filter((_, i) => i !== idx))}
-                      className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+                      className="p-1 text-ct-rose hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
               </div>
               <div className="space-y-1.5">
-                <span className="text-xs font-medium text-gray-500">Attach Invoice</span>
+                <span className="text-xs font-medium text-ct-mute">Attach Invoice</span>
                 <div className="grid grid-cols-[1fr_auto_1fr] gap-0 items-center">
                   <div
-                    className={`relative border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-colors ${
-                      dragOverIndex === idx ? 'border-primary-400 bg-primary-50' : 'border-gray-300 hover:border-primary-300 hover:bg-gray-50'
+                    className={`relative border-2 border-dashed rounded-ct-sm p-3 text-center cursor-pointer transition-colors ${
+                      dragOverIndex === idx ? 'border-ct-teal bg-ct-surface-2' : 'border-ct-line hover:border-ct-line hover:bg-ct-surface-2'
                     }`}
                     onDragOver={(e) => { e.preventDefault(); setDragOverIndex(idx); }}
                     onDragLeave={() => setDragOverIndex(null)}
@@ -1237,81 +1243,81 @@ function AddPaymentForm({
                   >
                     {processingInvoice === idx ? (
                       <div className="flex flex-col items-center gap-1">
-                        <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-xs text-secondary-600 font-medium">Scanning...</span>
+                        <div className="w-4 h-4 border-2 border-ct-teal border-t-transparent rounded-full animate-spin" />
+                        <span className="text-xs text-ct-mute font-medium">Scanning...</span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-1">
-                        <Upload className="w-4 h-4 text-gray-400" />
-                        <span className="text-xs text-gray-500"><span className="text-secondary-600 font-medium">Upload</span> existing</span>
+                        <Upload className="w-4 h-4 text-ct-mute" />
+                        <span className="text-xs text-ct-mute"><span className="text-ct-mute-2 font-medium">Upload</span> existing</span>
                       </div>
                     )}
                   </div>
                   <div className="flex items-center justify-center px-3">
-                    <span className="text-xs font-semibold text-gray-400 uppercase">or</span>
+                    <span className="text-xs font-semibold text-ct-mute uppercase">or</span>
                   </div>
                   {isProUser ? (
                     <button type="button" onClick={() => setShowCreateInvoice(idx)}
-                      className="h-full border-2 border-secondary-200 bg-secondary-50 hover:bg-secondary-100 rounded-lg transition-colors flex flex-col items-center justify-center gap-1 p-3">
-                      <PenLine className="w-4 h-4 text-secondary-600" />
-                      <span className="text-xs font-medium text-secondary-700">Create new</span>
+                      className="h-full border-2 border-ct-line bg-ct-surface-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors flex flex-col items-center justify-center gap-1 p-3">
+                      <PenLine className="w-4 h-4 text-ct-mute-2" />
+                      <span className="text-xs font-medium text-ct-mute-2">Create new</span>
                     </button>
                   ) : (
                     <button type="button" onClick={() => setShowSubscriptionModal(true)}
-                      className="h-full border-2 border-warm-200 bg-warm-50 hover:bg-warm-100 rounded-lg transition-colors flex flex-col items-center justify-center gap-1 p-3">
-                      <Crown className="w-4 h-4 text-warm-600" />
-                      <span className="text-xs font-medium text-warm-700">Pro only</span>
+                      className="h-full border-2 border-ct-amber/[0.34] bg-ct-amber/[0.13] hover:bg-ct-amber/[0.13] rounded-ct-sm transition-colors flex flex-col items-center justify-center gap-1 p-3">
+                      <Crown className="w-4 h-4 text-ct-mute-2" />
+                      <span className="text-xs font-medium text-ct-amber">Pro only</span>
                     </button>
                   )}
                 </div>
               </div>
               {(sub.file_name || sub.file_url || sub.invoice_id) && (
-                <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-secondary-50 rounded-lg border border-secondary-200">
-                  <FileText className="w-4 h-4 text-secondary-600 flex-shrink-0" />
-                  <span className="text-xs font-medium text-secondary-800 truncate flex-1">{sub.file_name || 'Invoice attached'}</span>
+                <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-ct-surface-2 rounded-ct-sm border border-ct-line">
+                  <FileText className="w-4 h-4 text-ct-mute-2 flex-shrink-0" />
+                  <span className="text-xs font-medium text-ct-mute-2 truncate flex-1">{sub.file_name || 'Invoice attached'}</span>
                   {sub.file_url && (
                     <button type="button"
                       onClick={async () => {
                         const signed = await getSignedUrl('documents', sub.file_url!, 600);
                         if (signed) window.open(signed, '_blank', 'noopener,noreferrer');
                       }}
-                      className="text-xs font-medium text-secondary-700 hover:text-secondary-900 flex items-center gap-1 flex-shrink-0">
+                      className="text-xs font-medium text-ct-mute-2 hover:text-ct-paper flex items-center gap-1 flex-shrink-0">
                       <Eye className="w-3.5 h-3.5" />View
                     </button>
                   )}
                   {sub.invoice_id && (
                     <button type="button" onClick={() => setViewingInvoiceId(sub.invoice_id!)}
-                      className="text-xs font-medium text-secondary-700 hover:text-secondary-900 flex items-center gap-1 flex-shrink-0">
+                      className="text-xs font-medium text-ct-mute-2 hover:text-ct-paper flex items-center gap-1 flex-shrink-0">
                       <Eye className="w-3.5 h-3.5" />View
                     </button>
                   )}
                 </div>
               )}
               {(sub.business_name || sub.amount || sub.invoice_number) && (
-                <div className="mt-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600 space-y-1">
+                <div className="mt-2 px-3 py-2 bg-ct-surface-2 rounded-ct-md border border-ct-line text-xs text-ct-mute-2 space-y-1">
                   {sub.business_name && (
-                    <div className="flex justify-between"><span className="text-gray-500">Business</span><span className="font-medium text-gray-800">{sub.business_name}</span></div>
+                    <div className="flex justify-between"><span className="text-ct-mute">Business</span><span className="font-medium text-ct-mute-2">{sub.business_name}</span></div>
                   )}
                   {sub.invoice_number && (
-                    <div className="flex justify-between"><span className="text-gray-500">Invoice #</span><span className="font-medium text-gray-800">{sub.invoice_number}</span></div>
+                    <div className="flex justify-between"><span className="text-ct-mute">Invoice #</span><span className="font-medium text-ct-mute-2">{sub.invoice_number}</span></div>
                   )}
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-500">Amount</span>
+                    <span className="text-ct-mute">Amount</span>
                     <div className="flex items-center gap-1">
-                      <span className="text-gray-500">$</span>
+                      <span className="text-ct-mute">$</span>
                       <input type="number" step="0.01" min="0" value={sub.amount}
                         onChange={(e) => { const updated = [...subcontractors]; updated[idx] = { ...updated[idx], amount: e.target.value }; setSubcontractors(updated); }}
-                        className="w-24 text-right text-xs font-medium text-gray-800 bg-white border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                        className="w-24 text-right text-xs font-medium text-ct-paper bg-ct-surface border border-ct-line rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-ct-teal"
                         placeholder="0.00" />
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-500">GST</span>
+                    <span className="text-ct-mute">GST</span>
                     <div className="flex items-center gap-1">
-                      <span className="text-gray-500">$</span>
+                      <span className="text-ct-mute">$</span>
                       <input type="number" step="0.01" min="0" value={sub.gst}
                         onChange={(e) => { const updated = [...subcontractors]; updated[idx] = { ...updated[idx], gst: e.target.value }; setSubcontractors(updated); }}
-                        className="w-24 text-right text-xs font-medium text-gray-800 bg-white border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                        className="w-24 text-right text-xs font-medium text-ct-paper bg-ct-surface border border-ct-line rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-ct-teal"
                         placeholder="0.00" />
                     </div>
                   </div>
@@ -1320,9 +1326,9 @@ function AddPaymentForm({
             </div>
           ))}
           {subcontractors.some(s => parseFloat(s.amount) > 0 || parseFloat(s.gst) > 0) && (
-            <div className="flex justify-between items-center px-3 py-2 bg-secondary-50 rounded-lg border border-secondary-200">
-              <span className="text-sm font-medium text-secondary-700">Total</span>
-              <span className="text-sm font-bold text-secondary-800">
+            <div className="flex justify-between items-center px-3 py-2 bg-ct-surface-2 rounded-ct-sm border border-ct-line">
+              <span className="text-sm font-medium text-ct-mute-2">Total</span>
+              <span className="text-sm font-bold text-ct-mute-2">
                 ${subcontractors.reduce((sum, s) => sum + (parseFloat(s.amount) || 0) + (parseFloat(s.gst) || 0), 0).toFixed(2)}
               </span>
             </div>
@@ -1332,40 +1338,40 @@ function AddPaymentForm({
 
       {milestonePaymentType !== 'subcontractor' && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Amount ($)</label>
+          <label className="block text-sm font-medium text-ct-mute-2 mb-1">Amount ($)</label>
           <input type="number" step="0.01" min="0" value={milestoneAmount} onChange={(e) => setMilestoneAmount(e.target.value)}
             placeholder="0.00"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm" />
+            className="w-full px-3 py-2 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-transparent text-sm" />
         </div>
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Due Date (Optional)</label>
+        <label className="block text-sm font-medium text-ct-mute-2 mb-1">Due Date (Optional)</label>
         <input type="date" value={milestoneDueDate} onChange={(e) => setMilestoneDueDate(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm" />
+          className="w-full px-3 py-2 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-transparent text-sm" />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Payment Type</label>
+        <label className="block text-sm font-medium text-ct-mute-2 mb-1">Payment Type</label>
         <div className="flex gap-2">
           <button type="button" onClick={() => setMilestonePaymentType('direct')}
-            className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${
-              milestonePaymentType === 'direct' ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+            className={`flex-1 px-3 py-2 rounded-ct-sm text-sm font-medium border-2 transition-colors ${
+              milestonePaymentType === 'direct' ? 'border-ct-teal bg-ct-teal/[0.14] text-ct-teal' : 'border-ct-line bg-ct-surface text-ct-mute-2 hover:border-ct-line'
             }`}>Direct Payment</button>
           <button type="button" onClick={() => setMilestonePaymentType('subcontractor')}
-            className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${
-              milestonePaymentType === 'subcontractor' ? 'border-primary-500 bg-warm-50 text-warm-700' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+            className={`flex-1 px-3 py-2 rounded-ct-sm text-sm font-medium border-2 transition-colors ${
+              milestonePaymentType === 'subcontractor' ? 'border-ct-teal bg-ct-amber/[0.13] text-ct-amber' : 'border-ct-line bg-ct-surface text-ct-mute-2 hover:border-ct-line'
             }`}>Subcontractor</button>
         </div>
       </div>
 
       <div className="flex gap-2 pt-1">
         <button onClick={handleAddMilestone} disabled={loading}
-          className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 font-medium text-sm">
+          className="flex-1 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm hover:brightness-110 disabled:opacity-50 font-medium text-sm">
           Add Progress Payment
         </button>
         <button onClick={onCancel}
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium text-sm">Cancel</button>
+          className="px-4 py-2 bg-ct-line text-ct-mute-2 rounded-ct-sm hover:bg-ct-line font-medium text-sm">Cancel</button>
       </div>
     </div>
   );
@@ -1395,30 +1401,30 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
   return (
     <div className="space-y-3">
       {/* Summary Banner */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-center">
           <div>
-            <p className="text-xs text-gray-500 mb-0.5">Approved</p>
-            <p className="text-sm font-bold text-green-700">
+            <p className="text-xs text-ct-mute mb-0.5">Approved</p>
+            <p className="text-sm font-bold text-ct-teal">
               +${approvedVariationsTotal.toLocaleString('en-AU', { minimumFractionDigits: 2 })}
             </p>
-            <p className="text-xs text-gray-400">{approved.length} variation{approved.length !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-ct-mute">{approved.length} variation{approved.length !== 1 ? 's' : ''}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 mb-0.5">Pending</p>
-            <p className="text-sm font-bold text-warm-600">{pending.length}</p>
-            <p className="text-xs text-gray-400">awaiting review</p>
+            <p className="text-xs text-ct-mute mb-0.5">Pending</p>
+            <p className="text-sm font-bold text-ct-amber">{pending.length}</p>
+            <p className="text-xs text-ct-mute">awaiting review</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 mb-0.5">Declined</p>
-            <p className="text-sm font-bold text-red-600">{rejected.length}</p>
-            <p className="text-xs text-gray-400">variation{rejected.length !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-ct-mute mb-0.5">Declined</p>
+            <p className="text-sm font-bold text-ct-rose">{rejected.length}</p>
+            <p className="text-xs text-ct-mute">variation{rejected.length !== 1 ? 's' : ''}</p>
           </div>
         </div>
         {jobBudget != null && jobBudget > 0 && approvedVariationsTotal > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-sm">
-            <span className="text-gray-500">Running total (budget + approved)</span>
-            <span className="font-bold text-gray-900">
+          <div className="mt-3 pt-3 border-t border-ct-line-soft flex items-center justify-between text-sm">
+            <span className="text-ct-mute">Running total (budget + approved)</span>
+            <span className="font-bold text-ct-paper">
               ${(jobBudget + approvedVariationsTotal).toLocaleString('en-AU', { minimumFractionDigits: 2 })}
             </span>
           </div>
@@ -1426,11 +1432,11 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
       </div>
 
       {/* Timeline */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4">
         <div className="flex items-center gap-2 mb-4">
-          <FileText className="w-4 h-4 text-gray-600" />
-          <h4 className="font-semibold text-gray-900 text-sm">Variations History</h4>
-          <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
+          <FileText className="w-4 h-4 text-ct-mute-2" />
+          <h4 className="font-ct-display font-semibold tracking-tight text-ct-paper text-sm">Variations History</h4>
+          <span className="px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded-full">
             {resolved.length}
           </span>
         </div>
@@ -1447,41 +1453,41 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
                   {/* Timeline spine */}
                   <div className="flex flex-col items-center pt-1">
                     {isApproved ? (
-                      <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                      <CheckCircle className="w-5 h-5 text-ct-teal flex-shrink-0" />
                     ) : (
-                      <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                      <XCircle className="w-5 h-5 text-ct-rose flex-shrink-0" />
                     )}
-                    {!isLast && <div className={`w-0.5 flex-1 mt-1 min-h-[16px] ${isApproved ? 'bg-green-200' : 'bg-red-200'}`} />}
+                    {!isLast && <div className={`w-0.5 flex-1 mt-1 min-h-[16px] ${isApproved ? 'bg-ct-teal/30' : 'bg-ct-rose/30'}`} />}
                   </div>
 
                   {/* Content */}
                   <div className={`flex-1 ${isLast ? 'pb-0' : 'pb-4'}`}>
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
                       {variation.reason_category && (
-                        <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full capitalize">
+                        <span className="px-3 py-1 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded-full capitalize">
                           {variation.reason_category.replace('_', ' ')}
                         </span>
                       )}
                       <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                        isApproved ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                        isApproved ? 'bg-ct-teal/[0.14] text-ct-teal' : 'bg-ct-rose/[0.13] text-ct-rose'
                       }`}>
                         {isApproved ? 'Approved' : 'Declined'}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-700 mt-1">{variation.description}</p>
+                    <p className="text-sm text-ct-mute-2 mt-1">{variation.description}</p>
                     <p className={`text-lg font-bold mt-1 ${
-                      isApproved ? 'text-green-700' : 'text-red-400 line-through'
+                      isApproved ? 'text-ct-teal' : 'text-ct-rose line-through'
                     }`}>
                       +${Number(variation.additional_amount).toFixed(2)}
                     </p>
-                    <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                    <p className="text-xs text-ct-mute mt-0.5 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {new Date(variation.updated_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                     {variation.photo_urls && variation.photo_urls.length > 0 && (
                       <div className="flex gap-1.5 mt-2 overflow-x-auto pb-1">
                         {variation.photo_urls.map((url, pIdx) => (
-                          <div key={pIdx} className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                          <div key={pIdx} className="w-12 h-12 rounded-ct-sm overflow-hidden bg-ct-surface-2 border border-ct-line flex-shrink-0">
                             <img src={url} alt={`Evidence ${pIdx + 1}`} loading="lazy" decoding="async"
                               className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
                               onClick={() => setVariationLightboxUrl(url)} />
