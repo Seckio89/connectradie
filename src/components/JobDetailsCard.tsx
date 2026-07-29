@@ -12,6 +12,7 @@ import { extractSuburb } from '../lib/contactGating';
 import { redactContactInfo } from '../lib/redaction';
 import { useSignedUrls } from '../hooks/useSignedUrl';
 import { getSignedUrl } from '../lib/storage';
+import { approveVariation, payPriceIncrease, humanizePaymentError } from '../lib/stripePayments';
 
 const RequestVariationModal = lazy(() => import('./RequestVariationModal'));
 const CreateInvoiceModal = lazy(() => import('./CreateInvoiceModal'));
@@ -126,6 +127,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
   const photoSignedUrls = useSignedUrls('job-attachments', job?.images_url || []);
   const [variations, setVariations] = useState<JobVariation[]>([]);
   const [showVariationModal, setShowVariationModal] = useState(false);
+  const [variationError, setVariationError] = useState('');
   const [loading, setLoading] = useState(false);
   const [milestones, setMilestones] = useState<JobMilestone[]>([]);
   const [showAddMilestone, setShowAddMilestone] = useState(false);
@@ -238,25 +240,26 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
     }
   };
 
-  const handleApproveVariation = async (variationId: string, additionalAmount: number) => {
+  /**
+   * Approving a variation means paying for it.
+   *
+   * This used to flip the variation to 'approved' and raise jobs.budget_amount
+   * straight from the browser, which left the job worth more than had been
+   * funded and trusted the client to write the job's value. Now the server
+   * prices it, Stripe collects it, and the webhook is the only thing that
+   * approves it.
+   */
+  const handleApproveVariation = async (variationId: string) => {
     setLoading(true);
     try {
-      const { error: updateVariationError } = await supabase
-        .from('job_variations')
-        .update({ status: 'approved' })
-        .eq('id', variationId);
-      if (updateVariationError) throw updateVariationError;
-      const newBudgetAmount = (job.budget_amount || 0) + additionalAmount;
-      const { error: updateJobError } = await supabase
-        .from('jobs')
-        .update({ budget_amount: newBudgetAmount })
-        .eq('id', job.id);
-      if (updateJobError) throw updateJobError;
-      await fetchVariations();
-      window.location.reload();
-    } catch {
-      alert('Failed to approve. Please try again.');
-    } finally {
+      const { paymentId } = await approveVariation(variationId);
+      const { url } = await payPriceIncrease(paymentId, job.id);
+      window.location.href = url;
+    } catch (err) {
+      // humanizePaymentError passes server messages through, so the specific
+      // reasons approve-variation returns ("This job hasn't been funded yet…")
+      // reach the client rather than a generic failure.
+      setVariationError(humanizePaymentError(err instanceof Error ? err.message : null));
       setLoading(false);
     }
   };
@@ -759,9 +762,12 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
                 </p>
               )}
             </div>
+            {!showClientDetails && variationError && (
+              <p className="text-sm text-red-600 mb-2">{variationError}</p>
+            )}
             {!showClientDetails && (
               <div className="flex gap-2">
-                <button onClick={() => handleApproveVariation(variation.id, variation.additional_amount)} disabled={loading}
+                <button onClick={() => handleApproveVariation(variation.id)} disabled={loading}
                   className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:bg-gray-400 flex items-center justify-center gap-2 text-sm font-medium transition-colors">
                   <CheckCircle className="w-4 h-4" />Approve & Fund
                 </button>

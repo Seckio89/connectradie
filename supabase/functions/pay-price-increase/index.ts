@@ -203,6 +203,13 @@ Deno.serve(async (req: Request) => {
     const additionalGst = typeof pendingIncrease.additional_gst === "number"
       ? pendingIncrease.additional_gst
       : 0;
+    // Set by approve-variation when this increase came from a job variation
+    // rather than a quote adjustment. Forwarded to Stripe so stripe-webhook can
+    // approve the variation and raise the budget once the money lands. Absent
+    // on quote adjustments, which take the accepted-quote path instead.
+    const variationId = typeof pendingIncrease.variation_id === "string"
+      ? pendingIncrease.variation_id
+      : null;
 
     // application_fee_amount is what the platform retains from the destination charge.
     const applicationFeeAmount = (typeof platformFee === "number" ? platformFee : 0) +
@@ -240,6 +247,7 @@ Deno.serve(async (req: Request) => {
           platform_fee: platformFee,
           gst: additionalGst,
           tradie_tier: payment.metadata?.tradie_tier || "free",
+          ...(variationId ? { variation_id: variationId } : {}),
         },
       })
       .select("id")
@@ -280,9 +288,16 @@ Deno.serve(async (req: Request) => {
         price_data: {
           currency: "aud",
           product_data: {
-            name: `Price Adjustment — ${jobDesc}`,
-            description:
-              "Additional amount after site inspection. Secured with Stripe.",
+            // A variation and a post-inspection quote adjustment both land
+            // here, but the client only agreed to one of them. Labelling a
+            // subfloor variation "after site inspection" on the Stripe page
+            // describes something that never happened.
+            name: variationId
+              ? `Variation — ${jobDesc}`
+              : `Price Adjustment — ${jobDesc}`,
+            description: variationId
+              ? "Approved change to the agreed scope. Secured with Stripe."
+              : "Additional amount after site inspection. Secured with Stripe.",
           },
           unit_amount: diffCents,
         },
@@ -333,6 +348,7 @@ Deno.serve(async (req: Request) => {
               job_id: payment.job_id,
               parent_payment_id: paymentId,
               tradie_id: job.tradie_id,
+              ...(variationId ? { variation_id: variationId } : {}),
             },
           },
           success_url: successUrl,
@@ -346,6 +362,7 @@ Deno.serve(async (req: Request) => {
             base_amount: String(diffCents),
             processing_fee: String(processingFee),
             platform_fee: String(platformFee),
+            ...(variationId ? { variation_id: variationId } : {}),
           },
         },
         idempotencyKey ? { idempotencyKey } : undefined
