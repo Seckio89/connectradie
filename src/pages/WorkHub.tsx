@@ -40,23 +40,23 @@ export default function WorkHub() {
   return (
     <DashboardLayout>
       <div>
-        <nav className="flex items-center gap-1.5 text-xs text-gray-400 mb-3">
-          <Link to="/dashboard" className="hover:text-gray-600 transition-colors">Dashboard</Link>
+        <nav className="flex items-center gap-1.5 text-xs text-ct-mute mb-3">
+          <Link to="/dashboard" className="hover:text-ct-mute-2 transition-colors">Dashboard</Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-gray-600">Work Hub</span>
+          <span className="text-ct-mute-2">Work Hub</span>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-gray-800 font-medium">{tabs.find(t => t.key === activeTab)?.label}</span>
+          <span className="text-ct-paper font-medium">{tabs.find(t => t.key === activeTab)?.label}</span>
         </nav>
 
-        <h1 className="text-xl font-bold text-gray-900 mb-1">Work Hub</h1>
-        <p className="text-sm text-gray-500 mb-4">
+        <h1 className="text-xl font-bold text-ct-paper mb-1">Work Hub</h1>
+        <p className="text-sm text-ct-mute mb-4">
           {activeTab === 'leads' && 'Fresh job requests near you — quote fast and track every response in one place'}
           {activeTab === 'jobs' && 'Every job you\'ve won, from first site visit through to final payment'}
           {activeTab === 'services' && 'Keep your regulars running — log visits, raise invoices and get paid on time'}
           {activeTab === 'hiring' && 'Post a vacancy and reach apprentices and qualified tradies looking for work'}
         </p>
 
-        <div className="flex items-center gap-0 border-b border-gray-200 mb-5 sm:overflow-x-auto sm:mx-0 scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex items-center gap-0 border-b border-ct-line mb-5 sm:overflow-x-auto sm:mx-0 scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
           {tabs.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.key;
@@ -74,8 +74,8 @@ export default function WorkHub() {
                 }}
                 className={`flex-1 justify-center sm:flex-none sm:justify-start flex items-center gap-1 sm:gap-1.5 px-1 sm:px-4 py-2.5 text-xs sm:text-sm font-medium transition-all border-b-2 -mb-px whitespace-nowrap min-h-[44px] ${
                   isActive
-                    ? 'border-warm-500 text-gray-900'
-                    : 'border-transparent text-gray-400 hover:text-gray-600'
+                    ? 'border-ct-teal text-ct-paper'
+                    : 'border-transparent text-ct-mute hover:text-ct-mute-2'
                 }`}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
