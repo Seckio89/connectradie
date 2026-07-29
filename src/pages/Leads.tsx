@@ -54,7 +54,7 @@ import QuoteComparisonView from '../components/QuoteComparisonView';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import ConfirmModal from '../components/ConfirmModal';
 import Modal from '../components/Modal';
-import { formatDate, checkLicenseExpired } from '../lib/utils';
+import { formatDate, checkLicenseExpired, friendlyError } from '../lib/utils';
 import { escapeHtml } from '../lib/escapeHtml';
 import { cancelRecurringJob } from '../lib/recurringJobs';
 import { extractSuburb } from '../lib/contactGating';
@@ -65,9 +65,11 @@ import SignedImage from '../components/SignedImage';
 import { getSignedUrl } from '../lib/storage';
 import { sendNotification } from '../lib/notificationService';
 import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
-import { acceptAndPay, verifyPayment, releaseEscrow, payPriceIncrease } from '../lib/stripePayments';
+import { acceptAndPay, verifyPayment, releaseEscrow, payPriceIncrease, processRefund, humanizePaymentError } from '../lib/stripePayments';
 import { acceptCancellationTerms } from '../lib/cancellationPolicy';
 import CancellationTerms from '../components/CancellationTerms';
+import CancelJobModal from '../components/CancelJobModal';
+import { raiseDispute } from '../lib/disputes';
 import { getJobHints } from '../lib/jobDescriptionHints';
 import ClientServicesTab from '../components/ClientServicesTab';
 
@@ -290,6 +292,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
   } | null>(null);
 
   const [releasingJobId, setReleasingJobId] = useState<string | null>(null);
+  const [cancelJobTarget, setCancelJobTarget] = useState<LeadWithClient | null>(null);
   const [releasedJobIds, setReleasedJobIds] = useState<Set<string>>(new Set());
   const [reviewedJobIds, setReviewedJobIds] = useState<Set<string>>(new Set());
   const [jobPaymentIds, setJobPaymentIds] = useState<Map<string, string>>(new Map());
@@ -1166,6 +1169,79 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     }
   };
 
+  /**
+   * Cancel a job the client has committed to.
+   *
+   * Goes through process-refund rather than writing a second money path. That
+   * function already returns the full amount including GST and the processing
+   * fee, reverses the destination-charge split, is idempotent, and — crucially
+   * — refuses once release has been approved or the work is done, which is
+   * exactly what the agreed terms promise. It also sets the job to 'cancelled'
+   * and notifies the tradie, so this handler never writes job state itself.
+   *
+   * A refusal is not an error. It means the money is already with the tradie,
+   * which the terms say is a dispute, so the reason they typed is escalated
+   * rather than thrown away.
+   */
+  const handleCancelJob = async (reason: string) => {
+    const job = cancelJobTarget;
+    if (!job || !user) return;
+
+    const { data: payment } = await supabase
+      .from('payments')
+      .select('id')
+      .eq('job_id', job.id)
+      .eq('payment_type', 'job_funding')
+      .eq('status', 'completed')
+      .maybeSingle();
+
+    if (!payment) {
+      // Accepted but never funded — no money to move, so just end the job.
+      const { error } = await supabase
+        .from('jobs')
+        .update({ status: 'cancelled' })
+        .eq('id', job.id);
+      if (error) throw new Error(friendlyError(error, 'Could not cancel the job. Please try again.'));
+      setCancelJobTarget(null);
+      setQuoteAcceptedBanner('cancelled');
+      setTimeout(() => setQuoteAcceptedBanner(false), 8000);
+      await fetchLeads();
+      return;
+    }
+
+    try {
+      await processRefund(payment.id, reason);
+    } catch (err) {
+      const status = (err as { status?: number }).status;
+      if (status === 409 && job.tradie_id) {
+        const result = await raiseDispute({
+          jobId: job.id,
+          againstUser: job.tradie_id,
+          openedBy: user.id,
+          description: reason,
+          reason: 'cancellation_after_release',
+        });
+        // Deliberately leave the modal open. It renders what's thrown below,
+        // and closing it here would unmount the only place the outcome is
+        // shown — the client would be left thinking nothing happened.
+        if (result.ok) {
+          throw new Error(
+            "This job's payment has already been released, so it can't be cancelled with an automatic refund. We've passed your reason to our team as a dispute and they'll review it.",
+          );
+        }
+        throw new Error(result.message);
+      }
+      throw new Error(
+        humanizePaymentError(err instanceof Error ? err.message : null),
+      );
+    }
+
+    setCancelJobTarget(null);
+    setQuoteAcceptedBanner('cancelled');
+    setTimeout(() => setQuoteAcceptedBanner(false), 8000);
+    await fetchLeads();
+  };
+
   const handleAcceptQuote = async (quoteId: string, jobId: string, agreedPrice?: number) => {
     try {
       // Record the client's agreement to the cancellation terms before any
@@ -1265,12 +1341,28 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
       // Child tables use ON DELETE CASCADE (migration 20260321100000), so just delete
       // the job — DB handles cleanup. (No-op if cancelRecurringJob already removed it.)
-      const { error } = await supabase.from('jobs').delete().eq('id', jobId);
+      //
+      // .select() so we can tell a real delete from a no-op. RLS restricts this
+      // to pending/cancelled/declined jobs, and a DELETE that matches zero rows
+      // is not an error — without this the row was dropped from local state
+      // regardless and the client was shown a deletion that never happened.
+      const { data: deleted, error } = await supabase
+        .from('jobs')
+        .delete()
+        .eq('id', jobId)
+        .select('id');
       if (error) throw error;
+
+      if (!deleted || deleted.length === 0) {
+        // Already gone (cancelRecurringJob may have removed it), or not
+        // deletable. Re-fetch rather than guess which.
+        await fetchLeads();
+        return;
+      }
 
       setLeads((prev) => prev.filter((l) => l.id !== jobId));
     } catch (err) {
-      console.error('Failed to cancel job:', err);
+      console.error('Failed to delete job:', err);
     } finally {
       setDeleteJobTarget(null);
     }
@@ -1533,11 +1625,20 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                         Ongoing
                       </span>
                     )}
-                    {isClientEditable && (
+                    {/* Delete only a posting nobody has taken on. The RLS
+                        policy "Clients can delete their own pending jobs"
+                        allows pending/cancelled/declined only, so on an
+                        accepted job this DELETE matched zero rows — which
+                        Postgres does not treat as an error. The handler then
+                        optimistically dropped the row from local state, so the
+                        client watched the job vanish and believed it was
+                        cancelled while the tradie still had it booked.
+                        Committed jobs use "Cancel job" below, which refunds. */}
+                    {isClientEditable && !lead.tradie_id && lead.status === 'pending' && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setDeleteJobTarget(lead); }}
                         className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Cancel job"
+                        title="Delete job posting"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -2014,6 +2115,26 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   Quote accepted — tradie assigned
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Cancel, for a job someone has actually committed to.
+              ClientDashboard has its own trash-can action, but that one is
+              gated to pending jobs with no tradie and just deletes the posting.
+              Once a tradie is on the job there may be money in escrow and
+              someone is expecting to work, so it goes through the refund path
+              and shows the terms both sides agreed to. Completed jobs are
+              excluded: reversing those is a dispute, not a cancellation. */}
+          {!isTradie && !lead.archived_at && lead.tradie_id &&
+           !['completed', 'cancelled', 'declined'].includes(lead.status) && (
+            <div className="flex justify-end px-5 py-3 border-t border-gray-100">
+              <button
+                onClick={(e) => { e.stopPropagation(); setCancelJobTarget(lead); }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                Cancel job
+              </button>
             </div>
           )}
 
@@ -3525,9 +3646,19 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         );
       })()}
 
+      {cancelJobTarget && (
+        <CancelJobModal
+          jobId={cancelJobTarget.id}
+          jobTitle={cancelJobTarget.title}
+          isFunded={cancelJobTarget.status === 'funded' || cancelJobTarget.status === 'in_progress'}
+          onConfirm={handleCancelJob}
+          onClose={() => setCancelJobTarget(null)}
+        />
+      )}
+
       {deleteJobTarget && (
         <ConfirmModal
-          title="Cancel Job?"
+          title="Delete job posting?"
           message={`Are you sure you want to cancel "${deleteJobTarget.title || cleanDescription(deleteJobTarget.description).slice(0, 60)}"?${deleteJobTarget.quote_count > 0 ? ` Any quotes received will be removed and tradies will be notified.` : ''} This action cannot be undone.`}
           confirmText="Cancel Job"
           cancelText="Keep Job"
