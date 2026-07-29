@@ -184,13 +184,25 @@ export default {
         'ct-lg': 'var(--r-lg)',
         'ct-xl': 'var(--r-xl)',
       },
+      fontSize: {
+        // Design system v2. The uppercase mono meta label — status
+        // pills, table headers, job references, milestone states.
+        // Tracking is baked in so it can't drift between call sites.
+        'ct-meta': ['0.625rem', { lineHeight: '1', letterSpacing: '0.1em' }],
+      },
       animation: {
         'float-slow': 'float-slow 6s ease-in-out infinite',
+        // Always pair with `motion-safe:` at the call site.
+        'ct-slide-in': 'ct-slide-in .6s cubic-bezier(.2,.7,.3,1) both',
       },
       keyframes: {
         'float-slow': {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-8px)' },
+        },
+        'ct-slide-in': {
+          from: { opacity: '0', transform: 'translateY(9px)' },
+          to: { opacity: '1', transform: 'none' },
         },
       },
     },
