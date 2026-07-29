@@ -8,8 +8,9 @@
 //   v5 — Workforce & Compliance added 4 lazy routes (/workforce, /workforce/:id,
 //        /workforce/invite, /workforce/claim).
 //   v6 — employment_type fix rehashed the Onboarding and Team chunks.
-const CACHE_NAME = 'connecttradie-v6';
-const API_CACHE_NAME = 'connecttradie-api-v6';
+//   v7 — Workforce nav entry rehashed DashboardLayout, which every page uses.
+const CACHE_NAME = 'connecttradie-v7';
+const API_CACHE_NAME = 'connecttradie-api-v7';
 const API_CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 const APP_SHELL = [
   '/',

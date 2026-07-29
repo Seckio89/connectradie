@@ -32,6 +32,7 @@ import {
   Star,
   FileText,
   Plus,
+  HardHat,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -605,6 +606,9 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
     { name: 'Work Hub', href: '/work', icon: ClipboardList },
     { name: 'Clients', href: '/clients', icon: Users },
     { name: 'Teams & Schedule', href: '/schedule', icon: CalendarDays },
+    // Sits next to Teams & Schedule deliberately — that page is the roster and
+    // timesheets, this one is the same crew's tickets, licences and expiries.
+    { name: 'Workforce', href: '/workforce', icon: HardHat },
     { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Messages', href: '/messages', icon: MessageCircle },
     { name: 'Insights', href: '/analytics', icon: BarChart3, children: [
