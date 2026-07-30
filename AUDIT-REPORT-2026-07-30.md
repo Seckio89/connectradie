@@ -11,12 +11,19 @@ tooling traps, the check was run against the current governing rules in
 |-----------|-------|--------|----------------------|--------|
 | Security & Auth | 92.3% | 25% | 23.1% | 🟢 |
 | Payments & Stripe | 86.4% | 25% | 21.6% | 🟡 |
-| Database & RLS | 71.4% | 20% | 14.3% | 🔴 |
+| Database & RLS | 100% | 20% | 20.0% | 🟢 |
 | TypeScript Safety | 100% | 10% | 10.0% | 🟢 |
 | UI & Design System | 85.7% | 5% | 4.3% | 🟡 |
 | Navigation | 80.0% | 5% | 4.0% | 🟡 |
 | Test Coverage | 42.9% | 10% | 4.3% | 🔴 |
-| **Overall** | **81.5%** | | | 🟡 |
+| **Overall** | **87.3%** | | | 🟡 |
+
+> **Amended same day.** Findings #3, #5 and #6 were fixed after the initial
+> run — the five FK indexes are live in prod (migration `20260730114952`,
+> advisor `unindexed_foreign_keys` now returns zero rows) and the
+> `JobDetailsCard` N+1 is batched. Database & RLS moved 71.4% 🔴 → 100% 🟢
+> and the overall score 81.5% → 87.3%. The findings table below records
+> them as fixed rather than deleting them.
 
 ## Detailed Check Results
 
@@ -59,10 +66,10 @@ Score: 19/22. *See finding #2.
 | RLS on every table | 3× | ✅ | 100/100 live. |
 | CRUD policies per user-facing table | 3× | ✅ | Two policy-free RLS tables (`service_decline_tokens`, `stripe_webhook_events`, `worker_credential_notifications`) are deliberate deny-all designs, documented in-migration. |
 | No permissive write policies | 3× | ✅ | All 21 `true`-qualified write policies are scoped `TO service_role`. Zero for user roles. |
-| FK columns indexed | 2× | ❌ | 5 unindexed FKs (custom_task_suggestions ×2, platform_fee_charges.job_id, platform_fee_invoices.adjusts_invoice_id, service_decline_tokens.recurring_job_id). All low-traffic, but `platform_fee_charges.job_id` sits on the money path. |
-| Composite indexes for common queries | 1× | ✅ | Present; ~55 "unused index" INFOs are expected pre-launch noise (no traffic yet). |
-| No N+1 in Edge Functions / data layer | 2× | ❌ | `JobDetailsCard.fetchMilestones` issues one `milestone_subcontractors` query **per milestone** (loop over `Promise.all`); fine at 3 milestones, degrades on long schedules. |
-| Score: 10/14. | | | |
+| FK columns indexed | 2× | ✅ (fixed) | Was 5 unindexed FKs. Migration `20260730114952_index_unindexed_foreign_keys` applied to prod; advisor `unindexed_foreign_keys` now returns zero rows. |
+| Composite indexes for common queries | 1× | ✅ | Present; ~60 "unused index" INFOs are expected pre-launch noise (no traffic yet — including the five just added). |
+| No N+1 in Edge Functions / data layer | 2× | ✅ (fixed) | `JobDetailsCard.fetchMilestones` now batches subcontractors into one `.in('milestone_id', …)` and skips the query entirely when no milestone is subcontractor-funded. |
+| Score: 14/14. | | | |
 
 Also noted (performance advisors): `cancellation_policies` and `profile_private` have overlapping permissive policies per role/action (WARN — evaluate both on every query); Auth uses a fixed 10-connection allocation rather than percentage.
 
@@ -117,10 +124,10 @@ Score: 3/7.
 |---|----------|-----------|---------------|---------|----------------|
 | 1 | HIGH | Tests | supabase/functions/* | 74 edge-fn entry points lack unit tests; only e2e + 5 _shared modules cover the money paths | Add deno tests for the top 10 money/auth fns' guard clauses |
 | 2 | HIGH (accepted) | Payments | auto-release-payments | Automatic escrow release 5h post-completion contradicts the "client-initiated only" rule | Keep (deliberate, mitigated by dispute gate + notifications); document as policy in CLAUDE.md |
-| 3 | HIGH | Database | platform_fee_charges.job_id | Unindexed FK on a money-path table | One-line index migration |
+| 3 | ~~HIGH~~ **FIXED** | Database | platform_fee_charges.job_id | Unindexed FK on a money-path table | Done — migration `20260730114952`, verified live |
 | 4 | HIGH | Security | fleet-wide | No inventory of which user-callable fns lack rate limiting (39/74 have it) | Enumerate user-facing fns; add checkRateLimit to the gaps |
-| 5 | MEDIUM | Database | JobDetailsCard.tsx fetchMilestones | N+1: one subcontractor query per milestone | Single `.in('milestone_id', ids)` query |
-| 6 | MEDIUM | Database | 4 more unindexed FKs | custom_task_suggestions ×2, platform_fee_invoices, service_decline_tokens | Same migration as #3 |
+| 5 | ~~MEDIUM~~ **FIXED** | Database | JobDetailsCard.tsx fetchMilestones | N+1: one subcontractor query per milestone | Done — single `.in('milestone_id', ids)` query, skipped entirely when unused |
+| 6 | ~~MEDIUM~~ **FIXED** | Database | 4 more unindexed FKs | custom_task_suggestions ×2, platform_fee_invoices, service_decline_tokens | Done — same migration as #3 |
 | 7 | MEDIUM | UI | 8 files | Residual hex outside documented exemptions, mostly chart palettes; 1 arbitrary `text-[#1D9E75]` in TradieDashboard | Chart palette → CSS vars; add charts to exemptions or fix |
 | 8 | MEDIUM | Database | cancellation_policies, profile_private | Overlapping permissive policies per role/action (perf WARN) | Merge admin policy into the public SELECT with OR |
 | 9 | LOW | Navigation | 4 routes | Orphaned/menu-less routes (tax-invoice, explore, how-fees-work, calendar-import) | Add menu entries or document as deep-link-only |
@@ -133,11 +140,11 @@ Score: 3/7.
 **Critical — fix before deploy:** none. No secrets, no RLS gaps, no permissive
 user writes, no AFSL language, webhook signatures verified in prod.
 
-**High — this sprint:** #3 index migration (one line); #4 rate-limit
+**High — this sprint:** ~~#3 index migration~~ (done); #4 rate-limit
 inventory; #1 guard-clause tests for the top money fns; ratify #2 in docs.
 
-**Medium — next sprint:** #5 N+1 fix; #6 remaining indexes; #7 chart palette
-onto tokens; #8 policy merge.
+**Medium — next sprint:** ~~#5 N+1 fix~~ (done); ~~#6 remaining indexes~~
+(done); #7 chart palette onto tokens; #8 policy merge.
 
 **Low — backlog:** #9–#12.
 
@@ -147,11 +154,12 @@ onto tokens; #8 policy merge.
 |------|---------|-------|
 | 2026-06-12 | (report on file) | |
 | 2026-07-01 | ~85.6% 🟡 | Pre-rebuild baseline; different check set |
-| 2026-07-30 | 81.5% 🟡 | Not comparable head-to-head: this run scores harder (weighted tiers, live-DB queries, e2e-verified payment checks) and the two 🔴s are test-coverage and DB items the earlier set didn't weigh. Security/TS/UI are materially stronger than July 1 (RLS now 100/100 live-verified; 0 type errors vs a 239-error history; one design system instead of two). |
+| 2026-07-30 | 81.5% 🟡 → **87.3%** 🟡 | Amended after fixing #3/#5/#6. Not comparable head-to-head: this run scores harder (weighted tiers, live-DB queries, e2e-verified payment checks) and the two 🔴s are test-coverage and DB items the earlier set didn't weigh. Security/TS/UI are materially stronger than July 1 (RLS now 100/100 live-verified; 0 type errors vs a 239-error history; one design system instead of two). |
 
 ## Next Recommended Action
 
-The single most impactful fix: **the `platform_fee_charges.job_id` index**
-(finding #3) — one line, money-path table, zero risk. Right behind it, the
-rate-limit inventory (#4), which is the only open question in an otherwise
-green security dimension.
+With the index and N+1 fixes landed, the highest-value remaining item is the
+**rate-limit inventory** (#4) — enumerate the user-callable Edge Functions and
+confirm which of the 35 without `checkRateLimit` actually need it. It is the
+only open question in an otherwise green security dimension, and the answer is
+either "add four calls" or "document why none are needed"; both are cheap.

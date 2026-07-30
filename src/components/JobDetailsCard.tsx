@@ -223,20 +223,30 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
         .eq('job_id', job.id)
         .order('stage_number', { ascending: true });
       if (error) throw error;
-      const milestonesWithSubs = await Promise.all(
-        ((data || []) as JobMilestone[]).map(async (milestone: JobMilestone) => {
-          if (milestone.payment_type === 'subcontractor') {
-            const { data: subs } = await supabase
-              .from('milestone_subcontractors')
-              .select('*')
-              .eq('milestone_id', milestone.id)
-              .order('created_at', { ascending: true });
-            return { ...milestone, subcontractors: subs || [] };
-          }
-          return { ...milestone, subcontractors: [] };
-        })
+      // One batched lookup, not one per milestone. A twelve-stage HIA schedule
+      // used to cost twelve round-trips to render this card.
+      const rows = (data || []) as JobMilestone[];
+      const subIds = rows.filter(m => m.payment_type === 'subcontractor').map(m => m.id);
+
+      const byMilestone = new Map<string, MilestoneSubcontractor[]>();
+      if (subIds.length > 0) {
+        const { data: subs } = await supabase
+          .from('milestone_subcontractors')
+          .select('*')
+          .in('milestone_id', subIds)
+          .order('created_at', { ascending: true });
+        // The ORDER BY holds across the whole result set, so appending in
+        // iteration order leaves each group ordered exactly as before.
+        for (const sub of (subs || []) as MilestoneSubcontractor[]) {
+          const group = byMilestone.get(sub.milestone_id);
+          if (group) group.push(sub);
+          else byMilestone.set(sub.milestone_id, [sub]);
+        }
+      }
+
+      setMilestones(
+        rows.map(m => ({ ...m, subcontractors: byMilestone.get(m.id) ?? [] })) as JobMilestone[],
       );
-      setMilestones(milestonesWithSubs as JobMilestone[]);
     } catch {
       // silent
     }
