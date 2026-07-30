@@ -238,20 +238,20 @@ export default function AddressAutocomplete({
   // same whether or not Places is available.
   const plainInput = (disabled = false, ph = placeholder) => (
     <div className="relative">
-      <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+      <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
       <input
         type="text"
         disabled={disabled}
         value={disabled ? undefined : value}
         onChange={disabled ? undefined : (e) => onChange(e.target.value)}
         placeholder={ph}
-        className={`w-full pl-12 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 ${disabled ? 'bg-gray-50' : ''} ${className}`}
+        className={`w-full pl-12 pr-10 py-3 bg-ct-ink text-ct-paper placeholder:text-ct-placeholder border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal ${disabled ? 'bg-ct-surface-2' : ''} ${className}`}
       />
       {!disabled && value && (
         <button
           type="button"
           onClick={handleClear}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ct-mute hover:text-ct-mute-2 rounded-full hover:bg-ct-surface-2"
         >
           <X className="w-4 h-4" />
         </button>
@@ -263,7 +263,7 @@ export default function AddressAutocomplete({
     return (
       <div>
         {plainInput()}
-        <div className="mt-2 flex items-start gap-2 text-sm text-warm-600 bg-warm-50 p-3 rounded-lg">
+        <div className="mt-2 flex items-start gap-2 text-sm text-ct-amber bg-ct-amber/[0.13] p-3 rounded-ct-sm">
           <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
           <p>Address autocomplete unavailable. Add VITE_GOOGLE_MAPS_API_KEY to enable suggestions.</p>
         </div>
@@ -275,7 +275,7 @@ export default function AddressAutocomplete({
     return (
       <div>
         {plainInput()}
-        <div className="mt-2 flex items-start gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+        <div className="mt-2 flex items-start gap-2 text-sm text-ct-rose bg-ct-rose/[0.13] p-3 rounded-ct-sm">
           <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
           <p>Failed to load Google Maps. Please check your API key and try again.</p>
         </div>
@@ -290,7 +290,7 @@ export default function AddressAutocomplete({
   return (
     <div className="relative" ref={wrapperRef}>
       <div className="relative">
-        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
         <input
           ref={inputRef}
           type="text"
@@ -307,16 +307,16 @@ export default function AddressAutocomplete({
           aria-expanded={open}
           aria-autocomplete="list"
           aria-controls="address-suggestions"
-          className={`w-full pl-12 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 ${className}`}
+          className={`w-full pl-12 pr-10 py-3 bg-ct-ink text-ct-paper placeholder:text-ct-placeholder border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal ${className}`}
         />
         {busy && !value && (
-          <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 animate-spin" />
+          <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute animate-spin" />
         )}
         {value && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ct-mute hover:text-ct-mute-2 rounded-full hover:bg-ct-surface-2"
           >
             <X className="w-4 h-4" />
           </button>
@@ -327,7 +327,7 @@ export default function AddressAutocomplete({
         <ul
           id="address-suggestions"
           role="listbox"
-          className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden max-h-64 overflow-y-auto"
+          className="absolute z-50 left-0 right-0 mt-1 bg-ct-surface border border-ct-line rounded-ct-md shadow-sm overflow-hidden max-h-64 overflow-y-auto"
         >
           {suggestions.map((s, i) => (
             <li key={s.key} role="option" aria-selected={i === highlighted}>
@@ -335,9 +335,9 @@ export default function AddressAutocomplete({
                 type="button"
                 onMouseEnter={() => setHighlighted(i)}
                 onClick={() => void selectSuggestion(s)}
-                className={`w-full text-left flex items-start gap-2.5 px-4 py-2.5 text-sm text-gray-700 transition-colors ${i === highlighted ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
+                className={`w-full text-left flex items-start gap-2.5 px-4 py-2.5 text-sm text-ct-mute-2 transition-colors ${i === highlighted ? 'bg-ct-surface-2' : 'hover:bg-ct-surface-2'}`}
               >
-                <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                <MapPin className="w-4 h-4 text-ct-mute flex-shrink-0 mt-0.5" />
                 <span className="min-w-0">{s.label}</span>
               </button>
             </li>

@@ -423,11 +423,11 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
         {sentLink ? (
           <div className="space-y-4">
             <div className="text-center">
-              <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
-                <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+              <div className="w-14 h-14 rounded-full bg-ct-teal/[0.14] flex items-center justify-center mx-auto mb-3">
+                <CheckCircle2 className="w-8 h-8 text-ct-teal" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900">Quote sent</h2>
-              <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
+              <h2 className="text-lg font-semibold text-ct-paper">Quote sent</h2>
+              <p className="text-sm text-ct-mute mt-1 max-w-sm mx-auto">
                 {emailed
                   ? `Emailed to ${effectiveEmail}. `
                   : effectiveEmail
@@ -438,23 +438,23 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
             </div>
 
             {/* Recap of what was sent */}
-            <div className="flex items-center justify-between gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
-              <span className="text-sm font-medium text-gray-900 truncate">{title.trim() || 'Quote'}</span>
+            <div className="flex items-center justify-between gap-3 bg-ct-surface-2 border border-ct-line rounded-ct-md px-4 py-3">
+              <span className="text-sm font-medium text-ct-paper truncate">{title.trim() || 'Quote'}</span>
               {price && (
-                <span className="text-sm font-semibold text-gray-900 flex-shrink-0">{`$${Number(price).toLocaleString('en-AU')}`}</span>
+                <span className="text-sm font-semibold text-ct-paper flex-shrink-0">{`$${Number(price).toLocaleString('en-AU')}`}</span>
               )}
             </div>
 
             {/* Shareable link — the fallback / manual way to deliver the quote */}
             <div>
-              <p className="text-xs font-medium text-gray-500 mb-1.5">Or share this link</p>
-              <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl p-2 pl-3">
-                <span className="flex-1 text-xs text-gray-600 truncate text-left">{sentLink}</span>
+              <p className="text-xs font-medium text-ct-mute mb-1.5">Or share this link</p>
+              <div className="flex items-center gap-2 bg-ct-surface border border-ct-line rounded-ct-md p-2 pl-3">
+                <span className="flex-1 text-xs text-ct-mute-2 truncate text-left">{sentLink}</span>
                 <button
                   onClick={copyLink}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 flex-shrink-0"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface border border-ct-line rounded-ct-sm text-xs font-medium text-ct-mute-2 hover:bg-ct-surface-2 flex-shrink-0"
                 >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? <Check className="w-3.5 h-3.5 text-ct-teal" /> : <Copy className="w-3.5 h-3.5" />}
                   {copied ? 'Copied' : 'Copy'}
                 </button>
               </div>
@@ -462,7 +462,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
 
             {/* Save this quote as a reusable template */}
             {templateSaved ? (
-              <p className="text-xs text-emerald-600 flex items-center justify-center gap-1">
+              <p className="text-xs text-ct-teal flex items-center justify-center gap-1">
                 <Check className="w-3.5 h-3.5" /> Saved as a template — reuse it on your next quote.
               </p>
             ) : showSaveTemplate ? (
@@ -473,30 +473,30 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                     value={templateName}
                     onChange={(e) => setTemplateName(e.target.value)}
                     placeholder="Template name, e.g. Standard office clean"
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="flex-1 px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                   />
                   <button
                     onClick={handleSaveTemplate}
                     disabled={savingTemplate || !templateName.trim()}
-                    className="px-3 py-2 rounded-lg bg-secondary-600 text-white text-sm font-medium hover:bg-secondary-700 disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+                    className="px-3 py-2 rounded-ct-sm bg-ct-surface-2 text-ct-ink text-sm font-medium hover:bg-ct-surface-2 disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
                   >
                     {savingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookmarkPlus className="w-4 h-4" />} Save
                   </button>
                 </div>
-                {templateError && <p className="text-xs text-red-600">{templateError}</p>}
+                {templateError && <p className="text-xs text-ct-rose">{templateError}</p>}
               </div>
             ) : (
               <button
                 onClick={() => { setTemplateName(title.trim()); setShowSaveTemplate(true); }}
-                className="w-full flex items-center justify-center gap-1.5 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center justify-center gap-1.5 py-2.5 border border-ct-line rounded-ct-md text-sm font-medium text-ct-mute-2 hover:bg-ct-surface-2 transition-colors"
               >
-                <BookmarkPlus className="w-4 h-4 text-secondary-600" /> Save as template
+                <BookmarkPlus className="w-4 h-4 text-ct-mute-2" /> Save as template
               </button>
             )}
 
             <button
               onClick={onClose}
-              className="w-full py-3 bg-warm-500 text-white rounded-xl font-medium hover:bg-warm-600 transition-colors"
+              className="w-full py-3 bg-ct-teal text-ct-ink rounded-ct-md font-medium hover:brightness-110 transition-colors"
             >
               Done
             </button>
@@ -504,15 +504,15 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
         ) : (
           <>
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-secondary-50 flex items-center justify-center flex-shrink-0">
-                <FileText className="w-5 h-5 text-secondary-600" />
+              <div className="w-10 h-10 rounded-ct-md bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-5 h-5 text-ct-mute-2" />
               </div>
               <div className="min-w-0">
-                <h2 className="text-lg font-semibold text-gray-900">New quote</h2>
-                <p className="text-sm text-gray-500 mt-0.5 truncate">
-                  For <span className="font-medium text-gray-700">{contact.full_name}</span>{contact.email ? ` · ${contact.email}` : ''}
+                <h2 className="text-lg font-semibold text-ct-paper">New quote</h2>
+                <p className="text-sm text-ct-mute mt-0.5 truncate">
+                  For <span className="font-medium text-ct-mute-2">{contact.full_name}</span>{contact.email ? ` · ${contact.email}` : ''}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-ct-mute mt-1">
                   {contact.email
                     ? 'They’ll get an email with a link to view and accept — no account needed.'
                     : 'No email on file — you’ll get a shareable link to send them.'}
@@ -524,61 +524,61 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
               {/* Which location is this job for? — sites drive address + email */}
               {sites.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Which location is this job for?</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Which location is this job for?</label>
                   <div className="space-y-1.5">
                     {sites.map((s) => (
                       <button
                         key={s.id}
                         type="button"
                         onClick={() => setSelectedSiteId(s.id)}
-                        className={`w-full flex items-start gap-2.5 text-left rounded-xl border px-3 py-2.5 transition-colors ${
-                          selectedSiteId === s.id ? 'border-secondary-300 bg-secondary-50' : 'border-gray-200 bg-white hover:bg-gray-50'
+                        className={`w-full flex items-start gap-2.5 text-left rounded-ct-md border px-3 py-2.5 transition-colors ${
+                          selectedSiteId === s.id ? 'border-ct-line bg-ct-surface-2' : 'border-ct-line bg-ct-surface hover:bg-ct-surface-2'
                         }`}
                       >
                         <span className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${
-                          selectedSiteId === s.id ? 'border-secondary-500' : 'border-gray-300'
+                          selectedSiteId === s.id ? 'border-ct-teal' : 'border-ct-line'
                         }`}>
-                          {selectedSiteId === s.id && <span className="w-2 h-2 rounded-full bg-secondary-500" />}
+                          {selectedSiteId === s.id && <span className="w-2 h-2 rounded-full bg-ct-surface-20" />}
                         </span>
                         <span className="min-w-0">
-                          <span className="text-sm font-medium text-gray-900">{s.site_name}</span>
-                          {s.address && <span className="block text-xs text-gray-500 truncate">{s.address}</span>}
-                          {s.contact_email && <span className="block text-[11px] text-gray-400 truncate">Quote emails go to {s.contact_email}</span>}
+                          <span className="text-sm font-medium text-ct-paper">{s.site_name}</span>
+                          {s.address && <span className="block text-xs text-ct-mute truncate">{s.address}</span>}
+                          {s.contact_email && <span className="block text-[11px] text-ct-mute truncate">Quote emails go to {s.contact_email}</span>}
                         </span>
                       </button>
                     ))}
                   </div>
                   {addingSite ? (
-                    <div className="mt-2 rounded-xl border border-gray-200 p-3 space-y-2">
+                    <div className="mt-2 rounded-ct-md border border-ct-line p-3 space-y-2">
                       <input
                         type="text"
                         value={newSiteName}
                         onChange={(e) => setNewSiteName(e.target.value)}
                         placeholder="Location name, e.g. Office"
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                       />
                       <input
                         type="text"
                         value={newSiteAddress}
                         onChange={(e) => setNewSiteAddress(e.target.value)}
                         placeholder="Address"
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                       />
                       <div className="flex gap-2">
                         <button type="button" onClick={() => setAddingSite(false)}
-                          className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
+                          className="flex-1 px-3 py-1.5 border border-ct-line rounded-ct-sm text-xs font-medium text-ct-mute-2 hover:bg-ct-surface-2">Cancel</button>
                         <button type="button" onClick={quickAddSite} disabled={savingSite || !newSiteName.trim()}
-                          className="flex-1 px-3 py-1.5 bg-secondary-600 text-white rounded-lg text-xs font-medium hover:bg-secondary-700 disabled:opacity-50 flex items-center justify-center gap-1">
+                          className="flex-1 px-3 py-1.5 bg-ct-surface-2 text-ct-ink rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 disabled:opacity-50 flex items-center justify-center gap-1">
                           {savingSite && <Loader2 className="w-3 h-3 animate-spin" />} Save location
                         </button>
                       </div>
-                      <p className="text-[11px] text-gray-400">Add full details (site email, access notes) later on the client page.</p>
+                      <p className="text-[11px] text-ct-mute">Add full details (site email, access notes) later on the client page.</p>
                     </div>
                   ) : (
                     <button
                       type="button"
                       onClick={() => setAddingSite(true)}
-                      className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-secondary-600 hover:text-secondary-700"
+                      className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2"
                     >
                       <Plus className="w-3.5 h-3.5" /> Add new location
                     </button>
@@ -589,9 +589,9 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
               {/* Quick Quote — one tap pre-fills a common job (adjust price & send).
                   Behind SHOW_QUICK_QUOTE; hidden for now, flip the flag to restore. */}
               {SHOW_QUICK_QUOTE && quickQuotePresets.length > 0 && (
-                <div className="rounded-xl border border-secondary-100 bg-secondary-50/60 p-3">
-                  <p className="flex items-center gap-1.5 text-xs font-semibold text-secondary-800 mb-2">
-                    <Zap className="w-3.5 h-3.5 text-secondary-600" /> Quick Quote — one tap, then adjust the price
+                <div className="rounded-ct-md border border-ct-line-soft bg-ct-surface-2/60 p-3">
+                  <p className="flex items-center gap-1.5 text-xs font-semibold text-ct-mute-2 mb-2">
+                    <Zap className="w-3.5 h-3.5 text-ct-mute-2" /> Quick Quote — one tap, then adjust the price
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {quickQuotePresets.map((p) => (
@@ -599,9 +599,9 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                         key={p.label}
                         type="button"
                         onClick={() => applyQuickQuote(p)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-secondary-200 text-xs font-medium text-secondary-700 hover:bg-secondary-50 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-ct-sm bg-ct-surface border border-ct-line text-xs font-medium text-ct-mute-2 hover:bg-ct-surface-2 transition-colors"
                       >
-                        {p.label} <span className="text-secondary-400">· ${p.price}</span>
+                        {p.label} <span className="text-ct-mute">· ${p.price}</span>
                       </button>
                     ))}
                   </div>
@@ -610,32 +610,32 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
 
               {/* Your saved quotes — reuse a template to pre-fill the form */}
               {templates.length > 0 && (
-                <div className="border border-gray-200 rounded-xl">
+                <div className="border border-ct-line rounded-ct-md">
                   <button
                     type="button"
                     onClick={() => setShowTemplates((v) => !v)}
-                    className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium text-gray-700"
+                    className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium text-ct-mute-2"
                   >
                     <span className="flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-secondary-600" /> Your saved quotes
-                      <span className="text-xs text-gray-400 font-normal">({templates.length})</span>
+                      <Layers className="w-4 h-4 text-ct-mute-2" /> Your saved quotes
+                      <span className="text-xs text-ct-mute font-normal">({templates.length})</span>
                     </span>
-                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showTemplates ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 text-ct-mute transition-transform ${showTemplates ? 'rotate-180' : ''}`} />
                   </button>
                   {showTemplates && (
                     <div className="px-3 pb-3 space-y-1.5">
                       {templates.map((t) => (
-                        <div key={t.id} className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                        <div key={t.id} className="flex items-center gap-2 rounded-ct-sm border border-ct-line-soft bg-ct-surface-2 px-3 py-2">
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-gray-800 truncate">{t.name}</p>
-                            <p className="text-xs text-gray-400 truncate">
+                            <p className="text-sm font-medium text-ct-paper truncate">{t.name}</p>
+                            <p className="text-xs text-ct-mute truncate">
                               {[t.title, t.price != null ? aud(Number(t.price)) : null, t.property_type].filter(Boolean).join(' · ') || 'Saved quote'}
                             </p>
                           </div>
                           <button type="button" onClick={() => applyTemplate(t)}
-                            className="flex-shrink-0 px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-medium text-secondary-700 hover:bg-secondary-50">Use</button>
+                            className="flex-shrink-0 px-2.5 py-1.5 rounded-ct-sm bg-ct-surface border border-ct-line text-xs font-medium text-ct-mute-2 hover:bg-ct-surface-2">Use</button>
                           <button type="button" onClick={() => removeTemplate(t.id)} aria-label="Delete template"
-                            className="flex-shrink-0 p-1.5 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                            className="flex-shrink-0 p-1.5 text-ct-mute hover:text-ct-rose"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
                       ))}
                     </div>
@@ -644,29 +644,29 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Job title</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Job title</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Fortnightly house clean"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-3 bg-ct-ink text-ct-paper placeholder:text-ct-placeholder border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Description</label>
                 <textarea
                   {...proseInputProps}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={4}
                   placeholder={'One task per line, e.g.\nCourt side clean\nRubbish removal\nBathrooms cleaned'}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                  className="w-full px-4 py-3 bg-ct-ink text-ct-paper placeholder:text-ct-placeholder border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal resize-none"
                 />
-                <p className="mt-1 text-xs text-gray-500">One task per line — these show as a bullet-point scope of work.</p>
+                <p className="mt-1 text-xs text-ct-mute">One task per line — these show as a bullet-point scope of work.</p>
                 {quickAddTasks.length > 0 && (
                   <div className="mt-2.5">
-                    <p className="text-xs font-medium text-gray-500 mb-1.5">Quick-add tasks — tap to add, tap again to remove</p>
+                    <p className="text-xs font-medium text-ct-mute mb-1.5">Quick-add tasks — tap to add, tap again to remove</p>
                     <div className="flex flex-wrap gap-1.5">
                       {quickAddTasks.map((task) => {
                         const active = taskActive(task);
@@ -676,7 +676,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                             type="button"
                             onClick={() => toggleTask(task)}
                             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                              active ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                              active ? 'bg-ct-teal/[0.14] border-ct-teal/30 text-ct-teal' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                             }`}
                           >
                             {active ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
@@ -690,18 +690,18 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-sm font-medium text-gray-700">Price (AUD)</label>
+                  <label className="block text-sm font-medium text-ct-mute-2">Price (AUD)</label>
                   <button
                     type="button"
                     onClick={() => setShowEstimator((v) => !v)}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-secondary-600 hover:text-secondary-700"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     {showEstimator ? 'Hide pricing helper' : 'Help me price this'}
                   </button>
                 </div>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ct-mute">$</span>
                   <input
                     type="number"
                     min="1"
@@ -709,10 +709,10 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="0"
-                    className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full pl-8 pr-4 py-3 bg-ct-ink text-ct-paper placeholder:text-ct-placeholder border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
                   />
                 </div>
-                <p className="mt-1 text-xs text-gray-500">Enter your total price including labour and materials.</p>
+                <p className="mt-1 text-xs text-ct-mute">Enter your total price including labour and materials.</p>
                 {/* Fee transparency for the tradie (never shown to the client) */}
                 {/* This form has no materials field, so the whole price is
                     treated as labour — the same all-labour fallback the charge
@@ -744,8 +744,8 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Note to client <span className="text-gray-400 font-normal">(optional)</span>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">
+                  Note to client <span className="text-ct-mute font-normal">(optional)</span>
                 </label>
                 <textarea
                   {...proseInputProps}
@@ -753,13 +753,13 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                   onChange={(e) => setMessage(e.target.value)}
                   rows={2}
                   placeholder="Anything you'd like them to know…"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                  className="w-full px-4 py-3 bg-ct-ink text-ct-paper placeholder:text-ct-placeholder border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Internal notes / conditions <span className="text-gray-400 font-normal">(never shown to the client)</span>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">
+                  Internal notes / conditions <span className="text-ct-mute font-normal">(never shown to the client)</span>
                 </label>
                 <textarea
                   {...proseInputProps}
@@ -767,16 +767,16 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                   onChange={(e) => setInternalNotes(e.target.value)}
                   rows={2}
                   placeholder="Site conditions, assumptions, pricing rationale, access…"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                  className="w-full px-4 py-3 bg-ct-ink text-ct-paper placeholder:text-ct-placeholder border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal resize-none"
                 />
-                <p className="mt-1 text-xs text-gray-500">For your records only — the client sees just the scope of work above.</p>
+                <p className="mt-1 text-xs text-ct-mute">For your records only — the client sees just the scope of work above.</p>
               </div>
 
               {/* Recurring service — turns the quote into an ongoing service */}
-              <div className="border border-gray-200 rounded-xl p-3">
+              <div className="border border-ct-line rounded-ct-md p-3">
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <Repeat className="w-4 h-4 text-secondary-600" /> Recurring service
+                  <span className="flex items-center gap-2 text-sm font-medium text-ct-mute-2">
+                    <Repeat className="w-4 h-4 text-ct-mute-2" /> Recurring service
                   </span>
                   <button
                     type="button"
@@ -784,22 +784,22 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                     role="switch"
                     aria-checked={isRecurring}
                     aria-label={isRecurring ? 'Turn off recurring' : 'Turn on recurring'}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isRecurring ? 'bg-warm-500' : 'bg-gray-300'}`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isRecurring ? 'bg-ct-teal' : 'bg-ct-line'}`}
                   >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${isRecurring ? 'translate-x-6' : 'translate-x-1'}`} />
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-ct-surface shadow-sm transition-transform ${isRecurring ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Turn on for regular clients you visit weekly or fortnightly.</p>
+                <p className="text-xs text-ct-mute mt-1">Turn on for regular clients you visit weekly or fortnightly.</p>
                 {isRecurring && (
                   <div className="mt-3 space-y-3">
                     {/* Frequency */}
                     <div>
-                      <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">Frequency</p>
+                      <p className="text-[11px] font-medium text-ct-mute uppercase tracking-wide mb-1.5">Frequency</p>
                       <div className="flex flex-wrap gap-1.5">
                         {FREQUENCIES.map((f) => (
                           <button key={f.key} type="button" onClick={() => setFrequency(f.key)}
                             className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                              frequency === f.key ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                              frequency === f.key ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                             }`}>{f.label}</button>
                         ))}
                       </div>
@@ -808,36 +808,36 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                     {/* Visits per cycle */}
                     <div>
                       <div className="flex items-center justify-between">
-                        <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Visits per {freqLabel.toLowerCase()} cycle</p>
+                        <p className="text-[11px] font-medium text-ct-mute uppercase tracking-wide">Visits per {freqLabel.toLowerCase()} cycle</p>
                         <div className="flex items-center gap-2">
                           <button type="button" onClick={() => setVisits(visitsPerCycle - 1)} disabled={visitsPerCycle <= 1}
                             aria-label="Fewer visits"
-                            className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40">−</button>
-                          <span className="w-6 text-center text-sm font-semibold text-gray-900 tabular-nums">{visitsPerCycle}</span>
+                            className="w-7 h-7 inline-flex items-center justify-center rounded-ct-sm border border-ct-line text-ct-mute-2 hover:bg-ct-surface-2 disabled:opacity-40">−</button>
+                          <span className="w-6 text-center text-sm font-semibold text-ct-paper tabular-nums">{visitsPerCycle}</span>
                           <button type="button" onClick={() => setVisits(visitsPerCycle + 1)} disabled={visitsPerCycle >= 7}
                             aria-label="More visits"
-                            className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40">+</button>
+                            className="w-7 h-7 inline-flex items-center justify-center rounded-ct-sm border border-ct-line text-ct-mute-2 hover:bg-ct-surface-2 disabled:opacity-40">+</button>
                         </div>
                       </div>
-                      <p className="text-[11px] text-gray-400 mt-1">e.g. a weekly office clean with a full clean on Monday and a light one on Thursday.</p>
+                      <p className="text-[11px] text-ct-mute mt-1">e.g. a weekly office clean with a full clean on Monday and a light one on Thursday.</p>
                     </div>
 
                     {/* Per-visit day + duration */}
                     <div className="space-y-1.5">
                       {visitSlots.map((s, i) => (
                         <div key={i} className="flex items-center gap-2">
-                          <span className="text-[11px] text-gray-500 w-12 flex-shrink-0">Visit {i + 1}</span>
+                          <span className="text-[11px] text-ct-mute w-12 flex-shrink-0">Visit {i + 1}</span>
                           <select value={s.day} onChange={(e) => updateSlot(i, { day: e.target.value })} aria-label={`Visit ${i + 1} day`}
-                            className="flex-1 px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            className="flex-1 px-2 py-1.5 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal">
                             {DAY_OPTS.map((d) => <option key={d} value={d}>{d}</option>)}
                           </select>
                           <select value={s.hours} onChange={(e) => updateSlot(i, { hours: e.target.value })} aria-label={`Visit ${i + 1} hours`}
-                            className="w-20 px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            className="w-20 px-2 py-1.5 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal">
                             <option value="">Hrs</option>
                             {HOUR_OPTS.map((h) => <option key={h} value={h}>{h} h</option>)}
                           </select>
                           <select value={s.mins} onChange={(e) => updateSlot(i, { mins: e.target.value })} aria-label={`Visit ${i + 1} minutes`}
-                            className="w-20 px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            className="w-20 px-2 py-1.5 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal">
                             <option value="">Min</option>
                             {MIN_OPTS.map((m) => <option key={m} value={m}>{m} m</option>)}
                           </select>
@@ -847,31 +847,31 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
 
                     {/* Price basis */}
                     <div>
-                      <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-1.5">The price above is</p>
+                      <p className="text-[11px] font-medium text-ct-mute uppercase tracking-wide mb-1.5">The price above is</p>
                       <div className="flex flex-wrap items-center gap-1.5">
                         {([['per_visit', 'Per visit'], ['per_cycle', `Per ${freqLabel.toLowerCase()} cycle`]] as const).map(([key, label]) => (
                           <button key={key} type="button" onClick={() => setPriceBasis(key)}
                             className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                              priceBasis === key ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                              priceBasis === key ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                             }`}>{label}</button>
                         ))}
                       </div>
                       {priceNum > 0 && visitsPerCycle > 1 && (
-                        <p className="text-[11px] text-gray-500 mt-1.5">
+                        <p className="text-[11px] text-ct-mute mt-1.5">
                           {priceBasis === 'per_visit'
-                            ? <>≈ <span className="font-medium text-gray-700">{aud(cyclePrice)}</span> per {freqLabel.toLowerCase()} cycle ({visitsPerCycle} × {aud(perVisitPrice)})</>
-                            : <>≈ <span className="font-medium text-gray-700">{aud(perVisitPrice)}</span> per visit ({aud(cyclePrice)} ÷ {visitsPerCycle})</>}
+                            ? <>≈ <span className="font-medium text-ct-mute-2">{aud(cyclePrice)}</span> per {freqLabel.toLowerCase()} cycle ({visitsPerCycle} × {aud(perVisitPrice)})</>
+                            : <>≈ <span className="font-medium text-ct-mute-2">{aud(perVisitPrice)}</span> per visit ({aud(cyclePrice)} ÷ {visitsPerCycle})</>}
                         </p>
                       )}
                     </div>
 
                     {/* Consumables */}
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11px] text-gray-500">Consumables:</span>
+                      <span className="text-[11px] text-ct-mute">Consumables:</span>
                       {(['client', 'tradie_billed'] as const).map((c) => (
                         <button key={c} type="button" onClick={() => setConsumables(c)}
                           className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                            consumables === c ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                            consumables === c ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                           }`}>{c === 'client' ? 'Client supplies' : 'I supply & bill'}</button>
                       ))}
                     </div>
@@ -881,20 +881,20 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>
+              <div className="p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md text-sm text-ct-rose">{error}</div>
             )}
 
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-3 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-3 border border-ct-line text-ct-mute-2 rounded-ct-md font-medium hover:bg-ct-surface-2 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSend}
                 disabled={sending}
-                className="flex-1 px-4 py-3 bg-warm-500 text-white rounded-xl font-medium hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 bg-ct-teal text-ct-ink rounded-ct-md font-medium hover:brightness-110 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
               >
                 {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : isRecurring ? <Repeat className="w-4 h-4" /> : <Send className="w-4 h-4" />}
                 Send Quote
