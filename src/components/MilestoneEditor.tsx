@@ -425,7 +425,7 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
           </div>
           <div className="w-full h-2 bg-ct-surface-2 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-ct-teal to-ct-teal0 rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-ct-teal to-ct-teal rounded-full transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>

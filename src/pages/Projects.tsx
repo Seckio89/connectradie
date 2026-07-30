@@ -38,8 +38,8 @@ function extractSuburbFromAddress(address: string | null): string | null {
 
 function getStatusDot(status: string | null) {
   switch (status) {
-    case 'completed': return 'bg-ct-teal/[0.14]0';
-    case 'in_progress': return 'bg-ct-surface-20';
+    case 'completed': return 'bg-ct-teal/[0.14]';
+    case 'in_progress': return 'bg-ct-surface-2';
     case 'accepted': return 'bg-ct-teal';
     case 'pending': return 'bg-ct-surface-2';
     case 'declined': return 'bg-ct-rose';

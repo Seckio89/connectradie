@@ -243,7 +243,7 @@ export default function TradieProfessionalSettings() {
               <h3 className="font-semibold text-ct-paper">What trade service are you providing?</h3>
               <p className="text-xs text-ct-mute">This determines your licensing requirements</p>
             </div>
-            {tradeSaving && <Loader2 className="w-4 h-4 text-ct-teal0 animate-spin ml-auto" />}
+            {tradeSaving && <Loader2 className="w-4 h-4 text-ct-teal animate-spin ml-auto" />}
           </div>
         </div>
         <div className="p-3 sm:p-5 space-y-3 sm:space-y-4">
@@ -325,7 +325,7 @@ export default function TradieProfessionalSettings() {
               />
               {abnValidating && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                  <Loader2 className="w-4 h-4 text-ct-teal0 animate-spin" />
+                  <Loader2 className="w-4 h-4 text-ct-teal animate-spin" />
                   <span className="text-xs text-ct-mute-2 font-medium">Validating...</span>
                 </div>
               )}
@@ -529,7 +529,7 @@ export default function TradieProfessionalSettings() {
               type="button"
               onClick={() => setInsurancePolicy(!insurancePolicy)}
               className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ct-teal focus:ring-offset-2 ${
-                insurancePolicy ? 'bg-ct-teal/[0.14]0' : 'bg-ct-line'
+                insurancePolicy ? 'bg-ct-teal/[0.14]' : 'bg-ct-line'
               }`}
             >
               <span
@@ -648,7 +648,7 @@ export default function TradieProfessionalSettings() {
               type="button"
               onClick={() => setAutoCompleteSessions(!autoCompleteSessions)}
               className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ct-teal focus:ring-offset-2 ${
-                autoCompleteSessions ? 'bg-ct-surface-20' : 'bg-ct-line'
+                autoCompleteSessions ? 'bg-ct-surface-2' : 'bg-ct-line'
               }`}
             >
               <span

@@ -70,7 +70,7 @@ export default function VacancyCard({ vacancy, onApply, hasApplied, isOwner, onM
           </div>
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="text-sm font-medium text-ct-mute-2 truncate">{businessName}</span>
-            {isVerified && <BadgeCheck className="w-4 h-4 text-ct-teal0 flex-shrink-0" />}
+            {isVerified && <BadgeCheck className="w-4 h-4 text-ct-teal flex-shrink-0" />}
           </div>
         </div>
 

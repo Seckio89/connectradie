@@ -424,7 +424,7 @@ export default function PublicTradieProfile() {
                           />
                           {img.caption && (
                             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                              <p className="text-ct-ink text-xs leading-snug">{img.caption}</p>
+                              <p className="text-ct-paper text-xs leading-snug">{img.caption}</p>
                             </div>
                           )}
                         </button>

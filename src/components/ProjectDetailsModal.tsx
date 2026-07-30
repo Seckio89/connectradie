@@ -538,7 +538,7 @@ export default function ProjectDetailsModal({
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between px-4 py-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-ct-surface-20 animate-pulse" />
+                      <div className="w-2 h-2 rounded-full bg-ct-surface-2 animate-pulse" />
                       <span className="text-sm font-semibold text-ct-mute-2">Ongoing</span>
                     </div>
                     {isClient && (

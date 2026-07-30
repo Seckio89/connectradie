@@ -90,7 +90,7 @@ function RemoveUserModal({ userName, userEmail, loading, onConfirm, onCancel }: 
             <select
               value={selectedReason}
               onChange={(e) => setSelectedReason(e.target.value)}
-              className="w-full px-3 py-2.5 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-rose0 text-sm bg-ct-surface-2 focus:bg-ct-surface"
+              className="w-full px-3 py-2.5 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-rose text-sm bg-ct-surface-2 focus:bg-ct-surface"
             >
               <option value="">Select a reason...</option>
               {REMOVAL_REASONS.map((reason) => (
@@ -109,7 +109,7 @@ function RemoveUserModal({ userName, userEmail, loading, onConfirm, onCancel }: 
               onChange={(e) => setCustomMessage(e.target.value)}
               rows={3}
               placeholder="Provide additional context or details for the user..."
-              className="w-full px-3 py-2.5 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-rose0 text-sm bg-ct-surface-2 focus:bg-ct-surface resize-none"
+              className="w-full px-3 py-2.5 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-rose text-sm bg-ct-surface-2 focus:bg-ct-surface resize-none"
             />
           </div>
 

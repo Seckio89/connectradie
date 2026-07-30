@@ -497,7 +497,7 @@ export default function AdminVerifications() {
                                       setRejectReason((prev) => ({ ...prev, [user.id]: e.target.value }))
                                     }
                                     placeholder="Enter rejection reason..."
-                                    className="w-full px-3 py-2 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-rose0 text-sm resize-none"
+                                    className="w-full px-3 py-2 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-rose text-sm resize-none"
                                     rows={2}
                                   />
                                   <div className="flex gap-2">

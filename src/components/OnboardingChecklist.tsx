@@ -345,7 +345,7 @@ export default function OnboardingChecklist() {
         )}
         <div className="w-full h-2 bg-ct-surface-2 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-ct-teal0 to-ct-teal rounded-full transition-all duration-700 ease-out"
+            className="h-full bg-gradient-to-r from-ct-teal to-ct-teal rounded-full transition-all duration-700 ease-out"
             style={{ width: `${percentage}%` }}
           />
         </div>
@@ -405,7 +405,7 @@ export default function OnboardingChecklist() {
                 </p>
               </div>
               {!step.complete && !isPaymentLoading && (
-                <ChevronRight className="w-4 h-4 text-ct-mute group-hover:text-ct-teal0 flex-shrink-0 transition-colors" />
+                <ChevronRight className="w-4 h-4 text-ct-mute group-hover:text-ct-teal flex-shrink-0 transition-colors" />
               )}
             </button>
           );

@@ -1284,7 +1284,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 <div className="flex-1 px-5 py-3.5">
                   <p className="text-2xl font-bold text-ct-paper tabular-nums leading-none">{weekJobCount}</p>
                   <p className="inline-flex items-center gap-1.5 text-xs font-medium text-ct-mute mt-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-ct-surface-20" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-ct-surface-2" />
                     job{weekJobCount === 1 ? '' : 's'} booked
                   </p>
                 </div>
@@ -1310,7 +1310,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                               key={slot.id}
                               title={`${formatSlotTime(slot.start_time)} – ${formatSlotTime(slot.end_time)} (${slot.status})`}
                               className={`w-1.5 h-1.5 rounded-full ${
-                                slot.status === 'available' ? 'bg-ct-teal/[0.14]0' : 'bg-ct-rose'
+                                slot.status === 'available' ? 'bg-ct-teal/[0.14]' : 'bg-ct-rose'
                               }`}
                             />
                           ))}
@@ -1386,7 +1386,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                           }}
                                           className="w-full flex items-center gap-2 px-3 py-2 text-xs text-ct-mute-2 hover:bg-ct-surface-2 transition-colors"
                                         >
-                                          <CalendarClock className="w-3.5 h-3.5 text-ct-teal0" />
+                                          <CalendarClock className="w-3.5 h-3.5 text-ct-teal" />
                                           Reschedule
                                         </button>
                                         <button
@@ -1454,7 +1454,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                               {/* Team avatars */}
                               {jobAssignments.length > 0 && (
                                 <div className="flex items-center gap-1 mt-2 pt-1.5 border-t border-ct-line-soft">
-                                  <Users className="w-2.5 h-2.5 text-ct-teal0" />
+                                  <Users className="w-2.5 h-2.5 text-ct-teal" />
                                   <div className="flex -space-x-1">
                                     {jobAssignments.slice(0, 3).map(a => (
                                       <div key={a.id} title={a.member?.invite_name}
@@ -1517,7 +1517,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                       <div className="flex items-center gap-2 flex-wrap">
                         {jobCount > 0 ? (
                           <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-ct-mute-2">
-                            <span className="w-2 h-2 rounded-full bg-ct-surface-20 flex-shrink-0" />
+                            <span className="w-2 h-2 rounded-full bg-ct-surface-2 flex-shrink-0" />
                             {jobCount} job{jobCount === 1 ? '' : 's'} booked
                           </span>
                         ) : hasAvailable ? (
@@ -1632,7 +1632,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 <div className="bg-ct-surface border border-ct-line rounded-ct-lg p-4 mt-1">
                   <div className="flex items-center gap-5 text-xs text-ct-mute">
                     <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-ct-teal" />Available</span>
-                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-ct-surface-20" />Scheduled job</span>
+                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-ct-surface-2" />Scheduled job</span>
                   </div>
                   <Link
                     to="/dashboard"
@@ -1733,11 +1733,11 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                             <div className="flex gap-0.5 mt-0.5">
                               {entries.slice(0, 3).map((e, j) => (
                                 <span key={j} className={`w-1 h-1 rounded-full ${
-                                  e.job.is_emergency || e.conflictWarning ? 'bg-ct-rose/[0.13]0' :
+                                  e.job.is_emergency || e.conflictWarning ? 'bg-ct-rose/[0.13]' :
                                   e.job.status === 'completed' ? 'bg-ct-surface-2' :
                                   e.job.status === 'in_progress' ? 'bg-ct-teal' :
-                                  e.job.status === 'accepted' ? 'bg-ct-surface-20' :
-                                  'bg-ct-amber/[0.13]0'
+                                  e.job.status === 'accepted' ? 'bg-ct-surface-2' :
+                                  'bg-ct-amber/[0.13]'
                                 }`} />
                               ))}
                             </div>

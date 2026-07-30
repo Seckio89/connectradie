@@ -87,7 +87,7 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
                           <div className="flex gap-2">
                             <button
                               onClick={async () => { await endAgreement(agreement.id); setShowMenu(false); setConfirmEnd(false); onRefresh(); }}
-                              className="px-2.5 py-1 bg-ct-rose/[0.13]0 text-ct-ink text-xs font-medium rounded-ct-xs hover:bg-ct-rose transition-colors"
+                              className="px-2.5 py-1 bg-ct-rose/[0.13] text-ct-ink text-xs font-medium rounded-ct-xs hover:bg-ct-rose transition-colors"
                             >
                               Yes, end it
                             </button>

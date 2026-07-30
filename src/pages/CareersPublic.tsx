@@ -171,7 +171,7 @@ export default function CareersPublic() {
                       </h3>
                       <div className="flex items-center gap-1.5 mt-1.5 text-sm text-ct-mute-2">
                         <span className="truncate">{employer}</span>
-                        {v.employer_verified && <BadgeCheck className="w-4 h-4 text-ct-teal0 flex-shrink-0" />}
+                        {v.employer_verified && <BadgeCheck className="w-4 h-4 text-ct-teal flex-shrink-0" />}
                       </div>
                       {pay && (
                         <div className="flex items-center gap-1.5 mt-3 text-sm font-semibold text-ct-teal">

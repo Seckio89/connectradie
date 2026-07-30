@@ -426,7 +426,7 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
             </div>
             <div>
               <label className="block text-sm font-medium text-ct-paper mb-1.5">Type <span className="font-bold">DELETE</span> to confirm</label>
-              <input type="text" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} placeholder="DELETE" className="w-full px-4 py-2.5 border border-ct-rose/40 rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-rose0 bg-ct-surface" />
+              <input type="text" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} placeholder="DELETE" className="w-full px-4 py-2.5 border border-ct-rose/40 rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-rose bg-ct-surface" />
             </div>
             <div className="flex gap-3">
               <button onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }} className="flex-1 px-4 py-2.5 bg-ct-surface border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors">Cancel</button>

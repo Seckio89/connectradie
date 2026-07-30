@@ -204,7 +204,7 @@ export default function MyProfile() {
               {!profile?.cover_photo_url && (
                 <button
                   onClick={() => setEditCoverPhoto(true)}
-                  className="absolute top-4 left-4 inline-flex items-center justify-center gap-2 min-h-[44px] px-3 py-1.5 bg-ct-surface/15 backdrop-blur-sm border border-white/20 text-ct-ink/70 text-xs font-medium rounded-ct-sm hover:bg-ct-surface/25 hover:text-ct-ink transition-colors"
+                  className="absolute top-4 left-4 inline-flex items-center justify-center gap-2 min-h-[44px] px-3 py-1.5 bg-ct-surface/15 backdrop-blur-sm border border-white/20 text-ct-paper/70 text-xs font-medium rounded-ct-sm hover:bg-ct-surface/25 hover:text-ct-paper transition-colors"
                 >
                   <Camera className="w-3.5 h-3.5" />
                   Add Cover Photo
@@ -227,13 +227,13 @@ export default function MyProfile() {
                       to="/settings"
                       className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <Settings className="w-5 h-5 text-ct-ink" />
+                      <Settings className="w-5 h-5 text-ct-paper" />
                     </Link>
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2.5 flex-wrap">
-                      <h2 className="text-2xl sm:text-3xl font-bold text-ct-ink drop-shadow-sm">{displayName}</h2>
+                      <h2 className="text-2xl sm:text-3xl font-bold text-ct-paper drop-shadow-sm">{displayName}</h2>
                       {isPro && (
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-teal/20 text-ct-teal text-xs font-medium rounded-full border border-ct-teal/30">
                           <Crown className="w-3.5 h-3.5" />
@@ -243,7 +243,7 @@ export default function MyProfile() {
                     </div>
 
                     {personalName && (
-                      <p className="text-ct-ink/60 mt-0.5">{personalName}</p>
+                      <p className="text-ct-paper/60 mt-0.5">{personalName}</p>
                     )}
 
                     <p className="text-ct-teal font-medium capitalize mt-1 drop-shadow-sm">
@@ -252,13 +252,13 @@ export default function MyProfile() {
 
                     <div className="flex flex-wrap items-center gap-2 mt-3">
                       {isIdentityVerified && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-teal/[0.14]0/20 text-ct-teal text-xs font-medium rounded-full border border-ct-teal/30">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-teal/[0.14]/20 text-ct-teal text-xs font-medium rounded-full border border-ct-teal/30">
                           <ShieldCheck className="w-3.5 h-3.5" />
                           ID Verified
                         </span>
                       )}
                       {tradieDetails?.is_insured && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-surface-20/20 text-ct-mute-2 text-xs font-medium rounded-full border border-ct-teal/30">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-surface-2/20 text-ct-mute-2 text-xs font-medium rounded-full border border-ct-teal/30">
                           <Shield className="w-3.5 h-3.5" />
                           Insured
                         </span>
@@ -270,7 +270,7 @@ export default function MyProfile() {
                         </span>
                       )}
                       {profile?.is_emergency_available && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-rose/[0.13]0/20 text-ct-rose text-xs font-medium rounded-full border border-ct-rose/30">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-rose/[0.13]/20 text-ct-rose text-xs font-medium rounded-full border border-ct-rose/30">
                           <Zap className="w-3.5 h-3.5" />
                           Emergency
                         </span>
@@ -400,7 +400,7 @@ export default function MyProfile() {
                         onClick={() => setEditBio(true)}
                         className="w-full border-2 border-dashed border-ct-line rounded-ct-md p-8 text-center hover:border-ct-teal hover:bg-ct-surface-2/30 transition-colors group"
                       >
-                        <Plus className="w-6 h-6 text-ct-mute group-hover:text-ct-teal0 mx-auto mb-2 transition-colors" />
+                        <Plus className="w-6 h-6 text-ct-mute group-hover:text-ct-teal mx-auto mb-2 transition-colors" />
                         <p className="text-sm font-medium text-ct-mute group-hover:text-ct-mute-2 transition-colors">
                           Tell clients why you’re the right tradie for the job
                         </p>
@@ -440,7 +440,7 @@ export default function MyProfile() {
                             />
                             {img.caption && (
                               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                <p className="text-ct-ink text-xs leading-snug">{img.caption}</p>
+                                <p className="text-ct-paper text-xs leading-snug">{img.caption}</p>
                               </div>
                             )}
                           </button>

@@ -103,15 +103,15 @@ export default function Privacy() {
                     <h3 className="text-[15px] font-semibold text-ct-paper mb-2">2.1 Identity & Contact Information (all users)</h3>
                     <ul className="space-y-2">
                       <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                        <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Full name:</strong> to create and identify your account</span>
                       </li>
                       <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                        <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Email address:</strong> to communicate with you and send platform notifications</span>
                       </li>
                       <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                        <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Phone number:</strong> to facilitate communication between Clients and Tradies once a job is initiated</span>
                       </li>
                     </ul>
@@ -124,19 +124,19 @@ export default function Privacy() {
                     </p>
                     <ul className="space-y-2">
                       <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                        <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Australian Business Number (ABN):</strong> verified against the Australian Business Register</span>
                       </li>
                       <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                        <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Trade licences and qualifications:</strong> to confirm compliance with Australian law</span>
                       </li>
                       <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                        <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Public Liability Insurance details (Certificates of Currency):</strong> to confirm minimum $5,000,000 AUD coverage</span>
                       </li>
                       <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                        <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Government-issued identification:</strong> solely to match identity to business credentials</span>
                       </li>
                     </ul>
@@ -149,15 +149,15 @@ export default function Privacy() {
                     <h3 className="text-[15px] font-semibold text-ct-paper mb-2">2.3 Profile & Trust Data</h3>
                     <ul className="space-y-2">
                       <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                        <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Profile photos:</strong> displayed publicly to help Clients identify Tradies</span>
                       </li>
                       <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                        <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">User reviews and ratings:</strong> to inform other users&rsquo; decision-making</span>
                       </li>
                       <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                        <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Identity verification documents:</strong> where required for enhanced verification tiers</span>
                       </li>
                     </ul>
@@ -208,15 +208,15 @@ export default function Privacy() {
                     </p>
                     <ul className="space-y-2">
                       <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                        <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Sign in with Google:</strong> if you choose this option, we receive your basic Google profile (name, email address, and profile picture) to create and authenticate your account. We request only the <span className="font-medium">email</span> and <span className="font-medium">profile</span> permissions for sign-in.</span>
                       </li>
                       <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                        <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Google Calendar sync:</strong> if you connect Google Calendar from Settings, you grant ConnecTradie access to your calendar so we can create and update events for your ConnecTradie bookings and site visits, and read your existing events to help you avoid double-booking. We access only the signed-in user&rsquo;s own calendar, and only to provide this scheduling feature.</span>
                       </li>
                       <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                        <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Disconnecting:</strong> you can revoke access at any time from Settings &rarr; Integrations, or via your Google Account permissions at <span className="font-medium">myaccount.google.com/permissions</span>. When you disconnect, we stop accessing your calendar and delete the Google access tokens we hold for you.</span>
                       </li>
                     </ul>
@@ -243,11 +243,11 @@ export default function Privacy() {
                 </p>
                 <ul className="space-y-2">
                   <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                    <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                    <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Free-Tier Tradies:</strong> first name, last initial, trade category, and verified badges only</span>
                   </li>
                   <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                    <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                    <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Pro-Tier Tradies:</strong> full registered business name and permitted portfolio details</span>
                   </li>
                 </ul>
@@ -346,19 +346,19 @@ export default function Privacy() {
 
                 <ul className="space-y-2 mb-5">
                   <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                    <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                    <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Encryption:</strong> all data encrypted in transit (TLS 1.2+) and at rest (AES-256)</span>
                   </li>
                   <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                    <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                    <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Access Controls:</strong> only authorised personnel can access sensitive information</span>
                   </li>
                   <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                    <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                    <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Authentication:</strong> multi-factor authentication available and encouraged</span>
                   </li>
                   <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                    <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                    <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Audits & Monitoring:</strong> regular security audits and suspicious activity monitoring</span>
                   </li>
                 </ul>
@@ -497,11 +497,11 @@ export default function Privacy() {
 
                 <div className="space-y-3 mb-4">
                   <div className="flex items-start gap-3">
-                    <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                    <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <p className="text-[15px] text-ct-mute-2"><strong className="text-ct-paper">Essential Cookies:</strong> required for core functionality including login and session security. Cannot be disabled without affecting Platform operation.</p>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                    <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <p className="text-[15px] text-ct-mute-2"><strong className="text-ct-paper">Analytics Cookies:</strong> used to improve user experience. Non-essential and can be managed via browser settings or account notification settings.</p>
                   </div>
                 </div>

@@ -1749,7 +1749,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     ) : (
                       <button
                         onClick={() => handleQuoteClick(lead)}
-                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-ct-sm text-xs font-semibold bg-ct-amber/[0.13]0 text-ct-ink hover:bg-ct-amber shadow-sm transition-all"
+                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-ct-sm text-xs font-semibold bg-ct-amber/[0.13] text-ct-ink hover:bg-ct-amber shadow-sm transition-all"
                         title="Get verified to quote on this trade"
                       >
                         <Shield className="w-3.5 h-3.5" />
@@ -2025,7 +2025,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       });
                   }}
                   disabled={payingJobId === lead.id}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13]0 text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-amber transition-colors disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13] text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-amber transition-colors disabled:opacity-60"
                 >
                   {payingJobId === lead.id ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2953,7 +2953,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   ) : (
                     <button
                       onClick={() => { setViewLeadDetail(null); handleQuoteClick(vl); }}
-                      className="inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-ct-sm text-sm font-semibold bg-ct-amber/[0.13]0 text-ct-ink hover:bg-ct-amber shadow-sm transition-all"
+                      className="inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-ct-sm text-sm font-semibold bg-ct-amber/[0.13] text-ct-ink hover:bg-ct-amber shadow-sm transition-all"
                     >
                       <Shield className="w-4 h-4" />
                       Get Verified

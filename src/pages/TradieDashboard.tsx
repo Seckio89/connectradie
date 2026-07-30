@@ -881,7 +881,7 @@ export default function TradieDashboard() {
       <div>
         {/* Header */}
         <div className="mb-3 md:mb-6 bg-ct-ink rounded-ct-lg p-4 sm:p-6 md:p-8 border border-ct-line px-4 sm:px-6 md:px-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-ct-ink mb-1">Your Business Hub</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-ct-paper mb-1">Your Business Hub</h1>
           <p className="text-ct-mute">Manage your schedule, jobs, and conversations in one place</p>
           {profile && (
             <div className="mt-4">
@@ -953,7 +953,7 @@ export default function TradieDashboard() {
                 </div>
                 <div className="h-1.5 bg-ct-surface-2 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all ${monthlyJobs >= FREE_LIMITS.MAX_JOBS_PER_MONTH ? 'bg-ct-rose/[0.13]0' : monthlyJobs >= FREE_LIMITS.MAX_JOBS_PER_MONTH - 1 ? 'bg-ct-amber/[0.13]0' : 'bg-ct-teal'}`}
+                    className={`h-full rounded-full transition-all ${monthlyJobs >= FREE_LIMITS.MAX_JOBS_PER_MONTH ? 'bg-ct-rose/[0.13]' : monthlyJobs >= FREE_LIMITS.MAX_JOBS_PER_MONTH - 1 ? 'bg-ct-amber/[0.13]' : 'bg-ct-teal'}`}
                     style={{ width: `${Math.min(100, (monthlyJobs / FREE_LIMITS.MAX_JOBS_PER_MONTH) * 100)}%` }}
                   />
                 </div>
@@ -965,7 +965,7 @@ export default function TradieDashboard() {
                 </div>
                 <div className="h-1.5 bg-ct-surface-2 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all ${monthlyUnlocks >= FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH ? 'bg-ct-rose/[0.13]0' : monthlyUnlocks >= FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH - 1 ? 'bg-ct-amber/[0.13]0' : 'bg-ct-teal'}`}
+                    className={`h-full rounded-full transition-all ${monthlyUnlocks >= FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH ? 'bg-ct-rose/[0.13]' : monthlyUnlocks >= FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH - 1 ? 'bg-ct-amber/[0.13]' : 'bg-ct-teal'}`}
                     style={{ width: `${Math.min(100, (monthlyUnlocks / FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH) * 100)}%` }}
                   />
                 </div>
@@ -1231,7 +1231,7 @@ export default function TradieDashboard() {
             </div>
             <button
               onClick={() => navigate('/work?tab=services')}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13]0 hover:bg-ct-amber text-ct-ink text-sm font-semibold rounded-ct-sm transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13] hover:bg-ct-amber text-ct-ink text-sm font-semibold rounded-ct-sm transition-colors"
             >
               Review &amp; Send
               <ArrowRight className="w-4 h-4" />
@@ -1751,7 +1751,7 @@ export default function TradieDashboard() {
                                 >
                                   <Archive className="w-3.5 h-3.5" />
                                 </button>
-                                <span className="text-xs text-ct-mute group-hover:text-ct-teal0 transition-colors flex-shrink-0">
+                                <span className="text-xs text-ct-mute group-hover:text-ct-teal transition-colors flex-shrink-0">
                                   View &rarr;
                                 </span>
                               </div>
@@ -2145,15 +2145,15 @@ export default function TradieDashboard() {
                             : hasAvailable && hasBooked ? 'bg-gradient-to-br from-ct-teal to-ct-rose hover:from-ct-teal hover:to-ct-rose'
                             : hasAvailable ? 'bg-ct-teal/[0.14] hover:bg-ct-teal/[0.14]'
                             : hasBooked ? 'bg-ct-rose/[0.13] hover:bg-ct-rose/[0.13]'
-                            : isToday ? 'ring-2 ring-ct-teal0 hover:bg-ct-surface-2'
+                            : isToday ? 'ring-2 ring-ct-teal hover:bg-ct-surface-2'
                             : 'hover:bg-ct-surface-2'
                           }`}
                         >
                           <div className="flex flex-col items-center">
                             <span className={`text-xs sm:text-sm font-medium ${isPast ? 'text-ct-mute' : isSelected ? 'text-ct-ink' : isToday ? 'text-ct-mute-2 font-bold' : 'text-ct-mute-2'}`}>{day}</span>
                             <div className="flex gap-0.5 mt-0.5">
-                              {hasAvailable && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-ct-teal/[0.14]' : 'bg-ct-teal/[0.14]0'}`} />}
-                              {hasBooked && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-ct-rose/[0.13]' : 'bg-ct-rose/[0.13]0'}`} />}
+                              {hasAvailable && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-ct-teal/[0.14]' : 'bg-ct-teal/[0.14]'}`} />}
+                              {hasBooked && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-ct-rose/[0.13]' : 'bg-ct-rose/[0.13]'}`} />}
                             </div>
                           </div>
                         </button>
@@ -2257,7 +2257,7 @@ export default function TradieDashboard() {
               section stays ~100px instead of four stacked full-width cards. */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-ct-surface-2 rounded-ct-md px-2 py-3">
             <div className="flex flex-col items-center gap-1 text-center p-1">
-              <Clock className="w-5 h-5 text-ct-teal0" />
+              <Clock className="w-5 h-5 text-ct-teal" />
               <p className="text-2xl sm:text-[28px] font-bold text-ct-paper leading-tight tabular-nums">{totalAvailableHours.toFixed(0)}</p>
               <p className="text-[11px] text-ct-mute leading-tight">Available<br className="sm:hidden" /> Hours</p>
             </div>

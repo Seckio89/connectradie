@@ -24,7 +24,7 @@ interface PlatformUpdate {
 type TypeConfig = { icon: typeof Shield; label: string; color: string; bg: string; border: string; badge: string };
 
 const FALLBACK_TYPE: TypeConfig = { icon: Wrench, label: 'Update', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2', border: 'border-ct-line', badge: 'bg-ct-surface-2 text-ct-mute-2' };
-const FALLBACK_PRIORITY = { bar: 'bg-ct-surface-20' };
+const FALLBACK_PRIORITY = { bar: 'bg-ct-surface-2' };
 
 const typeConfig: Record<string, TypeConfig | undefined> = {
   tos: { icon: Shield, label: 'Terms of Service', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2', border: 'border-ct-line', badge: 'bg-ct-surface-2 text-ct-mute-2' },
@@ -36,9 +36,9 @@ const typeConfig: Record<string, TypeConfig | undefined> = {
 
 const priorityConfig: Record<string, { bar: string } | undefined> = {
   low: { bar: 'bg-ct-line' },
-  normal: { bar: 'bg-ct-surface-20' },
-  high: { bar: 'bg-ct-amber/[0.13]0' },
-  critical: { bar: 'bg-ct-rose/[0.13]0' },
+  normal: { bar: 'bg-ct-surface-2' },
+  high: { bar: 'bg-ct-amber/[0.13]' },
+  critical: { bar: 'bg-ct-rose/[0.13]' },
 };
 
 export default function PlatformUpdateBanner() {

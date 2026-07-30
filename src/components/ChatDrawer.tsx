@@ -976,7 +976,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                             <img src={url} alt={`Job ${idx + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                             <button
                               onClick={() => setJobImages(jobImages.filter((_, i) => i !== idx))}
-                              className="absolute top-1 right-1 p-1 bg-ct-rose/[0.13]0 text-ct-ink rounded-full hover:bg-ct-rose"
+                              className="absolute top-1 right-1 p-1 bg-ct-rose/[0.13] text-ct-ink rounded-full hover:bg-ct-rose"
                             >
                               <X className="w-3 h-3" />
                             </button>

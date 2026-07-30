@@ -181,7 +181,7 @@ export default function CareerDetailPublic() {
                   <Building2 className="w-4 h-4 text-ct-mute" />
                 </div>
                 <span className="text-sm font-medium text-ct-mute-2">{employer}</span>
-                {v.employer_verified && <BadgeCheck className="w-4 h-4 text-ct-teal0" />}
+                {v.employer_verified && <BadgeCheck className="w-4 h-4 text-ct-teal" />}
                 <span className="text-xs text-ct-mute">· Posted {posted}</span>
               </div>
 

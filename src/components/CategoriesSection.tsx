@@ -74,7 +74,7 @@ const colorClasses = {
   teal: {
     bg: 'bg-ct-surface',
     bgHover: 'group-hover:bg-ct-surface-2',
-    icon: 'text-ct-teal0',
+    icon: 'text-ct-teal',
     border: 'border-ct-line',
   },
   emerald: {

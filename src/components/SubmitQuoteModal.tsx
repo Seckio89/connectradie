@@ -692,7 +692,7 @@ export default function SubmitQuoteModal({
                   </p>
                 </div>
                 <div className={`w-10 h-6 rounded-full transition-colors flex items-center flex-shrink-0 ${
-                  durationTBD ? 'bg-ct-amber/[0.13]0' : 'bg-ct-line'
+                  durationTBD ? 'bg-ct-amber/[0.13]' : 'bg-ct-line'
                 }`}>
                   <span className={`inline-block w-4 h-4 rounded-full bg-ct-surface shadow-sm transition-transform ${
                     durationTBD ? 'translate-x-5' : 'translate-x-1'

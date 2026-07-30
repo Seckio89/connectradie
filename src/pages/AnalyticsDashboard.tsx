@@ -595,9 +595,14 @@ export default function AnalyticsDashboard() {
                     <div key={i} className="flex flex-col items-center gap-1">
                       <div
                         className="w-full aspect-square rounded-ct-sm flex items-center justify-center text-xs font-medium"
+                        /* Tokens, not literals — the hard-coded blue measured
+                           4.25:1 against white and failed AA, and the #4b5563
+                           low-intensity branch was dark-on-dark. Teal deepens
+                           with volume; the label flips to ink once the fill is
+                           bright enough to carry it. */
                         style={{
-                          backgroundColor: `rgba(59, 130, 246, ${Math.max(m.intensity * 0.9, 0.05)})`,
-                          color: m.intensity > 0.5 ? 'white' : '#4b5563',
+                          backgroundColor: `rgb(var(--teal-c) / ${Math.max(m.intensity * 0.9, 0.06)})`,
+                          color: m.intensity > 0.5 ? 'rgb(var(--ink-c))' : 'rgb(var(--paper-c))',
                         }}
                       >
                         {m.count}
@@ -608,7 +613,7 @@ export default function AnalyticsDashboard() {
                 </div>
                 <div className="flex items-center gap-4 text-xs text-ct-mute-2">
                   <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-ct-xs bg-ct-surface-20" />
+                    <div className="w-3 h-3 rounded-ct-xs bg-ct-surface-2" />
                     <span>High season</span>
                   </div>
                   <div className="flex items-center gap-1.5">

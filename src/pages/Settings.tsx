@@ -618,7 +618,7 @@ export default function Settings() {
                 <div className="flex items-center gap-2 justify-center sm:justify-start">
                   <h2 className="text-xl font-semibold text-ct-paper">{profile?.full_name}</h2>
                   {(tradieDetails?.subscription_tier === 'pro' || profile?.is_premium) && (
-                    <BadgeCheck className="w-5 h-5 text-ct-teal0" />
+                    <BadgeCheck className="w-5 h-5 text-ct-teal" />
                   )}
                 </div>
                 <p className="text-ct-mute capitalize">{profile?.role}</p>
@@ -658,7 +658,7 @@ export default function Settings() {
               </div>
               <div className="w-full bg-ct-teal/[0.14] rounded-full h-2 mb-3 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-ct-teal0 to-ct-teal0 h-full transition-all duration-500"
+                  className="bg-gradient-to-r from-ct-teal to-ct-teal h-full transition-all duration-500"
                   style={{ width: `${profileCompletion}%` }}
                 />
               </div>

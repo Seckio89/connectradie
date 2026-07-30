@@ -1254,7 +1254,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
                               e.stopPropagation();
                               setSelectedJob(job);
                             }}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13]0 text-ct-ink rounded-ct-sm hover:bg-ct-amber text-sm font-medium transition-colors"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13] text-ct-ink rounded-ct-sm hover:bg-ct-amber text-sm font-medium transition-colors"
                           >
                             <AlertCircle className="w-3.5 h-3.5" />
                             Set Final Price
