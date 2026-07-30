@@ -1336,17 +1336,26 @@ html:not(.dark) .theme-aware .border-warm-500\/20 {
   border-color: rgba(6, 214, 160, 0.2) !important;
 }
 
-/* ── Form inputs in dashboard (override navy bg) ── */
-html:not(.dark) .theme-aware input:not([type="checkbox"]):not([type="radio"]),
-html:not(.dark) .theme-aware textarea,
-html:not(.dark) .theme-aware select {
+/* ── Form inputs in dashboard (override navy bg) ──
+   These are ELEMENT selectors with !important, so they beat any class a
+   component sets — including the v2 tokens. A migrated form rendered its
+   fields white-on-dark no matter what markup it used, which is not something
+   the markup could have revealed.
+
+   Excluded by :not([class*="bg-ct-"]) rather than deleted: every unmigrated
+   screen still depends on this rule for legible fields, and the bridge only
+   goes away when the last of them is migrated. A control that has opted into
+   a v2 surface is opting out of the bridge. */
+html:not(.dark) .theme-aware input:not([type="checkbox"]):not([type="radio"]):not([class*="bg-ct-"]),
+html:not(.dark) .theme-aware textarea:not([class*="bg-ct-"]),
+html:not(.dark) .theme-aware select:not([class*="bg-ct-"]) {
   background-color: #FFFFFF !important;
   border-color: #E0E3E6 !important;
   color: #111827 !important;
 }
 
-html:not(.dark) .theme-aware input::placeholder,
-html:not(.dark) .theme-aware textarea::placeholder {
+html:not(.dark) .theme-aware input:not([class*="bg-ct-"])::placeholder,
+html:not(.dark) .theme-aware textarea:not([class*="bg-ct-"])::placeholder {
   color: #9ca3af !important;
 }
 

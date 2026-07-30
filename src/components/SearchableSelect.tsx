@@ -66,11 +66,11 @@ export default function SearchableSelect({
     <div ref={containerRef} className={`relative ${className}`}>
       <div
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-3 w-full px-4 py-3 border border-gray-200 rounded-xl bg-white cursor-pointer hover:border-gray-300 transition-colors"
+        className="flex items-center gap-3 w-full px-4 py-3 border border-ct-line rounded-ct-md bg-ct-surface cursor-pointer hover:border-ct-line transition-colors"
       >
-        {icon && <span className="flex-shrink-0 text-gray-400">{icon}</span>}
+        {icon && <span className="flex-shrink-0 text-ct-mute">{icon}</span>}
         {!open ? (
-          <span className={`flex-1 text-left truncate ${value ? 'text-gray-900' : 'text-gray-500'}`}>
+          <span className={`flex-1 text-left truncate ${value ? 'text-ct-paper' : 'text-ct-mute'}`}>
             {selectedLabel || placeholder}
           </span>
         ) : (
@@ -81,28 +81,28 @@ export default function SearchableSelect({
             onChange={(e) => setQuery(e.target.value)}
             onClick={(e) => e.stopPropagation()}
             placeholder={selectedLabel || placeholder}
-            className="flex-1 bg-transparent outline-none text-gray-900 placeholder-gray-400"
+            className="flex-1 bg-transparent outline-none text-ct-paper placeholder-ct-placeholder"
           />
         )}
         <div className="flex items-center gap-1 flex-shrink-0">
           {value && clearable && (
             <button
               onClick={handleClear}
-              className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+              className="p-1 hover:bg-ct-surface-2 rounded-md transition-colors"
             >
-              <X className="w-4 h-4 text-gray-400" />
+              <X className="w-4 h-4 text-ct-mute" />
             </button>
           )}
           <ChevronDown
-            className={`w-4 h-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 text-ct-mute transition-transform ${open ? 'rotate-180' : ''}`}
           />
         </div>
       </div>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-200 z-50 max-h-80 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-ct-surface rounded-ct-md shadow-lg border border-ct-line z-50 max-h-80 overflow-y-auto">
           {filtered.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500">No results found</div>
+            <div className="px-4 py-3 text-sm text-ct-mute">No results found</div>
           ) : (
             filtered.map((option) => (
               <button
@@ -111,8 +111,8 @@ export default function SearchableSelect({
                 onClick={() => handleSelect(option.value)}
                 className={`w-full px-4 py-3 text-left text-sm transition-colors min-h-[44px] flex items-center ${
                   option.value === value
-                    ? 'bg-warm-50 text-warm-700 font-medium'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? 'bg-ct-amber/[0.13] text-ct-amber font-medium'
+                    : 'text-ct-mute-2 hover:bg-ct-surface-2'
                 }`}
               >
                 {option.label}

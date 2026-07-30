@@ -148,8 +148,8 @@ function RatingStars({ rating }: { rating: number }) {
           key={i}
           className={`w-3.5 h-3.5 ${
             i <= Math.round(rating)
-              ? 'text-yellow-400 fill-yellow-400'
-              : 'text-gray-200'
+              ? 'text-ct-amber fill-yellow-400'
+              : 'text-ct-mute-2'
           }`}
         />
       ))}
@@ -159,10 +159,10 @@ function RatingStars({ rating }: { rating: number }) {
 
 function QuoteTag({ label, color }: { label: string; color: 'teal' | 'amber' | 'blue' | 'green' }) {
   const colorClasses = {
-    teal: 'bg-secondary-50 text-secondary-700 border-secondary-200',
-    amber: 'bg-warm-50 text-warm-700 border-warm-200',
-    blue: 'bg-secondary-50 text-secondary-700 border-secondary-200',
-    green: 'bg-green-50 text-green-700 border-green-200',
+    teal: 'bg-ct-surface-2 text-ct-mute-2 border-ct-line',
+    amber: 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]',
+    blue: 'bg-ct-surface-2 text-ct-mute-2 border-ct-line',
+    green: 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30',
   };
 
   return (
@@ -404,17 +404,17 @@ export default function QuoteComparisonView({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
       </div>
     );
   }
 
   if (quotes.length === 0) {
     return (
-      <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-        <Clock className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-        <h3 className="font-semibold text-gray-900 mb-1">Waiting for Quotes</h3>
-        <p className="text-sm text-gray-600 max-w-xs mx-auto">
+      <div className="text-center py-10 bg-ct-surface-2 rounded-ct-md border border-dashed border-ct-line">
+        <Clock className="w-10 h-10 text-ct-mute mx-auto mb-3" />
+        <h3 className="font-semibold text-ct-paper mb-1">Waiting for Quotes</h3>
+        <p className="text-sm text-ct-mute-2 max-w-xs mx-auto">
           Tradies are reviewing your job. You'll receive up to {job.max_quotes} quotes.
         </p>
         <div className="mt-4 flex items-center justify-center gap-2">
@@ -422,11 +422,11 @@ export default function QuoteComparisonView({
             {Array.from({ length: Math.min(job.max_quotes, 5) }).map((_, i) => (
               <div
                 key={i}
-                className="w-6 h-6 rounded-full bg-gray-200 border-2 border-white"
+                className="w-6 h-6 rounded-full bg-ct-line border-2 border-white"
               />
             ))}
           </div>
-          <span className="text-xs text-gray-500">{job.max_quotes} slots open</span>
+          <span className="text-xs text-ct-mute">{job.max_quotes} slots open</span>
         </div>
       </div>
     );
@@ -438,16 +438,16 @@ export default function QuoteComparisonView({
     <div>
       {!acceptedQuote && quotes.length > 1 && (
         <div className="flex items-center justify-between mb-4">
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold text-gray-900">{quotes.length}</span> quote{quotes.length !== 1 ? 's' : ''} received
+          <p className="text-sm text-ct-mute-2">
+            <span className="font-semibold text-ct-paper">{quotes.length}</span> quote{quotes.length !== 1 ? 's' : ''} received
             {job.quoting_status === 'open' && (
-              <span className="text-gray-400"> -- {job.max_quotes - job.quote_count} more possible</span>
+              <span className="text-ct-mute"> -- {job.max_quotes - job.quote_count} more possible</span>
             )}
           </p>
           <select
             value={sortMode}
             onChange={(e) => setSortMode(e.target.value as SortMode)}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-secondary-500"
+            className="text-sm border border-ct-line rounded-ct-sm px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-ct-teal"
           >
             <option value="recommended">Recommended</option>
             <option value="price_low">Price: Low to High</option>
@@ -458,9 +458,9 @@ export default function QuoteComparisonView({
       )}
 
       {acceptedQuote && (
-        <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
-          <CheckCircle2 className="w-5 h-5 text-green-600" />
-          <span className="text-sm font-semibold text-green-800">
+        <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md">
+          <CheckCircle2 className="w-5 h-5 text-ct-teal" />
+          <span className="text-sm font-semibold text-ct-teal">
             You've accepted a quote from {formatTradieDisplayName(acceptedQuote)}
           </span>
         </div>
@@ -488,10 +488,10 @@ export default function QuoteComparisonView({
           return (
             <div
               key={quote.id}
-              className={`rounded-xl overflow-hidden border transition-all ${
+              className={`rounded-ct-md overflow-hidden border transition-all ${
                 isAccepted
-                  ? 'border-green-200 bg-green-50/30'
-                  : 'border-gray-200 hover:border-gray-300 bg-white'
+                  ? 'border-ct-teal/30 bg-ct-teal/[0.14]/30'
+                  : 'border-ct-line hover:border-ct-line bg-ct-surface'
               }`}
             >
               {/* Quote header */}
@@ -499,7 +499,7 @@ export default function QuoteComparisonView({
                 <div className="flex items-start gap-3">
                   {/* Quote number */}
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5 ${
-                    isAccepted ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                    isAccepted ? 'bg-ct-teal/[0.14] text-ct-teal' : 'bg-ct-surface-2 text-ct-mute'
                   }`}>
                     {quoteNumber}
                   </div>
@@ -508,11 +508,11 @@ export default function QuoteComparisonView({
                   <button
                     onClick={() => navigate(`/tradie/${quote.tradie_id}`)}
                     className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-opacity hover:opacity-80 ${
-                      isAccepted ? 'bg-green-100' : 'bg-secondary-50'
+                      isAccepted ? 'bg-ct-teal/[0.14]' : 'bg-ct-surface-2'
                     }`}
                     title="View profile"
                   >
-                    <span className={`text-base font-bold ${isAccepted ? 'text-green-600' : 'text-secondary-600'}`}>
+                    <span className={`text-base font-bold ${isAccepted ? 'text-ct-teal' : 'text-ct-mute-2'}`}>
                       {(quote.tradie_profile?.full_name?.charAt(0) || 'T').toUpperCase()}
                     </span>
                   </button>
@@ -522,7 +522,7 @@ export default function QuoteComparisonView({
                     <div className="flex items-center gap-2 flex-wrap">
                       <button
                         onClick={() => navigate(`/tradie/${quote.tradie_id}`)}
-                        className="text-[15px] font-semibold text-gray-900 truncate hover:text-primary-600 transition-colors"
+                        className="text-[15px] font-semibold text-ct-paper truncate hover:text-ct-mute-2 transition-colors"
                         title="View profile"
                       >
                         {formatTradieDisplayName(quote)}
@@ -537,10 +537,10 @@ export default function QuoteComparisonView({
                         />
                       )}
                       {quote.tradie_profile?.verification_status === 'verified' && (
-                        <Shield className="w-4 h-4 text-secondary-500 flex-shrink-0" />
+                        <Shield className="w-4 h-4 text-ct-mute-2 flex-shrink-0" />
                       )}
                       {isAccepted && !isV2 && (
-                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-bold">
+                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 bg-ct-teal/[0.14] text-ct-teal rounded text-xs font-bold">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           Hired
                         </span>
@@ -553,17 +553,17 @@ export default function QuoteComparisonView({
                       {quote.review_stats && quote.review_stats.avg_rating > 0 && (
                         <div className="flex items-center gap-1">
                           <RatingStars rating={quote.review_stats.avg_rating} />
-                          <span className="text-xs text-gray-400">({quote.review_stats.total_reviews})</span>
+                          <span className="text-xs text-ct-mute">({quote.review_stats.total_reviews})</span>
                         </div>
                       )}
                       {quote.review_stats && quote.review_stats.total_jobs_completed > 0 && (
-                        <span className="text-xs text-gray-400 flex items-center gap-1">
+                        <span className="text-xs text-ct-mute flex items-center gap-1">
                           <Briefcase className="w-3 h-3" />
                           {quote.review_stats.total_jobs_completed} jobs on ConnecTradie
                         </span>
                       )}
                       {quote.tradie_profile?.created_at && (
-                        <span className="text-xs text-gray-400 flex items-center gap-1" title="When this tradie joined ConnecTradie">
+                        <span className="text-xs text-ct-mute flex items-center gap-1" title="When this tradie joined ConnecTradie">
                           <Calendar className="w-3 h-3" />
                           Member since {new Date(quote.tradie_profile.created_at).getFullYear()}
                         </span>
@@ -579,32 +579,32 @@ export default function QuoteComparisonView({
                   <div className="text-right flex-shrink-0 pl-2">
                     {quote.final_price != null ? (
                       <>
-                        <span className="text-xl font-bold text-gray-900">
+                        <span className="text-xl font-bold text-ct-paper">
                           ${Number(quote.final_price).toLocaleString()}
                         </span>
                         {quote.tradie_profile?.is_gst_registered && (
-                          <span className="text-xs font-normal text-gray-500 ml-1">+ GST</span>
+                          <span className="text-xs font-normal text-ct-mute ml-1">+ GST</span>
                         )}
-                        <div className="text-[11px] text-gray-400 mt-0.5">
+                        <div className="text-[11px] text-ct-mute mt-0.5">
                           Estimate was ${quote.price_min.toLocaleString()}–${quote.price_max.toLocaleString()}
                         </div>
                       </>
                     ) : quote.firm_price ? (
                       <>
-                        <span className="text-xl font-bold text-gray-900">
+                        <span className="text-xl font-bold text-ct-paper">
                           ${quote.firm_price.toLocaleString()}
                         </span>
                         {quote.tradie_profile?.is_gst_registered && (
-                          <span className="text-xs font-normal text-gray-500 ml-1">+ GST</span>
+                          <span className="text-xs font-normal text-ct-mute ml-1">+ GST</span>
                         )}
                       </>
                     ) : (
                       <>
-                        <span className="text-lg font-bold text-gray-900">
+                        <span className="text-lg font-bold text-ct-paper">
                           ${quote.price_min.toLocaleString()} – ${quote.price_max.toLocaleString()}
                         </span>
                         {quote.tradie_profile?.is_gst_registered && (
-                          <span className="text-xs font-normal text-gray-500 ml-1">+ GST</span>
+                          <span className="text-xs font-normal text-ct-mute ml-1">+ GST</span>
                         )}
                       </>
                     )}
@@ -614,7 +614,7 @@ export default function QuoteComparisonView({
                 {/* Quote details — shown by default */}
                 <div className="mt-3 ml-[4.75rem]">
                   {/* Meta row */}
-                  <div className="flex items-center gap-4 text-[13px] text-gray-400">
+                  <div className="flex items-center gap-4 text-[13px] text-ct-mute">
                     {quote.estimated_duration && (
                       <span className="inline-flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5 flex-shrink-0" />
@@ -628,13 +628,13 @@ export default function QuoteComparisonView({
                       </span>
                     )}
                     {quote.requires_site_inspection && (
-                      <span className="inline-flex items-center gap-1.5 text-warm-500">
+                      <span className="inline-flex items-center gap-1.5 text-ct-teal">
                         <Eye className="w-3.5 h-3.5 flex-shrink-0" />
                         Site visit required
                       </span>
                     )}
                     {quote.proposed_start_date && (
-                      <span className="inline-flex items-center gap-1.5 text-emerald-600">
+                      <span className="inline-flex items-center gap-1.5 text-ct-teal">
                         <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
                         Available from {formatProposedStartDate(quote.proposed_start_date)}
                       </span>
@@ -642,7 +642,7 @@ export default function QuoteComparisonView({
                     {quote.message && (
                       <button
                         onClick={() => setCollapsedId(isCollapsed ? null : quote.id)}
-                        className="inline-flex items-center gap-1 text-secondary-500 hover:text-secondary-700 font-medium ml-auto"
+                        className="inline-flex items-center gap-1 text-ct-mute-2 hover:text-ct-mute-2 font-medium ml-auto"
                       >
                         {isCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
                         {isCollapsed ? 'Show message' : 'Hide message'}
@@ -652,8 +652,8 @@ export default function QuoteComparisonView({
 
                   {/* Quote message — shown by default, can be collapsed */}
                   {quote.message && !isCollapsed && (
-                    <div className="mt-2.5 p-3.5 bg-gray-50 rounded-lg border border-gray-100">
-                      <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{redactQuoteMessage(quote)}</p>
+                    <div className="mt-2.5 p-3.5 bg-ct-surface-2 rounded-ct-sm border border-ct-line-soft">
+                      <p className="text-sm text-ct-mute-2 leading-relaxed whitespace-pre-wrap">{redactQuoteMessage(quote)}</p>
                     </div>
                   )}
                 </div>
@@ -667,7 +667,7 @@ export default function QuoteComparisonView({
                 const deposit = Math.max(quote.price_min, budget ?? quote.price_min);
                 const usingBudget = budget != null && budget >= quote.price_min;
                 return (
-                  <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 leading-relaxed">
+                  <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm text-xs text-ct-paper leading-relaxed">
                     <span className="font-semibold">How this works:</span>{' '}
                     You deposit ${deposit.toLocaleString()} {usingBudget ? '(your budget)' : "(the tradie's minimum quote)"} securely via Stripe — the tradie gets your address and visits the site. After the visit, they confirm the final price. If it's higher, you approve the top-up before work starts; if lower, the difference is refunded.
                   </div>
@@ -686,11 +686,11 @@ export default function QuoteComparisonView({
 
               {/* LEGACY v1 action footer — unchanged behaviour */}
               {!acceptedQuote && !isV2 && quote.status === 'pending' && (
-                <div className="flex items-center gap-2.5 px-5 py-3 border-t border-gray-100 bg-gray-50/50 ml-[4.75rem]">
+                <div className="flex items-center gap-2.5 px-5 py-3 border-t border-ct-line-soft bg-ct-surface-2/50 ml-[4.75rem]">
                   <button
                     onClick={() => handleAccept(quote.id)}
                     disabled={!!acceptingId || !!decliningId}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-warm-500 text-white font-semibold rounded-lg hover:bg-warm-600 transition-colors disabled:opacity-50 text-sm shadow-sm"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-ct-teal text-ct-ink font-semibold rounded-ct-sm hover:brightness-110 transition-colors disabled:opacity-50 text-sm shadow-sm"
                   >
                     {acceptingId === quote.id ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -703,7 +703,7 @@ export default function QuoteComparisonView({
                   </button>
                   <button
                     onClick={() => onMessageTradie(quote.tradie_id, job.id)}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-secondary-50 border border-secondary-200 text-secondary-700 font-semibold rounded-lg hover:bg-secondary-100 hover:border-secondary-300 transition-colors text-sm"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-ct-surface-2 border border-ct-line text-ct-mute-2 font-semibold rounded-ct-sm hover:bg-ct-surface-2 hover:border-ct-line transition-colors text-sm"
                   >
                     <MessageSquare className="w-4 h-4" />
                     Message tradie
@@ -711,7 +711,7 @@ export default function QuoteComparisonView({
                   <button
                     onClick={() => handleDecline(quote.id)}
                     disabled={!!acceptingId || !!decliningId}
-                    className="inline-flex items-center justify-center px-3 py-2 border border-gray-200 text-gray-400 rounded-lg hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 ml-auto"
+                    className="inline-flex items-center justify-center px-3 py-2 border border-ct-line text-ct-mute rounded-ct-sm hover:text-ct-rose hover:border-ct-rose/[0.34] hover:bg-ct-rose/[0.13] transition-colors disabled:opacity-50 ml-auto"
                   >
                     {decliningId === quote.id ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -753,7 +753,7 @@ export default function QuoteComparisonView({
                     {/* ACL anti-misleading advisory (spec §5.5) when final
                         exceeds the original estimate range by >25%. */}
                     {exceedsAdvisory && !expired && (
-                      <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-warm-50 border border-warm-200 rounded-lg text-xs text-warm-800 leading-relaxed flex gap-2 items-start">
+                      <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm text-xs text-ct-paper leading-relaxed flex gap-2 items-start">
                         <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                         <span>
                           <span className="font-semibold">Final is above the original estimate:</span>{' '}
@@ -766,7 +766,7 @@ export default function QuoteComparisonView({
 
                     {/* Expired final — block acceptance, show clearly. */}
                     {expired && (
-                      <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800">
+                      <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm text-xs text-ct-paper">
                         <span className="font-semibold">This final quote expired on {quote.final_valid_until}.</span>{' '}
                         The tradie can submit a new quote on this job.
                       </div>
@@ -782,7 +782,7 @@ export default function QuoteComparisonView({
 
                     {/* Call-out fee credit at the accept moment */}
                     {actions.includes('accept_and_pay') && !expired && feeCredited && finalAfterCredit != null && (
-                      <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 leading-relaxed">
+                      <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm text-xs text-ct-teal leading-relaxed">
                         Your <span className="font-semibold">${callOutFeeDollars.toLocaleString()}</span> call-out fee is credited.
                         You pay the remaining <span className="font-semibold">${finalAfterCredit.toLocaleString()}</span> of the
                         ${Number(quote.final_price).toLocaleString()} final price.
@@ -791,7 +791,7 @@ export default function QuoteComparisonView({
 
                     {/* Call-out fee explainer at the book-visit moment */}
                     {actions.includes('book_site_visit') && callOutFeeDollars > 0 && (
-                      <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-secondary-50 border border-secondary-200 rounded-lg text-xs text-secondary-800 leading-relaxed">
+                      <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm text-xs text-ct-mute-2 leading-relaxed">
                         <span className="font-semibold">${callOutFeeDollars.toLocaleString()} call-out fee.</span>{' '}
                         Payable now to confirm your site visit, where the tradie assesses the job in person to
                         provide an accurate, detailed final price. The fee covers their time to attend and is
@@ -812,16 +812,16 @@ export default function QuoteComparisonView({
                       const timeRange = end ? `${t(start)} – ${t(end)}` : t(start);
                       const confirmed = quote.site_visit_time_confirmed === true;
                       return (
-                        <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-secondary-50 border border-secondary-200 rounded-lg">
+                        <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm">
                           <div className="flex items-start gap-2">
-                            <Eye className="w-4 h-4 text-secondary-600 flex-shrink-0 mt-0.5" />
-                            <div className="text-xs text-secondary-800 leading-relaxed">
+                            <Eye className="w-4 h-4 text-ct-mute-2 flex-shrink-0 mt-0.5" />
+                            <div className="text-xs text-ct-mute-2 leading-relaxed">
                               <p className="font-semibold">
                                 Site visit {quote.status === 'site_visit_completed' ? 'was held' : 'booked'}:{' '}
                                 <span className="font-bold">{day}</span> · {timeRange}
                               </p>
                               {quote.status === 'site_visit_scheduled' && (
-                                <p className="mt-0.5 text-[11px] text-secondary-700">
+                                <p className="mt-0.5 text-[11px] text-ct-mute-2">
                                   {confirmed
                                     ? 'Confirmed by the tradie.'
                                     : `Awaiting confirmation from the tradie. They may propose a different time.`}
@@ -833,12 +833,12 @@ export default function QuoteComparisonView({
                       );
                     })()}
 
-                    <div className="flex items-center gap-2.5 px-5 py-3 border-t border-gray-100 bg-gray-50/50 ml-[4.75rem]">
+                    <div className="flex items-center gap-2.5 px-5 py-3 border-t border-ct-line-soft bg-ct-surface-2/50 ml-[4.75rem]">
                       {actions.includes('book_site_visit') && (
                         <button
                           onClick={() => setConfirmingBookVisitId(quote.id)}
                           disabled={busy}
-                          className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-secondary-500 text-white font-semibold rounded-lg hover:bg-secondary-600 transition-colors disabled:opacity-50 text-sm shadow-sm"
+                          className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-ct-surface-20 text-ct-ink font-semibold rounded-ct-sm hover:bg-ct-surface-2 transition-colors disabled:opacity-50 text-sm shadow-sm"
                         >
                           {bookingVisitId === quote.id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -853,7 +853,7 @@ export default function QuoteComparisonView({
                         <button
                           onClick={() => handleAccept(quote.id)}
                           disabled={busy}
-                          className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-warm-500 text-white font-semibold rounded-lg hover:bg-warm-600 transition-colors disabled:opacity-50 text-sm shadow-sm"
+                          className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-ct-teal text-ct-ink font-semibold rounded-ct-sm hover:brightness-110 transition-colors disabled:opacity-50 text-sm shadow-sm"
                           title={feeCredited ? `$${Number(quote.final_price).toLocaleString()} final less $${callOutFeeDollars.toLocaleString()} call-out already paid` : undefined}
                         >
                           {acceptingId === quote.id ? (
@@ -866,12 +866,12 @@ export default function QuoteComparisonView({
                       )}
 
                       {waitHint && (
-                        <span className="text-sm text-gray-500 italic">{waitHint}</span>
+                        <span className="text-sm text-ct-mute italic">{waitHint}</span>
                       )}
 
                       <button
                         onClick={() => onMessageTradie(quote.tradie_id, job.id)}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-secondary-50 border border-secondary-200 text-secondary-700 font-semibold rounded-lg hover:bg-secondary-100 hover:border-secondary-300 transition-colors text-sm"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-ct-surface-2 border border-ct-line text-ct-mute-2 font-semibold rounded-ct-sm hover:bg-ct-surface-2 hover:border-ct-line transition-colors text-sm"
                       >
                         <MessageSquare className="w-4 h-4" />
                         Message tradie
@@ -881,7 +881,7 @@ export default function QuoteComparisonView({
                         <button
                           onClick={() => handleDecline(quote.id)}
                           disabled={busy}
-                          className="inline-flex items-center justify-center px-3 py-2 border border-gray-200 text-gray-400 rounded-lg hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 ml-auto"
+                          className="inline-flex items-center justify-center px-3 py-2 border border-ct-line text-ct-mute rounded-ct-sm hover:text-ct-rose hover:border-ct-rose/[0.34] hover:bg-ct-rose/[0.13] transition-colors disabled:opacity-50 ml-auto"
                           title="Decline this quote"
                         >
                           {decliningId === quote.id ? (
@@ -956,74 +956,74 @@ export default function QuoteComparisonView({
         return (
           <Modal isOpen onClose={() => setConfirmingBookVisitId(null)} maxWidth="md">
             <div className="p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-1">Book a site visit</h2>
-              <p className="text-sm text-gray-600 mb-4">
+              <h2 className="text-lg font-bold text-ct-paper mb-1">Book a site visit</h2>
+              <p className="text-sm text-ct-mute-2 mb-4">
                 Pick when {tradieName} should drop by. Visits are short — usually 30–60 minutes — and they'll confirm the exact time on the day. Afterwards they submit a binding final quote and your call-out fee is credited to it.
               </p>
 
               <div className="mb-4">
                 {visitSlotsLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 py-3">
+                  <div className="flex items-center gap-2 text-sm text-ct-mute py-3">
                     <Loader2 className="w-4 h-4 animate-spin" /> Loading {tradieName}'s availability…
                   </div>
                 ) : visitSlots.length > 0 ? (
                   <>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{tradieName}'s available times</p>
+                    <p className="text-xs font-semibold text-ct-mute uppercase tracking-wide mb-2">{tradieName}'s available times</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {visitSlots.map((s) => {
                         const active = selectedSlotId === s.id;
                         return (
                           <button key={s.id} type="button"
                             onClick={() => { setSelectedSlotId(active ? null : s.id); setProposeDate(''); setProposeTime(''); }}
-                            className={`text-left px-3 py-2 rounded-lg border text-xs font-medium transition-colors ${active ? 'border-secondary-400 bg-secondary-50 text-secondary-800' : 'border-gray-200 bg-white text-gray-700 hover:border-secondary-300'}`}>
+                            className={`text-left px-3 py-2 rounded-ct-sm border text-xs font-medium transition-colors ${active ? 'border-ct-line bg-ct-surface-2 text-ct-mute-2' : 'border-ct-line bg-ct-surface text-ct-mute-2 hover:border-ct-line'}`}>
                             {fmtSlot(s.start_time, s.end_time)}
                           </button>
                         );
                       })}
                     </div>
-                    <p className="mt-2 text-[11px] text-gray-400">Tap a window to lock it in.</p>
+                    <p className="mt-2 text-[11px] text-ct-mute">Tap a window to lock it in.</p>
                   </>
                 ) : (
-                  <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg text-xs text-amber-800">
+                  <div className="p-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm text-xs text-ct-paper">
                     {tradieName} hasn't published set times — suggest a time below and they'll confirm it.
                   </div>
                 )}
 
-                <div className={visitSlots.length > 0 ? 'mt-3 pt-3 border-t border-gray-100' : 'mt-3'}>
+                <div className={visitSlots.length > 0 ? 'mt-3 pt-3 border-t border-ct-line-soft' : 'mt-3'}>
                   {visitSlots.length > 0 && (
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Or suggest another time</p>
+                    <p className="text-xs font-semibold text-ct-mute uppercase tracking-wide mb-2">Or suggest another time</p>
                   )}
                   <div className="flex flex-col sm:flex-row gap-2">
                     <input type="date" value={proposeDate} min={new Date().toISOString().slice(0, 10)}
                       onChange={(e) => { setProposeDate(e.target.value); setSelectedSlotId(null); }}
-                      className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-secondary-500 outline-none" />
+                      className="px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal outline-none" />
                     <input type="time" value={proposeTime}
                       onChange={(e) => { setProposeTime(e.target.value); setSelectedSlotId(null); }}
-                      className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-secondary-500 outline-none" />
+                      className="px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal outline-none" />
                   </div>
                   {proposeDate && proposeTime && !selectedSlotId && (
-                    <p className="mt-1.5 text-[11px] text-gray-400">{tradieName} will confirm this proposed time.</p>
+                    <p className="mt-1.5 text-[11px] text-ct-mute">{tradieName} will confirm this proposed time.</p>
                   )}
                 </div>
               </div>
 
-              <div className="p-3 bg-secondary-50/60 border border-secondary-100 rounded-lg mb-4">
-                <p className="text-xs font-semibold text-secondary-700 mb-1">Your address will be shared with {tradieName}</p>
-                <p className="text-sm text-gray-800">{address}</p>
-                <p className="text-[11px] text-gray-500 mt-1.5">Shared so they can plan the visit. Use is limited to this engagement under our Privacy Policy.</p>
+              <div className="p-3 bg-ct-surface-2/60 border border-ct-line-soft rounded-ct-sm mb-4">
+                <p className="text-xs font-semibold text-ct-mute-2 mb-1">Your address will be shared with {tradieName}</p>
+                <p className="text-sm text-ct-paper">{address}</p>
+                <p className="text-[11px] text-ct-mute mt-1.5">Shared so they can plan the visit. Use is limited to this engagement under our Privacy Policy.</p>
               </div>
 
               <div className="flex items-center justify-end gap-2">
                 <button
                   onClick={() => setConfirmingBookVisitId(null)}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-ct-mute-2 hover:text-ct-paper transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleConfirm}
                   disabled={!hasChoice || bookingVisitId === confirmingBookVisitId}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-secondary-500 text-white font-semibold rounded-lg hover:bg-secondary-600 transition-colors text-sm disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-ct-surface-20 text-ct-ink font-semibold rounded-ct-sm hover:bg-ct-surface-2 transition-colors text-sm disabled:opacity-50"
                 >
                   {bookingVisitId === confirmingBookVisitId ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

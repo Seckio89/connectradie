@@ -26,6 +26,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import JobPostGuide from '../components/JobPostGuide';
 import SearchableSelect from '../components/SearchableSelect';
+import { Button, Card, SegmentedControl } from '../components/ui';
 import { notifyTradiesForUrgentJob } from '../lib/notifications';
 import { redactContactInfo, detectContactInfo, getContactWarningMessage } from '../lib/redaction';
 import { getJobHints } from '../lib/jobDescriptionHints';
@@ -230,31 +231,31 @@ function SmartCalendar({
   const canGoPrev = viewMonth > new Date(minDate.getFullYear(), minDate.getMonth(), 1);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4">
+    <div className="bg-ct-surface border border-ct-line rounded-ct-md p-4">
       <div className="flex items-center justify-between mb-4">
         <button
           type="button"
           onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))}
           disabled={!canGoPrev}
-          className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-ct-sm hover:bg-ct-surface-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
-          <ChevronLeft className="w-4 h-4 text-gray-600" />
+          <ChevronLeft className="w-4 h-4 text-ct-mute-2" />
         </button>
-        <span className="text-sm font-semibold text-gray-900">
+        <span className="text-sm font-semibold text-ct-paper">
           {viewMonth.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
         </span>
         <button
           type="button"
           onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          className="p-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
         >
-          <ChevronRight className="w-4 h-4 text-gray-600" />
+          <ChevronRight className="w-4 h-4 text-ct-mute-2" />
         </button>
       </div>
 
       <div className="grid grid-cols-7 gap-1 mb-2">
         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-          <div key={day} className="text-center text-xs font-medium text-gray-400 py-1">
+          <div key={day} className="text-center text-xs font-medium text-ct-mute py-1">
             {day}
           </div>
         ))}
@@ -274,14 +275,14 @@ function SmartCalendar({
               type="button"
               disabled={disabled}
               onClick={() => onSelectDate(day)}
-              className={`relative py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`relative py-2 rounded-ct-sm text-sm font-medium transition-all ${
                 disabled
-                  ? 'bg-red-50 text-red-300 cursor-not-allowed'
+                  ? 'bg-ct-rose/[0.13] text-ct-rose cursor-not-allowed'
                   : isSelected
-                  ? 'bg-secondary-600 text-white shadow-md'
+                  ? 'bg-ct-surface-2 text-ct-ink shadow-md'
                   : isWeekend
-                  ? 'bg-emerald-50/60 text-gray-400 hover:bg-emerald-100 hover:text-gray-600'
-                  : 'bg-emerald-50/60 text-gray-700 hover:bg-emerald-100 hover:text-emerald-700'
+                  ? 'bg-ct-teal/[0.14]/60 text-ct-mute hover:bg-ct-teal/[0.14] hover:text-ct-mute-2'
+                  : 'bg-ct-teal/[0.14]/60 text-ct-mute-2 hover:bg-ct-teal/[0.14] hover:text-ct-teal'
               }`}
             >
               {day.getDate()}
@@ -290,13 +291,13 @@ function SmartCalendar({
         })}
       </div>
 
-      <div className="mt-3 flex items-center gap-4 text-xs text-gray-400">
+      <div className="mt-3 flex items-center gap-4 text-xs text-ct-mute">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-emerald-50 border border-emerald-200"></div>
+          <div className="w-3 h-3 rounded bg-ct-teal/[0.14] border border-ct-teal/30"></div>
           <span>Available</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-red-50 border border-red-200"></div>
+          <div className="w-3 h-3 rounded bg-ct-rose/[0.13] border border-ct-rose/[0.34]"></div>
           <span>Unavailable</span>
         </div>
       </div>
@@ -594,21 +595,21 @@ export default function PostLead() {
     return (
       <DashboardLayout>
         <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-2xl border border-gray-200 p-8 md:p-12 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 className="w-8 h-8 text-green-600" />
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-8 md:p-12 text-center">
+            <div className="w-16 h-16 bg-ct-teal/[0.14] rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 className="w-8 h-8 text-ct-teal" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-3">Quote Request Submitted</h1>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            <h1 className="text-2xl font-bold text-ct-paper mb-3">Quote Request Submitted</h1>
+            <p className="text-ct-mute-2 mb-6 max-w-md mx-auto">
               {scheduleMode === 'urgent'
                 ? 'Your urgent lead is live. Nearby tradies are being pinged right now.'
                 : `Your lead is scheduled for ${scheduledDate?.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}. Tradies will pick it up during their planning sessions.`}
             </p>
             {smsResult && (smsResult.push > 0 || smsResult.sms > 0) && (
-              <div className="bg-secondary-50 border border-secondary-200 rounded-xl p-4 mb-6 max-w-md mx-auto">
+              <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md p-4 mb-6 max-w-md mx-auto">
                 <div className="flex items-center gap-3">
-                  <MessageSquare className="w-5 h-5 text-secondary-600 flex-shrink-0" />
-                  <p className="text-sm text-secondary-800 text-left">
+                  <MessageSquare className="w-5 h-5 text-ct-mute-2 flex-shrink-0" />
+                  <p className="text-sm text-ct-mute-2 text-left">
                     Urgent alerts sent to{' '}
                     {smsResult.push > 0 && <span className="font-semibold">{smsResult.push} push</span>}
                     {smsResult.push > 0 && smsResult.sms > 0 && ' and '}
@@ -619,32 +620,32 @@ export default function PostLead() {
               </div>
             )}
 
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-6 max-w-md mx-auto text-left">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">What happens next</h3>
+            <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md p-5 mb-6 max-w-md mx-auto text-left">
+              <h3 className="text-sm font-semibold text-ct-paper mb-3">What happens next</h3>
               <ol className="space-y-3">
                 <li className="flex items-start gap-3">
-                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 bg-secondary-100 text-secondary-700">1</span>
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 bg-ct-surface-2 text-ct-mute-2">1</span>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Tradies review your request</p>
-                    <p className="text-xs text-gray-500">{scheduleMode === 'urgent' ? 'Expect responses within minutes' : 'Usually within 24 hours'}</p>
+                    <p className="text-sm font-medium text-ct-paper">Tradies review your request</p>
+                    <p className="text-xs text-ct-mute">{scheduleMode === 'urgent' ? 'Expect responses within minutes' : 'Usually within 24 hours'}</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 bg-secondary-100 text-secondary-700">2</span>
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 bg-ct-surface-2 text-ct-mute-2">2</span>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Compare quotes side by side</p>
-                    <p className="text-xs text-gray-500">Up to {maxQuotes} tradies can quote — you pick the best fit</p>
+                    <p className="text-sm font-medium text-ct-paper">Compare quotes side by side</p>
+                    <p className="text-xs text-ct-mute">Up to {maxQuotes} tradies can quote — you pick the best fit</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 bg-secondary-100 text-secondary-700">3</span>
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 bg-ct-surface-2 text-ct-mute-2">3</span>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Accept a quote and get it done</p>
-                    <p className="text-xs text-gray-500">Message your chosen tradie to confirm the date, time, and any details</p>
+                    <p className="text-sm font-medium text-ct-paper">Accept a quote and get it done</p>
+                    <p className="text-xs text-ct-mute">Message your chosen tradie to confirm the date, time, and any details</p>
                   </div>
                 </li>
               </ol>
-              <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-200">
+              <p className="text-xs text-ct-mute mt-3 pt-3 border-t border-ct-line">
                 You&apos;ll get a notification each time a tradie quotes. Go to &ldquo;Job Requests&rdquo; in the sidebar to view and compare quotes side by side.
               </p>
             </div>
@@ -652,7 +653,7 @@ export default function PostLead() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 onClick={() => navigate('/leads')}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-secondary-50 border border-secondary-200 text-secondary-700 font-semibold rounded-xl hover:bg-secondary-100 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-ct-surface-2 border border-ct-line text-ct-mute-2 font-semibold rounded-ct-md hover:bg-ct-surface-2 transition-colors"
               >
                 View My Requests
                 <ArrowRight className="w-4 h-4" />
@@ -676,7 +677,7 @@ export default function PostLead() {
                   setSmsResult(null);
                   setPhotos([]);
                 }}
-                className="inline-flex items-center gap-2 px-6 py-3 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 border border-ct-line text-ct-mute-2 font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors"
               >
                 Request Another Quote
               </button>
@@ -691,69 +692,57 @@ export default function PostLead() {
     <DashboardLayout>
       <JobPostGuide />
       <div className="max-w-2xl mx-auto">
+        {/* The gap-1 control, hand-rolled in v1 because the primitives were dark
+            and this screen was light. Now that the screen is dark too, it is the
+            SegmentedControl primitive — same behaviour, one implementation. */}
         {!skipSelection && (
-          <div
-            role="group"
-            aria-label="Job type"
-            className="inline-flex gap-1 mb-6 p-1 rounded-xl border border-gray-200 bg-gray-50"
-          >
-            {([
+          <SegmentedControl
+            ariaLabel="Job type"
+            value={jobType}
+            onChange={setJobType}
+            options={[
               { value: 'oneoff', label: 'One-off job' },
               { value: 'ongoing', label: 'Ongoing / recurring' },
-            ] as const).map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                aria-pressed={jobType === option.value}
-                onClick={() => setJobType(option.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
-                  jobType === option.value
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+            ]}
+            className="mb-6"
+          />
         )}
 
         {jobType === 'ongoing' && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
+          <Card>
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <RefreshCw className="w-5 h-5 text-emerald-600" />
+              <div className="w-10 h-10 bg-ct-teal/[0.14] rounded-ct-md flex items-center justify-center flex-shrink-0">
+                <RefreshCw className="w-5 h-5 text-ct-teal" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">Ongoing work</h1>
+              <h1 className="font-ct-display text-2xl font-semibold tracking-tight text-ct-paper">Ongoing work</h1>
             </div>
-            <p className="text-sm text-gray-600 leading-relaxed">
+            <p className="text-sm text-ct-mute-2 leading-relaxed">
               Regular work that repeats — weekly, fortnightly or monthly cleaning or
               maintenance. You set the schedule once and each visit is created for you,
               so you're not re-posting the same job every month.
             </p>
-            <p className="text-sm text-gray-600 leading-relaxed mt-3">
+            <p className="text-sm text-ct-mute-2 leading-relaxed mt-3">
               Recurring work is set up on your services page, where you can see the
               schedule and every upcoming visit in one place.
             </p>
-            <button
-              type="button"
+            <Button
+              className="mt-5"
               onClick={() => navigate('/leads?tab=services', { state: { openScheduleForm: true } })}
-              className="inline-flex items-center gap-2 mt-5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors min-h-[44px]"
             >
               Set up recurring work
               <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+            </Button>
+          </Card>
         )}
 
         <div className={jobType === 'ongoing' ? 'hidden' : 'mb-8'}>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-warm-100 rounded-xl flex items-center justify-center">
-              <Zap className="w-5 h-5 text-warm-600" />
+            <div className="w-10 h-10 bg-ct-amber/[0.13] rounded-ct-md flex items-center justify-center">
+              <Zap className="w-5 h-5 text-ct-amber" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Request a Quote</h1>
-              <p className="text-gray-600">Describe what you need and we'll match you with the right tradie</p>
+              <h1 className="text-2xl font-bold text-ct-paper">Request a Quote</h1>
+              <p className="text-ct-mute-2">Describe what you need and we'll match you with the right tradie</p>
             </div>
           </div>
         </div>
@@ -762,12 +751,12 @@ export default function PostLead() {
             doesn't discard anything already typed. */}
         <form onSubmit={handleSubmit} className={jobType === 'ongoing' ? 'hidden' : 'space-y-5'}>
           {/* ── Section 1: Job Details ── */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-5">Job Details</h2>
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6 md:p-8">
+            <h2 className="text-sm font-semibold text-ct-paper uppercase tracking-wide mb-5">Job Details</h2>
             <div className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div data-tour="postlead-category">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Category</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Category</label>
                   <SearchableSelect
                     options={TRADE_CATEGORIES.map((cat) => ({ value: cat, label: cat }))}
                     value={category}
@@ -778,7 +767,7 @@ export default function PostLead() {
                   />
                 </div>
                 <div ref={titleRef} className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Job Title</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Job Title</label>
                   <input
                     type="text"
                     value={title}
@@ -789,10 +778,10 @@ export default function PostLead() {
                     onFocus={() => setTitleDropdownOpen(true)}
                     placeholder={category ? `Select or type your ${category.toLowerCase()} job title` : 'Select a trade first'}
                     maxLength={80}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-4 py-2.5 bg-ct-ink text-ct-paper placeholder:text-ct-placeholder border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
                   />
                   {titleDropdownOpen && titleSuggestions.length > 0 && (
-                    <ul className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                    <ul className="absolute z-20 mt-1 w-full bg-ct-surface border border-ct-line rounded-ct-md shadow-lg max-h-48 overflow-y-auto">
                       {titleSuggestions.map((suggestion) => (
                         <li
                           key={suggestion}
@@ -800,7 +789,7 @@ export default function PostLead() {
                             setTitle(suggestion);
                             setTitleDropdownOpen(false);
                           }}
-                          className="px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 cursor-pointer first:rounded-t-xl last:rounded-b-xl"
+                          className="px-4 py-2.5 text-sm text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-mute-2 cursor-pointer first:rounded-t-xl last:rounded-b-xl"
                         >
                           {suggestion}
                         </li>
@@ -811,23 +800,23 @@ export default function PostLead() {
               </div>
 
               <div data-tour="postlead-description">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Description</label>
                 <textarea
                   {...proseInputProps}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe the job in detail — size, materials, access, timeline... (no need to include contact info — tradies will message you through the platform)"
                   rows={4}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                  className="w-full px-4 py-3 bg-ct-ink text-ct-paper placeholder:text-ct-placeholder border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal resize-none"
                 />
                 {(() => {
                   const detection = detectContactInfo(description);
                   const warning = getContactWarningMessage(detection);
                   if (!warning) return null;
                   return (
-                    <div className="mt-2 flex items-start gap-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
-                      <span className="inline-block w-4 h-4 rounded-full bg-amber-400 text-white text-center leading-4 text-xs font-bold flex-shrink-0 mt-0.5">!</span>
-                      <p className="text-xs text-amber-800">{warning}</p>
+                    <div className="mt-2 flex items-start gap-2 px-3 py-2.5 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm">
+                      <span className="inline-block w-4 h-4 rounded-full bg-ct-amber text-ct-ink text-center leading-4 text-xs font-bold flex-shrink-0 mt-0.5">!</span>
+                      <p className="text-xs text-ct-paper">{warning}</p>
                     </div>
                   );
                 })()}
@@ -846,8 +835,8 @@ export default function PostLead() {
                           }}
                           className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
                             alreadyUsed
-                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-default'
-                              : 'bg-white text-gray-600 border-gray-200 hover:bg-primary-50 hover:text-primary-700 hover:border-primary-300'
+                              ? 'bg-ct-surface-2 text-ct-mute border-ct-line cursor-default'
+                              : 'bg-ct-surface text-ct-mute-2 border-ct-line hover:bg-ct-surface-2 hover:text-ct-mute-2 hover:border-ct-line'
                           }`}
                         >
                           {hint}
@@ -860,7 +849,7 @@ export default function PostLead() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Location</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Location</label>
                   <AddressAutocomplete
                     value={location}
                     onChange={(value, coordinates) => {
@@ -876,18 +865,18 @@ export default function PostLead() {
                       type="checkbox"
                       checked={parkingAvailable}
                       onChange={(e) => setParkingAvailable(e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
+                      className="w-4 h-4 rounded border-ct-line text-ct-teal focus:ring-ct-teal"
                     />
-                    <span className="text-sm text-gray-700">Parking available on site</span>
+                    <span className="text-sm text-ct-mute-2">Parking available on site</span>
                   </label>
                 </div>
                 <div data-tour="postlead-photos">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Photos of the job <span className="text-gray-400 font-normal">(optional — helps tradies quote accurately)</span>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">
+                    Photos of the job <span className="text-ct-mute font-normal">(optional — helps tradies quote accurately)</span>
                   </label>
                   <div className="flex gap-2 flex-wrap">
                     {photos.map((p, i) => (
-                      <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex-shrink-0 group/photo">
+                      <div key={i} className="relative w-16 h-16 rounded-ct-sm overflow-hidden border border-ct-line bg-ct-surface-2 flex-shrink-0 group/photo">
                         <img
                           src={p.preview}
                           alt={`Photo ${i + 1}`}
@@ -897,7 +886,7 @@ export default function PostLead() {
                         <button
                           type="button"
                           onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                          className="absolute top-0.5 right-0.5 p-1 bg-black/60 text-white rounded-md hover:bg-black/80 transition-colors sm:opacity-0 sm:group-hover/photo:opacity-100"
+                          className="absolute top-0.5 right-0.5 p-1 bg-black/60 text-ct-ink rounded-md hover:bg-black/80 transition-colors sm:opacity-0 sm:group-hover/photo:opacity-100"
                         >
                           <X className="w-2.5 h-2.5" />
                         </button>
@@ -907,10 +896,10 @@ export default function PostLead() {
                       <button
                         type="button"
                         onClick={() => photoInputRef.current?.click()}
-                        className="w-16 h-16 flex-shrink-0 flex flex-col items-center justify-center gap-0.5 border border-dashed border-gray-300 rounded-lg hover:border-warm-400 hover:bg-warm-50/30 transition-colors group"
+                        className="w-16 h-16 flex-shrink-0 flex flex-col items-center justify-center gap-0.5 border border-dashed border-ct-line rounded-ct-sm hover:border-ct-teal hover:bg-ct-amber/[0.13]/30 transition-colors group"
                       >
-                        <Camera className="w-4 h-4 text-gray-400 group-hover:text-warm-600 transition-colors" />
-                        <span className="text-[10px] text-gray-400 group-hover:text-warm-600">
+                        <Camera className="w-4 h-4 text-ct-mute group-hover:text-ct-amber transition-colors" />
+                        <span className="text-[10px] text-ct-mute group-hover:text-ct-amber">
                           {photos.length === 0 ? 'Add' : `${photos.length}/5`}
                         </span>
                       </button>
@@ -930,8 +919,8 @@ export default function PostLead() {
           </div>
 
           {/* ── Section 2: Scheduling ── */}
-          <div data-tour="postlead-schedule" className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">When do you need this done?</h2>
+          <div data-tour="postlead-schedule" className="bg-ct-surface rounded-ct-lg border border-ct-line p-6 md:p-8">
+            <h2 className="text-sm font-semibold text-ct-paper uppercase tracking-wide mb-4">When do you need this done?</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <button
                 type="button"
@@ -940,30 +929,30 @@ export default function PostLead() {
                   setScheduledDate(null);
                   setPreferredSlot(null);
                 }}
-                className={`relative group rounded-2xl border-2 p-5 text-left transition-all duration-200 ${
+                className={`relative group rounded-ct-lg border-2 p-5 text-left transition-all duration-200 ${
                   scheduleMode === 'urgent'
-                    ? 'border-warm-400 bg-gradient-to-br from-warm-50 to-warm-50 shadow-sm'
-                    : 'border-gray-200 bg-white hover:border-warm-300 hover:shadow-md'
+                    ? 'border-ct-teal bg-gradient-to-br from-warm-50 to-warm-50 shadow-sm'
+                    : 'border-ct-line bg-ct-surface hover:border-ct-amber/[0.34] hover:shadow-md'
                 }`}
               >
                 {scheduleMode === 'urgent' && (
                   <div className="absolute top-3 right-3">
-                    <CheckCircle2 className="w-5 h-5 text-warm-500" />
+                    <CheckCircle2 className="w-5 h-5 text-ct-teal" />
                   </div>
                 )}
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-colors ${
+                <div className={`w-12 h-12 rounded-ct-md flex items-center justify-center mb-3 transition-colors ${
                   scheduleMode === 'urgent'
                     ? 'bg-gradient-to-br from-warm-400 to-warm-400'
-                    : 'bg-warm-100 group-hover:bg-warm-200'
+                    : 'bg-ct-amber/[0.13] group-hover:bg-ct-amber/[0.13]'
                 }`}>
-                  <Zap className={`w-6 h-6 ${scheduleMode === 'urgent' ? 'text-white' : 'text-warm-600'}`} />
+                  <Zap className={`w-6 h-6 ${scheduleMode === 'urgent' ? 'text-ct-ink' : 'text-ct-amber'}`} />
                 </div>
-                <h3 className="font-bold text-gray-900 mb-1">Urgent / Next Available</h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <h3 className="font-bold text-ct-paper mb-1">Urgent / Next Available</h3>
+                <p className="text-sm text-ct-mute-2 leading-relaxed">
                   Get quotes within minutes — we notify nearby tradies instantly.
                 </p>
-                <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-warm-100 rounded-lg">
-                  <span className="text-xs font-semibold text-warm-700">
+                <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-ct-amber/[0.13] rounded-ct-sm">
+                  <span className="text-xs font-semibold text-ct-amber">
                     {isClientPro
                       ? 'Pro · Unlimited urgent posts'
                       : isUrgentAtCap
@@ -971,7 +960,7 @@ export default function PostLead() {
                         : `${urgentRemaining} of ${URGENT_FREE_LIMIT} free urgent posts left this month`}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-ct-mute mt-1">
                   {isClientPro
                     ? 'Your Pro membership covers unlimited urgent boosts.'
                     : 'Free urgent allowance resets on the 1st of each month.'}
@@ -983,39 +972,39 @@ export default function PostLead() {
                 onClick={() => {
                   setScheduleMode('scheduled');
                 }}
-                className={`relative group rounded-2xl border-2 p-5 text-left transition-all duration-200 ${
+                className={`relative group rounded-ct-lg border-2 p-5 text-left transition-all duration-200 ${
                   scheduleMode === 'scheduled'
-                    ? 'border-secondary-400 bg-gradient-to-br from-secondary-50 to-secondary-50 shadow-sm'
-                    : 'border-gray-200 bg-white hover:border-secondary-300 hover:shadow-md'
+                    ? 'border-ct-line bg-gradient-to-br from-secondary-50 to-secondary-50 shadow-sm'
+                    : 'border-ct-line bg-ct-surface hover:border-ct-line hover:shadow-md'
                 }`}
               >
                 {scheduleMode === 'scheduled' && (
                   <div className="absolute top-3 right-3">
-                    <CheckCircle2 className="w-5 h-5 text-secondary-500" />
+                    <CheckCircle2 className="w-5 h-5 text-ct-mute-2" />
                   </div>
                 )}
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-colors ${
+                <div className={`w-12 h-12 rounded-ct-md flex items-center justify-center mb-3 transition-colors ${
                   scheduleMode === 'scheduled'
                     ? 'bg-gradient-to-br from-secondary-400 to-secondary-400'
-                    : 'bg-secondary-100 group-hover:bg-secondary-200'
+                    : 'bg-ct-surface-2 group-hover:bg-ct-surface-2'
                 }`}>
-                  <CalendarDays className={`w-6 h-6 ${scheduleMode === 'scheduled' ? 'text-white' : 'text-secondary-600'}`} />
+                  <CalendarDays className={`w-6 h-6 ${scheduleMode === 'scheduled' ? 'text-ct-ink' : 'text-ct-mute-2'}`} />
                 </div>
-                <h3 className="font-bold text-gray-900 mb-1">Flexible / Scheduled</h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <h3 className="font-bold text-ct-paper mb-1">Flexible / Scheduled</h3>
+                <p className="text-sm text-ct-mute-2 leading-relaxed">
                   For renovations or maintenance. Save money by booking ahead.
                 </p>
-                <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-secondary-100 rounded-lg">
-                  <Clock className="w-3.5 h-3.5 text-secondary-700" />
-                  <span className="text-xs font-semibold text-secondary-700">No extra fees</span>
+                <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-ct-surface-2 rounded-ct-sm">
+                  <Clock className="w-3.5 h-3.5 text-ct-mute-2" />
+                  <span className="text-xs font-semibold text-ct-mute-2">No extra fees</span>
                 </div>
               </button>
             </div>
 
             {scheduleMode === 'urgent' && !isUrgentAtCap && (
-              <div className="mt-4 bg-gradient-to-r from-warm-50 to-warm-50 border border-warm-200 rounded-xl p-4 flex items-start gap-3 animate-in fade-in duration-300">
-                <Zap className="w-5 h-5 text-warm-600 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-warm-800">
+              <div className="mt-4 bg-gradient-to-r from-warm-50 to-warm-50 border border-ct-amber/[0.34] rounded-ct-md p-4 flex items-start gap-3 animate-in fade-in duration-300">
+                <Zap className="w-5 h-5 text-ct-amber flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-ct-paper">
                   <p className="font-medium mb-0.5">Flash Lead</p>
                   <p>Your lead will be boosted for 4 hours. Nearby tradies get instant notifications.</p>
                 </div>
@@ -1023,28 +1012,28 @@ export default function PostLead() {
             )}
 
             {scheduleMode === 'urgent' && isUrgentAtCap && (
-              <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 animate-in fade-in duration-300">
+              <div className="mt-4 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md p-4 animate-in fade-in duration-300">
                 <div className="flex items-start gap-3">
-                  <Zap className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <Zap className="w-5 h-5 text-ct-amber flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-amber-900 mb-0.5">
+                    <p className="text-sm font-semibold text-ct-paper mb-0.5">
                       You've used your {URGENT_FREE_LIMIT} free urgent posts this month
                     </p>
-                    <p className="text-sm text-amber-800 mb-3">
+                    <p className="text-sm text-ct-paper mb-3">
                       Free allowance resets on the 1st. Upgrade to Pro for unlimited urgent boosts, or pay a one-off fee for this post.
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={() => navigate('/pricing')}
-                        className="inline-flex items-center px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg"
+                        className="inline-flex items-center px-4 py-2 bg-ct-teal hover:brightness-110 text-ct-ink text-sm font-medium rounded-ct-sm"
                       >
                         Upgrade to Pro
                       </button>
                       <button
                         type="button"
                         onClick={() => setScheduleMode('scheduled')}
-                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-ct-mute-2 hover:text-ct-paper"
                       >
                         Switch to Scheduled
                       </button>
@@ -1057,12 +1046,12 @@ export default function PostLead() {
             {scheduleMode === 'scheduled' && (
               <div className="mt-5 space-y-4 animate-in fade-in duration-300">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">
                     {SIMPLE_TRADES.includes(category) ? 'When do you need this done?' : 'When should the tradie visit?'}
                   </label>
-                  <div className="flex items-start gap-2.5 px-3.5 py-2.5 bg-secondary-50 border border-secondary-200 rounded-xl mb-3">
-                    <CalendarDays className="w-4 h-4 text-secondary-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-secondary-800 leading-relaxed">
+                  <div className="flex items-start gap-2.5 px-3.5 py-2.5 bg-ct-surface-2 border border-ct-line rounded-ct-md mb-3">
+                    <CalendarDays className="w-4 h-4 text-ct-mute-2 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-ct-mute-2 leading-relaxed">
                       {SIMPLE_TRADES.includes(category)
                         ? <>Pick a date that works for the <strong>tradie to complete the job</strong>. You'll need to provide access.</>
                         : <>The tradie will come to your property to <strong>inspect the job and give you a firm quote</strong>. You'll need to be home.</>
@@ -1074,19 +1063,19 @@ export default function PostLead() {
                     onSelectDate={setScheduledDate}
                   />
                   {scheduledDate && (
-                    <p className="mt-2 text-sm text-secondary-700 font-medium">
+                    <p className="mt-2 text-sm text-ct-mute-2 font-medium">
                       Selected: {formatDateLabel(scheduledDate)}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">
                     {SIMPLE_TRADES.includes(category) ? 'What time works best?' : 'What time works best for the visit?'}
                   </label>
-                  <div className="flex items-start gap-2.5 px-3.5 py-2.5 bg-secondary-50 border border-secondary-200 rounded-xl mb-3">
-                    <Clock className="w-4 h-4 text-secondary-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-secondary-800 leading-relaxed">
+                  <div className="flex items-start gap-2.5 px-3.5 py-2.5 bg-ct-surface-2 border border-ct-line rounded-ct-md mb-3">
+                    <Clock className="w-4 h-4 text-ct-mute-2 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-ct-mute-2 leading-relaxed">
                       {SIMPLE_TRADES.includes(category)
                         ? <>Pick a time that suits you — the tradie will <strong>confirm availability</strong>.</>
                         : <>Pick when you're available to <strong>let the tradie in</strong> and walk them through the job.</>
@@ -1102,32 +1091,32 @@ export default function PostLead() {
                           key={slot.key}
                           type="button"
                           onClick={() => setPreferredSlot(slot.key)}
-                          className={`relative rounded-xl border-2 p-3 text-center transition-all duration-200 ${
+                          className={`relative rounded-ct-md border-2 p-3 text-center transition-all duration-200 ${
                             isSelected
-                              ? 'border-secondary-300 bg-secondary-50 shadow-sm'
-                              : 'border-gray-200 bg-white hover:border-secondary-300 hover:bg-secondary-50/30'
+                              ? 'border-ct-line bg-ct-surface-2 shadow-sm'
+                              : 'border-ct-line bg-ct-surface hover:border-ct-line hover:bg-ct-surface-2/30'
                           }`}
                         >
                           {isSelected && (
                             <div className="absolute -top-2 right-2">
-                              <span className="inline-block w-2 h-2 rounded-full bg-secondary-500" title="Your selected time" />
+                              <span className="inline-block w-2 h-2 rounded-full bg-ct-surface-20" title="Your selected time" />
                             </div>
                           )}
                           <Icon className={`w-5 h-5 mx-auto mb-1.5 ${
-                            isSelected ? 'text-secondary-600' : 'text-gray-400'
+                            isSelected ? 'text-ct-mute-2' : 'text-ct-mute'
                           }`} />
-                          <div className={`text-sm font-semibold ${isSelected ? 'text-secondary-700' : 'text-gray-700'}`}>
+                          <div className={`text-sm font-semibold ${isSelected ? 'text-ct-mute-2' : 'text-ct-mute-2'}`}>
                             {slot.label}
                           </div>
-                          <div className={`text-xs mt-0.5 ${isSelected ? 'text-secondary-600' : 'text-gray-400'}`}>{slot.range}</div>
+                          <div className={`text-xs mt-0.5 ${isSelected ? 'text-ct-mute-2' : 'text-ct-mute'}`}>{slot.range}</div>
                         </button>
                       );
                     })}
                   </div>
                   {category && TRADE_PEAK_TIMES[category] && (
-                    <div className="mt-3 flex items-start gap-2 px-3 py-2.5 bg-secondary-50 border border-secondary-200 rounded-xl">
-                      <Clock className="w-4 h-4 text-secondary-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-secondary-700 leading-relaxed">
+                    <div className="mt-3 flex items-start gap-2 px-3 py-2.5 bg-ct-surface-2 border border-ct-line rounded-ct-md">
+                      <Clock className="w-4 h-4 text-ct-mute-2 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-ct-mute-2 leading-relaxed">
                         <span className="font-semibold">{TRADE_PEAK_TIMES[category].slot === 'morning' ? 'Morning' : TRADE_PEAK_TIMES[category].slot === 'midday' ? 'Midday' : 'Afternoon'} is most common for {category.toLowerCase()}s.</span>{' '}
                         {TRADE_PEAK_TIMES[category].reason}.
                       </p>
@@ -1137,8 +1126,8 @@ export default function PostLead() {
                   {/* Optional: pin a specific start time + estimated duration. When set,
                       the job appears as a real time block on the client's and (once
                       assigned) the tradie's calendar. Left blank, it stays slot-flexible. */}
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
+                  <div className="mt-4 pt-4 border-t border-ct-line-soft">
+                    <label className="block text-xs font-medium text-ct-mute uppercase tracking-wide mb-1.5">
                       Prefer a specific start time? (optional)
                     </label>
                     <div className="flex flex-col sm:flex-row gap-2.5">
@@ -1146,13 +1135,13 @@ export default function PostLead() {
                         type="time"
                         value={specificStartTime}
                         onChange={(e) => setSpecificStartTime(e.target.value)}
-                        className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-secondary-500 outline-none"
+                        className="px-3 py-2.5 border border-ct-line rounded-ct-md text-sm focus:ring-2 focus:ring-ct-teal outline-none"
                       />
                       <select
                         value={durationMinutes}
                         onChange={(e) => setDurationMinutes(Number(e.target.value))}
                         disabled={!specificStartTime}
-                        className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-secondary-500 outline-none disabled:opacity-50 disabled:bg-gray-50"
+                        className="px-3 py-2.5 border border-ct-line rounded-ct-md text-sm bg-ct-surface focus:ring-2 focus:ring-ct-teal outline-none disabled:opacity-50 disabled:bg-ct-surface-2"
                       >
                         {DURATION_OPTIONS.map((d) => (
                           <option key={d.minutes} value={d.minutes}>{d.label}</option>
@@ -1160,13 +1149,13 @@ export default function PostLead() {
                       </select>
                     </div>
                     {specificStartTime ? (
-                      <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-secondary-700">
+                      <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-ct-mute-2">
                         <Clock className="w-3.5 h-3.5 flex-shrink-0" />
                         Roughly <span className="font-semibold">{formatTime12(specificStartTime)} – {formatTime12(addMinutesToTime(specificStartTime, durationMinutes))}</span>
-                        <span className="text-gray-400">· your preferred time; the tradie confirms the final window</span>
+                        <span className="text-ct-mute">· your preferred time; the tradie confirms the final window</span>
                       </p>
                     ) : (
-                      <p className="mt-2 text-[11px] text-gray-400">Leave blank to keep it flexible — the tradie confirms a time after accepting.</p>
+                      <p className="mt-2 text-[11px] text-ct-mute">Leave blank to keep it flexible — the tradie confirms a time after accepting.</p>
                     )}
                   </div>
                 </div>
@@ -1175,20 +1164,20 @@ export default function PostLead() {
           </div>
 
           {/* ── Section 3: Budget & Preferences ── */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-5">Budget & Preferences</h2>
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6 md:p-8">
+            <h2 className="text-sm font-semibold text-ct-paper uppercase tracking-wide mb-5">Budget & Preferences</h2>
             <div className="space-y-5">
               <div>
                 <div className="flex gap-3 mb-2">
                   <button
                     type="button"
                     onClick={() => setBudgetType('request_quote')}
-                    className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
+                    className={`flex-1 px-4 py-2.5 rounded-ct-md text-sm font-medium border-2 transition-all ${
                       budgetType === 'request_quote'
                         ? scheduleMode === 'urgent'
-                          ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                          : 'border-secondary-300 bg-secondary-50 text-secondary-700'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                          ? 'border-ct-teal/30 bg-ct-teal/[0.14] text-ct-teal'
+                          : 'border-ct-line bg-ct-surface-2 text-ct-mute-2'
+                        : 'border-ct-line text-ct-mute-2 hover:border-ct-line'
                     }`}
                   >
                     Open to Quotes
@@ -1196,25 +1185,25 @@ export default function PostLead() {
                   <button
                     type="button"
                     onClick={() => setBudgetType('fixed_budget')}
-                    className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
+                    className={`flex-1 px-4 py-2.5 rounded-ct-md text-sm font-medium border-2 transition-all ${
                       budgetType === 'fixed_budget'
                         ? scheduleMode === 'urgent'
-                          ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                          : 'border-secondary-300 bg-secondary-50 text-secondary-700'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                          ? 'border-ct-teal/30 bg-ct-teal/[0.14] text-ct-teal'
+                          : 'border-ct-line bg-ct-surface-2 text-ct-mute-2'
+                        : 'border-ct-line text-ct-mute-2 hover:border-ct-line'
                     }`}
                   >
                     Set a Budget
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-ct-mute mt-1">
                   {budgetType === 'request_quote'
                     ? 'Tradies will price based on your job details.'
                     : 'Tradies will see your budget and tailor their quote.'}
                 </p>
                 {budgetType === 'fixed_budget' && (
                   <div className="relative mt-3">
-                    <CircleDollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <CircleDollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
                     <input
                       type="number"
                       value={budgetAmount}
@@ -1222,14 +1211,14 @@ export default function PostLead() {
                       placeholder="Enter your budget (AUD)"
                       min="0"
                       step="10"
-                      className="w-full pl-12 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full pl-12 pr-4 py-2.5 bg-ct-ink text-ct-paper placeholder:text-ct-placeholder border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
                     />
                   </div>
                 )}
               </div>
 
-              <div className="border-t border-gray-100 pt-5">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Quotes</label>
+              <div className="border-t border-ct-line-soft pt-5">
+                <label className="block text-sm font-medium text-ct-mute-2 mb-2">Quotes</label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { num: 3, label: '3 quotes', desc: 'Best for most jobs' },
@@ -1239,27 +1228,27 @@ export default function PostLead() {
                       key={num}
                       type="button"
                       onClick={() => setMaxQuotes(num)}
-                      className={`py-2.5 px-4 rounded-xl text-left border-2 transition-all ${
+                      className={`py-2.5 px-4 rounded-ct-md text-left border-2 transition-all ${
                         maxQuotes === num
                           ? scheduleMode === 'urgent'
-                            ? 'border-emerald-300 bg-emerald-50'
-                            : 'border-secondary-300 bg-secondary-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                            ? 'border-ct-teal/30 bg-ct-teal/[0.14]'
+                            : 'border-ct-line bg-ct-surface-2'
+                          : 'border-ct-line hover:border-ct-line'
                       }`}
                     >
-                      <span className={`block text-sm font-semibold ${maxQuotes === num ? (scheduleMode === 'urgent' ? 'text-emerald-700' : 'text-secondary-700') : 'text-gray-700'}`}>{label}</span>
-                      <span className={`block text-xs mt-0.5 ${maxQuotes === num ? (scheduleMode === 'urgent' ? 'text-emerald-600' : 'text-secondary-600') : 'text-gray-500'}`}>{desc}</span>
+                      <span className={`block text-sm font-semibold ${maxQuotes === num ? (scheduleMode === 'urgent' ? 'text-ct-teal' : 'text-ct-mute-2') : 'text-ct-mute-2'}`}>{label}</span>
+                      <span className={`block text-xs mt-0.5 ${maxQuotes === num ? (scheduleMode === 'urgent' ? 'text-ct-teal' : 'text-ct-mute-2') : 'text-ct-mute'}`}>{desc}</span>
                     </button>
                   ))}
                 </div>
-                <p className="mt-1.5 text-xs text-gray-500">
+                <p className="mt-1.5 text-xs text-ct-mute">
                   Fewer quotes = higher win rate for tradies = better prices for you.
                 </p>
               </div>
 
               {!SIMPLE_TRADES.includes(category) && (
                 <label
-                  className="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 hover:border-secondary-300 cursor-pointer transition-colors"
+                  className="flex items-start gap-3 p-3.5 rounded-ct-md border border-ct-line hover:border-ct-line cursor-pointer transition-colors"
                   htmlFor="allows-site-inspection"
                 >
                   <input
@@ -1267,11 +1256,11 @@ export default function PostLead() {
                     type="checkbox"
                     checked={allowsSiteInspection}
                     onChange={(e) => setAllowsSiteInspection(e.target.checked)}
-                    className="w-4 h-4 text-secondary-600 rounded border-gray-300 focus:ring-secondary-500 mt-0.5"
+                    className="w-4 h-4 text-ct-mute-2 rounded border-ct-line focus:ring-ct-teal mt-0.5"
                   />
                   <div>
-                    <span className="text-sm font-medium text-gray-700">Allow site inspections</span>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <span className="text-sm font-medium text-ct-mute-2">Allow site inspections</span>
+                    <p className="text-xs text-ct-mute mt-0.5">
                       Let tradies visit before giving a firm price. Recommended for complex jobs.
                     </p>
                   </div>
@@ -1281,8 +1270,8 @@ export default function PostLead() {
           </div>
 
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="p-4 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md">
+              <p className="text-sm text-ct-rose">{error}</p>
             </div>
           )}
 
@@ -1290,12 +1279,12 @@ export default function PostLead() {
             <button
               type="submit"
               disabled={submitting || !scheduleMode}
-              className={`w-full py-3.5 font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-lg ${
+              className={`w-full py-3.5 font-semibold rounded-ct-md disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-lg ${
                 scheduleMode === 'urgent'
-                  ? 'bg-gradient-to-r from-warm-500 to-warm-500 text-white hover:from-warm-600 hover:to-warm-600 shadow-sm'
+                  ? 'bg-gradient-to-r from-warm-500 to-warm-500 text-ct-ink hover:from-warm-600 hover:to-warm-600 shadow-sm'
                   : scheduleMode === 'scheduled'
-                  ? 'bg-gradient-to-r from-secondary-400 to-secondary-400 text-white hover:from-secondary-500 hover:to-secondary-500 shadow-sm'
-                  : 'bg-gray-200 text-gray-500'
+                  ? 'bg-gradient-to-r from-secondary-400 to-secondary-400 text-ct-ink hover:from-secondary-500 hover:to-secondary-500 shadow-sm'
+                  : 'bg-ct-line text-ct-mute'
               }`}
             >
               {submitting ? (
@@ -1319,9 +1308,9 @@ export default function PostLead() {
             </button>
             {scheduleMode === 'urgent' && (
               <div className="flex items-center justify-center gap-2 text-sm">
-                <span className="font-semibold text-warm-700">+ $4.99 Emergency Fee</span>
-                <span className="text-gray-400">|</span>
-                <span className="text-gray-500">charged on confirmation</span>
+                <span className="font-semibold text-ct-amber">+ $4.99 Emergency Fee</span>
+                <span className="text-ct-mute">|</span>
+                <span className="text-ct-mute">charged on confirmation</span>
               </div>
             )}
           </div>
@@ -1337,12 +1326,12 @@ export default function PostLead() {
             <img
               src={previewPhoto}
               alt="Preview"
-              className="max-w-full max-h-[85vh] rounded-xl object-contain"
+              className="max-w-full max-h-[85vh] rounded-ct-md object-contain"
             />
             <button
               type="button"
               onClick={() => setPreviewPhoto(null)}
-              className="absolute top-2 right-2 p-2 bg-white text-gray-700 rounded-full shadow-lg hover:bg-gray-100 transition-colors"
+              className="absolute top-2 right-2 p-2 bg-ct-surface text-ct-mute-2 rounded-full shadow-lg hover:bg-ct-surface-2 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>

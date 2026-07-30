@@ -452,62 +452,62 @@ export default function SubmitQuoteModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/60" onClick={handleClose} />
 
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto">
+      <div className="relative bg-ct-surface rounded-ct-lg shadow-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto">
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors z-10"
+          className="absolute top-4 right-4 p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors z-10"
         >
           <X className="w-5 h-5" />
         </button>
 
         {modalState === 'submitting' && (
           <div className="p-16 flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-secondary-100 rounded-full flex items-center justify-center mb-6 animate-pulse">
-              <Loader2 className="w-10 h-10 text-primary-600 animate-spin" />
+            <div className="w-20 h-20 bg-ct-surface-2 rounded-full flex items-center justify-center mb-6 animate-pulse">
+              <Loader2 className="w-10 h-10 text-ct-mute-2 animate-spin" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Submitting Quote...</h2>
-            <p className="text-gray-600">Sending your quote to the client.</p>
+            <h2 className="text-2xl font-bold text-ct-paper mb-2">Submitting Quote...</h2>
+            <p className="text-ct-mute-2">Sending your quote to the client.</p>
           </div>
         )}
 
         {modalState === 'success' && (
           <div className="p-16 flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
-              <CheckCircle2 className="w-10 h-10 text-green-600" />
+            <div className="w-20 h-20 bg-ct-teal/[0.14] rounded-full flex items-center justify-center mb-6">
+              <CheckCircle2 className="w-10 h-10 text-ct-teal" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Quote Submitted</h2>
+            <h2 className="text-2xl font-bold text-ct-paper mb-2">Quote Submitted</h2>
             {job.tradie_id ? (
               <>
-                <p className="text-gray-600 mb-4 max-w-sm">
+                <p className="text-ct-mute-2 mb-4 max-w-sm">
                   Your quote has been sent directly to the client. They'll review it and get back to you.
                 </p>
-                <div className="bg-secondary-50 border border-secondary-200 rounded-xl p-4 mb-6 max-w-sm text-left">
-                  <p className="text-sm font-semibold text-gray-800 mb-2">What happens next?</p>
-                  <ul className="text-xs text-gray-600 space-y-2">
-                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>1</span>The client reviews your quote</li>
-                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>2</span>If accepted, they'll pay securely via Stripe</li>
-                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>3</span>You'll be notified to start the job</li>
+                <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md p-4 mb-6 max-w-sm text-left">
+                  <p className="text-sm font-semibold text-ct-paper mb-2">What happens next?</p>
+                  <ul className="text-xs text-ct-mute-2 space-y-2">
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>1</span>The client reviews your quote</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>2</span>If accepted, they'll pay securely via Stripe</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>3</span>You'll be notified to start the job</li>
                   </ul>
                 </div>
               </>
             ) : (
               <>
-                <p className="text-gray-600 mb-4 max-w-sm">
+                <p className="text-ct-mute-2 mb-4 max-w-sm">
                   The client will review your quote alongside up to {job.max_quotes - 1} others. You'll be notified if they accept.
                 </p>
-                <div className="bg-secondary-50 border border-secondary-200 rounded-xl p-4 mb-6 max-w-sm text-left">
-                  <p className="text-sm font-semibold text-secondary-900 mb-2">What happens next?</p>
-                  <ul className="text-xs text-secondary-800 space-y-2">
-                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>1</span>The client reviews all incoming quotes</li>
-                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>2</span>You'll get a notification when they respond</li>
-                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: '#2E86DE', color: 'white' }}>3</span>Track your quote status in the "My Quotes" tab</li>
+                <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md p-4 mb-6 max-w-sm text-left">
+                  <p className="text-sm font-semibold text-ct-paper mb-2">What happens next?</p>
+                  <ul className="text-xs text-ct-mute-2 space-y-2">
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>1</span>The client reviews all incoming quotes</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>2</span>You'll get a notification when they respond</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>3</span>Track your quote status in the "My Quotes" tab</li>
                   </ul>
                 </div>
               </>
             )}
             <button
               onClick={handleClose}
-              className="px-8 py-3 bg-secondary-600 text-white font-semibold rounded-xl hover:bg-secondary-700 transition-colors"
+              className="px-8 py-3 bg-ct-surface-2 text-ct-ink font-semibold rounded-ct-md hover:bg-ct-surface-2 transition-colors"
             >
               Done
             </button>
@@ -519,22 +519,22 @@ export default function SubmitQuoteModal({
             submit-final-quote (defence in depth). */}
         {modalState === 'form' && !verification.loading && !verification.canQuote && (
           <div className="p-8 text-center">
-            <div className="w-16 h-16 mx-auto bg-amber-100 rounded-full flex items-center justify-center mb-4">
-              <ShieldCheck className="w-8 h-8 text-amber-600" />
+            <div className="w-16 h-16 mx-auto bg-ct-amber/[0.13] rounded-full flex items-center justify-center mb-4">
+              <ShieldCheck className="w-8 h-8 text-ct-amber" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Get verified to quote</h2>
-            <p className="text-sm text-gray-600 mb-5 max-w-sm mx-auto">
+            <h2 className="text-xl font-bold text-ct-paper mb-2">Get verified to quote</h2>
+            <p className="text-sm text-ct-mute-2 mb-5 max-w-sm mx-auto">
               ConnecTradie verifies every tradie before they can quote — it&apos;s how clients trust the platform.
               {verification.requiresLicense && (
                 <> This job requires a contractor licence for <span className="font-semibold">{category}</span>.</>
               )}
             </p>
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-left mb-5 max-w-sm mx-auto">
-              <p className="text-xs font-semibold text-amber-900 uppercase tracking-wide mb-2">Still required:</p>
+            <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md p-4 text-left mb-5 max-w-sm mx-auto">
+              <p className="text-xs font-semibold text-ct-paper uppercase tracking-wide mb-2">Still required:</p>
               <ul className="space-y-1.5">
                 {verification.blockingReasons.map(reason => (
-                  <li key={reason} className="text-sm text-amber-900 flex items-start gap-2">
-                    <span className="text-amber-600 mt-0.5">•</span>
+                  <li key={reason} className="text-sm text-ct-paper flex items-start gap-2">
+                    <span className="text-ct-amber mt-0.5">•</span>
                     <span>{reason}</span>
                   </li>
                 ))}
@@ -543,7 +543,7 @@ export default function SubmitQuoteModal({
             <Link
               to="/verification"
               onClick={handleClose}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg text-sm transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-ct-teal hover:brightness-110 text-ct-ink font-medium rounded-ct-sm text-sm transition-colors"
             >
               <ShieldCheck className="w-4 h-4" />
               Go to Verification Center
@@ -553,36 +553,36 @@ export default function SubmitQuoteModal({
 
         {modalState === 'form' && verification.canQuote && (
           <>
-            <div className="p-6 pb-4 border-b border-gray-100">
+            <div className="p-6 pb-4 border-b border-ct-line-soft">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-secondary-600" />
+                <div className="w-10 h-10 bg-ct-surface-2 rounded-ct-md flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-ct-mute-2" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Submit Quote</h2>
-                  <p className="text-sm text-gray-500">Blind quoting -- other tradies can't see your price</p>
+                  <h2 className="text-xl font-bold text-ct-paper">Submit Quote</h2>
+                  <p className="text-sm text-ct-mute">Blind quoting -- other tradies can't see your price</p>
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+              <div className="bg-ct-surface-2 rounded-ct-md p-4 space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200">
+                  <span className="px-3 py-1 bg-ct-surface-2 text-ct-mute-2 rounded-full text-xs font-medium border border-ct-line">
                     {category}
                   </span>
                   {slotsRemaining <= 2 && (
-                    <span className="px-3 py-1 bg-warm-50 text-warm-700 rounded-full text-xs font-medium border border-warm-200">
+                    <span className="px-3 py-1 bg-ct-amber/[0.13] text-ct-amber rounded-full text-xs font-medium border border-ct-amber/[0.34]">
                       {slotsRemaining} spot{slotsRemaining !== 1 ? 's' : ''} left
                     </span>
                   )}
                 </div>
                 {isRecurring && (
-                  <p className="text-xs text-secondary-600 flex items-center gap-1.5">
+                  <p className="text-xs text-ct-mute-2 flex items-center gap-1.5">
                     <Repeat className="w-3 h-3 flex-shrink-0" />
                     Ongoing service — if accepted, you'll be the regular tradie for this service
                   </p>
                 )}
-                <p className="text-sm text-gray-700">{desc}</p>
-                <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
+                <p className="text-sm text-ct-mute-2">{desc}</p>
+                <div className="flex items-center gap-4 text-xs text-ct-mute flex-wrap">
                   <span className="flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
                     {suburb}
@@ -593,7 +593,7 @@ export default function SubmitQuoteModal({
                     <span>Quote requested</span>
                   ) : null}
                   {typeof job.parking_available === 'boolean' && (
-                    <span className={`flex items-center gap-1 ${job.parking_available ? 'text-emerald-600' : 'text-gray-500'}`}>
+                    <span className={`flex items-center gap-1 ${job.parking_available ? 'text-ct-teal' : 'text-ct-mute'}`}>
                       <Car className="w-3 h-3" />
                       {job.parking_available ? 'Parking on site' : 'No parking'}
                     </span>
@@ -602,24 +602,24 @@ export default function SubmitQuoteModal({
 
                 {/* Job Photos */}
                 {job.images_url && job.images_url.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <p className="text-xs font-medium text-gray-500 mb-2 flex items-center gap-1">
+                  <div className="mt-3 pt-3 border-t border-ct-line">
+                    <p className="text-xs font-medium text-ct-mute mb-2 flex items-center gap-1">
                       <Image className="w-3 h-3" /> Photos ({job.images_url.length})
                     </p>
                     <div className="flex gap-2 overflow-x-auto pb-1">
                       {job.images_url.slice(0, 4).map((_: string, i: number) => {
                         const signedUrl = photoSignedUrls[i];
                         return (
-                          <a key={i} href={signedUrl ?? '#'} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:border-secondary-300 transition-colors">
+                          <a key={i} href={signedUrl ?? '#'} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 w-16 h-16 rounded-ct-sm overflow-hidden border border-ct-line hover:border-ct-line transition-colors">
                             {signedUrl
                               ? <img src={signedUrl} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
-                              : <div className="w-full h-full bg-gray-100" />}
+                              : <div className="w-full h-full bg-ct-surface-2" />}
                           </a>
                         );
                       })}
                       {job.images_url.length > 4 && (
-                        <div className="flex-shrink-0 w-16 h-16 rounded-lg border border-gray-200 flex items-center justify-center bg-gray-50">
-                          <span className="text-xs text-gray-500 font-medium">+{job.images_url.length - 4}</span>
+                        <div className="flex-shrink-0 w-16 h-16 rounded-ct-sm border border-ct-line flex items-center justify-center bg-ct-surface-2">
+                          <span className="text-xs text-ct-mute font-medium">+{job.images_url.length - 4}</span>
                         </div>
                       )}
                     </div>
@@ -630,11 +630,11 @@ export default function SubmitQuoteModal({
 
             <div className="p-6 space-y-5">
               {effectiveStartDate && (
-                <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-xl p-3">
-                  <Calendar className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <div className="flex items-center gap-2.5 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md p-3">
+                  <Calendar className="w-4 h-4 text-ct-teal flex-shrink-0" />
                   <div>
-                    <p className="text-xs font-medium text-emerald-700">Earliest Available Date</p>
-                    <p className="text-sm font-semibold text-emerald-800">
+                    <p className="text-xs font-medium text-ct-teal">Earliest Available Date</p>
+                    <p className="text-sm font-semibold text-ct-teal">
                       {new Date(effectiveStartDate + 'T00:00:00').toLocaleDateString('en-AU', {
                         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
                       })}
@@ -644,13 +644,13 @@ export default function SubmitQuoteModal({
               )}
 
               {job.budget_amount != null && job.budget_amount > 0 ? (
-                <div className="mb-4 flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
-                  <span className="text-sm text-gray-600">Client's budget:</span>
-                  <span className="text-sm font-medium text-gray-900">${job.budget_amount.toLocaleString()}</span>
+                <div className="mb-4 flex items-center gap-2 px-3 py-2 bg-ct-surface-2 rounded-ct-sm">
+                  <span className="text-sm text-ct-mute-2">Client's budget:</span>
+                  <span className="text-sm font-medium text-ct-paper">${job.budget_amount.toLocaleString()}</span>
                 </div>
               ) : job.budget_type === 'request_quote' ? (
-                <div className="mb-4 px-3 py-2 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-600">Client wants a quote — submit your best competitive price.</p>
+                <div className="mb-4 px-3 py-2 bg-ct-surface-2 rounded-ct-sm">
+                  <p className="text-sm text-ct-mute-2">Client wants a quote — submit your best competitive price.</p>
                 </div>
               ) : null}
 
@@ -672,51 +672,51 @@ export default function SubmitQuoteModal({
                     setPriceMax('');
                   }
                 }}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-left ${
+                className={`w-full flex items-center gap-3 p-3 rounded-ct-md border transition-colors text-left ${
                   durationTBD
-                    ? 'bg-amber-50 border-amber-300 ring-1 ring-amber-200'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'bg-ct-amber/[0.13] border-ct-amber/[0.34] ring-1 ring-ct-amber/30'
+                    : 'border-ct-line hover:border-ct-line'
                 }`}
               >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                  durationTBD ? 'bg-amber-100' : 'bg-gray-100'
+                <div className={`w-8 h-8 rounded-ct-sm flex items-center justify-center flex-shrink-0 ${
+                  durationTBD ? 'bg-ct-amber/[0.13]' : 'bg-ct-surface-2'
                 }`}>
-                  <Eye className={`w-4 h-4 ${durationTBD ? 'text-amber-600' : 'text-gray-400'}`} />
+                  <Eye className={`w-4 h-4 ${durationTBD ? 'text-ct-amber' : 'text-ct-mute'}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${durationTBD ? 'text-amber-800' : 'text-gray-700'}`}>
+                  <p className={`text-sm font-medium ${durationTBD ? 'text-ct-paper' : 'text-ct-mute-2'}`}>
                     Site visit required
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-ct-mute">
                     Price and duration are estimates until I inspect the site
                   </p>
                 </div>
                 <div className={`w-10 h-6 rounded-full transition-colors flex items-center flex-shrink-0 ${
-                  durationTBD ? 'bg-amber-500' : 'bg-gray-300'
+                  durationTBD ? 'bg-ct-amber/[0.13]0' : 'bg-ct-line'
                 }`}>
-                  <span className={`inline-block w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
+                  <span className={`inline-block w-4 h-4 rounded-full bg-ct-surface shadow-sm transition-transform ${
                     durationTBD ? 'translate-x-5' : 'translate-x-1'
                   }`} />
                 </div>
               </button>
 
               {durationTBD && (
-                <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-                  <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-xs text-amber-700">
+                <div className="flex items-start gap-2 px-3 py-2 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm">
+                  <AlertTriangle className="w-4 h-4 text-ct-amber mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-ct-amber">
                     The client will see this as an estimated quote. Final price and timeframe will be confirmed after your on-site inspection.
                   </p>
                 </div>
               )}
 
               {durationTBD && (
-                <div className="px-3 py-3 bg-white border border-gray-200 rounded-lg space-y-2">
+                <div className="px-3 py-3 bg-ct-surface border border-ct-line rounded-ct-sm space-y-2">
                   <div className="flex items-center gap-2">
-                    <Car className="w-4 h-4 text-gray-500" />
-                    <label className="text-sm font-medium text-gray-700">Call-out fee for the visit</label>
+                    <Car className="w-4 h-4 text-ct-mute" />
+                    <label className="text-sm font-medium text-ct-mute-2">Call-out fee for the visit</label>
                   </div>
                   <div className="relative max-w-[140px]">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ct-mute text-sm font-medium">$</span>
                     <input
                       type="number"
                       min={20}
@@ -728,10 +728,10 @@ export default function SubmitQuoteModal({
                         const n = Math.round(Number(callOutFee) || 0);
                         setCallOutFee(String(Math.min(100, Math.max(20, n))));
                       }}
-                      className="w-full pl-7 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
+                      className="w-full pl-7 pr-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                     />
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-ct-mute">
                     The client pays this when they book your visit — it goes to you, and comes off their final bill if they go ahead. $20–$100.
                   </p>
                 </div>
@@ -739,17 +739,17 @@ export default function SubmitQuoteModal({
 
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-ct-mute-2">
                     {durationTBD ? 'Estimated Range' : 'Your Price'}
                     {profile?.is_gst_registered && (
-                      <span className="ml-1.5 text-xs font-normal text-gray-500">(ex. GST)</span>
+                      <span className="ml-1.5 text-xs font-normal text-ct-mute">(ex. GST)</span>
                     )}
                   </label>
                 </div>
 
                 {useFirmPrice ? (
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ct-mute text-sm font-medium">$</span>
                     <input
                       type="number"
                       value={firmPrice}
@@ -757,13 +757,13 @@ export default function SubmitQuoteModal({
                       placeholder="Your firm price (AUD)"
                       min="0"
                       step="10"
-                      className="w-full pl-9 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                      className="w-full pl-9 pr-4 py-3 bg-ct-ink text-ct-paper placeholder:text-ct-placeholder border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
                     />
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ct-mute text-sm font-medium">$</span>
                       <input
                         type="number"
                         value={priceMin}
@@ -771,11 +771,11 @@ export default function SubmitQuoteModal({
                         placeholder="Min"
                         min="0"
                         step="10"
-                        className="w-full pl-9 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary-500 text-sm"
+                        className="w-full pl-9 pr-4 py-3 bg-ct-ink text-ct-paper placeholder:text-ct-placeholder border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm"
                       />
                     </div>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ct-mute text-sm font-medium">$</span>
                       <input
                         type="number"
                         value={priceMax}
@@ -783,13 +783,13 @@ export default function SubmitQuoteModal({
                         placeholder="Max"
                         min="0"
                         step="10"
-                        className="w-full pl-9 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary-500 text-sm"
+                        className="w-full pl-9 pr-4 py-3 bg-ct-ink text-ct-paper placeholder:text-ct-placeholder border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm"
                       />
                     </div>
                   </div>
                 )}
                 {!useFirmPrice && (
-                  <p className="mt-1.5 text-xs text-gray-500">
+                  <p className="mt-1.5 text-xs text-ct-mute">
                     Give your best-case and worst-case estimate. You'll confirm the final price after visiting the site.
                   </p>
                 )}
@@ -799,38 +799,38 @@ export default function SubmitQuoteModal({
                   const max = parseFloat(priceMax);
                   if (useFirmPrice && firm > 0) {
                     return (
-                      <p className="mt-1.5 text-xs text-secondary-600">
+                      <p className="mt-1.5 text-xs text-ct-mute-2">
                         Client pays <span className="font-semibold">${(firm * 1.1).toFixed(2)}</span> total
-                        <span className="text-gray-400"> (${firm.toFixed(2)} + ${(firm * 0.1).toFixed(2)} GST)</span>
+                        <span className="text-ct-mute"> (${firm.toFixed(2)} + ${(firm * 0.1).toFixed(2)} GST)</span>
                       </p>
                     );
                   }
                   if (!useFirmPrice && min > 0 && max > 0) {
                     return (
-                      <p className="mt-1.5 text-xs text-secondary-600">
+                      <p className="mt-1.5 text-xs text-ct-mute-2">
                         Client pays <span className="font-semibold">${(min * 1.1).toFixed(2)} – ${(max * 1.1).toFixed(2)}</span> total
-                        <span className="text-gray-400"> (incl. 10% GST)</span>
+                        <span className="text-ct-mute"> (incl. 10% GST)</span>
                       </p>
                     );
                   }
                   return null;
                 })()}
                 {priceHint && (
-                  <p className="mt-1.5 text-xs text-gray-400">
+                  <p className="mt-1.5 text-xs text-ct-mute">
                     Typical range for similar jobs: ${priceHint.min.toLocaleString()} – ${priceHint.max.toLocaleString()}
                   </p>
                 )}
                 {/* Pricing v2.1 — materials at cost carry no commission. Part of the
                     quoted total above; labour is the remainder. */}
-                <div className="mt-3 px-3 py-3 bg-white border border-gray-200 rounded-lg space-y-2">
+                <div className="mt-3 px-3 py-3 bg-ct-surface border border-ct-line rounded-ct-sm space-y-2">
                   <div className="flex items-center gap-2">
-                    <Package className="w-4 h-4 text-gray-500" />
-                    <label className="text-sm font-medium text-gray-700">
-                      Materials at cost <span className="font-normal text-gray-400">(optional)</span>
+                    <Package className="w-4 h-4 text-ct-mute" />
+                    <label className="text-sm font-medium text-ct-mute-2">
+                      Materials at cost <span className="font-normal text-ct-mute">(optional)</span>
                     </label>
                   </div>
                   <div className="relative max-w-[160px]">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ct-mute text-sm font-medium">$</span>
                     <input
                       type="number"
                       min={0}
@@ -838,7 +838,7 @@ export default function SubmitQuoteModal({
                       value={materialsAmount}
                       onChange={(e) => setMaterialsAmount(e.target.value)}
                       placeholder="0"
-                      className="w-full pl-7 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
+                      className="w-full pl-7 pr-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                     />
                   </div>
 
@@ -849,33 +849,33 @@ export default function SubmitQuoteModal({
                       onChange={(e) => setMaterialsDescription(e.target.value)}
                       placeholder="e.g. Rheem 250L electric HWS"
                       maxLength={120}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-secondary-400 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                     />
                   )}
 
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-ct-mute">
                     We take nothing on materials — just card processing at cost (~1.93%).
                   </p>
 
                   {materialsExceedTotal ? (
-                    <p className="text-xs text-red-600">
+                    <p className="text-xs text-ct-rose">
                       Materials (${materialsDollars.toFixed(2)}) can't be more than your total price
                       (${quoteTotalDollars.toFixed(2)}).
                     </p>
                   ) : quoteTotalDollars > 0 && (
-                    <p className="text-xs text-gray-600">
+                    <p className="text-xs text-ct-mute-2">
                       Of your <span className="font-medium">${quoteTotalDollars.toFixed(2)}</span> total:{' '}
-                      <span className="font-medium text-gray-800">${labourDollars.toFixed(2)}</span> labour
+                      <span className="font-medium text-ct-paper">${labourDollars.toFixed(2)}</span> labour
                       {materialsDollars > 0 && (
-                        <> + <span className="font-medium text-gray-800">${materialsDollars.toFixed(2)}</span> materials</>
+                        <> + <span className="font-medium text-ct-paper">${materialsDollars.toFixed(2)}</span> materials</>
                       )}
                     </p>
                   )}
 
                   {materialsRatioHigh && (
-                    <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-                      <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                      <p className="text-xs text-amber-700">
+                    <div className="flex items-start gap-2 px-3 py-2 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm">
+                      <AlertTriangle className="w-4 h-4 text-ct-amber mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-ct-amber">
                         Materials are more than 75% of this quote — just checking that's right.
                       </p>
                     </div>
@@ -892,12 +892,12 @@ export default function SubmitQuoteModal({
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-medium text-gray-700">Message to Client</label>
+                  <label className="text-sm font-medium text-ct-mute-2">Message to Client</label>
                   {templates.length > 0 && (
                     <button
                       type="button"
                       onClick={() => setShowTemplates(!showTemplates)}
-                      className="flex items-center gap-1 text-xs font-medium text-secondary-600 hover:text-secondary-700 px-2 py-1 rounded-lg hover:bg-secondary-50 transition-colors"
+                      className="flex items-center gap-1 text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 px-2 py-1 rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
                     >
                       <Bookmark className="w-3.5 h-3.5" />
                       Templates
@@ -907,21 +907,21 @@ export default function SubmitQuoteModal({
                 </div>
 
                 {showTemplates && templates.length > 0 && (
-                  <div className="mb-3 border border-secondary-200 rounded-xl overflow-hidden divide-y divide-secondary-100">
+                  <div className="mb-3 border border-ct-line rounded-ct-md overflow-hidden divide-y divide-ct-line-soft">
                     {templates.map(t => (
-                      <div key={t.id} className="flex items-center justify-between p-3 hover:bg-secondary-50 transition-colors">
+                      <div key={t.id} className="flex items-center justify-between p-3 hover:bg-ct-surface-2 transition-colors">
                         <button
                           type="button"
                           onClick={() => { applyTemplate(t); setMessageExpanded(true); }}
                           className="flex-1 text-left"
                         >
-                          <span className="text-sm font-medium text-gray-900">{t.name}</span>
-                          <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{t.message}</p>
+                          <span className="text-sm font-medium text-ct-paper">{t.name}</span>
+                          <p className="text-xs text-ct-mute line-clamp-1 mt-0.5">{t.message}</p>
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteTemplate(t.id)}
-                          className="ml-2 p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
+                          className="ml-2 p-1 text-ct-mute hover:text-ct-rose rounded transition-colors"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -934,10 +934,10 @@ export default function SubmitQuoteModal({
                   <button
                     type="button"
                     onClick={() => setMessageExpanded(true)}
-                    className="w-full flex justify-between items-start px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-gray-300 transition-all duration-200"
+                    className="w-full flex justify-between items-start px-4 py-3 border border-ct-line rounded-ct-md text-sm text-ct-mute-2 hover:border-ct-line transition-all duration-200"
                   >
                     <span className="text-left">{message.length > 60 ? message.slice(0, 60) + '...' : message}</span>
-                    <span className="text-emerald-600 text-sm flex-shrink-0 ml-3">Edit</span>
+                    <span className="text-ct-teal text-sm flex-shrink-0 ml-3">Edit</span>
                   </button>
                 ) : (
                   <div className="transition-all duration-200">
@@ -947,26 +947,26 @@ export default function SubmitQuoteModal({
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       rows={4}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-sm"
+                      className="w-full px-4 py-3 bg-ct-ink text-ct-paper placeholder:text-ct-placeholder border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal resize-none text-sm"
                     />
 
                     <div className="mt-1.5 flex items-center justify-between">
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-ct-mute">
                         Not the right tone?{' '}
                         <button
                           type="button"
                           onClick={handleCycleMessage}
-                          className="text-gray-500 hover:text-gray-700 transition-colors"
+                          className="text-ct-mute hover:text-ct-mute-2 transition-colors"
                         >
                           Try another &rarr;
                         </button>
                       </span>
                       <div className="flex items-center gap-3">
-                        <span className="text-xs text-gray-300">{messageOptionIndex + 1} of {messageOptions.length}</span>
+                        <span className="text-xs text-ct-mute">{messageOptionIndex + 1} of {messageOptions.length}</span>
                         <button
                           type="button"
                           onClick={() => setMessageExpanded(false)}
-                          className="text-xs text-emerald-600 hover:text-emerald-700 transition-colors"
+                          className="text-xs text-ct-teal hover:text-ct-teal transition-colors"
                         >
                           Done editing
                         </button>
@@ -978,16 +978,16 @@ export default function SubmitQuoteModal({
                         type="checkbox"
                         checked={saveAsTemplate}
                         onChange={(e) => setSaveAsTemplate(e.target.checked)}
-                        className="rounded border-gray-300 text-secondary-500 focus:ring-secondary-400"
+                        className="rounded border-ct-line text-ct-mute-2 focus:ring-ct-teal"
                       />
-                      <span className="text-xs text-gray-500">Save this message for next time</span>
+                      <span className="text-xs text-ct-mute">Save this message for next time</span>
                     </label>
                   </div>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-ct-mute-2 mb-2">
                   Estimated duration
                 </label>
                 <div className="flex flex-wrap gap-1.5 mb-2">
@@ -999,8 +999,8 @@ export default function SubmitQuoteModal({
                       onClick={() => handlePillClick(pill)}
                       className={`px-3 py-1 rounded-full text-sm border transition-colors ${
                         selectedPill === pill.label
-                          ? 'bg-emerald-500 text-white border-emerald-500'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                          ? 'bg-ct-teal text-ct-ink border-ct-teal'
+                          : 'bg-ct-surface text-ct-mute-2 border-ct-line hover:border-ct-line'
                       } ${durationTBD ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {pill.label}
@@ -1016,11 +1016,11 @@ export default function SubmitQuoteModal({
                     value={durationValue}
                     onChange={(e) => { setDurationValue(e.target.value.replace(/[^0-9]/g, '')); setSelectedPill(null); }}
                     disabled={durationTBD}
-                    className={`w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-secondary-400 focus:border-secondary-400 ${
-                      durationTBD ? 'bg-gray-100 text-gray-400' : ''
+                    className={`w-20 px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-line ${
+                      durationTBD ? 'bg-ct-surface-2 text-ct-mute' : ''
                     }`}
                   />
-                  <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                  <div className="flex rounded-ct-sm border border-ct-line overflow-hidden">
                     {DURATION_UNITS.map((unit) => (
                       <button
                         key={unit}
@@ -1029,8 +1029,8 @@ export default function SubmitQuoteModal({
                         onClick={() => setDurationUnit(unit)}
                         className={`px-3 py-2 text-sm capitalize transition-colors ${
                           durationUnit === unit && !durationTBD
-                            ? 'bg-secondary-50 text-secondary-700 border border-secondary-300'
-                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                            ? 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line'
+                            : 'bg-ct-surface text-ct-mute-2 hover:bg-ct-surface-2'
                         } ${durationTBD ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         {unit}
@@ -1042,7 +1042,7 @@ export default function SubmitQuoteModal({
 
               <div className="flex flex-col gap-3">
                 <label
-                  className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-secondary-300 cursor-pointer transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-ct-md border border-ct-line hover:border-ct-line cursor-pointer transition-colors"
                   htmlFor="includes-materials"
                 >
                   <input
@@ -1050,21 +1050,21 @@ export default function SubmitQuoteModal({
                     type="checkbox"
                     checked={includesMaterials}
                     onChange={(e) => setIncludesMaterials(e.target.checked)}
-                    className="w-4 h-4 text-secondary-600 rounded border-gray-300 focus:ring-secondary-500"
+                    className="w-4 h-4 text-ct-mute-2 rounded border-ct-line focus:ring-ct-teal"
                   />
-                  <Package className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-700">Quote includes materials</span>
+                  <Package className="w-4 h-4 text-ct-mute" />
+                  <span className="text-sm text-ct-mute-2">Quote includes materials</span>
                 </label>
 
               </div>
 
               {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-                  <p className="text-sm text-red-600">{error}</p>
+                <div className="p-4 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md">
+                  <p className="text-sm text-ct-rose">{error}</p>
                 </div>
               )}
 
-              <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-xl p-3">
+              <div className="flex items-center gap-2 text-xs text-ct-mute bg-ct-surface-2 rounded-ct-md p-3">
                 <Wrench className="w-4 h-4 flex-shrink-0" />
                 <span>
                   Quoting as <strong>{tradieDetails?.business_name || profile?.full_name}</strong>
@@ -1079,7 +1079,7 @@ export default function SubmitQuoteModal({
               <button
                 onClick={handleSubmit}
                 disabled={!canSubmit}
-                className={`w-full py-3.5 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 transition-colors shadow-sm flex items-center justify-center gap-2 text-lg ${
+                className={`w-full py-3.5 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors shadow-sm flex items-center justify-center gap-2 text-lg ${
                   !canSubmit ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
