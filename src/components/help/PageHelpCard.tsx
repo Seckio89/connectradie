@@ -38,20 +38,20 @@ export default function PageHelpCard() {
   };
 
   return (
-    <div className="relative bg-secondary-50 border border-secondary-100 rounded-xl p-4 pr-10 mb-4 sm:mb-6">
+    <div className="relative bg-ct-surface-2 border border-ct-line rounded-ct-md p-4 pr-10 mb-4 sm:mb-6">
       <div className="flex items-start gap-3">
-        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
-          <Sparkles className="w-4 h-4 text-secondary-600" />
+        <div className="w-8 h-8 rounded-ct-sm bg-ct-surface flex items-center justify-center flex-shrink-0">
+          <Sparkles className="w-4 h-4 text-ct-mute-2" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-gray-900 break-words">{content.title}</p>
-          <p className="text-sm text-gray-600 mt-0.5 leading-relaxed break-words">{content.intro}</p>
+          <p className="text-sm font-semibold text-ct-paper break-words">{content.title}</p>
+          <p className="text-sm text-ct-mute-2 mt-0.5 leading-relaxed break-words">{content.intro}</p>
         </div>
       </div>
       <button
         onClick={dismiss}
         aria-label="Dismiss"
-        className="absolute top-3 right-3 p-1 text-gray-400 hover:text-gray-600 rounded-md hover:bg-white/70 transition-colors"
+        className="absolute top-3 right-3 p-1 text-ct-mute hover:text-ct-mute-2 rounded-md hover:bg-ct-surface/70 transition-colors"
       >
         <X className="w-4 h-4" />
       </button>
