@@ -133,74 +133,74 @@ export default function CalendarImport() {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto space-y-6">
-        <Link to="/settings" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
+        <Link to="/settings" className="inline-flex items-center gap-1.5 text-sm text-ct-mute hover:text-ct-mute-2">
           <ArrowLeft className="w-4 h-4" /> Settings
         </Link>
 
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-secondary-50 flex items-center justify-center flex-shrink-0">
-            <Calendar className="w-6 h-6 text-secondary-600" />
+          <div className="w-11 h-11 rounded-ct-md bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+            <Calendar className="w-6 h-6 text-ct-mute-2" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Import from Google Calendar</h1>
-            <p className="text-sm text-gray-600">Bring your existing jobs in. Each calendar (colour) maps to a team member.</p>
+            <h1 className="text-2xl font-bold text-ct-paper">Import from Google Calendar</h1>
+            <p className="text-sm text-ct-mute-2">Bring your existing jobs in. Each calendar (colour) maps to a team member.</p>
           </div>
         </div>
 
-        {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>}
+        {error && <div className="bg-ct-rose/[0.13] border border-ct-rose/[0.34] text-ct-rose text-sm rounded-ct-md px-4 py-3">{error}</div>}
 
         {/* Step 1 — connect */}
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
+        <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm p-5">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              {connected ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <Calendar className="w-5 h-5 text-gray-400" />}
-              <span className="text-sm font-medium text-gray-900">
+              {connected ? <CheckCircle2 className="w-5 h-5 text-ct-teal" /> : <Calendar className="w-5 h-5 text-ct-mute" />}
+              <span className="text-sm font-medium text-ct-paper">
                 {connected == null ? 'Checking connection…' : connected ? 'Google Calendar connected' : 'Not connected'}
               </span>
             </div>
-            <button onClick={connect} className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+            <button onClick={connect} className="inline-flex items-center gap-2 px-4 py-2 border border-ct-line rounded-ct-sm text-sm font-medium text-ct-mute-2 hover:bg-ct-surface-2">
               <RefreshCw className="w-4 h-4" /> {connected ? 'Reconnect' : 'Connect Google Calendar'}
             </button>
           </div>
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-ct-mute mt-2">
             To import, grant calendar access when prompted. After connecting, return here and load your calendars.
           </p>
         </div>
 
         {/* Step 2 — load + map calendars */}
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 space-y-4">
+        <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Calendars</h2>
-            <button onClick={loadCalendars} disabled={busy === 'calendars'} className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60">
+            <h2 className="text-lg font-semibold text-ct-paper">Calendars</h2>
+            <button onClick={loadCalendars} disabled={busy === 'calendars'} className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-ct-line rounded-ct-sm text-xs font-medium text-ct-mute-2 hover:bg-ct-surface-2 disabled:opacity-60">
               {busy === 'calendars' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />} {calendars.length ? 'Reload' : 'Load my calendars'}
             </button>
           </div>
 
           {calendars.length === 0 ? (
-            <p className="text-sm text-gray-400">Load your calendars, then tick the specific ones to import and map each to a team member.</p>
+            <p className="text-sm text-ct-mute">Load your calendars, then tick the specific ones to import and map each to a team member.</p>
           ) : (
             <>
-              <p className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+              <p className="text-xs text-ct-mute bg-ct-surface-2 rounded-ct-sm px-3 py-2">
                 Tick only the calendars you want to import (e.g. your employee calendars). Everything is unticked by default — personal calendars and other accounts are left out unless you tick them.
               </p>
               {/* Compact single-line rows — clean settings list, no wrapping:
                   checkbox + colour dot + name on the left, member dropdown on the
                   right. ~46px tall so all calendars fit without scrolling. */}
-              <div className="divide-y divide-gray-100 mt-2">
+              <div className="divide-y divide-ct-line-soft mt-2">
               {calendars.map((c) => {
                 const row = map[c.id];
                 if (!row) return null;
                 return (
                   <div key={c.id} className="flex items-center gap-2.5 py-2.5">
                     <input type="checkbox" checked={row.selected} onChange={(e) => setRow(c.id, { selected: e.target.checked })}
-                      className="w-4 h-4 flex-shrink-0 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
+                      className="w-4 h-4 flex-shrink-0 rounded border-ct-line text-ct-teal focus:ring-ct-teal" />
                     <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 border border-black/5" style={{ background: row.color }} />
-                    <span className="flex-1 min-w-0 text-sm text-gray-800 truncate">{c.summary}{c.primary && <span className="text-xs text-gray-400"> · primary</span>}</span>
+                    <span className="flex-1 min-w-0 text-sm text-ct-paper truncate">{c.summary}{c.primary && <span className="text-xs text-ct-mute"> · primary</span>}</span>
                     <select
                       value={row.teamMemberId ?? ''}
                       onChange={(e) => setRow(c.id, { teamMemberId: e.target.value || null })}
                       disabled={!row.selected}
-                      className="flex-shrink-0 w-32 px-2 py-1 border border-gray-200 rounded-md text-xs bg-white text-gray-700 disabled:opacity-50 disabled:bg-gray-50"
+                      className="flex-shrink-0 w-32 px-2 py-1 border border-ct-line rounded-md text-xs bg-ct-surface text-ct-mute-2 disabled:opacity-50 disabled:bg-ct-surface-2"
                     >
                       <option value="">Unassigned</option>
                       {team.map((m) => <option key={m.id} value={m.id}>{m.invite_name}</option>)}
@@ -213,7 +213,7 @@ export default function CalendarImport() {
           )}
 
           {team.length === 0 && calendars.length > 0 && (
-            <p className="text-xs text-amber-600 flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> No team members yet — add them under Team to map calendars to people.</p>
+            <p className="text-xs text-ct-amber flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> No team members yet — add them under Team to map calendars to people.</p>
           )}
         </div>
 
@@ -222,8 +222,8 @@ export default function CalendarImport() {
           const selectedCount = calendars.filter((c) => map[c.id]?.selected).length;
           return (
             <div className="flex items-center justify-end gap-3">
-              <span className="text-xs text-gray-500">{selectedCount} calendar{selectedCount === 1 ? '' : 's'} selected</span>
-              <button onClick={runImport} disabled={busy === 'import' || selectedCount === 0} className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed">
+              <span className="text-xs text-ct-mute">{selectedCount} calendar{selectedCount === 1 ? '' : 's'} selected</span>
+              <button onClick={runImport} disabled={busy === 'import' || selectedCount === 0} className="inline-flex items-center gap-2 px-5 py-2.5 bg-ct-teal text-ct-ink rounded-ct-md text-sm font-semibold hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed">
                 {busy === 'import' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />} Import Selected{selectedCount > 0 ? ` (${selectedCount})` : ''}
               </button>
             </div>
@@ -231,12 +231,12 @@ export default function CalendarImport() {
         })()}
 
         {result && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
-            <p className="text-sm font-semibold text-emerald-800 flex items-center gap-2"><CheckCircle2 className="w-5 h-5" /> Imported {result.imported} events{result.skipped ? ` · skipped ${result.skipped}` : ''}</p>
-            <ul className="mt-2 text-xs text-emerald-700 space-y-0.5">
+          <div className="bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-lg p-5">
+            <p className="text-sm font-semibold text-ct-teal flex items-center gap-2"><CheckCircle2 className="w-5 h-5" /> Imported {result.imported} events{result.skipped ? ` · skipped ${result.skipped}` : ''}</p>
+            <ul className="mt-2 text-xs text-ct-teal space-y-0.5">
               {Object.entries(result.byCalendar).map(([name, n]) => <li key={name}>{name}: {n}</li>)}
             </ul>
-            <p className="text-xs text-emerald-600 mt-2">Re-running is safe — existing events update instead of duplicating.</p>
+            <p className="text-xs text-ct-teal mt-2">Re-running is safe — existing events update instead of duplicating.</p>
           </div>
         )}
       </div>

@@ -133,7 +133,7 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30 flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-ct-surface-2 via-white to-ct-teal/30 flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8">
       <SEO title="Create Account" description="Create a free ConnecTradie account." noindex />
       <BetaModal />
 
@@ -142,13 +142,13 @@ export default function Register() {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center justify-center mb-6">
             <span className="text-2xl font-extrabold tracking-tight text-black">
-              Connec<span className="text-warm-500">Tradie</span>
+              Connec<span className="text-ct-teal">Tradie</span>
             </span>
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-ct-paper tracking-tight">
             {isTradie ? 'Join as a Verified Tradie' : 'Create your account'}
           </h1>
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm text-ct-mute">
             {isTradie
               ? 'Get verified and start receiving job leads.'
               : 'Find trusted, licensed tradies in your area.'}
@@ -156,41 +156,41 @@ export default function Register() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-ct-surface rounded-ct-lg shadow-sm border border-ct-line-soft overflow-hidden">
           <div className="p-6 sm:p-8">
             {error && (
-              <div className="mb-5 p-3.5 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2.5">
-                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-600">{error}</p>
+              <div className="mb-5 p-3.5 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-ct-rose flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-ct-rose">{error}</p>
               </div>
             )}
 
             {success ? (
               <div className="text-center py-4">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Mail className="w-8 h-8 text-green-600" />
+                <div className="w-16 h-16 bg-ct-teal/[0.14] rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mail className="w-8 h-8 text-ct-teal" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Check your email</h2>
-                <p className="text-gray-600 mb-2">
+                <h2 className="text-xl font-bold text-ct-paper mb-2">Check your email</h2>
+                <p className="text-ct-mute-2 mb-2">
                   We've sent a confirmation link to:
                 </p>
-                <p className="font-semibold text-gray-900 mb-4">{email}</p>
-                <p className="text-sm text-gray-500 mb-6">
+                <p className="font-semibold text-ct-paper mb-4">{email}</p>
+                <p className="text-sm text-ct-mute mb-6">
                   Click the link in your email to activate your account. You'll be signed in automatically.
                 </p>
                 <div className="space-y-3">
                   <Link
                     to="/login"
-                    className="block w-full py-3 px-4 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors text-center"
+                    className="block w-full py-3 px-4 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors text-center"
                   >
                     Go to Sign In
                   </Link>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-ct-mute">
                     Didn't get the email? Check your spam folder or{' '}
                     <button
                       type="button"
                       onClick={() => { setSuccess(false); setError(''); }}
-                      className="text-primary-600 hover:text-primary-700 font-medium"
+                      className="text-ct-mute-2 hover:text-ct-mute-2 font-medium"
                     >
                       try again
                     </button>
@@ -204,12 +204,12 @@ export default function Register() {
 
               {/* Name fields */}
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor="firstName" className="block text-sm font-medium text-ct-mute-2 mb-1.5">
                   Name
                 </label>
-                <div className="rounded-xl border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent transition-all">
+                <div className="rounded-ct-md border border-ct-line overflow-hidden focus-within:ring-2 focus-within:ring-ct-teal0 focus-within:border-transparent transition-all">
                   <div className="relative">
-                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400" />
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-ct-mute" />
                     <input
                       id="firstName"
                       name="firstName"
@@ -219,13 +219,13 @@ export default function Register() {
                       value={firstName}
                       onFocus={() => setShowNameExpanded(true)}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 text-sm border-0 focus:outline-none focus:ring-0 bg-white placeholder:text-gray-400"
+                      className="w-full pl-10 pr-4 py-2.5 text-sm border-0 focus:outline-none focus:ring-0 bg-ct-surface placeholder:text-ct-mute"
                       placeholder="First name"
                     />
                   </div>
                   {showNameExpanded && (
                     <>
-                      <div className="border-t border-gray-100">
+                      <div className="border-t border-ct-line-soft">
                         <input
                           id="middleName"
                           name="middleName"
@@ -233,11 +233,11 @@ export default function Register() {
                           autoComplete="additional-name"
                           value={middleName}
                           onChange={(e) => setMiddleName(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2.5 text-sm border-0 focus:outline-none focus:ring-0 bg-white placeholder:text-gray-400"
+                          className="w-full pl-10 pr-4 py-2.5 text-sm border-0 focus:outline-none focus:ring-0 bg-ct-surface placeholder:text-ct-mute"
                           placeholder="Middle name (optional)"
                         />
                       </div>
-                      <div className="border-t border-gray-100">
+                      <div className="border-t border-ct-line-soft">
                         <input
                           id="lastName"
                           name="lastName"
@@ -246,7 +246,7 @@ export default function Register() {
                           required
                           value={lastName}
                           onChange={(e) => setLastName(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2.5 text-sm border-0 focus:outline-none focus:ring-0 bg-white placeholder:text-gray-400"
+                          className="w-full pl-10 pr-4 py-2.5 text-sm border-0 focus:outline-none focus:ring-0 bg-ct-surface placeholder:text-ct-mute"
                           placeholder="Last name"
                         />
                       </div>
@@ -257,11 +257,11 @@ export default function Register() {
 
               {/* Phone */}
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor="phone" className="block text-sm font-medium text-ct-mute-2 mb-1.5">
                   Mobile phone
                 </label>
-                <div className="relative rounded-xl border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent transition-all">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400" />
+                <div className="relative rounded-ct-md border border-ct-line overflow-hidden focus-within:ring-2 focus-within:ring-ct-teal0 focus-within:border-transparent transition-all">
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-ct-mute" />
                   <input
                     id="phone"
                     name="phone"
@@ -270,7 +270,7 @@ export default function Register() {
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 text-sm border-0 focus:outline-none focus:ring-0 bg-white placeholder:text-gray-400"
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border-0 focus:outline-none focus:ring-0 bg-ct-surface placeholder:text-ct-mute"
                     placeholder="04XX XXX XXX"
                   />
                 </div>
@@ -278,11 +278,11 @@ export default function Register() {
 
               {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor="email" className="block text-sm font-medium text-ct-mute-2 mb-1.5">
                   Email address
                 </label>
-                <div className="relative rounded-xl border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent transition-all">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400" />
+                <div className="relative rounded-ct-md border border-ct-line overflow-hidden focus-within:ring-2 focus-within:ring-ct-teal0 focus-within:border-transparent transition-all">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-ct-mute" />
                   <input
                     id="email"
                     name="email"
@@ -291,7 +291,7 @@ export default function Register() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 text-sm border-0 focus:outline-none focus:ring-0 bg-white placeholder:text-gray-400"
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border-0 focus:outline-none focus:ring-0 bg-ct-surface placeholder:text-ct-mute"
                     placeholder="you@example.com"
                     aria-label="Email address for ConnecTradie account"
                   />
@@ -300,11 +300,11 @@ export default function Register() {
 
               {/* Password */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor="password" className="block text-sm font-medium text-ct-mute-2 mb-1.5">
                   Password
                 </label>
-                <div className="relative rounded-xl border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent transition-all">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400" />
+                <div className="relative rounded-ct-md border border-ct-line overflow-hidden focus-within:ring-2 focus-within:ring-ct-teal0 focus-within:border-transparent transition-all">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-ct-mute" />
                   <input
                     id="password"
                     name="password"
@@ -313,30 +313,30 @@ export default function Register() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-11 py-2.5 text-sm border-0 focus:outline-none focus:ring-0 bg-white placeholder:text-gray-400"
+                    className="w-full pl-10 pr-11 py-2.5 text-sm border-0 focus:outline-none focus:ring-0 bg-ct-surface placeholder:text-ct-mute"
                     placeholder="Min. 8 characters (A-Z, 0-9)"
                     aria-label="Create password for ConnecTradie account"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-ct-mute hover:text-ct-mute-2 transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
                 {password.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-                    <span className={`text-xs flex items-center gap-1 ${password.length >= 8 ? 'text-green-600' : 'text-gray-400'}`}>
-                      {password.length >= 8 ? <CheckCircle2 className="w-3 h-3" /> : <span className="w-3 h-3 rounded-full border border-gray-300 inline-block" />}
+                    <span className={`text-xs flex items-center gap-1 ${password.length >= 8 ? 'text-ct-teal' : 'text-ct-mute'}`}>
+                      {password.length >= 8 ? <CheckCircle2 className="w-3 h-3" /> : <span className="w-3 h-3 rounded-full border border-ct-line inline-block" />}
                       8+ characters
                     </span>
-                    <span className={`text-xs flex items-center gap-1 ${/[A-Z]/.test(password) ? 'text-green-600' : 'text-gray-400'}`}>
-                      {/[A-Z]/.test(password) ? <CheckCircle2 className="w-3 h-3" /> : <span className="w-3 h-3 rounded-full border border-gray-300 inline-block" />}
+                    <span className={`text-xs flex items-center gap-1 ${/[A-Z]/.test(password) ? 'text-ct-teal' : 'text-ct-mute'}`}>
+                      {/[A-Z]/.test(password) ? <CheckCircle2 className="w-3 h-3" /> : <span className="w-3 h-3 rounded-full border border-ct-line inline-block" />}
                       Uppercase letter
                     </span>
-                    <span className={`text-xs flex items-center gap-1 ${/[0-9]/.test(password) ? 'text-green-600' : 'text-gray-400'}`}>
-                      {/[0-9]/.test(password) ? <CheckCircle2 className="w-3 h-3" /> : <span className="w-3 h-3 rounded-full border border-gray-300 inline-block" />}
+                    <span className={`text-xs flex items-center gap-1 ${/[0-9]/.test(password) ? 'text-ct-teal' : 'text-ct-mute'}`}>
+                      {/[0-9]/.test(password) ? <CheckCircle2 className="w-3 h-3" /> : <span className="w-3 h-3 rounded-full border border-ct-line inline-block" />}
                       Number
                     </span>
                   </div>
@@ -345,8 +345,8 @@ export default function Register() {
 
               {/* Terms checkbox */}
               <label className="flex items-start gap-2.5 cursor-pointer select-none pt-1">
-                <div className={`mt-px w-4 h-4 rounded flex items-center justify-center flex-shrink-0 border transition-colors ${agreedToTerms ? 'bg-warm-500 border-warm-500' : 'border-gray-300 bg-white'}`}>
-                  {agreedToTerms && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                <div className={`mt-px w-4 h-4 rounded flex items-center justify-center flex-shrink-0 border transition-colors ${agreedToTerms ? 'bg-ct-teal border-ct-teal' : 'border-ct-line bg-ct-surface'}`}>
+                  {agreedToTerms && <Check className="w-3 h-3 text-ct-ink" strokeWidth={3} />}
                 </div>
                 <input
                   type="checkbox"
@@ -354,11 +354,11 @@ export default function Register() {
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
                   className="sr-only"
                 />
-                <span className="text-xs text-gray-500 leading-relaxed">
+                <span className="text-xs text-ct-mute leading-relaxed">
                   I agree to the{' '}
-                  <Link to="/terms" className="text-primary-600 hover:text-primary-700 font-medium">Terms of Service</Link>
+                  <Link to="/terms" className="text-ct-mute-2 hover:text-ct-mute-2 font-medium">Terms of Service</Link>
                   {' '}and{' '}
-                  <Link to="/privacy" className="text-primary-600 hover:text-primary-700 font-medium">Privacy Policy</Link>
+                  <Link to="/privacy" className="text-ct-mute-2 hover:text-ct-mute-2 font-medium">Privacy Policy</Link>
                 </span>
               </label>
 
@@ -366,7 +366,7 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={loading || success || !agreedToTerms}
-                className="w-full py-3 px-4 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-warm-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-sm shadow-warm-500/20"
+                className="w-full py-3 px-4 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ct-teal disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-sm shadow-warm-500/20"
                 aria-label="Create ConnecTradie account"
               >
                 {loading ? (
@@ -388,17 +388,17 @@ export default function Register() {
             <div className="mt-5">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200" />
+                  <div className="w-full border-t border-ct-line" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-3 bg-white text-gray-400">or</span>
+                  <span className="px-3 bg-ct-surface text-ct-mute">or</span>
                 </div>
               </div>
 
               <button
                 onClick={handleGoogleSignUp}
                 disabled={googleLoading}
-                className="mt-4 w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-all shadow-sm"
+                className="mt-4 w-full flex items-center justify-center gap-3 px-4 py-3 bg-ct-surface border border-ct-line rounded-ct-md font-medium text-ct-mute-2 hover:bg-ct-surface-2 disabled:opacity-50 transition-all shadow-sm"
               >
                 {googleLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -415,10 +415,10 @@ export default function Register() {
 
           {/* Footer */}
           {!success && (
-          <div className="px-6 sm:px-8 py-4 bg-gray-50 border-t border-gray-100">
-            <p className="text-center text-sm text-gray-500">
+          <div className="px-6 sm:px-8 py-4 bg-ct-surface-2 border-t border-ct-line-soft">
+            <p className="text-center text-sm text-ct-mute">
               Already have an account?{' '}
-              <Link to="/login" className="text-primary-600 font-semibold hover:text-primary-700 transition-colors">
+              <Link to="/login" className="text-ct-mute-2 font-semibold hover:text-ct-mute-2 transition-colors">
                 Sign in
               </Link>
             </p>
@@ -432,10 +432,10 @@ export default function Register() {
             const Icon = b.icon;
             return (
               <div key={b.text} className="flex flex-col items-center text-center gap-2 px-2">
-                <div className="w-9 h-9 rounded-full bg-warm-50 flex items-center justify-center">
-                  <Icon className="w-4 h-4 text-warm-600" />
+                <div className="w-9 h-9 rounded-full bg-ct-amber/[0.13] flex items-center justify-center">
+                  <Icon className="w-4 h-4 text-ct-amber" />
                 </div>
-                <span className="text-xs text-gray-500 leading-snug">{b.text}</span>
+                <span className="text-xs text-ct-mute leading-snug">{b.text}</span>
               </div>
             );
           })}

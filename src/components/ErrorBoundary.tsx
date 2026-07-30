@@ -87,18 +87,18 @@ export default class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-white flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <AlertTriangle className="w-8 h-8 text-red-600" />
+        <div className="min-h-screen bg-ct-surface flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-ct-surface rounded-ct-lg shadow-sm border border-ct-line p-8 text-center">
+            <div className="w-16 h-16 bg-ct-rose/[0.13] rounded-ct-lg flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle className="w-8 h-8 text-ct-rose" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h1>
-            <p className="text-gray-600 mb-8">
+            <h1 className="text-2xl font-bold text-ct-paper mb-2">Something went wrong</h1>
+            <p className="text-ct-mute-2 mb-8">
               An unexpected error occurred. Please try reloading the page.
             </p>
             <button
               onClick={this.handleReload}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
             >
               <RefreshCw className="w-5 h-5" />
               Reload Page

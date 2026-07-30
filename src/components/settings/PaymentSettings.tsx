@@ -105,42 +105,42 @@ function ExternalBankDetails() {
   };
 
   const inputCls =
-    'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500';
+    'w-full border border-ct-line rounded-ct-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal';
 
   // Escrow is forced for everyone except external-pay-allowed tradies (PM tiers),
   // so this off-platform bank-transfer section is hidden for the rest.
   if (profile?.external_pay_allowed !== true) return null;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+    <div className="bg-ct-surface rounded-ct-lg border border-ct-line shadow-sm p-5">
+      <p className="text-xs font-medium text-ct-mute uppercase tracking-wide flex items-center gap-1.5">
         <Landmark className="w-3.5 h-3.5" /> Bank details for invoices
       </p>
-      <p className="mt-2 text-sm text-gray-600">
+      <p className="mt-2 text-sm text-ct-mute-2">
         Printed on invoices for clients who pay by bank transfer, so they know where to send it.
       </p>
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="sm:col-span-2">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Account name</label>
+          <label className="block text-xs font-medium text-ct-mute mb-1">Account name</label>
           <input value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="e.g. Bright Spark Electrical Pty Ltd" className={inputCls} />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">BSB</label>
+          <label className="block text-xs font-medium text-ct-mute mb-1">BSB</label>
           <input value={bsb} onChange={(e) => setBsb(e.target.value)} placeholder="062-000" inputMode="numeric" className={`${inputCls} tabular-nums`} />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Account number</label>
+          <label className="block text-xs font-medium text-ct-mute mb-1">Account number</label>
           <input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="12345678" inputMode="numeric" className={`${inputCls} tabular-nums`} />
         </div>
         <div className="sm:col-span-2">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Bank name <span className="font-normal normal-case text-gray-400">(optional)</span></label>
+          <label className="block text-xs font-medium text-ct-mute mb-1">Bank name <span className="font-normal normal-case text-ct-mute">(optional)</span></label>
           <input value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. Commonwealth Bank" className={inputCls} />
         </div>
       </div>
       <button
         onClick={handleSave}
         disabled={saving || !dirty}
-        className="mt-4 inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+        className="mt-4 inline-flex items-center gap-2 bg-ct-teal hover:brightness-110 text-ct-ink px-4 py-2 rounded-ct-sm text-sm font-medium disabled:opacity-50 transition-colors"
       >
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
         Save bank details
@@ -207,18 +207,18 @@ export default function PaymentSettings() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
+        <Loader2 className="w-6 h-6 text-ct-mute animate-spin" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-md bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-        <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+      <div className="max-w-md bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md p-4 flex items-start gap-3">
+        <AlertCircle className="w-5 h-5 text-ct-rose flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-red-700">{error}</p>
-          <button onClick={load} className="mt-2 text-sm font-medium text-red-700 underline">Try again</button>
+          <p className="text-sm font-medium text-ct-rose">{error}</p>
+          <button onClick={load} className="mt-2 text-sm font-medium text-ct-rose underline">Try again</button>
         </div>
       </div>
     );
@@ -229,18 +229,18 @@ export default function PaymentSettings() {
   if (!details?.connected) {
     return (
       <div className="space-y-6 max-w-2xl">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 text-center">
-          <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-3">
-            <Landmark className="w-6 h-6 text-emerald-600" />
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line shadow-sm p-6 text-center">
+          <div className="w-12 h-12 rounded-full bg-ct-teal/[0.14] flex items-center justify-center mx-auto mb-3">
+            <Landmark className="w-6 h-6 text-ct-teal" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">Set up payouts</h3>
-          <p className="text-sm text-gray-600 mt-1 mb-4">
+          <h3 className="text-lg font-semibold text-ct-paper">Set up payouts</h3>
+          <p className="text-sm text-ct-mute-2 mt-1 mb-4">
             Connect your bank account to receive card payments from jobs and pay links — securely via Stripe.
           </p>
           <button
             onClick={handleSetup}
             disabled={setupLoading}
-            className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-60 transition-colors"
+            className="inline-flex items-center gap-2 bg-ct-teal hover:brightness-110 text-ct-ink px-5 py-2.5 rounded-ct-sm text-sm font-medium disabled:opacity-60 transition-colors"
           >
             {setupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
             Set up payouts
@@ -258,32 +258,32 @@ export default function PaymentSettings() {
   return (
     <div className="space-y-6 max-w-2xl">
       {needsAttention && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-amber-800">
+        <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-ct-amber flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-ct-paper">
             Stripe needs more information before payouts can run. Use <strong>Update Bank Details</strong> below to finish.
           </p>
         </div>
       )}
 
       {/* Bank account */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <div className="bg-ct-surface rounded-ct-lg border border-ct-line shadow-sm p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+            <p className="text-xs font-medium text-ct-mute uppercase tracking-wide flex items-center gap-1.5">
               <Landmark className="w-3.5 h-3.5" /> Bank account
             </p>
             {bank?.last4 ? (
-              <p className="mt-2 text-base font-semibold text-gray-900 tabular-nums">
+              <p className="mt-2 text-base font-semibold text-ct-paper tabular-nums">
                 •••• {bank.last4}
-                {bank.bankName && <span className="ml-2 text-sm font-normal text-gray-500">{bank.bankName}</span>}
+                {bank.bankName && <span className="ml-2 text-sm font-normal text-ct-mute">{bank.bankName}</span>}
               </p>
             ) : (
-              <p className="mt-2 text-sm text-gray-500">No bank account on file yet.</p>
+              <p className="mt-2 text-sm text-ct-mute">No bank account on file yet.</p>
             )}
           </div>
           {details.account?.payoutsEnabled && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 flex-shrink-0">
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-ct-teal/[0.14] text-ct-teal flex-shrink-0">
               <CheckCircle2 className="w-3.5 h-3.5" /> Active
             </span>
           )}
@@ -291,7 +291,7 @@ export default function PaymentSettings() {
         <button
           onClick={handleUpdateBank}
           disabled={bankLoading}
-          className="mt-4 inline-flex items-center gap-2 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-60 transition-colors"
+          className="mt-4 inline-flex items-center gap-2 border border-ct-line text-ct-mute-2 px-4 py-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 disabled:opacity-60 transition-colors"
         >
           {bankLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
           Update Bank Details
@@ -306,12 +306,12 @@ export default function PaymentSettings() {
           which shares not one figure with the Payouts page — so the two screens
           read as contradictory accounts of the same money. Same rows, same
           numbers, one source (useTradieEarnings) now. */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <div className="bg-ct-surface rounded-ct-lg border border-ct-line shadow-sm p-5">
         <div className="flex items-baseline justify-between gap-3">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+          <p className="text-xs font-medium text-ct-mute uppercase tracking-wide flex items-center gap-1.5">
             <Wallet className="w-3.5 h-3.5" /> Your money
           </p>
-          <p className="text-sm font-semibold text-gray-900 tabular-nums">{fmtAud(earnings.summary.earned)} earned</p>
+          <p className="text-sm font-semibold text-ct-paper tabular-nums">{fmtAud(earnings.summary.earned)} earned</p>
         </div>
         <div className="mt-3">
           <PayoutBreakdownRows summary={earnings.summary} />
@@ -319,21 +319,21 @@ export default function PaymentSettings() {
       </div>
 
       {/* Payouts — managed by the platform (escrow model), not a user-set schedule */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+      <div className="bg-ct-surface rounded-ct-lg border border-ct-line shadow-sm p-5">
+        <p className="text-xs font-medium text-ct-mute uppercase tracking-wide flex items-center gap-1.5">
           <CalendarClock className="w-3.5 h-3.5" /> Payouts
         </p>
-        <p className="mt-2 text-sm text-gray-700">
+        <p className="mt-2 text-sm text-ct-mute-2">
           ConnecTradie releases your money to your bank automatically — for each job when
           the client approves the work, and for recurring services when each invoice is paid.
         </p>
-        <p className="mt-2 text-xs text-gray-400">
+        <p className="mt-2 text-xs text-ct-mute">
           Funds are held securely until work is approved, so payout timing is managed for you
           rather than set to a fixed daily or weekly schedule.
         </p>
       </div>
 
-      <Link to="/payouts" className="inline-flex items-center gap-1.5 text-sm font-medium text-secondary-600 hover:text-secondary-700">
+      <Link to="/payouts" className="inline-flex items-center gap-1.5 text-sm font-medium text-ct-mute-2 hover:text-ct-mute-2">
         View full payout history <ArrowRight className="w-4 h-4" />
       </Link>
     </div>

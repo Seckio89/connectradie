@@ -23,22 +23,22 @@ interface PlatformUpdate {
 
 type TypeConfig = { icon: typeof Shield; label: string; color: string; bg: string; border: string; badge: string };
 
-const FALLBACK_TYPE: TypeConfig = { icon: Wrench, label: 'Update', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200', badge: 'bg-gray-100 text-gray-700' };
-const FALLBACK_PRIORITY = { bar: 'bg-secondary-500' };
+const FALLBACK_TYPE: TypeConfig = { icon: Wrench, label: 'Update', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2', border: 'border-ct-line', badge: 'bg-ct-surface-2 text-ct-mute-2' };
+const FALLBACK_PRIORITY = { bar: 'bg-ct-surface-20' };
 
 const typeConfig: Record<string, TypeConfig | undefined> = {
-  tos: { icon: Shield, label: 'Terms of Service', color: 'text-secondary-600', bg: 'bg-secondary-50', border: 'border-secondary-200', badge: 'bg-secondary-100 text-secondary-700' },
-  policy: { icon: Shield, label: 'Policy Update', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200', badge: 'bg-purple-100 text-purple-700' },
-  feature: { icon: Sparkles, label: 'New Feature', color: 'text-warm-600', bg: 'bg-warm-50', border: 'border-warm-200', badge: 'bg-warm-100 text-warm-700' },
-  recommendation: { icon: Lightbulb, label: 'Recommendation', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', badge: 'bg-amber-100 text-amber-700' },
-  maintenance: { icon: Wrench, label: 'Maintenance', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200', badge: 'bg-gray-100 text-gray-700' },
+  tos: { icon: Shield, label: 'Terms of Service', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2', border: 'border-ct-line', badge: 'bg-ct-surface-2 text-ct-mute-2' },
+  policy: { icon: Shield, label: 'Policy Update', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2', border: 'border-ct-line', badge: 'bg-ct-surface-2 text-ct-mute-2' },
+  feature: { icon: Sparkles, label: 'New Feature', color: 'text-ct-amber', bg: 'bg-ct-amber/[0.13]', border: 'border-ct-amber/[0.34]', badge: 'bg-ct-amber/[0.13] text-ct-amber' },
+  recommendation: { icon: Lightbulb, label: 'Recommendation', color: 'text-ct-amber', bg: 'bg-ct-amber/[0.13]', border: 'border-ct-amber/[0.34]', badge: 'bg-ct-amber/[0.13] text-ct-amber' },
+  maintenance: { icon: Wrench, label: 'Maintenance', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2', border: 'border-ct-line', badge: 'bg-ct-surface-2 text-ct-mute-2' },
 };
 
 const priorityConfig: Record<string, { bar: string } | undefined> = {
-  low: { bar: 'bg-gray-300' },
-  normal: { bar: 'bg-secondary-500' },
-  high: { bar: 'bg-amber-500' },
-  critical: { bar: 'bg-red-500' },
+  low: { bar: 'bg-ct-line' },
+  normal: { bar: 'bg-ct-surface-20' },
+  high: { bar: 'bg-ct-amber/[0.13]0' },
+  critical: { bar: 'bg-ct-rose/[0.13]0' },
 };
 
 export default function PlatformUpdateBanner() {
@@ -160,7 +160,7 @@ export default function PlatformUpdateBanner() {
         return (
           <div
             key={update.id}
-            className={`relative overflow-hidden rounded-xl border transition-all duration-300 ${
+            className={`relative overflow-hidden rounded-ct-md border transition-all duration-300 ${
               isDismissed ? 'opacity-0 scale-95' : 'opacity-100'
             } ${config.border} ${config.bg}`}
           >
@@ -169,7 +169,7 @@ export default function PlatformUpdateBanner() {
 
             <div className="pl-4 pr-3 py-3">
               <div className="flex items-start gap-3">
-                <div className={`mt-0.5 p-1.5 rounded-lg ${config.badge}`}>
+                <div className={`mt-0.5 p-1.5 rounded-ct-sm ${config.badge}`}>
                   <Icon className="w-4 h-4" />
                 </div>
 
@@ -179,30 +179,30 @@ export default function PlatformUpdateBanner() {
                       {config.label}
                     </span>
                     {update.priority === 'critical' && (
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded-full">
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-ct-rose bg-ct-rose/[0.13] px-1.5 py-0.5 rounded-full">
                         <AlertTriangle className="w-3 h-3" />
                         Urgent
                       </span>
                     )}
-                    <span className="text-[10px] text-gray-400">
+                    <span className="text-[10px] text-ct-mute">
                       {new Date(update.published_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                     </span>
                   </div>
 
-                  <h4 className="text-sm font-semibold text-gray-900">{update.title}</h4>
+                  <h4 className="text-sm font-semibold text-ct-paper">{update.title}</h4>
 
                   {isExpanded ? (
-                    <div className="mt-2 text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                    <div className="mt-2 text-sm text-ct-mute-2 whitespace-pre-line leading-relaxed">
                       {update.content}
                     </div>
                   ) : (
-                    <p className="text-xs text-gray-600 mt-0.5 line-clamp-1">{update.content}</p>
+                    <p className="text-xs text-ct-mute-2 mt-0.5 line-clamp-1">{update.content}</p>
                   )}
 
                   <div className="flex items-center gap-2 mt-2">
                     <button
                       onClick={() => setExpandedId(isExpanded ? null : update.id)}
-                      className="text-xs font-medium text-gray-500 hover:text-gray-700 flex items-center gap-0.5 transition-colors"
+                      className="text-xs font-medium text-ct-mute hover:text-ct-mute-2 flex items-center gap-0.5 transition-colors"
                     >
                       {isExpanded ? 'Show less' : 'Read more'}
                       <ChevronRight className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
@@ -211,7 +211,7 @@ export default function PlatformUpdateBanner() {
                     {update.requires_acknowledgment ? (
                       <button
                         onClick={() => acknowledgeUpdate(update.id)}
-                        className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors"
+                        className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-ct-ink bg-ct-teal rounded-ct-sm hover:bg-ct-teal/[0.14] transition-colors"
                       >
                         <CheckCircle2 className="w-3 h-3" />
                         I Acknowledge
@@ -219,7 +219,7 @@ export default function PlatformUpdateBanner() {
                     ) : (
                       <button
                         onClick={() => markAsRead(update.id)}
-                        className="text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors"
+                        className="text-xs font-medium text-ct-mute hover:text-ct-mute-2 transition-colors"
                       >
                         Dismiss
                       </button>
@@ -230,7 +230,7 @@ export default function PlatformUpdateBanner() {
                 {!update.requires_acknowledgment && (
                   <button
                     onClick={() => markAsRead(update.id)}
-                    className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-white/50 transition-colors flex-shrink-0"
+                    className="p-1 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface/50 transition-colors flex-shrink-0"
                     aria-label="Dismiss"
                   >
                     <X className="w-4 h-4" />
@@ -247,7 +247,7 @@ export default function PlatformUpdateBanner() {
         <div className="flex items-center justify-between px-1">
           <button
             onClick={() => setShowAll(!showAll)}
-            className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1 transition-colors"
+            className="text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 flex items-center gap-1 transition-colors"
           >
             <Bell className="w-3 h-3" />
             {showAll ? 'Show fewer' : `${updates.length - 2} more update${updates.length - 2 > 1 ? 's' : ''}`}
@@ -255,7 +255,7 @@ export default function PlatformUpdateBanner() {
           {showAll && (
             <button
               onClick={dismissAll}
-              className="text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-xs font-medium text-ct-mute hover:text-ct-mute-2 transition-colors"
             >
               Dismiss all
             </button>

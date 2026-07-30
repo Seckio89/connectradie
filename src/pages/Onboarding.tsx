@@ -230,76 +230,76 @@ export default function Onboarding() {
   const progressPct = steps.length > 1 ? Math.round((currentStepIndex / (steps.length - 1)) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-ct-surface flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-lg">
         <div className="flex items-center justify-center mb-8">
           <span className="text-2xl font-extrabold tracking-tight text-black">
-            Connec<span className="text-warm-500">Tradie</span>
+            Connec<span className="text-ct-teal">Tradie</span>
           </span>
         </div>
 
         {step !== 'role' && (
           <div className="mb-6">
-            <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+            <div className="flex items-center justify-between text-xs text-ct-mute mb-2">
               <span>Step {currentStepIndex + 1} of {steps.length}</span>
               <span>{progressPct}% complete</span>
             </div>
-            <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-ct-line rounded-full overflow-hidden">
               <div
-                className="h-full bg-warm-500 rounded-full transition-all duration-500"
+                className="h-full bg-ct-teal rounded-full transition-all duration-500"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
           </div>
         )}
 
-        <div className="bg-white py-8 px-4 shadow-sm rounded-2xl sm:px-10 border border-gray-100">
+        <div className="bg-ct-surface py-8 px-4 shadow-sm rounded-ct-lg sm:px-10 border border-ct-line-soft">
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
-              <X className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm font-medium text-red-800">{error}</p>
+            <div className="mb-6 p-4 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md flex items-start gap-2">
+              <X className="w-4 h-4 text-ct-rose flex-shrink-0 mt-0.5" />
+              <p className="text-sm font-medium text-ct-paper">{error}</p>
             </div>
           )}
 
           {step === 'role' && (
             <>
-              <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">
-                Welcome to Connec<span className="text-warm-500">Tradie</span>!
+              <h2 className="text-2xl font-bold text-ct-paper text-center mb-2">
+                Welcome to Connec<span className="text-ct-teal">Tradie</span>!
               </h2>
-              <p className="text-gray-600 text-center mb-8">
-                How will you be using Connec<span className="text-warm-500">Tradie</span>?
+              <p className="text-ct-mute-2 text-center mb-8">
+                How will you be using Connec<span className="text-ct-teal">Tradie</span>?
               </p>
 
               <div className="grid gap-4">
                 <button
                   onClick={() => handleRoleSelect('client')}
-                  className="group relative p-6 border-2 border-gray-200 rounded-2xl hover:border-primary-500 transition-all text-left"
+                  className="group relative p-6 border-2 border-ct-line rounded-ct-lg hover:border-ct-teal transition-all text-left"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-primary-100 rounded-xl flex items-center justify-center group-hover:bg-primary-200 transition-colors">
-                      <Home className="w-7 h-7 text-primary-600" />
+                    <div className="w-14 h-14 bg-ct-surface-2 rounded-ct-md flex items-center justify-center group-hover:bg-ct-teal/[0.14] transition-colors">
+                      <Home className="w-7 h-7 text-ct-mute-2" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">I'm hiring</h3>
-                      <p className="text-gray-600 text-sm mt-1">Find and book trusted tradies for my home or property</p>
+                      <h3 className="text-lg font-semibold text-ct-paper">I'm hiring</h3>
+                      <p className="text-ct-mute-2 text-sm mt-1">Find and book trusted tradies for my home or property</p>
                     </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all" />
+                    <ArrowRight className="w-5 h-5 text-ct-mute group-hover:text-ct-mute-2 group-hover:translate-x-1 transition-all" />
                   </div>
                 </button>
 
                 <button
                   onClick={() => handleRoleSelect('tradie')}
-                  className="group relative p-6 border-2 border-gray-200 rounded-2xl hover:border-primary-500 transition-all text-left"
+                  className="group relative p-6 border-2 border-ct-line rounded-ct-lg hover:border-ct-teal transition-all text-left"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-warm-100 rounded-xl flex items-center justify-center group-hover:bg-warm-200 transition-colors">
-                      <HardHat className="w-7 h-7 text-warm-600" />
+                    <div className="w-14 h-14 bg-ct-amber/[0.13] rounded-ct-md flex items-center justify-center group-hover:bg-ct-teal/[0.14] transition-colors">
+                      <HardHat className="w-7 h-7 text-ct-amber" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">I'm in the trades</h3>
-                      <p className="text-gray-600 text-sm mt-1">Connect with clients, manage jobs, and grow my trade business</p>
+                      <h3 className="text-lg font-semibold text-ct-paper">I'm in the trades</h3>
+                      <p className="text-ct-mute-2 text-sm mt-1">Connect with clients, manage jobs, and grow my trade business</p>
                     </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all" />
+                    <ArrowRight className="w-5 h-5 text-ct-mute group-hover:text-ct-mute-2 group-hover:translate-x-1 transition-all" />
                   </div>
                 </button>
               </div>
@@ -308,46 +308,46 @@ export default function Onboarding() {
 
           {step === 'trade-type' && selectedRole === 'tradie' && (
             <>
-              <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">What type of trade?</h2>
-              <p className="text-gray-600 text-center mb-8">Select your industry to get started</p>
+              <h2 className="text-2xl font-bold text-ct-paper text-center mb-2">What type of trade?</h2>
+              <p className="text-ct-mute-2 text-center mb-8">Select your industry to get started</p>
 
               <div className="grid gap-4">
                 <button
                   onClick={() => handleTradeTypeSelect('construction')}
-                  className="group relative p-6 border-2 border-gray-200 rounded-2xl hover:border-primary-500 transition-all text-left"
+                  className="group relative p-6 border-2 border-ct-line rounded-ct-lg hover:border-ct-teal transition-all text-left"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-primary-100 rounded-xl flex items-center justify-center group-hover:bg-primary-200 transition-colors">
-                      <HardHat className="w-7 h-7 text-primary-600" />
+                    <div className="w-14 h-14 bg-ct-surface-2 rounded-ct-md flex items-center justify-center group-hover:bg-ct-teal/[0.14] transition-colors">
+                      <HardHat className="w-7 h-7 text-ct-mute-2" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">Construction & Trades</h3>
-                      <p className="text-gray-600 text-sm mt-1">Plumbing, electrical, carpentry, building, and more</p>
+                      <h3 className="text-lg font-semibold text-ct-paper">Construction & Trades</h3>
+                      <p className="text-ct-mute-2 text-sm mt-1">Plumbing, electrical, carpentry, building, and more</p>
                     </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all" />
+                    <ArrowRight className="w-5 h-5 text-ct-mute group-hover:text-ct-mute-2 group-hover:translate-x-1 transition-all" />
                   </div>
                 </button>
 
                 <button
                   onClick={() => handleTradeTypeSelect('hospitality')}
-                  className="group relative p-6 border-2 border-gray-200 rounded-2xl hover:border-primary-500 transition-all text-left"
+                  className="group relative p-6 border-2 border-ct-line rounded-ct-lg hover:border-ct-teal transition-all text-left"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-secondary-100 rounded-xl flex items-center justify-center group-hover:bg-secondary-200 transition-colors">
-                      <Wrench className="w-7 h-7 text-secondary-600" />
+                    <div className="w-14 h-14 bg-ct-surface-2 rounded-ct-md flex items-center justify-center group-hover:bg-ct-surface-2 transition-colors">
+                      <Wrench className="w-7 h-7 text-ct-mute-2" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">Hospitality & Events</h3>
-                      <p className="text-gray-600 text-sm mt-1">Private chefs, catering, mobile bar services</p>
+                      <h3 className="text-lg font-semibold text-ct-paper">Hospitality & Events</h3>
+                      <p className="text-ct-mute-2 text-sm mt-1">Private chefs, catering, mobile bar services</p>
                     </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all" />
+                    <ArrowRight className="w-5 h-5 text-ct-mute group-hover:text-ct-mute-2 group-hover:translate-x-1 transition-all" />
                   </div>
                 </button>
               </div>
 
-              <div className="mt-6 flex items-start gap-2.5 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
-                <Shield className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-700 leading-relaxed">
+              <div className="mt-6 flex items-start gap-2.5 px-4 py-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md">
+                <Shield className="w-4 h-4 text-ct-amber flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-ct-amber leading-relaxed">
                   You'll need your trade licence or certificate ready to complete verification after signup. This unlocks full platform access.
                 </p>
               </div>
@@ -356,45 +356,45 @@ export default function Onboarding() {
 
           {step === 'employment' && selectedRole === 'tradie' && (
             <>
-              <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">How do you work?</h2>
-              <p className="text-gray-600 text-center mb-8">
+              <h2 className="text-2xl font-bold text-ct-paper text-center mb-2">How do you work?</h2>
+              <p className="text-ct-mute-2 text-center mb-8">
                 This helps us set up the right experience for you
               </p>
 
               <div className="grid gap-4">
                 <button
                   onClick={() => handleEmploymentSelect('own')}
-                  className="group p-6 border-2 border-gray-200 rounded-2xl hover:border-primary-500 transition-all text-left"
+                  className="group p-6 border-2 border-ct-line rounded-ct-lg hover:border-ct-teal transition-all text-left"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-primary-100 rounded-xl flex items-center justify-center group-hover:bg-primary-200 transition-colors flex-shrink-0">
-                      <Building2 className="w-7 h-7 text-primary-600" />
+                    <div className="w-14 h-14 bg-ct-surface-2 rounded-ct-md flex items-center justify-center group-hover:bg-ct-teal/[0.14] transition-colors flex-shrink-0">
+                      <Building2 className="w-7 h-7 text-ct-mute-2" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">I run my own business</h3>
-                      <p className="text-gray-600 text-sm mt-1">
+                      <h3 className="text-lg font-semibold text-ct-paper">I run my own business</h3>
+                      <p className="text-ct-mute-2 text-sm mt-1">
                         I'm a sole trader or own a company and manage my own jobs
                       </p>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all flex-shrink-0 mt-1" />
+                    <ChevronRight className="w-5 h-5 text-ct-mute group-hover:text-ct-mute-2 group-hover:translate-x-1 transition-all flex-shrink-0 mt-1" />
                   </div>
                 </button>
 
                 <button
                   onClick={() => handleEmploymentSelect('employed')}
-                  className="group p-6 border-2 border-gray-200 rounded-2xl hover:border-primary-500 transition-all text-left"
+                  className="group p-6 border-2 border-ct-line rounded-ct-lg hover:border-ct-teal transition-all text-left"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-secondary-100 rounded-xl flex items-center justify-center group-hover:bg-secondary-200 transition-colors flex-shrink-0">
-                      <Users className="w-7 h-7 text-secondary-600" />
+                    <div className="w-14 h-14 bg-ct-surface-2 rounded-ct-md flex items-center justify-center group-hover:bg-ct-surface-2 transition-colors flex-shrink-0">
+                      <Users className="w-7 h-7 text-ct-mute-2" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">I work for a business</h3>
-                      <p className="text-gray-600 text-sm mt-1">
+                      <h3 className="text-lg font-semibold text-ct-paper">I work for a business</h3>
+                      <p className="text-ct-mute-2 text-sm mt-1">
                         I'm an employee, apprentice, or subcontractor working under another business
                       </p>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all flex-shrink-0 mt-1" />
+                    <ChevronRight className="w-5 h-5 text-ct-mute group-hover:text-ct-mute-2 group-hover:translate-x-1 transition-all flex-shrink-0 mt-1" />
                   </div>
                 </button>
               </div>
@@ -403,14 +403,14 @@ export default function Onboarding() {
 
           {step === 'business-search' && selectedRole === 'tradie' && (
             <>
-              <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Find your employer</h2>
-              <p className="text-gray-600 text-center mb-8">
+              <h2 className="text-2xl font-bold text-ct-paper text-center mb-2">Find your employer</h2>
+              <p className="text-ct-mute-2 text-center mb-8">
                 Search for the business you work for. They'll receive a request to add you to their team.
               </p>
 
               <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Your trade / specialty</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">Your trade / specialty</label>
                   <SearchableSelect
                     options={tradeCategories.map(cat => ({ value: cat.toLowerCase(), label: cat }))}
                     value={tradeCategory}
@@ -420,36 +420,36 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Business name</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">Business name</label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
                     <input
                       type="text"
                       value={businessSearch}
                       onChange={e => { setBusinessSearch(e.target.value); setSelectedBusiness(null); }}
                       placeholder="Start typing the business name..."
-                      className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                      className="w-full pl-11 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-all"
                     />
                     {searchLoading && (
-                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute animate-spin" />
                     )}
                   </div>
 
                   {businessResults.length > 0 && !selectedBusiness && (
-                    <div className="mt-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                    <div className="mt-2 bg-ct-surface border border-ct-line rounded-ct-md shadow-lg overflow-hidden">
                       {businessResults.map(biz => (
                         <button
                           key={biz.profile_id}
                           type="button"
                           onClick={() => handleBusinessSelect(biz)}
-                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary-50 transition-colors text-left border-b border-gray-100 last:border-0"
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-ct-surface-2 transition-colors text-left border-b border-ct-line-soft last:border-0"
                         >
-                          <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-bold text-primary-700">{biz.business_name.charAt(0)}</span>
+                          <div className="w-9 h-9 rounded-full bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-bold text-ct-mute-2">{biz.business_name.charAt(0)}</span>
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900 text-sm">{biz.business_name}</p>
-                            <p className="text-xs text-gray-500">{biz.trade_category} · Owner: {biz.full_name}</p>
+                            <p className="font-medium text-ct-paper text-sm">{biz.business_name}</p>
+                            <p className="text-xs text-ct-mute">{biz.trade_category} · Owner: {biz.full_name}</p>
                           </div>
                         </button>
                       ))}
@@ -457,23 +457,23 @@ export default function Onboarding() {
                   )}
 
                   {businessSearch.length >= 2 && businessResults.length === 0 && !searchLoading && !selectedBusiness && (
-                    <p className="mt-2 text-sm text-gray-500 text-center py-3 bg-gray-50 rounded-xl">
+                    <p className="mt-2 text-sm text-ct-mute text-center py-3 bg-ct-surface-2 rounded-ct-md">
                       No businesses found. Ask your employer to sign up first, or proceed independently.
                     </p>
                   )}
 
                   {selectedBusiness && (
-                    <div className="mt-2 flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
-                      <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <Check className="w-5 h-5 text-green-600" />
+                    <div className="mt-2 flex items-center gap-3 p-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md">
+                      <div className="w-9 h-9 rounded-full bg-ct-teal/[0.14] flex items-center justify-center flex-shrink-0">
+                        <Check className="w-5 h-5 text-ct-teal" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900 text-sm">{selectedBusiness.business_name}</p>
-                        <p className="text-xs text-gray-500">{selectedBusiness.trade_category}</p>
+                        <p className="font-medium text-ct-paper text-sm">{selectedBusiness.business_name}</p>
+                        <p className="text-xs text-ct-mute">{selectedBusiness.trade_category}</p>
                       </div>
                       <button
                         onClick={() => { setSelectedBusiness(null); setBusinessSearch(''); }}
-                        className="p-1 text-gray-400 hover:text-gray-600"
+                        className="p-1 text-ct-mute hover:text-ct-mute-2"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -482,7 +482,7 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Your location</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">Your location</label>
                   <AddressAutocomplete
                     value={address}
                     onChange={handleAddressChange}
@@ -499,7 +499,7 @@ export default function Onboarding() {
                     }
                   }}
                   disabled={loading || !tradeCategory || !addressDetails?.suburb || (!!businessSearch && !selectedBusiness)}
-                  className="w-full py-3 px-4 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
+                  className="w-full py-3 px-4 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
                 >
                   {loading ? (
                     <><Loader2 className="w-5 h-5 animate-spin" />Setting up...</>
@@ -515,43 +515,43 @@ export default function Onboarding() {
 
           {step === 'employment-role' && selectedBusiness && (
             <>
-              <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">What's your role?</h2>
-              <p className="text-gray-600 text-center mb-2">
+              <h2 className="text-2xl font-bold text-ct-paper text-center mb-2">What's your role?</h2>
+              <p className="text-ct-mute-2 text-center mb-2">
                 How do you work with <strong>{selectedBusiness.business_name}</strong>?
               </p>
-              <p className="text-xs text-gray-400 text-center mb-8">
+              <p className="text-xs text-ct-mute text-center mb-8">
                 Your employer will review and approve your request
               </p>
 
               <div className="grid gap-4">
                 <button
                   onClick={() => { setEmploymentRole('employee'); }}
-                  className={`group p-6 border-2 rounded-2xl transition-all text-left ${
+                  className={`group p-6 border-2 rounded-ct-lg transition-all text-left ${
                     employmentRole === 'employee'
-                      ? 'border-warm-500 bg-warm-50'
-                      : 'border-gray-200 hover:border-primary-500'
+                      ? 'border-ct-teal bg-ct-amber/[0.13]'
+                      : 'border-ct-line hover:border-ct-teal'
                   }`}
                 >
                   <div className="flex items-start gap-4">
-                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                    <div className={`w-14 h-14 rounded-ct-md flex items-center justify-center flex-shrink-0 transition-colors ${
                       employmentRole === 'employee'
-                        ? 'bg-primary-200'
-                        : 'bg-secondary-100 group-hover:bg-secondary-200'
+                        ? 'bg-ct-teal/[0.14]'
+                        : 'bg-ct-surface-2 group-hover:bg-ct-surface-2'
                     }`}>
-                      <UserCheck className="w-7 h-7 text-secondary-600" />
+                      <UserCheck className="w-7 h-7 text-ct-mute-2" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">Employee</h3>
-                      <p className="text-gray-600 text-sm mt-1">
+                      <h3 className="text-lg font-semibold text-ct-paper">Employee</h3>
+                      <p className="text-ct-mute-2 text-sm mt-1">
                         I'm a direct employee or apprentice of this business
                       </p>
-                      <p className="text-xs text-secondary-600 mt-2 font-medium">
+                      <p className="text-xs text-ct-mute-2 mt-2 font-medium">
                         Your employer will approve your request
                       </p>
                     </div>
                     {employmentRole === 'employee' && (
-                      <div className="w-6 h-6 rounded-full bg-warm-500 flex items-center justify-center flex-shrink-0">
-                        <Check className="w-4 h-4 text-white" />
+                      <div className="w-6 h-6 rounded-full bg-ct-teal flex items-center justify-center flex-shrink-0">
+                        <Check className="w-4 h-4 text-ct-ink" />
                       </div>
                     )}
                   </div>
@@ -559,32 +559,32 @@ export default function Onboarding() {
 
                 <button
                   onClick={() => { setEmploymentRole('subcontractor'); }}
-                  className={`group p-6 border-2 rounded-2xl transition-all text-left ${
+                  className={`group p-6 border-2 rounded-ct-lg transition-all text-left ${
                     employmentRole === 'subcontractor'
-                      ? 'border-warm-500 bg-warm-50'
-                      : 'border-gray-200 hover:border-primary-500'
+                      ? 'border-ct-teal bg-ct-amber/[0.13]'
+                      : 'border-ct-line hover:border-ct-teal'
                   }`}
                 >
                   <div className="flex items-start gap-4">
-                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                    <div className={`w-14 h-14 rounded-ct-md flex items-center justify-center flex-shrink-0 transition-colors ${
                       employmentRole === 'subcontractor'
-                        ? 'bg-primary-200'
-                        : 'bg-warm-100 group-hover:bg-warm-200'
+                        ? 'bg-ct-teal/[0.14]'
+                        : 'bg-ct-amber/[0.13] group-hover:bg-ct-teal/[0.14]'
                     }`}>
-                      <Wrench className="w-7 h-7 text-warm-600" />
+                      <Wrench className="w-7 h-7 text-ct-amber" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">Subcontractor</h3>
-                      <p className="text-gray-600 text-sm mt-1">
+                      <h3 className="text-lg font-semibold text-ct-paper">Subcontractor</h3>
+                      <p className="text-ct-mute-2 text-sm mt-1">
                         I do contract work for this business on a project basis
                       </p>
-                      <p className="text-xs text-warm-600 mt-2 font-medium">
+                      <p className="text-xs text-ct-amber mt-2 font-medium">
                         Your employer will approve your request
                       </p>
                     </div>
                     {employmentRole === 'subcontractor' && (
-                      <div className="w-6 h-6 rounded-full bg-warm-500 flex items-center justify-center flex-shrink-0">
-                        <Check className="w-4 h-4 text-white" />
+                      <div className="w-6 h-6 rounded-full bg-ct-teal flex items-center justify-center flex-shrink-0">
+                        <Check className="w-4 h-4 text-ct-ink" />
                       </div>
                     )}
                   </div>
@@ -594,7 +594,7 @@ export default function Onboarding() {
               <button
                 onClick={handleJoinRequest}
                 disabled={loading || !employmentRole}
-                className="w-full mt-6 py-3 px-4 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
+                className="w-full mt-6 py-3 px-4 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
               >
                 {loading ? (
                   <><Loader2 className="w-5 h-5 animate-spin" />Setting up...</>
@@ -607,12 +607,12 @@ export default function Onboarding() {
 
           {step === 'details' && selectedRole === 'client' && (
             <>
-              <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Almost there!</h2>
-              <p className="text-gray-600 text-center mb-8">Tell us where you're located to find tradies near you</p>
+              <h2 className="text-2xl font-bold text-ct-paper text-center mb-2">Almost there!</h2>
+              <p className="text-ct-mute-2 text-center mb-8">Tell us where you're located to find tradies near you</p>
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Your location</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">Your location</label>
                   <AddressAutocomplete
                     value={address}
                     onChange={handleAddressChange}
@@ -623,7 +623,7 @@ export default function Onboarding() {
                 <button
                   onClick={handleComplete}
                   disabled={loading || !addressDetails?.suburb}
-                  className="w-full py-3 px-4 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
+                  className="w-full py-3 px-4 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
                 >
                   {loading ? (
                     <><Loader2 className="w-5 h-5 animate-spin" />Setting up...</>
@@ -637,23 +637,23 @@ export default function Onboarding() {
 
           {step === 'details' && selectedRole === 'tradie' && (
             <>
-              <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Set up your business</h2>
-              <p className="text-gray-600 text-center mb-8">Let potential clients know what you do</p>
+              <h2 className="text-2xl font-bold text-ct-paper text-center mb-2">Set up your business</h2>
+              <p className="text-ct-mute-2 text-center mb-8">Let potential clients know what you do</p>
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Business name</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">Business name</label>
                   <input
                     type="text"
                     value={businessName}
                     onChange={e => setBusinessName(e.target.value)}
                     placeholder="e.g., Smith's Plumbing"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Trade category</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">Trade category</label>
                   <SearchableSelect
                     options={tradeCategories.map(cat => ({ value: cat.toLowerCase(), label: cat }))}
                     value={tradeCategory}
@@ -663,7 +663,7 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Service area</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">Service area</label>
                   <AddressAutocomplete
                     value={address}
                     onChange={handleAddressChange}
@@ -674,7 +674,7 @@ export default function Onboarding() {
                 <button
                   onClick={handleComplete}
                   disabled={loading || !businessName || !tradeCategory || !addressDetails?.suburb}
-                  className="w-full py-3 px-4 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
+                  className="w-full py-3 px-4 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 min-h-[44px]"
                 >
                   {loading ? (
                     <><Loader2 className="w-5 h-5 animate-spin" />Setting up...</>
@@ -696,7 +696,7 @@ export default function Onboarding() {
                 else if (step === 'employment-role') setStep('business-search');
                 else if (step === 'trade-type') setStep('role');
               }}
-              className="mt-4 w-full text-center text-sm text-gray-500 hover:text-gray-900 transition-colors"
+              className="mt-4 w-full text-center text-sm text-ct-mute hover:text-ct-paper transition-colors"
             >
               Back
             </button>

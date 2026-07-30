@@ -43,9 +43,9 @@ function money(n: number): string {
 }
 
 const STATUS_CHIP: Record<string, string> = {
-  sent: 'bg-amber-100 text-amber-700',
-  paid: 'bg-emerald-100 text-emerald-700',
-  draft: 'bg-gray-100 text-gray-600',
+  sent: 'bg-ct-amber/[0.13] text-ct-amber',
+  paid: 'bg-ct-teal/[0.14] text-ct-teal',
+  draft: 'bg-ct-surface-2 text-ct-mute-2',
 };
 
 export default function PaymentRequestsSection() {
@@ -233,15 +233,15 @@ export default function PaymentRequestsSection() {
   if (!isEmployedWorker && receivedRequests.length === 0) return null;
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100">
+    <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-ct-line-soft">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 bg-secondary-50 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Banknote className="w-5 h-5 text-secondary-600" />
+          <div className="w-9 h-9 bg-ct-surface-2 rounded-ct-md flex items-center justify-center flex-shrink-0">
+            <Banknote className="w-5 h-5 text-ct-mute-2" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-gray-900">Payment requests</h2>
-            <p className="text-xs text-gray-500">
+            <h2 className="text-sm font-semibold text-ct-paper">Payment requests</h2>
+            <p className="text-xs text-ct-mute">
               Paid outside the platform by bank transfer — recorded here for both sides.
             </p>
           </div>
@@ -249,7 +249,7 @@ export default function PaymentRequestsSection() {
         {isEmployedWorker && (
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-warm-500 text-white text-xs font-semibold rounded-lg hover:bg-warm-600 transition-colors flex-shrink-0"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-ct-teal text-ct-ink text-xs font-semibold rounded-ct-sm hover:brightness-110 transition-colors flex-shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
             Request payment
@@ -258,39 +258,39 @@ export default function PaymentRequestsSection() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-8 text-gray-400">
+        <div className="flex items-center justify-center py-8 text-ct-mute">
           <Loader2 className="w-4 h-4 animate-spin mr-2" />
           <span className="text-xs">Loading…</span>
         </div>
       ) : (
-        <div className="divide-y divide-gray-50">
+        <div className="divide-y divide-ct-line-soft">
           {/* Employer: requests to pay */}
           {receivedRequests.map((row) => (
             <div key={row.id} className="px-5 py-4 flex items-start gap-3 flex-wrap sm:flex-nowrap">
               <div className="flex-1 min-w-[200px]">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-semibold text-gray-900">{row.business_name}</span>
+                  <span className="text-sm font-semibold text-ct-paper">{row.business_name}</span>
                   <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_CHIP[row.status]}`}>
                     {row.status === 'sent' ? 'Awaiting payment' : row.status === 'paid' ? 'Paid' : 'Draft'}
                   </span>
                 </div>
-                <p className="text-xs text-gray-600 mt-0.5">{row.notes}</p>
+                <p className="text-xs text-ct-mute-2 mt-0.5">{row.notes}</p>
                 {row.payment_bsb && (
-                  <p className="text-xs text-gray-500 mt-1 font-mono">
+                  <p className="text-xs text-ct-mute mt-1 font-mono">
                     {row.payment_account_name} · BSB {row.payment_bsb} · Acc {row.payment_account_number}
                   </p>
                 )}
-                <p className="text-[11px] text-gray-400 mt-0.5">
+                <p className="text-[11px] text-ct-mute mt-0.5">
                   {row.invoice_number} · {new Date(row.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                 </p>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
-                <span className="text-sm font-bold text-gray-900">{money(row.total_amount)}</span>
+                <span className="text-sm font-bold text-ct-paper">{money(row.total_amount)}</span>
                 {row.status === 'sent' && (
                   <button
                     onClick={() => handleMarkPaid(row)}
                     disabled={markingId === row.id}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg disabled:opacity-50 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal hover:brightness-110 text-ct-ink text-xs font-semibold rounded-ct-sm disabled:opacity-50 transition-colors"
                   >
                     {markingId === row.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                     Mark as paid
@@ -303,14 +303,14 @@ export default function PaymentRequestsSection() {
           {/* Worker: requests they've sent */}
           {isEmployedWorker && sentRequests.map((row) => (
             <div key={row.id} className="px-5 py-3.5 flex items-center gap-3">
-              <Clock className="w-4 h-4 text-gray-300 flex-shrink-0" />
+              <Clock className="w-4 h-4 text-ct-mute flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-700 truncate">{row.notes}</p>
-                <p className="text-[11px] text-gray-400">
+                <p className="text-sm text-ct-mute-2 truncate">{row.notes}</p>
+                <p className="text-[11px] text-ct-mute">
                   {row.invoice_number} · {new Date(row.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                 </p>
               </div>
-              <span className="text-sm font-semibold text-gray-900">{money(row.total_amount)}</span>
+              <span className="text-sm font-semibold text-ct-paper">{money(row.total_amount)}</span>
               <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium flex-shrink-0 ${STATUS_CHIP[row.status]}`}>
                 {row.status === 'sent' ? 'Awaiting payment' : row.status === 'paid' ? 'Paid' : 'Draft'}
               </span>
@@ -318,7 +318,7 @@ export default function PaymentRequestsSection() {
           ))}
 
           {isEmployedWorker && sentRequests.length === 0 && receivedRequests.length === 0 && (
-            <p className="px-5 py-6 text-center text-xs text-gray-400">
+            <p className="px-5 py-6 text-center text-xs text-ct-mute">
               No payment requests yet. Request payment from your employer for completed work.
             </p>
           )}
@@ -330,30 +330,30 @@ export default function PaymentRequestsSection() {
         <div className="p-6 space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Request payment</h2>
-              <p className="text-sm text-gray-500 mt-0.5">
+              <h2 className="text-lg font-semibold text-ct-paper">Request payment</h2>
+              <p className="text-sm text-ct-mute mt-0.5">
                 Sent to your employer with your bank details — they pay you directly by transfer.
               </p>
             </div>
-            <button onClick={() => setShowForm(false)} aria-label="Close" className="p-2 -mr-1 -mt-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+            <button onClick={() => setShowForm(false)} aria-label="Close" className="p-2 -mr-1 -mt-1 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2">
               <X className="w-5 h-5" />
             </button>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">What's this for?</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">What's this for?</label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g. Office cleans — week of 6 July (3 visits)"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Amount (AUD)</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Amount (AUD)</label>
               <input
                 type="number"
                 min="0"
@@ -361,7 +361,7 @@ export default function PaymentRequestsSection() {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="450.00"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
               />
             </div>
             <label className="flex items-center gap-2 cursor-pointer select-none sm:mt-9">
@@ -369,60 +369,60 @@ export default function PaymentRequestsSection() {
                 type="checkbox"
                 checked={gstIncluded}
                 onChange={(e) => setGstIncluded(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
+                className="w-4 h-4 rounded border-ct-line text-ct-teal focus:ring-ct-teal"
               />
-              <span className="text-sm text-gray-700">Amount includes GST</span>
+              <span className="text-sm text-ct-mute-2">Amount includes GST</span>
             </label>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">BSB</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">BSB</label>
               <input
                 type="text"
                 value={bsb}
                 onChange={(e) => setBsb(e.target.value)}
                 placeholder="062-000"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
+                className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal font-mono"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Account number</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Account number</label>
               <input
                 type="text"
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value)}
                 placeholder="12345678"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono"
+                className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal font-mono"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Account name</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Account name</label>
               <input
                 type="text"
                 value={accountName}
                 onChange={(e) => setAccountName(e.target.value)}
                 placeholder="J Smith"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
               />
             </div>
           </div>
 
           {formError && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{formError}</div>
+            <div className="p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md text-sm text-ct-rose">{formError}</div>
           )}
 
           <div className="flex gap-3 pt-1">
             <button
               onClick={() => setShowForm(false)}
-              className="flex-1 px-4 py-3 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-3 border border-ct-line text-ct-mute-2 rounded-ct-md font-medium hover:bg-ct-surface-2 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleSend}
               disabled={sending}
-              className="flex-1 px-4 py-3 bg-warm-500 text-white rounded-xl font-medium hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-3 bg-ct-teal text-ct-ink rounded-ct-md font-medium hover:brightness-110 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
               {sending && <Loader2 className="w-4 h-4 animate-spin" />}
               Send request

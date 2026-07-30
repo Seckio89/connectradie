@@ -97,10 +97,10 @@ export default function CareerDetailPublic() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-navy-900 theme-aware flex flex-col">
+      <div className="min-h-screen bg-ct-ink theme-aware flex flex-col">
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
+          <Loader2 className="w-6 h-6 text-ct-mute animate-spin" />
         </div>
         <Footer />
       </div>
@@ -109,17 +109,17 @@ export default function CareerDetailPublic() {
 
   if (!v) {
     return (
-      <div className="min-h-screen bg-navy-900 font-sans theme-aware flex flex-col">
+      <div className="min-h-screen bg-ct-ink font-sans theme-aware flex flex-col">
         <SEO title="Role no longer available" description="This trade role is no longer open." canonical={`/careers/${id}`} noindex />
         <Navbar />
         <main className="flex-1 flex items-center justify-center px-4">
           <div className="text-center py-20">
-            <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <Briefcase className="w-7 h-7 text-gray-300" />
+            <div className="w-14 h-14 bg-ct-surface-2 rounded-ct-lg flex items-center justify-center mx-auto mb-3">
+              <Briefcase className="w-7 h-7 text-ct-mute" />
             </div>
-            <h1 className="text-xl font-bold text-gray-900">This role is no longer open</h1>
-            <p className="text-sm text-gray-500 mt-1">It may have closed or been filled.</p>
-            <Link to="/careers" className="inline-flex items-center gap-2 mt-6 px-5 py-2.5 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors">
+            <h1 className="text-xl font-bold text-ct-paper">This role is no longer open</h1>
+            <p className="text-sm text-ct-mute mt-1">It may have closed or been filled.</p>
+            <Link to="/careers" className="inline-flex items-center gap-2 mt-6 px-5 py-2.5 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors">
               Browse open roles
             </Link>
           </div>
@@ -145,7 +145,7 @@ export default function CareerDetailPublic() {
   ];
 
   return (
-    <div className="min-h-screen bg-navy-900 font-sans antialiased theme-aware flex flex-col">
+    <div className="min-h-screen bg-ct-ink font-sans antialiased theme-aware flex flex-col">
       {/* SEO drives og/twitter/description; title, canonical and the JobPosting
           JSON-LD are set imperatively in the effect above (Helmet is unreliable
           for those here). */}
@@ -156,7 +156,7 @@ export default function CareerDetailPublic() {
       <Navbar />
       <main id="main-content" className="flex-1">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 lg:pt-28">
-          <button onClick={() => navigate('/careers')} className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-6">
+          <button onClick={() => navigate('/careers')} className="inline-flex items-center gap-1.5 text-sm text-ct-mute hover:text-ct-paper mb-6">
             <ArrowLeft className="w-4 h-4" /> All trade jobs
           </button>
 
@@ -164,29 +164,29 @@ export default function CareerDetailPublic() {
             {/* Main */}
             <div className="lg:col-span-2">
               <div className="flex items-center gap-2 mb-3">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-secondary-50 text-secondary-700 border border-secondary-200">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-ct-sm text-xs font-semibold bg-ct-surface-2 text-ct-mute-2 border border-ct-line">
                   {ROLE_LABELS[v.role_type]}
                 </span>
                 {v.employment_type && (
-                  <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                  <span className="px-2.5 py-1 rounded-ct-sm text-xs font-medium bg-ct-surface-2 text-ct-mute-2 border border-ct-line">
                     {employmentLabel(v.employment_type)}
                   </span>
                 )}
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-[-0.02em] leading-tight">{v.title}</h1>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-ct-paper tracking-[-0.02em] leading-tight">{v.title}</h1>
 
               <div className="flex items-center gap-2 mt-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                  <Building2 className="w-4 h-4 text-gray-500" />
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-ct-surface-2 to-ct-line flex items-center justify-center">
+                  <Building2 className="w-4 h-4 text-ct-mute" />
                 </div>
-                <span className="text-sm font-medium text-gray-700">{employer}</span>
-                {v.employer_verified && <BadgeCheck className="w-4 h-4 text-primary-500" />}
-                <span className="text-xs text-gray-400">· Posted {posted}</span>
+                <span className="text-sm font-medium text-ct-mute-2">{employer}</span>
+                {v.employer_verified && <BadgeCheck className="w-4 h-4 text-ct-teal0" />}
+                <span className="text-xs text-ct-mute">· Posted {posted}</span>
               </div>
 
               {pay && (
-                <div className="flex items-center gap-1.5 mt-4 text-lg font-bold text-emerald-600">
+                <div className="flex items-center gap-1.5 mt-4 text-lg font-bold text-ct-teal">
                   <DollarSign className="w-5 h-5" />
                   {pay}
                 </div>
@@ -194,11 +194,11 @@ export default function CareerDetailPublic() {
 
               {v.required_tickets.length > 0 && (
                 <div className="mt-6">
-                  <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Tickets &amp; licences</h2>
+                  <h2 className="text-xs font-semibold text-ct-mute uppercase tracking-wide mb-2">Tickets &amp; licences</h2>
                   <div className="flex flex-wrap gap-2">
                     {v.required_tickets.map(t => (
-                      <span key={t} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm bg-gray-50 text-gray-700 border border-gray-200">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                      <span key={t} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-ct-sm text-sm bg-ct-surface-2 text-ct-mute-2 border border-ct-line">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-ct-teal" />
                         {t}
                       </span>
                     ))}
@@ -207,35 +207,35 @@ export default function CareerDetailPublic() {
               )}
 
               <div className="mt-6">
-                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">About the role</h2>
-                <p className="text-[15px] text-gray-700 leading-relaxed whitespace-pre-wrap">{v.description}</p>
+                <h2 className="text-xs font-semibold text-ct-mute uppercase tracking-wide mb-2">About the role</h2>
+                <p className="text-[15px] text-ct-mute-2 leading-relaxed whitespace-pre-wrap">{v.description}</p>
               </div>
             </div>
 
             {/* Sidebar */}
             <aside className="lg:col-span-1">
-              <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm lg:sticky lg:top-24">
+              <div className="bg-ct-surface border border-ct-line rounded-ct-lg p-5 shadow-sm lg:sticky lg:top-24">
                 <Link
                   to="/register?type=tradie"
-                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
                 >
                   Apply — it’s free
                   <ArrowRight className="w-4 h-4" />
                 </Link>
-                <p className="text-center text-xs text-gray-500 mt-2">
+                <p className="text-center text-xs text-ct-mute mt-2">
                   Already have an account?{' '}
-                  <Link to="/login" className="text-primary-600 font-medium hover:underline">Sign in</Link>
+                  <Link to="/login" className="text-ct-mute-2 font-medium hover:underline">Sign in</Link>
                 </p>
 
-                <div className="mt-5 pt-5 border-t border-gray-100 space-y-3">
+                <div className="mt-5 pt-5 border-t border-ct-line-soft space-y-3">
                   {facts.map((f, i) => {
                     const Icon = f.icon;
                     return (
                       <div key={i} className="flex items-start gap-2.5">
-                        <Icon className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                        <Icon className="w-4 h-4 text-ct-mute flex-shrink-0 mt-0.5" />
                         <div className="min-w-0">
-                          <p className="text-[11px] text-gray-400 uppercase tracking-wide font-semibold">{f.label}</p>
-                          <p className="text-sm text-gray-800">{f.value}</p>
+                          <p className="text-[11px] text-ct-mute uppercase tracking-wide font-semibold">{f.label}</p>
+                          <p className="text-sm text-ct-paper">{f.value}</p>
                         </div>
                       </div>
                     );

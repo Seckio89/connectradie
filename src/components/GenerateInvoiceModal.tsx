@@ -71,13 +71,13 @@ export default function GenerateInvoiceModal({ isOpen, agreement, onClose, onSuc
   return (
     <>
       <div className="fixed inset-0 bg-black/30 z-50" onClick={onClose} />
-      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-ct-surface rounded-ct-lg shadow-2xl z-50 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-100 p-5 flex items-center justify-between z-10">
-          <h2 className="text-lg font-semibold text-gray-900">
+        <div className="sticky top-0 bg-ct-surface border-b border-ct-line-soft p-5 flex items-center justify-between z-10">
+          <h2 className="text-lg font-semibold text-ct-paper">
             {generatedInvoice ? 'Invoice Generated' : 'Generate Invoice'}
           </h2>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+          <button onClick={onClose} className="p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -85,55 +85,55 @@ export default function GenerateInvoiceModal({ isOpen, agreement, onClose, onSuc
         <div className="p-5">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+              <Loader2 className="w-6 h-6 text-ct-teal animate-spin" />
             </div>
           ) : visits.length === 0 && !generatedInvoice ? (
             <div className="text-center py-12">
-              <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-500">No uninvoiced visits</p>
-              <p className="text-xs text-gray-400 mt-1">Log some visits first, then come back to invoice.</p>
+              <FileText className="w-10 h-10 text-ct-mute mx-auto mb-3" />
+              <p className="text-sm text-ct-mute">No uninvoiced visits</p>
+              <p className="text-xs text-ct-mute mt-1">Log some visits first, then come back to invoice.</p>
             </div>
           ) : !generatedInvoice ? (
             <>
               {/* Client & Service */}
-              <div className="mb-5 p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm font-medium text-gray-900">{agreement.title}</p>
-                <p className="text-xs text-gray-500">{agreement.client?.full_name || 'Client'}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{agreement.address}</p>
+              <div className="mb-5 p-3 bg-ct-surface-2 rounded-ct-sm">
+                <p className="text-sm font-medium text-ct-paper">{agreement.title}</p>
+                <p className="text-xs text-ct-mute">{agreement.client?.full_name || 'Client'}</p>
+                <p className="text-xs text-ct-mute mt-0.5">{agreement.address}</p>
               </div>
 
               {/* Period */}
-              <p className="text-xs text-gray-500 mb-3">
+              <p className="text-xs text-ct-mute mb-3">
                 Period: {formatDate(periodStart)} — {formatDate(periodEnd)}
               </p>
 
               {/* Visits List */}
-              <div className="mb-5 divide-y divide-gray-100">
+              <div className="mb-5 divide-y divide-ct-line-soft">
                 {visits.map((visit) => (
                   <div key={visit.id} className="flex items-center justify-between py-2.5">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{formatDate(visit.visit_date)}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm font-medium text-ct-paper">{formatDate(visit.visit_date)}</p>
+                      <p className="text-xs text-ct-mute">
                         {visit.visit_type === 'extra' ? 'Extra visit' : 'Regular visit'}
                         {visit.notes && ` — ${visit.notes}`}
                       </p>
                     </div>
-                    <span className="text-sm font-medium text-gray-900">${visit.amount.toFixed(2)}</span>
+                    <span className="text-sm font-medium text-ct-paper">${visit.amount.toFixed(2)}</span>
                   </div>
                 ))}
               </div>
 
               {/* Totals */}
-              <div className="p-4 bg-emerald-50 rounded-lg mb-5">
-                <div className="flex justify-between text-xs text-gray-600 mb-1">
+              <div className="p-4 bg-ct-teal/[0.14] rounded-ct-sm mb-5">
+                <div className="flex justify-between text-xs text-ct-mute-2 mb-1">
                   <span>{visits.length} visit{visits.length !== 1 ? 's' : ''}</span>
                   <span>${subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-xs text-gray-600 mb-2">
+                <div className="flex justify-between text-xs text-ct-mute-2 mb-2">
                   <span>GST (10%)</span>
                   <span>${gst.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm font-semibold text-gray-900 pt-2 border-t border-emerald-200">
+                <div className="flex justify-between text-sm font-semibold text-ct-paper pt-2 border-t border-ct-teal/30">
                   <span>Total</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
@@ -142,7 +142,7 @@ export default function GenerateInvoiceModal({ isOpen, agreement, onClose, onSuc
               <button
                 onClick={handleGenerate}
                 disabled={isGenerating}
-                className="w-full px-4 py-3 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+                className="w-full px-4 py-3 bg-ct-teal text-ct-ink font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
               >
                 {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
                 {isGenerating ? 'Generating...' : 'Generate Invoice'}
@@ -151,34 +151,34 @@ export default function GenerateInvoiceModal({ isOpen, agreement, onClose, onSuc
           ) : (
             <>
               {/* Invoice Preview */}
-              <div className="mb-5 p-4 border border-gray-200 rounded-lg">
+              <div className="mb-5 p-4 border border-ct-line rounded-ct-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-xs text-gray-500">Invoice</p>
-                    <p className="text-lg font-semibold text-gray-900">{generatedInvoice.invoice_number}</p>
+                    <p className="text-xs text-ct-mute">Invoice</p>
+                    <p className="text-lg font-semibold text-ct-paper">{generatedInvoice.invoice_number}</p>
                   </div>
-                  <span className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                  <span className="px-3 py-1 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-full">
                     Draft
                   </span>
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Period</span>
-                    <span className="text-gray-900">{formatDate(generatedInvoice.period_start)} — {formatDate(generatedInvoice.period_end)}</span>
+                    <span className="text-ct-mute">Period</span>
+                    <span className="text-ct-paper">{formatDate(generatedInvoice.period_start)} — {formatDate(generatedInvoice.period_end)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Visits</span>
-                    <span className="text-gray-900">{generatedInvoice.visit_count}</span>
+                    <span className="text-ct-mute">Visits</span>
+                    <span className="text-ct-paper">{generatedInvoice.visit_count}</span>
                   </div>
                   {generatedInvoice.due_date && (
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Due</span>
-                      <span className="text-gray-900">{formatDate(generatedInvoice.due_date)}</span>
+                      <span className="text-ct-mute">Due</span>
+                      <span className="text-ct-paper">{formatDate(generatedInvoice.due_date)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between pt-2 border-t border-gray-200">
-                    <span className="font-medium text-gray-900">Total</span>
-                    <span className="font-semibold text-gray-900">${generatedInvoice.total.toFixed(2)}</span>
+                  <div className="flex justify-between pt-2 border-t border-ct-line">
+                    <span className="font-medium text-ct-paper">Total</span>
+                    <span className="font-semibold text-ct-paper">${generatedInvoice.total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -186,7 +186,7 @@ export default function GenerateInvoiceModal({ isOpen, agreement, onClose, onSuc
               <button
                 onClick={handleSend}
                 disabled={isSending}
-                className="w-full px-4 py-3 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+                className="w-full px-4 py-3 bg-ct-teal text-ct-ink font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
               >
                 {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 {isSending ? 'Sending...' : 'Send to Client'}

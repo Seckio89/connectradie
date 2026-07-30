@@ -30,17 +30,17 @@ const CATEGORY_CONFIG: Record<
   RecommendationCategory,
   { icon: typeof TrendingUp; label: string; color: string; bg: string; border: string }
 > = {
-  growth: { icon: TrendingUp, label: 'Growth', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-  pricing: { icon: DollarSign, label: 'Pricing', color: 'text-secondary-600', bg: 'bg-secondary-50', border: 'border-secondary-200' },
-  promotions: { icon: Megaphone, label: 'Promotions', color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-200' },
-  trends: { icon: BarChart3, label: 'Trends', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' },
-  operations: { icon: Settings, label: 'Operations', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200' },
+  growth: { icon: TrendingUp, label: 'Growth', color: 'text-ct-teal', bg: 'bg-ct-teal/[0.14]', border: 'border-ct-teal/30' },
+  pricing: { icon: DollarSign, label: 'Pricing', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2', border: 'border-ct-line' },
+  promotions: { icon: Megaphone, label: 'Promotions', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2', border: 'border-ct-line' },
+  trends: { icon: BarChart3, label: 'Trends', color: 'text-ct-amber', bg: 'bg-ct-amber/[0.13]', border: 'border-ct-amber/[0.34]' },
+  operations: { icon: Settings, label: 'Operations', color: 'text-ct-rose', bg: 'bg-ct-rose/[0.13]', border: 'border-ct-rose/[0.34]' },
 };
 
 const PRIORITY_CONFIG: Record<RecommendationPriority, { label: string; dot: string; text: string }> = {
-  high: { label: 'High', dot: 'bg-red-500', text: 'text-red-700' },
-  medium: { label: 'Medium', dot: 'bg-amber-500', text: 'text-amber-700' },
-  low: { label: 'Low', dot: 'bg-secondary-400', text: 'text-secondary-600' },
+  high: { label: 'High', dot: 'bg-ct-rose/[0.13]0', text: 'text-ct-rose' },
+  medium: { label: 'Medium', dot: 'bg-ct-amber/[0.13]0', text: 'text-ct-amber' },
+  low: { label: 'Low', dot: 'bg-ct-surface-2', text: 'text-ct-mute-2' },
 };
 
 type FilterCategory = RecommendationCategory | 'all';
@@ -194,22 +194,22 @@ export default function AdminRecommendations() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-bold text-gray-900">Insights & Recommendations</h2>
+            <h2 className="text-lg font-bold text-ct-paper">Insights & Recommendations</h2>
             {highCount > 0 && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-50 text-red-700 text-xs font-medium rounded-full border border-red-100">
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-rose/[0.13] text-ct-rose text-xs font-medium rounded-full border border-ct-rose/[0.34]">
                 <AlertCircle className="w-3 h-3" />
                 {highCount} urgent
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-ct-mute mt-0.5">
             {lastGenerated ? `Last analysed ${formatDate(lastGenerated)}` : 'AI-powered platform analysis'}
           </p>
         </div>
         <button
           onClick={generateRecommendations}
           disabled={generating}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-4 py-2 bg-ct-surface text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {generating ? (
             <>
@@ -227,13 +227,13 @@ export default function AdminRecommendations() {
 
       {/* Category Tabs */}
       {active.length > 0 && (
-        <div className="flex items-center gap-1 mb-4 border-b border-gray-200 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex items-center gap-1 mb-4 border-b border-ct-line overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
           <button
             onClick={() => setActiveCategory('all')}
             className={`px-3 py-2 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               activeCategory === 'all'
-                ? 'border-gray-900 text-gray-900'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-ct-line text-ct-paper'
+                : 'border-transparent text-ct-mute hover:text-ct-mute-2'
             }`}
           >
             All ({active.length})
@@ -248,8 +248,8 @@ export default function AdminRecommendations() {
                 onClick={() => setActiveCategory(cat)}
                 className={`px-3 py-2 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                   activeCategory === cat
-                    ? 'border-gray-900 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'border-ct-line text-ct-paper'
+                    : 'border-transparent text-ct-mute hover:text-ct-mute-2'
                 }`}
               >
                 {config.label} ({count})
@@ -262,21 +262,21 @@ export default function AdminRecommendations() {
       {/* Content */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
+          <Loader2 className="w-6 h-6 text-ct-mute animate-spin" />
         </div>
       ) : sorted.length === 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 text-center py-16 px-6">
-          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Sparkles className="w-6 h-6 text-gray-400" />
+        <div className="bg-ct-surface rounded-ct-sm border border-ct-line text-center py-16 px-6">
+          <div className="w-12 h-12 bg-ct-surface-2 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Sparkles className="w-6 h-6 text-ct-mute" />
           </div>
-          <p className="text-gray-900 font-semibold mb-1">No recommendations yet</p>
-          <p className="text-gray-500 text-sm mb-6 max-w-sm mx-auto">
+          <p className="text-ct-paper font-semibold mb-1">No recommendations yet</p>
+          <p className="text-ct-mute text-sm mb-6 max-w-sm mx-auto">
             Generate insights from your platform data to get actionable suggestions for growth, pricing, and operations.
           </p>
           <button
             onClick={generateRecommendations}
             disabled={generating}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white font-medium text-sm rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-ct-surface text-ct-ink font-medium text-sm rounded-ct-sm hover:bg-ct-surface transition-colors disabled:opacity-50"
           >
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {generating ? 'Analysing...' : 'Run First Analysis'}
@@ -296,10 +296,10 @@ export default function AdminRecommendations() {
             return (
               <div
                 key={rec.id}
-                className={`bg-white rounded-lg border transition-all ${
+                className={`bg-ct-surface rounded-ct-sm border transition-all ${
                   rec.priority === 'high'
-                    ? 'border-red-200'
-                    : 'border-gray-200'
+                    ? 'border-ct-rose/[0.34]'
+                    : 'border-ct-line'
                 } ${isExpanded ? 'shadow-sm' : 'hover:shadow-sm'}`}
               >
                 {/* Card Header */}
@@ -309,7 +309,7 @@ export default function AdminRecommendations() {
                 >
                   {/* Priority indicator bar */}
                   <div className={`w-1 self-stretch rounded-full flex-shrink-0 ${
-                    rec.priority === 'high' ? 'bg-red-400' : rec.priority === 'medium' ? 'bg-amber-400' : 'bg-secondary-300'
+                    rec.priority === 'high' ? 'bg-ct-rose' : rec.priority === 'medium' ? 'bg-ct-amber' : 'bg-ct-surface-2'
                   }`} />
 
                   <div className={`p-1.5 rounded-md flex-shrink-0 mt-0.5 ${catConfig.bg}`}>
@@ -318,7 +318,7 @@ export default function AdminRecommendations() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-sm font-semibold text-gray-900 truncate">
+                      <h4 className="text-sm font-semibold text-ct-paper truncate">
                         {rec.title}
                       </h4>
                       <span className={`inline-flex items-center gap-1 text-xs font-medium ${priorityConfig.text}`}>
@@ -326,25 +326,25 @@ export default function AdminRecommendations() {
                         {priorityConfig.label}
                       </span>
                       {rec.status === 'new' && (
-                        <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded">
+                        <span className="px-1.5 py-0.5 bg-ct-teal/[0.14] text-ct-teal text-xs font-semibold rounded">
                           NEW
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500 line-clamp-1">
+                    <p className="text-sm text-ct-mute line-clamp-1">
                       {parsed.summary}
                     </p>
                   </div>
 
-                  <ChevronRight className={`w-4 h-4 text-gray-400 flex-shrink-0 mt-1 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                  <ChevronRight className={`w-4 h-4 text-ct-mute flex-shrink-0 mt-1 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                 </button>
 
                 {/* Expanded Content */}
                 {isExpanded && (
                   <div className="px-4 pb-4 ml-[52px]">
-                    <div className="border-t border-gray-100 pt-4 space-y-4">
+                    <div className="border-t border-ct-line-soft pt-4 space-y-4">
                       {/* Summary */}
-                      <p className="text-sm text-gray-700 leading-relaxed">
+                      <p className="text-sm text-ct-mute-2 leading-relaxed">
                         {parsed.summary}
                       </p>
 
@@ -352,15 +352,15 @@ export default function AdminRecommendations() {
                       {parsed.sections.map((section, idx) => (
                         <div key={idx}>
                           {section.heading && (
-                            <h5 className="text-xs font-semibold text-gray-900 uppercase tracking-wide mb-2">
+                            <h5 className="text-xs font-semibold text-ct-paper uppercase tracking-wide mb-2">
                               {section.heading}
                             </h5>
                           )}
                           {section.items.length > 0 && (
                             <ol className="space-y-1.5">
                               {section.items.map((item, i) => (
-                                <li key={i} className="flex gap-2 text-sm text-gray-600">
-                                  <span className="text-gray-400 font-medium flex-shrink-0 w-5 text-right">{i + 1}.</span>
+                                <li key={i} className="flex gap-2 text-sm text-ct-mute-2">
+                                  <span className="text-ct-mute font-medium flex-shrink-0 w-5 text-right">{i + 1}.</span>
                                   <span className="leading-relaxed">{item}</span>
                                 </li>
                               ))}
@@ -373,10 +373,10 @@ export default function AdminRecommendations() {
                       {Boolean(confidence) && (
                         <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium ${
                           confidence === 'high'
-                            ? 'bg-emerald-50 text-emerald-700'
+                            ? 'bg-ct-teal/[0.14] text-ct-teal'
                             : confidence === 'medium'
-                              ? 'bg-amber-50 text-amber-700'
-                              : 'bg-gray-100 text-gray-500'
+                              ? 'bg-ct-amber/[0.13] text-ct-amber'
+                              : 'bg-ct-surface-2 text-ct-mute'
                         }`}>
                           <Info className="w-3 h-3" />
                           {confidence === 'high'
@@ -390,16 +390,16 @@ export default function AdminRecommendations() {
                       {/* Key Metrics */}
                       {rec.data_snapshot && Object.keys(rec.data_snapshot).filter(k => k !== 'confidence').length > 0 && (
                         <details className="group">
-                          <summary className="text-xs font-medium text-gray-400 cursor-pointer hover:text-gray-600 select-none">
+                          <summary className="text-xs font-medium text-ct-mute cursor-pointer hover:text-ct-mute-2 select-none">
                             View supporting data
                           </summary>
                           <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
                             {Object.entries(rec.data_snapshot)
                               .filter(([key]) => key !== 'confidence')
                               .map(([key, val]) => (
-                                <div key={key} className="bg-gray-50 rounded px-3 py-2">
-                                  <p className="text-xs text-gray-400 uppercase tracking-wide">{formatKey(key)}</p>
-                                  <p className="text-sm font-medium text-gray-900 truncate">
+                                <div key={key} className="bg-ct-surface-2 rounded px-3 py-2">
+                                  <p className="text-xs text-ct-mute uppercase tracking-wide">{formatKey(key)}</p>
+                                  <p className="text-sm font-medium text-ct-paper truncate">
                                     {typeof val === 'object' ? JSON.stringify(val) : String(val)}
                                   </p>
                                 </div>
@@ -409,12 +409,12 @@ export default function AdminRecommendations() {
                       )}
 
                       {/* Actions */}
-                      <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                      <div className="flex items-center gap-2 pt-2 border-t border-ct-line-soft">
                         {rec.action_url && (
                           <Link
                             to={rec.action_url}
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-md hover:bg-gray-800 transition-colors"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-ct-surface text-ct-ink text-xs font-medium rounded-md hover:bg-ct-surface transition-colors"
                           >
                             <ArrowUpRight className="w-3 h-3" />
                             Take Action
@@ -423,7 +423,7 @@ export default function AdminRecommendations() {
                         {rec.status === 'new' && (
                           <button
                             onClick={(e) => { e.stopPropagation(); updateStatus(rec.id, 'reviewed'); }}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-gray-600 text-xs font-medium rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-ct-mute-2 text-xs font-medium rounded-md border border-ct-line hover:bg-ct-surface-2 transition-colors"
                           >
                             <Eye className="w-3 h-3" />
                             Mark Reviewed
@@ -431,14 +431,14 @@ export default function AdminRecommendations() {
                         )}
                         <button
                           onClick={(e) => { e.stopPropagation(); updateStatus(rec.id, 'implemented'); }}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-emerald-700 text-xs font-medium rounded-md border border-emerald-200 hover:bg-emerald-50 transition-colors"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-ct-teal text-xs font-medium rounded-md border border-ct-teal/30 hover:bg-ct-teal/[0.14] transition-colors"
                         >
                           <Check className="w-3 h-3" />
                           Done
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); updateStatus(rec.id, 'dismissed'); }}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-gray-400 text-xs font-medium rounded-md hover:bg-gray-50 transition-colors ml-auto"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-ct-mute text-xs font-medium rounded-md hover:bg-ct-surface-2 transition-colors ml-auto"
                         >
                           <X className="w-3 h-3" />
                           Dismiss
@@ -446,7 +446,7 @@ export default function AdminRecommendations() {
                       </div>
 
                       {rec.reviewed_at && (
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-ct-mute">
                           Updated {formatDate(rec.reviewed_at)}
                         </p>
                       )}

@@ -73,30 +73,30 @@ export default function EditCoverPhotoModal({ isOpen, onClose, currentUrl, userI
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 ">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">Cover Photo</h3>
+      <div className="bg-ct-surface rounded-ct-lg shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ct-line-soft">
+          <h3 className="text-lg font-semibold text-ct-paper">Cover Photo</h3>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-6">
-          <div className="aspect-[3/1] rounded-xl overflow-hidden bg-gray-100 mb-4">
+          <div className="aspect-[3/1] rounded-ct-md overflow-hidden bg-ct-surface-2 mb-4">
             {previewUrl ? (
               <img src={previewUrl} alt="Cover photo" className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+              <div className="w-full h-full flex flex-col items-center justify-center text-ct-mute">
                 <ImageIcon className="w-10 h-10 mb-2" />
                 <p className="text-sm">No cover photo set</p>
               </div>
             )}
           </div>
 
-          <p className="text-xs text-gray-500 mb-4">
+          <p className="text-xs text-ct-mute mb-4">
             Recommended: landscape image, at least 1200x400px. Max 5MB.
           </p>
 
@@ -112,7 +112,7 @@ export default function EditCoverPhotoModal({ isOpen, onClose, currentUrl, userI
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading || removing}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-warm-500 text-white text-sm font-semibold rounded-lg hover:bg-warm-600 disabled:opacity-50 transition-colors"
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-sm hover:brightness-110 disabled:opacity-50 transition-colors"
             >
               {uploading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -126,7 +126,7 @@ export default function EditCoverPhotoModal({ isOpen, onClose, currentUrl, userI
               <button
                 onClick={handleRemove}
                 disabled={uploading || removing}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-red-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-ct-rose/[0.34] text-ct-rose text-sm font-medium rounded-ct-sm hover:bg-ct-rose/[0.13] disabled:opacity-50 transition-colors"
               >
                 {removing ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

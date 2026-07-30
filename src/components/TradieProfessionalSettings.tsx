@@ -53,15 +53,15 @@ function InfoTooltip({ text }: InfoTooltipProps) {
         onMouseLeave={() => setShow(false)}
         onFocus={() => setShow(true)}
         onBlur={() => setShow(false)}
-        className="ml-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+        className="ml-1.5 text-ct-mute hover:text-ct-mute-2 transition-colors"
         aria-label="More info"
       >
         <Info className="w-4 h-4" />
       </button>
       {show && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg whitespace-nowrap z-50 animate-in fade-in duration-150">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-ct-surface text-ct-ink text-xs rounded-ct-sm shadow-lg whitespace-nowrap z-50 animate-in fade-in duration-150">
           {text}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
+          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-ct-surface rotate-45" />
         </div>
       )}
     </div>
@@ -233,22 +233,22 @@ export default function TradieProfessionalSettings() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 p-3 sm:p-6 md:p-8">
       {/* ── Trade Service Selector ─────────────────────────────── */}
-      <div className="bg-white border border-gray-200 rounded-xl">
-        <div className="px-3 py-3 sm:px-5 sm:py-4 border-b border-gray-100 bg-gray-50/50 rounded-t-xl">
+      <div className="bg-ct-surface border border-ct-line rounded-ct-md">
+        <div className="px-3 py-3 sm:px-5 sm:py-4 border-b border-ct-line-soft bg-ct-surface-2/50 rounded-t-xl">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary-100 rounded-lg flex items-center justify-center">
-              <Wrench className="w-5 h-5 text-primary-600" />
+            <div className="w-9 h-9 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center">
+              <Wrench className="w-5 h-5 text-ct-mute-2" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">What trade service are you providing?</h3>
-              <p className="text-xs text-gray-500">This determines your licensing requirements</p>
+              <h3 className="font-semibold text-ct-paper">What trade service are you providing?</h3>
+              <p className="text-xs text-ct-mute">This determines your licensing requirements</p>
             </div>
-            {tradeSaving && <Loader2 className="w-4 h-4 text-primary-500 animate-spin ml-auto" />}
+            {tradeSaving && <Loader2 className="w-4 h-4 text-ct-teal0 animate-spin ml-auto" />}
           </div>
         </div>
         <div className="p-3 sm:p-5 space-y-3 sm:space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Popular trades</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-2">Popular trades</label>
             <div className="flex flex-wrap gap-2">
               {TOP_10_TRADES.map((trade) => {
                 const isSelected = selectedTrade === trade.value;
@@ -260,8 +260,8 @@ export default function TradieProfessionalSettings() {
                     disabled={tradeSaving}
                     className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
                       isSelected
-                        ? 'bg-warm-500 text-white border-primary-600 shadow-sm'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-primary-300 hover:bg-primary-50'
+                        ? 'bg-ct-teal text-ct-ink border-ct-teal/30 shadow-sm'
+                        : 'bg-ct-surface text-ct-mute-2 border-ct-line hover:border-ct-teal/30 hover:bg-ct-surface-2'
                     }`}
                   >
                     {isSelected && <CheckCircle2 className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />}
@@ -273,7 +273,7 @@ export default function TradieProfessionalSettings() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Or search all trades</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-2">Or search all trades</label>
             <SearchableSelect
               options={ALL_TRADES}
               value={selectedTrade}
@@ -284,9 +284,9 @@ export default function TradieProfessionalSettings() {
           </div>
 
           {selectedTrade && (
-            <div className="flex items-center gap-2 p-3 bg-primary-50 border border-primary-200 rounded-lg">
-              <CheckCircle2 className="w-4 h-4 text-primary-600 flex-shrink-0" />
-              <p className="text-sm text-primary-800">
+            <div className="flex items-center gap-2 p-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm">
+              <CheckCircle2 className="w-4 h-4 text-ct-mute-2 flex-shrink-0" />
+              <p className="text-sm text-ct-teal">
                 Selected: <strong>{normalizeTradeName(selectedTrade)}</strong>
               </p>
             </div>
@@ -295,59 +295,59 @@ export default function TradieProfessionalSettings() {
       </div>
 
       {/* ── Business Details ───────────────────────────────────── */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-3 py-3 sm:px-5 sm:py-4 border-b border-gray-100 bg-gray-50/50">
+      <div className="bg-ct-surface border border-ct-line rounded-ct-md overflow-hidden">
+        <div className="px-3 py-3 sm:px-5 sm:py-4 border-b border-ct-line-soft bg-ct-surface-2/50">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-secondary-100 rounded-lg flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-secondary-600" />
+            <div className="w-9 h-9 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5 text-ct-mute-2" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Business Details</h3>
-              <p className="text-xs text-gray-500">Builds trust with potential clients</p>
+              <h3 className="font-semibold text-ct-paper">Business Details</h3>
+              <p className="text-xs text-ct-mute">Builds trust with potential clients</p>
             </div>
           </div>
         </div>
         <div className="p-3 sm:p-5 space-y-3 sm:space-y-5">
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center text-sm font-medium text-ct-mute-2 mb-2">
               ABN (Australian Business Number)
               <InfoTooltip text="Your 11-digit ABN is verified against the ABR" />
             </label>
             <div className="relative">
-              <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
               <input
                 type="text"
                 value={formatAbn(abnNumber)}
                 onChange={(e) => handleAbnChange(e.target.value.replace(/\s/g, ''))}
                 placeholder="51 824 753 556"
                 maxLength={14}
-                className="w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                className="w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-2.5 sm:py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-shadow"
               />
               {abnValidating && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                  <Loader2 className="w-4 h-4 text-primary-500 animate-spin" />
-                  <span className="text-xs text-secondary-600 font-medium">Validating...</span>
+                  <Loader2 className="w-4 h-4 text-ct-teal0 animate-spin" />
+                  <span className="text-xs text-ct-mute-2 font-medium">Validating...</span>
                 </div>
               )}
               {!abnValidating && abnNumber.length === 11 && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                  <CheckCircle2 className="w-5 h-5 text-ct-teal" />
                 </div>
               )}
             </div>
           </div>
 
           {/* GST Registration */}
-          <label className="flex items-center gap-3 cursor-pointer border border-gray-200 rounded-xl p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+          <label className="flex items-center gap-3 cursor-pointer border border-ct-line rounded-ct-md p-3 sm:p-4 hover:bg-ct-surface-2 transition-colors">
             <input
               type="checkbox"
               checked={isGstRegistered}
               onChange={(e) => setIsGstRegistered(e.target.checked)}
-              className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 flex-shrink-0"
+              className="w-5 h-5 text-ct-teal rounded focus:ring-ct-teal flex-shrink-0"
             />
             <div className="flex-1">
-              <span className="text-sm font-medium text-gray-700">GST Registered</span>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <span className="text-sm font-medium text-ct-mute-2">GST Registered</span>
+              <p className="text-xs text-ct-mute mt-0.5">
                 Required if your annual turnover exceeds $75,000. When enabled, 10% GST will be added to your quoted prices at checkout.
               </p>
             </div>
@@ -355,16 +355,16 @@ export default function TradieProfessionalSettings() {
 
           {/* Issuing State */}
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center text-sm font-medium text-ct-mute-2 mb-2">
               Issuing State / Territory
               <InfoTooltip text="The state that issued your trade license" />
             </label>
             <div className="relative">
-              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
               <select
                 value={licenseState}
                 onChange={(e) => setLicenseState(e.target.value as AustralianState)}
-                className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white transition-shadow"
+                className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal appearance-none bg-ct-surface transition-shadow"
               >
                 <option value="">Select state...</option>
                 {AUSTRALIAN_STATES.map((s) => (
@@ -372,7 +372,7 @@ export default function TradieProfessionalSettings() {
                 ))}
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-ct-mute" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
@@ -381,25 +381,25 @@ export default function TradieProfessionalSettings() {
 
           {/* Licensing hint — specialist / threshold / exempt */}
           {licensingHint && (
-            <div className={`flex items-start gap-2.5 p-3 rounded-lg border ${
+            <div className={`flex items-start gap-2.5 p-3 rounded-ct-sm border ${
               licensingHint.exempt
-                ? 'bg-green-50 border-green-200'
-                : 'bg-secondary-50 border-secondary-200'
+                ? 'bg-ct-teal/[0.14] border-ct-teal/30'
+                : 'bg-ct-surface-2 border-ct-line'
             }`}>
               <Info className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
                 licensingHint.exempt
-                  ? 'text-green-500'
-                  : 'text-secondary-500'
+                  ? 'text-ct-teal'
+                  : 'text-ct-mute-2'
               }`} />
               <div>
                 <p className={`text-sm ${
                   licensingHint.exempt
-                    ? 'text-green-700'
-                    : 'text-secondary-700'
+                    ? 'text-ct-teal'
+                    : 'text-ct-mute-2'
                 }`}>
                   {licensingHint.hint}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-ct-mute mt-1">
                   Managed by {licensingHint.authority}
                 </p>
               </div>
@@ -408,9 +408,9 @@ export default function TradieProfessionalSettings() {
 
           {/* Exempt trade — show trust reminder instead of license fields */}
           {licensingHint?.exempt && (
-            <div className="flex items-start gap-2.5 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <CheckCircle2 className="w-4 h-4 mt-0.5 text-green-500 flex-shrink-0" />
-              <p className="text-sm text-green-700">
+            <div className="flex items-start gap-2.5 p-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm">
+              <CheckCircle2 className="w-4 h-4 mt-0.5 text-ct-teal flex-shrink-0" />
+              <p className="text-sm text-ct-teal">
                 Your verified <strong>ABN</strong> is sufficient for {normalizeTradeName(primaryTrade) || 'your trade'} in {licenseState}. We recommend also adding <strong>Public Liability Insurance</strong> to boost your trust score.
               </p>
             </div>
@@ -420,23 +420,23 @@ export default function TradieProfessionalSettings() {
           {licenseRequired && (
             <>
               {/* Apprentice toggle */}
-              <div className="flex items-center justify-between p-3 sm:p-4 bg-warm-50 rounded-xl border border-warm-200">
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-ct-amber/[0.13] rounded-ct-md border border-ct-amber/[0.34]">
                 <div className="flex items-center gap-3">
-                  <GraduationCap className="w-5 h-5 text-warm-600" />
+                  <GraduationCap className="w-5 h-5 text-ct-amber" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">I am an Apprentice</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Apprentices must be linked to a qualified supervisor</p>
+                    <p className="text-sm font-medium text-ct-paper">I am an Apprentice</p>
+                    <p className="text-xs text-ct-mute mt-0.5">Apprentices must be linked to a qualified supervisor</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsApprentice(!isApprentice)}
-                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-warm-500 focus:ring-offset-2 ${
-                    isApprentice ? 'bg-warm-500' : 'bg-gray-300'
+                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ct-teal focus:ring-offset-2 ${
+                    isApprentice ? 'bg-ct-teal' : 'bg-ct-line'
                   }`}
                 >
                   <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                    className={`inline-block h-5 w-5 transform rounded-full bg-ct-surface shadow-sm transition-transform ${
                       isApprentice ? 'translate-x-6' : 'translate-x-1'
                     }`}
                   />
@@ -445,54 +445,54 @@ export default function TradieProfessionalSettings() {
 
               {/* Conditional license fields */}
               {isApprentice ? (
-                <div className="space-y-4 pl-1 border-l-2 border-warm-200 ml-2">
+                <div className="space-y-4 pl-1 border-l-2 border-ct-amber/[0.34] ml-2">
                   <div className="pl-4">
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                    <label className="flex items-center text-sm font-medium text-ct-mute-2 mb-2">
                       Supervisor&apos;s License Number
                       <InfoTooltip text="The license number of your supervising contractor" />
                     </label>
                     <div className="relative">
-                      <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
                       <input
                         type="text"
                         value={supervisorLicense}
                         onChange={(e) => setSupervisorLicense(e.target.value)}
                         placeholder="e.g., 123456C"
-                        className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                        className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-shadow"
                       />
                     </div>
                   </div>
                   <div className="pl-4">
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                    <label className="flex items-center text-sm font-medium text-ct-mute-2 mb-2">
                       Supervisor&apos;s Name
                       <InfoTooltip text="Full name of the license holder supervising your work" />
                     </label>
                     <div className="relative">
-                      <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
                       <input
                         type="text"
                         value={supervisorName}
                         onChange={(e) => setSupervisorName(e.target.value)}
                         placeholder="e.g., John Smith"
-                        className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                        className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-shadow"
                       />
                     </div>
                   </div>
                 </div>
               ) : (
                 <div>
-                  <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <label className="flex items-center text-sm font-medium text-ct-mute-2 mb-2">
                     Contractor License Number
                     <InfoTooltip text="Your trade license number for verification" />
                   </label>
                   <div className="relative">
-                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
                     <input
                       type="text"
                       value={licenseNumber}
                       onChange={(e) => setLicenseNumber(e.target.value)}
                       placeholder="e.g., 123456C"
-                      className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                      className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-shadow"
                     />
                   </div>
                 </div>
@@ -500,40 +500,40 @@ export default function TradieProfessionalSettings() {
 
               {/* License expiry */}
               <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                <label className="flex items-center text-sm font-medium text-ct-mute-2 mb-2">
                   License Expiry Date
                   <InfoTooltip text="We'll remind you before your license expires" />
                 </label>
                 <div className="relative">
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
                   <input
                     type="date"
                     value={licenseExpiry}
                     onChange={(e) => setLicenseExpiry(e.target.value)}
-                    className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                    className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-shadow"
                   />
                 </div>
               </div>
             </>
           )}
 
-          <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-xl border border-gray-200">
+          <div className="flex items-center justify-between p-3 sm:p-4 bg-ct-surface-2 rounded-ct-md border border-ct-line">
             <div className="flex items-center gap-3">
-              <ShieldCheck className="w-5 h-5 text-green-600" />
+              <ShieldCheck className="w-5 h-5 text-ct-teal" />
               <div>
-                <p className="text-sm font-medium text-gray-900">I have valid Public Liability Insurance</p>
-                <p className="text-xs text-gray-500 mt-0.5">Displayed as a trust badge on your profile</p>
+                <p className="text-sm font-medium text-ct-paper">I have valid Public Liability Insurance</p>
+                <p className="text-xs text-ct-mute mt-0.5">Displayed as a trust badge on your profile</p>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setInsurancePolicy(!insurancePolicy)}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                insurancePolicy ? 'bg-green-500' : 'bg-gray-300'
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ct-teal focus:ring-offset-2 ${
+                insurancePolicy ? 'bg-ct-teal/[0.14]0' : 'bg-ct-line'
               }`}
             >
               <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                className={`inline-block h-5 w-5 transform rounded-full bg-ct-surface shadow-sm transition-transform ${
                   insurancePolicy ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />
@@ -542,21 +542,21 @@ export default function TradieProfessionalSettings() {
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-3 py-3 sm:px-5 sm:py-4 border-b border-gray-100 bg-gray-50/50">
+      <div className="bg-ct-surface border border-ct-line rounded-ct-md overflow-hidden">
+        <div className="px-3 py-3 sm:px-5 sm:py-4 border-b border-ct-line-soft bg-ct-surface-2/50">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-secondary-100 rounded-lg flex items-center justify-center">
-              <Radar className="w-5 h-5 text-secondary-600" />
+            <div className="w-9 h-9 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center">
+              <Radar className="w-5 h-5 text-ct-mute-2" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Operational Settings</h3>
-              <p className="text-xs text-gray-500">Controls which leads you receive</p>
+              <h3 className="font-semibold text-ct-paper">Operational Settings</h3>
+              <p className="text-xs text-ct-mute">Controls which leads you receive</p>
             </div>
           </div>
         </div>
         <div className="p-3 sm:p-5 space-y-4 sm:space-y-6">
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 mb-3">
+            <label className="flex items-center text-sm font-medium text-ct-mute-2 mb-3">
               Service Radius
               <InfoTooltip text="We use this to filter job notifications" />
             </label>
@@ -568,13 +568,13 @@ export default function TradieProfessionalSettings() {
                 step={1}
                 value={serviceRadius}
                 onChange={(e) => setServiceRadius(parseInt(e.target.value, 10))}
-                className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer warm-secondary-600 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-secondary-600 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white"
+                className="w-full h-2 bg-ct-line rounded-full appearance-none cursor-pointer warm-secondary-600 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-ct-surface-2 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white"
               />
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400">5km</span>
-                <span className="text-xs text-gray-400">50km</span>
+                <span className="text-xs text-ct-mute">5km</span>
+                <span className="text-xs text-ct-mute">50km</span>
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ct-mute">
                 You will receive leads within <span className="font-semibold">{serviceRadius}km</span> of <span className="font-semibold">{suburb}</span>.
               </p>
             </div>
@@ -582,62 +582,62 @@ export default function TradieProfessionalSettings() {
 
           {/* Business timezone — stamps the local day on auto-logged timesheet hours */}
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center text-sm font-medium text-ct-mute-2 mb-2">
               Business timezone
               <InfoTooltip text="Used to record the correct local day on automatically-logged (on-site check-in) timesheet hours" />
             </label>
             <div className="relative">
-              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
               <select
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
-                className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white transition-shadow"
+                className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal appearance-none bg-ct-surface transition-shadow"
               >
                 {TIMEZONES.map((tz) => (
                   <option key={tz.value} value={tz.value}>{tz.label}</option>
                 ))}
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-ct-mute" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-warm-50 to-warm-50 rounded-xl border border-warm-200">
+          <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-ct-teal to-ct-teal rounded-ct-md border border-ct-amber/[0.34]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-warm-100 rounded-lg flex items-center justify-center">
-                <Zap className="w-5 h-5 text-warm-600" />
+              <div className="w-10 h-10 bg-ct-amber/[0.13] rounded-ct-sm flex items-center justify-center">
+                <Zap className="w-5 h-5 text-ct-amber" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900">Available for 24/7 Emergency Jobs</p>
-                <p className="text-xs text-gray-600 mt-0.5">You'll be prioritized for urgent after-hours call-outs</p>
+                <p className="text-sm font-semibold text-ct-paper">Available for 24/7 Emergency Jobs</p>
+                <p className="text-xs text-ct-mute-2 mt-0.5">You'll be prioritized for urgent after-hours call-outs</p>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setIsEmergencyAvailable(!isEmergencyAvailable)}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-warm-500 focus:ring-offset-2 ${
-                isEmergencyAvailable ? 'bg-warm-500' : 'bg-gray-300'
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ct-teal focus:ring-offset-2 ${
+                isEmergencyAvailable ? 'bg-ct-teal' : 'bg-ct-line'
               }`}
             >
               <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                className={`inline-block h-5 w-5 transform rounded-full bg-ct-surface shadow-sm transition-transform ${
                   isEmergencyAvailable ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-secondary-50 to-secondary-50 rounded-xl border border-secondary-200">
+          <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-ct-surface-2 to-ct-surface-2 rounded-ct-md border border-ct-line">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-secondary-100 rounded-lg flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-secondary-600" />
+              <div className="w-10 h-10 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-ct-mute-2" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900">Auto-complete recurring sessions</p>
-                <p className="text-xs text-gray-600 mt-0.5">
+                <p className="text-sm font-semibold text-ct-paper">Auto-complete recurring sessions</p>
+                <p className="text-xs text-ct-mute-2 mt-0.5">
                   {autoCompleteSessions
                     ? "On — sessions auto-complete after their scheduled end time."
                     : "Off — you'll be asked to confirm each visit before it counts as completed."}
@@ -647,12 +647,12 @@ export default function TradieProfessionalSettings() {
             <button
               type="button"
               onClick={() => setAutoCompleteSessions(!autoCompleteSessions)}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:ring-offset-2 ${
-                autoCompleteSessions ? 'bg-secondary-500' : 'bg-gray-300'
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ct-teal focus:ring-offset-2 ${
+                autoCompleteSessions ? 'bg-ct-surface-20' : 'bg-ct-line'
               }`}
             >
               <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                className={`inline-block h-5 w-5 transform rounded-full bg-ct-surface shadow-sm transition-transform ${
                   autoCompleteSessions ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />
@@ -661,30 +661,30 @@ export default function TradieProfessionalSettings() {
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-3 py-3 sm:px-5 sm:py-4 border-b border-gray-100 bg-gray-50/50">
+      <div className="bg-ct-surface border border-ct-line rounded-ct-md overflow-hidden">
+        <div className="px-3 py-3 sm:px-5 sm:py-4 border-b border-ct-line-soft bg-ct-surface-2/50">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-secondary-100 rounded-lg flex items-center justify-center">
-              <PenLine className="w-5 h-5 text-secondary-600" />
+            <div className="w-9 h-9 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center">
+              <PenLine className="w-5 h-5 text-ct-mute-2" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">About the Business</h3>
-              <p className="text-xs text-gray-500">Help clients understand your services</p>
+              <h3 className="font-semibold text-ct-paper">About the Business</h3>
+              <p className="text-xs text-ct-mute">Help clients understand your services</p>
             </div>
           </div>
         </div>
         <div className="p-3 sm:p-5 space-y-3 sm:space-y-5">
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center text-sm font-medium text-ct-mute-2 mb-2">
               Team Size
               <InfoTooltip text="Helps clients gauge your capacity" />
             </label>
             <div className="relative">
-              <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
               <select
                 value={teamSize}
                 onChange={(e) => setTeamSize(e.target.value as TeamSize)}
-                className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white transition-shadow"
+                className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal appearance-none bg-ct-surface transition-shadow"
               >
                 <option value="">Select team size...</option>
                 {TEAM_SIZE_OPTIONS.map((opt) => (
@@ -692,7 +692,7 @@ export default function TradieProfessionalSettings() {
                 ))}
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-ct-mute" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
@@ -701,11 +701,11 @@ export default function TradieProfessionalSettings() {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="flex items-center text-sm font-medium text-gray-700">
+              <label className="flex items-center text-sm font-medium text-ct-mute-2">
                 Short Bio
                 <InfoTooltip text="A brief pitch shown on your public profile" />
               </label>
-              <span className={`text-xs font-medium ${bio.length > 140 ? 'text-red-500' : bio.length > 120 ? 'text-warm-500' : 'text-gray-400'}`}>
+              <span className={`text-xs font-medium ${bio.length > 140 ? 'text-ct-rose' : bio.length > 120 ? 'text-ct-teal' : 'text-ct-mute'}`}>
                 {bio.length}/140
               </span>
             </div>
@@ -716,29 +716,29 @@ export default function TradieProfessionalSettings() {
               }}
               placeholder="e.g., Specializing in heritage renovations with 15+ years experience..."
               rows={3}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-shadow"
+              className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal resize-none transition-shadow"
             />
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="p-4 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md">
+          <p className="text-sm text-ct-rose">{error}</p>
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-          <CheckCircle2 className="w-5 h-5 text-green-600" />
-          <p className="text-sm text-green-600 font-medium">Professional settings saved successfully.</p>
+        <div className="p-4 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+          <CheckCircle2 className="w-5 h-5 text-ct-teal" />
+          <p className="text-sm text-ct-teal font-medium">Professional settings saved successfully.</p>
         </div>
       )}
 
       <button
         type="submit"
         disabled={saving || bio.length > 140}
-        className="w-full py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        className="w-full py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
       >
         {saving ? (
           <>

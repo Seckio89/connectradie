@@ -100,15 +100,15 @@ function getDaysInMonth(date: Date) {
 function getStatusColor(status: string | null) {
   switch (status) {
     case 'completed':
-      return 'bg-green-100 text-green-700 border-green-200';
+      return 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30';
     case 'in_progress':
-      return 'bg-secondary-100 text-secondary-700 border-secondary-200';
+      return 'bg-ct-surface-2 text-ct-mute-2 border-ct-line';
     case 'cancelled':
-      return 'bg-red-100 text-red-700 border-red-200';
+      return 'bg-ct-rose/[0.13] text-ct-rose border-ct-rose/[0.34]';
     case 'accepted':
-      return 'bg-secondary-100 text-secondary-700 border-secondary-200';
+      return 'bg-ct-surface-2 text-ct-mute-2 border-ct-line';
     default:
-      return 'bg-warm-100 text-warm-700 border-warm-200';
+      return 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]';
   }
 }
 
@@ -849,25 +849,25 @@ export default function TradieDashboard() {
       <WelcomeGuide role="tradie" userName={profile?.full_name} />
       {showOnboardedBanner && (
         <div className="mb-4">
-          <div className="bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-2xl p-5 px-4 sm:px-5">
-            <h3 className="font-bold text-primary-900 mb-1">Welcome to ConnecTradie!</h3>
-            <p className="text-sm text-primary-800">Your account is set up. Set your availability below so clients can find and book you for jobs.</p>
+          <div className="bg-gradient-to-r from-ct-teal to-ct-surface-2 border border-ct-line rounded-ct-lg p-5 px-4 sm:px-5">
+            <h3 className="font-bold text-ct-teal mb-1">Welcome to ConnecTradie!</h3>
+            <p className="text-sm text-ct-teal">Your account is set up. Set your availability below so clients can find and book you for jobs.</p>
           </div>
         </div>
       )}
       {/* Join-a-business request pending — persists until the employer approves */}
       {isPendingEmployerApproval && (
         <div className="mb-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 px-4 sm:px-5">
+          <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-lg p-4 sm:p-5 px-4 sm:px-5">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Clock className="w-5 h-5 text-amber-600" />
+              <div className="w-10 h-10 bg-ct-amber/[0.13] rounded-ct-md flex items-center justify-center flex-shrink-0">
+                <Clock className="w-5 h-5 text-ct-amber" />
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-amber-900">
+                <h3 className="font-bold text-ct-paper">
                   Request sent{employerName ? ` to ${employerName}` : ''} — waiting for approval
                 </h3>
-                <p className="text-sm text-amber-800 mt-0.5">
+                <p className="text-sm text-ct-paper mt-0.5">
                   Your request to join{employerName ? ` ${employerName}` : ' the business'} as
                   {profile?.employment_type === 'subcontractor' ? ' a subcontractor' : ' an employee'} is with your
                   employer. You&rsquo;ll get a notification as soon as they approve it. In the meantime you can
@@ -880,9 +880,9 @@ export default function TradieDashboard() {
       )}
       <div>
         {/* Header */}
-        <div className="mb-3 md:mb-6 bg-navy-900 rounded-2xl p-4 sm:p-6 md:p-8 border border-navy-800 px-4 sm:px-6 md:px-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-white mb-1">Your Business Hub</h1>
-          <p className="text-navy-300">Manage your schedule, jobs, and conversations in one place</p>
+        <div className="mb-3 md:mb-6 bg-ct-ink rounded-ct-lg p-4 sm:p-6 md:p-8 border border-ct-line px-4 sm:px-6 md:px-8">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-ct-ink mb-1">Your Business Hub</h1>
+          <p className="text-ct-mute">Manage your schedule, jobs, and conversations in one place</p>
           {profile && (
             <div className="mt-4">
               <UserTradeBadges
@@ -895,13 +895,13 @@ export default function TradieDashboard() {
 
         {/* Pro Member Banner */}
         {showPayoutBanner && (
-          <div className="mt-3 sm:mt-6 flex items-center gap-2 sm:gap-2 px-4 py-3 bg-white sm:bg-green-50 border border-gray-100 sm:border-green-200 rounded-xl">
-            <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-            <span className="text-sm font-semibold text-green-800">Pro Member<span className="hidden sm:inline"> — Lowest Fees</span></span>
-            <span className="text-sm text-green-600 flex-1 hidden sm:inline">You're keeping more of every job with Pro.</span>
+          <div className="mt-3 sm:mt-6 flex items-center gap-2 sm:gap-2 px-4 py-3 bg-ct-surface sm:bg-ct-teal/[0.14] border border-ct-line-soft sm:border-ct-teal/30 rounded-ct-md">
+            <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0" />
+            <span className="text-sm font-semibold text-ct-teal">Pro Member<span className="hidden sm:inline"> — Lowest Fees</span></span>
+            <span className="text-sm text-ct-teal flex-1 hidden sm:inline">You're keeping more of every job with Pro.</span>
             <button
               onClick={() => { localStorage.setItem('dismissedPayoutBanner', 'true'); setShowPayoutBanner(false); }}
-              className="p-1 text-green-500 hover:text-green-700 rounded transition-colors flex-shrink-0"
+              className="p-1 text-ct-teal hover:text-ct-teal rounded transition-colors flex-shrink-0"
             >
               <X className="w-4 h-4" />
             </button>
@@ -910,14 +910,14 @@ export default function TradieDashboard() {
 
         {/* License Expired Banner */}
         {isLicenseExpired && (
-          <div className="mb-6 bg-red-50 border-2 border-red-300 rounded-2xl p-5">
+          <div className="mb-6 bg-ct-rose/[0.13] border-2 border-ct-rose/40 rounded-ct-lg p-5">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <ShieldAlert className="w-6 h-6 text-red-600" />
+              <div className="w-12 h-12 bg-ct-rose/[0.13] rounded-ct-md flex items-center justify-center flex-shrink-0">
+                <ShieldAlert className="w-6 h-6 text-ct-rose" />
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-red-900 text-lg">License Expired</h3>
-                <p className="text-red-800 mt-1">
+                <h3 className="font-bold text-ct-paper text-lg">License Expired</h3>
+                <p className="text-ct-paper mt-1">
                   Your trade license expired
                   {profile?.license_expiry && (
                     <> on <span className="font-semibold">{new Date(profile.license_expiry).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</span></>
@@ -926,7 +926,7 @@ export default function TradieDashboard() {
                 </p>
                 <Link
                   to="/settings"
-                  className="inline-flex items-center gap-2 mt-3 px-5 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-colors"
+                  className="inline-flex items-center gap-2 mt-3 px-5 py-2.5 bg-ct-rose text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
                 >
                   <Settings className="w-4 h-4" />
                   Upload Renewed License
@@ -938,34 +938,34 @@ export default function TradieDashboard() {
 
         {/* Free Tier Usage */}
         {!isProUser && (
-          <div className="mb-2 sm:mb-6 bg-white rounded-2xl shadow-sm p-3 sm:p-4 border border-gray-100 px-4 sm:px-6">
+          <div className="mb-2 sm:mb-6 bg-ct-surface rounded-ct-lg shadow-sm p-3 sm:p-4 border border-ct-line-soft px-4 sm:px-6">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-gray-900">Free Plan Usage</h3>
-              <button onClick={() => setShowSubscriptionModal(true)} className="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors">
+              <h3 className="text-xs font-semibold text-ct-paper">Free Plan Usage</h3>
+              <button onClick={() => setShowSubscriptionModal(true)} className="text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 transition-colors">
                 Upgrade to Pro
               </button>
             </div>
             <div className="space-y-2.5">
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-gray-600">Jobs accepted this month</span>
-                  <span className="text-xs font-medium text-gray-900">{monthlyJobs} of {FREE_LIMITS.MAX_JOBS_PER_MONTH}</span>
+                  <span className="text-xs text-ct-mute-2">Jobs accepted this month</span>
+                  <span className="text-xs font-medium text-ct-paper">{monthlyJobs} of {FREE_LIMITS.MAX_JOBS_PER_MONTH}</span>
                 </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-ct-surface-2 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all ${monthlyJobs >= FREE_LIMITS.MAX_JOBS_PER_MONTH ? 'bg-red-500' : monthlyJobs >= FREE_LIMITS.MAX_JOBS_PER_MONTH - 1 ? 'bg-amber-500' : 'bg-warm-500'}`}
+                    className={`h-full rounded-full transition-all ${monthlyJobs >= FREE_LIMITS.MAX_JOBS_PER_MONTH ? 'bg-ct-rose/[0.13]0' : monthlyJobs >= FREE_LIMITS.MAX_JOBS_PER_MONTH - 1 ? 'bg-ct-amber/[0.13]0' : 'bg-ct-teal'}`}
                     style={{ width: `${Math.min(100, (monthlyJobs / FREE_LIMITS.MAX_JOBS_PER_MONTH) * 100)}%` }}
                   />
                 </div>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-gray-600">Lead unlocks this month</span>
-                  <span className="text-xs font-medium text-gray-900">{monthlyUnlocks} of {FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH}</span>
+                  <span className="text-xs text-ct-mute-2">Lead unlocks this month</span>
+                  <span className="text-xs font-medium text-ct-paper">{monthlyUnlocks} of {FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH}</span>
                 </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-ct-surface-2 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all ${monthlyUnlocks >= FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH ? 'bg-red-500' : monthlyUnlocks >= FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH - 1 ? 'bg-amber-500' : 'bg-warm-500'}`}
+                    className={`h-full rounded-full transition-all ${monthlyUnlocks >= FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH ? 'bg-ct-rose/[0.13]0' : monthlyUnlocks >= FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH - 1 ? 'bg-ct-amber/[0.13]0' : 'bg-ct-teal'}`}
                     style={{ width: `${Math.min(100, (monthlyUnlocks / FREE_LIMITS.MAX_LEAD_UNLOCKS_PER_MONTH) * 100)}%` }}
                   />
                 </div>
@@ -985,48 +985,48 @@ export default function TradieDashboard() {
 
         {/* First-Time Guidance — shown when tradie has no jobs and no availability */}
         {jobs.length === 0 && slots.length === 0 && !slotsLoading && (
-          <div className="mb-3 sm:mb-6 bg-gradient-to-r from-warm-50 to-secondary-50 border border-warm-200 rounded-2xl p-4 sm:p-5">
-            <h3 className="font-bold text-gray-900 mb-1">What to do first</h3>
-            <p className="text-sm text-gray-600 mb-4">Complete these three steps to start getting work — most tradies are set up in under 5 minutes.</p>
+          <div className="mb-3 sm:mb-6 bg-gradient-to-r from-ct-teal to-ct-surface-2 border border-ct-amber/[0.34] rounded-ct-lg p-4 sm:p-5">
+            <h3 className="font-bold text-ct-paper mb-1">What to do first</h3>
+            <p className="text-sm text-ct-mute-2 mb-4">Complete these three steps to start getting work — most tradies are set up in under 5 minutes.</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
                 onClick={() => {
                   const calEl = document.querySelector('[data-tour="calendar"]');
                   if (calEl) calEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }}
-                className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200 hover:border-primary-300 transition-colors text-left"
+                className="flex items-center gap-3 p-3 bg-ct-surface rounded-ct-lg border border-ct-line hover:border-ct-teal/30 transition-colors text-left"
               >
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-green-700">1</span>
+                <div className="w-8 h-8 bg-ct-teal/[0.14] rounded-ct-sm flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-ct-teal">1</span>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">Set your availability</p>
-                  <p className="text-xs text-gray-500">Clients can only book open slots</p>
+                  <p className="text-sm font-semibold text-ct-paper">Set your availability</p>
+                  <p className="text-xs text-ct-mute">Clients can only book open slots</p>
                 </div>
               </button>
               <Link
                 to="/work"
-                className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200 hover:border-primary-300 transition-colors text-left"
+                className="flex items-center gap-3 p-3 bg-ct-surface rounded-ct-lg border border-ct-line hover:border-ct-teal/30 transition-colors text-left"
               >
-                <div className="w-8 h-8 bg-warm-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-warm-700">2</span>
+                <div className="w-8 h-8 bg-ct-amber/[0.13] rounded-ct-sm flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-ct-amber">2</span>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">Browse available leads</p>
-                  <p className="text-xs text-gray-500">Quote on jobs near you</p>
+                  <p className="text-sm font-semibold text-ct-paper">Browse available leads</p>
+                  <p className="text-xs text-ct-mute">Quote on jobs near you</p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-gray-400 md:hidden flex-shrink-0" />
+                <ChevronRight className="w-4 h-4 text-ct-mute md:hidden flex-shrink-0" />
               </Link>
               <Link
                 to="/my-profile"
-                className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200 hover:border-primary-300 transition-colors text-left"
+                className="flex items-center gap-3 p-3 bg-ct-surface rounded-ct-lg border border-ct-line hover:border-ct-teal/30 transition-colors text-left"
               >
-                <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-primary-700">3</span>
+                <div className="w-8 h-8 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-ct-mute-2">3</span>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">Complete your profile</p>
-                  <p className="text-xs text-gray-500">Verified profiles get 3x more leads</p>
+                  <p className="text-sm font-semibold text-ct-paper">Complete your profile</p>
+                  <p className="text-xs text-ct-mute">Verified profiles get 3x more leads</p>
                 </div>
               </Link>
             </div>
@@ -1038,15 +1038,15 @@ export default function TradieDashboard() {
           const pendingConfirmations = recurringSessions.filter(s => s.status === 'pending_confirmation');
           if (pendingConfirmations.length === 0) return null;
           return (
-            <div className="bg-white rounded-xl border-2 border-amber-300 shadow-sm p-5 mt-6 mb-4">
+            <div className="bg-ct-surface rounded-ct-md border-2 border-ct-amber/[0.34] shadow-sm p-5 mt-6 mb-4">
               <div className="flex items-center gap-2 mb-3">
-                <AlertCircle className="w-5 h-5 text-amber-500" />
-                <h3 className="text-sm font-bold text-gray-900">New Service Request{pendingConfirmations.length !== 1 ? 's' : ''} Awaiting Your Response</h3>
-                <span className="ml-auto px-3 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                <AlertCircle className="w-5 h-5 text-ct-amber" />
+                <h3 className="text-sm font-bold text-ct-paper">New Service Request{pendingConfirmations.length !== 1 ? 's' : ''} Awaiting Your Response</h3>
+                <span className="ml-auto px-3 py-1 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-full">
                   {pendingConfirmations.length}
                 </span>
               </div>
-              <p className="text-xs text-gray-600 mb-4">Confirm or decline these ongoing service visits. Auto-confirms in 48h if no action.</p>
+              <p className="text-xs text-ct-mute-2 mb-4">Confirm or decline these ongoing service visits. Auto-confirms in 48h if no action.</p>
               <div className="space-y-3">
                 {pendingConfirmations.map((s) => {
                   const tradeLabel = (s.recurring_job?.service_subtype || s.recurring_job?.trade_category || 'Service')
@@ -1057,11 +1057,11 @@ export default function TradieDashboard() {
                   });
                   const time = s.recurring_job?.preferred_time ? s.recurring_job.preferred_time.slice(0, 5) : null;
                   return (
-                    <div key={s.id} className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div key={s.id} className="p-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm">
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-gray-900">{tradeLabel}</p>
-                          <p className="text-xs text-gray-600 mt-0.5">
+                          <p className="text-sm font-semibold text-ct-paper">{tradeLabel}</p>
+                          <p className="text-xs text-ct-mute-2 mt-0.5">
                             {dateLabel}{time ? ` · ${time}` : ''}
                           </p>
                         </div>
@@ -1076,7 +1076,7 @@ export default function TradieDashboard() {
                               console.error('Failed to confirm session:', err);
                             }
                           }}
-                          className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors"
+                          className="inline-flex items-center gap-1.5 bg-ct-teal hover:brightness-110 text-ct-ink px-4 py-2 rounded-ct-sm text-xs font-medium transition-colors"
                         >
                           <CheckCircle2 className="w-3 h-3" />
                           Confirm
@@ -1091,14 +1091,14 @@ export default function TradieDashboard() {
                               console.error('Failed to decline session:', err);
                             }
                           }}
-                          className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+                          className="inline-flex items-center gap-1.5 border border-ct-line text-ct-mute-2 px-4 py-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors"
                         >
                           <XCircle className="w-3 h-3" />
                           Decline
                         </button>
                         <Link
                           to="/schedule"
-                          className="text-xs text-gray-500 hover:text-gray-700 font-medium ml-auto"
+                          className="text-xs text-ct-mute hover:text-ct-mute-2 font-medium ml-auto"
                         >
                           View details &rarr;
                         </Link>
@@ -1118,8 +1118,8 @@ export default function TradieDashboard() {
           const unreadConvos = conversations.filter(c => c.messages.some(m => m.receiver_id === user?.id && !m.read_at));
           const pendingConfirmations = recurringSessions.filter(s => s.status === 'pending_confirmation');
           if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0 && newLeads.length === 0) return (
-            <div className="bg-emerald-50 border rounded-2xl py-2 px-4 sm:p-3 mt-2 sm:mt-4 mb-1 sm:px-5" style={{ borderBottom: '0.5px solid #d1fae5' }}>
-              <div className="flex items-center gap-2 text-emerald-700">
+            <div className="bg-ct-teal/[0.14] border rounded-ct-lg py-2 px-4 sm:p-3 mt-2 sm:mt-4 mb-1 sm:px-5" style={{ borderBottom: '0.5px solid #d1fae5' }}>
+              <div className="flex items-center gap-2 text-ct-teal">
                 <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                 <span className="text-xs sm:text-sm font-medium">All caught up</span>
               </div>
@@ -1127,12 +1127,12 @@ export default function TradieDashboard() {
           );
           if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0) return null;
           return (
-            <div className="bg-white rounded-2xl border border-gray-200 p-3 sm:p-4 mt-2 sm:mt-4 mb-1 px-4 sm:px-6">
+            <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-3 sm:p-4 mt-2 sm:mt-4 mb-1 px-4 sm:px-6">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs md:text-sm font-semibold text-gray-900 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-amber-500" />
+                <p className="text-xs md:text-sm font-semibold text-ct-paper flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-ct-amber" />
                   Your Next Steps
-                  <span className="bg-amber-100 text-amber-700 text-[10px] md:text-xs font-medium px-2 md:px-3 py-0.5 md:py-1 rounded-full">
+                  <span className="bg-ct-amber/[0.13] text-ct-amber text-[10px] md:text-xs font-medium px-2 md:px-3 py-0.5 md:py-1 rounded-full">
                     {pendingJobs.length + inProgressJobs.length + unreadConvos.length + pendingConfirmations.length}
                   </span>
                 </p>
@@ -1140,12 +1140,12 @@ export default function TradieDashboard() {
               </div>
               <div className="space-y-2">
                 {pendingConfirmations.length > 0 && (
-                  <Link to="/schedule" className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors">
+                  <Link to="/schedule" className="flex items-center justify-between p-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm hover:bg-ct-amber/[0.13] transition-colors">
                     <div className="flex items-center gap-3">
-                      <RefreshCw className="w-4 h-4 text-amber-600" />
-                      <span className="text-sm text-gray-700">{pendingConfirmations.length} ongoing service session{pendingConfirmations.length !== 1 ? 's' : ''} need{pendingConfirmations.length === 1 ? 's' : ''} confirmation</span>
+                      <RefreshCw className="w-4 h-4 text-ct-amber" />
+                      <span className="text-sm text-ct-mute-2">{pendingConfirmations.length} ongoing service session{pendingConfirmations.length !== 1 ? 's' : ''} need{pendingConfirmations.length === 1 ? 's' : ''} confirmation</span>
                     </div>
-                    <span className="text-sm font-medium text-amber-700">Confirm &rarr;</span>
+                    <span className="text-sm font-medium text-ct-amber">Confirm &rarr;</span>
                   </Link>
                 )}
                 {pendingJobs.length > 0 && (
@@ -1165,12 +1165,12 @@ export default function TradieDashboard() {
                           ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                       }, 50);
                     }
-                  }} className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  }} className="w-full flex items-center justify-between p-3 bg-ct-surface-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors">
                     <div className="flex items-center gap-3">
-                      <Briefcase className="w-4 h-4 text-secondary-500" />
-                      <span className="text-sm text-gray-700">{pendingJobs.length} pending job{pendingJobs.length !== 1 ? 's' : ''} to review</span>
+                      <Briefcase className="w-4 h-4 text-ct-mute-2" />
+                      <span className="text-sm text-ct-mute-2">{pendingJobs.length} pending job{pendingJobs.length !== 1 ? 's' : ''} to review</span>
                     </div>
-                    <span className="text-sm font-medium text-emerald-600">
+                    <span className="text-sm font-medium text-ct-teal">
                       {pendingJobs.length === 1 ? 'View' : 'See all'} &rarr;
                     </span>
                   </button>
@@ -1187,23 +1187,23 @@ export default function TradieDashboard() {
                           ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                       }, 50);
                     }
-                  }} className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  }} className="w-full flex items-center justify-between p-3 bg-ct-surface-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors">
                     <div className="flex items-center gap-3">
-                      <Clock className="w-4 h-4 text-secondary-500" />
-                      <span className="text-sm text-gray-700">{inProgressJobs.length} job{inProgressJobs.length !== 1 ? 's' : ''} in progress</span>
+                      <Clock className="w-4 h-4 text-ct-mute-2" />
+                      <span className="text-sm text-ct-mute-2">{inProgressJobs.length} job{inProgressJobs.length !== 1 ? 's' : ''} in progress</span>
                     </div>
-                    <span className="text-sm font-medium text-emerald-600">
+                    <span className="text-sm font-medium text-ct-teal">
                       {inProgressJobs.length === 1 ? 'View' : 'See all'} &rarr;
                     </span>
                   </button>
                 )}
                 {unreadConvos.length > 0 && (
-                  <button onClick={() => { setActiveTab('messages'); setFlashMessages(true); setTimeout(() => setFlashMessages(false), 2000); }} className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <button onClick={() => { setActiveTab('messages'); setFlashMessages(true); setTimeout(() => setFlashMessages(false), 2000); }} className="w-full flex items-center justify-between p-3 bg-ct-surface-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors">
                     <div className="flex items-center gap-3">
-                      <MessageSquare className="w-4 h-4 text-emerald-500" />
-                      <span className="text-sm text-gray-700">{unreadConvos.length} unread message{unreadConvos.length !== 1 ? 's' : ''}</span>
+                      <MessageSquare className="w-4 h-4 text-ct-teal" />
+                      <span className="text-sm text-ct-mute-2">{unreadConvos.length} unread message{unreadConvos.length !== 1 ? 's' : ''}</span>
                     </div>
-                    <span className="text-sm font-medium text-emerald-600">Reply &rarr;</span>
+                    <span className="text-sm font-medium text-ct-teal">Reply &rarr;</span>
                   </button>
                 )}
               </div>
@@ -1215,23 +1215,23 @@ export default function TradieDashboard() {
 
         {/* Invoices ready to send */}
         {pendingInvoiceCount > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-lg px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                <FileText className="w-5 h-5 text-amber-700" />
+              <div className="w-10 h-10 rounded-full bg-ct-amber/[0.13] flex items-center justify-center flex-shrink-0">
+                <FileText className="w-5 h-5 text-ct-amber" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-amber-900">
+                <p className="text-sm font-semibold text-ct-paper">
                   {pendingInvoiceCount} {pendingInvoiceCount === 1 ? 'session' : 'sessions'} ready to invoice
                 </p>
-                <p className="text-xs text-amber-700">
+                <p className="text-xs text-ct-amber">
                   ~${pendingInvoiceTotal.toLocaleString()} waiting · review and send to get paid
                 </p>
               </div>
             </div>
             <button
               onClick={() => navigate('/work?tab=services')}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13]0 hover:bg-ct-amber text-ct-ink text-sm font-semibold rounded-ct-sm transition-colors"
             >
               Review &amp; Send
               <ArrowRight className="w-4 h-4" />
@@ -1275,15 +1275,15 @@ export default function TradieDashboard() {
             <div className="mt-6 mb-2">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-amber-600" />
+                  <div className="w-8 h-8 bg-ct-amber/[0.13] rounded-ct-sm flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-ct-amber" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900">New Leads</h3>
-                    <p className="text-xs text-gray-500">Jobs matching your trades</p>
+                    <h3 className="text-sm font-semibold text-ct-paper">New Leads</h3>
+                    <p className="text-xs text-ct-mute">Jobs matching your trades</p>
                   </div>
                 </div>
-                <Link to="/work" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                <Link to="/work" className="text-sm text-ct-mute-2 hover:text-ct-mute-2 font-medium">
                   View all &rarr;
                 </Link>
               </div>
@@ -1303,41 +1303,41 @@ export default function TradieDashboard() {
                       tabIndex={0}
                       onClick={() => navigate(`/work?job=${lead.id}`)}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/work?job=${lead.id}`); } }}
-                      className={`rounded-2xl overflow-hidden transition-all cursor-pointer ${
+                      className={`rounded-ct-lg overflow-hidden transition-all cursor-pointer ${
                         isFlashActive
-                          ? 'border border-warm-200 bg-white md:shadow-md hover:shadow-xl ring-1 ring-warm-100'
+                          ? 'border border-ct-amber/[0.34] bg-ct-surface md:shadow-md hover:shadow-xl ring-1 ring-ct-teal'
                           : isUrgent
-                          ? 'border border-red-200 bg-white md:shadow-md hover:shadow-xl'
+                          ? 'border border-ct-rose/[0.34] bg-ct-surface md:shadow-md hover:shadow-xl'
                           : isInvited
-                          ? 'border border-secondary-200 bg-white shadow-sm hover:shadow-md'
-                          : 'border border-gray-200 bg-white shadow-sm hover:shadow-lg hover:border-gray-300'
+                          ? 'border border-ct-line bg-ct-surface shadow-sm hover:shadow-md'
+                          : 'border border-ct-line bg-ct-surface shadow-sm hover:shadow-lg hover:border-ct-line'
                       }`}
                     >
                       <div className="flex">
                         <div className={`w-1.5 flex-shrink-0 ${
-                          isFlashActive ? 'bg-warm-500'
-                          : isUrgent ? 'bg-red-400'
-                          : isInvited ? 'bg-secondary-400'
-                          : 'bg-primary-400'
+                          isFlashActive ? 'bg-ct-teal'
+                          : isUrgent ? 'bg-ct-rose'
+                          : isInvited ? 'bg-ct-surface-2'
+                          : 'bg-ct-teal'
                         }`} />
                         <div className="flex-1 min-w-0">
                           <div className="px-3 sm:px-5 py-3 sm:py-4">
                             <div className="flex items-start justify-between gap-2 sm:gap-3 mb-2">
-                              <h3 className="text-sm sm:text-base font-bold text-gray-900 leading-snug capitalize">{title}</h3>
+                              <h3 className="text-sm sm:text-base font-bold text-ct-paper leading-snug capitalize">{title}</h3>
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 {isInvited && (
-                                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200">
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-surface-2 text-ct-mute-2 rounded-full text-xs font-medium border border-ct-line">
                                     Invited
                                   </span>
                                 )}
                                 {isFlashActive && (
-                                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-warm-500 text-white rounded-full text-xs font-medium shadow-sm animate-pulse">
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-teal text-ct-ink rounded-full text-xs font-medium shadow-sm animate-pulse">
                                     <Zap className="w-3 h-3" />
                                     Flash
                                   </span>
                                 )}
                                 {!isFlashActive && isUrgent && (
-                                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-50 text-red-700 rounded-full text-xs font-medium border border-red-200">
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-rose/[0.13] text-ct-rose rounded-full text-xs font-medium border border-ct-rose/[0.34]">
                                     <Zap className="w-3 h-3" />
                                     Urgent
                                   </span>
@@ -1347,39 +1347,39 @@ export default function TradieDashboard() {
 
                             <JobDescription text={desc} hideNotes maxItems={4} compact className="mb-3" />
 
-                            <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap text-xs text-gray-500">
+                            <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap text-xs text-ct-mute">
                               {category && (
-                                <span className="inline-flex items-center gap-1 text-gray-600 font-medium">
-                                  <Briefcase className="w-3 h-3 text-gray-400" />
+                                <span className="inline-flex items-center gap-1 text-ct-mute-2 font-medium">
+                                  <Briefcase className="w-3 h-3 text-ct-mute" />
                                   {category}
                                 </span>
                               )}
                               {lead.location_address && (
                                 <span className="inline-flex items-center gap-1">
-                                  <MapPin className="w-3 h-3 text-gray-400" />
+                                  <MapPin className="w-3 h-3 text-ct-mute" />
                                   {extractSuburb(lead.location_address) || 'Nearby'}
                                 </span>
                               )}
                               {lead.scheduled_date && (
                                 <span className="inline-flex items-center gap-1">
-                                  <CalendarDays className="w-3 h-3 text-secondary-500" />
-                                  <span className="text-secondary-700 font-medium">
+                                  <CalendarDays className="w-3 h-3 text-ct-mute-2" />
+                                  <span className="text-ct-mute-2 font-medium">
                                     {new Date(lead.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                                   </span>
                                 </span>
                               )}
                               {lead.budget_amount ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-ct-teal/[0.14] border border-ct-teal/30 text-ct-teal font-semibold">
                                   Budget ${lead.budget_amount.toLocaleString()}
                                 </span>
                               ) : lead.budget_type === 'request_quote' ? (
-                                <span className="inline-flex items-center gap-1 text-secondary-600 font-medium">
+                                <span className="inline-flex items-center gap-1 text-ct-mute-2 font-medium">
                                   <FileText className="w-3 h-3" />
                                   Quote Requested
                                 </span>
                               ) : null}
                               {typeof lead.parking_available === 'boolean' && (
-                                <span className={`inline-flex items-center gap-1 font-medium ${lead.parking_available ? 'text-emerald-600' : 'text-gray-500'}`}>
+                                <span className={`inline-flex items-center gap-1 font-medium ${lead.parking_available ? 'text-ct-teal' : 'text-ct-mute'}`}>
                                   <Car className="w-3 h-3" />
                                   {lead.parking_available ? 'Parking on site' : 'No parking'}
                                 </span>
@@ -1387,14 +1387,14 @@ export default function TradieDashboard() {
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between px-3 sm:px-5 py-3 border-t border-gray-100 gap-2" onClick={(e) => e.stopPropagation()}>
-                            <span className="text-[10px] sm:text-xs text-gray-400 truncate min-w-0">
+                          <div className="flex items-center justify-between px-3 sm:px-5 py-3 border-t border-ct-line-soft gap-2" onClick={(e) => e.stopPropagation()}>
+                            <span className="text-[10px] sm:text-xs text-ct-mute truncate min-w-0">
                               {clientName} · {formatDate(lead.created_at)}
                             </span>
                             <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                               <button
                                 onClick={() => dismissLead(lead.id)}
-                                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+                                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-ct-sm text-xs font-medium text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 transition-all"
                               >
                                 <XCircle className="w-3.5 h-3.5" />
                                 Pass
@@ -1404,7 +1404,7 @@ export default function TradieDashboard() {
                                   if (isLicenseExpired) { navigate(`/work?job=${lead.id}`); return; }
                                   setQuoteModalJob(lead);
                                 }}
-                                className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-5 py-1.5 rounded-lg text-xs font-semibold bg-warm-500 text-white hover:bg-warm-600 shadow-sm transition-all"
+                                className="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-5 py-1.5 rounded-ct-sm text-xs font-semibold bg-ct-teal text-ct-ink hover:brightness-110 shadow-sm transition-all"
                               >
                                 <FileText className="w-3.5 h-3.5" />
                                 <span className="hidden sm:inline">Submit </span>Quote
@@ -1422,8 +1422,8 @@ export default function TradieDashboard() {
         })()}
 
         {/* Tabbed Content */}
-        <div className="bg-white rounded-2xl border border-gray-200 mb-3 sm:mb-6 shadow-sm mt-3 sm:mt-6 sm:ring-1 ring-primary-100/50" data-tour="jobs-tab">
-          <div className="border-b border-gray-200">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line mb-3 sm:mb-6 shadow-sm mt-3 sm:mt-6 sm:ring-1 ring-ct-teal/50" data-tour="jobs-tab">
+          <div className="border-b border-ct-line">
             <div className="flex justify-center sm:justify-start gap-2 sm:gap-2 px-3 py-2 sm:p-4">
               {(['jobs', 'messages'] as TabType[]).map((tab) => {
                 const icons = { overview: Calendar, jobs: Briefcase, messages: MessageSquare };
@@ -1433,10 +1433,10 @@ export default function TradieDashboard() {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex items-center gap-2 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl text-sm sm:text-base font-semibold transition-all min-h-[44px] ${
+                    className={`flex items-center gap-2 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-ct-md text-sm sm:text-base font-semibold transition-all min-h-[44px] ${
                       activeTab === tab
-                        ? 'bg-warm-500 text-white shadow-md'
-                        : 'text-gray-600 hover:bg-gray-50 active:scale-95'
+                        ? 'bg-ct-teal text-ct-ink shadow-md'
+                        : 'text-ct-mute-2 hover:bg-ct-surface-2 active:scale-95'
                     }`}
                   >
                     <Icon className="w-5 h-5 sm:w-5 sm:h-5 flex-shrink-0" />
@@ -1515,13 +1515,13 @@ export default function TradieDashboard() {
                     <div className="mb-6">
                       <div className="flex items-center justify-between mb-3 flex-wrap gap-y-1">
                         <div className="flex items-center gap-2">
-                          <RefreshCw className="w-4 h-4 text-emerald-600" />
-                          <h2 className="text-base sm:text-lg font-bold text-gray-900">Ongoing Services</h2>
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                          <RefreshCw className="w-4 h-4 text-ct-teal" />
+                          <h2 className="text-base sm:text-lg font-bold text-ct-paper">Ongoing Services</h2>
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-ct-teal/[0.14] text-ct-teal">
                             {items.length}
                           </span>
                         </div>
-                        <Link to="/work?tab=services" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+                        <Link to="/work?tab=services" className="text-sm text-ct-teal hover:text-ct-teal font-medium">
                           Manage all &rarr;
                         </Link>
                       </div>
@@ -1530,31 +1530,31 @@ export default function TradieDashboard() {
                           <Link
                             key={item.key}
                             to="/work?tab=services"
-                            className="flex items-center p-3 bg-white border border-gray-200 rounded-xl hover:border-emerald-200 hover:bg-emerald-50/30 transition-colors group px-4 sm:px-3"
+                            className="flex items-center p-3 bg-ct-surface border border-ct-line rounded-ct-md hover:border-ct-teal/30 hover:bg-ct-teal/[0.14]/30 transition-colors group px-4 sm:px-3"
                           >
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-xs flex items-center justify-center flex-shrink-0">
+                              <div className="w-9 h-9 rounded-full bg-ct-teal/[0.14] text-ct-teal font-semibold text-xs flex items-center justify-center flex-shrink-0">
                                 {initials(item.clientName)}
                               </div>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <p className="text-sm text-gray-900 font-semibold truncate">{item.clientName}</p>
-                                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] sm:text-xs font-medium rounded-full flex-shrink-0">
+                                  <p className="text-sm text-ct-paper font-semibold truncate">{item.clientName}</p>
+                                  <span className="px-2 py-0.5 bg-ct-teal/[0.14] text-ct-teal text-[10px] sm:text-xs font-medium rounded-full flex-shrink-0">
                                     Active
                                   </span>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ct-mute">
                                   <span className="capitalize">{item.label}</span>
                                   {item.rate && item.rate > 0 && (
                                     <>
-                                      <span className="text-gray-300 hidden sm:inline">·</span>
-                                      <span className="text-emerald-600 font-medium">${item.rate.toFixed(0)}/visit</span>
+                                      <span className="text-ct-mute hidden sm:inline">·</span>
+                                      <span className="text-ct-teal font-medium">${item.rate.toFixed(0)}/visit</span>
                                     </>
                                   )}
                                   {item.nextDate && (
                                     <>
-                                      <span className="text-gray-300 hidden sm:inline">·</span>
-                                      <span className="font-medium text-gray-700">Next: {item.nextDate}</span>
+                                      <span className="text-ct-mute hidden sm:inline">·</span>
+                                      <span className="font-medium text-ct-mute-2">Next: {item.nextDate}</span>
                                     </>
                                   )}
                                 </div>
@@ -1564,7 +1564,7 @@ export default function TradieDashboard() {
                         ))}
                       </div>
                       {hidden > 0 && (
-                        <Link to="/work?tab=services" className="block text-center text-xs text-gray-500 hover:text-gray-700 mt-3 py-2">
+                        <Link to="/work?tab=services" className="block text-center text-xs text-ct-mute hover:text-ct-mute-2 mt-3 py-2">
                           +{hidden} more in Work Hub &rarr;
                         </Link>
                       )}
@@ -1583,8 +1583,8 @@ export default function TradieDashboard() {
                   return (
                     <>
                       <div className="flex items-center justify-between mb-2 sm:mb-4 pl-1 sm:pl-0">
-                        <h2 className="text-base sm:text-lg font-bold text-gray-900">{heading}</h2>
-                        <Link to="/work?tab=active" className="text-xs sm:text-sm text-primary-600 hover:text-primary-700 font-medium">
+                        <h2 className="text-base sm:text-lg font-bold text-ct-paper">{heading}</h2>
+                        <Link to="/work?tab=active" className="text-xs sm:text-sm text-ct-mute-2 hover:text-ct-mute-2 font-medium">
                           View all in Work Hub &rarr;
                         </Link>
                       </div>
@@ -1599,7 +1599,7 @@ export default function TradieDashboard() {
                             onAction={() => setShowAddSlot(true)}
                           />
                           <div className="text-center -mt-1 sm:mt-1 pb-1">
-                            <Link to="/work?tab=recruitment" className="inline-flex items-center justify-center min-h-[44px] px-2 text-xs text-primary-600 hover:text-primary-700 font-medium">
+                            <Link to="/work?tab=recruitment" className="inline-flex items-center justify-center min-h-[44px] px-2 text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium">
                               Or post a vacancy to find staff &rarr;
                             </Link>
                           </div>
@@ -1623,25 +1623,25 @@ export default function TradieDashboard() {
                           tabIndex={0}
                           onClick={() => { if (!isLicenseExpired) { setSelectedJob(job.id); setShowJobManagement(true); } }}
                           onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !isLicenseExpired) { e.preventDefault(); setSelectedJob(job.id); setShowJobManagement(true); } }}
-                          className={`border rounded-xl overflow-hidden transition-all hover:shadow-sm cursor-pointer ${
-                            job.priority === 'high' ? 'border-orange-200 bg-gradient-to-r from-orange-50/40 to-white' : 'border-gray-200 hover:border-primary-200'
+                          className={`border rounded-ct-md overflow-hidden transition-all hover:shadow-sm cursor-pointer ${
+                            job.priority === 'high' ? 'border-ct-amber/[0.34] bg-gradient-to-r from-ct-amber/40 to-white' : 'border-ct-line hover:border-ct-line'
                           }`}
                         >
                           <div className="px-4 pt-4 pb-3">
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex-1 min-w-0">
                                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
-                                  <h3 className="font-semibold text-gray-900 truncate capitalize max-w-[60vw] sm:max-w-none">{displayTitle}</h3>
+                                  <h3 className="font-semibold text-ct-paper truncate capitalize max-w-[60vw] sm:max-w-none">{displayTitle}</h3>
                                   <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-medium border flex-shrink-0 ${getStatusColor(job.status)}`}>
                                     {(job.status ?? 'pending').replace(/_/g, ' ')}
                                   </span>
                                   {job.priority === 'high' && (
-                                    <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full border border-orange-200 flex-shrink-0">
+                                    <span className="px-3 py-1 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-full border border-ct-amber/[0.34] flex-shrink-0">
                                       HIGH PRIORITY
                                     </span>
                                   )}
                                   {job.is_delayed && (
-                                    <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full border border-yellow-200 flex-shrink-0">
+                                    <span className="px-3 py-1 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-full border border-ct-amber/[0.34] flex-shrink-0">
                                       Delayed
                                     </span>
                                   )}
@@ -1651,7 +1651,7 @@ export default function TradieDashboard() {
                               <button
                                 onClick={(e) => { e.stopPropagation(); if (!isLicenseExpired) { setSelectedJob(job.id); setShowJobManagement(true); } }}
                                 disabled={isLicenseExpired}
-                                className={`p-2 rounded-lg transition-colors flex-shrink-0 ${isLicenseExpired ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                                className={`p-2 rounded-ct-sm transition-colors flex-shrink-0 ${isLicenseExpired ? 'text-ct-mute cursor-not-allowed' : 'text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2'}`}
                                 title={isLicenseExpired ? 'License expired' : 'Manage job'}
                               >
                                 <Settings className="w-4 h-4" />
@@ -1661,32 +1661,32 @@ export default function TradieDashboard() {
 
                           <div className="px-4 pb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
                             {category && (
-                              <span className="px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200 capitalize">
+                              <span className="px-3 py-1 bg-ct-surface-2 text-ct-mute-2 rounded-full text-xs font-medium border border-ct-line capitalize">
                                 {category}
                               </span>
                             )}
-                            <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                            <span className="flex items-center gap-1.5 text-xs text-ct-mute">
                               <Users className="w-3.5 h-3.5" />
                               {job.profiles?.full_name || 'Client'}
                             </span>
                             {job.location_address && (
-                              <span className="flex items-center gap-1.5 text-xs text-gray-500 truncate max-w-[200px]">
+                              <span className="flex items-center gap-1.5 text-xs text-ct-mute truncate max-w-[200px]">
                                 <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
                                 {job.location_address}
                               </span>
                             )}
                             {job.scheduled_time && (
-                              <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                              <span className="flex items-center gap-1.5 text-xs text-ct-mute">
                                 <Clock className="w-3.5 h-3.5" />
                                 {new Date(job.scheduled_time).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                               </span>
                             )}
-                            <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                            <span className="flex items-center gap-1.5 text-xs text-ct-mute">
                               <Calendar className="w-3 h-3" />
                               {new Date(job.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                             </span>
                             {job.budget_amount != null && job.budget_amount > 0 && (
-                              <span className="text-xs font-medium text-gray-900">
+                              <span className="text-xs font-medium text-ct-paper">
                                 ${job.budget_amount.toLocaleString()}
                               </span>
                             )}
@@ -1725,20 +1725,20 @@ export default function TradieDashboard() {
                               <div
                                 key={job.id}
                                 onClick={() => navigate(job.title?.includes('Recurring Service') ? '/schedule' : '/work?tab=active')}
-                                className="flex items-center gap-3 px-4 py-3 border border-gray-100 rounded-lg bg-gray-50/50 hover:bg-white hover:border-primary-200 cursor-pointer transition-all group"
+                                className="flex items-center gap-3 px-4 py-3 border border-ct-line-soft rounded-ct-sm bg-ct-surface-2/50 hover:bg-ct-surface hover:border-ct-line cursor-pointer transition-all group"
                               >
-                                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                <div className="w-8 h-8 bg-ct-teal/[0.14] rounded-full flex items-center justify-center flex-shrink-0">
+                                  <CheckCircle2 className="w-4 h-4 text-ct-teal" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="text-sm font-medium text-gray-900 truncate capitalize group-hover:text-primary-700 transition-colors">{displayTitle}</h4>
+                                  <h4 className="text-sm font-medium text-ct-paper truncate capitalize group-hover:text-ct-mute-2 transition-colors">{displayTitle}</h4>
                                   <div className="flex items-center gap-3 mt-0.5">
-                                    <span className="text-xs text-gray-500">{job.profiles?.full_name || 'Client'}</span>
+                                    <span className="text-xs text-ct-mute">{job.profiles?.full_name || 'Client'}</span>
                                     {completedDate && (
-                                      <span className="text-xs text-gray-400">{completedDate}</span>
+                                      <span className="text-xs text-ct-mute">{completedDate}</span>
                                     )}
                                     {job.location_address && (
-                                      <span className="text-xs text-gray-400 truncate max-w-[150px]">
+                                      <span className="text-xs text-ct-mute truncate max-w-[150px]">
                                         {job.location_address.split(',')[0]}
                                       </span>
                                     )}
@@ -1746,12 +1746,12 @@ export default function TradieDashboard() {
                                 </div>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); archiveJob(job.id); }}
-                                  className="p-1.5 text-gray-300 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
+                                  className="p-1.5 text-ct-mute hover:text-ct-mute hover:bg-ct-surface-2 rounded-ct-sm transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
                                   title="Archive job"
                                 >
                                   <Archive className="w-3.5 h-3.5" />
                                 </button>
-                                <span className="text-xs text-gray-400 group-hover:text-primary-500 transition-colors flex-shrink-0">
+                                <span className="text-xs text-ct-mute group-hover:text-ct-teal0 transition-colors flex-shrink-0">
                                   View &rarr;
                                 </span>
                               </div>
@@ -1761,7 +1761,7 @@ export default function TradieDashboard() {
                         {hiddenCompleted.length > 0 && (
                           <button
                             onClick={() => setShowAllCompleted(!showAllCompleted)}
-                            className="mt-3 text-xs text-secondary-600 hover:text-secondary-700 font-medium"
+                            className="mt-3 text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium"
                           >
                             {showAllCompleted ? 'Show less' : `Show ${hiddenCompleted.length} more completed job${hiddenCompleted.length !== 1 ? 's' : ''}`}
                           </button>
@@ -1786,23 +1786,23 @@ export default function TradieDashboard() {
                           return (
                             <div
                               key={job.id}
-                              className="flex items-center justify-between gap-3 px-4 py-3 border border-gray-100 rounded-lg bg-gray-50/50"
+                              className="flex items-center justify-between gap-3 px-4 py-3 border border-ct-line-soft rounded-ct-sm bg-ct-surface-2/50"
                             >
                               <div className="flex items-center gap-3 min-w-0">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                  job.status === 'cancelled' ? 'bg-red-50' : 'bg-orange-50'
+                                  job.status === 'cancelled' ? 'bg-ct-rose/[0.13]' : 'bg-ct-amber/[0.13]'
                                 }`}>
-                                  <XCircle className={`w-4 h-4 ${job.status === 'cancelled' ? 'text-red-400' : 'text-orange-400'}`} />
+                                  <XCircle className={`w-4 h-4 ${job.status === 'cancelled' ? 'text-ct-rose' : 'text-ct-amber'}`} />
                                 </div>
                                 <div className="min-w-0">
-                                  <h4 className="text-sm font-medium text-gray-500 truncate capitalize">{displayTitle}</h4>
-                                  <span className="text-xs text-gray-400 capitalize">{job.status} &middot; {job.profiles?.full_name || 'Client'}</span>
+                                  <h4 className="text-sm font-medium text-ct-mute truncate capitalize">{displayTitle}</h4>
+                                  <span className="text-xs text-ct-mute capitalize">{job.status} &middot; {job.profiles?.full_name || 'Client'}</span>
                                 </div>
                               </div>
                               {job.status === 'declined' && (
                                 <button
                                   onClick={() => { setJobToDelete(job.id); setShowDeleteConfirm(true); }}
-                                  className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                                  className="px-2.5 py-1 text-xs text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors flex-shrink-0"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -1821,7 +1821,7 @@ export default function TradieDashboard() {
             {/* ─── MESSAGES TAB ─── */}
             {activeTab === 'messages' && (
               <div>
-                <h2 className="text-lg font-bold text-gray-900 mb-4">Conversations</h2>
+                <h2 className="text-lg font-bold text-ct-paper mb-4">Conversations</h2>
                 {conversations.length === 0 ? (
                   <EmptyState
                     icon={MessageSquare}
@@ -1841,28 +1841,28 @@ export default function TradieDashboard() {
                         tabIndex={0}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/messages?conversation=${conv.id}`); } }}
                         onClick={() => navigate(`/messages?conversation=${conv.id}`)}
-                        className={`border rounded-xl p-4 hover:border-primary-300 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                          flashMessages && hasUnread ? 'animate-flash-highlight border-emerald-400' : 'border-gray-200'
+                        className={`border rounded-ct-md p-4 hover:border-ct-teal/30 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-ct-teal focus:ring-offset-2 ${
+                          flashMessages && hasUnread ? 'animate-flash-highlight border-ct-teal/30' : 'border-ct-line'
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-bold text-primary-600">{getConversationInitial(conv)}</span>
+                          <div className="w-10 h-10 bg-ct-surface-2 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-bold text-ct-mute-2">{getConversationInitial(conv)}</span>
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
-                              <h3 className="font-semibold text-gray-900">{getConversationTitle(conv)}</h3>
+                              <h3 className="font-semibold text-ct-paper">{getConversationTitle(conv)}</h3>
                               <button
                                 onClick={(e) => { e.stopPropagation(); setSelectedConversation(conv); setShowConversationSettings(true); }}
-                                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                className="p-1.5 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                               >
                                 <Settings className="w-4 h-4" />
                               </button>
                             </div>
                             {conv.lastMessage && (
                               <>
-                                <p className="text-sm text-gray-600 truncate">{redactSensitiveInfo(conv.lastMessage.content, false)}</p>
-                                <span className="text-xs text-gray-400 mt-1">{new Date(conv.lastMessage.created_at).toLocaleDateString()}</span>
+                                <p className="text-sm text-ct-mute-2 truncate">{redactSensitiveInfo(conv.lastMessage.content, false)}</p>
+                                <span className="text-xs text-ct-mute mt-1">{new Date(conv.lastMessage.created_at).toLocaleDateString()}</span>
                               </>
                             )}
                           </div>
@@ -1883,7 +1883,7 @@ export default function TradieDashboard() {
         </div>
 
         {/* Calendar */}
-        <div className="mt-6 bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3 sm:p-6 sm:ring-1 ring-primary-100/50" data-tour="calendar">
+        <div className="mt-6 bg-ct-surface rounded-ct-lg border border-ct-line shadow-sm px-4 py-3 sm:p-6 sm:ring-1 ring-ct-teal/50" data-tour="calendar">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8 max-w-full overflow-hidden">
             {/* Calendar */}
             <div className="lg:col-span-2 min-w-0">
@@ -1894,20 +1894,20 @@ export default function TradieDashboard() {
                     which keys on the bare .gap-2 class. */}
                 <div className="flex items-center justify-between gap-x-2 gap-y-2 flex-wrap">
                   <div className="flex items-center gap-1 sm:gap-4">
-                    <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1)); setSelectedDay(null); }} className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
-                      <ChevronLeft className="w-5 h-5 text-gray-600" />
+                    <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1)); setSelectedDay(null); }} className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center hover:bg-ct-surface-2 rounded-ct-sm transition-colors flex-shrink-0">
+                      <ChevronLeft className="w-5 h-5 text-ct-mute-2" />
                     </button>
-                    <h2 className="text-sm sm:text-lg font-semibold text-gray-900 whitespace-nowrap">
+                    <h2 className="text-sm sm:text-lg font-semibold text-ct-paper whitespace-nowrap">
                       {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                     </h2>
-                    <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1)); setSelectedDay(null); }} className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
-                      <ChevronRight className="w-5 h-5 text-gray-600" />
+                    <button onClick={() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1)); setSelectedDay(null); }} className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center hover:bg-ct-surface-2 rounded-ct-sm transition-colors flex-shrink-0">
+                      <ChevronRight className="w-5 h-5 text-ct-mute-2" />
                     </button>
                   </div>
-                  <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                  <div className="flex gap-1 bg-ct-surface-2 rounded-ct-sm p-1">
                     {(['day', 'week', 'month'] as const).map(v => (
                       <button key={v} onClick={() => setCalendarView(v)}
-                        className={`px-2 sm:px-3 py-1.5 min-h-[44px] text-xs font-medium rounded-md transition-colors ${calendarView === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                        className={`px-2 sm:px-3 py-1.5 min-h-[44px] text-xs font-medium rounded-md transition-colors ${calendarView === v ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute hover:text-ct-mute-2'}`}>
                         <span>{v.charAt(0).toUpperCase() + v.slice(1)}</span>
                       </button>
                     ))}
@@ -1916,17 +1916,17 @@ export default function TradieDashboard() {
 
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 w-full overflow-visible">
                   {isProUser ? (
-                    <button onClick={() => setShowAddSlot(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-emerald-600 text-white text-[10px] sm:text-sm font-medium rounded-xl hover:bg-emerald-700 transition-colors min-h-[36px] sm:min-h-[44px]">
+                    <button onClick={() => setShowAddSlot(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-ct-teal text-ct-ink text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-teal transition-colors min-h-[36px] sm:min-h-[44px]">
                       <Plus className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots
                     </button>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-warm-500 text-white text-[10px] sm:text-sm font-medium rounded-xl hover:bg-warm-600 transition-all min-h-[36px] sm:min-h-[44px]">
-                      <Crown className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots<span className="text-xs font-bold bg-white/20 px-1.5 py-0.5 rounded ml-1">PRO</span>
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-ct-teal text-ct-ink text-[10px] sm:text-sm font-medium rounded-ct-md hover:brightness-110 transition-all min-h-[36px] sm:min-h-[44px]">
+                      <Crown className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots<span className="text-xs font-bold bg-ct-surface/20 px-1.5 py-0.5 rounded ml-1">PRO</span>
                     </button>
                   )}
                   {isProUser ? (
                     <>
-                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-gray-200 text-gray-700 text-[10px] sm:text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[32px] sm:min-h-[44px]">
+                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-line text-ct-mute-2 text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[32px] sm:min-h-[44px]">
                       {/* Three states, not two. Offering "Connect" while the lookup
                           is unresolved told an already-connected tradie they were
                           disconnected, and sent them to Google consent instead of
@@ -1945,7 +1945,7 @@ export default function TradieDashboard() {
                     </button>
                     {/* Only offered once connected — nothing to strip out otherwise. */}
                     {calendarIntegration && (
-                      <button onClick={() => setShowUnsyncConfirm(true)} disabled={unsyncLoading || syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-gray-200 text-gray-700 text-[10px] sm:text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[32px] sm:min-h-[44px]">
+                      <button onClick={() => setShowUnsyncConfirm(true)} disabled={unsyncLoading || syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-line text-ct-mute-2 text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[32px] sm:min-h-[44px]">
                         {unsyncLoading ? (
                           <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">Unsyncing...</span><span className="sm:hidden">Unsync</span></>
                         ) : (
@@ -1955,22 +1955,22 @@ export default function TradieDashboard() {
                     )}
                     </>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-warm-300 text-warm-700 text-[10px] sm:text-sm font-medium rounded-xl hover:bg-warm-50 transition-colors min-h-[32px] sm:min-h-[44px]">
-                      <Calendar className="w-4 h-4" /><span className="hidden sm:inline">Google Calendar</span><span className="sm:hidden">Calendar</span><span className="text-xs font-bold bg-warm-100 text-warm-600 px-1.5 py-0.5 rounded">PRO</span>
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-teal/30 text-ct-amber text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-amber/[0.13] transition-colors min-h-[32px] sm:min-h-[44px]">
+                      <Calendar className="w-4 h-4" /><span className="hidden sm:inline">Google Calendar</span><span className="sm:hidden">Calendar</span><span className="text-xs font-bold bg-ct-amber/[0.13] text-ct-amber px-1.5 py-0.5 rounded">PRO</span>
                     </button>
                   )}
                   <div className="relative flex-shrink-0">
-                    <button onClick={() => setShowManageMenu(!showManageMenu)} className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors">
+                    <button onClick={() => setShowManageMenu(!showManageMenu)} className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center border border-ct-line text-ct-mute-2 rounded-ct-md hover:bg-ct-surface-2 transition-colors">
                       <MoreVertical className="w-5 h-5" />
                     </button>
                     {showManageMenu && (
                       <>
                         <div className="fixed inset-0 z-10" onClick={() => setShowManageMenu(false)} />
-                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-20 py-2">
-                          <button onClick={handleRemoveDups} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3">
-                            <Copy className="w-4 h-4 text-gray-400" />Remove Duplicates
+                        <div className="absolute right-0 mt-2 w-56 bg-ct-surface rounded-ct-md shadow-lg border border-ct-line z-20 py-2">
+                          <button onClick={handleRemoveDups} className="w-full px-4 py-2.5 text-left text-sm text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-3">
+                            <Copy className="w-4 h-4 text-ct-mute" />Remove Duplicates
                           </button>
-                          <button onClick={() => setConfirmClearAll(true)} className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3">
+                          <button onClick={() => setConfirmClearAll(true)} className="w-full px-4 py-2.5 text-left text-sm text-ct-rose hover:bg-ct-rose/[0.13] flex items-center gap-3">
                             <Trash2 className="w-4 h-4" />Clear All Upcoming
                           </button>
                         </div>
@@ -1982,7 +1982,7 @@ export default function TradieDashboard() {
 
               {slotsLoading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+                  <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
                 </div>
               ) : calendarView === 'day' ? (
                 /* Day View */
@@ -1996,11 +1996,11 @@ export default function TradieDashboard() {
                   return (
                     <div>
                       <div className="text-center mb-4">
-                        <p className="text-sm font-medium text-gray-700">
+                        <p className="text-sm font-medium text-ct-mute-2">
                           {viewDate.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </p>
                       </div>
-                      <div className="border border-gray-200 rounded-xl overflow-hidden">
+                      <div className="border border-ct-line rounded-ct-md overflow-hidden">
                         {hours.map(hour => {
                           const hourStr = `${hour.toString().padStart(2, '0')}:00`;
                           const label = hour < 12 ? `${hour}:00 AM` : hour === 12 ? '12:00 PM' : `${hour - 12}:00 PM`;
@@ -2010,13 +2010,13 @@ export default function TradieDashboard() {
                             return hour >= startH && hour < endH;
                           });
                           return (
-                            <div key={hourStr} className={`flex border-b border-gray-100 last:border-b-0 min-h-[44px] ${slotsInHour.length > 0 ? '' : 'bg-white'}`}>
-                              <div className="w-20 flex-shrink-0 px-3 py-2 text-xs text-gray-400 font-medium border-r border-gray-100">
+                            <div key={hourStr} className={`flex border-b border-ct-line-soft last:border-b-0 min-h-[44px] ${slotsInHour.length > 0 ? '' : 'bg-ct-surface'}`}>
+                              <div className="w-20 flex-shrink-0 px-3 py-2 text-xs text-ct-mute font-medium border-r border-ct-line-soft">
                                 {label}
                               </div>
                               <div className="flex-1 flex gap-1 p-1">
                                 {slotsInHour.map(s => (
-                                  <div key={s.id} className={`flex-1 rounded-md px-2 py-1 text-xs font-medium ${s.status === 'available' ? 'bg-green-100 text-green-700 border border-green-200' : s.status === 'booked' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
+                                  <div key={s.id} className={`flex-1 rounded-md px-2 py-1 text-xs font-medium ${s.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal border border-ct-teal/30' : s.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose border border-ct-rose/[0.34]' : 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line'}`}>
                                     {s.status === 'available' ? 'Available' : s.status === 'booked' ? 'Booked' : s.status}
                                   </div>
                                 ))}
@@ -2025,9 +2025,9 @@ export default function TradieDashboard() {
                           );
                         })}
                       </div>
-                      <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-gray-700">
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded flex-shrink-0" /><span className="font-medium">Available</span></div>
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-red-100 border-2 border-red-500 rounded flex-shrink-0" /><span className="font-medium">Booked</span></div>
+                      <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-ct-mute-2">
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded flex-shrink-0" /><span className="font-medium">Available</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded flex-shrink-0" /><span className="font-medium">Booked</span></div>
                       </div>
                     </div>
                   );
@@ -2055,24 +2055,24 @@ export default function TradieDashboard() {
                       <div className="relative">
                       <div className="overflow-x-auto overflow-y-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
                         <div className="min-w-[480px]">
-                          <div className="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[80px_repeat(7,1fr)] border border-gray-200 rounded-t-xl overflow-hidden">
-                            <div className="bg-gray-50 border-r border-b border-gray-200 p-2" />
+                          <div className="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[80px_repeat(7,1fr)] border border-ct-line rounded-t-xl overflow-hidden">
+                            <div className="bg-ct-surface-2 border-r border-b border-ct-line p-2" />
                             {weekDays.map(d => {
                               const isToday = d.toDateString() === new Date().toDateString();
                               return (
-                                <div key={d.toISOString()} className={`text-center py-2 border-r border-b border-gray-200 last:border-r-0 text-xs font-medium ${isToday ? 'bg-primary-50 text-primary-700' : 'bg-gray-50 text-gray-600'}`}>
+                                <div key={d.toISOString()} className={`text-center py-2 border-r border-b border-ct-line last:border-r-0 text-xs font-medium ${isToday ? 'bg-ct-surface-2 text-ct-mute-2' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
                                   <div>{dayNames[d.getDay()]}</div>
-                                  <div className={`text-base font-semibold ${isToday ? 'text-primary-700' : 'text-gray-900'}`}>{d.getDate()}</div>
+                                  <div className={`text-base font-semibold ${isToday ? 'text-ct-mute-2' : 'text-ct-paper'}`}>{d.getDate()}</div>
                                 </div>
                               );
                             })}
                           </div>
-                          <div className="border-x border-b border-gray-200 rounded-b-xl overflow-hidden">
+                          <div className="border-x border-b border-ct-line rounded-b-xl overflow-hidden">
                             {hours.map(hour => {
                               const label = hour < 12 ? `${hour}:00 AM` : hour === 12 ? '12:00 PM' : `${hour - 12}:00 PM`;
                               return (
-                                <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[80px_repeat(7,1fr)] border-b border-gray-100 last:border-b-0">
-                                  <div className="px-3 py-1.5 text-xs text-gray-400 font-medium border-r border-gray-100">{label}</div>
+                                <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[80px_repeat(7,1fr)] border-b border-ct-line-soft last:border-b-0">
+                                  <div className="px-3 py-1.5 text-xs text-ct-mute font-medium border-r border-ct-line-soft">{label}</div>
                                   {weekDays.map(d => {
                                     const isSameMonth = d.getMonth() === currentDate.getMonth() && d.getFullYear() === currentDate.getFullYear();
                                     const daySlotsW = isSameMonth ? getSlotsForDate(d.getDate()) : [];
@@ -2082,9 +2082,9 @@ export default function TradieDashboard() {
                                       return hour >= startH && hour < endH;
                                     });
                                     return (
-                                      <div key={d.toISOString()} className="border-r border-gray-100 last:border-r-0 p-0.5 min-h-[32px]">
+                                      <div key={d.toISOString()} className="border-r border-ct-line-soft last:border-r-0 p-0.5 min-h-[32px]">
                                         {slotsInHour.map(s => (
-                                          <div key={s.id} className={`rounded px-1 py-0.5 text-xs font-medium truncate ${s.status === 'available' ? 'bg-green-100 text-green-700' : s.status === 'booked' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
+                                          <div key={s.id} className={`rounded px-1 py-0.5 text-xs font-medium truncate ${s.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal' : s.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
                                             {s.status === 'available' ? 'Avail' : 'Bkd'}
                                           </div>
                                         ))}
@@ -2099,9 +2099,9 @@ export default function TradieDashboard() {
                       </div>
                       <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent sm:hidden" />
                       </div>
-                      <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-gray-700">
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded flex-shrink-0" /><span className="font-medium">Available</span></div>
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-red-100 border-2 border-red-500 rounded flex-shrink-0" /><span className="font-medium">Booked</span></div>
+                      <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-ct-mute-2">
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded flex-shrink-0" /><span className="font-medium">Available</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded flex-shrink-0" /><span className="font-medium">Booked</span></div>
                       </div>
                     </div>
                   );
@@ -2111,7 +2111,7 @@ export default function TradieDashboard() {
                 <>
                   <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2 w-full" role="row">
                     {dayNames.map((day) => (
-                      <div key={day} className="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2 truncate" role="columnheader">{day}</div>
+                      <div key={day} className="text-center text-[10px] sm:text-xs font-medium text-ct-mute py-1 sm:py-2 truncate" role="columnheader">{day}</div>
                     ))}
                   </div>
 
@@ -2139,21 +2139,21 @@ export default function TradieDashboard() {
                           onClick={() => setSelectedDay(day)}
                           aria-label={`${dateLabel}${slotSummary}`}
                           aria-pressed={isSelected}
-                          className={`aspect-square rounded-lg p-0 sm:p-1 text-xs sm:text-sm transition-all min-w-0 ${
-                            isSelected ? 'bg-warm-500 text-white ring-2 ring-primary-600 ring-offset-2'
+                          className={`aspect-square rounded-ct-sm p-0 sm:p-1 text-xs sm:text-sm transition-all min-w-0 ${
+                            isSelected ? 'bg-ct-teal text-ct-ink ring-2 ring-ct-teal ring-offset-2'
                             : isPast ? 'opacity-50 hover:opacity-75'
-                            : hasAvailable && hasBooked ? 'bg-gradient-to-br from-green-50 to-red-50 hover:from-green-100 hover:to-red-100'
-                            : hasAvailable ? 'bg-green-50 hover:bg-green-100'
-                            : hasBooked ? 'bg-red-50 hover:bg-red-100'
-                            : isToday ? 'ring-2 ring-primary-500 hover:bg-gray-100'
-                            : 'hover:bg-gray-100'
+                            : hasAvailable && hasBooked ? 'bg-gradient-to-br from-ct-teal to-ct-rose hover:from-ct-teal hover:to-ct-rose'
+                            : hasAvailable ? 'bg-ct-teal/[0.14] hover:bg-ct-teal/[0.14]'
+                            : hasBooked ? 'bg-ct-rose/[0.13] hover:bg-ct-rose/[0.13]'
+                            : isToday ? 'ring-2 ring-ct-teal0 hover:bg-ct-surface-2'
+                            : 'hover:bg-ct-surface-2'
                           }`}
                         >
                           <div className="flex flex-col items-center">
-                            <span className={`text-xs sm:text-sm font-medium ${isPast ? 'text-gray-400' : isSelected ? 'text-white' : isToday ? 'text-primary-600 font-bold' : 'text-gray-700'}`}>{day}</span>
+                            <span className={`text-xs sm:text-sm font-medium ${isPast ? 'text-ct-mute' : isSelected ? 'text-ct-ink' : isToday ? 'text-ct-mute-2 font-bold' : 'text-ct-mute-2'}`}>{day}</span>
                             <div className="flex gap-0.5 mt-0.5">
-                              {hasAvailable && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-green-300' : 'bg-green-500'}`} />}
-                              {hasBooked && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-red-300' : 'bg-red-500'}`} />}
+                              {hasAvailable && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-ct-teal/[0.14]' : 'bg-ct-teal/[0.14]0'}`} />}
+                              {hasBooked && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-ct-rose/[0.13]' : 'bg-ct-rose/[0.13]0'}`} />}
                             </div>
                           </div>
                         </button>
@@ -2161,17 +2161,17 @@ export default function TradieDashboard() {
                     })}
                   </div>
 
-                  <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-sm text-gray-700">
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded flex-shrink-0" /><span className="font-medium">Available</span></div>
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-red-100 border-2 border-red-500 rounded flex-shrink-0" /><span className="font-medium">Booked</span></div>
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-sm text-ct-mute-2">
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded flex-shrink-0" /><span className="font-medium">Available</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded flex-shrink-0" /><span className="font-medium">Booked</span></div>
                   </div>
                 </>
               )}
             </div>
 
             {/* Slot Sidebar */}
-            <div className="bg-gray-50 rounded-xl p-4 overflow-hidden mb-4 sm:mb-0">
-              <h3 className="font-semibold text-gray-900 mb-4">
+            <div className="bg-ct-surface-2 rounded-ct-md p-4 overflow-hidden mb-4 sm:mb-0">
+              <h3 className="font-semibold text-ct-paper mb-4">
                 {selectedDay
                   ? new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
                   : 'Upcoming Slots'}
@@ -2181,8 +2181,8 @@ export default function TradieDashboard() {
                 <button
                   onClick={() => !isLicenseExpired && setShowAddSlotForDay(true)}
                   disabled={isLicenseExpired}
-                  className={`w-full mb-4 flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed rounded-xl transition-all ${
-                    isLicenseExpired ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50' : 'border-gray-300 text-gray-600 hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50'
+                  className={`w-full mb-4 flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed rounded-ct-md transition-all ${
+                    isLicenseExpired ? 'border-ct-line text-ct-mute cursor-not-allowed bg-ct-surface-2' : 'border-ct-line text-ct-mute-2 hover:border-ct-teal hover:text-ct-mute-2 hover:bg-ct-surface-2'
                   }`}
                   title={isLicenseExpired ? 'License expired - renew to add slots' : ''}
                 >
@@ -2192,52 +2192,52 @@ export default function TradieDashboard() {
 
               <div className="space-y-3 max-h-80 overflow-y-auto">
                 {(selectedDay ? getSlotsForDate(selectedDay) : slots.filter((s) => new Date(s.start_time) > new Date()).slice(0, 10)).map((slot) => (
-                  <div key={slot.id} className={`p-3 rounded-xl border ${slot.status === 'available' ? 'bg-green-50 border-green-200' : slot.status === 'booked' ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+                  <div key={slot.id} className={`p-3 rounded-ct-md border ${slot.status === 'available' ? 'bg-ct-teal/[0.14] border-ct-teal/30' : slot.status === 'booked' ? 'bg-ct-rose/[0.13] border-ct-rose/[0.34]' : 'bg-ct-surface-2 border-ct-line'}`}>
                     <div className="flex items-start justify-between">
                       <div>
                         {!selectedDay && (
-                          <p className="font-medium text-gray-900 text-sm">
+                          <p className="font-medium text-ct-paper text-sm">
                             {new Date(slot.start_time).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
                           </p>
                         )}
-                        <p className={`text-gray-600 ${selectedDay ? 'text-sm font-medium text-gray-900' : 'text-xs mt-0.5'}`}>
+                        <p className={`text-ct-mute-2 ${selectedDay ? 'text-sm font-medium text-ct-paper' : 'text-xs mt-0.5'}`}>
                           {new Date(slot.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(slot.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
                       {slot.status === 'available' && (
                         <div className="flex items-center gap-1 flex-shrink-0">
-                          <button onClick={() => startEditingSlot(slot)} className="p-1.5 sm:p-2.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors min-w-[36px] sm:min-w-[44px] min-h-[36px] sm:min-h-[44px] flex items-center justify-center" title="Edit time" aria-label="Edit time slot">
+                          <button onClick={() => startEditingSlot(slot)} className="p-1.5 sm:p-2.5 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors min-w-[36px] sm:min-w-[44px] min-h-[36px] sm:min-h-[44px] flex items-center justify-center" title="Edit time" aria-label="Edit time slot">
                             <Pencil className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDeleteSlot(slot.id)} className="p-1.5 sm:p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors min-w-[36px] sm:min-w-[44px] min-h-[36px] sm:min-h-[44px] flex items-center justify-center" title="Delete slot" aria-label="Delete time slot">
+                          <button onClick={() => handleDeleteSlot(slot.id)} className="p-1.5 sm:p-2.5 text-ct-mute hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors min-w-[36px] sm:min-w-[44px] min-h-[36px] sm:min-h-[44px] flex items-center justify-center" title="Delete slot" aria-label="Delete time slot">
                             <X className="w-4 h-4" />
                           </button>
                         </div>
                       )}
                     </div>
-                    <span className={`mt-2 inline-block text-xs px-3 py-1 rounded-full font-medium ${slot.status === 'available' ? 'bg-green-100 text-green-700' : slot.status === 'booked' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
+                    <span className={`mt-2 inline-block text-xs px-3 py-1 rounded-full font-medium ${slot.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal' : slot.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
                       {slot.status}
                     </span>
                   </div>
                 ))}
 
                 {selectedDay && getSlotsForDate(selectedDay).length === 0 && (
-                  <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                    <p className="text-gray-600 text-sm font-medium mb-2">No slots for this day</p>
-                    <p className="text-gray-600 text-xs">Add one above to let clients know you're available</p>
+                  <div className="text-center py-6 bg-ct-surface-2 rounded-ct-sm border border-dashed border-ct-line">
+                    <p className="text-ct-mute-2 text-sm font-medium mb-2">No slots for this day</p>
+                    <p className="text-ct-mute-2 text-xs">Add one above to let clients know you're available</p>
                   </div>
                 )}
 
                 {!selectedDay && slots.filter((s) => new Date(s.start_time) > new Date()).length === 0 && (
-                  <div className="text-center py-6 bg-warm-50 rounded-lg border border-warm-200">
-                    <p className="text-warm-900 text-sm font-medium mb-2">No upcoming availability</p>
-                    <p className="text-warm-800 text-xs">Add slots to your calendar so clients can book you</p>
+                  <div className="text-center py-6 bg-ct-amber/[0.13] rounded-ct-sm border border-ct-amber/[0.34]">
+                    <p className="text-ct-teal text-sm font-medium mb-2">No upcoming availability</p>
+                    <p className="text-ct-paper text-xs">Add slots to your calendar so clients can book you</p>
                   </div>
                 )}
               </div>
 
               {selectedDay && (
-                <button onClick={() => setSelectedDay(null)} className="w-full mt-3 text-sm text-gray-500 hover:text-gray-700 py-2">
+                <button onClick={() => setSelectedDay(null)} className="w-full mt-3 text-sm text-ct-mute hover:text-ct-mute-2 py-2">
                   Show all upcoming slots
                 </button>
               )}
@@ -2246,35 +2246,35 @@ export default function TradieDashboard() {
         </div>
 
         {/* Quick Stats */}
-        <div data-tour="quick-stats" className="[&>div]:rounded-xl">
+        <div data-tour="quick-stats" className="[&>div]:rounded-ct-md">
         <CollapsibleSection
           title="Quick Stats"
           defaultOpen={true}
-          icon={<div className="w-7 h-7 bg-primary-100 rounded-lg flex items-center justify-center"><Clock className="w-4 h-4 text-primary-600" /></div>}
+          icon={<div className="w-7 h-7 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center"><Clock className="w-4 h-4 text-ct-mute-2" /></div>}
         >
           {/* Compact one-row stat strip: small icon on top, prominent number,
               tiny label. One subtle background, no per-card borders — the whole
               section stays ~100px instead of four stacked full-width cards. */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-gray-50 rounded-xl px-2 py-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-ct-surface-2 rounded-ct-md px-2 py-3">
             <div className="flex flex-col items-center gap-1 text-center p-1">
-              <Clock className="w-5 h-5 text-primary-500" />
-              <p className="text-2xl sm:text-[28px] font-bold text-navy-900 leading-tight tabular-nums">{totalAvailableHours.toFixed(0)}</p>
-              <p className="text-[11px] text-gray-500 leading-tight">Available<br className="sm:hidden" /> Hours</p>
+              <Clock className="w-5 h-5 text-ct-teal0" />
+              <p className="text-2xl sm:text-[28px] font-bold text-ct-paper leading-tight tabular-nums">{totalAvailableHours.toFixed(0)}</p>
+              <p className="text-[11px] text-ct-mute leading-tight">Available<br className="sm:hidden" /> Hours</p>
             </div>
             <div className="flex flex-col items-center gap-1 text-center p-1">
-              <Calendar className="w-5 h-5 text-secondary-500" />
-              <p className="text-2xl sm:text-[28px] font-bold text-navy-900 leading-tight tabular-nums">{bookedSlots}</p>
-              <p className="text-[11px] text-gray-500 leading-tight">Booked<br className="sm:hidden" /> Slots</p>
+              <Calendar className="w-5 h-5 text-ct-mute-2" />
+              <p className="text-2xl sm:text-[28px] font-bold text-ct-paper leading-tight tabular-nums">{bookedSlots}</p>
+              <p className="text-[11px] text-ct-mute leading-tight">Booked<br className="sm:hidden" /> Slots</p>
             </div>
-            <Link to="/work?tab=active" className="flex flex-col items-center gap-1 text-center p-1 rounded-lg hover:bg-white transition-colors">
-              <Users className="w-5 h-5 text-secondary-500" />
-              <p className="text-2xl sm:text-[28px] font-bold text-navy-900 leading-tight tabular-nums">{activeJobCount}</p>
-              <p className="text-[11px] text-gray-500 leading-tight">Active<br className="sm:hidden" /> Jobs</p>
+            <Link to="/work?tab=active" className="flex flex-col items-center gap-1 text-center p-1 rounded-ct-sm hover:bg-ct-surface transition-colors">
+              <Users className="w-5 h-5 text-ct-mute-2" />
+              <p className="text-2xl sm:text-[28px] font-bold text-ct-paper leading-tight tabular-nums">{activeJobCount}</p>
+              <p className="text-[11px] text-ct-mute leading-tight">Active<br className="sm:hidden" /> Jobs</p>
             </Link>
-            <button onClick={() => setShowSubscriptionModal(true)} className="flex flex-col items-center gap-1 text-center p-1 rounded-lg hover:bg-white transition-colors">
-              <Crown className={`w-5 h-5 ${isProUser ? 'text-secondary-500' : 'text-gray-400'}`} />
-              <p className="text-2xl sm:text-[28px] font-bold text-navy-900 leading-tight">{isProUser ? 'Pro' : 'Free'}</p>
-              <p className="text-[11px] text-gray-500 leading-tight">Your<br className="sm:hidden" /> Plan</p>
+            <button onClick={() => setShowSubscriptionModal(true)} className="flex flex-col items-center gap-1 text-center p-1 rounded-ct-sm hover:bg-ct-surface transition-colors">
+              <Crown className={`w-5 h-5 ${isProUser ? 'text-ct-mute-2' : 'text-ct-mute'}`} />
+              <p className="text-2xl sm:text-[28px] font-bold text-ct-paper leading-tight">{isProUser ? 'Pro' : 'Free'}</p>
+              <p className="text-[11px] text-ct-mute leading-tight">Your<br className="sm:hidden" /> Plan</p>
             </button>
           </div>
         </CollapsibleSection>
@@ -2282,36 +2282,36 @@ export default function TradieDashboard() {
 
         {/* Earnings Summary — only show when there's activity */}
         {(earnings.total > 0 || earnings.thisMonth > 0 || earnings.pendingJobs > 0) && (
-        <div className="mt-6 bg-white rounded-2xl border border-gray-200 p-5">
+        <div className="mt-6 bg-ct-surface rounded-ct-lg border border-ct-line p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-secondary-50 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-secondary-600" />
+            <div className="p-2 bg-ct-surface-2 rounded-ct-sm">
+              <TrendingUp className="w-5 h-5 text-ct-mute-2" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">Earnings Summary</h3>
+            <h3 className="text-lg font-semibold text-ct-paper">Earnings Summary</h3>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:gap-4" data-earnings-grid>
-            <div className="bg-secondary-50 rounded-xl p-2 sm:p-4 text-center">
-              <Calendar className="w-5 h-5 text-secondary-600 mx-auto mb-1" />
+            <div className="bg-ct-surface-2 rounded-ct-md p-2 sm:p-4 text-center">
+              <Calendar className="w-5 h-5 text-ct-mute-2 mx-auto mb-1" />
               {earnings.thisMonth > 0 ? (
-                <p className="text-base sm:text-xl font-bold text-secondary-700">${earnings.thisMonth.toLocaleString()}</p>
+                <p className="text-base sm:text-xl font-bold text-ct-mute-2">${earnings.thisMonth.toLocaleString()}</p>
               ) : (
-                <p className="text-sm text-secondary-600 font-medium mt-1">Quote on leads to start earning</p>
+                <p className="text-sm text-ct-mute-2 font-medium mt-1">Quote on leads to start earning</p>
               )}
-              <p className="text-xs text-secondary-600 mt-1">This Month</p>
+              <p className="text-xs text-ct-mute-2 mt-1">This Month</p>
             </div>
-            <div className="bg-white rounded-xl p-2 sm:p-4 text-center border border-gray-200">
-              <TrendingUp className="w-5 h-5 text-secondary-600 mx-auto mb-1" />
+            <div className="bg-ct-surface rounded-ct-md p-2 sm:p-4 text-center border border-ct-line">
+              <TrendingUp className="w-5 h-5 text-ct-mute-2 mx-auto mb-1" />
               {earnings.total > 0 ? (
-                <p className="text-base sm:text-xl font-bold text-gray-800">${earnings.total.toLocaleString()}</p>
+                <p className="text-base sm:text-xl font-bold text-ct-paper">${earnings.total.toLocaleString()}</p>
               ) : (
-                <p className="text-sm text-gray-500 font-medium mt-1">Complete your first job!</p>
+                <p className="text-sm text-ct-mute font-medium mt-1">Complete your first job!</p>
               )}
-              <p className="text-xs text-gray-500 mt-1">All Time</p>
+              <p className="text-xs text-ct-mute mt-1">All Time</p>
             </div>
-            <div className="bg-white rounded-xl p-2 sm:p-4 text-center border border-gray-200">
-              <Briefcase className="w-5 h-5 text-secondary-600 mx-auto mb-1" />
-              <p className="text-base sm:text-xl font-bold text-gray-800">{earnings.pendingJobs}</p>
-              <p className="text-xs text-gray-500 mt-1">Active Jobs</p>
+            <div className="bg-ct-surface rounded-ct-md p-2 sm:p-4 text-center border border-ct-line">
+              <Briefcase className="w-5 h-5 text-ct-mute-2 mx-auto mb-1" />
+              <p className="text-base sm:text-xl font-bold text-ct-paper">{earnings.pendingJobs}</p>
+              <p className="text-xs text-ct-mute mt-1">Active Jobs</p>
             </div>
           </div>
         </div>
@@ -2320,42 +2320,42 @@ export default function TradieDashboard() {
         {/* Recent Reviews — compact rows: avatar + name + stars + date on one
             line, with a one-line comment preview only when there's text. */}
         {recentReviews.length > 0 && (
-          <div className="mt-5 bg-white rounded-2xl border border-gray-200 px-4 sm:px-5 py-4">
+          <div className="mt-5 bg-ct-surface rounded-ct-lg border border-ct-line px-4 sm:px-5 py-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2.5">
-                <div className="p-1.5 bg-yellow-50 rounded-lg">
-                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-400" />
+                <div className="p-1.5 bg-ct-amber/[0.13] rounded-ct-sm">
+                  <Star className="w-4 h-4 text-ct-amber fill-yellow-400" />
                 </div>
-                <h3 className="text-base font-semibold text-gray-900">Recent Reviews</h3>
+                <h3 className="text-base font-semibold text-ct-paper">Recent Reviews</h3>
               </div>
-              <Link to="/my-profile" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+              <Link to="/my-profile" className="text-sm text-ct-mute-2 hover:text-ct-mute-2 font-medium">
                 View All
               </Link>
             </div>
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-ct-line-soft">
               {recentReviews.map((review) => (
                 <div key={review.id} className="py-2">
                   <div className="flex items-center gap-2.5 min-h-[32px]">
-                    <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
-                      <span className="text-[11px] font-bold text-primary-600">
+                    <div className="w-7 h-7 rounded-full bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                      <span className="text-[11px] font-bold text-ct-mute-2">
                         {(review.client_name || 'C').charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <span className="text-sm font-medium text-gray-900 truncate">{review.client_name || 'Client'}</span>
+                    <span className="text-sm font-medium text-ct-paper truncate">{review.client_name || 'Client'}</span>
                     <div className="flex items-center gap-px flex-shrink-0">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-3 h-3 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'}`}
+                          className={`w-3 h-3 ${i < review.rating ? 'fill-yellow-400 text-ct-amber' : 'text-ct-paper'}`}
                         />
                       ))}
                     </div>
-                    <span className="ml-auto text-[11px] text-gray-400 flex-shrink-0 tabular-nums">
+                    <span className="ml-auto text-[11px] text-ct-mute flex-shrink-0 tabular-nums">
                       {new Date(review.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                     </span>
                   </div>
                   {review.comment && review.comment.replace(/\[Tags:.*?\]/, '').trim() && (
-                    <p className="mt-0.5 pl-[38px] text-xs text-gray-500 line-clamp-1">
+                    <p className="mt-0.5 pl-[38px] text-xs text-ct-mute line-clamp-1">
                       {review.comment.replace(/\[Tags:.*?\]/, '').trim()}
                     </p>
                   )}
@@ -2373,25 +2373,25 @@ export default function TradieDashboard() {
 
         {/* Push Notification Banner — dismissible */}
         {showPushBanner && pushStatus !== 'granted' && pushStatus !== 'unsupported' && (
-          <div className="bg-gradient-to-r from-primary-50 to-warm-50 rounded-2xl border border-primary-200 p-5 mb-6 mt-6">
+          <div className="bg-gradient-to-r from-ct-teal to-ct-teal rounded-ct-lg border border-ct-line p-5 mb-6 mt-6">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <BellRing className="w-6 h-6 text-primary-600" />
+                <div className="w-12 h-12 bg-ct-surface-2 rounded-ct-md flex items-center justify-center flex-shrink-0">
+                  <BellRing className="w-6 h-6 text-ct-mute-2" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Never Miss an Urgent Lead</h3>
-                  <p className="text-sm text-gray-600 mt-0.5">Get instant desktop alerts when high-priority jobs are posted in your area.</p>
+                  <h3 className="font-semibold text-ct-paper">Never Miss an Urgent Lead</h3>
+                  <p className="text-sm text-ct-mute-2 mt-0.5">Get instant desktop alerts when high-priority jobs are posted in your area.</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={handleEnablePush}
                   disabled={pushEnabling || pushStatus === 'denied'}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-ct-md font-semibold text-sm transition-all ${
                     pushStatus === 'denied'
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-warm-500 text-white hover:bg-warm-600 shadow-sm hover:shadow-md active:scale-95'
+                      ? 'bg-ct-surface-2 text-ct-mute cursor-not-allowed'
+                      : 'bg-ct-teal text-ct-ink hover:brightness-110 shadow-sm hover:shadow-md active:scale-95'
                   }`}
                 >
                   {pushEnabling ? <Loader2 className="w-4 h-4 animate-spin" /> : pushStatus === 'denied' ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
@@ -2399,7 +2399,7 @@ export default function TradieDashboard() {
                 </button>
                 <button
                   onClick={() => { localStorage.setItem('dismissedPushBanner', 'true'); setShowPushBanner(false); }}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                  className="p-1.5 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -2418,32 +2418,32 @@ export default function TradieDashboard() {
       {editingSlot && (
         <>
           <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setEditingSlot(null)} />
-          <div role="dialog" aria-modal="true" onKeyDown={(e) => { if (e.key === 'Escape') setEditingSlot(null); }} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-md p-6">
+          <div role="dialog" aria-modal="true" onKeyDown={(e) => { if (e.key === 'Escape') setEditingSlot(null); }} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-ct-surface rounded-ct-lg shadow-2xl z-50 w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Edit Time Slot</h3>
-              <button onClick={() => setEditingSlot(null)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Close">
+              <h3 className="text-lg font-semibold text-ct-paper">Edit Time Slot</h3>
+              <button onClick={() => setEditingSlot(null)} className="p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors" aria-label="Close">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-ct-mute-2 mb-4">
                 {new Date(editingSlot.start_time).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
-                  <input type="time" step="300" value={editStartTime} onChange={(e) => setEditStartTime(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">Start Time</label>
+                  <input type="time" step="300" value={editStartTime} onChange={(e) => setEditStartTime(e.target.value)} className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">End Time</label>
-                  <input type="time" step="300" value={editEndTime} onChange={(e) => setEditEndTime(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">End Time</label>
+                  <input type="time" step="300" value={editEndTime} onChange={(e) => setEditEndTime(e.target.value)} className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal" />
                 </div>
               </div>
-              <p className="text-xs text-gray-400 mt-2">Select times in 5-minute intervals</p>
+              <p className="text-xs text-ct-mute mt-2">Select times in 5-minute intervals</p>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setEditingSlot(null)} className="flex-1 px-4 py-3 text-gray-700 font-medium border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
-              <button onClick={handleUpdateSlot} className="flex-1 px-4 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors">Save Changes</button>
+              <button onClick={() => setEditingSlot(null)} className="flex-1 px-4 py-3 text-ct-mute-2 font-medium border border-ct-line rounded-ct-md hover:bg-ct-surface-2 transition-colors">Cancel</button>
+              <button onClick={handleUpdateSlot} className="flex-1 px-4 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors">Save Changes</button>
             </div>
           </div>
         </>
@@ -2453,18 +2453,18 @@ export default function TradieDashboard() {
       {confirmClearAll && (
         <>
           <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setConfirmClearAll(false)} />
-          <div role="dialog" aria-modal="true" onKeyDown={(e) => { if (e.key === 'Escape') setConfirmClearAll(false); }} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-md p-6">
+          <div role="dialog" aria-modal="true" onKeyDown={(e) => { if (e.key === 'Escape') setConfirmClearAll(false); }} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-ct-surface rounded-ct-lg shadow-2xl z-50 w-full max-w-md p-6">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center"><Trash2 className="w-6 h-6 text-red-600" /></div>
+              <div className="w-12 h-12 bg-ct-rose/[0.13] rounded-full flex items-center justify-center"><Trash2 className="w-6 h-6 text-ct-rose" /></div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Clear All Upcoming Slots</h3>
-                <p className="text-sm text-gray-500">This action cannot be undone</p>
+                <h3 className="text-lg font-semibold text-ct-paper">Clear All Upcoming Slots</h3>
+                <p className="text-sm text-ct-mute">This action cannot be undone</p>
               </div>
             </div>
-            <p className="text-gray-600 mb-6">Are you sure you want to delete all upcoming available slots? Booked slots will not be affected.</p>
+            <p className="text-ct-mute-2 mb-6">Are you sure you want to delete all upcoming available slots? Booked slots will not be affected.</p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmClearAll(false)} className="flex-1 px-4 py-3 text-gray-700 font-medium border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
-              <button onClick={handleClearAll} className="flex-1 px-4 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-colors">Clear All</button>
+              <button onClick={() => setConfirmClearAll(false)} className="flex-1 px-4 py-3 text-ct-mute-2 font-medium border border-ct-line rounded-ct-md hover:bg-ct-surface-2 transition-colors">Cancel</button>
+              <button onClick={handleClearAll} className="flex-1 px-4 py-3 bg-ct-rose text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors">Clear All</button>
             </div>
           </div>
         </>
@@ -2474,32 +2474,32 @@ export default function TradieDashboard() {
       {showAddSlotForDay && selectedDay !== null && (
         <>
           <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowAddSlotForDay(false)} />
-          <div role="dialog" aria-modal="true" onKeyDown={(e) => { if (e.key === 'Escape') setShowAddSlotForDay(false); }} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-md p-6">
+          <div role="dialog" aria-modal="true" onKeyDown={(e) => { if (e.key === 'Escape') setShowAddSlotForDay(false); }} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-ct-surface rounded-ct-lg shadow-2xl z-50 w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Add Time Slot</h3>
-              <button onClick={() => setShowAddSlotForDay(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Close">
+              <h3 className="text-lg font-semibold text-ct-paper">Add Time Slot</h3>
+              <button onClick={() => setShowAddSlotForDay(false)} className="p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors" aria-label="Close">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="mb-6">
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-ct-mute-2 mb-4">
                 {new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
-                  <input type="time" step="300" value={newSlotStartTime} onChange={(e) => setNewSlotStartTime(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">Start Time</label>
+                  <input type="time" step="300" value={newSlotStartTime} onChange={(e) => setNewSlotStartTime(e.target.value)} className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">End Time</label>
-                  <input type="time" step="300" value={newSlotEndTime} onChange={(e) => setNewSlotEndTime(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">End Time</label>
+                  <input type="time" step="300" value={newSlotEndTime} onChange={(e) => setNewSlotEndTime(e.target.value)} className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal" />
                 </div>
               </div>
-              <p className="text-xs text-gray-400 mt-2">Select times in 5-minute intervals</p>
+              <p className="text-xs text-ct-mute mt-2">Select times in 5-minute intervals</p>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setShowAddSlotForDay(false)} className="flex-1 px-4 py-3 text-gray-700 font-medium border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
-              <button onClick={handleAddSlotForDay} disabled={newSlotStartTime >= newSlotEndTime || addingSlot} className="flex-1 px-4 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              <button onClick={() => setShowAddSlotForDay(false)} className="flex-1 px-4 py-3 text-ct-mute-2 font-medium border border-ct-line rounded-ct-md hover:bg-ct-surface-2 transition-colors">Cancel</button>
+              <button onClick={handleAddSlotForDay} disabled={newSlotStartTime >= newSlotEndTime || addingSlot} className="flex-1 px-4 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 {addingSlot ? <><Loader2 className="w-4 h-4 animate-spin" />Adding...</> : 'Add Slot'}
               </button>
             </div>
@@ -2547,15 +2547,15 @@ export default function TradieDashboard() {
       {showDeleteConfirm && (
         <>
           <div className="fixed inset-0 bg-black/50 z-50" onClick={() => !deleting && setShowDeleteConfirm(false)} />
-          <div role="dialog" aria-modal="true" onKeyDown={(e) => { if (e.key === 'Escape' && !deleting) setShowDeleteConfirm(false); }} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-md p-6">
+          <div role="dialog" aria-modal="true" onKeyDown={(e) => { if (e.key === 'Escape' && !deleting) setShowDeleteConfirm(false); }} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-ct-surface rounded-ct-lg shadow-2xl z-50 w-full max-w-md p-6">
             <div className="flex items-center justify-center mb-4">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center"><Trash2 className="w-6 h-6 text-red-600" /></div>
+              <div className="w-12 h-12 bg-ct-rose/[0.13] rounded-full flex items-center justify-center"><Trash2 className="w-6 h-6 text-ct-rose" /></div>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 text-center mb-2">Delete Job</h3>
-            <p className="text-gray-600 text-center mb-6">Are you sure you want to delete this job? This action cannot be undone.</p>
+            <h3 className="text-xl font-bold text-ct-paper text-center mb-2">Delete Job</h3>
+            <p className="text-ct-mute-2 text-center mb-6">Are you sure you want to delete this job? This action cannot be undone.</p>
             <div className="flex gap-3">
-              <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50">Cancel</button>
-              <button onClick={handleDeleteJob} disabled={deleting} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50">
+              <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting} className="flex-1 px-4 py-2 border border-ct-line text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors disabled:opacity-50">Cancel</button>
+              <button onClick={handleDeleteJob} disabled={deleting} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-ct-rose text-ct-ink rounded-ct-sm hover:brightness-110 transition-colors disabled:opacity-50">
                 {deleting ? <><Loader2 className="w-4 h-4 animate-spin" />Deleting...</> : <><Trash2 className="w-4 h-4" />Delete</>}
               </button>
             </div>
@@ -2565,8 +2565,8 @@ export default function TradieDashboard() {
 
       {/* Toast */}
       {toast.show && (
-        <div className={`fixed bottom-20 sm:bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm ${toast.isError ? 'bg-red-600' : 'bg-green-600'} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50 animate-slide-up`}>
-          <div className={`w-2 h-2 ${toast.isError ? 'bg-red-300' : 'bg-green-300'} rounded-full animate-pulse`} />
+        <div className={`fixed bottom-20 sm:bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm ${toast.isError ? 'bg-ct-rose' : 'bg-ct-teal'} text-ct-ink px-6 py-3 rounded-ct-md shadow-lg flex items-center gap-3 z-50 animate-slide-up`}>
+          <div className={`w-2 h-2 ${toast.isError ? 'bg-ct-rose/[0.13]' : 'bg-ct-teal/[0.14]'} rounded-full animate-pulse`} />
           <span className="font-medium">{toast.message}</span>
         </div>
       )}

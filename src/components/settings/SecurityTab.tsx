@@ -197,110 +197,110 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
     <div>
       <form onSubmit={handlePasswordChange} className="space-y-6 p-6 md:p-8" aria-label="Change ConnecTradie Password">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
-          <p className="text-sm text-gray-600 mb-6">Enter a new password for your account. Must be at least 8 characters with uppercase, lowercase, and a number.</p>
+          <h3 className="text-lg font-semibold text-ct-paper mb-4">Change Password</h3>
+          <p className="text-sm text-ct-mute-2 mb-6">Enter a new password for your account. Must be at least 8 characters with uppercase, lowercase, and a number.</p>
         </div>
 
         <div>
-          <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+          <label htmlFor="new-password" className="block text-sm font-medium text-ct-mute-2 mb-2">New Password</label>
           <div className="relative">
-            <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input id="new-password" type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Enter new password" className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500" aria-label="New password for ConnecTradie account" />
+            <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
+            <input id="new-password" type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Enter new password" className="w-full pl-12 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal" aria-label="New password for ConnecTradie account" />
           </div>
         </div>
 
         <div>
-          <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+          <label htmlFor="confirm-password" className="block text-sm font-medium text-ct-mute-2 mb-2">Confirm Password</label>
           <div className="relative">
-            <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input id="confirm-password" type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500" aria-label="Confirm new password for ConnecTradie account" />
+            <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
+            <input id="confirm-password" type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" className="w-full pl-12 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal" aria-label="Confirm new password for ConnecTradie account" />
           </div>
         </div>
 
         {passwordError && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-xl"><p className="text-sm text-red-600">{passwordError}</p></div>
+          <div className="p-4 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md"><p className="text-sm text-ct-rose">{passwordError}</p></div>
         )}
         {passwordSuccess && (
-          <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-            <CheckCircle2 className="w-5 h-5 text-green-600 animate-bounce" />
-            <p className="text-sm text-green-600 font-medium">Your account is now more secure!</p>
+          <div className="p-4 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+            <CheckCircle2 className="w-5 h-5 text-ct-teal animate-bounce" />
+            <p className="text-sm text-ct-teal font-medium">Your account is now more secure!</p>
           </div>
         )}
 
-        <button type="submit" disabled={passwordLoading || !newPassword || !confirmPassword} className="w-full py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 min-h-[44px]">
+        <button type="submit" disabled={passwordLoading || !newPassword || !confirmPassword} className="w-full py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 min-h-[44px]">
           {passwordLoading ? (<><Loader2 className="w-5 h-5 animate-spin" />Updating Password...</>) : (<><Lock className="w-5 h-5" />Update Password</>)}
         </button>
       </form>
 
       {/* Two-Factor Authentication */}
-      <div className="border-t border-gray-200 p-6 md:p-8">
+      <div className="border-t border-ct-line p-6 md:p-8">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-primary-50 rounded-lg">
-            <Shield className="w-5 h-5 text-primary-600" />
+          <div className="p-2 bg-ct-surface-2 rounded-ct-sm">
+            <Shield className="w-5 h-5 text-ct-mute-2" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Two-Factor Authentication</h3>
-            <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
+            <h3 className="text-lg font-semibold text-ct-paper">Two-Factor Authentication</h3>
+            <p className="text-sm text-ct-mute">Add an extra layer of security to your account</p>
           </div>
         </div>
 
         {mfaError && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-            <p className="text-sm text-red-600">{mfaError}</p>
+          <div className="mb-4 p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md">
+            <p className="text-sm text-ct-rose">{mfaError}</p>
           </div>
         )}
         {mfaSuccess && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-green-600" />
-            <p className="text-sm text-green-600 font-medium">{mfaSuccess}</p>
+          <div className="mb-4 p-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-ct-teal" />
+            <p className="text-sm text-ct-teal font-medium">{mfaSuccess}</p>
           </div>
         )}
 
         {mfaEnabled ? (
-          <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-xl">
+          <div className="flex items-center justify-between p-4 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md">
             <div className="flex items-center gap-3">
-              <Smartphone className="w-5 h-5 text-green-600" />
+              <Smartphone className="w-5 h-5 text-ct-teal" />
               <div>
-                <p className="text-sm font-medium text-green-800">2FA is enabled</p>
-                <p className="text-xs text-green-600">Your account is protected with an authenticator app</p>
+                <p className="text-sm font-medium text-ct-teal">2FA is enabled</p>
+                <p className="text-xs text-ct-teal">Your account is protected with an authenticator app</p>
               </div>
             </div>
             <button
               onClick={handleDisableMfa}
               disabled={mfaLoading}
-              className="px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-ct-rose bg-ct-surface border border-ct-rose/[0.34] rounded-ct-sm hover:bg-ct-rose/[0.13] disabled:opacity-50 transition-colors"
             >
               {mfaLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Disable'}
             </button>
           </div>
         ) : mfaQR ? (
           <div className="space-y-4">
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 text-center">
-              <p className="text-sm text-gray-700 mb-4">Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)</p>
-              <img src={mfaQR} alt="2FA QR Code" className="mx-auto w-48 h-48 rounded-lg border border-gray-200" />
+            <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md p-5 text-center">
+              <p className="text-sm text-ct-mute-2 mb-4">Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)</p>
+              <img src={mfaQR} alt="2FA QR Code" className="mx-auto w-48 h-48 rounded-ct-sm border border-ct-line" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Enter the 6-digit code from your app</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-2">Enter the 6-digit code from your app</label>
               <input
                 type="text"
                 value={mfaVerifyCode}
                 onChange={(e) => setMfaVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="000000"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-center text-xl tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-3 border border-ct-line rounded-ct-md text-center text-xl tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-ct-teal"
                 maxLength={6}
               />
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => { setMfaQR(null); setMfaVerifyCode(''); }}
-                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors"
+                className="flex-1 px-4 py-2.5 bg-ct-surface-2 text-ct-mute-2 rounded-ct-md text-sm font-medium hover:bg-ct-line transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleVerifyMfa}
                 disabled={mfaVerifyCode.length !== 6 || mfaLoading}
-                className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-medium hover:bg-primary-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-md text-sm font-medium hover:brightness-110 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
               >
                 {mfaLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
                 Verify & Enable
@@ -311,8 +311,8 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
           <button
             onClick={handleEnableMfa}
             disabled={mfaLoading}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 transition-colors hover:opacity-90"
-            style={{ backgroundColor: '#06D6A0', color: 'white' }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-ct-md text-sm font-medium disabled:opacity-50 transition-colors hover:opacity-90"
+            style={{ backgroundColor: 'var(--teal)', color: 'var(--ink)' }}
           >
             {mfaLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
             Enable Two-Factor Authentication
@@ -322,31 +322,31 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
 
       {/* Access Instructions PIN (tradies only) */}
       {isTradie && (
-        <div className="border-t border-gray-200 p-6 md:p-8">
+        <div className="border-t border-ct-line p-6 md:p-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-secondary-50 rounded-lg">
-              <KeyRound className="w-5 h-5 text-secondary-600" />
+            <div className="p-2 bg-ct-surface-2 rounded-ct-sm">
+              <KeyRound className="w-5 h-5 text-ct-mute-2" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Access Instructions PIN</h3>
-              <p className="text-sm text-gray-500">A 4-digit PIN that unlocks client gate codes, key locations, and alarm details on your jobs.</p>
+              <h3 className="text-lg font-semibold text-ct-paper">Access Instructions PIN</h3>
+              <p className="text-sm text-ct-mute">A 4-digit PIN that unlocks client gate codes, key locations, and alarm details on your jobs.</p>
             </div>
           </div>
 
           {accessPinSet === null ? (
-            <div className="flex items-center gap-2 text-sm text-gray-400"><Loader2 className="w-4 h-4 animate-spin" /> Checking…</div>
+            <div className="flex items-center gap-2 text-sm text-ct-mute"><Loader2 className="w-4 h-4 animate-spin" /> Checking…</div>
           ) : accessPinSet ? (
-            <div className="flex items-center justify-between p-4 bg-secondary-50 border border-secondary-100 rounded-xl">
+            <div className="flex items-center justify-between p-4 bg-ct-surface-2 border border-ct-line rounded-ct-md">
               <div className="flex items-center gap-3">
-                <Lock className="w-5 h-5 text-secondary-600" />
+                <Lock className="w-5 h-5 text-ct-mute-2" />
                 <div>
-                  <p className="text-sm font-medium text-secondary-800">Your access PIN is set</p>
-                  <p className="text-xs text-secondary-600">You’ll enter it whenever you view protected access details.</p>
+                  <p className="text-sm font-medium text-ct-mute-2">Your access PIN is set</p>
+                  <p className="text-xs text-ct-mute-2">You’ll enter it whenever you view protected access details.</p>
                 </div>
               </div>
               <button
                 onClick={() => setPinModalOpen(true)}
-                className="px-4 py-2 text-sm font-medium text-secondary-700 bg-white border border-secondary-200 rounded-lg hover:bg-secondary-50 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-ct-mute-2 bg-ct-surface border border-ct-line rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
               >
                 Change PIN
               </button>
@@ -354,8 +354,8 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
           ) : (
             <button
               onClick={() => setPinModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors hover:opacity-90"
-              style={{ backgroundColor: '#2E86DE', color: 'white' }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-ct-md text-sm font-medium transition-colors hover:opacity-90"
+              style={{ backgroundColor: 'var(--surface-2)', color: 'var(--paper)' }}
             >
               <KeyRound className="w-4 h-4" />
               Set up Access PIN
@@ -372,21 +372,21 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
       )}
 
       {/* Export My Data */}
-      <div className="border-t border-gray-200 p-6 md:p-8">
+      <div className="border-t border-ct-line p-6 md:p-8">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-secondary-50 rounded-lg">
-            <Download className="w-5 h-5 text-secondary-600" />
+          <div className="p-2 bg-ct-surface-2 rounded-ct-sm">
+            <Download className="w-5 h-5 text-ct-mute-2" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Export My Data</h3>
-            <p className="text-sm text-gray-500">Download all your personal data as a JSON file</p>
+            <h3 className="text-lg font-semibold text-ct-paper">Export My Data</h3>
+            <p className="text-sm text-ct-mute">Download all your personal data as a JSON file</p>
           </div>
         </div>
         <button
           onClick={handleExportData}
           disabled={exportLoading}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 transition-colors hover:opacity-90"
-          style={{ backgroundColor: '#2E86DE', color: 'white' }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-ct-md text-sm font-medium disabled:opacity-50 transition-colors hover:opacity-90"
+          style={{ backgroundColor: 'var(--surface-2)', color: 'var(--paper)' }}
         >
           {exportLoading ? (
             <>
@@ -402,21 +402,21 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
         </button>
       </div>
 
-      <div className="border-t border-gray-200 p-6 md:p-8">
-        <h3 className="text-lg font-semibold text-red-600 mb-2">Delete Account</h3>
-        <p className="text-sm text-gray-600 mb-4">Permanently delete your account and all associated data. This action cannot be undone.</p>
+      <div className="border-t border-ct-line p-6 md:p-8">
+        <h3 className="text-lg font-semibold text-ct-rose mb-2">Delete Account</h3>
+        <p className="text-sm text-ct-mute-2 mb-4">Permanently delete your account and all associated data. This action cannot be undone.</p>
 
         {!showDeleteConfirm ? (
-          <button onClick={() => setShowDeleteConfirm(true)} className="flex items-center gap-2 px-4 py-2.5 border border-red-200 text-red-600 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors">
+          <button onClick={() => setShowDeleteConfirm(true)} className="flex items-center gap-2 px-4 py-2.5 border border-ct-rose/[0.34] text-ct-rose rounded-ct-md text-sm font-medium hover:bg-ct-rose/[0.13] transition-colors">
             <Trash2 className="w-4 h-4" />Delete My Account
           </button>
         ) : (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-5 space-y-4">
+          <div className="bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md p-5 space-y-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="w-5 h-5 text-ct-rose flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-red-800">This will permanently delete:</p>
-                <ul className="mt-2 text-sm text-red-700 space-y-1 list-disc list-inside">
+                <p className="text-sm font-medium text-ct-paper">This will permanently delete:</p>
+                <ul className="mt-2 text-sm text-ct-rose space-y-1 list-disc list-inside">
                   <li>Your profile and personal information</li>
                   <li>All job history and messages</li>
                   <li>Reviews and ratings</li>
@@ -425,12 +425,12 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-red-800 mb-1.5">Type <span className="font-bold">DELETE</span> to confirm</label>
-              <input type="text" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} placeholder="DELETE" className="w-full px-4 py-2.5 border border-red-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white" />
+              <label className="block text-sm font-medium text-ct-paper mb-1.5">Type <span className="font-bold">DELETE</span> to confirm</label>
+              <input type="text" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} placeholder="DELETE" className="w-full px-4 py-2.5 border border-ct-rose/40 rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-rose0 bg-ct-surface" />
             </div>
             <div className="flex gap-3">
-              <button onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }} className="flex-1 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">Cancel</button>
-              <button onClick={handleDelete} disabled={deleteConfirmText !== 'DELETE' || deleteLoading} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              <button onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }} className="flex-1 px-4 py-2.5 bg-ct-surface border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors">Cancel</button>
+              <button onClick={handleDelete} disabled={deleteConfirmText !== 'DELETE' || deleteLoading} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-rose text-ct-ink rounded-ct-sm text-sm font-medium hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                 {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}Delete Permanently
               </button>
             </div>

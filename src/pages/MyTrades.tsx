@@ -116,12 +116,12 @@ export default function MyTrades() {
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Trades</h1>
-            <p className="text-gray-600 mt-1">Your personal team of trusted tradies</p>
+            <h1 className="text-2xl font-bold text-ct-paper">My Trades</h1>
+            <p className="text-ct-mute-2 mt-1">Your personal team of trusted tradies</p>
           </div>
           <Link
             to="/search"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
           >
             <Plus className="w-5 h-5" />
             Add Tradie
@@ -129,13 +129,13 @@ export default function MyTrades() {
         </div>
 
         <div className="mb-8">
-          <div className="flex items-center gap-3 sm:gap-6 border-b border-gray-200 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="flex items-center gap-3 sm:gap-6 border-b border-ct-line overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
             <button
               onClick={() => setFilter('all')}
               className={`py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 filter === 'all'
-                  ? 'border-warm-500 text-warm-600'
-                  : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                  ? 'border-ct-teal text-ct-amber'
+                  : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
               }`}
             >
               All ({savedTradies.length})
@@ -144,8 +144,8 @@ export default function MyTrades() {
               onClick={() => setFilter('available')}
               className={`py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 filter === 'available'
-                  ? 'border-warm-500 text-warm-600'
-                  : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                  ? 'border-ct-teal text-ct-amber'
+                  : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
               }`}
             >
               Available Now
@@ -154,8 +154,8 @@ export default function MyTrades() {
               onClick={() => setFilter('verified')}
               className={`py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 filter === 'verified'
-                  ? 'border-warm-500 text-warm-600'
-                  : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                  ? 'border-ct-teal text-ct-amber'
+                  : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
               }`}
             >
               Verified Only
@@ -166,8 +166,8 @@ export default function MyTrades() {
                 onClick={() => setFilter(cat!)}
                 className={`py-3 text-sm font-semibold whitespace-nowrap border-b-2 capitalize transition-colors ${
                   filter === cat
-                    ? 'border-warm-500 text-warm-600'
-                    : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                    ? 'border-ct-teal text-ct-amber'
+                    : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
                 }`}
               >
                 {cat}
@@ -177,35 +177,35 @@ export default function MyTrades() {
         </div>
 
         {error ? (
-          <div className="bg-white rounded-2xl border border-red-200 p-6 sm:p-12 text-center">
-            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Something went wrong</h3>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <button onClick={fetchSavedTradies} className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-rose/[0.34] p-6 sm:p-12 text-center">
+            <AlertCircle className="w-12 h-12 text-ct-rose mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-ct-paper mb-2">Something went wrong</h3>
+            <p className="text-ct-mute-2 mb-4">{error}</p>
+            <button onClick={fetchSavedTradies} className="inline-flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm hover:brightness-110 transition-colors">
               <RefreshCw className="w-4 h-4" />
               Try Again
             </button>
           </div>
         ) : loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+            <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
           </div>
         ) : filteredTradies.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-12 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-8 h-8 text-gray-400" />
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6 sm:p-12 text-center">
+            <div className="w-16 h-16 bg-ct-surface-2 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-ct-mute" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-lg font-medium text-ct-paper mb-2">
               {savedTradies.length === 0 ? 'Build your go-to trade list' : 'No tradies match this filter'}
             </h3>
-            <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+            <p className="text-ct-mute mb-6 max-w-sm mx-auto">
               {savedTradies.length === 0
                 ? 'Save the tradies you rate and they\u2019ll be one tap away next time something needs doing'
                 : 'Try a different filter, or save a few more tradies to your list'}
             </p>
             <Link
               to="/search"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
             >
               <Search className="w-5 h-5" />
               Find Tradies
@@ -213,7 +213,7 @@ export default function MyTrades() {
           </div>
         ) : (
           <>
-            <p className="text-sm text-gray-500 mb-4">{filteredTradies.length} tradies</p>
+            <p className="text-sm text-ct-mute mb-4">{filteredTradies.length} tradies</p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTradies.map((tradie) => (
                 <TradieCard

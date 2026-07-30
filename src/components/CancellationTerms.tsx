@@ -79,34 +79,34 @@ export default function CancellationTerms({
   if (!loaded || !terms) return null;
 
   return (
-    <div className={`rounded-xl border border-gray-200 bg-gray-50 p-4 ${className}`}>
+    <div className={`rounded-ct-md border border-ct-line bg-ct-surface-2 p-4 ${className}`}>
       <div className="flex items-start gap-3">
-        <ShieldCheck className="w-5 h-5 text-secondary-500 flex-shrink-0 mt-0.5" />
+        <ShieldCheck className="w-5 h-5 text-ct-mute-2 flex-shrink-0 mt-0.5" />
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-semibold text-gray-900">If the job is cancelled</h3>
-          {summary && <p className="mt-1 text-sm text-gray-600 leading-relaxed">{summary}</p>}
+          <h3 className="text-sm font-semibold text-ct-paper">If the job is cancelled</h3>
+          {summary && <p className="mt-1 text-sm text-ct-mute-2 leading-relaxed">{summary}</p>}
 
           <button
             type="button"
             onClick={() => setExpanded((prev) => !prev)}
             aria-expanded={expanded}
-            className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-secondary-600 hover:text-secondary-700 transition-colors min-h-[44px]"
+            className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-ct-mute-2 hover:text-ct-mute-2 transition-colors min-h-[44px]"
           >
             {expanded ? 'Hide full terms' : 'Read the full terms'}
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
 
           {expanded && (
-            <div className="mt-2 whitespace-pre-line text-sm text-gray-600 leading-relaxed">
+            <div className="mt-2 whitespace-pre-line text-sm text-ct-mute-2 leading-relaxed">
               {terms}
             </div>
           )}
 
           {acceptanceLabel && (
-            <p className="mt-3 text-xs text-gray-500">{acceptanceLabel}</p>
+            <p className="mt-3 text-xs text-ct-mute">{acceptanceLabel}</p>
           )}
           {version !== null && (
-            <p className="mt-1 text-xs text-gray-400">Cancellation terms v{version}</p>
+            <p className="mt-1 text-xs text-ct-mute">Cancellation terms v{version}</p>
           )}
         </div>
       </div>

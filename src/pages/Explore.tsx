@@ -288,57 +288,57 @@ const allCategories: Category[] = [
 ];
 
 const iconColors: Record<string, string> = {
-  sky: 'text-secondary-600',
-  amber: 'text-warm-600',
-  orange: 'text-warm-600',
-  slate: 'text-navy-600',
-  rose: 'text-warm-600',
-  emerald: 'text-secondary-600',
-  teal: 'text-secondary-600',
-  gray: 'text-gray-600',
-  red: 'text-red-600',
-  blue: 'text-secondary-600',
-  stone: 'text-stone-600',
-  brick: 'text-warm-700',
-  cyan: 'text-secondary-600',
-  wood: 'text-warm-700',
-  cream: 'text-neutral-600',
-  sand: 'text-yellow-700',
-  brown: 'text-warm-800',
-  walnut: 'text-warm-800',
-  steel: 'text-zinc-600',
-  yellow: 'text-yellow-600',
-  aqua: 'text-secondary-500',
-  lime: 'text-lime-600',
-  charcoal: 'text-gray-700',
-  earth: 'text-warm-700',
-  navy: 'text-secondary-700',
-  pink: 'text-warm-600',
-  metal: 'text-navy-600',
-  dark: 'text-gray-800',
-  indigo: 'text-primary-600',
-  silver: 'text-gray-500',
-  beige: 'text-stone-500',
-  gold: 'text-warm-600',
-  burgundy: 'text-warm-700',
+  sky: 'text-ct-mute-2',
+  amber: 'text-ct-amber',
+  orange: 'text-ct-amber',
+  slate: 'text-ct-mute-2',
+  rose: 'text-ct-amber',
+  emerald: 'text-ct-mute-2',
+  teal: 'text-ct-mute-2',
+  gray: 'text-ct-mute-2',
+  red: 'text-ct-rose',
+  blue: 'text-ct-mute-2',
+  stone: 'text-ct-mute-2',
+  brick: 'text-ct-amber',
+  cyan: 'text-ct-mute-2',
+  wood: 'text-ct-amber',
+  cream: 'text-ct-mute-2',
+  sand: 'text-ct-amber',
+  brown: 'text-ct-paper',
+  walnut: 'text-ct-paper',
+  steel: 'text-ct-mute-2',
+  yellow: 'text-ct-amber',
+  aqua: 'text-ct-mute-2',
+  lime: 'text-ct-teal',
+  charcoal: 'text-ct-mute-2',
+  earth: 'text-ct-amber',
+  navy: 'text-ct-mute-2',
+  pink: 'text-ct-amber',
+  metal: 'text-ct-mute-2',
+  dark: 'text-ct-paper',
+  indigo: 'text-ct-mute-2',
+  silver: 'text-ct-mute',
+  beige: 'text-ct-mute-20',
+  gold: 'text-ct-amber',
+  burgundy: 'text-ct-amber',
 };
 
 export default function Explore() {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-ct-surface">
       <SEO
         title="Explore All Trade Categories"
         description="Browse 35+ trade categories on ConnecTradie. From plumbers and electricians to solar installers and private chefs — find the right professional for any job in Australia."
         canonical="/explore"
       />
-      <header className="sticky top-0 z-30 bg-white border-b border-gray-100">
+      <header className="sticky top-0 z-30 bg-ct-surface border-b border-ct-line-soft">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center">
               <span className="text-2xl font-extrabold tracking-tight text-black">
-                Connec<span className="text-warm-500">Tradie</span>
+                Connec<span className="text-ct-teal">Tradie</span>
               </span>
             </Link>
 
@@ -346,7 +346,7 @@ export default function Explore() {
               {user ? (
                 <Link
                   to="/dashboard"
-                  className="px-4 py-2 bg-warm-500 text-white font-medium rounded-lg hover:bg-warm-600 transition-colors"
+                  className="px-4 py-2 bg-ct-teal text-ct-ink font-medium rounded-ct-sm hover:brightness-110 transition-colors"
                 >
                   Dashboard
                 </Link>
@@ -354,13 +354,13 @@ export default function Explore() {
                 <>
                   <Link
                     to="/login"
-                    className="px-4 py-2 text-gray-700 font-medium hover:text-gray-900 transition-colors"
+                    className="px-4 py-2 text-ct-mute-2 font-medium hover:text-ct-paper transition-colors"
                   >
                     Sign In
                   </Link>
                   <Link
                     to="/register"
-                    className="px-4 py-2 bg-warm-500 text-white font-medium rounded-lg hover:bg-warm-600 transition-colors"
+                    className="px-4 py-2 bg-ct-teal text-ct-ink font-medium rounded-ct-sm hover:brightness-110 transition-colors"
                   >
                     Get Started
                   </Link>
@@ -374,10 +374,10 @@ export default function Explore() {
       <main id="main-content" className="py-12 sm:py-16">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-bold text-ct-paper tracking-tight">
               Explore All Trade Categories
             </h1>
-            <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="mt-4 text-lg text-ct-mute-2 max-w-2xl mx-auto">
               Find the right professional for any job. Browse by category or search for specific services.
             </p>
           </div>
@@ -385,22 +385,22 @@ export default function Explore() {
           <div className="space-y-5">
             {allCategories.map((category) => {
               const Icon = category.icon;
-              const iconColor = iconColors[category.color] || 'text-secondary-600';
+              const iconColor = iconColors[category.color] || 'text-ct-mute-2';
 
               return (
                 <div
                   key={category.value}
-                  className="bg-gray-100 rounded-xl border border-gray-200 p-5 sm:p-6"
+                  className="bg-ct-surface-2 rounded-ct-md border border-ct-line p-5 sm:p-6"
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-white rounded-lg border border-gray-200 flex items-center justify-center shadow-sm">
+                    <div className="w-10 h-10 bg-ct-surface rounded-ct-sm border border-ct-line flex items-center justify-center shadow-sm">
                       <Icon className={`w-5 h-5 ${iconColor}`} />
                     </div>
                     <div>
-                      <h2 className="text-lg font-bold text-secondary-900">{category.title}</h2>
+                      <h2 className="text-lg font-bold text-ct-paper">{category.title}</h2>
                       <Link
                         to={`/search?trade=${category.value}`}
-                        className="text-xs text-primary-600 font-medium hover:underline inline-flex items-center gap-1"
+                        className="text-xs text-ct-mute-2 font-medium hover:underline inline-flex items-center gap-1"
                       >
                         View all tradies
                         <ArrowRight className="w-3 h-3" />
@@ -419,7 +419,7 @@ export default function Explore() {
                       <Link
                         key={service}
                         to={`/search?trade=${category.value}&q=${encodeURIComponent(service)}`}
-                        className="bg-white px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium transition-all hover:bg-warm-400 hover:border-warm-400 hover:text-gray-900 hover:shadow-sm"
+                        className="bg-ct-surface px-3 py-1.5 rounded-ct-sm border border-ct-line text-ct-mute-2 text-sm font-medium transition-all hover:bg-ct-teal hover:border-ct-teal hover:text-ct-paper hover:shadow-sm"
                       >
                         {service}
                       </Link>
@@ -431,10 +431,10 @@ export default function Explore() {
           </div>
 
           <div className="mt-16 text-center">
-            <p className="text-gray-600 mb-4">Can't find what you're looking for?</p>
+            <p className="text-ct-mute-2 mb-4">Can't find what you're looking for?</p>
             <Link
               to="/search"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
             >
               Browse All Tradies
               <ArrowRight className="w-5 h-5" />
@@ -443,11 +443,11 @@ export default function Explore() {
         </div>
       </main>
 
-      <footer className="bg-gray-900 text-gray-400 py-8 mt-12">
+      <footer className="bg-ct-surface text-ct-mute py-8 mt-12">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <Link to="/" className="inline-flex items-center mb-4">
-            <span className="text-2xl font-extrabold tracking-tight text-white">
-              Connec<span className="text-warm-500">Tradie</span>
+            <span className="text-2xl font-extrabold tracking-tight text-ct-ink">
+              Connec<span className="text-ct-teal">Tradie</span>
             </span>
           </Link>
           <p className="text-sm">Connecting Australians with trusted trade professionals.</p>

@@ -135,23 +135,23 @@ export default function BonusModal({ isOpen, onClose, jobId, tradieName, jobLabe
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+        className="bg-ct-surface rounded-ct-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between p-5 border-b border-gray-100">
+        <div className="flex items-start justify-between p-5 border-b border-ct-line-soft">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-warm-100 flex items-center justify-center">
-              <Gift className="w-5 h-5 text-warm-600" />
+            <div className="w-10 h-10 rounded-ct-md bg-ct-amber/[0.13] flex items-center justify-center">
+              <Gift className="w-5 h-5 text-ct-amber" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Give an extra payment</h2>
-              <p className="text-xs text-gray-500">
+              <h2 className="text-lg font-bold text-ct-paper">Give an extra payment</h2>
+              <p className="text-xs text-ct-mute">
                 {tradieName ? `For ${tradieName}` : 'For your tradie'}
                 {jobLabel ? ` · ${jobLabel}` : ''}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+          <button onClick={onClose} className="p-1.5 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -159,26 +159,26 @@ export default function BonusModal({ isOpen, onClose, jobId, tradieName, jobLabe
         <div className="p-5 space-y-4">
           {loadingPayment ? (
             <div className="flex justify-center py-10">
-              <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
+              <Loader2 className="w-6 h-6 text-ct-mute animate-spin" />
             </div>
           ) : fetchError ? (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700">{fetchError}</p>
+            <div className="bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm p-3 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-ct-rose flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-ct-rose">{fetchError}</p>
             </div>
           ) : (
             <>
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Quick amounts</p>
+                <p className="text-xs font-semibold text-ct-mute uppercase tracking-wide mb-2">Quick amounts</p>
                 <div className="grid grid-cols-4 gap-2">
                   {PRESET_AMOUNTS.map((v) => (
                     <button
                       key={v}
                       onClick={() => setAmountInput(String(v))}
-                      className={`py-2 rounded-lg text-sm font-semibold transition-colors border ${
+                      className={`py-2 rounded-ct-sm text-sm font-semibold transition-colors border ${
                         amountInput === String(v)
-                          ? 'bg-warm-500 text-white border-warm-500'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-warm-300 hover:bg-warm-50'
+                          ? 'bg-ct-teal text-ct-ink border-ct-teal'
+                          : 'bg-ct-surface text-ct-mute-2 border-ct-line hover:border-ct-teal/30 hover:bg-ct-amber/[0.13]'
                       }`}
                     >
                       ${v}
@@ -188,11 +188,11 @@ export default function BonusModal({ isOpen, onClose, jobId, tradieName, jobLabe
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                  Custom amount {tradieIsGstRegistered && <span className="normal-case text-gray-400 font-normal">(ex. GST)</span>}
+                <label className="block text-xs font-semibold text-ct-mute uppercase tracking-wide mb-2">
+                  Custom amount {tradieIsGstRegistered && <span className="normal-case text-ct-mute font-normal">(ex. GST)</span>}
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ct-mute text-sm font-medium">$</span>
                   <input
                     type="number"
                     min="1"
@@ -200,33 +200,33 @@ export default function BonusModal({ isOpen, onClose, jobId, tradieName, jobLabe
                     value={amountInput}
                     onChange={(e) => setAmountInput(e.target.value)}
                     placeholder="Enter an extra amount"
-                    className="w-full pl-7 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-warm-400 bg-white"
+                    className="w-full pl-7 pr-3 py-2.5 border border-ct-line rounded-ct-sm text-sm text-ct-paper focus:outline-none focus:ring-2 focus:ring-ct-teal bg-ct-surface"
                   />
                 </div>
                 {capDollars != null && (
-                  <p className="text-[11px] text-gray-400 mt-1">
+                  <p className="text-[11px] text-ct-mute mt-1">
                     Max ${capDollars.toFixed(2)} (2× the original payment).
                   </p>
                 )}
               </div>
 
               {validAmount && !exceedsCap && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs space-y-1">
-                  <div className="flex justify-between text-gray-600">
+                <div className="bg-ct-surface-2 border border-ct-line rounded-ct-sm p-3 text-xs space-y-1">
+                  <div className="flex justify-between text-ct-mute-2">
                     <span>Extra payment</span>
                     <span>${amount.toFixed(2)}</span>
                   </div>
                   {tradieIsGstRegistered && (
-                    <div className="flex justify-between text-gray-600">
+                    <div className="flex justify-between text-ct-mute-2">
                       <span>GST (10%)</span>
                       <span>${gst.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-ct-mute-2">
                     <span>Processing fee</span>
                     <span>${processingFee.toFixed(2)}</span>
                   </div>
-                  <div className="border-t border-gray-200 pt-1.5 mt-1.5 flex justify-between font-semibold text-gray-900">
+                  <div className="border-t border-ct-line pt-1.5 mt-1.5 flex justify-between font-semibold text-ct-paper">
                     <span>You'll be charged</span>
                     <span>${totalCharge.toFixed(2)}</span>
                   </div>
@@ -234,40 +234,40 @@ export default function BonusModal({ isOpen, onClose, jobId, tradieName, jobLabe
               )}
 
               {exceedsCap && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-amber-700">
+                <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm p-3 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-ct-amber flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-ct-amber">
                     Extra payments are capped at ${capDollars!.toFixed(2)} for this job. Please lower the amount.
                   </p>
                 </div>
               )}
 
-              <div className="flex items-start gap-2 text-xs text-gray-500">
-                <Shield className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2 text-xs text-ct-mute">
+                <Shield className="w-3.5 h-3.5 text-ct-mute flex-shrink-0 mt-0.5" />
                 <span>Funds are sent directly to your tradie via Stripe — no escrow hold.</span>
               </div>
 
               {submitError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-700">{submitError}</p>
+                <div className="bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm p-3 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-ct-rose flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-ct-rose">{submitError}</p>
                 </div>
               )}
             </>
           )}
         </div>
 
-        <div className="flex gap-2 p-5 border-t border-gray-100">
+        <div className="flex gap-2 p-5 border-t border-ct-line-soft">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+            className="flex-1 px-4 py-2.5 bg-ct-surface border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="flex-1 px-4 py-2.5 bg-warm-500 text-white rounded-lg text-sm font-semibold hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4" />}
             Send extra payment

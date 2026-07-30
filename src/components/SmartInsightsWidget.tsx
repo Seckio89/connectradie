@@ -163,10 +163,10 @@ export default function SmartInsightsWidget() {
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl border border-amber-200 p-6 animate-pulse">
+      <div className="bg-gradient-to-r from-ct-amber to-ct-amber rounded-ct-lg border border-ct-amber/[0.34] p-6 animate-pulse">
         <div className="flex items-center gap-3">
-          <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />
-          <span className="text-sm text-amber-700">Analyzing your performance...</span>
+          <Loader2 className="w-5 h-5 text-ct-amber animate-spin" />
+          <span className="text-sm text-ct-amber">Analyzing your performance...</span>
         </div>
       </div>
     );
@@ -178,41 +178,41 @@ export default function SmartInsightsWidget() {
 
   return (
     <div
-      className={`rounded-2xl border p-5 transition-all hover:shadow-md ${
+      className={`rounded-ct-lg border p-5 transition-all hover:shadow-md ${
         isPositive
-          ? 'bg-gradient-to-r from-secondary-50 via-secondary-50 to-secondary-50 border-secondary-200'
-          : 'bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-amber-200'
+          ? 'bg-gradient-to-r from-ct-surface-2 via-ct-surface-2 to-ct-surface-2 border-ct-line'
+          : 'bg-gradient-to-r from-ct-amber via-ct-amber to-ct-amber border-ct-amber/[0.34]'
       }`}
     >
       <div className="flex items-start gap-4">
         <div
-          className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
-            isPositive ? 'bg-emerald-100' : 'bg-amber-100'
+          className={`w-11 h-11 rounded-ct-md flex items-center justify-center flex-shrink-0 ${
+            isPositive ? 'bg-ct-teal/[0.14]' : 'bg-ct-amber/[0.13]'
           }`}
         >
           {isPositive ? (
-            <TrendingUp className="w-5 h-5 text-emerald-600" />
+            <TrendingUp className="w-5 h-5 text-ct-teal" />
           ) : (
-            <Lightbulb className="w-5 h-5 text-amber-600" />
+            <Lightbulb className="w-5 h-5 text-ct-amber" />
           )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5">
             <h3
               className={`text-sm font-bold uppercase tracking-wide ${
-                isPositive ? 'text-emerald-700' : 'text-amber-700'
+                isPositive ? 'text-ct-teal' : 'text-ct-amber'
               }`}
             >
               Smart Insight
             </h3>
           </div>
-          <p className="text-gray-800 text-[15px] leading-relaxed">{insight.text}</p>
+          <p className="text-ct-paper text-[15px] leading-relaxed">{insight.text}</p>
           <Link
             to="/performance"
             className={`inline-flex items-center gap-1.5 mt-3 text-sm font-semibold transition-colors ${
               isPositive
-                ? 'text-emerald-600 hover:text-emerald-700'
-                : 'text-amber-600 hover:text-amber-700'
+                ? 'text-ct-teal hover:text-ct-teal'
+                : 'text-ct-amber hover:text-ct-amber'
             }`}
           >
             View Full Performance Report

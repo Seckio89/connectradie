@@ -147,20 +147,20 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
   );
 
   return (
-    <div className="px-4 py-3 border-b border-gray-100">
+    <div className="px-4 py-3 border-b border-ct-line-soft">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide inline-flex items-center gap-1.5">
-          <Package className="w-3.5 h-3.5 text-gray-400" />
+        <p className="text-xs font-medium text-ct-mute uppercase tracking-wide inline-flex items-center gap-1.5">
+          <Package className="w-3.5 h-3.5 text-ct-mute" />
           Supplies ({items.length})
           {lowStockItems.length > 0 && (
-            <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[10px] font-semibold normal-case">
+            <span className="px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber rounded-full text-[10px] font-semibold normal-case">
               {lowStockItems.length} low stock
             </span>
           )}
         </p>
         <button
           onClick={() => { setEditing(!editing); setItems(supplies); }}
-          className="text-xs text-secondary-600 hover:text-secondary-700 font-medium"
+          className="text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium"
         >
           {editing ? 'Cancel' : 'Edit'}
         </button>
@@ -172,19 +172,19 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
           {items.map(item => {
             const isLow = item.stock_level != null && item.restock_threshold != null && item.stock_level <= item.restock_threshold;
             return (
-              <div key={item.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${isLow ? 'bg-amber-50' : 'bg-gray-50'}`}>
-                <span className="font-medium text-gray-800 flex-1">{item.name}</span>
+              <div key={item.id} className={`flex items-center gap-2 px-3 py-2 rounded-ct-sm text-xs ${isLow ? 'bg-ct-amber/[0.13]' : 'bg-ct-surface-2'}`}>
+                <span className="font-medium text-ct-paper flex-1">{item.name}</span>
                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                  item.provided_by === 'tradie' ? 'bg-secondary-50 text-secondary-600' : 'bg-gray-100 text-gray-500'
+                  item.provided_by === 'tradie' ? 'bg-ct-surface-2 text-ct-mute-2' : 'bg-ct-surface-2 text-ct-mute'
                 }`}>
                   {item.provided_by === 'tradie' ? 'Tradie supplies' : 'You supply'}
                 </span>
                 {item.stock_level != null && (
-                  <span className={`text-xs font-semibold ${isLow ? 'text-amber-700' : 'text-gray-600'}`}>
+                  <span className={`text-xs font-semibold ${isLow ? 'text-ct-amber' : 'text-ct-mute-2'}`}>
                     {item.stock_level} {item.unit || ''}
                   </span>
                 )}
-                {isLow && <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" />}
+                {isLow && <AlertTriangle className="w-3 h-3 text-ct-amber flex-shrink-0" />}
               </div>
             );
           })}
@@ -192,7 +192,7 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
       )}
 
       {!editing && items.length === 0 && (
-        <p className="text-xs text-gray-400">No supplies listed. Click Edit to add items your tradie needs to bring.</p>
+        <p className="text-xs text-ct-mute">No supplies listed. Click Edit to add items your tradie needs to bring.</p>
       )}
 
       {/* Edit mode */}
@@ -200,23 +200,23 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
         <div className="space-y-3 mt-2">
           {/* Existing items */}
           {items.map(item => (
-            <div key={item.id} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
-              <span className="text-xs font-medium text-gray-800 flex-1">{item.name}</span>
+            <div key={item.id} className="flex items-center gap-2 px-3 py-2 bg-ct-surface-2 rounded-ct-sm">
+              <span className="text-xs font-medium text-ct-paper flex-1">{item.name}</span>
               {item.stock_level != null && (
-                <span className="text-xs text-gray-500">{item.stock_level} {item.unit || ''}</span>
+                <span className="text-xs text-ct-mute">{item.stock_level} {item.unit || ''}</span>
               )}
-              <span className="text-[10px] text-gray-400">{item.provided_by}</span>
-              <button onClick={() => handleRemoveItem(item.id)} className="text-red-400 hover:text-red-600">
+              <span className="text-[10px] text-ct-mute">{item.provided_by}</span>
+              <button onClick={() => handleRemoveItem(item.id)} className="text-ct-rose hover:text-ct-rose">
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           ))}
 
           {/* Add new item form */}
-          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg space-y-2">
+          <div className="p-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] font-medium text-emerald-700 uppercase tracking-wide mb-1">Item Name</label>
+                <label className="block text-[10px] font-medium text-ct-teal uppercase tracking-wide mb-1">Item Name</label>
                 <select
                   value={availableSuggestions.slice(0, 5).includes(newName) ? newName : newName === '' ? '' : '__other__'}
                   onChange={e => {
@@ -232,7 +232,7 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
                       setNewUnit(SUPPLY_DEFAULT_UNITS[e.target.value] || '');
                     }
                   }}
-                  className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-2.5 py-1.5 border border-ct-line rounded-ct-sm text-xs focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                 >
                   <option value="">Select an item...</option>
                   {availableSuggestions.slice(0, 5).map(name => (
@@ -246,68 +246,68 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
                     value={newName}
                     onChange={e => setNewName(e.target.value)}
                     placeholder="Enter item name..."
-                    className="w-full mt-1.5 px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="w-full mt-1.5 px-2.5 py-1.5 border border-ct-line rounded-ct-sm text-xs focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                   />
                 )}
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-emerald-700 uppercase tracking-wide mb-1">Unit</label>
+                <label className="block text-[10px] font-medium text-ct-teal uppercase tracking-wide mb-1">Unit</label>
                 <input
                   value={newUnit}
                   onChange={e => setNewUnit(e.target.value)}
                   placeholder="rolls, bottles, packs..."
-                  className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-2.5 py-1.5 border border-ct-line rounded-ct-sm text-xs focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                 />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2" data-supplies-grid>
               <div>
-                <label className="block text-[10px] font-medium text-emerald-700 uppercase tracking-wide mb-1">Supplied By</label>
+                <label className="block text-[10px] font-medium text-ct-teal uppercase tracking-wide mb-1">Supplied By</label>
                 <select
                   value={newProvidedBy}
                   onChange={e => setNewProvidedBy(e.target.value as 'tradie' | 'client')}
-                  className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-2.5 py-1.5 border border-ct-line rounded-ct-sm text-xs focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                 >
                   <option value="tradie">Tradie supplies</option>
                   <option value="client">I supply</option>
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-emerald-700 uppercase tracking-wide mb-1">Stock Qty</label>
+                <label className="block text-[10px] font-medium text-ct-teal uppercase tracking-wide mb-1">Stock Qty</label>
                 <input
                   type="number"
                   value={newStock}
                   onChange={e => setNewStock(e.target.value)}
                   placeholder="e.g. 10"
                   min="0"
-                  className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-2.5 py-1.5 border border-ct-line rounded-ct-sm text-xs focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-emerald-700 uppercase tracking-wide mb-1">Alert When ≤</label>
+                <label className="block text-[10px] font-medium text-ct-teal uppercase tracking-wide mb-1">Alert When ≤</label>
                 <input
                   type="number"
                   value={newThreshold}
                   onChange={e => setNewThreshold(e.target.value)}
                   placeholder="e.g. 3"
                   min="0"
-                  className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-2.5 py-1.5 border border-ct-line rounded-ct-sm text-xs focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-emerald-700 uppercase tracking-wide mb-1">Notes</label>
+              <label className="block text-[10px] font-medium text-ct-teal uppercase tracking-wide mb-1">Notes</label>
               <input
                 value={newNotes}
                 onChange={e => setNewNotes(e.target.value)}
                 placeholder="Brand, size, where to find it..."
-                className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-2.5 py-1.5 border border-ct-line rounded-ct-sm text-xs focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
               />
             </div>
             <button
               onClick={handleAddItem}
               disabled={!newName.trim()}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-ct-teal hover:brightness-110 text-ct-ink text-xs font-medium rounded-ct-sm disabled:opacity-50 transition-colors"
             >
               <Plus className="w-3 h-3" />
               Add Item
@@ -319,12 +319,12 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
             <button
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-teal hover:brightness-110 text-ct-ink text-xs font-medium rounded-ct-sm disabled:opacity-50 transition-colors"
             >
               {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
               Save Supplies
             </button>
-            <button onClick={() => { setEditing(false); setItems(supplies); }} className="text-xs text-gray-500 hover:text-gray-700 font-medium">
+            <button onClick={() => { setEditing(false); setItems(supplies); }} className="text-xs text-ct-mute hover:text-ct-mute-2 font-medium">
               Cancel
             </button>
           </div>
@@ -416,41 +416,41 @@ function QuickChat({ tradieId, tradieName, userId, recurringJobId }: { tradieId:
   };
 
   return (
-    <div className="border-t border-gray-100">
+    <div className="border-t border-ct-line-soft">
       <div className="px-4 py-3">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium text-gray-600">Chat with {tradieName}</span>
+          <span className="text-xs font-medium text-ct-mute-2">Chat with {tradieName}</span>
           {conversationId && (
             <button
               onClick={() => navigate(`/messages?conversation=${conversationId}`)}
-              className="text-xs text-secondary-500 hover:text-secondary-700 font-medium"
+              className="text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium"
             >
               Open full chat
             </button>
           )}
         </div>
-        <div ref={chatContainerRef} className="bg-gray-50 rounded-lg border border-gray-200 max-h-48 overflow-y-auto p-3 space-y-2 mb-2">
+        <div ref={chatContainerRef} className="bg-ct-surface-2 rounded-ct-sm border border-ct-line max-h-48 overflow-y-auto p-3 space-y-2 mb-2">
           {loading ? (
             <div className="flex items-center justify-center py-4">
-              <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+              <Loader2 className="w-4 h-4 animate-spin text-ct-mute" />
             </div>
           ) : messages.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-3">No messages yet. Start the conversation!</p>
+            <p className="text-xs text-ct-mute text-center py-3">No messages yet. Start the conversation!</p>
           ) : (
             messages.map(msg => {
               const isOwn = msg.sender_id === userId;
               return (
                 <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[75%] px-3 py-1.5 rounded-lg text-xs ${
+                  <div className={`max-w-[75%] px-3 py-1.5 rounded-ct-sm text-xs ${
                     isOwn
-                      ? 'bg-secondary-500 text-white'
-                      : 'bg-white border border-gray-200 text-gray-700'
+                      ? 'bg-ct-surface-20 text-ct-ink'
+                      : 'bg-ct-surface border border-ct-line text-ct-mute-2'
                   }`}>
                     {msg.content}
                     {isOwn && (
                       <div className="flex justify-end mt-0.5">
                         <CheckCheck
-                          className={`w-3 h-3 ${msg.read_at ? 'text-emerald-300' : 'text-secondary-200'}`}
+                          className={`w-3 h-3 ${msg.read_at ? 'text-ct-teal' : 'text-ct-mute-2'}`}
                           aria-label={msg.read_at ? 'Seen' : 'Sent'}
                         />
                       </div>
@@ -469,12 +469,12 @@ function QuickChat({ tradieId, tradieName, userId, recurringJobId }: { tradieId:
             onChange={e => setNewMessage(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
             placeholder="Type a message..."
-            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-secondary-500 focus:border-transparent"
+            className="flex-1 px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
           />
           <button
             onClick={handleSend}
             disabled={!newMessage.trim() || sending}
-            className="px-3 py-2 bg-secondary-500 text-white rounded-lg hover:bg-secondary-600 disabled:opacity-50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="px-3 py-2 bg-ct-surface-20 text-ct-ink rounded-ct-sm hover:bg-ct-surface-2 disabled:opacity-50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
@@ -694,10 +694,10 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
     const tradeLabel = resolvedSubtype || category.replace(/_/g, ' ');
     const selectedTradie = savedTradies.find(t => t.id === selectedTradieId);
     return (
-      <div className="bg-white rounded-xl border border-emerald-200 p-6 text-center">
-        <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
-        <h3 className="text-lg font-semibold text-gray-900 capitalize">{tradeLabel} Scheduled</h3>
-        <p className="text-sm text-gray-500 mt-1">
+      <div className="bg-ct-surface rounded-ct-md border border-ct-teal/30 p-6 text-center">
+        <CheckCircle2 className="w-10 h-10 text-ct-teal mx-auto mb-3" />
+        <h3 className="text-lg font-semibold text-ct-paper capitalize">{tradeLabel} Scheduled</h3>
+        <p className="text-sm text-ct-mute mt-1">
           {selectedTradie
             ? `Your ongoing service has been set up and assigned to ${selectedTradie.full_name}.`
             : 'Your ongoing service has been set up. Tradies will be notified.'}
@@ -708,17 +708,17 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
               to={`/search?trade=${encodeURIComponent(
                 TRADE_OPTIONS.find(t => t.label.toLowerCase() === category.toLowerCase())?.value || category
               )}`}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-sm font-medium rounded-lg hover:bg-emerald-600 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:brightness-110 transition-colors"
             >
               Find a Tradie
             </Link>
           )}
           <button
             onClick={onDone}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-ct-sm transition-colors ${
               selectedTradieId
-                ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                : 'border border-gray-200 text-gray-700 hover:bg-gray-50'
+                ? 'bg-ct-teal text-ct-ink hover:brightness-110'
+                : 'border border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
             }`}
           >
             Done
@@ -731,26 +731,26 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
-          <RefreshCw className="w-5 h-5 text-secondary-600" />
+        <div className="w-10 h-10 bg-ct-surface-2 rounded-ct-md flex items-center justify-center">
+          <RefreshCw className="w-5 h-5 text-ct-mute-2" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Schedule a Service</h1>
-          <p className="text-gray-600">Set up a recurring service and we'll match you with the right tradie</p>
+          <h1 className="text-2xl font-bold text-ct-paper">Schedule a Service</h1>
+          <p className="text-ct-mute-2">Set up a recurring service and we'll match you with the right tradie</p>
         </div>
       </div>
 
       {/* ── Section 1: Service Details ── */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
-        <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-5">Service Details</h2>
+      <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6 md:p-8">
+        <h2 className="text-sm font-semibold text-ct-paper uppercase tracking-wide mb-5">Service Details</h2>
         <div className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Trade</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Trade</label>
               <select
                 value={category}
                 onChange={e => setCategory(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500 bg-white"
+                className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal bg-ct-surface"
               >
                 <option value="">Select a trade...</option>
                 {tradeKeys.map(trade => (
@@ -759,12 +759,12 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Service Type</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Service Type</label>
               {hasSubcategories ? (
                 <select
                   value={serviceSubtype}
                   onChange={e => setServiceSubtype(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500 bg-white"
+                  className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal bg-ct-surface"
                 >
                   <option value="">Select a service type...</option>
                   {subcategories.map(sub => (
@@ -777,14 +777,14 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                   value={customSubtype}
                   onChange={e => setCustomSubtype(e.target.value)}
                   placeholder="e.g., Annual roof inspection"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                  className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                 />
               ) : (
                 <input
                   type="text"
                   disabled
                   placeholder="Select a trade first"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 text-gray-400"
+                  className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md text-sm bg-ct-surface-2 text-ct-mute"
                 />
               )}
             </div>
@@ -793,13 +793,13 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
           {category && (hasSubcategories ? serviceSubtype : customSubtype.trim()) && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Description</label>
                 <textarea {...proseInputProps}
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   placeholder="Describe the job in detail — size, materials, access, timeline... (no need to include contact info — tradies will message you through the platform)"
                   rows={8}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-y min-h-[10rem] focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                  className="w-full px-4 py-3 border border-ct-line rounded-ct-md text-sm resize-y min-h-[10rem] focus:outline-none focus:ring-2 focus:ring-ct-teal"
                 />
                 {keywords.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-2">
@@ -815,8 +815,8 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                           }}
                           className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
                             included
-                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-default'
-                              : 'bg-white text-gray-600 border-gray-200 hover:bg-secondary-50 hover:text-secondary-700 hover:border-secondary-300'
+                              ? 'bg-ct-surface-2 text-ct-mute border-ct-line cursor-default'
+                              : 'bg-ct-surface text-ct-mute-2 border-ct-line hover:bg-ct-surface-2 hover:text-ct-mute-2 hover:border-ct-line'
                           }`}
                         >
                           {kw.keyword}
@@ -828,7 +828,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Location</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Location</label>
                 <AddressAutocomplete
                   value={location}
                   onChange={setLocation}
@@ -839,24 +839,24 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                     type="checkbox"
                     checked={parkingAvailable}
                     onChange={(e) => setParkingAvailable(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
+                    className="w-4 h-4 rounded border-ct-line text-ct-teal focus:ring-ct-teal"
                   />
-                  <span className="text-sm text-gray-700">Parking available on site for the tradie</span>
+                  <span className="text-sm text-ct-mute-2">Parking available on site for the tradie</span>
                 </label>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Photos <span className="text-gray-400 font-normal">(optional — helps tradies quote accurately)</span>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">
+                  Photos <span className="text-ct-mute font-normal">(optional — helps tradies quote accurately)</span>
                 </label>
                 <div className="flex gap-2 flex-wrap">
                   {photos.map((p, i) => (
-                    <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex-shrink-0 group/photo">
+                    <div key={i} className="relative w-16 h-16 rounded-ct-sm overflow-hidden border border-ct-line bg-ct-surface-2 flex-shrink-0 group/photo">
                       <img src={p.preview} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                        className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 text-white rounded-md hover:bg-black/80 transition-colors opacity-0 group-hover/photo:opacity-100"
+                        className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 text-ct-ink rounded-md hover:bg-black/80 transition-colors opacity-0 group-hover/photo:opacity-100"
                       >
                         <X className="w-2.5 h-2.5" />
                       </button>
@@ -866,10 +866,10 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                     <button
                       type="button"
                       onClick={() => photoInputRef.current?.click()}
-                      className="w-16 h-16 flex-shrink-0 flex flex-col items-center justify-center gap-0.5 border border-dashed border-gray-300 rounded-lg hover:border-secondary-400 hover:bg-secondary-50/30 transition-colors group"
+                      className="w-16 h-16 flex-shrink-0 flex flex-col items-center justify-center gap-0.5 border border-dashed border-ct-line rounded-ct-sm hover:border-ct-line hover:bg-ct-surface-2/30 transition-colors group"
                     >
-                      <Camera className="w-4 h-4 text-gray-400 group-hover:text-secondary-600 transition-colors" />
-                      <span className="text-[10px] text-gray-400 group-hover:text-secondary-600">
+                      <Camera className="w-4 h-4 text-ct-mute group-hover:text-ct-mute-2 transition-colors" />
+                      <span className="text-[10px] text-ct-mute group-hover:text-ct-mute-2">
                         {photos.length === 0 ? 'Add' : `${photos.length}/5`}
                       </span>
                     </button>
@@ -891,8 +891,8 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
 
       {/* ── Section 2: Schedule ── */}
       {category && (hasSubcategories ? serviceSubtype : customSubtype.trim()) && description.trim() && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">How often do you need this?</h2>
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6 md:p-8">
+          <h2 className="text-sm font-semibold text-ct-paper uppercase tracking-wide mb-4">How often do you need this?</h2>
           <div className="space-y-5">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {([
@@ -908,10 +908,10 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                   key={opt.value}
                   type="button"
                   onClick={() => setFrequency(opt.value)}
-                  className={`py-2.5 px-4 rounded-xl text-sm font-medium border-2 transition-all ${
+                  className={`py-2.5 px-4 rounded-ct-md text-sm font-medium border-2 transition-all ${
                     frequency === opt.value
-                      ? 'border-secondary-300 bg-secondary-50 text-secondary-700'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                      ? 'border-ct-line bg-ct-surface-2 text-ct-mute-2'
+                      : 'border-ct-line text-ct-mute-2 hover:border-ct-line'
                   }`}
                 >
                   {opt.label}
@@ -921,24 +921,24 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">First date</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">First date</label>
                 <input
                   type="date"
                   value={nextDate}
                   min={new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' })}
                   onChange={e => setNextDate(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                  className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Preferred time</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Preferred time</label>
                 <input
                   type="time"
                   value={preferredTime}
                   onChange={e => setPreferredTime(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500 bg-white"
+                  className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal bg-ct-surface"
                 />
-                <p className="text-xs text-gray-400 mt-1">Leave blank for flexible timing</p>
+                <p className="text-xs text-ct-mute mt-1">Leave blank for flexible timing</p>
               </div>
             </div>
           </div>
@@ -947,18 +947,18 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
 
       {/* ── Section 3: Budget & Preferences ── */}
       {category && (hasSubcategories ? serviceSubtype : customSubtype.trim()) && description.trim() && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-5">Budget & Preferences</h2>
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6 md:p-8">
+          <h2 className="text-sm font-semibold text-ct-paper uppercase tracking-wide mb-5">Budget & Preferences</h2>
           <div className="space-y-5">
             <div>
               <div className="flex gap-3 mb-2">
                 <button
                   type="button"
                   onClick={() => { setBudgetType('quote'); setBudget(''); }}
-                  className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
+                  className={`flex-1 px-4 py-2.5 rounded-ct-md text-sm font-medium border-2 transition-all ${
                     budgetType === 'quote'
-                      ? 'border-secondary-300 bg-secondary-50 text-secondary-700'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                      ? 'border-ct-line bg-ct-surface-2 text-ct-mute-2'
+                      : 'border-ct-line text-ct-mute-2 hover:border-ct-line'
                   }`}
                 >
                   Open to Quotes
@@ -966,23 +966,23 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                 <button
                   type="button"
                   onClick={() => setBudgetType('set')}
-                  className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
+                  className={`flex-1 px-4 py-2.5 rounded-ct-md text-sm font-medium border-2 transition-all ${
                     budgetType === 'set'
-                      ? 'border-secondary-300 bg-secondary-50 text-secondary-700'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                      ? 'border-ct-line bg-ct-surface-2 text-ct-mute-2'
+                      : 'border-ct-line text-ct-mute-2 hover:border-ct-line'
                   }`}
                 >
                   Set a Budget
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-ct-mute mt-1">
                 {budgetType === 'quote'
                   ? 'Tradies will price based on your job details.'
                   : 'Tradies will see your budget and tailor their quote.'}
               </p>
               {budgetType === 'set' && (
                 <div className="relative mt-3">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ct-mute text-sm">$</span>
                   <input
                     type="number"
                     value={budget}
@@ -990,14 +990,14 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                     placeholder={suggestion?.priceRange ? `${suggestion.priceRange.min} – ${suggestion.priceRange.max} per visit` : 'Enter budget per visit (AUD)'}
                     min="0"
                     step="10"
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                    className="w-full pl-10 pr-4 py-2.5 border border-ct-line rounded-ct-md text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                   />
                 </div>
               )}
             </div>
 
             <label
-              className="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 hover:border-secondary-300 cursor-pointer transition-colors"
+              className="flex items-start gap-3 p-3.5 rounded-ct-md border border-ct-line hover:border-ct-line cursor-pointer transition-colors"
               htmlFor="recurring-site-inspection"
             >
               <input
@@ -1005,11 +1005,11 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                 type="checkbox"
                 checked={allowsSiteInspection}
                 onChange={(e) => setAllowsSiteInspection(e.target.checked)}
-                className="w-4 h-4 text-secondary-600 rounded border-gray-300 focus:ring-secondary-500 mt-0.5"
+                className="w-4 h-4 text-ct-mute-2 rounded border-ct-line focus:ring-ct-teal mt-0.5"
               />
               <div>
-                <span className="text-sm font-medium text-gray-700">Allow on-site quote</span>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <span className="text-sm font-medium text-ct-mute-2">Allow on-site quote</span>
+                <p className="text-xs text-ct-mute mt-0.5">
                   Let the tradie visit before giving a firm price. Recommended for complex or first-time jobs.
                 </p>
               </div>
@@ -1025,16 +1025,16 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
               );
               return (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">
                     Preferred Tradie
                     {matchingTradies.length > 0 && (
-                      <span className="text-warm-600 ml-1 text-xs">({matchingTradies.length} matching)</span>
+                      <span className="text-ct-amber ml-1 text-xs">({matchingTradies.length} matching)</span>
                     )}
                   </label>
                   <select
                     value={selectedTradieId}
                     onChange={e => setSelectedTradieId(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-secondary-500 bg-white"
+                    className="w-full px-3 py-2.5 border border-ct-line rounded-ct-md text-sm focus:ring-2 focus:ring-ct-teal bg-ct-surface"
                   >
                     <option value="">Any available tradie</option>
                     {matchingTradies.length > 0 && (
@@ -1065,22 +1065,22 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
 
       {/* ── Supplies & Materials ── */}
       {category && (hasSubcategories ? serviceSubtype : customSubtype.trim()) && description.trim() && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-2">Supplies &amp; Materials</h2>
-          <p className="text-xs text-gray-500 mb-4">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6 md:p-8">
+          <h2 className="text-sm font-semibold text-ct-paper uppercase tracking-wide mb-2">Supplies &amp; Materials</h2>
+          <p className="text-xs text-ct-mute mb-4">
             Your tradie always brings their own equipment for the job (vacuum, mop, chemicals, etc.) —
             already covered by the agreed price.
           </p>
 
-          <p className="text-sm font-medium text-gray-700 mb-2">
-            Household consumables <span className="text-gray-400 font-normal">(toilet paper, soap, dish liquid)</span>
+          <p className="text-sm font-medium text-ct-mute-2 mb-2">
+            Household consumables <span className="text-ct-mute font-normal">(toilet paper, soap, dish liquid)</span>
           </p>
           <div className="space-y-2">
             <label
-              className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${
+              className={`flex items-start gap-3 p-3.5 rounded-ct-md border cursor-pointer transition-colors ${
                 consumablesProvider === 'client'
-                  ? 'border-emerald-400 bg-emerald-50/50'
-                  : 'border-gray-200 hover:border-emerald-300'
+                  ? 'border-ct-teal/30 bg-ct-teal/[0.14]/50'
+                  : 'border-ct-line hover:border-ct-teal/30'
               }`}
             >
               <input
@@ -1089,19 +1089,19 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                 value="client"
                 checked={consumablesProvider === 'client'}
                 onChange={() => setConsumablesProvider('client')}
-                className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500 mt-0.5"
+                className="w-4 h-4 text-ct-teal border-ct-line focus:ring-ct-teal mt-0.5"
               />
               <div>
-                <span className="text-sm font-medium text-gray-900">I'll keep these stocked at home</span>
-                <p className="text-xs text-gray-500 mt-0.5">Tradie uses what's already there.</p>
+                <span className="text-sm font-medium text-ct-paper">I'll keep these stocked at home</span>
+                <p className="text-xs text-ct-mute mt-0.5">Tradie uses what's already there.</p>
               </div>
             </label>
 
             <label
-              className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${
+              className={`flex items-start gap-3 p-3.5 rounded-ct-md border cursor-pointer transition-colors ${
                 consumablesProvider === 'tradie_billed'
-                  ? 'border-emerald-400 bg-emerald-50/50'
-                  : 'border-gray-200 hover:border-emerald-300'
+                  ? 'border-ct-teal/30 bg-ct-teal/[0.14]/50'
+                  : 'border-ct-line hover:border-ct-teal/30'
               }`}
             >
               <input
@@ -1110,11 +1110,11 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                 value="tradie_billed"
                 checked={consumablesProvider === 'tradie_billed'}
                 onChange={() => setConsumablesProvider('tradie_billed')}
-                className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500 mt-0.5"
+                className="w-4 h-4 text-ct-teal border-ct-line focus:ring-ct-teal mt-0.5"
               />
               <div>
-                <span className="text-sm font-medium text-gray-900">Tradie picks them up — adds to my invoice</span>
-                <p className="text-xs text-gray-500 mt-0.5">Costs are itemised on each billing cycle.</p>
+                <span className="text-sm font-medium text-ct-paper">Tradie picks them up — adds to my invoice</span>
+                <p className="text-xs text-ct-mute mt-0.5">Costs are itemised on each billing cycle.</p>
               </div>
             </label>
           </div>
@@ -1123,7 +1123,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
             const supplySuggestions = getSupplySuggestions(category);
             return (
               <div className="mt-4 space-y-3">
-                <p className="text-xs font-medium text-gray-600">What should they pick up? <span className="font-normal text-gray-400">(optional)</span></p>
+                <p className="text-xs font-medium text-ct-mute-2">What should they pick up? <span className="font-normal text-ct-mute">(optional)</span></p>
                 <div className="flex flex-wrap gap-2">
                   {supplySuggestions.map(name => {
                     const isSelected = selectedSupplies.includes(name);
@@ -1134,10 +1134,10 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                         onClick={() => setSelectedSupplies(prev =>
                           isSelected ? prev.filter(s => s !== name) : [...prev, name]
                         )}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                        className={`px-3 py-1.5 rounded-ct-sm text-xs font-medium border transition-colors ${
                           isSelected
-                            ? 'bg-emerald-500 border-emerald-500 text-white'
-                            : 'bg-white border-gray-200 text-gray-700 hover:border-emerald-300 hover:bg-emerald-50'
+                            ? 'bg-ct-teal border-ct-teal text-ct-ink'
+                            : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:border-ct-teal/30 hover:bg-ct-teal/[0.14]'
                         }`}
                       >
                         {isSelected && <CheckCircle2 className="w-3 h-3 inline mr-1" />}
@@ -1151,7 +1151,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                     value={customSupplyName}
                     onChange={e => setCustomSupplyName(e.target.value)}
                     placeholder="Add other item..."
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="flex-1 px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                     onKeyDown={e => {
                       if (e.key === 'Enter' && customSupplyName.trim()) {
                         e.preventDefault();
@@ -1171,13 +1171,13 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                       }
                     }}
                     disabled={!customSupplyName.trim()}
-                    className="px-3 py-2 bg-emerald-500 text-white text-sm font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                    className="px-3 py-2 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-50 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
                 {selectedSupplies.length > 0 && (
-                  <p className="text-xs text-emerald-600 font-medium">{selectedSupplies.length} item{selectedSupplies.length !== 1 ? 's' : ''} selected</p>
+                  <p className="text-xs text-ct-teal font-medium">{selectedSupplies.length} item{selectedSupplies.length !== 1 ? 's' : ''} selected</p>
                 )}
               </div>
             );
@@ -1191,7 +1191,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
           <button
             onClick={handleSubmit}
             disabled={saving || !description.trim() || (hasSubcategories ? !serviceSubtype : !customSubtype.trim())}
-            className="w-full py-3.5 font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-lg bg-secondary-500 text-white hover:bg-secondary-600 shadow-sm"
+            className="w-full py-3.5 font-semibold rounded-ct-md disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-lg bg-ct-surface-20 text-ct-ink hover:bg-ct-surface-2 shadow-sm"
           >
             {saving ? (
               <>
@@ -1207,7 +1207,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
           </button>
           <button
             onClick={onCancel}
-            className="w-full py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+            className="w-full py-2.5 text-sm font-medium text-ct-mute hover:text-ct-mute-2 transition-colors"
           >
             Cancel
           </button>
@@ -1550,7 +1550,7 @@ export default function ClientServicesTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
+        <Loader2 className="w-6 h-6 text-ct-mute animate-spin" />
       </div>
     );
   }
@@ -1567,14 +1567,14 @@ export default function ClientServicesTab() {
           />
         ) : (
           <div className="text-center py-16">
-            <RefreshCw className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-gray-900">No Ongoing Services</h3>
-            <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
+            <RefreshCw className="w-10 h-10 text-ct-mute mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-ct-paper">No Ongoing Services</h3>
+            <p className="text-sm text-ct-mute mt-1 max-w-sm mx-auto">
               Schedule regular cleaning, lawn mowing, pool maintenance and more — all managed in one place.
             </p>
             <button
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-emerald-500 text-white text-sm font-medium rounded-lg hover:bg-emerald-600 transition-colors"
+              className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:brightness-110 transition-colors"
             >
               <Plus className="w-4 h-4" />
               Schedule a Service
@@ -1591,7 +1591,7 @@ export default function ClientServicesTab() {
       <div className="flex justify-end">
         <button
           onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white text-sm font-medium rounded-lg hover:bg-emerald-600 transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:brightness-110 transition-colors"
         >
           {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           {showForm ? 'Cancel' : 'Schedule a Service'}
@@ -1641,24 +1641,24 @@ export default function ClientServicesTab() {
             };
 
             return (
-              <div key={job.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div key={job.id} className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
                 {/* Service header — clickable to expand/collapse */}
                 <button
                   onClick={toggleExpanded}
-                  className="w-full px-4 py-3 bg-gray-50 text-left hover:bg-gray-100 transition-colors"
+                  className="w-full px-4 py-3 bg-ct-surface-2 text-left hover:bg-ct-surface-2 transition-colors"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
-                        <p className="text-sm font-semibold text-gray-900 capitalize">{label}</p>
+                        <ChevronDown className={`w-4 h-4 text-ct-mute transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                        <p className="text-sm font-semibold text-ct-paper capitalize">{label}</p>
                         {/* Mobile: show Active badge inline with title */}
-                        <span className="sm:hidden px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-medium rounded-full ml-auto">
+                        <span className="sm:hidden px-2 py-0.5 bg-ct-teal/[0.14] text-ct-teal text-[10px] font-medium rounded-full ml-auto">
                           Active
                         </span>
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 ml-6">
-                        <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                        <span className="inline-flex items-center gap-1 text-xs text-ct-mute">
                           <User className="w-3 h-3" />
                           {tradieName}
                         </span>
@@ -1668,36 +1668,36 @@ export default function ClientServicesTab() {
                             tabIndex={0}
                             onClick={(e) => { e.stopPropagation(); setWorkerModalJobId(job.id); }}
                             onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setWorkerModalJobId(job.id); } }}
-                            className="inline-flex items-center gap-1 text-xs font-medium text-secondary-600 hover:text-secondary-700 hover:underline cursor-pointer"
+                            className="inline-flex items-center gap-1 text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 hover:underline cursor-pointer"
                           >
                             <ShieldCheck className="w-3 h-3" />
                             Who&apos;s coming
                           </span>
                         )}
                         {freq && (
-                          <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                          <span className="inline-flex items-center gap-1 text-xs text-ct-mute">
                             <Clock className="w-3 h-3" />
                             {freq}
                           </span>
                         )}
                         {job.agreed_price != null && job.agreed_price > 0 && (
-                          <span className="sm:hidden inline-flex items-center text-xs font-semibold text-emerald-600">
+                          <span className="sm:hidden inline-flex items-center text-xs font-semibold text-ct-teal">
                             ${job.agreed_price.toFixed(2)}/visit
                           </span>
                         )}
                         {job.location && (
-                          <span className="inline-flex items-center gap-1 text-xs text-gray-500 truncate max-w-[200px] sm:max-w-[220px]">
+                          <span className="inline-flex items-center gap-1 text-xs text-ct-mute truncate max-w-[200px] sm:max-w-[220px]">
                             <MapPin className="w-3 h-3 flex-shrink-0" />
                             {job.location.split(',')[0]}
                           </span>
                         )}
                         {!isExpanded && upcoming.length > 0 && (
-                          <span className="inline-flex items-center gap-1 text-xs text-secondary-600">
+                          <span className="inline-flex items-center gap-1 text-xs text-ct-mute-2">
                             {upcoming.length} upcoming
                           </span>
                         )}
                         {savedMethods.has(job.id) && savedMethods.get(job.id)!.mandate_status === 'active' && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-secondary-600 bg-secondary-50 border border-secondary-200 px-1.5 py-0.5 rounded-md">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-ct-mute-2 bg-ct-surface-2 border border-ct-line px-1.5 py-0.5 rounded-md">
                             <Building2 className="w-2.5 h-2.5" />
                             Direct Debit
                           </span>
@@ -1706,16 +1706,16 @@ export default function ClientServicesTab() {
                     </div>
                     <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
                       {job.agreed_price != null && job.agreed_price > 0 ? (
-                        <span className="text-sm font-semibold text-emerald-600">
+                        <span className="text-sm font-semibold text-ct-teal">
                           ${job.agreed_price.toFixed(2)}
-                          <span className="text-xs font-normal text-gray-400 ml-0.5">per visit</span>
+                          <span className="text-xs font-normal text-ct-mute ml-0.5">per visit</span>
                         </span>
                       ) : (
-                        <span className="text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                        <span className="text-xs font-medium text-ct-amber bg-ct-amber/[0.13] border border-ct-amber/[0.34] px-2 py-0.5 rounded-md">
                           Awaiting quote
                         </span>
                       )}
-                      <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+                      <span className="px-3 py-1 bg-ct-teal/[0.14] text-ct-teal text-xs font-medium rounded-full">
                         Active
                       </span>
                     </div>
@@ -1727,19 +1727,19 @@ export default function ClientServicesTab() {
                   <>
                   {/* Awaiting-quote CTA — only when no price is set */}
                   {(job.agreed_price == null || job.agreed_price <= 0) && (
-                    <div className="px-4 py-3 border-t border-gray-100 bg-amber-50/60">
+                    <div className="px-4 py-3 border-t border-ct-line-soft bg-ct-amber/[0.13]/60">
                       {pendingQuoteJobIds.has(job.id) ? (
-                        <div className="flex items-center gap-2 text-xs text-amber-700">
+                        <div className="flex items-center gap-2 text-xs text-ct-amber">
                           <Clock className="w-3.5 h-3.5 flex-shrink-0" />
                           <span>Quote request sent — waiting on {tradieName || 'tradie'} to respond.</span>
                         </div>
                       ) : (
                         <div className="flex items-start gap-3 flex-wrap">
                           <div className="flex items-start gap-2 flex-1 min-w-[200px]">
-                            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <AlertTriangle className="w-4 h-4 text-ct-amber flex-shrink-0 mt-0.5" />
                             <div>
-                              <p className="text-xs font-semibold text-amber-800">No price agreed yet</p>
-                              <p className="text-xs text-amber-700 mt-0.5">
+                              <p className="text-xs font-semibold text-ct-paper">No price agreed yet</p>
+                              <p className="text-xs text-ct-amber mt-0.5">
                                 {job.tradie_id
                                   ? `Request a quote from ${tradieName || 'your tradie'} so we can bill and schedule properly.`
                                   : 'Send this out for a quote to lock in a price per visit.'}
@@ -1749,7 +1749,7 @@ export default function ClientServicesTab() {
                           <button
                             onClick={() => handleRequestQuote(job)}
                             disabled={requestingQuoteId === job.id}
-                            className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50 transition-colors"
+                            className="inline-flex items-center gap-1.5 bg-ct-teal hover:brightness-110 text-ct-ink px-3 py-1.5 rounded-ct-sm text-xs font-semibold disabled:opacity-50 transition-colors"
                           >
                             {requestingQuoteId === job.id ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1768,12 +1768,12 @@ export default function ClientServicesTab() {
                     const isExpanded = expandedQuoteServiceId === job.id;
                     const isAccepting = acceptingQuoteId === qInfo.quoteId;
                     return (
-                      <div className="border-t border-gray-100">
+                      <div className="border-t border-ct-line-soft">
                         {/* Collapsed: show summary + View Quote button */}
-                        <div className="px-4 py-3 bg-secondary-50/60 flex items-center justify-between gap-3 flex-wrap">
+                        <div className="px-4 py-3 bg-ct-surface-2/60 flex items-center justify-between gap-3 flex-wrap">
                           <div className="flex items-center gap-2 min-w-0">
-                            <FileTextIcon className="w-4 h-4 text-secondary-600 flex-shrink-0" />
-                            <p className="text-xs font-semibold text-secondary-800">
+                            <FileTextIcon className="w-4 h-4 text-ct-mute-2 flex-shrink-0" />
+                            <p className="text-xs font-semibold text-ct-mute-2">
                               {qInfo.count === 1
                                 ? `1 Quote received — $${qInfo.topPrice.toFixed(0)} from ${qInfo.topTradie}`
                                 : `${qInfo.count} Quotes received — from $${qInfo.topPrice.toFixed(0)}`}
@@ -1781,7 +1781,7 @@ export default function ClientServicesTab() {
                           </div>
                           <button
                             onClick={() => setExpandedQuoteServiceId(isExpanded ? null : job.id)}
-                            className="inline-flex items-center gap-1.5 bg-secondary-500 hover:bg-secondary-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                            className="inline-flex items-center gap-1.5 bg-ct-surface-20 hover:bg-ct-surface-2 text-ct-ink px-3 py-1.5 rounded-ct-sm text-xs font-semibold transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             {isExpanded ? 'Hide' : 'View'} {qInfo.count === 1 ? 'Quote' : 'Quotes'}
@@ -1790,43 +1790,43 @@ export default function ClientServicesTab() {
 
                         {/* Expanded: show full quote details + Accept & Pay */}
                         {isExpanded && (
-                          <div className="px-4 py-4 bg-white border-t border-gray-100">
+                          <div className="px-4 py-4 bg-ct-surface border-t border-ct-line-soft">
                             {/* Tradie header */}
                             <div className="flex items-start gap-3">
-                              <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                <User className="w-5 h-5 text-emerald-700" />
+                              <div className="w-10 h-10 bg-ct-teal/[0.14] rounded-full flex items-center justify-center flex-shrink-0">
+                                <User className="w-5 h-5 text-ct-teal" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <p className="text-sm font-semibold text-gray-900">{qInfo.topTradie}</p>
+                                  <p className="text-sm font-semibold text-ct-paper">{qInfo.topTradie}</p>
                                   {qInfo.isPro && (
-                                    <span className="px-2 py-0.5 bg-warm-100 text-warm-700 text-[10px] font-semibold rounded-full">PRO</span>
+                                    <span className="px-2 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-[10px] font-semibold rounded-full">PRO</span>
                                   )}
                                 </div>
                                 {qInfo.businessName && (
-                                  <p className="text-xs text-gray-500">{qInfo.businessName}</p>
+                                  <p className="text-xs text-ct-mute">{qInfo.businessName}</p>
                                 )}
                                 {qInfo.avgRating !== null && (
                                   <div className="flex items-center gap-1 mt-0.5">
-                                    <span className="text-xs text-amber-500">{'★'.repeat(Math.round(qInfo.avgRating))}</span>
-                                    <span className="text-xs text-gray-500">{qInfo.avgRating} ({qInfo.reviewCount} review{qInfo.reviewCount !== 1 ? 's' : ''})</span>
+                                    <span className="text-xs text-ct-amber">{'★'.repeat(Math.round(qInfo.avgRating))}</span>
+                                    <span className="text-xs text-ct-mute">{qInfo.avgRating} ({qInfo.reviewCount} review{qInfo.reviewCount !== 1 ? 's' : ''})</span>
                                   </div>
                                 )}
                               </div>
                               <div className="text-right flex-shrink-0">
-                                <p className="text-lg font-bold text-emerald-700">${qInfo.topPrice.toFixed(0)}</p>
-                                <p className="text-[10px] text-gray-400">per visit</p>
+                                <p className="text-lg font-bold text-ct-teal">${qInfo.topPrice.toFixed(0)}</p>
+                                <p className="text-[10px] text-ct-mute">per visit</p>
                               </div>
                             </div>
 
                             {/* Quote details */}
                             {qInfo.message && (
-                              <div className="mt-3 ml-13 p-3 bg-gray-50 rounded-lg">
-                                <p className="text-sm text-gray-700 leading-relaxed">{qInfo.message}</p>
+                              <div className="mt-3 ml-13 p-3 bg-ct-surface-2 rounded-ct-sm">
+                                <p className="text-sm text-ct-mute-2 leading-relaxed">{qInfo.message}</p>
                               </div>
                             )}
 
-                            <div className="mt-3 ml-13 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                            <div className="mt-3 ml-13 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ct-mute">
                               {qInfo.estimatedDuration && (
                                 <span className="flex items-center gap-1">
                                   <Clock className="w-3 h-3" /> {qInfo.estimatedDuration}
@@ -1834,7 +1834,7 @@ export default function ClientServicesTab() {
                               )}
                               {qInfo.includesMaterials && (
                                 <span className="flex items-center gap-1">
-                                  <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Materials included
+                                  <CheckCircle2 className="w-3 h-3 text-ct-teal" /> Materials included
                                 </span>
                               )}
                             </div>
@@ -1867,48 +1867,48 @@ export default function ClientServicesTab() {
                                   }
                                 }}
                                 disabled={isAccepting}
-                                className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60"
+                                className="inline-flex items-center gap-1.5 bg-ct-teal hover:brightness-110 text-ct-ink px-4 py-2 rounded-ct-sm text-sm font-semibold transition-colors disabled:opacity-60"
                               >
                                 {isAccepting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                                 Accept & Pay
                               </button>
                               <button
                                 onClick={() => setExpandedQuoteServiceId(null)}
-                                className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                                className="inline-flex items-center px-3 py-2 text-sm font-medium text-ct-mute-2 hover:text-ct-paper hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
                               >
                                 Cancel
                               </button>
                             </div>
 
-                            <p className="text-[11px] text-gray-400 mt-2 ml-13">Accepting locks in this price and assigns {qInfo.topTradie} to your service. Payment secured with Stripe.</p>
+                            <p className="text-[11px] text-ct-mute mt-2 ml-13">Accepting locks in this price and assigns {qInfo.topTradie} to your service. Payment secured with Stripe.</p>
                           </div>
                         )}
                       </div>
                     );
                   })()}
                   {/* Menu actions */}
-                  <div className="px-4 py-1.5 border-t border-gray-100 flex justify-end">
+                  <div className="px-4 py-1.5 border-t border-ct-line-soft flex justify-end">
                     <div className="relative">
                       <button
                         onClick={() => setMenuOpen(menuOpen === job.id ? null : job.id)}
-                        className="p-2.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
+                        className="p-2.5 text-ct-mute hover:text-ct-mute-2 rounded transition-colors"
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>
                       {menuOpen === job.id && (
                         <>
                           <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(null)} />
-                          <div className="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 z-20 py-1">
+                          <div className="absolute right-0 mt-1 w-44 bg-ct-surface rounded-ct-sm shadow-lg border border-ct-line z-20 py-1">
                             <button
                               onClick={() => { setMenuOpen(null); setCancelTarget(null); setHoldTarget(job.id); setHoldReason(''); }}
-                              className="w-full px-3 py-2 text-left text-sm text-amber-600 hover:bg-amber-50 flex items-center gap-2 transition-colors"
+                              className="w-full px-3 py-2 text-left text-sm text-ct-amber hover:bg-ct-amber/[0.13] flex items-center gap-2 transition-colors"
                             >
                               <Pause className="w-3.5 h-3.5" />
                               Put on Hold
                             </button>
                             <button
                               onClick={() => { setMenuOpen(null); setHoldTarget(null); setCancelTarget(job.id); }}
-                              className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                              className="w-full px-3 py-2 text-left text-sm text-ct-rose hover:bg-ct-rose/[0.13] flex items-center gap-2 transition-colors"
                             >
                               <X className="w-3.5 h-3.5" />
                               End Service
@@ -1921,14 +1921,14 @@ export default function ClientServicesTab() {
 
                 {/* Task requirements */}
                 {taskLines.length > 0 && (
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                  <div className="px-4 py-3 border-b border-ct-line-soft">
+                    <p className="text-xs font-medium text-ct-mute uppercase tracking-wide mb-2">
                       Task Requirements ({taskLines.length})
                     </p>
                     <ol className="space-y-1.5">
                       {taskLines.map((line, i) => (
-                        <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
-                          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-[10px] font-bold mt-0.5">
+                        <li key={i} className="flex items-start gap-2 text-xs text-ct-mute-2">
+                          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-ct-teal/[0.14] text-ct-teal flex items-center justify-center text-[10px] font-bold mt-0.5">
                             {i + 1}
                           </span>
                           <span className="pt-0.5">{line}</span>
@@ -1951,13 +1951,13 @@ export default function ClientServicesTab() {
                 {/* Message Tradie toggle + inline chat */}
                 {job.tradie_id && user && (
                   <>
-                    <div className="px-4 py-2.5 border-b border-gray-100">
+                    <div className="px-4 py-2.5 border-b border-ct-line-soft">
                       <button
                         onClick={() => setChatOpenJobId(chatOpenJobId === job.id ? null : job.id)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-ct-sm transition-colors ${
                           chatOpenJobId === job.id
-                            ? 'bg-secondary-100 text-secondary-700 border border-secondary-300'
-                            : 'text-secondary-600 border border-secondary-200 hover:bg-secondary-50'
+                            ? 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line'
+                            : 'text-ct-mute-2 border border-ct-line hover:bg-ct-surface-2'
                         }`}
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
@@ -1973,12 +1973,12 @@ export default function ClientServicesTab() {
                 {/* Upcoming sessions */}
                 {upcoming.length > 0 ? (
                   <div className="p-4 space-y-3">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center justify-between">
+                    <p className="text-xs font-medium text-ct-mute uppercase tracking-wide flex items-center justify-between">
                       <span>Upcoming Visits</span>
                       {upcoming.length > 3 && expandedSessionsJobId === job.id && (
                         <button
                           onClick={() => setExpandedSessionsJobId(null)}
-                          className="text-sm font-bold text-gray-900 hover:text-gray-700 transition-colors flex items-center gap-0.5 normal-case tracking-normal"
+                          className="text-sm font-bold text-ct-paper hover:text-ct-mute-2 transition-colors flex items-center gap-0.5 normal-case tracking-normal"
                         >
                           <ChevronDown className="w-3.5 h-3.5 rotate-180" />
                           Show less
@@ -2016,7 +2016,7 @@ export default function ClientServicesTab() {
                     {upcoming.length > 3 && expandedSessionsJobId !== job.id && (
                       <button
                         onClick={() => setExpandedSessionsJobId(job.id)}
-                        className="w-full py-2 text-xs font-medium text-secondary-600 hover:text-secondary-700 hover:bg-secondary-50 rounded-lg transition-colors flex items-center justify-center gap-1"
+                        className="w-full py-2 text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors flex items-center justify-center gap-1"
                       >
                         <ChevronDown className="w-3.5 h-3.5" />
                         + {upcoming.length - 3} more scheduled
@@ -2025,7 +2025,7 @@ export default function ClientServicesTab() {
                     {upcoming.length > 3 && expandedSessionsJobId === job.id && (
                       <button
                         onClick={() => setExpandedSessionsJobId(null)}
-                        className="w-full py-2 text-sm font-bold text-gray-900 hover:bg-gray-50 rounded-lg transition-colors flex items-center justify-center gap-1"
+                        className="w-full py-2 text-sm font-bold text-ct-paper hover:bg-ct-surface-2 rounded-ct-sm transition-colors flex items-center justify-center gap-1"
                       >
                         <ChevronDown className="w-3.5 h-3.5 rotate-180" />
                         Show less
@@ -2034,7 +2034,7 @@ export default function ClientServicesTab() {
                   </div>
                 ) : (
                   <div className="px-4 py-6 text-center">
-                    <p className="text-sm text-gray-400">No upcoming sessions scheduled</p>
+                    <p className="text-sm text-ct-mute">No upcoming sessions scheduled</p>
                   </div>
                 )}
 
@@ -2070,7 +2070,7 @@ export default function ClientServicesTab() {
                         sessionDate >= inv.billing_period_start && sessionDate <= inv.billing_period_end
                       );
                       const method = paidInv?.payment_method === 'au_becs_debit' ? 'Direct Debit' : 'Stripe';
-                      return { label: 'Paid', style: 'bg-emerald-100 text-emerald-700', method };
+                      return { label: 'Paid', style: 'bg-ct-teal/[0.14] text-ct-teal', method };
                     }
                     // Check non-paid invoices (sent, processing, etc.)
                     const candidates = jobInvoices.filter(inv =>
@@ -2085,19 +2085,19 @@ export default function ClientServicesTab() {
                           return spanA !== spanB ? spanA - spanB : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
                         })[0]
                       : null;
-                    if (!matchingInvoice) return { label: 'Awaiting Payment', style: 'bg-amber-100 text-amber-700' };
+                    if (!matchingInvoice) return { label: 'Awaiting Payment', style: 'bg-ct-amber/[0.13] text-ct-amber' };
                     switch (matchingInvoice.status) {
-                      case 'processing': return { label: 'Processing', style: 'bg-secondary-100 text-secondary-700', method: matchingInvoice.payment_method === 'au_becs_debit' ? 'Direct Debit' : 'Stripe' };
-                      case 'pending_approval': return { label: 'Awaiting Approval', style: 'bg-amber-100 text-amber-700' };
-                      case 'sent': return { label: 'Invoice Sent', style: 'bg-amber-100 text-amber-700' };
-                      case 'overdue': return { label: 'Overdue', style: 'bg-red-100 text-red-700' };
-                      default: return { label: 'Invoiced', style: 'bg-secondary-100 text-secondary-700' };
+                      case 'processing': return { label: 'Processing', style: 'bg-ct-surface-2 text-ct-mute-2', method: matchingInvoice.payment_method === 'au_becs_debit' ? 'Direct Debit' : 'Stripe' };
+                      case 'pending_approval': return { label: 'Awaiting Approval', style: 'bg-ct-amber/[0.13] text-ct-amber' };
+                      case 'sent': return { label: 'Invoice Sent', style: 'bg-ct-amber/[0.13] text-ct-amber' };
+                      case 'overdue': return { label: 'Overdue', style: 'bg-ct-rose/[0.13] text-ct-rose' };
+                      default: return { label: 'Invoiced', style: 'bg-ct-surface-2 text-ct-mute-2' };
                     }
                   };
 
                   return (
-                    <div className="px-4 py-3 border-t border-gray-100">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                    <div className="px-4 py-3 border-t border-ct-line-soft">
+                      <p className="text-xs font-medium text-ct-mute uppercase tracking-wide mb-2">
                         Recent Visits ({completed.length + skipped.length + overdue.length})
                       </p>
                       <div className="space-y-1.5">
@@ -2117,7 +2117,7 @@ export default function ClientServicesTab() {
                             const paymentStatus = isCompleted ? getPaymentStatus(s.id, s.scheduled_date) : null;
                             const isPaid = paymentStatus?.label === 'Paid';
                             return (
-                              <div key={s.id} className={`rounded-lg ${isOverdue ? 'bg-red-50' : 'bg-gray-50'}`}>
+                              <div key={s.id} className={`rounded-ct-sm ${isOverdue ? 'bg-ct-rose/[0.13]' : 'bg-ct-surface-2'}`}>
                                 {/* Tap the row to reveal full details — the compact
                                     badges collapse below the date on narrow screens. */}
                                 <button
@@ -2129,14 +2129,14 @@ export default function ClientServicesTab() {
                                   {/* Date */}
                                   <div className="flex items-center gap-2 min-w-0 sm:flex-1">
                                     {isOverdue ? (
-                                      <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                                      <AlertTriangle className="w-4 h-4 text-ct-rose flex-shrink-0" />
                                     ) : isCompleted ? (
-                                      <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${isPaid ? 'text-emerald-500' : 'text-secondary-500'}`} />
+                                      <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${isPaid ? 'text-ct-teal' : 'text-ct-mute-2'}`} />
                                     ) : (
-                                      <X className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                      <X className="w-4 h-4 text-ct-mute flex-shrink-0" />
                                     )}
-                                    <span className={`text-sm whitespace-nowrap ${isOverdue ? 'text-red-700 font-medium' : 'text-gray-700'}`}>{date}</span>
-                                    <ChevronDown className={`w-3.5 h-3.5 text-gray-400 flex-shrink-0 ml-0.5 transition-transform ${isExpandedVisit ? 'rotate-180' : ''}`} />
+                                    <span className={`text-sm whitespace-nowrap ${isOverdue ? 'text-ct-rose font-medium' : 'text-ct-mute-2'}`}>{date}</span>
+                                    <ChevronDown className={`w-3.5 h-3.5 text-ct-mute flex-shrink-0 ml-0.5 transition-transform ${isExpandedVisit ? 'rotate-180' : ''}`} />
                                   </div>
                                   {/* Price | Status | Payment | Method — fixed widths align the columns from
                                       sm up. Below that the four widths total 308px, which
@@ -2144,22 +2144,22 @@ export default function ClientServicesTab() {
                                       main's overflow-x:clip, so on mobile they size to
                                       content and wrap. */}
                                   <div className="flex items-center gap-1 flex-wrap justify-end sm:flex-nowrap sm:flex-shrink-0 min-w-0">
-                                    <span className={`sm:w-[58px] text-right text-xs font-medium ${isOverdue ? 'text-red-600' : 'text-gray-600'}`}>
+                                    <span className={`sm:w-[58px] text-right text-xs font-medium ${isOverdue ? 'text-ct-rose' : 'text-ct-mute-2'}`}>
                                       {(isCompleted || isOverdue) && job.agreed_price != null && job.agreed_price > 0
                                         ? `$${job.agreed_price.toFixed(2)}` : ''}
                                     </span>
                                     <span className={`sm:w-[78px] text-center px-1 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
-                                      isOverdue ? 'bg-red-100 text-red-700' : isCompleted ? 'bg-secondary-100 text-secondary-700' : 'bg-gray-100 text-gray-500'
+                                      isOverdue ? 'bg-ct-rose/[0.13] text-ct-rose' : isCompleted ? 'bg-ct-surface-2 text-ct-mute-2' : 'bg-ct-surface-2 text-ct-mute'
                                     }`}>
                                       {isOverdue ? 'Not Completed' : isCompleted ? 'Completed' : 'Skipped'}
                                     </span>
                                     <span className={`sm:w-[88px] text-center px-1 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
-                                      isOverdue ? 'bg-red-100 text-red-700' : isCompleted && paymentStatus ? paymentStatus.style : 'bg-transparent text-transparent'
+                                      isOverdue ? 'bg-ct-rose/[0.13] text-ct-rose' : isCompleted && paymentStatus ? paymentStatus.style : 'bg-transparent text-transparent'
                                     }`}>
                                       {isOverdue ? 'Awaiting Action' : isCompleted && paymentStatus ? paymentStatus.label : '-'}
                                     </span>
                                     <span className={`sm:w-[72px] text-center px-1 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
-                                      isCompleted && paymentStatus?.method ? 'bg-gray-100 text-gray-500' : 'bg-transparent text-transparent'
+                                      isCompleted && paymentStatus?.method ? 'bg-ct-surface-2 text-ct-mute' : 'bg-transparent text-transparent'
                                     }`}>
                                       {isCompleted && paymentStatus?.method ? paymentStatus.method : '-'}
                                     </span>
@@ -2168,43 +2168,43 @@ export default function ClientServicesTab() {
                                 {/* Expanded detail — the same info, laid out so it's
                                     always readable regardless of screen width. */}
                                 {isExpandedVisit && (
-                                  <div className="px-3 pb-3 pt-1 mt-0.5 border-t border-gray-100 space-y-1.5 text-xs">
+                                  <div className="px-3 pb-3 pt-1 mt-0.5 border-t border-ct-line-soft space-y-1.5 text-xs">
                                     <div className="flex items-center justify-between gap-3">
-                                      <span className="text-gray-400">Date</span>
-                                      <span className="text-gray-700 text-right">{fullDate}</span>
+                                      <span className="text-ct-mute">Date</span>
+                                      <span className="text-ct-mute-2 text-right">{fullDate}</span>
                                     </div>
                                     {(isCompleted || isOverdue) && job.agreed_price != null && job.agreed_price > 0 && (
                                       <div className="flex items-center justify-between gap-3">
-                                        <span className="text-gray-400">Price</span>
-                                        <span className="text-gray-700 font-medium">${job.agreed_price.toFixed(2)}</span>
+                                        <span className="text-ct-mute">Price</span>
+                                        <span className="text-ct-mute-2 font-medium">${job.agreed_price.toFixed(2)}</span>
                                       </div>
                                     )}
                                     <div className="flex items-center justify-between gap-3">
-                                      <span className="text-gray-400">Status</span>
-                                      <span className="text-gray-700">{isOverdue ? 'Not Completed' : isCompleted ? 'Completed' : 'Skipped'}</span>
+                                      <span className="text-ct-mute">Status</span>
+                                      <span className="text-ct-mute-2">{isOverdue ? 'Not Completed' : isCompleted ? 'Completed' : 'Skipped'}</span>
                                     </div>
                                     {isCompleted && paymentStatus && (
                                       <div className="flex items-center justify-between gap-3">
-                                        <span className="text-gray-400">Payment</span>
-                                        <span className="text-gray-700">{paymentStatus.label}</span>
+                                        <span className="text-ct-mute">Payment</span>
+                                        <span className="text-ct-mute-2">{paymentStatus.label}</span>
                                       </div>
                                     )}
                                     {isCompleted && paymentStatus?.method && (
                                       <div className="flex items-center justify-between gap-3">
-                                        <span className="text-gray-400">Method</span>
-                                        <span className="text-gray-700">{paymentStatus.method}</span>
+                                        <span className="text-ct-mute">Method</span>
+                                        <span className="text-ct-mute-2">{paymentStatus.method}</span>
                                       </div>
                                     )}
                                     {s.status === 'skipped' && s.reschedule_reason && (
                                       <div className="flex items-start justify-between gap-3">
-                                        <span className="text-gray-400 flex-shrink-0">Reason</span>
-                                        <span className="text-gray-600 italic text-right">{s.reschedule_reason}</span>
+                                        <span className="text-ct-mute flex-shrink-0">Reason</span>
+                                        <span className="text-ct-mute-2 italic text-right">{s.reschedule_reason}</span>
                                       </div>
                                     )}
                                   </div>
                                 )}
                                 {!isExpandedVisit && s.status === 'skipped' && s.reschedule_reason && (
-                                  <p className="px-3 pb-2 text-[10px] text-gray-400 italic truncate">
+                                  <p className="px-3 pb-2 text-[10px] text-ct-mute italic truncate">
                                     Reason: {s.reschedule_reason}
                                   </p>
                                 )}
@@ -2223,7 +2223,7 @@ export default function ClientServicesTab() {
 
                   return (
                     <div className="px-4 pb-4">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Payment Method</p>
+                      <p className="text-xs font-medium text-ct-mute uppercase tracking-wide mb-2">Payment Method</p>
 
                       {isSettingUpBecs ? (
                         <BecsSetupForm
@@ -2256,48 +2256,48 @@ export default function ClientServicesTab() {
                             onRemove={() => handleBecsRemove(job.id)}
                           />
                           {/* Pay by Card — greyed out */}
-                          <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg opacity-50">
-                            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <CreditCard className="w-4 h-4 text-gray-400" />
+                          <div className="flex items-center gap-3 px-4 py-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm opacity-50">
+                            <div className="w-8 h-8 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center flex-shrink-0">
+                              <CreditCard className="w-4 h-4 text-ct-mute" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-400">Pay by Card</p>
-                              <p className="text-xs text-gray-400">Switch from Direct Debit to use card payments</p>
+                              <p className="text-sm font-medium text-ct-mute">Pay by Card</p>
+                              <p className="text-xs text-ct-mute">Switch from Direct Debit to use card payments</p>
                             </div>
-                            <span className="px-3 py-1 bg-gray-100 text-gray-400 text-xs font-medium rounded-full flex-shrink-0">Inactive</span>
+                            <span className="px-3 py-1 bg-ct-surface-2 text-ct-mute text-xs font-medium rounded-full flex-shrink-0">Inactive</span>
                           </div>
                         </div>
                       ) : (
                         <div className="space-y-2">
                           {/* Stripe card — active */}
-                          <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                            <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <CreditCard className="w-4 h-4 text-emerald-600" />
+                          <div className="flex items-center gap-3 px-4 py-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm">
+                            <div className="w-8 h-8 bg-ct-teal/[0.14] rounded-ct-sm flex items-center justify-center flex-shrink-0">
+                              <CreditCard className="w-4 h-4 text-ct-teal" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900">Manual Payments</p>
-                              <p className="text-xs text-gray-500">Invoices will be sent with a secure Stripe payment link</p>
+                              <p className="text-sm font-medium text-ct-paper">Manual Payments</p>
+                              <p className="text-xs text-ct-mute">Invoices will be sent with a secure Stripe payment link</p>
                             </div>
-                            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full flex-shrink-0">Active</span>
+                            <span className="px-3 py-1 bg-ct-teal/[0.14] text-ct-teal text-xs font-medium rounded-full flex-shrink-0">Active</span>
                           </div>
                           {/* BECS upgrade option */}
                           <button
                             onClick={() => handleBecsSetup(job.id)}
                             disabled={becsLoading === job.id}
-                            className="w-full flex items-center gap-3 px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-left transition-colors disabled:opacity-50"
+                            className="w-full flex items-center gap-3 px-4 py-3 border border-ct-line rounded-ct-sm hover:bg-ct-surface-2 text-left transition-colors disabled:opacity-50"
                           >
-                            <div className="w-8 h-8 bg-secondary-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <div className="w-8 h-8 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center flex-shrink-0">
                               {becsLoading === job.id ? (
-                                <Loader2 className="w-4 h-4 text-secondary-600 animate-spin" />
+                                <Loader2 className="w-4 h-4 text-ct-mute-2 animate-spin" />
                               ) : (
-                                <Building2 className="w-4 h-4 text-secondary-600" />
+                                <Building2 className="w-4 h-4 text-ct-mute-2" />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900">
+                              <p className="text-sm font-medium text-ct-paper">
                                 {becsLoading === job.id ? 'Setting up Direct Debit...' : 'Direct Debit'}
                               </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-ct-mute">
                                 {becsLoading === job.id ? 'Please wait while we prepare the form' : 'Auto-pay invoices from your bank account · Lower fees'}
                               </p>
                             </div>
@@ -2316,8 +2316,8 @@ export default function ClientServicesTab() {
                   if (jobOutstanding.length === 0) return null;
                   const jobHasBecs = savedMethods.has(job.id) && savedMethods.get(job.id)!.mandate_status === 'active';
                   return (
-                    <div className="px-4 py-3 border-t border-gray-100">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                    <div className="px-4 py-3 border-t border-ct-line-soft">
+                      <p className="text-xs font-medium text-ct-mute uppercase tracking-wide mb-2">
                         Outstanding Invoices ({jobOutstanding.length})
                       </p>
                       <div className="space-y-3">
@@ -2382,8 +2382,8 @@ export default function ClientServicesTab() {
                     .sort((a, b) => new Date(b.paid_at || b.created_at).getTime() - new Date(a.paid_at || a.created_at).getTime());
                   if (paidInvs.length === 0) return null;
                   return (
-                    <div className="px-4 py-3 border-t border-gray-100">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                    <div className="px-4 py-3 border-t border-ct-line-soft">
+                      <p className="text-xs font-medium text-ct-mute uppercase tracking-wide mb-2">
                         Payment History ({paidInvs.length})
                       </p>
                       <div className="space-y-1.5">
@@ -2393,20 +2393,20 @@ export default function ClientServicesTab() {
                             : '—';
                           const method = inv.payment_method === 'au_becs_debit' ? 'Direct Debit' : 'Card';
                           return (
-                            <div key={inv.id} className="flex items-center justify-between py-1.5 px-3 bg-gray-50 rounded-lg">
+                            <div key={inv.id} className="flex items-center justify-between py-1.5 px-3 bg-ct-surface-2 rounded-ct-sm">
                               <div className="flex items-center gap-2 min-w-0">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                                <span className="text-xs text-gray-700">{paidDate}</span>
+                                <CheckCircle2 className="w-3.5 h-3.5 text-ct-teal flex-shrink-0" />
+                                <span className="text-xs text-ct-mute-2">{paidDate}</span>
                               </div>
                               <div className="flex items-center gap-2 flex-shrink-0">
-                                <span className="text-xs font-medium text-gray-900">${inv.total.toFixed(2)}</span>
-                                <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-medium rounded">{method}</span>
+                                <span className="text-xs font-medium text-ct-paper">${inv.total.toFixed(2)}</span>
+                                <span className="px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute text-[10px] font-medium rounded">{method}</span>
                               </div>
                             </div>
                           );
                         })}
                         {paidInvs.length > 5 && (
-                          <p className="text-[10px] text-gray-400 text-center pt-1">+ {paidInvs.length - 5} older payments</p>
+                          <p className="text-[10px] text-ct-mute text-center pt-1">+ {paidInvs.length - 5} older payments</p>
                         )}
                       </div>
                     </div>
@@ -2415,13 +2415,13 @@ export default function ClientServicesTab() {
 
                 {/* Hold confirmation panel */}
                 {holdTarget === job.id && (
-                  <div className="px-4 py-3 bg-amber-50 border-t border-amber-100">
+                  <div className="px-4 py-3 bg-ct-amber/[0.13] border-t border-ct-amber/[0.34]">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-semibold text-amber-800 flex items-center gap-1.5">
+                      <p className="text-xs font-semibold text-ct-paper flex items-center gap-1.5">
                         <Pause className="w-3.5 h-3.5" />
                         Why are you putting this on hold?
                       </p>
-                      <button onClick={() => { setHoldTarget(null); setHoldReason(''); }} className="text-amber-400 hover:text-amber-600">
+                      <button onClick={() => { setHoldTarget(null); setHoldReason(''); }} className="text-ct-amber hover:text-ct-amber">
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -2432,8 +2432,8 @@ export default function ClientServicesTab() {
                           onClick={() => setHoldReason(r)}
                           className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
                             holdReason === r
-                              ? 'bg-amber-200 border-amber-300 text-amber-800'
-                              : 'bg-white border-amber-200 text-amber-700 hover:bg-amber-100'
+                              ? 'bg-ct-amber/[0.13] border-ct-amber/[0.34] text-ct-paper'
+                              : 'bg-ct-surface border-ct-amber/[0.34] text-ct-amber hover:bg-ct-amber/[0.13]'
                           }`}
                         >
                           {r}
@@ -2443,7 +2443,7 @@ export default function ClientServicesTab() {
                     <button
                       onClick={() => handlePause(job.id)}
                       disabled={!holdReason}
-                      className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white text-xs font-medium rounded-lg transition-colors"
+                      className="px-4 py-1.5 bg-ct-amber/[0.13]0 hover:bg-ct-amber disabled:bg-ct-amber/[0.13] text-ct-ink text-xs font-medium rounded-ct-sm transition-colors"
                     >
                       Confirm Hold
                     </button>
@@ -2463,36 +2463,36 @@ export default function ClientServicesTab() {
       {oneOffJobs.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Briefcase className="w-4 h-4 text-gray-400" />
-            <h3 className="text-sm font-semibold text-gray-900">Active Jobs</h3>
-            <span className="text-xs text-gray-400">{oneOffJobs.length}</span>
+            <Briefcase className="w-4 h-4 text-ct-mute" />
+            <h3 className="text-sm font-semibold text-ct-paper">Active Jobs</h3>
+            <span className="text-xs text-ct-mute">{oneOffJobs.length}</span>
           </div>
           <div className="space-y-2">
             {oneOffJobs.map((job) => {
               const tradieName = job.tradie?.full_name || 'Tradie';
               const statusLabel = job.status === 'funded' ? 'Funded' : 'In Progress';
               const statusClasses = job.status === 'funded'
-                ? 'bg-secondary-100 text-secondary-700'
-                : 'bg-emerald-100 text-emerald-700';
+                ? 'bg-ct-surface-2 text-ct-mute-2'
+                : 'bg-ct-teal/[0.14] text-ct-teal';
 
               return (
-                <div key={job.id} className="bg-white rounded-lg border border-gray-200 px-4 py-3">
+                <div key={job.id} className="bg-ct-surface rounded-ct-sm border border-ct-line px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900">{job.title}</p>
+                      <p className="text-sm font-medium text-ct-paper">{job.title}</p>
                       <div className="flex items-center gap-x-3 mt-1">
-                        <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                        <span className="inline-flex items-center gap-1 text-xs text-ct-mute">
                           <User className="w-3 h-3" />
                           {tradieName}
                         </span>
                         {job.location_address && (
-                          <span className="inline-flex items-center gap-1 text-xs text-gray-500 truncate max-w-[220px]">
+                          <span className="inline-flex items-center gap-1 text-xs text-ct-mute truncate max-w-[220px]">
                             <MapPin className="w-3 h-3 flex-shrink-0" />
                             {job.location_address}
                           </span>
                         )}
                         {job.budget_amount != null && (
-                          <span className="text-xs text-gray-500">${job.budget_amount.toLocaleString()}</span>
+                          <span className="text-xs text-ct-mute">${job.budget_amount.toLocaleString()}</span>
                         )}
                       </div>
                     </div>
@@ -2516,11 +2516,11 @@ export default function ClientServicesTab() {
           <div>
             <button
               onClick={() => setShowPastServices(!showPastServices)}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              className="flex items-center gap-2 text-sm text-ct-mute hover:text-ct-mute-2 transition-colors"
             >
-              <Clock className="w-4 h-4 text-gray-400" />
+              <Clock className="w-4 h-4 text-ct-mute" />
               <span className="font-medium">{pastJobs.length} past service{pastJobs.length !== 1 ? 's' : ''}</span>
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showPastServices ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 text-ct-mute transition-transform ${showPastServices ? 'rotate-180' : ''}`} />
             </button>
 
             {showPastServices && (
@@ -2535,37 +2535,37 @@ export default function ClientServicesTab() {
                   const freq = freqLabel(job.frequency_months);
 
                   return (
-                    <div key={job.id} className="bg-white rounded-xl border border-gray-200 px-4 py-3">
+                    <div key={job.id} className="bg-ct-surface rounded-ct-lg border border-ct-line px-4 py-3">
                       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-semibold text-gray-900 capitalize">{label}</p>
+                            <p className="text-sm font-semibold text-ct-paper capitalize">{label}</p>
                             <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium border ${
-                              isPaused ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-gray-100 text-gray-500 border-gray-200'
+                              isPaused ? 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]' : 'bg-ct-surface-2 text-ct-mute border-ct-line'
                             }`}>
                               {isPaused ? 'Paused' : 'Ended'}
                             </span>
                           </div>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
                             {tradieName && (
-                              <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                              <span className="inline-flex items-center gap-1 text-xs text-ct-mute">
                                 <User className="w-3 h-3" />
                                 {tradieName}
                               </span>
                             )}
                             {freq && (
-                              <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                              <span className="inline-flex items-center gap-1 text-xs text-ct-mute">
                                 <RefreshCw className="w-3 h-3" />
                                 {freq}
                               </span>
                             )}
                             {job.times_completed > 0 && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-ct-mute">
                                 {job.times_completed} session{job.times_completed !== 1 ? 's' : ''} completed
                               </span>
                             )}
                             {price != null && price > 0 && (
-                              <span className="text-xs font-medium text-emerald-600">${price.toFixed(2)}/visit</span>
+                              <span className="text-xs font-medium text-ct-teal">${price.toFixed(2)}/visit</span>
                             )}
                           </div>
                         </div>
@@ -2574,7 +2574,7 @@ export default function ClientServicesTab() {
                           {tradieId && (
                             <Link
                               to={`/messages?tradie=${tradieId}`}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-ct-mute-2 border border-ct-line rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
                             >
                               <MessageCircle className="w-3 h-3" />
                               Message
@@ -2596,7 +2596,7 @@ export default function ClientServicesTab() {
                               setShowForm(true);
                               setShowPastServices(false);
                             }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-ct-teal bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm hover:bg-ct-teal/[0.14] transition-colors"
                           >
                             <RotateCcw className="w-3 h-3" />
                             Schedule Again
@@ -2616,9 +2616,9 @@ export default function ClientServicesTab() {
       {agreements.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Handshake className="w-4 h-4 text-gray-400" />
-            <h3 className="text-sm font-semibold text-gray-900">Service Agreements</h3>
-            <span className="text-xs text-gray-400">{agreements.length}</span>
+            <Handshake className="w-4 h-4 text-ct-mute" />
+            <h3 className="text-sm font-semibold text-ct-paper">Service Agreements</h3>
+            <span className="text-xs text-ct-mute">{agreements.length}</span>
           </div>
           <div className="space-y-2">
             {agreements.map((ag) => {
@@ -2626,36 +2626,36 @@ export default function ClientServicesTab() {
                 ? ({ daily: 'Daily', weekly: 'Weekly', fortnightly: 'Fortnightly', monthly: 'Monthly', as_needed: 'As needed' }[ag.typical_frequency] || ag.typical_frequency)
                 : null;
               return (
-                <div key={ag.id} className="bg-white rounded-lg border border-gray-200 px-4 py-3">
+                <div key={ag.id} className="bg-ct-surface rounded-ct-sm border border-ct-line px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900">{ag.title}</p>
+                      <p className="text-sm font-medium text-ct-paper">{ag.title}</p>
                       <div className="flex items-center gap-x-3 mt-1 flex-wrap">
-                        <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                        <span className="inline-flex items-center gap-1 text-xs text-ct-mute">
                           <User className="w-3 h-3" />
                           {ag.tradie?.full_name || 'Tradie'}
                         </span>
                         {freq && (
-                          <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                          <span className="inline-flex items-center gap-1 text-xs text-ct-mute">
                             <Clock className="w-3 h-3" />
                             {freq}
                           </span>
                         )}
                         {ag.address && (
-                          <span className="inline-flex items-center gap-1 text-xs text-gray-500 truncate max-w-[220px]">
+                          <span className="inline-flex items-center gap-1 text-xs text-ct-mute truncate max-w-[220px]">
                             <MapPin className="w-3 h-3 flex-shrink-0" />
                             {ag.address}
                           </span>
                         )}
                         {ag.rate_per_visit != null && (
-                          <span className="text-xs font-medium text-emerald-600">${Number(ag.rate_per_visit).toFixed(2)}/visit</span>
+                          <span className="text-xs font-medium text-ct-teal">${Number(ag.rate_per_visit).toFixed(2)}/visit</span>
                         )}
                       </div>
                       {ag.description && (
-                        <p className="text-xs text-gray-400 mt-1 line-clamp-2">{ag.description}</p>
+                        <p className="text-xs text-ct-mute mt-1 line-clamp-2">{ag.description}</p>
                       )}
                     </div>
-                    <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full flex-shrink-0 capitalize">
+                    <span className="px-3 py-1 bg-ct-teal/[0.14] text-ct-teal text-xs font-medium rounded-full flex-shrink-0 capitalize">
                       {ag.status}
                     </span>
                   </div>

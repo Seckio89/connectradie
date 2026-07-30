@@ -71,12 +71,12 @@ export default function TrustSignals({
 
   if (variant === 'inline') {
     return (
-      <div className={`flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-secondary-700 ${className}`}>
+      <div className={`flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ct-mute-2 ${className}`}>
         {signals.map((s) => {
           const Icon = s.icon;
           return (
             <span key={s.title} className="inline-flex items-center gap-1.5">
-              <Icon className="w-3.5 h-3.5 text-secondary-500 flex-shrink-0" />
+              <Icon className="w-3.5 h-3.5 text-ct-mute-2 flex-shrink-0" />
               <span className="font-medium">{s.title}</span>
             </span>
           );
@@ -86,16 +86,16 @@ export default function TrustSignals({
   }
 
   return (
-    <div className={`p-3 bg-secondary-50/50 border border-secondary-100 rounded-lg ${className}`}>
-      <p className="text-xs font-semibold text-secondary-700 mb-2">{captionText}</p>
+    <div className={`p-3 bg-ct-surface-2/50 border border-ct-line rounded-ct-sm ${className}`}>
+      <p className="text-xs font-semibold text-ct-mute-2 mb-2">{captionText}</p>
       <ul className="space-y-1.5">
         {signals.map((s) => {
           const Icon = s.icon;
           return (
-            <li key={s.title} className="flex items-start gap-2 text-xs text-gray-600">
-              <Icon className="w-3.5 h-3.5 text-secondary-500 flex-shrink-0 mt-0.5" />
+            <li key={s.title} className="flex items-start gap-2 text-xs text-ct-mute-2">
+              <Icon className="w-3.5 h-3.5 text-ct-mute-2 flex-shrink-0 mt-0.5" />
               <span>
-                <span className="font-medium text-gray-800">{s.title}.</span>{' '}
+                <span className="font-medium text-ct-paper">{s.title}.</span>{' '}
                 {s.body}
               </span>
             </li>

@@ -37,8 +37,8 @@ export default function ProBadge({
   const isVerified = variant === 'verified';
   const displayLabel = label ?? (isVerified ? 'VERIFIED PRO' : 'PRO');
   const tone = isVerified
-    ? 'bg-gradient-to-r from-emerald-50 to-warm-50 text-emerald-700 border-emerald-200'
-    : 'bg-warm-50 text-warm-700 border-warm-200';
+    ? 'bg-gradient-to-r from-ct-teal to-ct-teal text-ct-teal border-ct-teal/30'
+    : 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]';
   const Icon = isVerified ? BadgeCheck : Crown;
   const title = isVerified
     ? 'Verified Pro — government ID confirmed via Stripe Identity, Pro subscription active. Highest trust signal on the platform.'

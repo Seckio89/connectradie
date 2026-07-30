@@ -26,13 +26,13 @@ export default function PayoutBreakdownRows({ summary, autoReleaseLabel }: Payou
   return (
     <div className="space-y-2">
       {/* 🟡 Waiting on the client to approve */}
-      <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-100 px-4 py-3">
-        <Clock className="w-5 h-5 text-amber-500 flex-shrink-0" />
+      <div className="flex items-center gap-3 rounded-ct-md bg-ct-amber/[0.13] border border-ct-amber/[0.34] px-4 py-3">
+        <Clock className="w-5 h-5 text-ct-amber flex-shrink-0" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-amber-900 tabular-nums">
+          <p className="text-sm font-semibold text-ct-paper tabular-nums">
             {formatCurrency(summary.awaitingClient)} — Secured, awaiting approval
           </p>
-          <p className="text-xs text-amber-700">
+          <p className="text-xs text-ct-amber">
             {summary.awaitingClient === 0
               ? 'Nothing waiting on a client'
               : `Held safely — released to you when your client approves${autoReleaseLabel ? ` · ${autoReleaseLabel}` : ''}`}
@@ -41,24 +41,24 @@ export default function PayoutBreakdownRows({ summary, autoReleaseLabel }: Payou
       </div>
 
       {/* 🔵 On its way to the bank */}
-      <div className="flex items-center gap-3 rounded-xl bg-secondary-50 border border-secondary-100 px-4 py-3">
-        <ExternalLink className="w-5 h-5 text-secondary-500 flex-shrink-0" />
+      <div className="flex items-center gap-3 rounded-ct-md bg-ct-surface-2 border border-ct-line px-4 py-3">
+        <ExternalLink className="w-5 h-5 text-ct-mute-2 flex-shrink-0" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-secondary-900 tabular-nums">
+          <p className="text-sm font-semibold text-ct-paper tabular-nums">
             {formatCurrency(summary.transit.amount)} — {summary.transit.title}
           </p>
-          <p className="text-xs text-secondary-700">{summary.transit.detail}</p>
+          <p className="text-xs text-ct-mute-2">{summary.transit.detail}</p>
         </div>
       </div>
 
       {/* 🟢 Landed */}
-      <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3">
-        <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+      <div className="flex items-center gap-3 rounded-ct-md bg-ct-teal/[0.14] border border-ct-teal/30 px-4 py-3">
+        <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-emerald-900 tabular-nums">
+          <p className="text-sm font-semibold text-ct-teal tabular-nums">
             {formatCurrency(summary.received)} — In your account
           </p>
-          <p className="text-xs text-emerald-700">
+          <p className="text-xs text-ct-teal">
             {summary.received > 0 ? '✓ Received' : 'Payouts land here once they clear'}
           </p>
         </div>

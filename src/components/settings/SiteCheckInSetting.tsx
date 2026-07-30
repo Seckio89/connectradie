@@ -46,15 +46,15 @@ export default function SiteCheckInSetting() {
   };
 
   return (
-    <div className="border-t border-gray-200 p-6 md:p-8">
+    <div className="border-t border-ct-line p-6 md:p-8">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 bg-secondary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-            <MapPin className="w-5 h-5 text-secondary-600" />
+          <div className="w-10 h-10 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center flex-shrink-0">
+            <MapPin className="w-5 h-5 text-ct-mute-2" />
           </div>
           <div>
-            <p className="font-medium text-gray-900">Automatic job-site check-in</p>
-            <p className="text-sm text-gray-600 mt-0.5 max-w-md">
+            <p className="font-medium text-ct-paper">Automatic job-site check-in</p>
+            <p className="text-sm text-ct-mute-2 mt-0.5 max-w-md">
               Detects when you arrive at and leave a booked job site — your client is notified you’re on
               site and your on-site hours are logged automatically. Uses background location, even when
               the app is closed or not in use.
@@ -67,9 +67,9 @@ export default function SiteCheckInSetting() {
           role="switch"
           aria-checked={enabled}
           aria-label={enabled ? 'Turn off automatic job-site check-in' : 'Turn on automatic job-site check-in'}
-          className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 flex-shrink-0 cursor-pointer ${enabled ? 'bg-warm-500' : 'bg-gray-300'}`}
+          className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ct-teal focus:ring-offset-2 flex-shrink-0 cursor-pointer ${enabled ? 'bg-ct-teal' : 'bg-ct-line'}`}
         >
-          <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+          <span className={`inline-block h-5 w-5 transform rounded-full bg-ct-surface shadow-sm transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
         </button>
       </div>
 

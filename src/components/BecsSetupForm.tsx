@@ -50,15 +50,15 @@ function BecsFormInner({ clientSecret, name, email, onSuccess, onCancel }: BecsF
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Bank Account Details</label>
-        <div className="border border-gray-200 rounded-lg p-3.5 bg-white focus-within:border-secondary-400 focus-within:ring-1 focus-within:ring-secondary-400 transition-colors">
+        <label className="block text-sm font-medium text-ct-mute-2 mb-2">Bank Account Details</label>
+        <div className="border border-ct-line rounded-ct-sm p-3.5 bg-ct-surface focus-within:border-ct-line focus-within:ring-1 focus-within:ring-ct-teal transition-colors">
           <AuBankAccountElement
             options={{
               style: {
                 base: {
                   fontSize: '16px',
-                  color: '#1a202c',
-                  '::placeholder': { color: '#a0aec0' },
+                  color: '#F3F6F5', // --paper: literals required, Stripe iframe can't read CSS vars
+                  '::placeholder': { color: '#6B807B' }, // --placeholder
                 },
               },
             }}
@@ -67,17 +67,17 @@ function BecsFormInner({ clientSecret, name, email, onSuccess, onCancel }: BecsF
       </div>
 
       {/* Mandatory BECS Direct Debit agreement text */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3.5">
+      <div className="bg-ct-surface-2 border border-ct-line rounded-ct-sm p-3.5">
         <div className="flex items-start gap-2">
-          <Shield className="w-4 h-4 text-secondary-500 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-gray-600 leading-relaxed">
+          <Shield className="w-4 h-4 text-ct-mute-2 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-ct-mute-2 leading-relaxed">
             By providing your bank account details and confirming this payment, you agree to this
             Direct Debit Request and the{' '}
             <a
               href="https://stripe.com/au-becs-dd-service-agreement/legal"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-secondary-600 underline"
+              className="text-ct-mute-2 underline"
             >
               Direct Debit Request service agreement
             </a>
@@ -90,14 +90,14 @@ function BecsFormInner({ clientSecret, name, email, onSuccess, onCancel }: BecsF
       </div>
 
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-ct-rose">{error}</p>
       )}
 
       <div className="flex items-center gap-3">
         <button
           type="submit"
           disabled={!stripe || loading}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 text-sm font-medium transition-colors"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm hover:brightness-110 disabled:opacity-50 text-sm font-medium transition-colors"
         >
           {loading ? (
             <>
@@ -115,7 +115,7 @@ function BecsFormInner({ clientSecret, name, email, onSuccess, onCancel }: BecsF
           type="button"
           onClick={onCancel}
           disabled={loading}
-          className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+          className="px-4 py-2.5 text-sm font-medium text-ct-mute-2 hover:text-ct-paper transition-colors"
         >
           Cancel
         </button>

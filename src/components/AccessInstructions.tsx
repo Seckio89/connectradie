@@ -45,7 +45,7 @@ export default function AccessInstructions({ jobId, className }: { jobId: string
 
   if (loading) {
     return (
-      <div className={`flex items-center gap-2 text-xs text-gray-400 ${className ?? ''}`}>
+      <div className={`flex items-center gap-2 text-xs text-ct-mute ${className ?? ''}`}>
         <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking access details…
       </div>
     );
@@ -55,31 +55,31 @@ export default function AccessInstructions({ jobId, className }: { jobId: string
   return (
     <div className={className}>
       {text != null ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+        <div className="rounded-ct-md border border-ct-amber/[0.34] bg-ct-amber/[0.13] p-3">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 uppercase tracking-wide">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-ct-paper uppercase tracking-wide">
               <KeyRound className="w-3.5 h-3.5" /> Access instructions
             </span>
-            <span className="text-[11px] text-amber-600 tabular-nums">Auto-locking in {secondsLeft}s</span>
+            <span className="text-[11px] text-ct-amber tabular-nums">Auto-locking in {secondsLeft}s</span>
           </div>
           {text.trim()
-            ? <FormattedNotes text={text} className="text-sm text-amber-900 space-y-1" />
-            : <p className="text-sm text-amber-700 italic">No access instructions were provided for this job.</p>}
-          <button onClick={() => setText(null)} className="mt-2 text-xs font-medium text-amber-700 hover:text-amber-800">Hide now</button>
+            ? <FormattedNotes text={text} className="text-sm text-ct-paper space-y-1" />
+            : <p className="text-sm text-ct-amber italic">No access instructions were provided for this job.</p>}
+          <button onClick={() => setText(null)} className="mt-2 text-xs font-medium text-ct-amber hover:text-ct-paper">Hide now</button>
         </div>
       ) : (
         <button
           type="button"
           onClick={() => setPinOpen(true)}
-          className="w-full text-left rounded-xl border border-gray-200 bg-gray-50 p-3 hover:bg-gray-100 transition-colors"
+          className="w-full text-left rounded-ct-md border border-ct-line bg-ct-surface-2 p-3 hover:bg-ct-surface-2 transition-colors"
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
-              <Lock className="w-4 h-4 text-gray-500" />
+            <div className="w-9 h-9 rounded-ct-sm bg-ct-surface border border-ct-line flex items-center justify-center flex-shrink-0">
+              <Lock className="w-4 h-4 text-ct-mute" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-800">Tap to view access details</p>
-              <p className="text-xs text-gray-500">Access codes are PIN-protected to keep your client’s property secure. Tap to enter your PIN and view.</p>
+              <p className="text-sm font-medium text-ct-paper">Tap to view access details</p>
+              <p className="text-xs text-ct-mute">Access codes are PIN-protected to keep your client’s property secure. Tap to enter your PIN and view.</p>
             </div>
           </div>
         </button>

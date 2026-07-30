@@ -66,14 +66,14 @@ function invoiceBadge(inv: InvoiceRow): { label: string; cls: string } {
   const ext = inv.payment_method === 'external';
   if (inv.status === 'paid') {
     return ext
-      ? { label: 'Paid · External', cls: 'bg-secondary-100 text-secondary-700' }
-      : { label: 'Paid', cls: 'bg-emerald-100 text-emerald-700' };
+      ? { label: 'Paid · External', cls: 'bg-ct-surface-2 text-ct-mute-2' }
+      : { label: 'Paid', cls: 'bg-ct-teal/[0.14] text-ct-teal' };
   }
-  if (inv.status === 'sent') return { label: ext ? 'Awaiting transfer' : 'Awaiting payment', cls: 'bg-amber-100 text-amber-700' };
-  if (inv.status === 'overdue') return { label: 'Overdue', cls: 'bg-red-100 text-red-700' };
-  if (inv.status === 'processing') return { label: 'Processing', cls: 'bg-secondary-100 text-secondary-700' };
-  if (inv.status === 'cancelled') return { label: 'Cancelled', cls: 'bg-gray-100 text-gray-600' };
-  return { label: inv.status, cls: 'bg-gray-100 text-gray-600' };
+  if (inv.status === 'sent') return { label: ext ? 'Awaiting transfer' : 'Awaiting payment', cls: 'bg-ct-amber/[0.13] text-ct-amber' };
+  if (inv.status === 'overdue') return { label: 'Overdue', cls: 'bg-ct-rose/[0.13] text-ct-rose' };
+  if (inv.status === 'processing') return { label: 'Processing', cls: 'bg-ct-surface-2 text-ct-mute-2' };
+  if (inv.status === 'cancelled') return { label: 'Cancelled', cls: 'bg-ct-surface-2 text-ct-mute-2' };
+  return { label: inv.status, cls: 'bg-ct-surface-2 text-ct-mute-2' };
 }
 
 const todayISO = () => new Date().toISOString().split('T')[0];
@@ -84,14 +84,14 @@ const freqLabel = (m: number): string =>
 
 // Client-facing status, quote-centric: "Sent" until they accept.
 const STATUS_META: Record<QuoteStatus, { label: string; cls: string }> = {
-  pending: { label: 'Sent', cls: 'bg-amber-100 text-amber-700' },
-  accepted: { label: 'Accepted', cls: 'bg-emerald-100 text-emerald-700' },
-  declined: { label: 'Declined', cls: 'bg-red-100 text-red-700' },
-  withdrawn: { label: 'Withdrawn', cls: 'bg-gray-100 text-gray-600' },
-  expired: { label: 'Expired', cls: 'bg-gray-100 text-gray-600' },
-  site_visit_scheduled: { label: 'In progress', cls: 'bg-secondary-100 text-secondary-700' },
-  site_visit_completed: { label: 'In progress', cls: 'bg-secondary-100 text-secondary-700' },
-  final_submitted: { label: 'In progress', cls: 'bg-secondary-100 text-secondary-700' },
+  pending: { label: 'Sent', cls: 'bg-ct-amber/[0.13] text-ct-amber' },
+  accepted: { label: 'Accepted', cls: 'bg-ct-teal/[0.14] text-ct-teal' },
+  declined: { label: 'Declined', cls: 'bg-ct-rose/[0.13] text-ct-rose' },
+  withdrawn: { label: 'Withdrawn', cls: 'bg-ct-surface-2 text-ct-mute-2' },
+  expired: { label: 'Expired', cls: 'bg-ct-surface-2 text-ct-mute-2' },
+  site_visit_scheduled: { label: 'In progress', cls: 'bg-ct-surface-2 text-ct-mute-2' },
+  site_visit_completed: { label: 'In progress', cls: 'bg-ct-surface-2 text-ct-mute-2' },
+  final_submitted: { label: 'In progress', cls: 'bg-ct-surface-2 text-ct-mute-2' },
 };
 
 const money = (n: number) => `$${Number(n).toLocaleString('en-AU')}`;
@@ -143,24 +143,24 @@ function MarkPaidModal({ invoice, onClose, onDone }: { invoice: InvoiceRow; onCl
     <Modal isOpen onClose={onClose} maxWidth="md">
       <div className="p-6 space-y-5">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Mark invoice as paid</h2>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h2 className="text-lg font-semibold text-ct-paper">Mark invoice as paid</h2>
+          <p className="text-sm text-ct-mute mt-0.5">
             Record a payment you received outside the app for {money(invoice.total)}.
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">How was it paid?</label>
+          <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">How was it paid?</label>
           <div className="grid grid-cols-2 gap-2">
             {(['bank_transfer', 'cash', 'cheque', 'accountant'] as const).map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => setMethod(m)}
-                className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-ct-sm border text-sm font-medium transition-colors ${
                   method === m
-                    ? 'border-warm-500 bg-warm-50 text-warm-700 ring-1 ring-warm-500'
-                    : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                    ? 'border-ct-teal bg-ct-amber/[0.13] text-ct-amber ring-1 ring-ct-teal0'
+                    : 'border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                 }`}
               >
                 {EXTERNAL_METHOD_LABEL[m]}
@@ -171,24 +171,24 @@ function MarkPaidModal({ invoice, onClose, onDone }: { invoice: InvoiceRow; onCl
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Date received</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Date received</label>
             <input
               type="date"
               value={receivedDate}
               max={todayISO()}
               onChange={(e) => setReceivedDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Reference <span className="text-gray-400 font-normal">(optional)</span>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">
+              Reference <span className="text-ct-mute font-normal">(optional)</span>
             </label>
             <input
               value={reference}
               onChange={(e) => setReference(e.target.value)}
               placeholder="e.g. bank reference"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
             />
           </div>
         </div>
@@ -196,14 +196,14 @@ function MarkPaidModal({ invoice, onClose, onDone }: { invoice: InvoiceRow; onCl
         <div className="flex gap-3 pt-1">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-sm font-medium hover:bg-ct-surface-2 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={saving}
-            className="flex-1 px-4 py-2.5 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm font-medium hover:brightness-110 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />} Mark as paid
           </button>
@@ -346,7 +346,7 @@ export default function ClientDetail() {
   };
 
   const backLink = (
-    <Link to="/clients" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
+    <Link to="/clients" className="inline-flex items-center gap-1.5 text-sm text-ct-mute hover:text-ct-mute-2">
       <ArrowLeft className="w-4 h-4" /> Clients
     </Link>
   );
@@ -357,49 +357,49 @@ export default function ClientDetail() {
         {backLink}
 
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-gray-400">
+          <div className="flex items-center justify-center py-16 text-ct-mute">
             <Loader2 className="w-5 h-5 animate-spin mr-2" />
             <span className="text-sm">Loading client…</span>
           </div>
         ) : !contact ? (
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm px-6 py-16 text-center">
-            <h3 className="text-lg font-semibold text-gray-900">Client not found</h3>
-            <p className="text-sm text-gray-600 mt-1">This client may have been removed.</p>
+          <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm px-6 py-16 text-center">
+            <h3 className="text-lg font-semibold text-ct-paper">Client not found</h3>
+            <p className="text-sm text-ct-mute-2 mt-1">This client may have been removed.</p>
           </div>
         ) : (
           <>
             {/* Client header */}
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 sm:p-6">
+            <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm p-5 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                 <div className="flex items-start gap-4 flex-1 min-w-0">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xl font-bold text-secondary-800">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-ct-surface-2 to-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xl font-bold text-ct-mute-2">
                       {contact.full_name.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h1 className="text-xl font-bold text-gray-900 truncate">{contact.full_name}</h1>
+                      <h1 className="text-xl font-bold text-ct-paper truncate">{contact.full_name}</h1>
                       {contact.linked_profile_id && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-ct-teal/[0.14] text-ct-teal">
                           <UserCheck className="w-3 h-3" /> On app
                         </span>
                       )}
                     </div>
                     <div className="mt-2 space-y-1">
                       {contact.email && (
-                        <p className="flex items-center gap-1.5 text-sm text-gray-600 min-w-0">
-                          <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" /> <span className="truncate">{contact.email}</span>
+                        <p className="flex items-center gap-1.5 text-sm text-ct-mute-2 min-w-0">
+                          <Mail className="w-4 h-4 text-ct-mute flex-shrink-0" /> <span className="truncate">{contact.email}</span>
                         </p>
                       )}
                       {contact.phone && (
-                        <p className="flex items-center gap-1.5 text-sm text-gray-600">
-                          <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" /> {contact.phone}
+                        <p className="flex items-center gap-1.5 text-sm text-ct-mute-2">
+                          <Phone className="w-4 h-4 text-ct-mute flex-shrink-0" /> {contact.phone}
                         </p>
                       )}
                       {contact.address && (
-                        <p className="flex items-center gap-1.5 text-sm text-gray-500 truncate">
-                          <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" /> {contact.address}
+                        <p className="flex items-center gap-1.5 text-sm text-ct-mute truncate">
+                          <MapPin className="w-4 h-4 text-ct-mute flex-shrink-0" /> {contact.address}
                         </p>
                       )}
                     </div>
@@ -407,13 +407,13 @@ export default function ClientDetail() {
                 </div>
                 <button
                   onClick={() => setShowQuote(true)}
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600 transition-colors w-full sm:w-auto flex-shrink-0"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-sm hover:brightness-110 transition-colors w-full sm:w-auto flex-shrink-0"
                 >
                   <FileText className="w-4 h-4" /> New quote
                 </button>
               </div>
               {contact.notes && (
-                <p className="mt-4 text-sm text-gray-500 bg-gray-50 rounded-lg px-3 py-2.5">{contact.notes}</p>
+                <p className="mt-4 text-sm text-ct-mute bg-ct-surface-2 rounded-ct-sm px-3 py-2.5">{contact.notes}</p>
               )}
             </div>
 
@@ -423,50 +423,50 @@ export default function ClientDetail() {
             {/* Quotes */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <h2 className="text-lg font-semibold text-gray-900">Quotes</h2>
+                <h2 className="text-lg font-semibold text-ct-paper">Quotes</h2>
                 {jobs.length > 0 && (
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{jobs.length}</span>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-ct-surface-2 text-ct-mute-2">{jobs.length}</span>
                 )}
               </div>
 
               {jobs.length === 0 ? (
-                <div className="bg-white border border-gray-100 rounded-2xl shadow-sm px-6 py-12 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-secondary-50 flex items-center justify-center mx-auto mb-3">
-                    <FileText className="w-6 h-6 text-secondary-500" />
+                <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm px-6 py-12 text-center">
+                  <div className="w-12 h-12 rounded-ct-lg bg-ct-surface-2 flex items-center justify-center mx-auto mb-3">
+                    <FileText className="w-6 h-6 text-ct-mute-2" />
                   </div>
-                  <h3 className="font-semibold text-gray-700">No quotes yet</h3>
-                  <p className="text-sm text-gray-400 max-w-xs mx-auto mt-1">
+                  <h3 className="font-semibold text-ct-mute-2">No quotes yet</h3>
+                  <p className="text-sm text-ct-mute max-w-xs mx-auto mt-1">
                     Send {contact.full_name.split(' ')[0]} a quote — they’ll get a link to view and accept it.
                   </p>
                   <button
                     onClick={() => setShowQuote(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 mt-5 bg-emerald-500 text-white text-sm font-semibold rounded-xl hover:bg-emerald-600 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 mt-5 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-md hover:brightness-110 transition-colors"
                   >
                     <Plus className="w-4 h-4" /> New quote
                   </button>
                 </div>
               ) : (
-                <div className="bg-white border border-gray-100 rounded-2xl shadow-sm divide-y divide-gray-100 overflow-hidden">
+                <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm divide-y divide-ct-line-soft overflow-hidden">
                   {jobs.map(({ id: jobId, title, quote }) => {
                     const meta = STATUS_META[quote.status] ?? STATUS_META.pending;
                     return (
-                      <div key={jobId} className="flex items-center gap-4 p-4 hover:bg-gray-50/50 transition-colors">
+                      <div key={jobId} className="flex items-center gap-4 p-4 hover:bg-ct-surface-2/50 transition-colors">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium text-gray-900 truncate">{title}</span>
+                            <span className="font-medium text-ct-paper truncate">{title}</span>
                             <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${meta.cls}`}>{meta.label}</span>
                           </div>
-                          <p className="text-xs text-gray-500 mt-0.5">Sent {fmtDate(quote.created_at)}</p>
+                          <p className="text-xs text-ct-mute mt-0.5">Sent {fmtDate(quote.created_at)}</p>
                         </div>
-                        <span className="text-sm font-semibold text-gray-900 flex-shrink-0 tabular-nums">{priceOf(quote)}</span>
+                        <span className="text-sm font-semibold text-ct-paper flex-shrink-0 tabular-nums">{priceOf(quote)}</span>
                         {quote.public_token && (
                           <button
                             onClick={() => copyLink(quote)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors flex-shrink-0"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-ct-line rounded-ct-sm text-xs font-medium text-ct-mute-2 hover:bg-ct-surface-2 transition-colors flex-shrink-0"
                             title="Copy the client’s quote link"
                           >
                             {copiedId === quote.id ? (
-                              <><Check className="w-3.5 h-3.5 text-emerald-600" /> Copied</>
+                              <><Check className="w-3.5 h-3.5 text-ct-teal" /> Copied</>
                             ) : (
                               <><Copy className="w-3.5 h-3.5" /> Copy link</>
                             )}
@@ -485,39 +485,39 @@ export default function ClientDetail() {
             {services.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <h2 className="text-lg font-semibold text-gray-900">Ongoing services</h2>
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{services.length}</span>
+                  <h2 className="text-lg font-semibold text-ct-paper">Ongoing services</h2>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-ct-surface-2 text-ct-mute-2">{services.length}</span>
                 </div>
-                <div className="bg-white border border-gray-100 rounded-2xl shadow-sm divide-y divide-gray-100 overflow-hidden">
+                <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm divide-y divide-ct-line-soft overflow-hidden">
                   {services.map((s) => (
                     <div key={s.id} className="flex items-center gap-4 p-4">
-                      <div className="w-9 h-9 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
-                        <RefreshCw className="w-4 h-4 text-secondary-600" />
+                      <div className="w-9 h-9 rounded-ct-sm bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                        <RefreshCw className="w-4 h-4 text-ct-mute-2" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-gray-900 capitalize truncate">{s.trade_category.replace(/-/g, ' ')}</span>
-                          <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Active</span>
-                          <span className="text-xs text-gray-400 capitalize">{freqLabel(s.frequencyMonths)}</span>
+                          <span className="font-medium text-ct-paper capitalize truncate">{s.trade_category.replace(/-/g, ' ')}</span>
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-ct-teal/[0.14] text-ct-teal">Active</span>
+                          <span className="text-xs text-ct-mute capitalize">{freqLabel(s.frequencyMonths)}</span>
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                        <p className="text-xs text-ct-mute mt-0.5 flex items-center gap-1">
                           {s.assignedName ? (
-                            <><UserCheck className="w-3.5 h-3.5 text-gray-400" /> {s.assignedName}</>
+                            <><UserCheck className="w-3.5 h-3.5 text-ct-mute" /> {s.assignedName}</>
                           ) : (
                             'No worker assigned'
                           )}
                         </p>
                       </div>
                       {s.agreedPrice != null && (
-                        <span className="text-sm font-semibold text-gray-900 flex-shrink-0 tabular-nums">
-                          ${Number(s.agreedPrice).toLocaleString('en-AU')}<span className="text-xs font-normal text-gray-400">/visit</span>
+                        <span className="text-sm font-semibold text-ct-paper flex-shrink-0 tabular-nums">
+                          ${Number(s.agreedPrice).toLocaleString('en-AU')}<span className="text-xs font-normal text-ct-mute">/visit</span>
                         </span>
                       )}
                       {s.isOffApp && s.agreedPrice != null && s.agreedPrice > 0 && (contact.payment_method === 'external' || contact.email) && (
                         <button
                           onClick={() => sendInvoice(s.id)}
                           disabled={invoicingId === s.id}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-ct-line rounded-ct-sm text-xs font-medium text-ct-mute-2 hover:bg-ct-surface-2 transition-colors flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
                           title={contact.payment_method === 'external'
                             ? `Invoice ${contact.full_name.split(' ')[0]} for this visit (bank transfer)`
                             : `Email ${contact.full_name.split(' ')[0]} a card payment link for this visit`}
@@ -540,25 +540,25 @@ export default function ClientDetail() {
             {invoices.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <h2 className="text-lg font-semibold text-gray-900">Invoices</h2>
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{invoices.length}</span>
+                  <h2 className="text-lg font-semibold text-ct-paper">Invoices</h2>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-ct-surface-2 text-ct-mute-2">{invoices.length}</span>
                 </div>
-                <div className="bg-white border border-gray-100 rounded-2xl shadow-sm divide-y divide-gray-100 overflow-hidden">
+                <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm divide-y divide-ct-line-soft overflow-hidden">
                   {invoices.map((inv) => {
                     const badge = invoiceBadge(inv);
                     const ext = inv.payment_method === 'external';
                     const canMark = ext && inv.status !== 'paid' && inv.status !== 'cancelled';
                     return (
                       <div key={inv.id} className="flex items-center gap-4 p-4">
-                        <div className="w-9 h-9 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
-                          <Receipt className="w-4 h-4 text-secondary-600" />
+                        <div className="w-9 h-9 rounded-ct-sm bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                          <Receipt className="w-4 h-4 text-ct-mute-2" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-gray-900 tabular-nums">{money(inv.total)}</span>
+                            <span className="font-semibold text-ct-paper tabular-nums">{money(inv.total)}</span>
                             <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.cls}`}>{badge.label}</span>
                           </div>
-                          <p className="text-xs text-gray-500 mt-0.5">
+                          <p className="text-xs text-ct-mute mt-0.5">
                             {inv.status === 'paid' && inv.paid_at ? (
                               <>
                                 Paid {fmtDate(inv.paid_at)}
@@ -573,12 +573,12 @@ export default function ClientDetail() {
                         {canMark ? (
                           <button
                             onClick={() => setMarkPaid(inv)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors flex-shrink-0"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-ct-line rounded-ct-sm text-xs font-medium text-ct-mute-2 hover:bg-ct-surface-2 transition-colors flex-shrink-0"
                           >
                             <Banknote className="w-3.5 h-3.5" /> Mark as paid
                           </button>
                         ) : inv.status === 'paid' ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                          <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0" />
                         ) : null}
                       </div>
                     );

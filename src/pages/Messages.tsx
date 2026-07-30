@@ -803,7 +803,7 @@ export default function Messages() {
     if (parts.length === 1) return text;
     return parts.map((part, i) =>
       pattern.test(`[${part}]`)
-        ? <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded">{`[${part}]`}</span>
+        ? <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded">{`[${part}]`}</span>
         : part
     );
   };
@@ -812,13 +812,13 @@ export default function Messages() {
     <DashboardLayout wide>
       <div>
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
+          <h1 className="text-2xl font-bold text-ct-paper">Messages</h1>
           <button
             onClick={() => setShowArchivedFilter(!showArchivedFilter)}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-ct-sm text-sm font-medium transition-colors min-h-[44px] ${
               showArchivedFilter
-                ? 'bg-warm-100 text-warm-700'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                ? 'bg-ct-amber/[0.13] text-ct-amber'
+                : 'text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2'
             }`}
           >
             <Archive className="w-4 h-4" />
@@ -826,24 +826,24 @@ export default function Messages() {
           </button>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line shadow-sm overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] h-[calc(100dvh-14rem)] overflow-hidden">
-            <div className={`border-r border-gray-200 overflow-y-auto flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`} style={{ scrollbarWidth: 'thin', scrollbarColor: '#DDD0CC #F5F0EF' }}>
+            <div className={`border-r border-ct-line overflow-y-auto flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`} style={{ scrollbarWidth: 'thin', scrollbarColor: '#DDD0CC #F5F0EF' }}>
               <div className="px-4 pt-4 pb-3">
                 <div className="relative">
-                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search conversations..."
-                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-gray-50 placeholder:text-gray-400"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal bg-ct-surface-2 placeholder:text-ct-mute"
                   />
                 </div>
                 <div className="flex justify-end mt-2">
                   <button
                     onClick={() => setShowNewGroupModal(true)}
-                    className="inline-flex items-center gap-1.5 min-h-[44px] px-2 -mx-2 text-xs font-medium text-secondary-600 hover:text-secondary-700 transition-colors"
+                    className="inline-flex items-center gap-1.5 min-h-[44px] px-2 -mx-2 text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" /> New Group
                   </button>
@@ -852,7 +852,7 @@ export default function Messages() {
 
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+                  <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
                 </div>
               ) : conversations.length === 0 ? (
                 <EmptyState
@@ -886,13 +886,13 @@ export default function Messages() {
                         onClick={() => handleConversationClick(conv)}
                         className={`w-full px-4 py-3.5 text-left transition-colors relative ${
                           isSelected
-                            ? 'bg-primary-50 border-l-[3px] border-l-primary-600'
-                            : 'border-l-[3px] border-l-transparent hover:bg-gray-50'
+                            ? 'bg-ct-surface-2 border-l-[3px] border-l-primary-600'
+                            : 'border-l-[3px] border-l-transparent hover:bg-ct-surface-2'
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
-                            isSelected ? 'bg-primary-600 text-white' : 'bg-primary-100 text-primary-600'
+                            isSelected ? 'bg-ct-teal text-ct-ink' : 'bg-ct-surface-2 text-ct-mute-2'
                           }`}>
                             {conv.is_group ? (
                               <Users className="w-5 h-5" />
@@ -904,15 +904,15 @@ export default function Messages() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
-                              <h3 className={`text-sm truncate ${hasUnread ? 'font-bold text-gray-900' : 'font-medium text-gray-900'}`}>
+                              <h3 className={`text-sm truncate ${hasUnread ? 'font-bold text-ct-paper' : 'font-medium text-ct-paper'}`}>
                                 {getConversationTitle(conv)}
                               </h3>
-                              <span className={`text-xs flex-shrink-0 ml-2 ${hasUnread ? 'text-warm-600 font-semibold' : 'text-gray-400'}`}>
+                              <span className={`text-xs flex-shrink-0 ml-2 ${hasUnread ? 'text-ct-amber font-semibold' : 'text-ct-mute'}`}>
                                 {conv.lastMessage ? formatRelativeTime(conv.lastMessage.created_at) : ''}
                               </span>
                             </div>
                             <div className="flex items-center justify-between mt-0.5">
-                              <p className={`text-xs truncate pr-2 ${hasUnread ? 'text-gray-700 font-medium' : 'text-gray-500'}`}>
+                              <p className={`text-xs truncate pr-2 ${hasUnread ? 'text-ct-mute-2 font-medium' : 'text-ct-mute'}`}>
                                 {conv.lastMessage
                                   ? (conv.lastMessage.sender_id === user?.id
                                       ? 'You: '
@@ -922,7 +922,7 @@ export default function Messages() {
                                   : 'No messages yet'}
                               </p>
                               {hasUnread && (
-                                <span className="w-5 h-5 bg-warm-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0">
+                                <span className="w-5 h-5 bg-ct-teal text-ct-ink text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0">
                                   {conv.unreadCount}
                                 </span>
                               )}
@@ -939,29 +939,29 @@ export default function Messages() {
             <div className={`flex-col h-full overflow-hidden ${selectedConversation ? 'flex' : 'hidden md:flex'}`}>
               {selectedConversation ? (
                 <>
-                  <div className="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between bg-white">
+                  <div className="px-5 py-3.5 border-b border-ct-line flex items-center justify-between bg-ct-surface">
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => setSelectedConversation(null)}
-                        className="md:hidden p-2 text-gray-400 hover:text-gray-600 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        className="md:hidden p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm min-w-[44px] min-h-[44px] flex items-center justify-center"
                         aria-label="Back to conversations"
                       >
                         <ArrowLeft className="w-5 h-5" />
                       </button>
-                      <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
+                      <div className="w-10 h-10 bg-ct-teal rounded-full flex items-center justify-center">
                         {selectedConversation.is_group ? (
-                          <Users className="w-5 h-5 text-white" />
+                          <Users className="w-5 h-5 text-ct-ink" />
                         ) : (
-                          <span className="text-sm font-bold text-white">
+                          <span className="text-sm font-bold text-ct-ink">
                             {getConversationInitial(selectedConversation)}
                           </span>
                         )}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 text-sm">
+                        <h3 className="font-semibold text-ct-paper text-sm">
                           {getConversationTitle(selectedConversation)}
                         </h3>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-ct-mute">
                           {selectedConversation.is_group
                             ? `${selectedConversation.participants.length} members`
                             : isTradie ? 'Client' : 'Tradie'}
@@ -970,7 +970,7 @@ export default function Messages() {
                     </div>
                     <button
                       onClick={() => setShowSettingsModal(true)}
-                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
+                      className="p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
                       aria-label="Conversation settings"
                     >
                       <Settings className="w-4.5 h-4.5" />
@@ -979,15 +979,15 @@ export default function Messages() {
 
                   <div
                     ref={messagesContainerRef}
-                    className="flex-1 min-h-0 messages-scrollbar px-5 py-4 space-y-3 bg-gray-50/50"
+                    className="flex-1 min-h-0 messages-scrollbar px-5 py-4 space-y-3 bg-ct-surface-2/50"
                   >
                     {selectedConversation.messages.length === 0 && (
                       <div className="flex flex-col items-center justify-center h-full text-center px-6">
-                        <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4">
-                          <MessageSquare className="w-7 h-7 text-primary-600" />
+                        <div className="w-16 h-16 bg-ct-surface-2 rounded-full flex items-center justify-center mb-4">
+                          <MessageSquare className="w-7 h-7 text-ct-mute-2" />
                         </div>
-                        <h3 className="text-base font-semibold text-gray-900 mb-1">Start the conversation</h3>
-                        <p className="text-sm text-gray-500 max-w-xs">
+                        <h3 className="text-base font-semibold text-ct-paper mb-1">Start the conversation</h3>
+                        <p className="text-sm text-ct-mute max-w-xs">
                           Send a message to {getOtherParticipantName(selectedConversation).split(' ')[0]} about your job. Ask questions, discuss details, or request a quote.
                         </p>
                       </div>
@@ -1004,7 +1004,7 @@ export default function Messages() {
                         <div key={message.id}>
                           {showDate && (
                             <div className="flex items-center justify-center my-3">
-                              <span className="px-3 py-1 bg-white border border-gray-200 rounded-full text-[11px] font-medium text-gray-500 shadow-sm">
+                              <span className="px-3 py-1 bg-ct-surface border border-ct-line rounded-full text-[11px] font-medium text-ct-mute shadow-sm">
                                 {formatMessageDateSeparator(message.created_at)}
                               </span>
                             </div>
@@ -1017,25 +1017,25 @@ export default function Messages() {
                                 : undefined
                             }
                             style={isOwn ? { color: '#ffffff' } : undefined}
-                            className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-2.5 ${
+                            className={`max-w-[85%] sm:max-w-[70%] rounded-ct-lg px-4 py-2.5 ${
                               isOwn
-                                ? 'bg-secondary-500 text-white rounded-br-md'
-                                : 'bg-white text-gray-900 rounded-bl-md border border-gray-200 shadow-sm'
+                                ? 'bg-ct-surface-20 text-ct-ink rounded-br-md'
+                                : 'bg-ct-surface text-ct-paper rounded-bl-md border border-ct-line shadow-sm'
                             } ${
                               message.is_booking_request
-                                ? 'border-2 border-warm-400 cursor-pointer hover:shadow-lg transition-shadow'
+                                ? 'border-2 border-ct-teal cursor-pointer hover:shadow-lg transition-shadow'
                                 : ''
                             }`}
                           >
                             {selectedConversation.is_group && !isOwn && (
-                              <p className="text-[11px] font-semibold text-secondary-600 mb-0.5">
+                              <p className="text-[11px] font-semibold text-ct-mute-2 mb-0.5">
                                 {message.sender_profile?.full_name?.split(' ')[0] || 'Unknown'}
                               </p>
                             )}
                             {message.is_booking_request && (
                               <div
                                 className={`flex items-center gap-1 text-xs mb-1 ${
-                                  isOwn ? 'text-primary-300' : 'text-warm-600'
+                                  isOwn ? 'text-ct-teal' : 'text-ct-amber'
                                 }`}
                               >
                                 <Calendar className="w-3 h-3" />
@@ -1051,7 +1051,7 @@ export default function Messages() {
                                     alt={message.attachment_name || 'Image'}
                                     loading="lazy"
                                     decoding="async"
-                                    className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                    className="max-w-full rounded-ct-sm cursor-pointer hover:opacity-90 transition-opacity"
                                     onClick={() => setLightboxUrl(getAttachmentUrl(message.attachment_url ?? ''))}
                                   />
                                 ) : (
@@ -1059,8 +1059,8 @@ export default function Messages() {
                                     href={getAttachmentUrl(message.attachment_url ?? '')}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${
-                                      isOwn ? 'bg-secondary-600 hover:bg-secondary-700' : 'bg-gray-100 hover:bg-gray-200'
+                                    className={`flex items-center gap-2 p-2 rounded-ct-sm transition-colors ${
+                                      isOwn ? 'bg-ct-surface-2 hover:bg-ct-surface-2' : 'bg-ct-surface-2 hover:bg-ct-line'
                                     }`}
                                   >
                                     {message.attachment_type === 'pdf' && <FileText className="w-4 h-4" />}
@@ -1069,7 +1069,7 @@ export default function Messages() {
                                     <div className="flex-1 min-w-0">
                                       <p className="text-xs font-medium truncate">{message.attachment_name}</p>
                                       {message.attachment_size && (
-                                        <p className={`text-xs ${isOwn ? 'text-secondary-200' : 'text-gray-500'}`}>
+                                        <p className={`text-xs ${isOwn ? 'text-ct-mute-2' : 'text-ct-mute'}`}>
                                           {(message.attachment_size / 1024 / 1024).toFixed(2)} MB
                                         </p>
                                       )}
@@ -1077,23 +1077,23 @@ export default function Messages() {
                                   </a>
                                 )}
                                 {message.content && !message.content.startsWith('Sent a ') && (
-                                  <p style={isOwn ? { color: '#ffffff' } : undefined} className={`text-sm whitespace-pre-wrap ${isOwn ? 'text-white' : 'text-gray-900'}`}>
+                                  <p style={isOwn ? { color: '#ffffff' } : undefined} className={`text-sm whitespace-pre-wrap ${isOwn ? 'text-ct-ink' : 'text-ct-paper'}`}>
                                     {isCrossMessageRedacted
-                                      ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded">[hidden]</span>
+                                      ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded">[hidden]</span>
                                       : renderRedacted(maybeRedact(message.content, selectedConversation))}
                                   </p>
                                 )}
                               </div>
                             ) : (
-                              <p style={isOwn ? { color: '#ffffff' } : undefined} className={`text-sm whitespace-pre-wrap ${isOwn ? 'text-white' : 'text-gray-900'}`}>
+                              <p style={isOwn ? { color: '#ffffff' } : undefined} className={`text-sm whitespace-pre-wrap ${isOwn ? 'text-ct-ink' : 'text-ct-paper'}`}>
                                 {isCrossMessageRedacted
-                                  ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded">[hidden]</span>
+                                  ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded">[hidden]</span>
                                   : renderRedacted(maybeRedact(message.content.replace('[Booking Request] ', ''), selectedConversation))}
                               </p>
                             )}
 
                             <div className={`flex items-center gap-1 mt-1.5 ${isOwn ? 'justify-end' : ''}`}>
-                              <p className={`text-[11px] ${isOwn ? 'text-secondary-200' : 'text-gray-400'}`}>
+                              <p className={`text-[11px] ${isOwn ? 'text-ct-mute-2' : 'text-ct-mute'}`}>
                                 {new Date(message.created_at).toLocaleTimeString('en-AU', {
                                   hour: '2-digit',
                                   minute: '2-digit',
@@ -1101,13 +1101,13 @@ export default function Messages() {
                               </p>
                               {isOwn && (
                                 <CheckCheck
-                                  className={`w-3 h-3 ${message.read_at ? 'text-emerald-300' : 'text-secondary-200'}`}
+                                  className={`w-3 h-3 ${message.read_at ? 'text-ct-teal' : 'text-ct-mute-2'}`}
                                   aria-label={message.read_at ? 'Seen' : 'Sent'}
                                 />
                               )}
                             </div>
                             {message.is_booking_request && (
-                              <p className={`text-xs mt-1 font-medium ${isOwn ? 'text-primary-100' : 'text-warm-600'}`}>
+                              <p className={`text-xs mt-1 font-medium ${isOwn ? 'text-ct-teal' : 'text-ct-amber'}`}>
                                 Click to view details
                               </p>
                             )}
@@ -1118,9 +1118,9 @@ export default function Messages() {
                     });
                     })()}
                     {selectedConversation.messages.length > 0 && !isContactSharingAllowed(selectedConversation) && (
-                      <div className="flex items-start gap-2 px-3 py-3 bg-warm-50 border border-warm-200 rounded-xl mx-1">
-                        <Lock className="w-4 h-4 text-warm-600 flex-shrink-0 mt-0.5" />
-                        <p className="text-xs text-warm-700">
+                      <div className="flex items-start gap-2 px-3 py-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md mx-1">
+                        <Lock className="w-4 h-4 text-ct-amber flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-ct-amber">
                           For your safety, contact details such as phone numbers and emails are hidden to keep communication on the platform.
                         </p>
                       </div>
@@ -1128,11 +1128,11 @@ export default function Messages() {
                     {typingUsers.length > 0 && (
                       <div className="flex items-center gap-2 px-3 py-2">
                         <div className="flex gap-1">
-                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          <span className="w-2 h-2 bg-ct-surface-2 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-2 h-2 bg-ct-surface-2 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-2 h-2 bg-ct-surface-2 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                         </div>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-ct-mute">
                           {(() => {
                             const names = typingUsers.map(uid => {
                               const p = selectedConversation.otherParticipants.find(op => op.user_id === uid);
@@ -1148,14 +1148,14 @@ export default function Messages() {
                     <div ref={messagesEndRef} />
                   </div>
 
-                  <div className="px-5 py-3 border-t border-gray-200 bg-white">
+                  <div className="px-5 py-3 border-t border-ct-line bg-ct-surface">
                     {failedMessages.size > 0 && (
-                      <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-                        <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                        <p className="text-xs text-red-700 flex-1">Message failed to send.</p>
+                      <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm">
+                        <AlertTriangle className="w-4 h-4 text-ct-rose flex-shrink-0" />
+                        <p className="text-xs text-ct-rose flex-1">Message failed to send.</p>
                         <button
                           onClick={() => handleRetryMessage(newMessage)}
-                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors"
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-ct-rose bg-ct-rose/[0.13] rounded-md hover:bg-ct-rose/[0.13] transition-colors"
                         >
                           <RotateCcw className="w-3 h-3" />
                           Retry
@@ -1167,7 +1167,7 @@ export default function Messages() {
                         <button
                           onClick={() => setAttachmentMenuOpen(!attachmentMenuOpen)}
                           disabled={uploadingFile}
-                          className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50"
+                          className="p-2.5 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-md transition-colors disabled:opacity-50"
                           aria-label="Attach file"
                         >
                           {uploadingFile ? (
@@ -1177,38 +1177,38 @@ export default function Messages() {
                           )}
                         </button>
                         {attachmentMenuOpen && (
-                          <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-lg p-2 w-48 z-10">
+                          <div className="absolute bottom-full left-0 mb-2 bg-ct-surface border border-ct-line rounded-ct-md shadow-lg p-2 w-48 z-10">
                             <button
                               onClick={() => handleAttachmentClick('image/*')}
                               disabled={uploadingFile}
-                              className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+                              className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-ct-surface-2 rounded-ct-sm transition-colors disabled:opacity-50"
                             >
-                              <ImageIcon className="w-4 h-4 text-secondary-600" />
-                              <span className="text-sm text-gray-700">Photo</span>
+                              <ImageIcon className="w-4 h-4 text-ct-mute-2" />
+                              <span className="text-sm text-ct-mute-2">Photo</span>
                             </button>
                             <button
                               onClick={() => handleAttachmentClick('application/pdf')}
                               disabled={uploadingFile}
-                              className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+                              className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-ct-surface-2 rounded-ct-sm transition-colors disabled:opacity-50"
                             >
-                              <FileText className="w-4 h-4 text-red-600" />
-                              <span className="text-sm text-gray-700">PDF</span>
+                              <FileText className="w-4 h-4 text-ct-rose" />
+                              <span className="text-sm text-ct-mute-2">PDF</span>
                             </button>
                             <button
                               onClick={() => handleAttachmentClick('audio/*')}
                               disabled={uploadingFile}
-                              className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+                              className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-ct-surface-2 rounded-ct-sm transition-colors disabled:opacity-50"
                             >
-                              <Mic className="w-4 h-4 text-green-600" />
-                              <span className="text-sm text-gray-700">Audio</span>
+                              <Mic className="w-4 h-4 text-ct-teal" />
+                              <span className="text-sm text-ct-mute-2">Audio</span>
                             </button>
                             <button
                               onClick={() => handleAttachmentClick('*/*')}
                               disabled={uploadingFile}
-                              className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+                              className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-ct-surface-2 rounded-ct-sm transition-colors disabled:opacity-50"
                             >
-                              <Paperclip className="w-4 h-4 text-gray-600" />
-                              <span className="text-sm text-gray-700">All Files</span>
+                              <Paperclip className="w-4 h-4 text-ct-mute-2" />
+                              <span className="text-sm text-ct-mute-2">All Files</span>
                             </button>
                           </div>
                         )}
@@ -1227,13 +1227,13 @@ export default function Messages() {
                           onKeyDown={handleKeyPress}
                           placeholder="Type a message..."
                           rows={1}
-                          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-gray-50 text-sm placeholder:text-gray-400 transition-all"
+                          className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md resize-none focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal bg-ct-surface-2 text-sm placeholder:text-ct-mute transition-all"
                         />
                       </div>
                       <button
                         onClick={() => handleSend()}
                         disabled={!newMessage.trim() || sending}
-                        className="p-2.5 bg-primary-700 text-white rounded-xl hover:bg-primary-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors min-h-[42px] min-w-[42px] flex items-center justify-center"
+                        className="p-2.5 bg-ct-teal text-ct-ink rounded-ct-md hover:bg-ct-teal/[0.14] disabled:opacity-30 disabled:cursor-not-allowed transition-colors min-h-[42px] min-w-[42px] flex items-center justify-center"
                         aria-label="Send message"
                       >
                         {sending ? (
@@ -1246,13 +1246,13 @@ export default function Messages() {
                   </div>
                 </>
               ) : (
-                <div className="flex items-center justify-center h-full bg-gray-50/50">
+                <div className="flex items-center justify-center h-full bg-ct-surface-2/50">
                   <div className="text-center px-6">
-                    <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <MessageSquare className="w-6 h-6 text-gray-400" />
+                    <div className="w-14 h-14 bg-ct-surface-2 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <MessageSquare className="w-6 h-6 text-ct-mute" />
                     </div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-1">Select a conversation</h3>
-                    <p className="text-xs text-gray-500">Choose a conversation from the list to view messages</p>
+                    <h3 className="text-sm font-semibold text-ct-mute-2 mb-1">Select a conversation</h3>
+                    <p className="text-xs text-ct-mute">Choose a conversation from the list to view messages</p>
                   </div>
                 </div>
               )}
@@ -1310,7 +1310,7 @@ export default function Messages() {
         />
       )}
       {toast.show && (
-        <div className={`fixed bottom-20 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-50 px-5 py-3 rounded-xl shadow-lg text-white text-sm font-medium animate-slide-in ${toast.isError ? 'bg-red-600' : 'bg-green-600'}`}>
+        <div className={`fixed bottom-20 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-50 px-5 py-3 rounded-ct-md shadow-lg text-ct-ink text-sm font-medium animate-slide-in ${toast.isError ? 'bg-ct-rose' : 'bg-ct-teal'}`}>
           {toast.message}
         </div>
       )}
@@ -1323,12 +1323,12 @@ export default function Messages() {
           <img
             src={lightboxUrl}
             alt="Attachment"
-            className="max-w-full max-h-[90vh] rounded-lg object-contain"
+            className="max-w-full max-h-[90vh] rounded-ct-sm object-contain"
             onClick={(e) => e.stopPropagation()}
           />
           <button
             onClick={() => setLightboxUrl(null)}
-            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+            className="absolute top-4 right-4 w-10 h-10 bg-ct-surface/10 hover:bg-ct-surface/20 rounded-full flex items-center justify-center text-ct-ink transition-colors"
           >
             <X className="w-5 h-5" />
           </button>

@@ -206,37 +206,37 @@ export default function JobPostGuide() {
   if (!showTour) {
     return (
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-gray-900/40" onClick={dismiss} />
-        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div className="absolute inset-0 bg-ct-surface/40" onClick={dismiss} />
+        <div className="relative bg-ct-surface rounded-ct-lg shadow-2xl w-full max-w-sm overflow-hidden">
           <button
             onClick={dismiss}
-            className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors z-10"
+            className="absolute top-4 right-4 p-1.5 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors z-10"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
           </button>
 
           <div className="px-6 pt-8 pb-6 text-center">
-            <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-7 h-7 text-emerald-500" />
+            <div className="w-14 h-14 bg-ct-teal/[0.14] rounded-ct-lg flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-7 h-7 text-ct-teal" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+            <h2 className="text-xl font-bold text-ct-paper tracking-tight">
               First time posting?
             </h2>
-            <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+            <p className="text-sm text-ct-mute mt-2 leading-relaxed">
               Four quick tips for getting the best quotes. Takes about 30 seconds.
             </p>
 
             <div className="mt-6 space-y-2.5">
               <button
                 onClick={() => setShowTour(true)}
-                className="w-full py-2.5 px-4 bg-emerald-500 text-white text-sm font-semibold rounded-xl hover:bg-emerald-600 transition-colors shadow-sm"
+                className="w-full py-2.5 px-4 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-md hover:brightness-110 transition-colors shadow-sm"
               >
                 Show me how
               </button>
               <button
                 onClick={dismiss}
-                className="w-full py-2.5 px-4 bg-gray-50 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-100 border border-gray-200 transition-colors"
+                className="w-full py-2.5 px-4 bg-ct-surface-2 text-ct-mute-2 text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 border border-ct-line transition-colors"
               >
                 Skip, I&apos;ve got it
               </button>
@@ -328,7 +328,7 @@ export default function JobPostGuide() {
           fill="none"
           strokeWidth="2"
           className="animate-pulse"
-          style={{ stroke: '#10b981' }}
+          style={{ stroke: 'var(--teal)' }}
         />
       </svg>
     );
@@ -341,24 +341,24 @@ export default function JobPostGuide() {
 
       <div
         ref={tooltipRef}
-        className="z-[70] bg-white rounded-2xl shadow-2xl border border-gray-100 w-[340px] overflow-hidden"
+        className="z-[70] bg-ct-surface rounded-ct-lg shadow-2xl border border-ct-line-soft w-[340px] overflow-hidden"
         style={getTooltipStyle()}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={dismiss}
-          className="absolute top-3.5 right-3.5 p-1 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors z-10"
+          className="absolute top-3.5 right-3.5 p-1 text-ct-mute hover:text-ct-mute-2 rounded-md hover:bg-ct-surface-2 transition-colors z-10"
           aria-label="Close"
         >
           <X className="w-3.5 h-3.5" />
         </button>
 
         <div className="px-5 pt-4 pb-2">
-          <p className="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-1.5">
+          <p className="text-xs font-bold text-ct-teal uppercase tracking-wider mb-1.5">
             Tip {step + 1} of {steps.length}
           </p>
-          <h3 className="font-bold text-gray-900 text-base leading-tight">{current.title}</h3>
-          <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{current.description}</p>
+          <h3 className="font-bold text-ct-paper text-base leading-tight">{current.title}</h3>
+          <p className="text-sm text-ct-mute mt-1.5 leading-relaxed">{current.description}</p>
         </div>
 
         {current.hints && current.hints.length > 0 && (
@@ -368,8 +368,8 @@ export default function JobPostGuide() {
                 const HintIcon = hint.icon;
                 return (
                   <div key={i} className="flex items-start gap-2.5 py-1">
-                    <HintIcon className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-[13px] text-gray-600 leading-snug">{hint.text}</span>
+                    <HintIcon className="w-4 h-4 text-ct-mute flex-shrink-0 mt-0.5" />
+                    <span className="text-[13px] text-ct-mute-2 leading-snug">{hint.text}</span>
                   </div>
                 );
               })}
@@ -377,13 +377,13 @@ export default function JobPostGuide() {
           </div>
         )}
 
-        <div className="px-5 py-3.5 flex items-center justify-between border-t border-gray-100 mt-1">
+        <div className="px-5 py-3.5 flex items-center justify-between border-t border-ct-line-soft mt-1">
           <div className="flex items-center gap-1">
             {steps.map((_, i) => (
               <span
                 key={i}
                 className={`rounded-full transition-all ${
-                  i === step ? 'w-5 h-1.5 bg-emerald-500' : 'w-1.5 h-1.5 bg-gray-200'
+                  i === step ? 'w-5 h-1.5 bg-ct-teal' : 'w-1.5 h-1.5 bg-ct-line'
                 }`}
               />
             ))}
@@ -393,7 +393,7 @@ export default function JobPostGuide() {
             {step > 0 && (
               <button
                 onClick={() => setStep(step - 1)}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
                 aria-label="Previous"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -402,14 +402,14 @@ export default function JobPostGuide() {
             {isLast ? (
               <button
                 onClick={dismiss}
-                className="px-5 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-xl hover:bg-emerald-600 transition-colors shadow-sm"
+                className="px-5 py-2 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-md hover:brightness-110 transition-colors shadow-sm"
               >
                 Got it!
               </button>
             ) : (
               <button
                 onClick={() => setStep(step + 1)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-surface text-ct-ink text-sm font-medium rounded-ct-md hover:bg-ct-surface transition-colors"
               >
                 Next
                 <ArrowRight className="w-3.5 h-3.5" />

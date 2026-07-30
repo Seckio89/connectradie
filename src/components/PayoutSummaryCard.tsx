@@ -10,11 +10,11 @@ const fmtDay = (unixSeconds: number) =>
   new Date(unixSeconds * 1000).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
 
 const STATUS_STYLE: Record<string, string> = {
-  paid: 'bg-emerald-100 text-emerald-700',
-  in_transit: 'bg-secondary-100 text-secondary-700',
-  pending: 'bg-amber-100 text-amber-700',
-  failed: 'bg-red-100 text-red-700',
-  canceled: 'bg-gray-100 text-gray-600',
+  paid: 'bg-ct-teal/[0.14] text-ct-teal',
+  in_transit: 'bg-ct-surface-2 text-ct-mute-2',
+  pending: 'bg-ct-amber/[0.13] text-ct-amber',
+  failed: 'bg-ct-rose/[0.13] text-ct-rose',
+  canceled: 'bg-ct-surface-2 text-ct-mute-2',
 };
 
 /**
@@ -38,8 +38,8 @@ export default function PayoutSummaryCard() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-center justify-center">
-        <Loader2 className="w-5 h-5 text-gray-300 animate-spin" />
+      <div className="bg-ct-surface rounded-ct-lg border border-ct-line shadow-sm p-5 flex items-center justify-center">
+        <Loader2 className="w-5 h-5 text-ct-mute animate-spin" />
       </div>
     );
   }
@@ -53,28 +53,28 @@ export default function PayoutSummaryCard() {
   const recent = payouts.slice(0, 4);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+    <div className="bg-ct-surface rounded-ct-lg border border-ct-line shadow-sm p-5">
       <div className="flex items-center justify-between gap-3 mb-3">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+        <p className="text-xs font-medium text-ct-mute uppercase tracking-wide flex items-center gap-1.5">
           <Banknote className="w-3.5 h-3.5" /> Payouts
         </p>
-        <Link to="/payouts" className="inline-flex items-center gap-1 text-xs font-medium text-secondary-600 hover:text-secondary-700">
+        <Link to="/payouts" className="inline-flex items-center gap-1 text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2">
           View all <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
 
       {/* Next payout, or available balance heading to the bank */}
-      <div className="rounded-lg bg-emerald-50 border border-emerald-100 p-3 mb-3">
+      <div className="rounded-ct-sm bg-ct-teal/[0.14] border border-ct-teal/30 p-3 mb-3">
         {upcoming ? (
-          <p className="text-sm text-gray-800">
+          <p className="text-sm text-ct-paper">
             <span className="font-semibold">Next payout: {fmtAud(upcoming.amount)}</span>
-            {last4 && <span className="text-gray-500"> → •••• {last4}</span>}
-            <span className="text-gray-500"> on {fmtDay(upcoming.arrival_date)}</span>
+            {last4 && <span className="text-ct-mute"> → •••• {last4}</span>}
+            <span className="text-ct-mute"> on {fmtDay(upcoming.arrival_date)}</span>
           </p>
         ) : (
-          <p className="text-sm text-gray-800">
+          <p className="text-sm text-ct-paper">
             <span className="font-semibold">{fmtAud(details.balance?.available ?? 0)} available</span>
-            {last4 && <span className="text-gray-500"> → •••• {last4}</span>}
+            {last4 && <span className="text-ct-mute"> → •••• {last4}</span>}
           </p>
         )}
       </div>
@@ -84,10 +84,10 @@ export default function PayoutSummaryCard() {
         <div className="space-y-1.5">
           {recent.map((p) => (
             <div key={p.id} className="flex items-center justify-between gap-2 text-sm">
-              <span className="text-gray-500">{fmtDay(p.arrival_date)}</span>
+              <span className="text-ct-mute">{fmtDay(p.arrival_date)}</span>
               <span className="flex items-center gap-2">
-                <span className="font-medium text-gray-900 tabular-nums">{fmtAud(p.amount)}</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium capitalize ${STATUS_STYLE[p.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                <span className="font-medium text-ct-paper tabular-nums">{fmtAud(p.amount)}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium capitalize ${STATUS_STYLE[p.status] ?? 'bg-ct-surface-2 text-ct-mute-2'}`}>
                   {p.status.replace('_', ' ')}
                 </span>
               </span>
@@ -95,7 +95,7 @@ export default function PayoutSummaryCard() {
           ))}
         </div>
       ) : (
-        <p className="text-xs text-gray-400">No payouts yet — they’ll appear here once you’re paid for completed jobs.</p>
+        <p className="text-xs text-ct-mute">No payouts yet — they’ll appear here once you’re paid for completed jobs.</p>
       )}
     </div>
   );

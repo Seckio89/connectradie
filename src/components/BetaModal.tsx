@@ -67,37 +67,37 @@ export default function BetaModal() {
       aria-labelledby="beta-modal-title"
     >
       <div
-        className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] overflow-y-auto"
+        className="relative w-full max-w-md bg-ct-surface rounded-ct-lg shadow-2xl overflow-hidden max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={handleDismiss}
-          className="absolute top-3 right-3 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors z-10"
+          className="absolute top-3 right-3 p-1.5 rounded-ct-sm text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 transition-colors z-10"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="px-6 pt-6 pb-4 bg-gradient-to-br from-amber-50 to-warm-50/40 border-b border-amber-100">
+        <div className="px-6 pt-6 pb-4 bg-gradient-to-br from-ct-amber to-ct-teal/40 border-b border-ct-amber/[0.34]">
           <div className="flex items-center gap-2.5">
             <span className="text-2xl leading-none" aria-hidden="true">🚧</span>
-            <h2 id="beta-modal-title" className="text-lg font-bold text-gray-900">
+            <h2 id="beta-modal-title" className="text-lg font-bold text-ct-paper">
               ConnecTradie is in beta
             </h2>
           </div>
-          <p className="text-sm text-gray-600 mt-1 ml-9">
+          <p className="text-sm text-ct-mute-2 mt-1 ml-9">
             Thanks for checking us out early. Three things to know first.
           </p>
         </div>
 
         <div className="px-6 py-5 space-y-4">
           <div className="flex gap-3">
-            <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center">
-              <CreditCard className="w-4 h-4 text-amber-600" />
+            <div className="flex-shrink-0 w-9 h-9 rounded-ct-sm bg-ct-amber/[0.13] flex items-center justify-center">
+              <CreditCard className="w-4 h-4 text-ct-amber" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-900">Payments are live &amp; protected</p>
-              <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
+              <p className="text-sm font-semibold text-ct-paper">Payments are live &amp; protected</p>
+              <p className="text-xs text-ct-mute-2 mt-0.5 leading-relaxed">
                 Real payments run through secure Stripe escrow — funds are held safely and only
                 released to the tradie once the work is approved.
               </p>
@@ -105,28 +105,28 @@ export default function BetaModal() {
           </div>
 
           <div className="flex gap-3">
-            <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-secondary-50 flex items-center justify-center">
-              <Users className="w-4 h-4 text-secondary-600" />
+            <div className="flex-shrink-0 w-9 h-9 rounded-ct-sm bg-ct-surface-2 flex items-center justify-center">
+              <Users className="w-4 h-4 text-ct-mute-2" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-900">Tradies are still being onboarded</p>
-              <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
+              <p className="text-sm font-semibold text-ct-paper">Tradies are still being onboarded</p>
+              <p className="text-xs text-ct-mute-2 mt-0.5 leading-relaxed">
                 You can post a job, but verified tradies in your suburb may not yet be on the platform. We&apos;re onboarding professionals across Australia daily.
               </p>
             </div>
           </div>
 
           <div className="flex gap-3">
-            <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
-              <Mail className="w-4 h-4 text-emerald-600" />
+            <div className="flex-shrink-0 w-9 h-9 rounded-ct-sm bg-ct-teal/[0.14] flex items-center justify-center">
+              <Mail className="w-4 h-4 text-ct-teal" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-900">Found a bug?</p>
-              <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
+              <p className="text-sm font-semibold text-ct-paper">Found a bug?</p>
+              <p className="text-xs text-ct-mute-2 mt-0.5 leading-relaxed">
                 Email{' '}
                 <a
                   href="mailto:admin@connectradie.com"
-                  className="text-emerald-700 hover:text-emerald-800 font-medium"
+                  className="text-ct-teal hover:text-ct-teal font-medium"
                   onClick={(e) => e.stopPropagation()}
                 >
                   admin@connectradie.com
@@ -140,7 +140,7 @@ export default function BetaModal() {
         <div className="px-6 pb-6">
           <button
             onClick={handleDismiss}
-            className="w-full px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-colors text-sm shadow-sm"
+            className="w-full px-4 py-3 bg-ct-teal hover:brightness-110 text-ct-ink font-semibold rounded-ct-md transition-colors text-sm shadow-sm"
           >
             Got it, let me continue
           </button>

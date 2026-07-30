@@ -190,27 +190,27 @@ export default function RecommendedTradies() {
     : '/search';
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6" data-tour="recommended-tradies">
-      <h3 className="font-semibold text-gray-900 mb-4">
+    <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6" data-tour="recommended-tradies">
+      <h3 className="font-semibold text-ct-paper mb-4">
         {headerLabel}
         {profile?.postcode && (
-          <span className="text-gray-400 font-normal"> {profile.postcode}</span>
+          <span className="text-ct-mute font-normal"> {profile.postcode}</span>
         )}
       </h3>
       {!profile?.postcode && (
-        <p className="text-xs text-gray-500 -mt-3 mb-4">
-          <Link to="/settings" className="text-primary-600 hover:underline">Add your postcode</Link> for nearby matches.
+        <p className="text-xs text-ct-mute -mt-3 mb-4">
+          <Link to="/settings" className="text-ct-mute-2 hover:underline">Add your postcode</Link> for nearby matches.
         </p>
       )}
 
       {loading ? (
         <div className="space-y-3">
-          {[0, 1, 2].map((i) => <div key={i} className="h-14 bg-gray-50 rounded-xl animate-pulse" />)}
+          {[0, 1, 2].map((i) => <div key={i} className="h-14 bg-ct-surface-2 rounded-ct-md animate-pulse" />)}
         </div>
       ) : items.length === 0 ? (
         <div className="text-center py-6">
-          <p className="text-sm text-gray-500 mb-2">No matches in your area yet</p>
-          <Link to="/search" className="text-xs text-primary-600 hover:underline">
+          <p className="text-sm text-ct-mute mb-2">No matches in your area yet</p>
+          <Link to="/search" className="text-xs text-ct-mute-2 hover:underline">
             Browse all tradies →
           </Link>
         </div>
@@ -226,35 +226,35 @@ export default function RecommendedTradies() {
             return (
               <div
                 key={tradie.id}
-                className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-3 p-3 bg-ct-surface-2 rounded-ct-md hover:bg-ct-surface-2 transition-colors"
               >
-                <Link to={`/tradie/${tradie.id}`} className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-primary-600">
+                <Link to={`/tradie/${tradie.id}`} className="w-10 h-10 bg-ct-surface-2 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-ct-mute-2">
                     {tradie.full_name?.charAt(0) || 'T'}
                   </span>
                 </Link>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <Link to={`/tradie/${tradie.id}`} className="font-medium text-gray-900 text-sm truncate hover:text-primary-600 transition-colors">
+                    <Link to={`/tradie/${tradie.id}`} className="font-medium text-ct-paper text-sm truncate hover:text-ct-mute-2 transition-colors">
                       {displayName}
                     </Link>
-                    {isPro && <Crown className="w-3 h-3 text-amber-500 flex-shrink-0" />}
+                    {isPro && <Crown className="w-3 h-3 text-ct-amber flex-shrink-0" />}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-600 min-w-0">
+                  <div className="flex items-center gap-2 mt-0.5 text-xs text-ct-mute-2 min-w-0">
                     <span className="capitalize whitespace-nowrap flex-shrink-0">{prettyTrade(tradie.tradie_details?.trade_category)}</span>
                     {tradie.__totalReviews > 0 && (
                       <>
-                        <span className="text-gray-300">·</span>
+                        <span className="text-ct-mute">·</span>
                         <span className="inline-flex items-center gap-0.5">
-                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          <Star className="w-3 h-3 fill-amber-400 text-ct-amber" />
                           {tradie.__averageRating.toFixed(1)}
-                          <span className="text-gray-400">({tradie.__totalReviews})</span>
+                          <span className="text-ct-mute">({tradie.__totalReviews})</span>
                         </span>
                       </>
                     )}
                     {tradie.__distanceLabel && (
                       <>
-                        <span className="text-gray-300">·</span>
+                        <span className="text-ct-mute">·</span>
                         <span className="truncate">{tradie.__distanceLabel}</span>
                       </>
                     )}
@@ -266,7 +266,7 @@ export default function RecommendedTradies() {
                       size="sm"
                     />
                     {tradie.__matchesActiveTrade && (
-                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-ct-teal/[0.14] text-ct-teal border border-ct-teal/30">
                         Same as your service
                       </span>
                     )}
@@ -275,7 +275,7 @@ export default function RecommendedTradies() {
                 <button
                   onClick={() => handleSave(tradie.id)}
                   disabled={savingId === tradie.id}
-                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                  className="p-2 text-ct-mute hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors disabled:opacity-50"
                   title="Save tradie"
                   aria-label="Save tradie"
                 >
@@ -289,7 +289,7 @@ export default function RecommendedTradies() {
 
       <Link
         to={viewAllHref}
-        className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 text-primary-600 font-medium hover:bg-primary-50 active:scale-95 rounded-xl transition-all duration-200 min-h-[44px]"
+        className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 text-ct-mute-2 font-medium hover:bg-ct-surface-2 active:scale-95 rounded-ct-md transition-all duration-200 min-h-[44px]"
       >
         View all matches
         <ArrowRight className="w-4 h-4" />
@@ -300,7 +300,7 @@ export default function RecommendedTradies() {
       {activeTrades.length > 0 && (
         <Link
           to="/search"
-          className="mt-1 block text-center text-xs text-gray-500 hover:text-primary-600 transition-colors py-1"
+          className="mt-1 block text-center text-xs text-ct-mute hover:text-ct-mute-2 transition-colors py-1"
         >
           Looking for a different trade? Browse all tradies →
         </Link>

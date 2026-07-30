@@ -54,52 +54,52 @@ const categories = [
 
 const colorClasses = {
   sky: {
-    bg: 'bg-navy-800',
-    bgHover: 'group-hover:bg-navy-700',
-    icon: 'text-secondary-600',
-    border: 'border-navy-700',
+    bg: 'bg-ct-surface',
+    bgHover: 'group-hover:bg-ct-surface-2',
+    icon: 'text-ct-mute-2',
+    border: 'border-ct-line',
   },
   amber: {
-    bg: 'bg-navy-800',
-    bgHover: 'group-hover:bg-navy-700',
-    icon: 'text-amber-500',
-    border: 'border-navy-700',
+    bg: 'bg-ct-surface',
+    bgHover: 'group-hover:bg-ct-surface-2',
+    icon: 'text-ct-amber',
+    border: 'border-ct-line',
   },
   orange: {
-    bg: 'bg-navy-800',
-    bgHover: 'group-hover:bg-navy-700',
-    icon: 'text-orange-600',
-    border: 'border-navy-700',
+    bg: 'bg-ct-surface',
+    bgHover: 'group-hover:bg-ct-surface-2',
+    icon: 'text-ct-amber',
+    border: 'border-ct-line',
   },
   teal: {
-    bg: 'bg-navy-800',
-    bgHover: 'group-hover:bg-navy-700',
-    icon: 'text-teal-500',
-    border: 'border-navy-700',
+    bg: 'bg-ct-surface',
+    bgHover: 'group-hover:bg-ct-surface-2',
+    icon: 'text-ct-teal0',
+    border: 'border-ct-line',
   },
   emerald: {
-    bg: 'bg-navy-800',
-    bgHover: 'group-hover:bg-navy-700',
-    icon: 'text-emerald-600',
-    border: 'border-navy-700',
+    bg: 'bg-ct-surface',
+    bgHover: 'group-hover:bg-ct-surface-2',
+    icon: 'text-ct-teal',
+    border: 'border-ct-line',
   },
   rose: {
-    bg: 'bg-navy-800',
-    bgHover: 'group-hover:bg-navy-700',
-    icon: 'text-rose-500',
-    border: 'border-navy-700',
+    bg: 'bg-ct-surface',
+    bgHover: 'group-hover:bg-ct-surface-2',
+    icon: 'text-ct-rose',
+    border: 'border-ct-line',
   },
 };
 
 export default function CategoriesSection() {
   return (
-    <section className="py-20 lg:py-28 bg-navy-900">
+    <section className="py-20 lg:py-28 bg-ct-ink">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-[-0.02em]">
-            What Do You <span className="text-warm-500">Need Done?</span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-ct-ink tracking-[-0.02em]">
+            What Do You <span className="text-ct-teal">Need Done?</span>
           </h2>
-          <p className="mt-4 text-lg text-gray-400">
+          <p className="mt-4 text-lg text-ct-mute">
             Pick a trade. Every result is a verified, licensed professional.
           </p>
         </div>
@@ -113,22 +113,22 @@ export default function CategoriesSection() {
               <Link
                 key={category.title}
                 to={`/search?trade=${category.value}`}
-                className={`group relative ${colors.bg} ${colors.bgHover} rounded-lg p-6 border ${colors.border} transition-all duration-300 hover:border-warm-500 hover:-translate-y-0.5`}
+                className={`group relative ${colors.bg} ${colors.bgHover} rounded-ct-sm p-6 border ${colors.border} transition-all duration-300 hover:border-ct-teal hover:-translate-y-0.5`}
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div className="w-14 h-14 bg-navy-700 rounded-xl flex items-center justify-center">
+                  <div className="w-14 h-14 bg-ct-surface-2 rounded-ct-md flex items-center justify-center">
                     <Icon className={`w-7 h-7 ${colors.icon}`} />
                   </div>
-                  <ArrowRight className="w-5 h-5 text-gray-500 group-hover:text-gray-300 group-hover:translate-x-1 transition-all" />
+                  <ArrowRight className="w-5 h-5 text-ct-mute group-hover:text-ct-mute group-hover:translate-x-1 transition-all" />
                 </div>
 
-                <h3 className="text-lg font-semibold text-white mb-1">
+                <h3 className="text-lg font-semibold text-ct-ink mb-1">
                   {category.title}
                 </h3>
-                <p className="text-sm text-gray-400 mb-3">
+                <p className="text-sm text-ct-mute mb-3">
                   {category.subtitle}
                 </p>
-                <p className="text-xs font-medium text-gray-500">
+                <p className="text-xs font-medium text-ct-mute">
                   {category.jobs}
                 </p>
               </Link>
@@ -139,7 +139,7 @@ export default function CategoriesSection() {
         <div className="mt-12 text-center">
           <Link
             to="/explore"
-            className="inline-flex items-center gap-2 text-warm-400 font-semibold hover:text-warm-300 transition-colors"
+            className="inline-flex items-center gap-2 text-ct-amber font-semibold hover:text-ct-teal transition-colors"
           >
             View All Categories
             <ArrowRight className="w-5 h-5" />

@@ -136,17 +136,17 @@ export default function EditPortfolioModal({ isOpen, onClose, images, tradieId, 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 ">
       <div
-        className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+        className="bg-ct-surface rounded-ct-lg shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ct-line-soft flex-shrink-0">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Edit Portfolio</h3>
-            <p className="text-sm text-gray-500 mt-0.5">{localImages.length} photo{localImages.length !== 1 ? 's' : ''}</p>
+            <h3 className="text-lg font-semibold text-ct-paper">Edit Portfolio</h3>
+            <p className="text-sm text-ct-mute mt-0.5">{localImages.length} photo{localImages.length !== 1 ? 's' : ''}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -155,9 +155,9 @@ export default function EditPortfolioModal({ isOpen, onClose, images, tradieId, 
         <div className="p-6 overflow-y-auto flex-1">
           {localImages.length === 0 && (
             <div className="text-center py-12">
-              <ImageIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 mb-1">No portfolio images yet</p>
-              <p className="text-sm text-gray-400">Upload photos of your best work to attract clients</p>
+              <ImageIcon className="w-12 h-12 text-ct-mute mx-auto mb-3" />
+              <p className="text-ct-mute mb-1">No portfolio images yet</p>
+              <p className="text-sm text-ct-mute">Upload photos of your best work to attract clients</p>
             </div>
           )}
 
@@ -165,27 +165,27 @@ export default function EditPortfolioModal({ isOpen, onClose, images, tradieId, 
             {localImages.map((image, index) => (
               <div
                 key={image.id}
-                className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200 group"
+                className="flex items-start gap-3 p-3 bg-ct-surface-2 rounded-ct-md border border-ct-line group"
               >
                 <div className="flex flex-col items-center gap-1 pt-2">
                   <button
                     onClick={() => handleReorder(index, 'up')}
                     disabled={index === 0}
-                    className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 transition-colors"
+                    className="p-1 text-ct-mute hover:text-ct-mute-2 disabled:opacity-30 transition-colors"
                   >
                     <ArrowUp className="w-3.5 h-3.5" />
                   </button>
-                  <GripVertical className="w-4 h-4 text-gray-300" />
+                  <GripVertical className="w-4 h-4 text-ct-mute" />
                   <button
                     onClick={() => handleReorder(index, 'down')}
                     disabled={index === localImages.length - 1}
-                    className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 transition-colors"
+                    className="p-1 text-ct-mute hover:text-ct-mute-2 disabled:opacity-30 transition-colors"
                   >
                     <ArrowDown className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
-                <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+                <div className="w-20 h-20 rounded-ct-sm overflow-hidden bg-ct-line flex-shrink-0">
                   <img
                     src={image.image_url}
                     alt={image.caption || 'Portfolio'}
@@ -205,17 +205,17 @@ export default function EditPortfolioModal({ isOpen, onClose, images, tradieId, 
                     }}
                     onBlur={(e) => handleCaptionSave(image.id, e.target.value)}
                     placeholder="Add a caption..."
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                    className="w-full px-3 py-2 text-sm border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal bg-ct-surface"
                   />
                   {savingCaption === image.id && (
-                    <p className="text-xs text-gray-400 mt-1">Saving...</p>
+                    <p className="text-xs text-ct-mute mt-1">Saving...</p>
                   )}
                 </div>
 
                 <button
                   onClick={() => handleDelete(image)}
                   disabled={deleting === image.id}
-                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                  className="p-2 text-ct-mute hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors flex-shrink-0"
                 >
                   {deleting === image.id ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -228,7 +228,7 @@ export default function EditPortfolioModal({ isOpen, onClose, images, tradieId, 
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex items-center justify-between flex-shrink-0">
+        <div className="px-6 py-4 border-t border-ct-line-soft bg-ct-surface-2 rounded-b-2xl flex items-center justify-between flex-shrink-0">
           <input
             ref={fileInputRef}
             type="file"
@@ -240,7 +240,7 @@ export default function EditPortfolioModal({ isOpen, onClose, images, tradieId, 
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-300 text-sm font-medium text-gray-700 rounded-lg hover:bg-white transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2.5 border border-ct-line text-sm font-medium text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface transition-colors disabled:opacity-50"
           >
             {uploading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -252,7 +252,7 @@ export default function EditPortfolioModal({ isOpen, onClose, images, tradieId, 
 
           <button
             onClick={onClose}
-            className="px-5 py-2.5 bg-warm-500 text-white text-sm font-semibold rounded-lg hover:bg-warm-600 transition-colors"
+            className="px-5 py-2.5 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-sm hover:brightness-110 transition-colors"
           >
             Done
           </button>

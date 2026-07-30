@@ -197,16 +197,16 @@ export default function AdminModeration() {
 
   const getStatusBadge = (status: string) => {
     const map: Record<string, string> = {
-      pending: 'bg-warm-100 text-warm-700',
-      accepted: 'bg-secondary-100 text-secondary-700',
-      in_progress: 'bg-warm-100 text-warm-700',
-      completed: 'bg-green-100 text-green-700',
-      cancelled: 'bg-gray-100 text-gray-600',
-      declined: 'bg-red-100 text-red-700',
-      funded: 'bg-warm-100 text-warm-700',
+      pending: 'bg-ct-amber/[0.13] text-ct-amber',
+      accepted: 'bg-ct-surface-2 text-ct-mute-2',
+      in_progress: 'bg-ct-amber/[0.13] text-ct-amber',
+      completed: 'bg-ct-teal/[0.14] text-ct-teal',
+      cancelled: 'bg-ct-surface-2 text-ct-mute-2',
+      declined: 'bg-ct-rose/[0.13] text-ct-rose',
+      funded: 'bg-ct-amber/[0.13] text-ct-amber',
     };
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[status] || 'bg-gray-100 text-gray-600'}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[status] || 'bg-ct-surface-2 text-ct-mute-2'}`}>
         {status.replace('_', ' ')}
       </span>
     );
@@ -214,10 +214,10 @@ export default function AdminModeration() {
 
   const getReportStatusBadge = (status: string) => {
     const cfg: Record<string, { bg: string; icon: typeof Clock; label: string }> = {
-      pending: { bg: 'bg-warm-100 text-warm-700', icon: Clock, label: 'Pending' },
-      resolved: { bg: 'bg-green-100 text-green-700', icon: CheckCircle2, label: 'Resolved' },
-      dismissed: { bg: 'bg-gray-100 text-gray-600', icon: XCircle, label: 'Dismissed' },
-      warned: { bg: 'bg-red-100 text-red-700', icon: AlertTriangle, label: 'Warning Issued' },
+      pending: { bg: 'bg-ct-amber/[0.13] text-ct-amber', icon: Clock, label: 'Pending' },
+      resolved: { bg: 'bg-ct-teal/[0.14] text-ct-teal', icon: CheckCircle2, label: 'Resolved' },
+      dismissed: { bg: 'bg-ct-surface-2 text-ct-mute-2', icon: XCircle, label: 'Dismissed' },
+      warned: { bg: 'bg-ct-rose/[0.13] text-ct-rose', icon: AlertTriangle, label: 'Warning Issued' },
     };
     const c = cfg[status] || cfg.pending;
     const Icon = c.icon;
@@ -239,7 +239,7 @@ export default function AdminModeration() {
       other: 'Other',
     };
     return (
-      <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+      <span className="px-3 py-1 rounded-full text-xs font-medium bg-ct-rose/[0.13] text-ct-rose border border-ct-rose/[0.34]">
         {labels[type] || type.replace(/_/g, ' ')}
       </span>
     );
@@ -250,20 +250,20 @@ export default function AdminModeration() {
       <Breadcrumbs />
       <div>
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Content Moderation</h1>
-          <p className="text-gray-600 mt-1">Review and moderate platform content, manage abuse reports</p>
+          <h1 className="text-2xl font-bold text-ct-paper">Content Moderation</h1>
+          <p className="text-ct-mute-2 mt-1">Review and moderate platform content, manage abuse reports</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
           {/* Tabs */}
-          <div className="border-b border-gray-200 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="border-b border-ct-line overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
             <div className="flex min-w-max">
               <button
                 onClick={() => { setActiveTab('reports'); setSearchQuery(''); }}
                 className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'reports'
-                    ? 'text-red-700 bg-red-50/50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'text-ct-rose bg-ct-rose/[0.13]/50'
+                    : 'text-ct-mute-2 hover:text-ct-paper hover:bg-ct-surface-2'
                 }`}
               >
                 <div className="flex items-center justify-center gap-1.5 sm:gap-2">
@@ -271,21 +271,21 @@ export default function AdminModeration() {
                   <span className="hidden sm:inline">Abuse Reports</span>
                   <span className="sm:hidden">Reports</span>
                   {pendingReportsCount > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-500 text-white">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-ct-rose/[0.13]0 text-ct-ink">
                       {pendingReportsCount}
                     </span>
                   )}
                 </div>
                 {activeTab === 'reports' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-ct-rose" />
                 )}
               </button>
               <button
                 onClick={() => { setActiveTab('flagged'); setSearchQuery(''); }}
                 className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'flagged'
-                    ? 'text-amber-700 bg-amber-50/50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'text-ct-amber bg-ct-amber/[0.13]/50'
+                    : 'text-ct-mute-2 hover:text-ct-paper hover:bg-ct-surface-2'
                 }`}
               >
                 <div className="flex items-center justify-center gap-1.5 sm:gap-2">
@@ -293,42 +293,42 @@ export default function AdminModeration() {
                   <span className="hidden sm:inline">Flagged Jobs</span>
                   <span className="sm:hidden">Flagged</span>
                   {flaggedJobs.length > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-white">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-ct-amber/[0.13]0 text-ct-ink">
                       {flaggedJobs.length}
                     </span>
                   )}
                 </div>
                 {activeTab === 'flagged' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-ct-amber/[0.13]0" />
                 )}
               </button>
               <button
                 onClick={() => { setActiveTab('reviews'); setSearchQuery(''); }}
                 className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'reviews'
-                    ? 'text-warm-700 bg-warm-50/50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'text-ct-amber bg-ct-amber/[0.13]/50'
+                    : 'text-ct-mute-2 hover:text-ct-paper hover:bg-ct-surface-2'
                 }`}
               >
                 <div className="flex items-center justify-center gap-1.5 sm:gap-2">
                   <MessageSquare className="w-4 h-4 flex-shrink-0" />
                   <span>Reviews</span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                    activeTab === 'reviews' ? 'bg-warm-200 text-warm-800' : 'bg-gray-200 text-gray-700'
+                    activeTab === 'reviews' ? 'bg-ct-teal/[0.14] text-ct-paper' : 'bg-ct-line text-ct-mute-2'
                   }`}>
                     {reviews.length}
                   </span>
                 </div>
                 {activeTab === 'reviews' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-warm-600" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-ct-teal" />
                 )}
               </button>
               <button
                 onClick={() => { setActiveTab('jobs'); setSearchQuery(''); }}
                 className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'jobs'
-                    ? 'text-primary-700 bg-primary-50/50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'text-ct-mute-2 bg-ct-surface-2/50'
+                    : 'text-ct-mute-2 hover:text-ct-paper hover:bg-ct-surface-2'
                 }`}
               >
                 <div className="flex items-center justify-center gap-1.5 sm:gap-2">
@@ -336,50 +336,50 @@ export default function AdminModeration() {
                   <span className="hidden sm:inline">Job Listings</span>
                   <span className="sm:hidden">Jobs</span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                    activeTab === 'jobs' ? 'bg-primary-200 text-primary-800' : 'bg-gray-200 text-gray-700'
+                    activeTab === 'jobs' ? 'bg-ct-teal/[0.14] text-ct-teal' : 'bg-ct-line text-ct-mute-2'
                   }`}>
                     {jobs.length}
                   </span>
                 </div>
                 {activeTab === 'jobs' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-warm-500" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-ct-teal" />
                 )}
               </button>
             </div>
           </div>
 
           {fetchError ? (
-            <div className="bg-white rounded-2xl border border-red-200 p-12 text-center">
-              <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load</h3>
-              <p className="text-gray-600 mb-4">{fetchError}</p>
-              <button onClick={fetchData} className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+            <div className="bg-ct-surface rounded-ct-lg border border-ct-rose/[0.34] p-12 text-center">
+              <AlertCircle className="w-12 h-12 text-ct-rose mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-ct-paper mb-2">Failed to Load</h3>
+              <p className="text-ct-mute-2 mb-4">{fetchError}</p>
+              <button onClick={fetchData} className="inline-flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm hover:brightness-110 transition-colors">
                 <RefreshCw className="w-4 h-4" /> Try Again
               </button>
             </div>
           ) : loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+              <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
             </div>
           ) : activeTab === 'reports' ? (
             <>
               {/* Report Filters */}
-              <div className="p-4 border-b border-gray-100">
+              <div className="p-4 border-b border-ct-line-soft">
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
                       placeholder="Search reports by name or description..."
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                      className="w-full pl-10 pr-4 py-2.5 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm"
                     />
                   </div>
                   <select
                     value={reportStatusFilter}
                     onChange={e => setReportStatusFilter(e.target.value)}
-                    className="px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="px-3 py-2.5 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                   >
                     <option value="all">All Status</option>
                     <option value="pending">Pending</option>
@@ -392,32 +392,32 @@ export default function AdminModeration() {
 
               {filteredReports.length === 0 ? (
                 <div className="py-16 text-center">
-                  <Flag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 font-medium">No abuse reports found</p>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <Flag className="w-12 h-12 text-ct-mute mx-auto mb-3" />
+                  <p className="text-ct-mute font-medium">No abuse reports found</p>
+                  <p className="text-sm text-ct-mute mt-1">
                     {reportStatusFilter !== 'all' || searchQuery
                       ? 'Try adjusting your filters'
                       : 'No abuse reports have been submitted'}
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-ct-line-soft">
                   {filteredReports.map(report => (
-                    <div key={report.id} className={`p-5 ${report.status === 'pending' ? 'bg-red-50/30' : ''}`}>
+                    <div key={report.id} className={`p-5 ${report.status === 'pending' ? 'bg-ct-rose/[0.13]/30' : ''}`}>
                       <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <Flag className="w-5 h-5 text-red-600" />
+                        <div className="w-10 h-10 bg-ct-rose/[0.13] rounded-ct-md flex items-center justify-center flex-shrink-0">
+                          <Flag className="w-5 h-5 text-ct-rose" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-2">
-                            <span className="font-semibold text-gray-900">
+                            <span className="font-semibold text-ct-paper">
                               {report.reporter?.full_name || 'Anonymous'}
                             </span>
-                            <span className="text-gray-400">reported</span>
-                            <span className="font-medium text-red-700">
+                            <span className="text-ct-mute">reported</span>
+                            <span className="font-medium text-ct-rose">
                               {report.reported_user?.full_name || 'Unknown User'}
                             </span>
-                            <span className="text-sm text-gray-500">{formatDate(report.created_at)}</span>
+                            <span className="text-sm text-ct-mute">{formatDate(report.created_at)}</span>
                           </div>
 
                           <div className="flex items-center gap-2 mb-2">
@@ -425,12 +425,12 @@ export default function AdminModeration() {
                             {getReportStatusBadge(report.status)}
                           </div>
 
-                          <p className="text-gray-700 text-sm leading-relaxed mb-3">{report.description}</p>
+                          <p className="text-ct-mute-2 text-sm leading-relaxed mb-3">{report.description}</p>
 
                           {report.admin_notes && report.status !== 'pending' && (
-                            <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                              <p className="text-xs text-gray-500 font-medium mb-1">Admin Notes</p>
-                              <p className="text-sm text-gray-600">{report.admin_notes}</p>
+                            <div className="bg-ct-surface-2 rounded-ct-sm p-3 mb-3">
+                              <p className="text-xs text-ct-mute font-medium mb-1">Admin Notes</p>
+                              <p className="text-sm text-ct-mute-2">{report.admin_notes}</p>
                             </div>
                           )}
 
@@ -441,26 +441,26 @@ export default function AdminModeration() {
                                 onChange={e => setAdminNotes(prev => ({ ...prev, [report.id]: e.target.value }))}
                                 placeholder="Add admin notes (optional)..."
                                 rows={2}
-                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                               />
                               <div className="flex gap-2">
                                 <button
                                   onClick={() => handleReportAction(report.id, 'resolved')}
-                                  className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition-colors"
+                                  className="flex items-center gap-1.5 px-3 py-2 bg-ct-teal text-ct-ink rounded-ct-sm text-xs font-medium hover:brightness-110 transition-colors"
                                 >
                                   <CheckCircle2 className="w-3.5 h-3.5" />
                                   Resolve
                                 </button>
                                 <button
                                   onClick={() => handleReportAction(report.id, 'warned')}
-                                  className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 transition-colors"
+                                  className="flex items-center gap-1.5 px-3 py-2 bg-ct-rose text-ct-ink rounded-ct-sm text-xs font-medium hover:brightness-110 transition-colors"
                                 >
                                   <AlertTriangle className="w-3.5 h-3.5" />
                                   Issue Warning
                                 </button>
                                 <button
                                   onClick={() => handleReportAction(report.id, 'dismissed')}
-                                  className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors"
+                                  className="flex items-center gap-1.5 px-3 py-2 bg-ct-surface-2 text-ct-mute-2 rounded-ct-sm text-xs font-medium hover:bg-ct-line transition-colors"
                                 >
                                   <XCircle className="w-3.5 h-3.5" />
                                   Dismiss
@@ -479,9 +479,9 @@ export default function AdminModeration() {
             <div className="p-4">
               {flaggedJobs.length === 0 ? (
                 <div className="text-center py-12">
-                  <CheckCircle2 className="w-10 h-10 text-green-400 mx-auto mb-3" />
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">No flagged jobs</h3>
-                  <p className="text-xs text-gray-500">All job descriptions look clean.</p>
+                  <CheckCircle2 className="w-10 h-10 text-ct-teal mx-auto mb-3" />
+                  <h3 className="text-sm font-semibold text-ct-paper mb-1">No flagged jobs</h3>
+                  <p className="text-xs text-ct-mute">All job descriptions look clean.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -489,25 +489,25 @@ export default function AdminModeration() {
                     const category = job.description.match(/^\[([^\]]+)\]/)?.[1] || '';
                     const desc = job.description.replace(/^\[[^\]]+\]\s*/, '');
                     return (
-                      <div key={job.id} className="border border-amber-200 bg-amber-50/30 rounded-xl p-4">
+                      <div key={job.id} className="border border-ct-amber/[0.34] bg-ct-amber/[0.13]/30 rounded-ct-md p-4">
                         <div className="flex items-start justify-between gap-3 mb-2">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <h4 className="text-sm font-semibold text-gray-900">{job.title || category || 'Untitled'}</h4>
-                              {category && <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">{category}</span>}
-                              <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium border border-amber-200">Flagged</span>
+                              <h4 className="text-sm font-semibold text-ct-paper">{job.title || category || 'Untitled'}</h4>
+                              {category && <span className="px-3 py-1 bg-ct-surface-2 text-ct-mute-2 rounded-full text-xs font-medium">{category}</span>}
+                              <span className="px-3 py-1 bg-ct-amber/[0.13] text-ct-amber rounded-full text-xs font-medium border border-ct-amber/[0.34]">Flagged</span>
                             </div>
-                            <p className="text-sm text-gray-700 mb-2">{desc}</p>
-                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                            <p className="text-sm text-ct-mute-2 mb-2">{desc}</p>
+                            <div className="flex items-center gap-3 text-xs text-ct-mute">
                               <span><User className="w-3 h-3 inline mr-1" />{job.client_profile?.full_name || 'Unknown'}</span>
                               <span><Clock className="w-3 h-3 inline mr-1" />{new Date(job.created_at).toLocaleDateString('en-AU')}</span>
-                              <span className="px-2 py-0.5 bg-gray-100 rounded text-xs">{job.status}</span>
+                              <span className="px-2 py-0.5 bg-ct-surface-2 rounded text-xs">{job.status}</span>
                             </div>
                           </div>
                         </div>
-                        <div className="mt-3 pt-3 border-t border-amber-200/50">
+                        <div className="mt-3 pt-3 border-t border-ct-amber/[0.34]/50">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5 text-xs text-amber-700">
+                            <div className="flex items-center gap-1.5 text-xs text-ct-amber">
                               <AlertTriangle className="w-3.5 h-3.5" />
                               <span className="font-medium">Reason:</span>
                               <span>{job.contact_flag_reason || 'Contact info detected'}</span>
@@ -524,7 +524,7 @@ export default function AdminModeration() {
                                   showToast('Failed to dismiss flag', true);
                                 }
                               }}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 bg-white border border-gray-200 hover:border-gray-300 rounded-lg transition-colors"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ct-mute-2 hover:text-ct-paper bg-ct-surface border border-ct-line hover:border-ct-line rounded-ct-sm transition-colors"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               Dismiss Flag
@@ -540,22 +540,22 @@ export default function AdminModeration() {
           ) : activeTab === 'reviews' ? (
             <>
               {/* Review Filters */}
-              <div className="p-4 border-b border-gray-100">
+              <div className="p-4 border-b border-ct-line-soft">
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
                       placeholder="Search reviews by name or content..."
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                      className="w-full pl-10 pr-4 py-2.5 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm"
                     />
                   </div>
                   <select
                     value={ratingFilter}
                     onChange={e => setRatingFilter(e.target.value)}
-                    className="px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="px-3 py-2.5 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                   >
                     <option value="all">All Ratings</option>
                     <option value="5">5 Stars</option>
@@ -569,32 +569,32 @@ export default function AdminModeration() {
 
               {filteredReviews.length === 0 ? (
                 <div className="py-16 text-center">
-                  <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 font-medium">No reviews found</p>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <MessageSquare className="w-12 h-12 text-ct-mute mx-auto mb-3" />
+                  <p className="text-ct-mute font-medium">No reviews found</p>
+                  <p className="text-sm text-ct-mute mt-1">
                     {searchQuery || ratingFilter !== 'all'
                       ? 'Try adjusting your filters'
                       : 'No reviews have been submitted yet'}
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-ct-line-soft">
                   {filteredReviews.map(review => (
-                    <div key={review.id} className="p-5 hover:bg-gray-50/50 transition-colors">
+                    <div key={review.id} className="p-5 hover:bg-ct-surface-2/50 transition-colors">
                       <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 bg-warm-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <User className="w-5 h-5 text-warm-600" />
+                        <div className="w-10 h-10 bg-ct-amber/[0.13] rounded-ct-md flex items-center justify-center flex-shrink-0">
+                          <User className="w-5 h-5 text-ct-amber" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <span className="font-semibold text-gray-900">
+                            <span className="font-semibold text-ct-paper">
                               {review.client?.full_name || 'Anonymous'}
                             </span>
-                            <span className="text-gray-400">&rarr;</span>
-                            <span className="font-medium text-gray-700">
+                            <span className="text-ct-mute">&rarr;</span>
+                            <span className="font-medium text-ct-mute-2">
                               {review.tradie?.full_name || 'Unknown Tradie'}
                             </span>
-                            <span className="text-sm text-gray-500">{formatDate(review.created_at)}</span>
+                            <span className="text-sm text-ct-mute">{formatDate(review.created_at)}</span>
                           </div>
 
                           <div className="flex items-center gap-1 mb-2">
@@ -603,21 +603,21 @@ export default function AdminModeration() {
                                 key={i}
                                 className={`w-4 h-4 ${
                                   i < review.rating
-                                    ? 'fill-yellow-400 text-yellow-400'
-                                    : 'text-gray-300'
+                                    ? 'fill-yellow-400 text-ct-amber'
+                                    : 'text-ct-mute'
                                 }`}
                               />
                             ))}
                           </div>
 
                           {review.comment && (
-                            <p className="text-gray-700 text-sm leading-relaxed">{review.comment}</p>
+                            <p className="text-ct-mute-2 text-sm leading-relaxed">{review.comment}</p>
                           )}
                         </div>
 
                         <button
                           onClick={() => setDeleteReviewId(review.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                          className="p-2 text-ct-mute hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors flex-shrink-0"
                           title="Delete review"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -632,20 +632,20 @@ export default function AdminModeration() {
             /* Jobs Tab */
             jobs.length === 0 ? (
               <div className="py-16 text-center">
-                <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">No job listings found</p>
-                <p className="text-sm text-gray-400 mt-1">No jobs have been posted yet</p>
+                <Briefcase className="w-12 h-12 text-ct-mute mx-auto mb-3" />
+                <p className="text-ct-mute font-medium">No job listings found</p>
+                <p className="text-sm text-ct-mute mt-1">No jobs have been posted yet</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-ct-line-soft">
                 {jobs.map(job => (
-                  <div key={job.id} className="p-5 hover:bg-gray-50/50 transition-colors">
+                  <div key={job.id} className="p-5 hover:bg-ct-surface-2/50 transition-colors">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-gray-900 mb-1">
+                        <p className="text-sm font-medium text-ct-paper mb-1">
                           {job.description?.slice(0, 120)}{(job.description?.length || 0) > 120 ? '...' : ''}
                         </p>
-                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <div className="flex items-center gap-3 text-xs text-ct-mute">
                           <span>{job.client_profile?.full_name || 'Unknown'}</span>
                           <span>&middot;</span>
                           <span>{formatDate(job.created_at)}</span>

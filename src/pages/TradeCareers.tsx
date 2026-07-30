@@ -204,15 +204,15 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Recruitment</h1>
-            <p className="text-gray-500 mt-1">
+            <h1 className="text-2xl font-bold text-ct-paper">Recruitment</h1>
+            <p className="text-ct-mute mt-1">
               Find apprenticeships, qualified roles, and senior positions in the trades
             </p>
           </div>
           {isVerifiedBusiness && (
             <button
               onClick={() => { setEditVacancy(null); setShowPostModal(true); }}
-              className="self-center sm:self-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 active:scale-[0.98] transition-all shadow-sm text-sm"
+              className="self-center sm:self-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 active:scale-[0.98] transition-all shadow-sm text-sm"
             >
               <Plus className="w-4 h-4" />
               Post a Vacancy
@@ -225,18 +225,18 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
             stats rule) to one column — gap-3 keeps this a 3-across row. */}
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           {[
-            { label: 'Open Positions', value: vacancies.filter(v => v.status === 'open').length, color: 'bg-secondary-50', iconColor: 'text-secondary-600', Icon: Briefcase },
-            { label: 'Apprentice', value: vacancies.filter(v => v.status === 'open' && v.role_type === 'apprentice').length, color: 'bg-secondary-50', iconColor: 'text-secondary-600', Icon: GraduationCap },
-            { label: 'Senior Roles', value: vacancies.filter(v => v.status === 'open' && v.role_type === 'senior_advisory').length, color: 'bg-warm-50', iconColor: 'text-warm-600', Icon: Award },
+            { label: 'Open Positions', value: vacancies.filter(v => v.status === 'open').length, color: 'bg-ct-surface-2', iconColor: 'text-ct-mute-2', Icon: Briefcase },
+            { label: 'Apprentice', value: vacancies.filter(v => v.status === 'open' && v.role_type === 'apprentice').length, color: 'bg-ct-surface-2', iconColor: 'text-ct-mute-2', Icon: GraduationCap },
+            { label: 'Senior Roles', value: vacancies.filter(v => v.status === 'open' && v.role_type === 'senior_advisory').length, color: 'bg-ct-amber/[0.13]', iconColor: 'text-ct-amber', Icon: Award },
           ].map(stat => (
-            <div key={stat.label} className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 shadow-sm">
+            <div key={stat.label} className="bg-ct-surface border border-ct-line-soft rounded-ct-lg p-4 sm:p-5 shadow-sm">
               <div className="flex flex-col items-center text-center gap-1 sm:flex-row sm:items-center sm:text-left sm:gap-3">
-                <div className={`w-10 h-10 ${stat.color} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                <div className={`w-10 h-10 ${stat.color} rounded-ct-md flex items-center justify-center flex-shrink-0`}>
                   <stat.Icon className={`w-5 h-5 ${stat.iconColor}`} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-[11px] sm:text-sm text-gray-500 leading-tight whitespace-nowrap">{stat.label}</p>
+                  <p className="text-2xl font-bold text-ct-paper">{stat.value}</p>
+                  <p className="text-[11px] sm:text-sm text-ct-mute leading-tight whitespace-nowrap">{stat.label}</p>
                 </div>
               </div>
             </div>
@@ -244,7 +244,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
         </div>
 
         {isVerifiedBusiness && myListings.length > 0 && (
-          <div className="flex border-b border-gray-200">
+          <div className="flex border-b border-ct-line">
             {([
               { key: 'browse' as ViewTab, label: 'Browse Vacancies' },
               { key: 'my_listings' as ViewTab, label: `My Listings (${myListings.length})` },
@@ -254,8 +254,8 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
                 onClick={() => setViewTab(tab.key)}
                 className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
                   viewTab === tab.key
-                    ? 'border-primary-600 text-primary-700'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'border-ct-teal/30 text-ct-mute-2'
+                    : 'border-transparent text-ct-mute hover:text-ct-mute-2'
                 }`}
               >
                 {tab.label}
@@ -267,13 +267,13 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
         {viewTab === 'browse' && (
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search by title, trade, or location..."
-                className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none text-sm"
+                className="w-full pl-11 pr-4 py-2.5 border border-ct-line rounded-ct-md focus:ring-2 focus:ring-ct-teal focus:border-ct-teal outline-none text-sm"
               />
             </div>
             {/* Outer scrolls, inner is the flex row — kept as two elements so the
@@ -281,17 +281,17 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
                 (flex:1 + overflow:hidden) doesn't squeeze and clip the labels. */}
             <div className="overflow-x-auto pb-1 sm:pb-0 scrollbar-hide scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
               <div className="flex items-center gap-2 w-max">
-                <SlidersHorizontal className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <SlidersHorizontal className="w-4 h-4 text-ct-mute flex-shrink-0" />
                 {ROLE_FILTERS.map(f => {
                   const Icon = f.icon;
                   return (
                     <button
                       key={f.value}
                       onClick={() => setRoleFilter(f.value)}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors ${
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-ct-sm text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors ${
                         roleFilter === f.value
-                          ? 'bg-warm-500 text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'bg-ct-teal text-ct-ink'
+                          : 'bg-ct-surface-2 text-ct-mute-2 hover:bg-ct-line'
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5" />
@@ -307,7 +307,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-7 h-7 text-gray-400 animate-spin" />
+            <Loader2 className="w-7 h-7 text-ct-mute animate-spin" />
           </div>
         ) : displayVacancies.length === 0 ? (
           viewTab === 'my_listings' ? (

@@ -18,12 +18,12 @@ export default function LocalFAQ({ faqs, heading = 'Frequently asked questions' 
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8">
+    <section className="bg-ct-surface rounded-ct-lg border border-ct-line p-6 sm:p-8">
       <div className="flex items-start gap-3 mb-5">
-        <div className="w-10 h-10 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
-          <HelpCircle className="w-5 h-5 text-secondary-600" />
+        <div className="w-10 h-10 rounded-ct-sm bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+          <HelpCircle className="w-5 h-5 text-ct-mute-2" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900">{heading}</h2>
+        <h2 className="text-xl font-bold text-ct-paper">{heading}</h2>
       </div>
 
       <div className="space-y-2">
@@ -32,26 +32,26 @@ export default function LocalFAQ({ faqs, heading = 'Frequently asked questions' 
           return (
             <div
               key={i}
-              className="border border-gray-200 rounded-xl overflow-hidden"
+              className="border border-ct-line rounded-ct-md overflow-hidden"
             >
               <button
                 type="button"
                 onClick={() => setOpenIndex(isOpen ? null : i)}
                 aria-expanded={isOpen}
-                className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left hover:bg-ct-surface-2 transition-colors"
               >
-                <span className="font-medium text-gray-900 text-sm sm:text-base">
+                <span className="font-medium text-ct-paper text-sm sm:text-base">
                   {faq.q}
                 </span>
                 <ChevronDown
-                  className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform ${
+                  className={`w-5 h-5 text-ct-mute flex-shrink-0 transition-transform ${
                     isOpen ? 'rotate-180' : ''
                   }`}
                 />
               </button>
               {isOpen && (
                 <div className="px-5 pb-4">
-                  <p className="text-sm text-gray-700 leading-relaxed">{faq.a}</p>
+                  <p className="text-sm text-ct-mute-2 leading-relaxed">{faq.a}</p>
                 </div>
               )}
             </div>

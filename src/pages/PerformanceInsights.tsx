@@ -281,8 +281,8 @@ export default function PerformanceInsights() {
         <div>
           <div className="flex items-center justify-center py-24">
             <div className="text-center">
-              <Loader2 className="w-10 h-10 text-primary-600 animate-spin mx-auto mb-4" />
-              <p className="text-gray-400 font-medium">Crunching your numbers...</p>
+              <Loader2 className="w-10 h-10 text-ct-mute-2 animate-spin mx-auto mb-4" />
+              <p className="text-ct-mute font-medium">Crunching your numbers...</p>
             </div>
           </div>
         </div>
@@ -297,18 +297,18 @@ export default function PerformanceInsights() {
       <DashboardLayout wide>
         <div className="py-12">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-2xl mb-4">
-              <TrendingUp className="w-8 h-8 text-emerald-600" />
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-ct-teal/[0.14] rounded-ct-lg mb-4">
+              <TrendingUp className="w-8 h-8 text-ct-teal" />
             </div>
             <div className="flex items-center justify-center gap-2 mb-2">
-              <h1 className="text-3xl font-bold text-white">Performance Insights</h1>
+              <h1 className="text-3xl font-bold text-ct-ink">Performance Insights</h1>
               <ProBadge size="md" />
             </div>
-            <p className="text-gray-400">Win rate, response time, conversion, and revenue trends — track every metric that matters.</p>
+            <p className="text-ct-mute">Win rate, response time, conversion, and revenue trends — track every metric that matters.</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 className="text-base font-semibold text-gray-900 mb-3">What you get with Pro Insights</h2>
+          <div className="bg-ct-surface rounded-ct-md shadow-sm p-6 mb-6">
+            <h2 className="text-base font-semibold text-ct-paper mb-3">What you get with Pro Insights</h2>
             <ul className="space-y-2.5">
               {[
                 'Quote win rate with trend indicators',
@@ -318,8 +318,8 @@ export default function PerformanceInsights() {
                 'Total revenue ranked against the trade',
                 'Personalised focus areas to win more work',
               ].map(item => (
-                <li key={item} className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                <li key={item} className="flex items-start gap-2.5 text-sm text-ct-mute-2">
+                  <CheckCircle2 className="w-4 h-4 text-ct-teal flex-shrink-0 mt-0.5" />
                   <span>{item}</span>
                 </li>
               ))}
@@ -329,12 +329,12 @@ export default function PerformanceInsights() {
           <div className="text-center">
             <button
               onClick={() => setShowUpgradeModal(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl shadow-sm transition-colors text-sm"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-ct-teal hover:brightness-110 text-ct-ink font-semibold rounded-ct-md shadow-sm transition-colors text-sm"
             >
               <TrendingUp className="w-4 h-4" />
               {`Upgrade to Pro — $${TIER_PRICING.pro.monthly}/mo`}
             </button>
-            <p className="mt-3 text-xs text-gray-600">Pro also gives you priority placement in client search and lower platform fees.</p>
+            <p className="mt-3 text-xs text-ct-mute-2">Pro also gives you priority placement in client search and lower platform fees.</p>
           </div>
         </div>
         <SubscriptionModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
@@ -347,12 +347,12 @@ export default function PerformanceInsights() {
       <div>
         <div className="mb-8">
           <div className="flex items-start gap-3 mb-2">
-            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <TrendingUp className="w-5 h-5 text-emerald-600" />
+            <div className="w-10 h-10 bg-ct-teal/[0.14] rounded-ct-md flex items-center justify-center flex-shrink-0">
+              <TrendingUp className="w-5 h-5 text-ct-teal" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-white">Performance Insights</h1>
-              <p className="text-gray-600 text-sm">
+              <h1 className="text-2xl font-bold text-ct-ink">Performance Insights</h1>
+              <p className="text-ct-mute-2 text-sm">
                 Understand how your business is performing and where to improve
               </p>
             </div>
@@ -361,8 +361,8 @@ export default function PerformanceInsights() {
 
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-4">
-            <BarChart3 className="w-5 h-5 text-gray-600" />
-            <h2 className="text-lg font-bold text-white">Health Check</h2>
+            <BarChart3 className="w-5 h-5 text-ct-mute-2" />
+            <h2 className="text-lg font-bold text-ct-ink">Health Check</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <HealthCard
@@ -422,17 +422,17 @@ export default function PerformanceInsights() {
             />
           </div>
 
-          {/* Was bg-gradient-to-r from-green-50 to-emerald-50 — green and emerald
+          {/* Was bg-gradient-to-r from-ct-teal to-ct-teal — green and emerald
               are the same ramp, so the gradient rendered flat anyway. */}
           {health && health.totalRevenue > 0 && (
-            <div className="mt-4 bg-emerald-50 rounded-xl border border-emerald-200 p-6">
+            <div className="mt-4 bg-ct-teal/[0.14] rounded-ct-md border border-ct-teal/30 p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <DollarSign className="w-6 h-6 text-emerald-600" />
+                <div className="w-12 h-12 bg-ct-teal/[0.14] rounded-ct-md flex items-center justify-center flex-shrink-0">
+                  <DollarSign className="w-6 h-6 text-ct-teal" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm text-emerald-700 font-medium">Total Quoted Revenue</p>
-                  <p className="text-3xl font-bold text-emerald-900 truncate">
+                  <p className="text-sm text-ct-teal font-medium">Total Quoted Revenue</p>
+                  <p className="text-3xl font-bold text-ct-teal truncate">
                     ${health.totalRevenue.toLocaleString()}
                   </p>
                 </div>
@@ -443,17 +443,17 @@ export default function PerformanceInsights() {
 
         <section>
           <div className="flex items-center gap-2 mb-4">
-            <Lightbulb className="w-5 h-5 text-gray-600" />
-            <h2 className="text-lg font-bold text-white">Strengths & Focus Areas</h2>
+            <Lightbulb className="w-5 h-5 text-ct-mute-2" />
+            <h2 className="text-lg font-bold text-ct-ink">Strengths & Focus Areas</h2>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-navy-800 rounded-xl border border-navy-700 p-6">
+            <div className="bg-ct-surface rounded-ct-md border border-ct-line p-6">
               <div className="flex items-center gap-2 mb-5">
-                <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                  <Award className="w-4 h-4 text-emerald-600" />
+                <div className="w-8 h-8 bg-ct-teal/[0.14] rounded-ct-sm flex items-center justify-center">
+                  <Award className="w-4 h-4 text-ct-teal" />
                 </div>
-                <h3 className="font-bold text-white">What's Working</h3>
+                <h3 className="font-bold text-ct-ink">What's Working</h3>
               </div>
 
               {strengths ? (
@@ -481,7 +481,7 @@ export default function PerformanceInsights() {
                     />
                   )}
                   {strengths.avgRating > 0 && (
-                    <div className="pt-3 border-t border-navy-700">
+                    <div className="pt-3 border-t border-ct-line">
                       <div className="flex items-center gap-2">
                         <div className="flex">
                           {[1, 2, 3, 4, 5].map((s) => (
@@ -489,37 +489,37 @@ export default function PerformanceInsights() {
                               key={s}
                               className={`w-4 h-4 ${
                                 s <= Math.round(strengths.avgRating)
-                                  ? 'text-yellow-400 fill-yellow-400'
-                                  : 'text-gray-200'
+                                  ? 'text-ct-amber fill-yellow-400'
+                                  : 'text-ct-paper'
                               }`}
                             />
                           ))}
                         </div>
-                        <span className="text-sm font-semibold text-gray-300">
+                        <span className="text-sm font-semibold text-ct-mute">
                           {strengths.avgRating} avg rating
                         </span>
                       </div>
                     </div>
                   )}
                   {strengths.reviewCount === 0 && strengths.topSuburb === '--' && (
-                    <p className="text-sm text-gray-600 italic">
+                    <p className="text-sm text-ct-mute-2 italic">
                       Complete more jobs and gather reviews to unlock detailed strengths analysis.
                     </p>
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-ct-mute-2">
                   Complete some jobs and receive reviews to see your strengths here.
                 </p>
               )}
             </div>
 
-            <div className="bg-navy-800 rounded-xl border border-navy-700 p-6">
+            <div className="bg-ct-surface rounded-ct-md border border-ct-line p-6">
               <div className="flex items-center gap-2 mb-5">
-                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                  <Lightbulb className="w-4 h-4 text-amber-700" />
+                <div className="w-8 h-8 bg-ct-amber/[0.13] rounded-ct-sm flex items-center justify-center">
+                  <Lightbulb className="w-4 h-4 text-ct-amber" />
                 </div>
-                <h3 className="font-bold text-white">Where to Improve</h3>
+                <h3 className="font-bold text-ct-ink">Where to Improve</h3>
               </div>
 
               {focusAreas.length > 0 ? (
@@ -529,7 +529,7 @@ export default function PerformanceInsights() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-ct-mute-2">
                   No immediate areas to focus on. Keep doing what you're doing!
                 </p>
               )}
@@ -556,21 +556,21 @@ function HealthCard({
   color: 'sky' | 'green' | 'amber';
   trend?: 'up' | 'down';
 }) {
-  // amber was bg-warm-100/text-warm-600, but tailwind.config aliases warm, green,
+  // amber was bg-ct-amber/[0.13]/text-ct-amber, but tailwind.config aliases warm, green,
   // emerald and teal onto the SAME #06D6A0 ramp — so "Profile Views" and "Average
   // Job Value" rendered identical mint chips. Real amber keeps them distinct.
   const colorMap = {
     sky: {
-      iconBg: 'bg-secondary-100',
-      iconText: 'text-secondary-600',
+      iconBg: 'bg-ct-surface-2',
+      iconText: 'text-ct-mute-2',
     },
     green: {
-      iconBg: 'bg-emerald-100',
-      iconText: 'text-emerald-600',
+      iconBg: 'bg-ct-teal/[0.14]',
+      iconText: 'text-ct-teal',
     },
     amber: {
-      iconBg: 'bg-amber-100',
-      iconText: 'text-amber-700',
+      iconBg: 'bg-ct-amber/[0.13]',
+      iconText: 'text-ct-amber',
     },
   };
 
@@ -578,18 +578,18 @@ function HealthCard({
 
   return (
     <div
-      className="bg-navy-800 rounded-xl border border-navy-700 shadow-sm p-6 h-full"
+      className="bg-ct-surface rounded-ct-md border border-ct-line shadow-sm p-6 h-full"
     >
       <div className="flex items-start justify-between gap-2 mb-3">
-        <div className={`w-10 h-10 ${c.iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
+        <div className={`w-10 h-10 ${c.iconBg} rounded-ct-md flex items-center justify-center flex-shrink-0`}>
           <Icon className={`w-5 h-5 ${c.iconText}`} />
         </div>
         {trend && (
           <div
             className={`flex items-center gap-1 whitespace-nowrap flex-shrink-0 text-xs font-medium px-3 py-1 rounded-full ${
               trend === 'up'
-                ? 'bg-emerald-100 text-emerald-700'
-                : 'bg-red-100 text-red-700'
+                ? 'bg-ct-teal/[0.14] text-ct-teal'
+                : 'bg-ct-rose/[0.13] text-ct-rose'
             }`}
           >
             {trend === 'up' ? (
@@ -601,9 +601,9 @@ function HealthCard({
           </div>
         )}
       </div>
-      <p className="text-sm font-medium text-gray-600 mb-1">{label}</p>
-      <p className="text-3xl font-bold text-white mb-1">{value}</p>
-      {detail && <p className="text-xs text-gray-600 leading-relaxed">{detail}</p>}
+      <p className="text-sm font-medium text-ct-mute-2 mb-1">{label}</p>
+      <p className="text-3xl font-bold text-ct-ink mb-1">{value}</p>
+      {detail && <p className="text-xs text-ct-mute-2 leading-relaxed">{detail}</p>}
     </div>
   );
 }
@@ -621,13 +621,13 @@ function StrengthRow({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-        <Icon className="w-4 h-4 text-gray-600" />
+      <div className="w-8 h-8 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center flex-shrink-0 mt-0.5">
+        <Icon className="w-4 h-4 text-ct-mute-2" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-600 font-medium uppercase tracking-wide">{label}</p>
-        <p className="font-semibold text-white">{value}</p>
-        <p className="text-xs text-gray-600 mt-0.5">{detail}</p>
+        <p className="text-xs text-ct-mute-2 font-medium uppercase tracking-wide">{label}</p>
+        <p className="font-semibold text-ct-ink">{value}</p>
+        <p className="text-xs text-ct-mute-2 mt-0.5">{detail}</p>
       </div>
     </div>
   );
@@ -639,19 +639,19 @@ function FocusAreaRow({ area }: { area: FocusArea }) {
   // and "low" severity were indistinguishable. Amber gives a real red→amber→
   // emerald ramp, and matches the pending/attention tier in the design system.
   const severityStyles = {
-    high: 'bg-red-50 border-red-200',
-    medium: 'bg-amber-50 border-amber-200',
-    low: 'bg-emerald-50 border-emerald-200',
+    high: 'bg-ct-rose/[0.13] border-ct-rose/[0.34]',
+    medium: 'bg-ct-amber/[0.13] border-ct-amber/[0.34]',
+    low: 'bg-ct-teal/[0.14] border-ct-teal/30',
   };
   const iconStyles = {
-    high: 'bg-red-100 text-red-600',
-    medium: 'bg-amber-100 text-amber-700',
-    low: 'bg-emerald-100 text-emerald-600',
+    high: 'bg-ct-rose/[0.13] text-ct-rose',
+    medium: 'bg-ct-amber/[0.13] text-ct-amber',
+    low: 'bg-ct-teal/[0.14] text-ct-teal',
   };
   const badgeStyles = {
-    high: 'bg-red-100 text-red-700',
-    medium: 'bg-amber-100 text-amber-700',
-    low: 'bg-emerald-100 text-emerald-700',
+    high: 'bg-ct-rose/[0.13] text-ct-rose',
+    medium: 'bg-ct-amber/[0.13] text-ct-amber',
+    low: 'bg-ct-teal/[0.14] text-ct-teal',
   };
   const badgeLabels = {
     high: 'High Priority',
@@ -660,10 +660,10 @@ function FocusAreaRow({ area }: { area: FocusArea }) {
   };
 
   return (
-    <div className={`rounded-xl border p-4 ${severityStyles[area.severity]}`}>
+    <div className={`rounded-ct-md border p-4 ${severityStyles[area.severity]}`}>
       <div className="flex items-start gap-3">
         <div
-          className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconStyles[area.severity]}`}
+          className={`w-8 h-8 rounded-ct-sm flex items-center justify-center flex-shrink-0 ${iconStyles[area.severity]}`}
         >
           <Icon className="w-4 h-4" />
         </div>
@@ -671,18 +671,18 @@ function FocusAreaRow({ area }: { area: FocusArea }) {
           {/* items-start, and the badge must not shrink: without whitespace-nowrap
               it broke "High Priority" across two lines beside a wrapping title. */}
           <div className="flex items-start justify-between gap-2 mb-1">
-            <p className="font-semibold text-white text-sm min-w-0">{area.title}</p>
+            <p className="font-semibold text-ct-ink text-sm min-w-0">{area.title}</p>
             <span
               className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${badgeStyles[area.severity]}`}
             >
               {badgeLabels[area.severity]}
             </span>
           </div>
-          <p className="text-sm text-gray-600 leading-relaxed">{area.description}</p>
+          <p className="text-sm text-ct-mute-2 leading-relaxed">{area.description}</p>
           {area.link && area.linkLabel && (
             <Link
               to={area.link}
-              className="inline-flex items-center min-h-[44px] mt-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+              className="inline-flex items-center min-h-[44px] mt-1 text-xs font-semibold text-ct-teal hover:text-ct-teal transition-colors"
             >
               {area.linkLabel} →
             </Link>

@@ -32,7 +32,7 @@ export default function UserTradeBadges({ verifiedTrades, declaredTrades, size =
         <span
           key={`v-${trade}`}
           className={`inline-flex items-center gap-1 ${paddingClass} ${textClass} font-semibold rounded-full shadow-sm`}
-          style={{ backgroundColor: '#2E86DE', color: 'white' }}
+          style={{ backgroundColor: 'var(--teal)', color: 'var(--ink)' }}
         >
           <CheckCircle2 className={iconClass} />
           {trade}
@@ -41,13 +41,13 @@ export default function UserTradeBadges({ verifiedTrades, declaredTrades, size =
       {pendingTrades.map((trade) => (
         <div key={`p-${trade}`} className="relative group">
           <span
-            className={`inline-flex items-center gap-1 ${paddingClass} bg-white text-gray-500 ${textClass} font-medium rounded-full border border-gray-300 cursor-pointer`}
+            className={`inline-flex items-center gap-1 ${paddingClass} bg-ct-surface text-ct-mute ${textClass} font-medium rounded-full border border-ct-line cursor-pointer`}
             onClick={() => setVisibleTooltip(visibleTooltip === trade ? null : trade)}
           >
             <Clock className={iconClass} />
             {trade}
           </span>
-          <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap transition-all duration-200 pointer-events-none z-50 shadow-xl ${visibleTooltip === trade ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'}`}>
+          <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-ct-surface text-ct-ink text-xs rounded-ct-sm whitespace-nowrap transition-all duration-200 pointer-events-none z-50 shadow-xl ${visibleTooltip === trade ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'}`}>
             Awaiting Certificate Verification
             <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900" />
           </div>

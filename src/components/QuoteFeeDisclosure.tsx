@@ -64,9 +64,9 @@ export default function QuoteFeeDisclosure({
   // message rather than "$0.00 platform fee", which reads oddly.
   if (fee <= 0 && matProcessing <= 0) {
     return (
-      <div className={`flex items-start gap-2 rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2 ${className ?? ''}`}>
-        <Info className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
-        <p className="text-xs text-emerald-800 leading-relaxed">
+      <div className={`flex items-start gap-2 rounded-ct-sm bg-ct-teal/[0.14] border border-ct-teal/30 px-3 py-2 ${className ?? ''}`}>
+        <Info className="w-3.5 h-3.5 text-ct-teal flex-shrink-0 mt-0.5" />
+        <p className="text-xs text-ct-teal leading-relaxed">
           No platform fee on this job — you receive the full{' '}
           <span className="font-semibold">{money(total)}</span>.
         </p>
@@ -75,30 +75,30 @@ export default function QuoteFeeDisclosure({
   }
 
   return (
-    <div className={`rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 ${className ?? ''}`}>
+    <div className={`rounded-ct-sm bg-ct-surface-2 border border-ct-line-soft px-3 py-2 ${className ?? ''}`}>
       <div className="flex items-start gap-2">
-        <Info className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
+        <Info className="w-3.5 h-3.5 text-ct-mute flex-shrink-0 mt-0.5" />
         <div className="flex-1 space-y-1">
-          <p className="text-xs text-gray-600 leading-relaxed">
-            You'll receive <span className="font-semibold text-gray-800">{money(receives)}</span> if you win.
+          <p className="text-xs text-ct-mute-2 leading-relaxed">
+            You'll receive <span className="font-semibold text-ct-paper">{money(receives)}</span> if you win.
           </p>
 
           <div className="space-y-0.5">
             {fee > 0 && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ct-mute">
                 Our fee — {tierLabel === 'Free' ? '8%' : '5%'} of your labour (inc GST):{' '}
-                <span className="font-medium text-gray-700">−{money(fee)}</span>
+                <span className="font-medium text-ct-mute-2">−{money(fee)}</span>
               </p>
             )}
             {matProcessing > 0 && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ct-mute">
                 Card processing on materials — at cost:{' '}
-                <span className="font-medium text-gray-700">−{money(matProcessing)}</span>
+                <span className="font-medium text-ct-mute-2">−{money(matProcessing)}</span>
               </p>
             )}
           </div>
 
-          <p className="text-xs text-gray-400 leading-relaxed">
+          <p className="text-xs text-ct-mute leading-relaxed">
             {materials > 0
               ? 'We take nothing on your materials. '
               : ''}
@@ -107,7 +107,7 @@ export default function QuoteFeeDisclosure({
               to="/how-fees-work"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-secondary-600 hover:text-secondary-700 font-medium"
+              className="text-ct-mute-2 hover:text-ct-mute-2 font-medium"
             >
               How fees work
             </Link>

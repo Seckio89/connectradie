@@ -79,14 +79,14 @@ export default function EditDetailsModal({ isOpen, onClose, currentValues, onSav
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 ">
       <div
-        className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col"
+        className="bg-ct-surface rounded-ct-lg shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
-          <h3 className="text-lg font-semibold text-gray-900">Edit Details</h3>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ct-line-soft flex-shrink-0">
+          <h3 className="text-lg font-semibold text-ct-paper">Edit Details</h3>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -94,35 +94,35 @@ export default function EditDetailsModal({ isOpen, onClose, currentValues, onSav
 
         <div className="p-6 space-y-5 overflow-y-auto flex-1">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Business Name</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Business Name</label>
             <input
               type="text"
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
               placeholder="e.g. Happy Phoenix Cleaning Services"
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-sm"
             />
-            <p className="text-xs text-gray-400 mt-1">This is shown to clients on your profile and invoices</p>
+            <p className="text-xs text-ct-mute mt-1">This is shown to clients on your profile and invoices</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Hourly Rate ($)</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Hourly Rate ($)</label>
             <input
               type="number"
               value={hourlyRate}
               onChange={(e) => setHourlyRate(e.target.value)}
               min="0"
               placeholder="e.g. 85"
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Business Type</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Business Type</label>
             <select
               value={contractorType}
               onChange={(e) => setContractorType(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-white"
+              className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-sm bg-ct-surface"
             >
               {CONTRACTOR_TYPES.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -131,11 +131,11 @@ export default function EditDetailsModal({ isOpen, onClose, currentValues, onSav
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Team Size</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Team Size</label>
             <select
               value={teamSize}
               onChange={(e) => setTeamSize(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-white"
+              className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-sm bg-ct-surface"
             >
               {TEAM_SIZE_OPTIONS.map((s) => (
                 <option key={s} value={s}>{s}</option>
@@ -144,27 +144,27 @@ export default function EditDetailsModal({ isOpen, onClose, currentValues, onSav
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Service Radius (km)</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Service Radius (km)</label>
             <input
               type="number"
               value={serviceRadius}
               onChange={(e) => setServiceRadius(e.target.value)}
               min="1"
               max="200"
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Qualifications</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Qualifications</label>
             <input
               type="text"
               value={qualifications}
               onChange={(e) => setQualifications(e.target.value)}
               placeholder="e.g. Cert III Plumbing, Gas Fitting License"
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-sm"
             />
-            <p className="text-xs text-gray-400 mt-1">Separate multiple qualifications with commas</p>
+            <p className="text-xs text-ct-mute mt-1">Separate multiple qualifications with commas</p>
           </div>
 
           <label className="flex items-center gap-2.5 cursor-pointer">
@@ -172,24 +172,24 @@ export default function EditDetailsModal({ isOpen, onClose, currentValues, onSav
               type="checkbox"
               checked={isEmergencyAvailable}
               onChange={(e) => setIsEmergencyAvailable(e.target.checked)}
-              className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-ct-mute-2 border-ct-line rounded focus:ring-ct-teal"
             />
-            <span className="text-sm text-gray-700 font-medium">Available for emergency call-outs</span>
+            <span className="text-sm text-ct-mute-2 font-medium">Available for emergency call-outs</span>
           </label>
         </div>
 
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex-shrink-0">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-ct-line-soft bg-ct-surface-2 rounded-b-2xl flex-shrink-0">
           <button
             onClick={onClose}
             disabled={saving}
-            className="px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+            className="px-4 py-2.5 text-sm font-medium text-ct-mute-2 hover:bg-ct-line rounded-ct-sm transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-warm-500 text-white text-sm font-semibold rounded-lg hover:bg-warm-600 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-sm hover:brightness-110 disabled:opacity-50 transition-colors"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             Save

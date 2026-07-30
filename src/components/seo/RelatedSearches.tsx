@@ -46,10 +46,10 @@ export default function RelatedSearches({
     <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Same trade, nearby suburbs */}
       {neighbours.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6">
           <div className="flex items-center gap-2 mb-4">
-            <MapPin className="w-4 h-4 text-emerald-600" />
-            <h3 className="text-base font-semibold text-gray-900">
+            <MapPin className="w-4 h-4 text-ct-teal" />
+            <h3 className="text-base font-semibold text-ct-paper">
               {currentTradePlural} in nearby suburbs
             </h3>
           </div>
@@ -58,12 +58,12 @@ export default function RelatedSearches({
               <li key={slug}>
                 <Link
                   to={findUrl(tradeSlug, slug)}
-                  className="flex items-center justify-between text-sm text-gray-700 hover:text-emerald-600 hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors group"
+                  className="flex items-center justify-between text-sm text-ct-mute-2 hover:text-ct-teal hover:bg-ct-surface-2 rounded-ct-sm px-3 py-2 transition-colors group"
                 >
                   <span>
                     {currentTradePlural} in <span className="font-medium">{suburb.name}</span>
                   </span>
-                  <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all" />
+                  <ArrowRight className="w-3.5 h-3.5 text-ct-mute group-hover:text-ct-teal group-hover:translate-x-0.5 transition-all" />
                 </Link>
               </li>
             ))}
@@ -73,10 +73,10 @@ export default function RelatedSearches({
 
       {/* Other trades, same suburb */}
       {otherTradeSlugs.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Wrench className="w-4 h-4 text-emerald-600" />
-            <h3 className="text-base font-semibold text-gray-900">
+            <Wrench className="w-4 h-4 text-ct-teal" />
+            <h3 className="text-base font-semibold text-ct-paper">
               Other tradies in {currentSuburb.name}
             </h3>
           </div>
@@ -85,13 +85,13 @@ export default function RelatedSearches({
               <li key={slug}>
                 <Link
                   to={findUrl(slug, suburbSlug)}
-                  className="flex items-center justify-between text-sm text-gray-700 hover:text-emerald-600 hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors group"
+                  className="flex items-center justify-between text-sm text-ct-mute-2 hover:text-ct-teal hover:bg-ct-surface-2 rounded-ct-sm px-3 py-2 transition-colors group"
                 >
                   <span>
                     {tradePluralLabel(slug)} in{' '}
                     <span className="font-medium">{currentSuburb.name}</span>
                   </span>
-                  <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all" />
+                  <ArrowRight className="w-3.5 h-3.5 text-ct-mute group-hover:text-ct-teal group-hover:translate-x-0.5 transition-all" />
                 </Link>
               </li>
             ))}

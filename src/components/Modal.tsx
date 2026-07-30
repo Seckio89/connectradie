@@ -44,7 +44,7 @@ export default function Modal({ isOpen, onClose, children, maxWidth = '2xl', clo
           pb-[env(safe-area-inset-bottom)] keeps the last row — usually the
           primary buttons — clear of the home indicator on notched phones. */}
       <div
-        className={`bg-white rounded-t-2xl sm:rounded-2xl ${maxWidthClass} w-full max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-xl pb-[env(safe-area-inset-bottom)] sm:pb-0`}
+        className={`bg-ct-surface border border-ct-line rounded-t-ct-xl sm:rounded-ct-xl ${maxWidthClass} w-full max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-xl pb-[env(safe-area-inset-bottom)] sm:pb-0`}
         style={{
           transform: 'translateZ(0)',
           willChange: 'transform',

@@ -49,12 +49,12 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 bg-navy-900/95 backdrop-blur-sm border-b border-navy-800 z-50">
+    <nav className="sticky top-0 bg-ct-ink/95 backdrop-blur-sm border-b border-ct-line z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center group">
             <span className="text-2xl font-extrabold tracking-tight">
-              <span className="text-white">Connec</span><span className="text-warm-500">Tradie</span>
+              <span className="text-ct-ink">Connec</span><span className="text-ct-teal">Tradie</span>
             </span>
           </Link>
 
@@ -63,8 +63,8 @@ export default function Navbar() {
               const isActive = link.isRoute && location.pathname === link.href;
               const className = `relative h-full inline-flex items-center text-base font-medium transition-colors ${
                 isActive
-                  ? 'text-warm-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-warm-500'
-                  : 'text-gray-300 hover:text-warm-400'
+                  ? 'text-ct-amber after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-ct-teal'
+                  : 'text-ct-mute hover:text-ct-amber'
               }`;
               return link.isRoute ? (
                 <Link key={link.name} to={link.href} className={className}>
@@ -85,8 +85,8 @@ export default function Navbar() {
                   to="/dashboard"
                   className={`relative h-full inline-flex items-center gap-1.5 text-base font-medium transition-colors ${
                     location.pathname === '/dashboard'
-                      ? 'text-warm-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-warm-500'
-                      : 'text-gray-300 hover:text-warm-400'
+                      ? 'text-ct-amber after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-ct-teal'
+                      : 'text-ct-mute hover:text-ct-amber'
                   }`}
                 >
                   <LayoutDashboard className="w-4 h-4" />
@@ -96,8 +96,8 @@ export default function Navbar() {
                   to="/settings"
                   className={`relative h-full inline-flex items-center gap-1.5 text-base font-medium transition-colors ${
                     location.pathname === '/settings'
-                      ? 'text-warm-400 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-warm-500'
-                      : 'text-gray-300 hover:text-warm-400'
+                      ? 'text-ct-amber after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-ct-teal'
+                      : 'text-ct-mute hover:text-ct-amber'
                   }`}
                 >
                   <User className="w-4 h-4" />
@@ -105,7 +105,7 @@ export default function Navbar() {
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="h-full inline-flex items-center gap-1.5 text-base font-medium text-gray-400 hover:text-warm-400 transition-colors"
+                  className="h-full inline-flex items-center gap-1.5 text-base font-medium text-ct-mute hover:text-ct-amber transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                   Sign Out
@@ -115,13 +115,13 @@ export default function Navbar() {
               <>
                 <Link
                   to="/login"
-                  className="h-full inline-flex items-center text-base font-medium text-gray-300 hover:text-warm-400 transition-colors"
+                  className="h-full inline-flex items-center text-base font-medium text-ct-mute hover:text-ct-amber transition-colors"
                 >
                   Log In
                 </Link>
                 <Link
                   to="/register"
-                  className="h-full inline-flex items-center text-base font-medium text-warm-400 hover:text-warm-300 transition-colors"
+                  className="h-full inline-flex items-center text-base font-medium text-ct-amber hover:text-ct-teal transition-colors"
                 >
                   Get Started Free
                 </Link>
@@ -130,7 +130,7 @@ export default function Navbar() {
           </div>
 
           <button
-            className="md:hidden p-2 text-gray-300 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="md:hidden p-2 text-ct-mute hover:text-ct-ink min-w-[44px] min-h-[44px] flex items-center justify-center"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-menu"
@@ -141,14 +141,14 @@ export default function Navbar() {
         </div>
 
         {mobileMenuOpen && (
-          <nav id="mobile-menu" role="navigation" aria-label="Mobile navigation" className="md:hidden py-4 border-t border-navy-800">
+          <nav id="mobile-menu" role="navigation" aria-label="Mobile navigation" className="md:hidden py-4 border-t border-ct-line">
             <div className="flex flex-col gap-2">
               {navLinks.map((link) =>
                 link.isRoute ? (
                   <Link
                     key={link.name}
                     to={link.href}
-                    className="px-4 py-3 text-gray-300 hover:text-white hover:bg-navy-800 rounded-lg font-medium transition-colors"
+                    className="px-4 py-3 text-ct-mute hover:text-ct-ink hover:bg-ct-surface rounded-ct-sm font-medium transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {link.name}
@@ -157,7 +157,7 @@ export default function Navbar() {
                   <a
                     key={link.name}
                     href={link.href}
-                    className="px-4 py-3 text-gray-300 hover:text-white hover:bg-navy-800 rounded-lg font-medium transition-colors"
+                    className="px-4 py-3 text-ct-mute hover:text-ct-ink hover:bg-ct-surface rounded-ct-sm font-medium transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {link.name}
@@ -169,7 +169,7 @@ export default function Navbar() {
                   <>
                     <Link
                       to="/dashboard"
-                      className="flex items-center justify-center gap-2 py-3 text-center bg-warm-500 text-white font-semibold rounded-lg hover:bg-warm-600 transition-colors"
+                      className="flex items-center justify-center gap-2 py-3 text-center bg-ct-teal text-ct-ink font-semibold rounded-ct-sm hover:brightness-110 transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <LayoutDashboard className="w-4 h-4" />
@@ -177,7 +177,7 @@ export default function Navbar() {
                     </Link>
                     <Link
                       to="/settings"
-                      className="flex items-center justify-center gap-2 py-3 text-center text-gray-300 font-medium border border-navy-700 rounded-lg hover:bg-navy-800 transition-colors"
+                      className="flex items-center justify-center gap-2 py-3 text-center text-ct-mute font-medium border border-ct-line rounded-ct-sm hover:bg-ct-surface transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <User className="w-4 h-4" />
@@ -185,7 +185,7 @@ export default function Navbar() {
                     </Link>
                     <button
                       onClick={handleSignOut}
-                      className="flex items-center justify-center gap-2 py-3 text-center text-gray-400 font-medium border border-navy-700 rounded-lg hover:bg-navy-800 transition-colors"
+                      className="flex items-center justify-center gap-2 py-3 text-center text-ct-mute font-medium border border-ct-line rounded-ct-sm hover:bg-ct-surface transition-colors"
                     >
                       <LogOut className="w-4 h-4" />
                       Sign Out
@@ -195,14 +195,14 @@ export default function Navbar() {
                   <>
                     <Link
                       to="/login"
-                      className="py-3 text-center text-gray-300 font-medium border border-navy-700 rounded-lg hover:bg-navy-800 transition-colors"
+                      className="py-3 text-center text-ct-mute font-medium border border-ct-line rounded-ct-sm hover:bg-ct-surface transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Log In
                     </Link>
                     <Link
                       to="/register"
-                      className="py-3 text-center bg-warm-500 text-white font-semibold rounded-lg hover:bg-warm-600 transition-colors"
+                      className="py-3 text-center bg-ct-teal text-ct-ink font-semibold rounded-ct-sm hover:brightness-110 transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Get Started Free

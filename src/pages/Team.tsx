@@ -80,15 +80,15 @@ const toLocalYmd = (d: Date): string => {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  employee: 'bg-secondary-100 text-secondary-700',
-  subcontractor: 'bg-warm-100 text-warm-700',
-  apprentice: 'bg-green-100 text-green-700',
+  employee: 'bg-ct-surface-2 text-ct-mute-2',
+  subcontractor: 'bg-ct-amber/[0.13] text-ct-amber',
+  apprentice: 'bg-ct-teal/[0.14] text-ct-teal',
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  invited: 'bg-yellow-100 text-yellow-700',
-  active: 'bg-green-100 text-green-700',
-  inactive: 'bg-gray-100 text-gray-600',
+  invited: 'bg-ct-amber/[0.13] text-ct-amber',
+  active: 'bg-ct-teal/[0.14] text-ct-teal',
+  inactive: 'bg-ct-surface-2 text-ct-mute-2',
 };
 
 const ROLE_PERMISSIONS: Record<string, { label: string; permissions: string[] }> = {
@@ -145,76 +145,76 @@ function AddMemberModal({ onClose, onSave, editMember }: AddMemberModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 ">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-start gap-3 p-6 border-b border-gray-100">
-          <div className="w-10 h-10 rounded-xl bg-secondary-50 flex items-center justify-center flex-shrink-0">
-            <UserPlus className="w-5 h-5 text-secondary-600" />
+      <div className="bg-ct-surface rounded-ct-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-start gap-3 p-6 border-b border-ct-line-soft">
+          <div className="w-10 h-10 rounded-ct-md bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+            <UserPlus className="w-5 h-5 text-ct-mute-2" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-bold text-gray-900">{editMember ? 'Edit team member' : 'Add a team member'}</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h2 className="text-lg font-bold text-ct-paper">{editMember ? 'Edit team member' : 'Add a team member'}</h2>
+            <p className="text-sm text-ct-mute mt-0.5">
               {editMember ? 'Update their details.' : 'Track someone in your business — assign them to jobs and log their hours.'}
             </p>
           </div>
-          <button onClick={onClose} aria-label="Close" className="p-2 -mr-1 -mt-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 flex-shrink-0">
+          <button onClick={onClose} aria-label="Close" className="p-2 -mr-1 -mt-1 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 flex-shrink-0">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <div className="flex items-center gap-2 p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm text-ct-rose text-sm">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               {error}
             </div>
           )}
 
           {!editMember && (
-            <p className="text-xs text-gray-500 bg-secondary-50 border border-secondary-100 rounded-lg px-3 py-2.5 leading-relaxed">
+            <p className="text-xs text-ct-mute bg-ct-surface-2 border border-ct-line rounded-ct-sm px-3 py-2.5 leading-relaxed">
               Added to your business for scheduling, job assignment and timesheets. They won’t get app notifications unless they join ConnecTradie and link to your business.
             </p>
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name *</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Full Name *</label>
               <input
                 type="text"
                 value={form.invite_name}
                 onChange={e => setForm(f => ({ ...f, invite_name: e.target.value }))}
                 placeholder="e.g. Jake Morrison"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md focus:ring-2 focus:ring-ct-teal focus:border-ct-teal outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Email</label>
               <input
                 type="email"
                 value={form.invite_email}
                 onChange={e => setForm(f => ({ ...f, invite_email: e.target.value }))}
                 placeholder="jake@email.com"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md focus:ring-2 focus:ring-ct-teal focus:border-ct-teal outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Phone</label>
               <input
                 type="tel"
                 value={form.invite_phone}
                 onChange={e => setForm(f => ({ ...f, invite_phone: e.target.value }))}
                 placeholder="04xx xxx xxx"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md focus:ring-2 focus:ring-ct-teal focus:border-ct-teal outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Role</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Role</label>
               <select
                 value={form.role}
                 onChange={e => setForm(f => ({ ...f, role: e.target.value as TeamMember['role'] }))}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none bg-white"
+                className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md focus:ring-2 focus:ring-ct-teal focus:border-ct-teal outline-none bg-ct-surface"
               >
                 <option value="employee">Employee</option>
                 <option value="subcontractor">Subcontractor</option>
@@ -223,18 +223,18 @@ function AddMemberModal({ onClose, onSave, editMember }: AddMemberModalProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Trade / Specialty</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Trade / Specialty</label>
               <input
                 type="text"
                 value={form.trade_specialty}
                 onChange={e => setForm(f => ({ ...f, trade_specialty: e.target.value }))}
                 placeholder="e.g. Plumbing, Electrical"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md focus:ring-2 focus:ring-ct-teal focus:border-ct-teal outline-none"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Hourly Rate ($/hr)</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Hourly Rate ($/hr)</label>
               <input
                 type="number"
                 min="0"
@@ -242,18 +242,18 @@ function AddMemberModal({ onClose, onSave, editMember }: AddMemberModalProps) {
                 value={form.hourly_rate}
                 onChange={e => setForm(f => ({ ...f, hourly_rate: parseFloat(e.target.value) || 0 }))}
                 placeholder="0.00"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md focus:ring-2 focus:ring-ct-teal focus:border-ct-teal outline-none"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Notes</label>
               <textarea {...proseInputProps}
                 value={form.notes}
                 onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                 rows={3}
                 placeholder="Any notes about this person, their skills, or working arrangement..."
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none resize-none"
+                className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md focus:ring-2 focus:ring-ct-teal focus:border-ct-teal outline-none resize-none"
               />
             </div>
           </div>
@@ -262,14 +262,14 @@ function AddMemberModal({ onClose, onSave, editMember }: AddMemberModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 px-4 py-2.5 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink font-medium rounded-ct-md hover:brightness-110 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
               {saving ? (
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -570,9 +570,9 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
   if (profile?.role !== 'tradie') {
     const notAvailable = (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <HardHat className="w-16 h-16 text-gray-300 mb-4" />
-        <h2 className="text-xl font-semibold text-gray-700 mb-2">Team Management</h2>
-        <p className="text-gray-500">This feature is available for trade businesses.</p>
+        <HardHat className="w-16 h-16 text-ct-mute mb-4" />
+        <h2 className="text-xl font-semibold text-ct-mute-2 mb-2">Team Management</h2>
+        <p className="text-ct-mute">This feature is available for trade businesses.</p>
       </div>
     );
     if (embedded) return notAvailable;
@@ -605,12 +605,12 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-3 sm:gap-4">
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Team</h1>
-            <p className="text-gray-500 mt-1 text-sm sm:text-base">Add your crew, set their roles and rates, then assign them to jobs in seconds.</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-ct-paper">My Team</h1>
+            <p className="text-ct-mute mt-1 text-sm sm:text-base">Add your crew, set their roles and rates, then assign them to jobs in seconds.</p>
           </div>
           <button
             onClick={() => { setEditMember(null); setShowAddModal(true); }}
-            className="flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 transition-colors text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
+            className="flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 bg-ct-teal text-ct-ink font-medium rounded-ct-md hover:brightness-110 transition-colors text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Add Member</span>
@@ -619,100 +619,100 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+          <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg p-5 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-secondary-50 rounded-xl flex items-center justify-center">
-                <Users className="w-5 h-5 text-secondary-600" />
+              <div className="w-10 h-10 bg-ct-surface-2 rounded-ct-md flex items-center justify-center">
+                <Users className="w-5 h-5 text-ct-mute-2" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                <p className="text-sm text-gray-500">Total active</p>
+                <p className="text-2xl font-bold text-ct-paper">{stats.total}</p>
+                <p className="text-sm text-ct-mute">Total active</p>
               </div>
             </div>
           </div>
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+          <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg p-5 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center">
-                <UserCheck className="w-5 h-5 text-green-600" />
+              <div className="w-10 h-10 bg-ct-teal/[0.14] rounded-ct-md flex items-center justify-center">
+                <UserCheck className="w-5 h-5 text-ct-teal" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
-                <p className="text-sm text-gray-500">Approved</p>
+                <p className="text-2xl font-bold text-ct-paper">{stats.active}</p>
+                <p className="text-sm text-ct-mute">Approved</p>
               </div>
             </div>
           </div>
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+          <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg p-5 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-warm-50 rounded-xl flex items-center justify-center">
-                <Clock className="w-5 h-5 text-warm-600" />
+              <div className="w-10 h-10 bg-ct-amber/[0.13] rounded-ct-md flex items-center justify-center">
+                <Clock className="w-5 h-5 text-ct-amber" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
-                <p className="text-sm text-gray-500">Pending</p>
+                <p className="text-2xl font-bold text-ct-paper">{stats.pending}</p>
+                <p className="text-sm text-ct-mute">Pending</p>
               </div>
             </div>
           </div>
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+          <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg p-5 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center">
-                <Wrench className="w-5 h-5 text-gray-600" />
+              <div className="w-10 h-10 bg-ct-surface-2 rounded-ct-md flex items-center justify-center">
+                <Wrench className="w-5 h-5 text-ct-mute-2" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.manual}</p>
-                <p className="text-sm text-gray-500">Manual</p>
+                <p className="text-2xl font-bold text-ct-paper">{stats.manual}</p>
+                <p className="text-sm text-ct-mute">Manual</p>
               </div>
             </div>
           </div>
         </div>
 
         {pendingRequests.length > 0 && (
-          <div className="bg-warm-50 border-2 border-warm-300 rounded-2xl overflow-hidden shadow-sm">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-warm-200 bg-warm-100/60">
-              <div className="w-8 h-8 bg-warm-200 rounded-lg flex items-center justify-center">
-                <AlertCircle className="w-5 h-5 text-warm-700" />
+          <div className="bg-ct-amber/[0.13] border-2 border-ct-teal/30 rounded-ct-lg overflow-hidden shadow-sm">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-ct-amber/[0.34] bg-ct-amber/[0.13]/60">
+              <div className="w-8 h-8 bg-ct-teal/[0.14] rounded-ct-sm flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-ct-amber" />
               </div>
               <div className="flex-1">
-                <h2 className="font-bold text-warm-900">Pending requests</h2>
-                <p className="text-xs text-warm-700 mt-0.5">These users want to join your team. Review and approve or decline.</p>
+                <h2 className="font-bold text-ct-teal">Pending requests</h2>
+                <p className="text-xs text-ct-amber mt-0.5">These users want to join your team. Review and approve or decline.</p>
               </div>
-              <span className="px-3 py-1 bg-warm-200 text-warm-800 rounded-full text-xs font-medium">
+              <span className="px-3 py-1 bg-ct-teal/[0.14] text-ct-paper rounded-full text-xs font-medium">
                 {pendingRequests.length} pending
               </span>
             </div>
-            <div className="divide-y divide-warm-200">
+            <div className="divide-y divide-ct-teal/30">
               {pendingRequests.map(emp => (
-                <div key={emp.id} className="flex items-center gap-4 p-5 bg-white/40 flex-wrap sm:flex-nowrap">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-warm-200 to-warm-300 flex items-center justify-center flex-shrink-0">
-                    <span className="text-lg font-bold text-warm-800">
+                <div key={emp.id} className="flex items-center gap-4 p-5 bg-ct-surface/40 flex-wrap sm:flex-nowrap">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-ct-teal to-ct-teal flex items-center justify-center flex-shrink-0">
+                    <span className="text-lg font-bold text-ct-paper">
                       {emp.full_name.charAt(0).toUpperCase()}
                     </span>
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-gray-900">{emp.full_name}</span>
+                      <span className="font-semibold text-ct-paper">{emp.full_name}</span>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[emp.employment_type]}`}>
                         {ROLE_LABELS[emp.employment_type]}
                       </span>
                     </div>
                     <div className="flex items-center gap-4 mt-1 flex-wrap">
                       {emp.tradie_details?.trade_category && (
-                        <span className="flex items-center gap-1 text-sm text-gray-600">
+                        <span className="flex items-center gap-1 text-sm text-ct-mute-2">
                           <Briefcase className="w-3.5 h-3.5" />
                           {emp.tradie_details.trade_category}
                         </span>
                       )}
-                      <span className="flex items-center gap-1 text-sm text-gray-500 min-w-0">
+                      <span className="flex items-center gap-1 text-sm text-ct-mute min-w-0">
                         <Mail className="w-3.5 h-3.5 flex-shrink-0" />
                         <span className="truncate">{emp.email}</span>
                       </span>
                       {emp.phone && (
-                        <span className="flex items-center gap-1 text-sm text-gray-500">
+                        <span className="flex items-center gap-1 text-sm text-ct-mute">
                           <Phone className="w-3.5 h-3.5" />
                           {emp.phone}
                         </span>
                       )}
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-ct-mute">
                         {new Date(emp.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                       </span>
                     </div>
@@ -722,7 +722,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                     <button
                       onClick={() => handleDeclineRequest(emp.id)}
                       disabled={processingId === emp.id}
-                      className="flex items-center gap-1.5 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-100 disabled:opacity-50 transition-colors"
+                      className="flex items-center gap-1.5 px-4 py-2.5 border border-ct-line text-ct-mute-2 text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 disabled:opacity-50 transition-colors"
                     >
                       <X className="w-4 h-4" />
                       Decline
@@ -730,7 +730,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                     <button
                       onClick={() => handleApproveRequest(emp.id)}
                       disabled={processingId === emp.id}
-                      className="flex items-center gap-1.5 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-xl hover:bg-green-700 disabled:opacity-50 transition-colors"
+                      className="flex items-center gap-1.5 px-4 py-2.5 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-md hover:brightness-110 disabled:opacity-50 transition-colors"
                     >
                       {processingId === emp.id ? (
                         <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -746,8 +746,8 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
           </div>
         )}
 
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-          <div className="relative border-b border-gray-100">
+        <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm overflow-hidden">
+          <div className="relative border-b border-ct-line-soft">
           <div className="flex overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
             {teamTabs.map(tab => (
               <button
@@ -755,8 +755,8 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 sm:py-4 -mb-px text-xs sm:text-sm font-medium transition-colors whitespace-nowrap border-b-2 ${
                   activeTab === tab.key
-                    ? 'border-warm-500 text-warm-600'
-                    : 'border-transparent text-gray-400 hover:text-gray-600'
+                    ? 'border-ct-teal text-ct-amber'
+                    : 'border-transparent text-ct-mute hover:text-ct-mute-2'
                 }`}
               >
                 <tab.icon className="w-4 h-4 flex-shrink-0" />
@@ -764,7 +764,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                 <span className="sm:hidden">{tab.label === 'Role Permissions' ? 'Roles' : tab.label === 'Manually Added' ? 'Manual' : tab.label === 'Active Team' ? 'Active' : tab.label === 'Team Calendar' ? 'Calendar' : tab.label === 'Site Activity' ? 'Sites' : tab.label === 'My Hours' ? 'Hours' : tab.label}</span>
                 {tab.count > 0 && (
                   <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
-                    activeTab === tab.key ? 'bg-warm-100 text-warm-700' : 'bg-gray-100 text-gray-600'
+                    activeTab === tab.key ? 'bg-ct-amber/[0.13] text-ct-amber' : 'bg-ct-surface-2 text-ct-mute-2'
                   }`}>
                     {tab.count}
                   </span>
@@ -778,13 +778,13 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
           </div>
 
           {loading ? (
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-ct-line-soft">
               {[1,2,3].map(i => (
                 <div key={i} className="flex items-center gap-4 p-5 animate-pulse">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full" />
+                  <div className="w-12 h-12 bg-ct-surface-2 rounded-full" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-100 rounded w-1/3" />
-                    <div className="h-3 bg-gray-100 rounded w-1/4" />
+                    <div className="h-4 bg-ct-surface-2 rounded w-1/3" />
+                    <div className="h-3 bg-ct-surface-2 rounded w-1/4" />
                   </div>
                 </div>
               ))}
@@ -792,31 +792,31 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
           ) : activeTab === 'active' ? (
             activeTeam.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-                <div className="w-16 h-16 bg-secondary-50 rounded-2xl flex items-center justify-center mb-4">
-                  <UserCheck className="w-8 h-8 text-secondary-400" />
+                <div className="w-16 h-16 bg-ct-surface-2 rounded-ct-lg flex items-center justify-center mb-4">
+                  <UserCheck className="w-8 h-8 text-ct-mute" />
                 </div>
-                <h3 className="font-semibold text-gray-800 mb-1">Build your crew</h3>
-                <p className="text-sm text-gray-500 max-w-xs">
+                <h3 className="font-semibold text-ct-paper mb-1">Build your crew</h3>
+                <p className="text-sm text-ct-mute max-w-xs">
                   Approve a join request or add someone manually — they'll appear here, ready to assign to jobs and clock on.
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-ct-line-soft">
                 {activeTeam.map(emp => (
-                  <div key={emp.id} className="flex items-start gap-3 sm:gap-4 p-4 sm:p-5 hover:bg-gray-50/50 transition-colors group">
-                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center flex-shrink-0">
-                      <span className="text-lg font-bold text-green-700">
+                  <div key={emp.id} className="flex items-start gap-3 sm:gap-4 p-4 sm:p-5 hover:bg-ct-surface-2/50 transition-colors group">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-ct-teal to-ct-teal flex items-center justify-center flex-shrink-0">
+                      <span className="text-lg font-bold text-ct-teal">
                         {emp.full_name.charAt(0).toUpperCase()}
                       </span>
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-gray-900 truncate">{emp.full_name}</span>
+                        <span className="font-semibold text-ct-paper truncate">{emp.full_name}</span>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[emp.employment_type]}`}>
                           {ROLE_LABELS[emp.employment_type]}
                         </span>
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-ct-teal/[0.14] text-ct-teal">
                           Active
                         </span>
                       </div>
@@ -824,17 +824,17 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                           instead of wrapping/squishing; inline row on sm+. */}
                       <div className="mt-1.5 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4 sm:flex-wrap">
                         {emp.tradie_details?.trade_category && (
-                          <span className="flex items-center gap-1.5 text-sm text-gray-500 min-w-0">
+                          <span className="flex items-center gap-1.5 text-sm text-ct-mute min-w-0">
                             <Briefcase className="w-3.5 h-3.5 flex-shrink-0" />
                             <span className="truncate">{emp.tradie_details.trade_category}</span>
                           </span>
                         )}
-                        <span className="flex items-center gap-1.5 text-sm text-gray-500 min-w-0">
+                        <span className="flex items-center gap-1.5 text-sm text-ct-mute min-w-0">
                           <Mail className="w-3.5 h-3.5 flex-shrink-0" />
                           <span className="truncate">{emp.email}</span>
                         </span>
                         {emp.phone && (
-                          <span className="flex items-center gap-1.5 text-sm text-gray-500 min-w-0">
+                          <span className="flex items-center gap-1.5 text-sm text-ct-mute min-w-0">
                             <Phone className="w-3.5 h-3.5 flex-shrink-0" />
                             <span className="truncate">{emp.phone}</span>
                           </span>
@@ -846,10 +846,10 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                       onClick={() => setMemberToRemove({ id: emp.id, name: emp.full_name, type: 'linked' })}
                       disabled={processingId === emp.id}
                       title="Remove team member"
-                      className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 border border-red-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors sm:opacity-0 opacity-60 group-hover:opacity-100 min-h-[44px] flex-shrink-0"
+                      className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 border border-ct-rose/[0.34] text-ct-rose text-sm font-medium rounded-ct-sm hover:bg-ct-rose/[0.13] disabled:opacity-50 transition-colors sm:opacity-0 opacity-60 group-hover:opacity-100 min-h-[44px] flex-shrink-0"
                     >
                       {processingId === emp.id ? (
-                        <span className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                        <span className="w-4 h-4 border-2 border-ct-rose/40 border-t-red-600 rounded-full animate-spin" />
                       ) : (
                         <Shield className="w-4 h-4" />
                       )}
@@ -862,17 +862,17 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
           ) : activeTab === 'permissions' ? (
             <div className="p-5 space-y-4">
               {Object.entries(ROLE_PERMISSIONS).map(([key, { label, permissions }]) => (
-                <div key={key} className="border border-gray-100 rounded-xl p-4">
+                <div key={key} className="border border-ct-line-soft rounded-ct-md p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[key]}`}>{label}</span>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-ct-mute">
                       {allMembers.filter(m => m.role === key).length} member{allMembers.filter(m => m.role === key).length !== 1 ? 's' : ''}
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {permissions.map(p => (
-                      <div key={p} className="flex items-center gap-2 text-sm text-gray-600">
-                        <Check className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                      <div key={p} className="flex items-center gap-2 text-sm text-ct-mute-2">
+                        <Check className="w-3.5 h-3.5 text-ct-teal flex-shrink-0" />
                         {p}
                       </div>
                     ))}
@@ -883,17 +883,17 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
           ) : activeTab === 'calendar' ? (
             <div className="p-5">
               <div className="flex items-center justify-between mb-4">
-                <button onClick={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() - 1))} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+                <button onClick={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() - 1))} className="p-1.5 rounded-ct-sm hover:bg-ct-surface-2 text-ct-mute">
                   <ChevronLeft className="w-5 h-5" />
                 </button>
-                <h3 className="text-sm font-semibold text-gray-900">{calMonthLabel}</h3>
-                <button onClick={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1))} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+                <h3 className="text-sm font-semibold text-ct-paper">{calMonthLabel}</h3>
+                <button onClick={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1))} className="p-1.5 rounded-ct-sm hover:bg-ct-surface-2 text-ct-mute">
                   <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
               <div className="grid grid-cols-7 gap-1 mb-1">
                 {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
-                  <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
+                  <div key={d} className="text-center text-xs font-medium text-ct-mute py-1">{d}</div>
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-1">
@@ -905,12 +905,12 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                   const isWeekend = new Date(calMonth.getFullYear(), calMonth.getMonth(), day).getDay() % 6 === 0;
                   const isPast = new Date(calMonth.getFullYear(), calMonth.getMonth(), day) < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                   return (
-                    <div key={day} className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs ${isPast ? 'opacity-50' : ''} ${isToday ? 'bg-primary-100 border border-primary-300 font-bold text-primary-700' : isWeekend ? 'bg-gray-50 text-gray-400' : isPast ? 'text-gray-400' : 'text-gray-700'}`}>
+                    <div key={day} className={`aspect-square rounded-ct-sm flex flex-col items-center justify-center text-xs ${isPast ? 'opacity-50' : ''} ${isToday ? 'bg-ct-surface-2 border border-ct-teal/30 font-bold text-ct-mute-2' : isWeekend ? 'bg-ct-surface-2 text-ct-mute' : isPast ? 'text-ct-mute' : 'text-ct-mute-2'}`}>
                       <span>{day}</span>
                       {allMembers.length > 0 && !isWeekend && (
                         <div className="flex gap-0.5 mt-0.5">
                           {allMembers.slice(0, 3).map((m, idx) => (
-                            <div key={idx} className={`w-1.5 h-1.5 rounded-full ${idx === 0 ? 'bg-green-400' : idx === 1 ? 'bg-secondary-400' : 'bg-warm-400'}`} title={m.name} />
+                            <div key={idx} className={`w-1.5 h-1.5 rounded-full ${idx === 0 ? 'bg-ct-teal' : idx === 1 ? 'bg-ct-surface-2' : 'bg-ct-teal'}`} title={m.name} />
                           ))}
                         </div>
                       )}
@@ -921,15 +921,15 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
               {allMembers.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-3">
                   {allMembers.slice(0, 5).map((m, idx) => (
-                    <div key={idx} className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <div className={`w-2 h-2 rounded-full ${idx === 0 ? 'bg-green-400' : idx === 1 ? 'bg-secondary-400' : idx === 2 ? 'bg-warm-400' : 'bg-primary-400'}`} />
+                    <div key={idx} className="flex items-center gap-1.5 text-xs text-ct-mute">
+                      <div className={`w-2 h-2 rounded-full ${idx === 0 ? 'bg-ct-teal' : idx === 1 ? 'bg-ct-surface-2' : idx === 2 ? 'bg-ct-teal' : 'bg-ct-teal'}`} />
                       {m.name}
                     </div>
                   ))}
                 </div>
               )}
               {allMembers.length === 0 && (
-                <div className="text-center py-8 text-gray-400 text-sm">No active team members to show on the calendar</div>
+                <div className="text-center py-8 text-ct-mute text-sm">No active team members to show on the calendar</div>
               )}
             </div>
           ) : activeTab === 'timesheets' ? (
@@ -938,16 +938,16 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
               <div className="flex items-center justify-between">
                 <button
                   onClick={() => { const d = new Date(timesheetWeekStart); d.setDate(d.getDate() - 7); setTimesheetWeekStart(d); }}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"
+                  className="p-1.5 rounded-ct-sm hover:bg-ct-surface-2 text-ct-mute"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
-                <h3 className="text-sm font-semibold text-gray-900">
+                <h3 className="text-sm font-semibold text-ct-paper">
                   Week of {timesheetWeekStart.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </h3>
                 <button
                   onClick={() => { const d = new Date(timesheetWeekStart); d.setDate(d.getDate() + 7); setTimesheetWeekStart(d); }}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"
+                  className="p-1.5 rounded-ct-sm hover:bg-ct-surface-2 text-ct-mute"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
@@ -957,7 +957,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
               <div className="flex justify-end">
                 <button
                   onClick={() => setShowAddEntry(!showAddEntry)}
-                  className="flex items-center gap-2 px-4 py-2 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 transition-colors text-sm"
+                  className="flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink font-medium rounded-ct-md hover:brightness-110 transition-colors text-sm"
                 >
                   <Plus className="w-4 h-4" />
                   Add Entry
@@ -966,14 +966,14 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
 
               {/* Inline Add Entry Form */}
               {showAddEntry && (
-                <div className="border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-3">
+                <div className="border border-ct-line rounded-ct-md p-4 bg-ct-surface-2 space-y-3">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Team Member *</label>
+                      <label className="block text-xs font-medium text-ct-mute-2 mb-1">Team Member *</label>
                       <select
                         value={entryForm.member_id}
                         onChange={e => setEntryForm(f => ({ ...f, member_id: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                        className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal outline-none"
                       >
                         <option value="">Select member...</option>
                         {activeTeam.map(e => (
@@ -985,16 +985,16 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Date *</label>
+                      <label className="block text-xs font-medium text-ct-mute-2 mb-1">Date *</label>
                       <input
                         type="date"
                         value={entryForm.date}
                         onChange={e => setEntryForm(f => ({ ...f, date: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                        className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Hours *</label>
+                      <label className="block text-xs font-medium text-ct-mute-2 mb-1">Hours *</label>
                       <input
                         type="number"
                         min="0.25"
@@ -1003,41 +1003,41 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                         value={entryForm.hours}
                         onChange={e => setEntryForm(f => ({ ...f, hours: e.target.value }))}
                         placeholder="8"
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                        className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Job (optional)</label>
+                      <label className="block text-xs font-medium text-ct-mute-2 mb-1">Job (optional)</label>
                       <input
                         type="text"
                         value={entryForm.job_id}
                         onChange={e => setEntryForm(f => ({ ...f, job_id: e.target.value }))}
                         placeholder="Job ID"
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                        className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal outline-none"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                    <label className="block text-xs font-medium text-ct-mute-2 mb-1">Description</label>
                     <input
                       type="text"
                       value={entryForm.description}
                       onChange={e => setEntryForm(f => ({ ...f, description: e.target.value }))}
                       placeholder="What was worked on..."
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                      className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal outline-none"
                     />
                   </div>
                   <div className="flex gap-2 justify-end">
                     <button
                       onClick={() => setShowAddEntry(false)}
-                      className="px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                      className="px-4 py-2 border border-ct-line text-ct-mute-2 text-sm font-medium rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleAddTimeEntry}
                       disabled={savingEntry || !entryForm.member_id || !entryForm.hours}
-                      className="px-4 py-2 bg-warm-500 text-white text-sm font-medium rounded-lg hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center gap-2"
+                      className="px-4 py-2 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-50 transition-colors flex items-center gap-2"
                     >
                       {savingEntry && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                       Save Entry
@@ -1058,10 +1058,10 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                 return (
                   <div className="flex flex-wrap gap-3">
                     {totals.map((t, i) => (
-                      <div key={i} className="flex items-center gap-2 px-3 py-2 bg-primary-50 rounded-lg border border-primary-100">
-                        <Timer className="w-4 h-4 text-primary-600" />
-                        <span className="text-sm font-medium text-gray-900">{t.name}</span>
-                        <span className="text-sm font-bold text-primary-700">{t.hours}h</span>
+                      <div key={i} className="flex items-center gap-2 px-3 py-2 bg-ct-surface-2 rounded-ct-sm border border-ct-teal/30">
+                        <Timer className="w-4 h-4 text-ct-mute-2" />
+                        <span className="text-sm font-medium text-ct-paper">{t.name}</span>
+                        <span className="text-sm font-bold text-ct-mute-2">{t.hours}h</span>
                       </div>
                     ))}
                   </div>
@@ -1070,54 +1070,54 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
 
               {/* Time Entries List */}
               {timeEntries.length === 0 ? (
-                <div className="text-center py-12 text-gray-400 text-sm">
-                  <Timer className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-                  <p className="font-medium text-gray-600">No time entries this week</p>
+                <div className="text-center py-12 text-ct-mute text-sm">
+                  <Timer className="w-10 h-10 mx-auto mb-3 text-ct-mute" />
+                  <p className="font-medium text-ct-mute-2">No time entries this week</p>
                   <p className="text-xs mt-1">Add entries to start tracking your team's hours</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden">
+                <div className="divide-y divide-ct-line-soft border border-ct-line rounded-ct-md overflow-hidden">
                   {timeEntries.map(entry => (
-                    <div key={entry.id} className="flex items-center gap-4 p-4 bg-white hover:bg-gray-50/50 transition-colors">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm font-bold text-primary-700">
+                    <div key={entry.id} className="flex items-center gap-4 p-4 bg-ct-surface hover:bg-ct-surface-2/50 transition-colors">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-ct-teal to-ct-teal flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-bold text-ct-mute-2">
                           {entry.member_name.charAt(0).toUpperCase()}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-gray-900 text-sm">{entry.member_name}</span>
+                          <span className="font-medium text-ct-paper text-sm">{entry.member_name}</span>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            entry.status === 'approved' ? 'bg-green-100 text-green-700'
-                            : entry.status === 'rejected' ? 'bg-red-100 text-red-700'
-                            : 'bg-yellow-100 text-yellow-700'
+                            entry.status === 'approved' ? 'bg-ct-teal/[0.14] text-ct-teal'
+                            : entry.status === 'rejected' ? 'bg-ct-rose/[0.13] text-ct-rose'
+                            : 'bg-ct-amber/[0.13] text-ct-amber'
                           }`}>
                             {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
                           </span>
                           {entry.source === 'geofence' && (
                             <span
                               title="Auto-logged from on-site check-in"
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-secondary-50 text-secondary-700"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-ct-surface-2 text-ct-mute-2"
                             >
                               <MapPin className="w-3 h-3" /> Auto
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
+                        <div className="flex items-center gap-3 mt-0.5 text-xs text-ct-mute">
                           <span>{new Date(entry.date).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
-                          <span className="font-semibold text-gray-700">{entry.hours}h</span>
+                          <span className="font-semibold text-ct-mute-2">{entry.hours}h</span>
                           {entry.description && <span className="truncate">{entry.description}</span>}
                         </div>
                         {entry.source === 'geofence' && entry.arrived_at && (
-                          <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 flex-wrap">
+                          <div className="flex items-center gap-3 mt-1 text-xs text-ct-mute flex-wrap">
                             <span className="inline-flex items-center gap-1" title="Arrived on site">
-                              <LogIn className="w-3.5 h-3.5 text-gray-400" /> {formatTime(entry.arrived_at)}
+                              <LogIn className="w-3.5 h-3.5 text-ct-mute" /> {formatTime(entry.arrived_at)}
                             </span>
                             <span className="inline-flex items-center gap-1" title="Left site">
-                              <LogOut className="w-3.5 h-3.5 text-gray-400" /> {entry.departed_at ? formatTime(entry.departed_at) : '—'}
+                              <LogOut className="w-3.5 h-3.5 text-ct-mute" /> {entry.departed_at ? formatTime(entry.departed_at) : '—'}
                             </span>
                             {geofenceTravelMs[entry.id] != null && (
-                              <span className="inline-flex items-center gap-1 text-secondary-600" title="Travel from the previous site">
+                              <span className="inline-flex items-center gap-1 text-ct-mute-2" title="Travel from the previous site">
                                 <Navigation className="w-3.5 h-3.5" /> {formatDuration(geofenceTravelMs[entry.id])} drive from last site
                               </span>
                             )}
@@ -1128,14 +1128,14 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           <button
                             onClick={() => handleUpdateEntryStatus(entry.id, 'approved')}
-                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            className="p-2 text-ct-teal hover:bg-ct-teal/[0.14] rounded-ct-sm transition-colors"
                             title="Approve"
                           >
                             <CheckCircle2 className="w-5 h-5" />
                           </button>
                           <button
                             onClick={() => handleUpdateEntryStatus(entry.id, 'rejected')}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors"
                             title="Reject"
                           >
                             <XCircle className="w-5 h-5" />
@@ -1160,34 +1160,34 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
           ) : (
             manualMembers.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                  <Users className="w-8 h-8 text-gray-300" />
+                <div className="w-16 h-16 bg-ct-surface-2 rounded-ct-lg flex items-center justify-center mb-4">
+                  <Users className="w-8 h-8 text-ct-mute" />
                 </div>
-                <h3 className="font-semibold text-gray-700 mb-1">No manually added members</h3>
-                <p className="text-sm text-gray-400 max-w-xs mb-6">
+                <h3 className="font-semibold text-ct-mute-2 mb-1">No manually added members</h3>
+                <p className="text-sm text-ct-mute max-w-xs mb-6">
                   Use "Add Member" to manually track team members who aren't on ConnectTradie yet.
                 </p>
                 <button
                   onClick={() => { setEditMember(null); setShowAddModal(true); }}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 transition-colors text-sm"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-ct-teal text-ct-ink font-medium rounded-ct-md hover:brightness-110 transition-colors text-sm"
                 >
                   <Plus className="w-4 h-4" />
                   Add First Member
                 </button>
               </div>
             ) : (
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-ct-line-soft">
                 {manualMembers.map(member => (
-                  <div key={member.id} className="flex items-start gap-3 sm:gap-4 p-4 sm:p-5 hover:bg-gray-50/50 transition-colors group">
-                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center flex-shrink-0">
-                      <span className="text-lg font-bold text-primary-700">
+                  <div key={member.id} className="flex items-start gap-3 sm:gap-4 p-4 sm:p-5 hover:bg-ct-surface-2/50 transition-colors group">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-ct-teal to-ct-teal flex items-center justify-center flex-shrink-0">
+                      <span className="text-lg font-bold text-ct-mute-2">
                         {member.invite_name.charAt(0).toUpperCase()}
                       </span>
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-gray-900 truncate">{member.invite_name}</span>
+                        <span className="font-semibold text-ct-paper truncate">{member.invite_name}</span>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[member.role]}`}>
                           {ROLE_LABELS[member.role]}
                         </span>
@@ -1199,54 +1199,54 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                           full-width line instead of wrapping; inline row on sm+. */}
                       <div className="mt-1.5 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4 sm:flex-wrap">
                         {member.trade_specialty && (
-                          <span className="flex items-center gap-1.5 text-sm text-gray-500 min-w-0">
+                          <span className="flex items-center gap-1.5 text-sm text-ct-mute min-w-0">
                             <Briefcase className="w-3.5 h-3.5 flex-shrink-0" />
                             <span className="truncate">{member.trade_specialty}</span>
                           </span>
                         )}
                         {member.invite_email && (
-                          <span className="flex items-center gap-1.5 text-sm text-gray-500 min-w-0">
+                          <span className="flex items-center gap-1.5 text-sm text-ct-mute min-w-0">
                             <Mail className="w-3.5 h-3.5 flex-shrink-0" />
                             <span className="truncate">{member.invite_email}</span>
                           </span>
                         )}
                         {member.invite_phone && (
-                          <span className="flex items-center gap-1.5 text-sm text-gray-500 min-w-0">
+                          <span className="flex items-center gap-1.5 text-sm text-ct-mute min-w-0">
                             <Phone className="w-3.5 h-3.5 flex-shrink-0" />
                             <span className="truncate">{member.invite_phone}</span>
                           </span>
                         )}
                         {member.hourly_rate > 0 && (
-                          <span className="flex items-center gap-1.5 text-sm text-gray-500 flex-shrink-0">
+                          <span className="flex items-center gap-1.5 text-sm text-ct-mute flex-shrink-0">
                             <Star className="w-3.5 h-3.5 flex-shrink-0" />
                             ${member.hourly_rate}/hr
                           </span>
                         )}
                       </div>
                       {member.notes && (
-                        <p className="text-xs text-gray-400 mt-1 truncate">{member.notes}</p>
+                        <p className="text-xs text-ct-mute mt-1 truncate">{member.notes}</p>
                       )}
                     </div>
 
                     <div className="relative">
                       <button
                         onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)}
-                        className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 sm:opacity-0 opacity-60 group-hover:opacity-100 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        className="p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 sm:opacity-0 opacity-60 group-hover:opacity-100 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>
                       {openMenuId === member.id && (
-                        <div className="absolute right-0 top-10 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-10 py-1">
+                        <div className="absolute right-0 top-10 w-48 bg-ct-surface border border-ct-line rounded-ct-md shadow-lg z-10 py-1">
                           <button
                             onClick={() => { setEditMember(member); setShowAddModal(true); setOpenMenuId(null); }}
-                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-ct-mute-2 hover:bg-ct-surface-2"
                           >
                             <Pencil className="w-4 h-4" />
                             Edit Details
                           </button>
                           <button
                             onClick={() => { setMemberToRemove({ id: member.id, name: member.invite_name, type: 'manual' }); setOpenMenuId(null); }}
-                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"
+                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-ct-rose hover:bg-ct-rose/[0.13]"
                           >
                             <Trash2 className="w-4 h-4" />
                             Remove

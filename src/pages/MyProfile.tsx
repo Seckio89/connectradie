@@ -152,7 +152,7 @@ export default function MyProfile() {
     return (
       <DashboardLayout wide>
         <div className="flex items-center justify-center py-32">
-          <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
         </div>
       </DashboardLayout>
     );
@@ -165,25 +165,25 @@ export default function MyProfile() {
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">My Public Profile</h1>
-              <p className="text-sm text-gray-500 mt-0.5">
+              <h1 className="text-2xl font-bold text-ct-paper">My Public Profile</h1>
+              <p className="text-sm text-ct-mute mt-0.5">
                 This is how clients see your profile. <span className="hidden sm:inline">Hover over any section to edit.</span><span className="sm:hidden">Tap any section to edit.</span>
               </p>
             </div>
             <Link
               to={`/tradie/${user?.id}`}
               target="_blank"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-sm font-medium text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-ct-surface border border-ct-line text-sm font-medium text-ct-mute-2 rounded-ct-md hover:bg-ct-surface-2 hover:border-ct-line transition-colors shadow-sm"
             >
               <Eye className="w-4 h-4" />
               View as Client
-              <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
+              <ExternalLink className="w-3.5 h-3.5 text-ct-mute" />
             </Link>
           </div>
 
           {/* ====== HERO BANNER ====== */}
           <EditableSection label="Cover Photo" onEdit={() => setEditCoverPhoto(true)} dark>
-            <div className="rounded-2xl relative overflow-hidden dark-overlay">
+            <div className="rounded-ct-lg relative overflow-hidden dark-overlay">
               {/* Cover image / gradient as an absolute background so the info
                   block below defines the banner height. This prevents the
                   avatar + business name from overflowing a fixed-height banner
@@ -196,7 +196,7 @@ export default function MyProfile() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900" />
+                  <div className="w-full h-full bg-gradient-to-br from-ct-surface-2 via-ct-surface to-ct-surface" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
               </div>
@@ -204,7 +204,7 @@ export default function MyProfile() {
               {!profile?.cover_photo_url && (
                 <button
                   onClick={() => setEditCoverPhoto(true)}
-                  className="absolute top-4 left-4 inline-flex items-center justify-center gap-2 min-h-[44px] px-3 py-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white/70 text-xs font-medium rounded-lg hover:bg-white/25 hover:text-white transition-colors"
+                  className="absolute top-4 left-4 inline-flex items-center justify-center gap-2 min-h-[44px] px-3 py-1.5 bg-ct-surface/15 backdrop-blur-sm border border-white/20 text-ct-ink/70 text-xs font-medium rounded-ct-sm hover:bg-ct-surface/25 hover:text-ct-ink transition-colors"
                 >
                   <Camera className="w-3.5 h-3.5" />
                   Add Cover Photo
@@ -213,12 +213,12 @@ export default function MyProfile() {
 
               <div className="relative px-6 pb-6 pt-16 min-h-[14rem] sm:min-h-[18rem] flex flex-col justify-end">
                 <div className="flex flex-col sm:flex-row items-start gap-5">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gray-700 overflow-hidden ring-4 ring-white/20 flex-shrink-0 relative group shadow-xl">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-ct-lg bg-ct-surface-2 overflow-hidden ring-4 ring-white/20 flex-shrink-0 relative group shadow-xl">
                     {profile?.avatar_url ? (
                       <img src={profile.avatar_url} alt={displayName} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full bg-warm-500 flex items-center justify-center">
-                        <span className="text-4xl font-bold text-white">
+                      <div className="w-full h-full bg-ct-teal flex items-center justify-center">
+                        <span className="text-4xl font-bold text-ct-ink">
                           {profile?.full_name?.charAt(0) || 'T'}
                         </span>
                       </div>
@@ -227,15 +227,15 @@ export default function MyProfile() {
                       to="/settings"
                       className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <Settings className="w-5 h-5 text-white" />
+                      <Settings className="w-5 h-5 text-ct-ink" />
                     </Link>
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2.5 flex-wrap">
-                      <h2 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">{displayName}</h2>
+                      <h2 className="text-2xl sm:text-3xl font-bold text-ct-ink drop-shadow-sm">{displayName}</h2>
                       {isPro && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-warm-500/20 text-warm-300 text-xs font-medium rounded-full border border-warm-500/30">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-teal/20 text-ct-teal text-xs font-medium rounded-full border border-ct-teal/30">
                           <Crown className="w-3.5 h-3.5" />
                           PRO
                         </span>
@@ -243,34 +243,34 @@ export default function MyProfile() {
                     </div>
 
                     {personalName && (
-                      <p className="text-white/60 mt-0.5">{personalName}</p>
+                      <p className="text-ct-ink/60 mt-0.5">{personalName}</p>
                     )}
 
-                    <p className="text-primary-300 font-medium capitalize mt-1 drop-shadow-sm">
+                    <p className="text-ct-teal font-medium capitalize mt-1 drop-shadow-sm">
                       {tradeCategory || 'Trade Professional'}
                     </p>
 
                     <div className="flex flex-wrap items-center gap-2 mt-3">
                       {isIdentityVerified && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-500/20 text-green-300 text-xs font-medium rounded-full border border-green-500/30">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-teal/[0.14]0/20 text-ct-teal text-xs font-medium rounded-full border border-ct-teal/30">
                           <ShieldCheck className="w-3.5 h-3.5" />
                           ID Verified
                         </span>
                       )}
                       {tradieDetails?.is_insured && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary-500/20 text-secondary-300 text-xs font-medium rounded-full border border-secondary-500/30">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-surface-20/20 text-ct-mute-2 text-xs font-medium rounded-full border border-ct-teal/30">
                           <Shield className="w-3.5 h-3.5" />
                           Insured
                         </span>
                       )}
                       {tradieDetails?.is_licensed && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-warm-500/20 text-warm-300 text-xs font-medium rounded-full border border-warm-500/30">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-teal/20 text-ct-teal text-xs font-medium rounded-full border border-ct-teal/30">
                           <FileCheck className="w-3.5 h-3.5" />
                           Licensed
                         </span>
                       )}
                       {profile?.is_emergency_available && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-500/20 text-red-300 text-xs font-medium rounded-full border border-red-500/30">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-rose/[0.13]0/20 text-ct-rose text-xs font-medium rounded-full border border-ct-rose/30">
                           <Zap className="w-3.5 h-3.5" />
                           Emergency
                         </span>
@@ -292,48 +292,48 @@ export default function MyProfile() {
 
           {/* ====== STATS BAR ====== */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-warm-50 flex items-center justify-center flex-shrink-0">
-                <Star className="w-5 h-5 text-yellow-500" />
+            <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm px-4 py-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-ct-sm bg-ct-amber/[0.13] flex items-center justify-center flex-shrink-0">
+                <Star className="w-5 h-5 text-ct-amber" />
               </div>
               <div>
-                <p className="text-lg font-bold text-gray-900">
+                <p className="text-lg font-bold text-ct-paper">
                   {totalReviews > 0 ? avgRating.toFixed(1) : '4.8'}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-ct-mute">
                   {totalReviews > 0 ? `${totalReviews} reviews` : 'Rating'}
                 </p>
               </div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
+            <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm px-4 py-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-ct-sm bg-ct-teal/[0.14] flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-ct-teal" />
               </div>
               <div>
-                <p className="text-lg font-bold text-gray-900">
+                <p className="text-lg font-bold text-ct-paper">
                   {completedJobs > 0 ? completedJobs : '24'}
                 </p>
-                <p className="text-xs text-gray-500">Jobs Completed</p>
+                <p className="text-xs text-ct-mute">Jobs Completed</p>
               </div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
-                <Clock className="w-5 h-5 text-secondary-600" />
+            <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm px-4 py-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-ct-sm bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                <Clock className="w-5 h-5 text-ct-mute-2" />
               </div>
               <div>
-                <p className="text-lg font-bold text-gray-900">&lt; 1 hr</p>
-                <p className="text-xs text-gray-500">Response Time</p>
+                <p className="text-lg font-bold text-ct-paper">&lt; 1 hr</p>
+                <p className="text-xs text-ct-mute">Response Time</p>
               </div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
-                <MapPin className="w-5 h-5 text-secondary-600" />
+            <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm px-4 py-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-ct-sm bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-5 h-5 text-ct-mute-2" />
               </div>
               <div>
-                <p className="text-lg font-bold text-gray-900">
+                <p className="text-lg font-bold text-ct-paper">
                   {profile?.service_radius_km || 20}km
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-ct-mute">
                   {suburb ? `from ${suburb}` : 'Service Radius'}
                 </p>
               </div>
@@ -358,18 +358,18 @@ export default function MyProfile() {
             const pct = Math.round((done / checks.length) * 100);
             if (pct >= 100) return null;
             return (
-              <div className="mt-6 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div className="mt-6 bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-900">Profile Completeness</h3>
-                  <span className="text-sm font-bold text-primary-600">{pct}%</span>
+                  <h3 className="text-sm font-semibold text-ct-paper">Profile Completeness</h3>
+                  <span className="text-sm font-bold text-ct-mute-2">{pct}%</span>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-2.5 mb-4">
-                  <div className="bg-primary-600 h-2.5 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                <div className="w-full bg-ct-surface-2 rounded-full h-2.5 mb-4">
+                  <div className="bg-ct-teal h-2.5 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {checks.filter(c => !c.done).map(c => (
-                    <div key={c.label} className="flex items-center gap-2 text-xs text-gray-500">
-                      <div className="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0" />
+                    <div key={c.label} className="flex items-center gap-2 text-xs text-ct-mute">
+                      <div className="w-1.5 h-1.5 rounded-full bg-ct-line flex-shrink-0" />
                       {c.label}
                     </div>
                   ))}
@@ -386,22 +386,22 @@ export default function MyProfile() {
 
               {/* About */}
               <EditableSection label="About" onEdit={() => setEditBio(true)}>
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="px-6 py-4 border-b border-gray-100">
-                    <h2 className="text-lg font-semibold text-gray-900">About</h2>
+                <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-ct-line-soft">
+                    <h2 className="text-lg font-semibold text-ct-paper">About</h2>
                   </div>
                   <div className="p-6">
                     {(profile?.bio || tradieDetails?.bio) ? (
-                      <p className="text-gray-700 leading-relaxed whitespace-pre-line text-[15px]">
+                      <p className="text-ct-mute-2 leading-relaxed whitespace-pre-line text-[15px]">
                         {profile?.bio || tradieDetails?.bio}
                       </p>
                     ) : (
                       <button
                         onClick={() => setEditBio(true)}
-                        className="w-full border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-primary-400 hover:bg-primary-50/30 transition-colors group"
+                        className="w-full border-2 border-dashed border-ct-line rounded-ct-md p-8 text-center hover:border-ct-teal hover:bg-ct-surface-2/30 transition-colors group"
                       >
-                        <Plus className="w-6 h-6 text-gray-300 group-hover:text-primary-500 mx-auto mb-2 transition-colors" />
-                        <p className="text-sm font-medium text-gray-400 group-hover:text-primary-600 transition-colors">
+                        <Plus className="w-6 h-6 text-ct-mute group-hover:text-ct-teal0 mx-auto mb-2 transition-colors" />
+                        <p className="text-sm font-medium text-ct-mute group-hover:text-ct-mute-2 transition-colors">
                           Tell clients why you’re the right tradie for the job
                         </p>
                       </button>
@@ -412,12 +412,12 @@ export default function MyProfile() {
 
               {/* Portfolio */}
               <EditableSection label="Portfolio" onEdit={() => setEditPortfolio(true)}>
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-gray-900">
+                <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-ct-line-soft flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-ct-paper">
                       Portfolio
                       {portfolio.length > 0 && (
-                        <span className="text-sm font-normal text-gray-400 ml-2">
+                        <span className="text-sm font-normal text-ct-mute ml-2">
                           {portfolio.length} {portfolio.length === 1 ? 'photo' : 'photos'}
                         </span>
                       )}
@@ -430,7 +430,7 @@ export default function MyProfile() {
                           <button
                             key={img.id}
                             onClick={() => setLightboxImage(img.image_url)}
-                            className="group aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 relative focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                            className="group aspect-[4/3] rounded-ct-md overflow-hidden bg-ct-surface-2 relative focus:outline-none focus:ring-2 focus:ring-ct-teal focus:ring-offset-2"
                           >
                             <img
                               src={img.image_url}
@@ -440,7 +440,7 @@ export default function MyProfile() {
                             />
                             {img.caption && (
                               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                <p className="text-white text-xs leading-snug">{img.caption}</p>
+                                <p className="text-ct-ink text-xs leading-snug">{img.caption}</p>
                               </div>
                             )}
                           </button>
@@ -449,10 +449,10 @@ export default function MyProfile() {
                     ) : (
                       <button
                         onClick={() => setEditPortfolio(true)}
-                        className="w-full border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-primary-400 hover:bg-primary-50/30 transition-colors group"
+                        className="w-full border-2 border-dashed border-ct-line rounded-ct-md p-8 text-center hover:border-ct-teal hover:bg-ct-surface-2/30 transition-colors group"
                       >
-                        <ImageIcon className="w-10 h-10 text-gray-300 group-hover:text-primary-400 mx-auto mb-2 transition-colors" />
-                        <p className="text-sm font-medium text-gray-400 group-hover:text-primary-600 transition-colors">
+                        <ImageIcon className="w-10 h-10 text-ct-mute group-hover:text-ct-mute mx-auto mb-2 transition-colors" />
+                        <p className="text-sm font-medium text-ct-mute group-hover:text-ct-mute-2 transition-colors">
                           Show clients the standard of your work
                         </p>
                       </button>
@@ -462,9 +462,9 @@ export default function MyProfile() {
               </EditableSection>
 
               {/* Reviews */}
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-100">
-                  <h2 className="text-lg font-semibold text-gray-900">Client Reviews</h2>
+              <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-ct-line-soft">
+                  <h2 className="text-lg font-semibold text-ct-paper">Client Reviews</h2>
                 </div>
                 <div className="p-6">
                   {rating && rating.total_reviews > 0 ? (
@@ -476,9 +476,9 @@ export default function MyProfile() {
                     </>
                   ) : (
                     <div className="text-center py-8">
-                      <Star className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                      <p className="text-gray-500 font-medium mb-1">No reviews yet</p>
-                      <p className="text-sm text-gray-400">
+                      <Star className="w-10 h-10 text-ct-paper mx-auto mb-3" />
+                      <p className="text-ct-mute font-medium mb-1">No reviews yet</p>
+                      <p className="text-sm text-ct-mute">
                         Finish a job and your client’s rating lands here
                       </p>
                     </div>
@@ -492,16 +492,16 @@ export default function MyProfile() {
               <div className="lg:sticky lg:top-24 space-y-6">
 
                 {/* Request a Quote (mock) */}
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm overflow-hidden">
                   <div className="p-5">
                     <button
                       disabled
-                      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-warm-500 text-white text-sm font-semibold rounded-xl opacity-90 cursor-not-allowed"
+                      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-md opacity-90 cursor-not-allowed"
                     >
                       <Send className="w-4 h-4" />
                       Request a Quote
                     </button>
-                    <p className="text-xs text-gray-400 text-center mt-2.5">
+                    <p className="text-xs text-ct-mute text-center mt-2.5">
                       This is what clients see on your profile
                     </p>
                   </div>
@@ -509,39 +509,39 @@ export default function MyProfile() {
 
                 {/* Details sidebar */}
                 <EditableSection label="Details" onEdit={() => setEditDetails(true)}>
-                  <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="px-5 py-4 border-b border-gray-100">
-                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Details</h3>
+                  <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm overflow-hidden">
+                    <div className="px-5 py-4 border-b border-ct-line-soft">
+                      <h3 className="text-sm font-semibold text-ct-paper uppercase tracking-wider">Details</h3>
                     </div>
-                    <div className="divide-y divide-gray-50">
+                    <div className="divide-y divide-ct-line-soft">
                       <DetailRow
-                        icon={<CircleDollarSign className="w-4.5 h-4.5 text-green-600" />}
+                        icon={<CircleDollarSign className="w-4.5 h-4.5 text-ct-teal" />}
                         label="Hourly Rate"
                         value={tradieDetails?.hourly_rate ? `$${tradieDetails.hourly_rate}/hr` : null}
                       />
                       <DetailRow
-                        icon={<Briefcase className="w-4 h-4 text-secondary-600" />}
+                        icon={<Briefcase className="w-4 h-4 text-ct-mute-2" />}
                         label="Business Type"
                         value={tradieDetails?.contractor_type || null}
                       />
                       <DetailRow
-                        icon={<Users className="w-4 h-4 text-secondary-600" />}
+                        icon={<Users className="w-4 h-4 text-ct-mute-2" />}
                         label="Team Size"
                         value={profile?.team_size || null}
                       />
                       <DetailRow
-                        icon={<MapPin className="w-4 h-4 text-gray-500" />}
+                        icon={<MapPin className="w-4 h-4 text-ct-mute" />}
                         label="Service Radius"
                         value={profile?.service_radius_km ? `${profile.service_radius_km}km` : null}
                       />
 
                       {profile?.is_emergency_available && (
                         <div className="px-5 py-3.5 flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
-                            <Zap className="w-4 h-4 text-red-600" />
+                          <div className="w-8 h-8 rounded-ct-sm bg-ct-rose/[0.13] flex items-center justify-center flex-shrink-0">
+                            <Zap className="w-4 h-4 text-ct-rose" />
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-green-700">Emergency Available</p>
+                            <p className="text-sm font-semibold text-ct-teal">Emergency Available</p>
                           </div>
                         </div>
                       )}
@@ -549,24 +549,24 @@ export default function MyProfile() {
                       {/* Qualifications */}
                       <div className="px-5 py-3.5">
                         <div className="flex items-center gap-3 mb-2">
-                          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
-                            <GraduationCap className="w-4 h-4 text-gray-600" />
+                          <div className="w-8 h-8 rounded-ct-sm bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                            <GraduationCap className="w-4 h-4 text-ct-mute-2" />
                           </div>
-                          <p className="text-xs text-gray-500">Qualifications</p>
+                          <p className="text-xs text-ct-mute">Qualifications</p>
                         </div>
                         {tradieDetails?.qualifications && tradieDetails.qualifications.length > 0 ? (
                           <div className="flex flex-wrap gap-1.5 ml-11">
                             {tradieDetails.qualifications.map((qual, i) => (
                               <span
                                 key={i}
-                                className="inline-flex items-center px-2.5 py-1 bg-gray-50 text-gray-700 text-xs font-medium rounded-lg border border-gray-100"
+                                className="inline-flex items-center px-2.5 py-1 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded-ct-sm border border-ct-line-soft"
                               >
                                 {qual}
                               </span>
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-gray-400 italic ml-11">None added</p>
+                          <p className="text-sm text-ct-mute italic ml-11">None added</p>
                         )}
                       </div>
                     </div>
@@ -577,17 +577,17 @@ export default function MyProfile() {
                 {!isIdentityVerified && !tradieDetails?.is_insured && !tradieDetails?.is_licensed && (
                   <Link
                     to="/settings"
-                    className="block bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:border-primary-300 transition-colors group"
+                    className="block bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm p-5 hover:border-ct-teal/30 transition-colors group"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
-                        <ShieldCheck className="w-5 h-5 text-primary-600" />
+                      <div className="w-10 h-10 rounded-ct-sm bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                        <ShieldCheck className="w-5 h-5 text-ct-mute-2" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-gray-900 group-hover:text-primary-700 transition-colors">
+                        <p className="text-sm font-semibold text-ct-paper group-hover:text-ct-mute-2 transition-colors">
                           Get Verified
                         </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-ct-mute mt-0.5">
                           Verified tradies get up to 3x more enquiries
                         </p>
                       </div>
@@ -607,14 +607,14 @@ export default function MyProfile() {
           >
             <button
               onClick={() => setLightboxImage(null)}
-              className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors p-2"
+              className="absolute top-4 right-4 text-ct-ink/80 hover:text-ct-ink transition-colors p-2"
             >
               <X className="w-6 h-6" />
             </button>
             <img
               src={lightboxImage}
               alt="Portfolio full view"
-              className="max-w-full max-h-[85vh] rounded-lg object-contain"
+              className="max-w-full max-h-[85vh] rounded-ct-sm object-contain"
               onClick={(e) => e.stopPropagation()}
             />
           </div>
@@ -685,15 +685,15 @@ function DetailRow({
 }) {
   return (
     <div className="px-5 py-3.5 flex items-center gap-3">
-      <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
+      <div className="w-8 h-8 rounded-ct-sm bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-500">{label}</p>
+        <p className="text-xs text-ct-mute">{label}</p>
         {value ? (
-          <p className="text-sm font-semibold text-gray-900">{value}</p>
+          <p className="text-sm font-semibold text-ct-paper">{value}</p>
         ) : (
-          <p className="text-sm text-gray-400 italic">Not set</p>
+          <p className="text-sm text-ct-mute italic">Not set</p>
         )}
       </div>
     </div>

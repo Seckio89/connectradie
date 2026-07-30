@@ -5,10 +5,10 @@ import { supabase } from '../lib/supabase';
 import type { TradeVacancyWithEmployer, VacancyApplicationWithApplicant, ApplicationStatus } from '../types/database';
 
 const APP_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
-  reviewed: { label: 'Reviewed', color: 'bg-secondary-100 text-secondary-700' },
-  shortlisted: { label: 'Shortlisted', color: 'bg-green-100 text-green-700' },
-  rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700' },
+  pending: { label: 'Pending', color: 'bg-ct-amber/[0.13] text-ct-amber' },
+  reviewed: { label: 'Reviewed', color: 'bg-ct-surface-2 text-ct-mute-2' },
+  shortlisted: { label: 'Shortlisted', color: 'bg-ct-teal/[0.14] text-ct-teal' },
+  rejected: { label: 'Rejected', color: 'bg-ct-rose/[0.13] text-ct-rose' },
 };
 
 interface VacancyManageModalProps {
@@ -87,31 +87,31 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="2xl">
-      <div className="flex items-start justify-between gap-3 p-5 sm:p-6 border-b border-gray-100">
+      <div className="flex items-start justify-between gap-3 p-5 sm:p-6 border-b border-ct-line-soft">
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug line-clamp-2">{vacancy.title}</h2>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h2 className="text-lg sm:text-xl font-bold text-ct-paper leading-snug line-clamp-2">{vacancy.title}</h2>
+          <p className="text-sm text-ct-mute mt-0.5">
             {vacancy.application_count || 0} application{(vacancy.application_count || 0) !== 1 ? 's' : ''} received
           </p>
         </div>
         <button
           onClick={onClose}
           aria-label="Close"
-          className="p-2 -mr-1 -mt-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 flex-shrink-0"
+          className="p-2 -mr-1 -mt-1 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 flex-shrink-0"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Action bar — wraps on mobile so the buttons never crowd the title */}
-      <div className="flex flex-wrap items-center gap-2 px-5 sm:px-6 py-3 border-b border-gray-100 bg-gray-50/50">
+      <div className="flex flex-wrap items-center gap-2 px-5 sm:px-6 py-3 border-b border-ct-line-soft bg-ct-surface-2/50">
         <button
           onClick={handleToggle}
           disabled={toggling}
-          className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl transition-colors ${
+          className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-ct-md transition-colors ${
             vacancy.status === 'open'
-              ? 'border border-red-200 text-red-600 hover:bg-red-50'
-              : 'border border-green-200 text-green-600 hover:bg-green-50'
+              ? 'border border-ct-rose/[0.34] text-ct-rose hover:bg-ct-rose/[0.13]'
+              : 'border border-ct-teal/30 text-ct-teal hover:bg-ct-teal/[0.14]'
           }`}
         >
           {toggling ? (
@@ -121,7 +121,7 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
         {vacancy.status === 'closed' && (
           <button
             onClick={() => onRepost(vacancy)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-ct-md border border-ct-line text-ct-mute-2 hover:bg-ct-surface-2 transition-colors"
           >
             <Copy className="w-4 h-4" />
             Repost
@@ -129,14 +129,14 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
         )}
         <button
           onClick={() => onEdit(vacancy)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-ct-md border border-ct-line text-ct-mute-2 hover:bg-ct-surface-2 transition-colors"
         >
           <Pencil className="w-4 h-4" />
           Edit
         </button>
         <button
           onClick={() => setConfirmDelete(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors sm:ml-auto"
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-ct-md border border-ct-rose/[0.34] text-ct-rose hover:bg-ct-rose/[0.13] transition-colors sm:ml-auto"
         >
           <Trash2 className="w-4 h-4" />
           Delete
@@ -145,12 +145,12 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
 
       <div className="p-5 sm:p-6 max-h-[55vh] overflow-y-auto">
         {confirmDelete && (
-          <div className="mb-4 p-4 rounded-xl border border-red-200 bg-red-50">
+          <div className="mb-4 p-4 rounded-ct-md border border-ct-rose/[0.34] bg-ct-rose/[0.13]">
             <div className="flex items-start gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="w-5 h-5 text-ct-rose flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-semibold text-red-800">Delete this listing?</p>
-                <p className="text-xs text-red-600 mt-0.5">
+                <p className="text-sm font-semibold text-ct-paper">Delete this listing?</p>
+                <p className="text-xs text-ct-rose mt-0.5">
                   This permanently removes the listing
                   {applications.length > 0
                     ? ` and its ${applications.length} application${applications.length !== 1 ? 's' : ''}`
@@ -161,7 +161,7 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
                   <button
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-ct-ink bg-ct-rose rounded-ct-sm hover:brightness-110 disabled:opacity-50 transition-colors"
                   >
                     {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                     Delete listing
@@ -169,7 +169,7 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
                   <button
                     onClick={() => setConfirmDelete(false)}
                     disabled={deleting}
-                    className="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-white transition-colors"
+                    className="px-3 py-1.5 text-xs font-medium text-ct-mute-2 border border-ct-line rounded-ct-sm hover:bg-ct-surface transition-colors"
                   >
                     Cancel
                   </button>
@@ -180,15 +180,15 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
         )}
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
+            <Loader2 className="w-6 h-6 text-ct-mute animate-spin" />
           </div>
         ) : applications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-3">
-              <Briefcase className="w-7 h-7 text-gray-300" />
+            <div className="w-14 h-14 bg-ct-surface-2 rounded-ct-lg flex items-center justify-center mb-3">
+              <Briefcase className="w-7 h-7 text-ct-mute" />
             </div>
-            <h3 className="font-semibold text-gray-700 mb-1">No applications yet</h3>
-            <p className="text-sm text-gray-400 max-w-xs">
+            <h3 className="font-semibold text-ct-mute-2 mb-1">No applications yet</h3>
+            <p className="text-sm text-ct-mute max-w-xs">
               Applications will appear here as workers apply for this position.
             </p>
           </div>
@@ -201,25 +201,25 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
               const isExpanded = expandedId === app.id;
 
               return (
-                <div key={app.id} className="border border-gray-100 rounded-xl overflow-hidden hover:border-gray-200 transition-colors">
+                <div key={app.id} className="border border-ct-line-soft rounded-ct-md overflow-hidden hover:border-ct-line transition-colors">
                   <div
                     className="flex items-center gap-3 p-4 cursor-pointer"
                     onClick={() => setExpandedId(isExpanded ? null : app.id)}
                   >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-bold text-secondary-700">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-ct-surface-2 to-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-bold text-ct-mute-2">
                         {applicant?.full_name?.charAt(0)?.toUpperCase() || '?'}
                       </span>
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-gray-900">{applicant?.full_name || 'Unknown'}</span>
+                        <span className="font-semibold text-ct-paper">{applicant?.full_name || 'Unknown'}</span>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
                           {statusConfig.label}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
+                      <div className="flex items-center gap-3 mt-0.5 text-xs text-ct-mute">
                         {details?.trade_category && (
                           <span className="flex items-center gap-1">
                             <Briefcase className="w-3 h-3" />
@@ -233,30 +233,30 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
                       </div>
                     </div>
 
-                    <Eye className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''} text-gray-400`} />
+                    <Eye className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''} text-ct-mute`} />
                   </div>
 
                   {isExpanded && (
-                    <div className="px-4 pb-4 pt-0 space-y-3 border-t border-gray-50">
-                      <div className="flex items-center gap-4 flex-wrap text-sm text-gray-600 pt-3">
+                    <div className="px-4 pb-4 pt-0 space-y-3 border-t border-ct-line-soft">
+                      <div className="flex items-center gap-4 flex-wrap text-sm text-ct-mute-2 pt-3">
                         {applicant?.email && (
                           <span className="flex items-center gap-1.5">
-                            <Mail className="w-3.5 h-3.5 text-gray-400" />
+                            <Mail className="w-3.5 h-3.5 text-ct-mute" />
                             {applicant.email}
                           </span>
                         )}
                         {applicant?.phone && (
                           <span className="flex items-center gap-1.5">
-                            <Phone className="w-3.5 h-3.5 text-gray-400" />
+                            <Phone className="w-3.5 h-3.5 text-ct-mute" />
                             {applicant.phone}
                           </span>
                         )}
                       </div>
 
                       {app.cover_letter && (
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <p className="text-xs font-medium text-gray-500 mb-1">Cover Letter</p>
-                          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{app.cover_letter}</p>
+                        <div className="bg-ct-surface-2 rounded-ct-sm p-3">
+                          <p className="text-xs font-medium text-ct-mute mb-1">Cover Letter</p>
+                          <p className="text-sm text-ct-mute-2 leading-relaxed whitespace-pre-wrap">{app.cover_letter}</p>
                         </div>
                       )}
 
@@ -264,7 +264,7 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
                         {app.status !== 'shortlisted' && (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleUpdateStatus(app.id, 'shortlisted'); }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 border border-green-200 rounded-lg hover:bg-green-50 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ct-teal border border-ct-teal/30 rounded-ct-sm hover:bg-ct-teal/[0.14] transition-colors"
                           >
                             <UserCheck className="w-3.5 h-3.5" />
                             Shortlist
@@ -273,7 +273,7 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
                         {app.status !== 'reviewed' && app.status !== 'shortlisted' && (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleUpdateStatus(app.id, 'reviewed'); }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-700 border border-primary-200 rounded-lg hover:bg-primary-50 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ct-mute-2 border border-ct-line rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             Mark Reviewed
@@ -282,7 +282,7 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
                         {app.status !== 'rejected' && (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleUpdateStatus(app.id, 'rejected'); }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ct-rose border border-ct-rose/[0.34] rounded-ct-sm hover:bg-ct-rose/[0.13] transition-colors"
                           >
                             <UserX className="w-3.5 h-3.5" />
                             Reject

@@ -32,27 +32,27 @@ const footerLinks: Record<string, FooterLink[]> = {
 
 export default function Footer() {
   return (
-    <footer className="bg-navy-900 text-gray-300">
+    <footer className="bg-ct-ink text-ct-mute">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-16 lg:py-20">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-10">
             <div className="col-span-2">
               <Link to="/" className="flex items-center group">
                 <span className="text-xl font-bold">
-                  <span className="text-white">Connec</span><span className="text-warm-500">Tradie</span>
+                  <span className="text-ct-ink">Connec</span><span className="text-ct-teal">Tradie</span>
                 </span>
               </Link>
 
-              <p className="mt-4 text-gray-400 leading-relaxed max-w-sm">
+              <p className="mt-4 text-ct-mute leading-relaxed max-w-sm">
                 The all-in-one app for Australian tradies — jobs, site calendar, team scheduling, GST invoicing and Stripe-secured payments in one place.
               </p>
 
               <div className="mt-6 space-y-3">
-                <a href="mailto:admin@connectradie.com" className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors">
+                <a href="mailto:admin@connectradie.com" className="flex items-center gap-3 text-ct-mute hover:text-ct-ink transition-colors">
                   <Mail className="w-5 h-5" />
                   <span>admin@connectradie.com</span>
                 </a>
-                <div className="flex items-center gap-3 text-gray-400">
+                <div className="flex items-center gap-3 text-ct-mute">
                   <MapPin className="w-5 h-5" />
                   <span>Sydney, Australia</span>
                 </div>
@@ -60,7 +60,7 @@ export default function Footer() {
             </div>
 
             <div>
-              <h4 className="text-white font-semibold mb-4">For Tradies</h4>
+              <h4 className="text-ct-ink font-semibold mb-4">For Tradies</h4>
               {/* No space-y here: the links carry py-2.5 instead, which turns a
                   24px row + 12px gap into a real 44px tap target at roughly the
                   same visual rhythm. */}
@@ -68,11 +68,11 @@ export default function Footer() {
                 {footerLinks.tradies.map((link) => (
                   <li key={link.name}>
                     {link.isHash ? (
-                      <a href={link.href} className="block py-2.5 text-gray-400 hover:text-white transition-colors">
+                      <a href={link.href} className="block py-2.5 text-ct-mute hover:text-ct-ink transition-colors">
                         {link.name}
                       </a>
                     ) : (
-                      <Link to={link.href} className="block py-2.5 text-gray-400 hover:text-white transition-colors">
+                      <Link to={link.href} className="block py-2.5 text-ct-mute hover:text-ct-ink transition-colors">
                         {link.name}
                       </Link>
                     )}
@@ -82,7 +82,7 @@ export default function Footer() {
             </div>
 
             <div>
-              <h4 className="text-white font-semibold mb-4">For Homeowners</h4>
+              <h4 className="text-ct-ink font-semibold mb-4">For Homeowners</h4>
               {/* No space-y here: the links carry py-2.5 instead, which turns a
                   24px row + 12px gap into a real 44px tap target at roughly the
                   same visual rhythm. */}
@@ -90,11 +90,11 @@ export default function Footer() {
                 {footerLinks.homeowners.map((link) => (
                   <li key={link.name}>
                     {link.isHash ? (
-                      <a href={link.href} className="block py-2.5 text-gray-400 hover:text-white transition-colors">
+                      <a href={link.href} className="block py-2.5 text-ct-mute hover:text-ct-ink transition-colors">
                         {link.name}
                       </a>
                     ) : (
-                      <Link to={link.href} className="block py-2.5 text-gray-400 hover:text-white transition-colors">
+                      <Link to={link.href} className="block py-2.5 text-ct-mute hover:text-ct-ink transition-colors">
                         {link.name}
                       </Link>
                     )}
@@ -104,14 +104,14 @@ export default function Footer() {
             </div>
 
             <div>
-              <h4 className="text-white font-semibold mb-4">Support</h4>
+              <h4 className="text-ct-ink font-semibold mb-4">Support</h4>
               {/* No space-y here: the links carry py-2.5 instead, which turns a
                   24px row + 12px gap into a real 44px tap target at roughly the
                   same visual rhythm. */}
               <ul>
                 {footerLinks.support.map((link) => (
                   <li key={link.name}>
-                    <Link to={link.href} className="block py-2.5 text-gray-400 hover:text-white transition-colors">
+                    <Link to={link.href} className="block py-2.5 text-ct-mute hover:text-ct-ink transition-colors">
                       {link.name}
                     </Link>
                   </li>
@@ -120,14 +120,14 @@ export default function Footer() {
             </div>
 
             <div>
-              <h4 className="text-white font-semibold mb-4">Legal</h4>
+              <h4 className="text-ct-ink font-semibold mb-4">Legal</h4>
               {/* No space-y here: the links carry py-2.5 instead, which turns a
                   24px row + 12px gap into a real 44px tap target at roughly the
                   same visual rhythm. */}
               <ul>
                 {footerLinks.legal.map((link) => (
                   <li key={link.name}>
-                    <Link to={link.href} className="block py-2.5 text-gray-400 hover:text-white transition-colors">
+                    <Link to={link.href} className="block py-2.5 text-ct-mute hover:text-ct-ink transition-colors">
                       {link.name}
                     </Link>
                   </li>
@@ -137,15 +137,15 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="py-6 border-t border-navy-800">
+        <div className="py-6 border-t border-ct-line">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-gray-500 text-sm">
-              &copy; 2026 Connec<span className="text-warm-500">Tradie</span> Australia. All rights reserved.
+            <p className="text-ct-mute text-sm">
+              &copy; 2026 Connec<span className="text-ct-teal">Tradie</span> Australia. All rights reserved.
             </p>
-            <div className="flex items-center gap-6 text-sm text-gray-500">
-              <Link to="/terms" className="py-3 hover:text-gray-300 transition-colors">Terms</Link>
-              <Link to="/privacy" className="py-3 hover:text-gray-300 transition-colors">Privacy</Link>
-              <Link to="/contact" className="py-3 hover:text-gray-300 transition-colors">Contact</Link>
+            <div className="flex items-center gap-6 text-sm text-ct-mute">
+              <Link to="/terms" className="py-3 hover:text-ct-mute transition-colors">Terms</Link>
+              <Link to="/privacy" className="py-3 hover:text-ct-mute transition-colors">Privacy</Link>
+              <Link to="/contact" className="py-3 hover:text-ct-mute transition-colors">Contact</Link>
             </div>
           </div>
         </div>

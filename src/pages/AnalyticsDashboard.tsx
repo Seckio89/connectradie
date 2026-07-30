@@ -360,12 +360,12 @@ export default function AnalyticsDashboard() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Stats</h1>
-            <p className="text-gray-600 mt-1">See how your business is tracking and where to improve</p>
+            <h1 className="text-2xl font-bold text-ct-paper">My Stats</h1>
+            <p className="text-ct-mute-2 mt-1">See how your business is tracking and where to improve</p>
           </div>
           {/* Short labels below sm: five full labels ("All Time" etc.) overflow a
               360px screen, and the last one was being clipped mid-word. */}
-          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
+          <div className="flex items-center gap-1 bg-ct-surface border border-ct-line rounded-ct-md p-1 shadow-sm">
             {([
               { key: '7d' as DateRange, short: '7D', label: '7 Days' },
               { key: '30d' as DateRange, short: '30D', label: '30 Days' },
@@ -378,10 +378,10 @@ export default function AnalyticsDashboard() {
                 onClick={() => setDateRange(key)}
                 aria-label={label}
                 aria-pressed={dateRange === key}
-                className={`flex-1 sm:flex-none min-h-[44px] px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+                className={`flex-1 sm:flex-none min-h-[44px] px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-ct-sm transition-colors whitespace-nowrap ${
                   dateRange === key
-                    ? 'bg-warm-500 text-white shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-ct-teal text-ct-ink shadow-sm'
+                    : 'text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper'
                 }`}
               >
                 <span className="sm:hidden">{short}</span>
@@ -392,10 +392,10 @@ export default function AnalyticsDashboard() {
         </div>
 
         {!hasData ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center shadow-sm">
-            <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No stats yet</h3>
-            <p className="text-gray-600 max-w-md mx-auto">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-12 text-center shadow-sm">
+            <BarChart3 className="w-12 h-12 text-ct-mute mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-ct-paper mb-2">No stats yet</h3>
+            <p className="text-ct-mute-2 max-w-md mx-auto">
               Once you submit your first quote and complete a job, your stats will appear here. Browse available leads to get started.
             </p>
           </div>
@@ -410,15 +410,15 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Interactive Revenue Trend (Line Chart) */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6 shadow-sm overflow-hidden">
+            <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4 sm:p-6 mb-6 shadow-sm overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
                 <div>
-                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">Revenue Trend</h2>
-                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5">Monthly revenue over the selected period</p>
+                  <h2 className="text-base sm:text-lg font-semibold text-ct-paper">Revenue Trend</h2>
+                  <p className="text-xs sm:text-sm text-ct-mute-2 mt-0.5">Monthly revenue over the selected period</p>
                 </div>
                 <div className="sm:text-right">
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{formatCurrency(totalRevenue)}</p>
-                  <p className="text-xs text-gray-600">Total in period</p>
+                  <p className="text-xl sm:text-2xl font-bold text-ct-paper">{formatCurrency(totalRevenue)}</p>
+                  <p className="text-xs text-ct-mute-2">Total in period</p>
                 </div>
               </div>
               <LineChart
@@ -434,9 +434,9 @@ export default function AnalyticsDashboard() {
                 labelled "$0-500 Sent" etc. which truncated to "$0-5…" on mobile, and
                 the "Win Rate by Quote Price" table below carries the same four rows. */}
             <div className="mb-6">
-              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm overflow-hidden">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">Job Status Breakdown</h2>
-                <p className="text-xs sm:text-sm text-gray-600 mb-4">Distribution of jobs by current status</p>
+              <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4 sm:p-6 shadow-sm overflow-hidden">
+                <h2 className="text-base sm:text-lg font-semibold text-ct-paper mb-1">Job Status Breakdown</h2>
+                <p className="text-xs sm:text-sm text-ct-mute-2 mb-4">Distribution of jobs by current status</p>
                 <DonutChart
                   data={[
                     { label: 'Completed', value: jobs.filter(j => j.status === 'completed').length, color: '#06D6A0' },
@@ -453,8 +453,8 @@ export default function AnalyticsDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
               {/* Quote Performance */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm overflow-hidden">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Quote Performance</h2>
+              <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4 sm:p-6 shadow-sm overflow-hidden">
+                <h2 className="text-base sm:text-lg font-semibold text-ct-paper mb-4">Quote Performance</h2>
                 <div className="flex items-center gap-4 sm:gap-6 mb-6">
                   {/* CSS Donut */}
                   <div className="relative w-24 h-24 flex-shrink-0">
@@ -466,35 +466,35 @@ export default function AnalyticsDashboard() {
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-lg font-bold text-gray-900">{winRate}%</span>
+                      <span className="text-lg font-bold text-ct-paper">{winRate}%</span>
                     </div>
                   </div>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p>Quotes Sent: <span className="font-semibold text-gray-900">{totalQuotes}</span></p>
-                    <p>Accepted: <span className="font-semibold text-green-600">{wonQuotes}</span></p>
-                    <p>Declined: <span className="font-semibold text-red-600">{quotes.filter(q => q.status === 'declined').length}</span></p>
-                    <p>Pending: <span className="font-semibold text-warm-600">{quotes.filter(q => q.status === 'pending').length}</span></p>
+                  <div className="text-sm text-ct-mute-2 space-y-1">
+                    <p>Quotes Sent: <span className="font-semibold text-ct-paper">{totalQuotes}</span></p>
+                    <p>Accepted: <span className="font-semibold text-ct-teal">{wonQuotes}</span></p>
+                    <p>Declined: <span className="font-semibold text-ct-rose">{quotes.filter(q => q.status === 'declined').length}</span></p>
+                    <p>Pending: <span className="font-semibold text-ct-amber">{quotes.filter(q => q.status === 'pending').length}</span></p>
                   </div>
                 </div>
 
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Win Rate by Quote Price</h3>
+                <h3 className="text-sm font-medium text-ct-mute-2 mb-2">Win Rate by Quote Price</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-left text-gray-600 border-b border-gray-200">
+                      <tr className="text-left text-ct-mute-2 border-b border-ct-line">
                         <th className="pb-2 font-medium">Range</th>
                         <th className="pb-2 font-medium text-center">Sent</th>
                         <th className="pb-2 font-medium text-center">Won</th>
                         <th className="pb-2 font-medium text-right">Rate</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-ct-line-soft">
                       {conversionByRange.map(r => (
                         <tr key={r.label}>
-                          <td className="py-2 text-gray-700">{r.label}</td>
-                          <td className="py-2 text-center text-gray-600">{r.total}</td>
-                          <td className="py-2 text-center text-gray-600">{r.won}</td>
-                          <td className="py-2 text-right font-medium text-gray-900">{r.rate}%</td>
+                          <td className="py-2 text-ct-mute-2">{r.label}</td>
+                          <td className="py-2 text-center text-ct-mute-2">{r.total}</td>
+                          <td className="py-2 text-center text-ct-mute-2">{r.won}</td>
+                          <td className="py-2 text-right font-medium text-ct-paper">{r.rate}%</td>
                         </tr>
                       ))}
                     </tbody>
@@ -503,43 +503,43 @@ export default function AnalyticsDashboard() {
               </div>
 
               {/* Response Time */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm overflow-hidden">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">Response Time</h2>
-                <p className="text-xs sm:text-sm text-gray-600 mb-4">
+              <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4 sm:p-6 shadow-sm overflow-hidden">
+                <h2 className="text-base sm:text-lg font-semibold text-ct-paper mb-1">Response Time</h2>
+                <p className="text-xs sm:text-sm text-ct-mute-2 mb-4">
                   How long from a job being posted to your quote landing
                 </p>
 
                 {hasResponseData ? (
                   <>
                     <div className="flex gap-3 sm:gap-6 mb-6">
-                      <div className="bg-secondary-50 rounded-xl p-4 flex-1 text-center">
-                        <Clock className="w-5 h-5 text-secondary-600 mx-auto mb-1" />
-                        <p className="text-2xl font-bold text-gray-900">{formatHours(avgResponseTime)}</p>
-                        <p className="text-xs text-gray-600">Average</p>
+                      <div className="bg-ct-surface-2 rounded-ct-md p-4 flex-1 text-center">
+                        <Clock className="w-5 h-5 text-ct-mute-2 mx-auto mb-1" />
+                        <p className="text-2xl font-bold text-ct-paper">{formatHours(avgResponseTime)}</p>
+                        <p className="text-xs text-ct-mute-2">Average</p>
                       </div>
-                      <div className="bg-primary-50 rounded-xl p-4 flex-1 text-center">
-                        <Clock className="w-5 h-5 text-primary-600 mx-auto mb-1" />
-                        <p className="text-2xl font-bold text-gray-900">{formatHours(medianResponseTime)}</p>
-                        <p className="text-xs text-gray-600">Median</p>
+                      <div className="bg-ct-surface-2 rounded-ct-md p-4 flex-1 text-center">
+                        <Clock className="w-5 h-5 text-ct-mute-2 mx-auto mb-1" />
+                        <p className="text-2xl font-bold text-ct-paper">{formatHours(medianResponseTime)}</p>
+                        <p className="text-xs text-ct-mute-2">Median</p>
                       </div>
                     </div>
 
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">By Day of Week</h3>
+                    <h3 className="text-sm font-medium text-ct-mute-2 mb-3">By Day of Week</h3>
                     <div className="flex items-end gap-2 h-28">
                       {responseByDay.map((d, i) => (
                         <div key={i} className="flex-1 flex flex-col items-center">
                           <div
-                            className="w-full max-w-[32px] bg-warm-500 rounded-t-sm"
+                            className="w-full max-w-[32px] bg-ct-teal rounded-t-sm"
                             style={{ height: `${Math.max((d.avg / maxDayResponse) * 80, 2)}px` }}
                             title={d.avg > 0 ? `${d.label}: ${formatHours(d.avg)}` : `${d.label}: no quotes`}
                           />
-                          <span className="text-xs text-gray-600 mt-1">{d.label}</span>
+                          <span className="text-xs text-ct-mute-2 mt-1">{d.label}</span>
                         </div>
                       ))}
                     </div>
                   </>
                 ) : (
-                  <p className="text-sm text-gray-600 py-8 text-center">
+                  <p className="text-sm text-ct-mute-2 py-8 text-center">
                     Quote on a few leads and your response times will show up here.
                   </p>
                 )}
@@ -548,38 +548,38 @@ export default function AnalyticsDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
               {/* Client Retention */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm overflow-hidden">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Client Retention</h2>
+              <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4 sm:p-6 shadow-sm overflow-hidden">
+                <h2 className="text-base sm:text-lg font-semibold text-ct-paper mb-4">Client Retention</h2>
                 {/* items-stretch, not items-center: only the first tile has an icon
                     and only some labels wrap, so centring left the three at visibly
                     different heights with their numbers on different baselines. */}
                 <div className="flex items-stretch gap-3 sm:gap-4 mb-6">
-                  <div className="bg-green-50 rounded-xl p-4 text-center flex-1 flex flex-col justify-center">
-                    <Users className="w-5 h-5 text-green-600 mx-auto mb-1" />
-                    <p className="text-2xl font-bold text-gray-900">{clientStats.repeatPct}%</p>
-                    <p className="text-xs text-gray-600">Repeat Clients</p>
+                  <div className="bg-ct-teal/[0.14] rounded-ct-md p-4 text-center flex-1 flex flex-col justify-center">
+                    <Users className="w-5 h-5 text-ct-teal mx-auto mb-1" />
+                    <p className="text-2xl font-bold text-ct-paper">{clientStats.repeatPct}%</p>
+                    <p className="text-xs text-ct-mute-2">Repeat Clients</p>
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-4 text-center flex-1 flex flex-col justify-center">
-                    <p className="text-2xl font-bold text-gray-900">{clientStats.totalClients}</p>
-                    <p className="text-xs text-gray-600">Total Clients</p>
+                  <div className="bg-ct-surface-2 rounded-ct-md p-4 text-center flex-1 flex flex-col justify-center">
+                    <p className="text-2xl font-bold text-ct-paper">{clientStats.totalClients}</p>
+                    <p className="text-xs text-ct-mute-2">Total Clients</p>
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-4 text-center flex-1 flex flex-col justify-center">
-                    <p className="text-2xl font-bold text-gray-900">{clientStats.repeatClients}</p>
-                    <p className="text-xs text-gray-600">Returning</p>
+                  <div className="bg-ct-surface-2 rounded-ct-md p-4 text-center flex-1 flex flex-col justify-center">
+                    <p className="text-2xl font-bold text-ct-paper">{clientStats.repeatClients}</p>
+                    <p className="text-xs text-ct-mute-2">Returning</p>
                   </div>
                 </div>
 
                 {clientStats.topClients.length > 0 && (
                   <>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Top Clients</h3>
-                    <div className="divide-y divide-gray-100">
+                    <h3 className="text-sm font-medium text-ct-mute-2 mb-2">Top Clients</h3>
+                    <div className="divide-y divide-ct-line-soft">
                       {clientStats.topClients.map((c, i) => (
                         <div key={c.client_id} className="flex items-center justify-between py-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium text-gray-400 w-4">{i + 1}.</span>
-                            <span className="text-sm text-gray-700">{c.full_name}</span>
+                            <span className="text-xs font-medium text-ct-mute w-4">{i + 1}.</span>
+                            <span className="text-sm text-ct-mute-2">{c.full_name}</span>
                           </div>
-                          <span className="text-sm font-medium text-gray-600">{c.count} jobs</span>
+                          <span className="text-sm font-medium text-ct-mute-2">{c.count} jobs</span>
                         </div>
                       ))}
                     </div>
@@ -588,13 +588,13 @@ export default function AnalyticsDashboard() {
               </div>
 
               {/* Seasonal Trends */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm overflow-hidden">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Seasonal Trends</h2>
+              <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4 sm:p-6 shadow-sm overflow-hidden">
+                <h2 className="text-base sm:text-lg font-semibold text-ct-paper mb-4">Seasonal Trends</h2>
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-4">
                   {seasonalData.map((m, i) => (
                     <div key={i} className="flex flex-col items-center gap-1">
                       <div
-                        className="w-full aspect-square rounded-lg flex items-center justify-center text-xs font-medium"
+                        className="w-full aspect-square rounded-ct-sm flex items-center justify-center text-xs font-medium"
                         style={{
                           backgroundColor: `rgba(59, 130, 246, ${Math.max(m.intensity * 0.9, 0.05)})`,
                           color: m.intensity > 0.5 ? 'white' : '#4b5563',
@@ -602,17 +602,17 @@ export default function AnalyticsDashboard() {
                       >
                         {m.count}
                       </div>
-                      <span className="text-xs text-gray-600">{m.label}</span>
+                      <span className="text-xs text-ct-mute-2">{m.label}</span>
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center gap-4 text-xs text-gray-600">
+                <div className="flex items-center gap-4 text-xs text-ct-mute-2">
                   <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded bg-secondary-500" />
+                    <div className="w-3 h-3 rounded bg-ct-surface-20" />
                     <span>High season</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded bg-gray-200" />
+                    <div className="w-3 h-3 rounded bg-ct-line" />
                     <span>Low season</span>
                   </div>
                 </div>
@@ -620,16 +620,16 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Insights */}
-            <div className="bg-gradient-to-r from-secondary-50 to-primary-50 rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm overflow-hidden">
+            <div className="bg-gradient-to-r from-ct-surface-2 to-ct-teal rounded-ct-md border border-ct-line p-4 sm:p-6 shadow-sm overflow-hidden">
               <div className="flex items-center gap-2 mb-4">
-                <Lightbulb className="w-5 h-5 text-secondary-600" />
-                <h2 className="text-lg font-semibold text-gray-900">Insights & Tips</h2>
+                <Lightbulb className="w-5 h-5 text-ct-mute-2" />
+                <h2 className="text-lg font-semibold text-ct-paper">Insights & Tips</h2>
               </div>
               <div className="space-y-3">
                 {insights.map((tip, i) => (
-                  <div key={i} className="flex items-start gap-3 bg-white/80 rounded-xl px-4 py-3">
-                    <Calendar className="w-4 h-4 text-secondary-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-gray-700">{tip}</p>
+                  <div key={i} className="flex items-start gap-3 bg-ct-surface/80 rounded-ct-md px-4 py-3">
+                    <Calendar className="w-4 h-4 text-ct-mute-2 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-ct-mute-2">{tip}</p>
                   </div>
                 ))}
               </div>
@@ -657,29 +657,29 @@ function KPICard({
   color: string;
 }) {
   const bgMap: Record<string, string> = {
-    green: 'bg-green-50',
-    blue: 'bg-secondary-50',
-    indigo: 'bg-primary-50',
-    amber: 'bg-warm-50',
+    green: 'bg-ct-teal/[0.14]',
+    blue: 'bg-ct-surface-2',
+    indigo: 'bg-ct-surface-2',
+    amber: 'bg-ct-amber/[0.13]',
   };
   const iconColorMap: Record<string, string> = {
-    green: 'text-green-600',
-    blue: 'text-secondary-600',
-    indigo: 'text-primary-600',
-    amber: 'text-warm-600',
+    green: 'text-ct-teal',
+    blue: 'text-ct-mute-2',
+    indigo: 'text-ct-mute-2',
+    amber: 'text-ct-amber',
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm">
+    <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4 sm:p-5 shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <div className={`p-2 sm:p-2.5 ${bgMap[color]} rounded-xl`}>
+        <div className={`p-2 sm:p-2.5 ${bgMap[color]} rounded-ct-md`}>
           <Icon className={`w-5 h-5 ${iconColorMap[color]}`} />
         </div>
-        {trend === 'up' && <ArrowUpRight className="w-4 h-4 text-green-500" />}
-        {trend === 'down' && <ArrowDownRight className="w-4 h-4 text-red-500" />}
+        {trend === 'up' && <ArrowUpRight className="w-4 h-4 text-ct-teal" />}
+        {trend === 'down' && <ArrowDownRight className="w-4 h-4 text-ct-rose" />}
       </div>
-      <p className="text-xl sm:text-2xl font-bold text-gray-900">{value}</p>
-      <p className="text-xs sm:text-sm text-gray-600 mt-1">{label}</p>
+      <p className="text-xl sm:text-2xl font-bold text-ct-paper">{value}</p>
+      <p className="text-xs sm:text-sm text-ct-mute-2 mt-1">{label}</p>
     </div>
   );
 }

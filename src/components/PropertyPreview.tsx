@@ -42,19 +42,19 @@ export default function PropertyPreview({ address, lat, lng }: PropertyPreviewPr
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full flex items-center gap-2 rounded-lg border border-secondary-200 bg-secondary-50/40 px-3 py-2 text-left text-sm text-secondary-700 hover:bg-secondary-50 transition-colors"
+        className="w-full flex items-center gap-2 rounded-ct-sm border border-ct-line bg-ct-surface-2/40 px-3 py-2 text-left text-sm text-ct-mute-2 hover:bg-ct-surface-2 transition-colors"
       >
         <Home className="w-4 h-4 flex-shrink-0" />
         <span className="font-medium">See the property</span>
-        {address && <span className="text-[11px] text-gray-500 truncate">{address}</span>}
+        {address && <span className="text-[11px] text-ct-mute truncate">{address}</span>}
       </button>
     );
   }
 
   return (
-    <div className="rounded-xl border border-secondary-200 bg-white overflow-hidden">
+    <div className="rounded-ct-md border border-ct-line bg-ct-surface overflow-hidden">
       {failed ? (
-        <div className="flex h-40 w-full flex-col items-center justify-center gap-1 bg-gray-50 text-gray-400">
+        <div className="flex h-40 w-full flex-col items-center justify-center gap-1 bg-ct-surface-2 text-ct-mute">
           <ImageOff className="w-5 h-5" />
           <span className="text-xs">No Street View for this address</span>
         </div>
@@ -67,8 +67,8 @@ export default function PropertyPreview({ address, lat, lng }: PropertyPreviewPr
         />
       )}
       {address && (
-        <p className="flex items-start gap-1.5 p-3 text-sm font-medium text-gray-900">
-          <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-secondary-600" />
+        <p className="flex items-start gap-1.5 p-3 text-sm font-medium text-ct-paper">
+          <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-ct-mute-2" />
           {address}
         </p>
       )}

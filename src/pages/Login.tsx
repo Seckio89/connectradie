@@ -169,39 +169,39 @@ export default function Login() {
 
   if (showForgotPassword) {
     return (
-      <div className="min-h-screen bg-white flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-ct-surface flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
         <SEO title="Reset Password" description="Reset your ConnecTradie account password." noindex />
         <BetaModal />
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <Link to="/" className="flex items-center justify-center">
             <span className="text-2xl font-extrabold tracking-tight text-black">
-              Connec<span className="text-warm-500">Tradie</span>
+              Connec<span className="text-ct-teal">Tradie</span>
             </span>
           </Link>
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-bold text-ct-paper">
             Reset your password
           </h2>
-          <p className="mt-2 text-center text-gray-600">
+          <p className="mt-2 text-center text-ct-mute-2">
             Enter your email and we'll send you a reset link
           </p>
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white py-8 px-4 shadow-sm rounded-2xl sm:px-10 border border-gray-100">
+          <div className="bg-ct-surface py-8 px-4 shadow-sm rounded-ct-lg sm:px-10 border border-ct-line-soft">
             {resetError && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-700">{resetError}</p>
+              <div className="mb-6 p-4 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-ct-rose flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-ct-rose">{resetError}</p>
               </div>
             )}
 
             {resetSent ? (
               <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="w-8 h-8 text-green-600" />
+                <div className="w-16 h-16 bg-ct-teal/[0.14] rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="w-8 h-8 text-ct-teal" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Check your email</h3>
-                <p className="text-gray-600 text-sm mb-6">
+                <h3 className="text-lg font-semibold text-ct-paper mb-2">Check your email</h3>
+                <p className="text-ct-mute-2 text-sm mb-6">
                   If an account exists for {resetEmail}, we've sent a password reset link.
                 </p>
                 <button
@@ -210,7 +210,7 @@ export default function Login() {
                     setResetSent(false);
                     setResetEmail('');
                   }}
-                  className="inline-flex items-center gap-2 text-primary-600 font-medium hover:text-primary-700 transition-colors"
+                  className="inline-flex items-center gap-2 text-ct-mute-2 font-medium hover:text-ct-mute-2 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Back to sign in
@@ -220,18 +220,18 @@ export default function Login() {
               <>
                 <form onSubmit={handleResetPassword} className="space-y-6">
                   <div>
-                    <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="reset-email" className="block text-sm font-medium text-ct-mute-2 mb-2">
                       Email address
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
                       <input
                         id="reset-email"
                         type="email"
                         required
                         value={resetEmail}
                         onChange={(e) => setResetEmail(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                        className="w-full pl-11 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-all"
                         placeholder="you@example.com"
                       />
                     </div>
@@ -240,7 +240,7 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={resetLoading}
-                    className="w-full py-3 px-4 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3 px-4 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                   >
                     {resetLoading ? (
                       <>
@@ -258,7 +258,7 @@ export default function Login() {
                     setShowForgotPassword(false);
                     setResetError('');
                   }}
-                  className="mt-6 w-full text-center text-sm text-gray-600 hover:text-gray-900 transition-colors inline-flex items-center justify-center gap-2"
+                  className="mt-6 w-full text-center text-sm text-ct-mute-2 hover:text-ct-paper transition-colors inline-flex items-center justify-center gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Back to sign in
@@ -272,19 +272,19 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-ct-surface flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <SEO title="Sign In" description="Sign in to your ConnecTradie account." noindex />
       <BetaModal />
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link to="/" className="flex items-center justify-center">
           <span className="text-2xl font-extrabold tracking-tight text-black">
-            Connec<span className="text-warm-500">Tradie</span>
+            Connec<span className="text-ct-teal">Tradie</span>
           </span>
         </Link>
-        <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
+        <h2 className="mt-6 text-center text-3xl font-bold text-ct-paper">
           Welcome back
         </h2>
-        <p className="mt-2 text-center text-gray-600">
+        <p className="mt-2 text-center text-ct-mute-2">
           Sign in to manage your jobs and messages
         </p>
       </div>
@@ -292,29 +292,29 @@ export default function Login() {
       {/* Account Notice Modal */}
       {removedNotice && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[70] p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl animate-scale-in">
+          <div className="bg-ct-surface rounded-ct-lg max-w-md w-full shadow-2xl animate-scale-in">
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   {removedNotice.reason === 'self_deleted' ? (
                     <>
-                      <div className="p-3 bg-gray-100 rounded-full">
-                        <UserX className="w-6 h-6 text-gray-600" />
+                      <div className="p-3 bg-ct-surface-2 rounded-full">
+                        <UserX className="w-6 h-6 text-ct-mute-2" />
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900">Account Deleted</h3>
+                      <h3 className="text-lg font-semibold text-ct-paper">Account Deleted</h3>
                     </>
                   ) : (
                     <>
-                      <div className="p-3 bg-red-50 rounded-full">
-                        <ShieldX className="w-6 h-6 text-red-600" />
+                      <div className="p-3 bg-ct-rose/[0.13] rounded-full">
+                        <ShieldX className="w-6 h-6 text-ct-rose" />
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900">Account Removed</h3>
+                      <h3 className="text-lg font-semibold text-ct-paper">Account Removed</h3>
                     </>
                   )}
                 </div>
                 <button
                   onClick={() => setRemovedNotice(null)}
-                  className="p-2.5 text-gray-400 hover:text-gray-600 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  className="p-2.5 text-ct-mute hover:text-ct-mute-2 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -322,38 +322,38 @@ export default function Login() {
 
               {removedNotice.reason === 'self_deleted' ? (
                 <div className="space-y-4">
-                  <p className="text-gray-600 leading-relaxed">
+                  <p className="text-ct-mute-2 leading-relaxed">
                     This account has been deleted. All associated data has been permanently removed.
                   </p>
 
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                    <p className="text-sm font-medium text-gray-800 mb-1">Want to come back?</p>
-                    <p className="text-sm text-gray-600">
+                  <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md p-4">
+                    <p className="text-sm font-medium text-ct-paper mb-1">Want to come back?</p>
+                    <p className="text-sm text-ct-mute-2">
                       You can create a new account using the same or a different email address to get started again.
                     </p>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-gray-600 leading-relaxed">
+                  <p className="text-ct-mute-2 leading-relaxed">
                     Your ConnecTradie account has been removed and you can no longer access the platform.
                   </p>
 
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                    <p className="text-sm font-medium text-red-800 mb-1">Reason for removal:</p>
-                    <p className="text-sm text-red-700">{removedNotice.reason}</p>
+                  <div className="bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md p-4">
+                    <p className="text-sm font-medium text-ct-paper mb-1">Reason for removal:</p>
+                    <p className="text-sm text-ct-rose">{removedNotice.reason}</p>
                     {removedNotice.message && (
-                      <p className="text-sm text-red-600 mt-2">{removedNotice.message}</p>
+                      <p className="text-sm text-ct-rose mt-2">{removedNotice.message}</p>
                     )}
                   </div>
 
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                    <p className="text-sm font-medium text-amber-800 mb-1">Believe this was a mistake?</p>
-                    <p className="text-sm text-amber-700">
+                  <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md p-4">
+                    <p className="text-sm font-medium text-ct-paper mb-1">Believe this was a mistake?</p>
+                    <p className="text-sm text-ct-amber">
                       You can dispute this decision by emailing{' '}
                       <a
                         href="mailto:admin@connectradie.com?subject=Account Removal Dispute"
-                        className="font-semibold underline hover:text-amber-900"
+                        className="font-semibold underline hover:text-ct-paper"
                       >
                         admin@connectradie.com
                       </a>{' '}
@@ -368,14 +368,14 @@ export default function Login() {
               {removedNotice.reason === 'self_deleted' && (
                 <Link
                   to="/register"
-                  className="flex-1 px-4 py-3 bg-warm-500 text-white rounded-xl font-medium hover:bg-warm-600 transition-colors text-center"
+                  className="flex-1 px-4 py-3 bg-ct-teal text-ct-ink rounded-ct-md font-medium hover:brightness-110 transition-colors text-center"
                 >
                   Create New Account
                 </Link>
               )}
               <button
                 onClick={() => setRemovedNotice(null)}
-                className={`${removedNotice.reason === 'self_deleted' ? 'flex-1' : 'w-full'} px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors`}
+                className={`${removedNotice.reason === 'self_deleted' ? 'flex-1' : 'w-full'} px-4 py-3 bg-ct-surface-2 text-ct-mute-2 rounded-ct-md font-medium hover:bg-ct-line transition-colors`}
               >
                 Close
               </button>
@@ -385,22 +385,22 @@ export default function Login() {
       )}
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-sm rounded-2xl sm:px-10 border border-gray-100">
+        <div className="bg-ct-surface py-8 px-4 shadow-sm rounded-ct-lg sm:px-10 border border-ct-line-soft">
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700">{error}</p>
+            <div className="mb-6 p-4 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-ct-rose flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-ct-rose">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6" aria-label="ConnecTradie Login">
             <input type="hidden" name="form-name" value="connectradie-login" />
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-ct-mute-2 mb-2">
                 Email address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
                 <input
                   id="email"
                   name="email"
@@ -409,7 +409,7 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  className="w-full pl-11 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-all"
                   placeholder="you@example.com"
                   aria-label="Email address for ConnecTradie"
                 />
@@ -417,11 +417,11 @@ export default function Login() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-ct-mute-2 mb-2">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
                 <input
                   id="password"
                   name="password"
@@ -430,14 +430,14 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-12 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  className="w-full pl-11 pr-12 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-all"
                   placeholder="Enter your password"
                   aria-label="Password for ConnecTradie"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ct-mute hover:text-ct-mute-2 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -449,7 +449,7 @@ export default function Login() {
                     setShowForgotPassword(true);
                     setResetEmail(email);
                   }}
-                  className="text-sm text-primary-600 font-medium hover:text-primary-700 transition-colors"
+                  className="text-sm text-ct-mute-2 font-medium hover:text-ct-mute-2 transition-colors"
                 >
                   Forgot password?
                 </button>
@@ -459,7 +459,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ct-teal disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               aria-label="Sign in to ConnecTradie"
             >
               {loading ? (
@@ -479,17 +479,17 @@ export default function Login() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
+                <div className="w-full border-t border-ct-line" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-3 bg-white text-gray-400">or</span>
+                <span className="px-3 bg-ct-surface text-ct-mute">or</span>
               </div>
             </div>
 
             <button
               onClick={handleGoogleSignIn}
               disabled={googleLoading}
-              className="mt-4 w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-all shadow-sm"
+              className="mt-4 w-full flex items-center justify-center gap-3 px-4 py-3 bg-ct-surface border border-ct-line rounded-ct-md font-medium text-ct-mute-2 hover:bg-ct-surface-2 disabled:opacity-50 transition-all shadow-sm"
             >
               {googleLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -501,9 +501,9 @@ export default function Login() {
           </div>
           )}
 
-          <p className="mt-6 text-center text-sm text-gray-600">
+          <p className="mt-6 text-center text-sm text-ct-mute-2">
             New here?{' '}
-            <Link to="/register" className="text-primary-600 font-medium hover:text-primary-700">
+            <Link to="/register" className="text-ct-mute-2 font-medium hover:text-ct-mute-2">
               Create a free account
             </Link>
           </p>

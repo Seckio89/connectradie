@@ -253,16 +253,16 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
-              <FileText className="w-5 h-5 text-secondary-600" />
+            <div className="w-10 h-10 bg-ct-surface-2 rounded-ct-md flex items-center justify-center">
+              <FileText className="w-5 h-5 text-ct-mute-2" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900">Invoice</h2>
+            <h2 className="text-xl font-bold text-ct-paper">Invoice</h2>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <button
               onClick={handleDownloadPdf}
               disabled={pdfLoading}
-              className="flex items-center gap-2 px-4 py-2 border border-secondary-600 text-secondary-600 rounded-lg hover:bg-secondary-50 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-2 border border-ct-line text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {pdfLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -273,35 +273,35 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
             </button>
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 px-4 py-2 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 text-sm font-medium transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-ct-surface-2 text-ct-ink rounded-ct-sm hover:bg-ct-surface-2 text-sm font-medium transition-colors"
             >
               <Printer className="w-4 h-4" />
               <span className="hidden sm:inline">Print / Save PDF</span>
             </button>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="p-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
-              <X className="w-5 h-5 text-gray-400" />
+              <X className="w-5 h-5 text-ct-mute" />
             </button>
           </div>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 border-3 border-primary-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-3 border-ct-teal/30 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : invoice ? (
-          <div ref={printRef} className="bg-white">
+          <div ref={printRef} className="bg-ct-surface">
             <div className="invoice-header flex justify-between items-start mb-8">
               <div>
-                <h1 className="text-3xl font-extrabold text-secondary-600 tracking-tight mb-6">
+                <h1 className="text-3xl font-extrabold text-ct-mute-2 tracking-tight mb-6">
                   INVOICE
                 </h1>
-                <div className="company-name text-lg font-bold text-gray-900">
+                <div className="company-name text-lg font-bold text-ct-paper">
                   {invoice.business_name}
                 </div>
-                <div className="company-details text-xs text-gray-500 leading-relaxed">
+                <div className="company-details text-xs text-ct-mute leading-relaxed">
                   {invoice.business_abn && <div>ABN: {invoice.business_abn}</div>}
                   {invoice.business_address && <div>{invoice.business_address}</div>}
                   {invoice.business_phone && <div>{invoice.business_phone}</div>}
@@ -310,27 +310,27 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
               </div>
               <div className="invoice-meta text-right space-y-2">
                 <div>
-                  <div className="label text-xs text-gray-400 uppercase tracking-wider">
+                  <div className="label text-xs text-ct-mute uppercase tracking-wider">
                     Invoice No.
                   </div>
-                  <div className="value text-sm font-semibold text-gray-900">
+                  <div className="value text-sm font-semibold text-ct-paper">
                     {invoice.invoice_number}
                   </div>
                 </div>
                 <div>
-                  <div className="label text-xs text-gray-400 uppercase tracking-wider">
+                  <div className="label text-xs text-ct-mute uppercase tracking-wider">
                     Date
                   </div>
-                  <div className="value text-sm font-semibold text-gray-900">
+                  <div className="value text-sm font-semibold text-ct-paper">
                     {formatDate(invoice.invoice_date)}
                   </div>
                 </div>
                 {invoice.due_date && (
                   <div>
-                    <div className="label text-xs text-gray-400 uppercase tracking-wider">
+                    <div className="label text-xs text-ct-mute uppercase tracking-wider">
                       Due Date
                     </div>
-                    <div className="value text-sm font-semibold text-gray-900">
+                    <div className="value text-sm font-semibold text-ct-paper">
                       {formatDate(invoice.due_date)}
                     </div>
                   </div>
@@ -339,49 +339,49 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
             </div>
 
             {(invoice.bill_to_name || invoice.bill_to_address) && (
-              <div className="bill-to mb-8 p-4 bg-gray-50 rounded-xl">
-                <div className="label text-xs text-gray-400 uppercase tracking-wider mb-1">
+              <div className="bill-to mb-8 p-4 bg-ct-surface-2 rounded-ct-md">
+                <div className="label text-xs text-ct-mute uppercase tracking-wider mb-1">
                   Bill To
                 </div>
                 {invoice.bill_to_name && (
-                  <div className="name text-base font-semibold text-gray-900">
+                  <div className="name text-base font-semibold text-ct-paper">
                     {invoice.bill_to_name}
                   </div>
                 )}
                 {invoice.bill_to_address && (
-                  <div className="address text-sm text-gray-600">{invoice.bill_to_address}</div>
+                  <div className="address text-sm text-ct-mute-2">{invoice.bill_to_address}</div>
                 )}
               </div>
             )}
 
             <table className="w-full mb-6">
               <thead>
-                <tr className="border-b-2 border-gray-200 bg-gray-50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <tr className="border-b-2 border-ct-line bg-ct-surface-2">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-ct-mute uppercase tracking-wider">
                     Description
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-ct-mute uppercase tracking-wider">
                     Qty
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-ct-mute uppercase tracking-wider">
                     Unit Price
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-ct-mute uppercase tracking-wider">
                     Amount
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {lineItems.map((item) => (
-                  <tr key={item.id} className="border-b border-gray-100">
-                    <td className="px-4 py-3 text-sm text-gray-700">{item.description}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 text-right">
+                  <tr key={item.id} className="border-b border-ct-line-soft">
+                    <td className="px-4 py-3 text-sm text-ct-mute-2">{item.description}</td>
+                    <td className="px-4 py-3 text-sm text-ct-mute-2 text-right">
                       {Number(item.quantity).toFixed(item.quantity % 1 === 0 ? 0 : 2)}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700 text-right">
+                    <td className="px-4 py-3 text-sm text-ct-mute-2 text-right">
                       ${Number(item.unit_price).toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right">
+                    <td className="px-4 py-3 text-sm font-medium text-ct-paper text-right">
                       ${Number(item.amount).toFixed(2)}
                     </td>
                   </tr>
@@ -392,35 +392,35 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
             <div className="totals flex justify-end mb-6">
               <div className="totals-table w-72 space-y-1">
                 <div className="totals-row flex justify-between py-1.5 text-sm">
-                  <span className="label text-gray-600">Subtotal</span>
-                  <span className="value font-semibold text-gray-900">
+                  <span className="label text-ct-mute-2">Subtotal</span>
+                  <span className="value font-semibold text-ct-paper">
                     ${Number(invoice.subtotal).toFixed(2)}
                   </span>
                 </div>
                 {Number(invoice.gst_amount) > 0 && (
                   <div className="totals-row flex justify-between py-1.5 text-sm">
-                    <span className="label text-gray-600">GST (10%)</span>
-                    <span className="value font-semibold text-gray-900">
+                    <span className="label text-ct-mute-2">GST (10%)</span>
+                    <span className="value font-semibold text-ct-paper">
                       ${Number(invoice.gst_amount).toFixed(2)}
                     </span>
                   </div>
                 )}
-                <div className="totals-row total flex justify-between pt-3 mt-1 border-t-2 border-secondary-500">
-                  <span className="label text-lg font-bold text-gray-900">Total</span>
-                  <span className="value text-xl font-extrabold text-secondary-600">
+                <div className="totals-row total flex justify-between pt-3 mt-1 border-t-2 border-ct-teal">
+                  <span className="label text-lg font-bold text-ct-paper">Total</span>
+                  <span className="value text-xl font-extrabold text-ct-mute-2">
                     ${Number(invoice.total_amount).toFixed(2)}
                   </span>
                 </div>
                 {viewerRole === 'tradie' && (
                   <>
                     <div className="totals-row flex justify-between py-1.5 text-sm mt-2">
-                      <span className="label text-green-700 font-medium">Your Payout</span>
-                      <span className="value font-semibold text-green-700">
+                      <span className="label text-ct-teal font-medium">Your Payout</span>
+                      <span className="value font-semibold text-ct-teal">
                         ${Number(invoice.total_amount).toFixed(2)}
                       </span>
                     </div>
                     <div className="mt-1 text-right">
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full border border-green-200">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-teal/[0.14] text-ct-teal text-xs font-medium rounded-full border border-ct-teal/30">
                         100% Payout
                       </span>
                     </div>
@@ -430,18 +430,18 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
             </div>
 
             {invoice.notes && (
-              <div className="notes p-4 bg-gray-50 rounded-xl border-l-3 border-secondary-500">
-                <div className="label text-xs text-gray-400 uppercase tracking-wider mb-1">
+              <div className="notes p-4 bg-ct-surface-2 rounded-ct-md border-l-3 border-ct-teal">
+                <div className="label text-xs text-ct-mute uppercase tracking-wider mb-1">
                   Notes
                 </div>
-                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+                <p className="text-sm text-ct-mute-2 leading-relaxed whitespace-pre-wrap">
                   {invoice.notes}
                 </p>
               </div>
             )}
           </div>
         ) : (
-          <div className="text-center py-16 text-gray-600">Invoice not found</div>
+          <div className="text-center py-16 text-ct-mute-2">Invoice not found</div>
         )}
       </div>
     </Modal>

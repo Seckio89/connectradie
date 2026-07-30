@@ -260,40 +260,40 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/60 " onClick={handleClose} />
 
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[92vh] overflow-y-auto">
+      <div className="relative bg-ct-surface rounded-ct-lg shadow-2xl max-w-3xl w-full max-h-[92vh] overflow-y-auto">
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors z-10"
+          className="absolute top-4 right-4 p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors z-10"
         >
           <X className="w-5 h-5" />
         </button>
 
         {modalState === 'cancelling' && (
           <div className="p-16 flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6 animate-pulse">
-              <Loader2 className="w-10 h-10 text-gray-500 animate-spin" />
+            <div className="w-20 h-20 bg-ct-surface-2 rounded-full flex items-center justify-center mb-6 animate-pulse">
+              <Loader2 className="w-10 h-10 text-ct-mute animate-spin" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Cancelling Subscription...</h2>
-            <p className="text-gray-600">Please wait while we process your cancellation.</p>
+            <h2 className="text-2xl font-bold text-ct-paper mb-2">Cancelling Subscription...</h2>
+            <p className="text-ct-mute-2">Please wait while we process your cancellation.</p>
           </div>
         )}
 
         {modalState === 'cancelled' && (
           <div className="p-16 flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-              <Check className="w-10 h-10 text-gray-600" />
+            <div className="w-20 h-20 bg-ct-surface-2 rounded-full flex items-center justify-center mb-6">
+              <Check className="w-10 h-10 text-ct-mute-2" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Subscription Cancelled</h2>
-            <p className="text-gray-600 mb-4 max-w-sm">
+            <h2 className="text-2xl font-bold text-ct-paper mb-2">Subscription Cancelled</h2>
+            <p className="text-ct-mute-2 mb-4 max-w-sm">
               Your membership has been cancelled. You'll revert to the free plan at the end of your billing period.
             </p>
-            <p className="text-sm text-gray-500 mb-8 max-w-sm">
+            <p className="text-sm text-ct-mute mb-8 max-w-sm">
               You'll still have access to unlimited job accepts on the free plan.
               Upgrade again anytime.
             </p>
             <button
               onClick={handleClose}
-              className="px-8 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+              className="px-8 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
             >
               Done
             </button>
@@ -302,16 +302,16 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
 
         {modalState === 'error' && (
           <div className="p-16 flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
-              <AlertCircle className="w-10 h-10 text-red-600" />
+            <div className="w-20 h-20 bg-ct-rose/[0.13] rounded-full flex items-center justify-center mb-6">
+              <AlertCircle className="w-10 h-10 text-ct-rose" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Something Went Wrong</h2>
-            <p className="text-gray-600 mb-8 max-w-sm">
+            <h2 className="text-2xl font-bold text-ct-paper mb-2">Something Went Wrong</h2>
+            <p className="text-ct-mute-2 mb-8 max-w-sm">
               {errorMessage || 'An error occurred. Please try again.'}
             </p>
             <button
               onClick={() => setModalState('pricing')}
-              className="px-8 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+              className="px-8 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
             >
               Try Again
             </button>
@@ -320,31 +320,31 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
 
         {modalState === 'processing' && (
           <div className="p-16 flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-warm-100 rounded-full flex items-center justify-center mb-6 animate-pulse">
-              <Loader2 className="w-10 h-10 text-warm-600 animate-spin" />
+            <div className="w-20 h-20 bg-ct-amber/[0.13] rounded-full flex items-center justify-center mb-6 animate-pulse">
+              <Loader2 className="w-10 h-10 text-ct-amber animate-spin" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Activating Pro...</h2>
-            <p className="text-gray-600">Please wait while we activate your membership.</p>
+            <h2 className="text-2xl font-bold text-ct-paper mb-2">Activating Pro...</h2>
+            <p className="text-ct-mute-2">Please wait while we activate your membership.</p>
           </div>
         )}
 
         {modalState === 'success' && (
           <div className="p-16 flex flex-col items-center justify-center text-center">
             <div className="relative mb-6">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
-                <Check className="w-10 h-10 text-green-600" />
+              <div className="w-20 h-20 bg-ct-teal/[0.14] rounded-full flex items-center justify-center">
+                <Check className="w-10 h-10 text-ct-teal" />
               </div>
-              <div className="absolute -top-2 -right-2 w-10 h-10 bg-warm-400 rounded-full flex items-center justify-center shadow-lg">
-                <Crown className="w-5 h-5 text-white" />
+              <div className="absolute -top-2 -right-2 w-10 h-10 bg-ct-teal rounded-full flex items-center justify-center shadow-lg">
+                <Crown className="w-5 h-5 text-ct-ink" />
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Pro!</h2>
-            <p className="text-gray-600 mb-8 max-w-sm">
+            <h2 className="text-2xl font-bold text-ct-paper mb-2">Welcome to Pro!</h2>
+            <p className="text-ct-mute-2 mb-8 max-w-sm">
               All Pro features are now unlocked. Your verified badge is live and clients will see you first in search results.
             </p>
             <button
               onClick={handleClose}
-              className="px-8 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+              className="px-8 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
             >
               Get Started
             </button>
@@ -354,53 +354,53 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
         {modalState === 'pricing' && (
           <>
             {trainingModeEnabled && (
-              <div className="mx-8 mt-8 mb-0 flex items-center gap-3 px-4 py-3 bg-secondary-50 border border-secondary-200 rounded-xl">
-                <FlaskConical className="w-5 h-5 text-secondary-600 flex-shrink-0" />
-                <p className="text-sm text-secondary-800 font-medium">
+              <div className="mx-8 mt-8 mb-0 flex items-center gap-3 px-4 py-3 bg-ct-surface-2 border border-ct-line rounded-ct-md">
+                <FlaskConical className="w-5 h-5 text-ct-mute-2 flex-shrink-0" />
+                <p className="text-sm text-ct-mute-2 font-medium">
                   Test Mode is active — subscriptions can be activated without payment.
                 </p>
               </div>
             )}
 
             <div className="px-8 pt-8 pb-4 text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-warm-50 text-warm-700 rounded-full text-sm font-medium mb-4">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-ct-amber/[0.13] text-ct-amber rounded-full text-sm font-medium mb-4">
                 <Crown className="w-4 h-4" />
                 {currentTier !== 'free'
                   ? `Your ${tierLabel(currentTier)} Plan`
                   : 'Choose Your Plan'}
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="text-2xl font-bold text-ct-paper mb-2">
                 {currentTier !== 'free'
                   ? `You're on the ${tierLabel(currentTier)} Plan`
                   : 'Grow Your Business'}
               </h2>
-              <p className="text-gray-500 max-w-lg mx-auto text-sm">
+              <p className="text-ct-mute max-w-lg mx-auto text-sm">
                 {currentTier !== 'free'
                   ? 'You have access to premium features. Manage your subscription below.'
                   : 'Choose a plan that fits where your business is at. Upgrade or cancel anytime.'}
               </p>
 
-              <div className="mt-5 inline-flex items-center bg-gray-100 rounded-xl p-1 gap-1">
+              <div className="mt-5 inline-flex items-center bg-ct-surface-2 rounded-ct-md p-1 gap-1">
                 <button
                   onClick={() => setBillingCycle('monthly')}
-                  className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-5 py-2 rounded-ct-sm text-sm font-medium transition-all ${
                     billingCycle === 'monthly'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'bg-ct-surface text-ct-paper shadow-sm'
+                      : 'text-ct-mute hover:text-ct-mute-2'
                   }`}
                 >
                   Monthly
                 </button>
                 <button
                   onClick={() => setBillingCycle('annual')}
-                  className={`px-5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                  className={`px-5 py-2 rounded-ct-sm text-sm font-medium transition-all flex items-center gap-2 ${
                     billingCycle === 'annual'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'bg-ct-surface text-ct-paper shadow-sm'
+                      : 'text-ct-mute hover:text-ct-mute-2'
                   }`}
                 >
                   Annual
-                  <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-md">
+                  <span className="px-1.5 py-0.5 bg-ct-teal/[0.14] text-ct-teal text-xs font-semibold rounded-md">
                     Save 28%
                   </span>
                 </button>
@@ -409,35 +409,35 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
 
             <div className="p-8 pt-4 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto w-full">
               {/* Free */}
-              <div className={`border-2 rounded-2xl p-6 relative flex flex-col ${
-                currentTier === 'free' ? 'border-primary-200 bg-primary-50/30' : 'border-gray-200'
+              <div className={`border-2 rounded-ct-lg p-6 relative flex flex-col ${
+                currentTier === 'free' ? 'border-ct-line bg-ct-surface-2/30' : 'border-ct-line'
               }`}>
                 {currentTier === 'free' && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-warm-500 text-white text-xs font-bold rounded-full whitespace-nowrap">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-ct-teal text-ct-ink text-xs font-bold rounded-full whitespace-nowrap">
                     Current Plan
                   </div>
                 )}
                 <div className="mb-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <Users className="w-4 h-4 text-gray-600" />
+                    <div className="w-8 h-8 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center">
+                      <Users className="w-4 h-4 text-ct-mute-2" />
                     </div>
-                    <h3 className="text-base font-semibold text-gray-900">Free</h3>
+                    <h3 className="text-base font-semibold text-ct-paper">Free</h3>
                   </div>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-gray-900">$0</span>
-                    <span className="text-gray-500 text-sm">/mo</span>
+                    <span className="text-3xl font-bold text-ct-paper">$0</span>
+                    <span className="text-ct-mute text-sm">/mo</span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1.5">Get listed — no per-lead fees</p>
+                  <p className="text-xs text-ct-mute mt-1.5">Get listed — no per-lead fees</p>
                 </div>
 
                 {/* Fee summary */}
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                <div className="mb-4 p-3 bg-ct-surface-2 rounded-ct-sm border border-ct-line-soft">
                   <div className="flex items-center gap-1.5">
-                    <Percent className="w-3.5 h-3.5 text-gray-500" />
-                    <span className="text-xs font-medium text-gray-700">Low platform fees on completed jobs</span>
+                    <Percent className="w-3.5 h-3.5 text-ct-mute" />
+                    <span className="text-xs font-medium text-ct-mute-2">Low platform fees on completed jobs</span>
                   </div>
-                  <p className="text-[11px] text-gray-400 mt-1">Fees decrease as your job values grow. Upgrade to Pro to save more.</p>
+                  <p className="text-[11px] text-ct-mute mt-1">Fees decrease as your job values grow. Upgrade to Pro to save more.</p>
                 </div>
 
                 <div className="space-y-2.5 flex-1">
@@ -445,12 +445,12 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     const Icon = feature.icon;
                     return (
                       <div key={feature.text} className="flex items-center gap-2.5">
-                        <div className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                          <Check className="w-2.5 h-2.5 text-green-600" />
+                        <div className="w-4 h-4 rounded-full bg-ct-teal/[0.14] flex items-center justify-center flex-shrink-0">
+                          <Check className="w-2.5 h-2.5 text-ct-teal" />
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <Icon className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                          <span className="text-xs text-gray-700">{feature.text}</span>
+                          <Icon className="w-3 h-3 text-ct-mute flex-shrink-0" />
+                          <span className="text-xs text-ct-mute-2">{feature.text}</span>
                         </div>
                       </div>
                     );
@@ -459,53 +459,53 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
 
                 <button
                   disabled
-                  className="w-full mt-6 py-2.5 border-2 border-gray-200 text-gray-400 text-sm font-semibold rounded-xl cursor-not-allowed"
+                  className="w-full mt-6 py-2.5 border-2 border-ct-line text-ct-mute text-sm font-semibold rounded-ct-md cursor-not-allowed"
                 >
                   {currentTier === 'free' ? 'Current Plan' : 'Free Plan'}
                 </button>
               </div>
 
               {/* Pro */}
-              <div className={`border-2 rounded-2xl p-6 relative flex flex-col ${
+              <div className={`border-2 rounded-ct-lg p-6 relative flex flex-col ${
                 currentTier === 'pro'
-                  ? 'border-warm-400 bg-warm-50/30'
-                  : 'border-warm-300 bg-gradient-to-b from-warm-50/40 to-white shadow-sm'
+                  ? 'border-ct-teal bg-ct-amber/[0.13]/30'
+                  : 'border-ct-teal/30 bg-gradient-to-b from-ct-teal/40 to-white shadow-sm'
               }`}>
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-warm-500 to-warm-600 text-white text-xs font-bold rounded-full uppercase tracking-wide">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-ct-teal0 to-ct-teal text-ct-ink text-xs font-bold rounded-full uppercase tracking-wide">
                   {currentTier === 'pro' ? 'Current Plan' : 'Most Popular'}
                 </div>
 
                 <div className="mb-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 bg-warm-100 rounded-lg flex items-center justify-center">
-                      <Crown className="w-4 h-4 text-warm-600" />
+                    <div className="w-8 h-8 bg-ct-amber/[0.13] rounded-ct-sm flex items-center justify-center">
+                      <Crown className="w-4 h-4 text-ct-amber" />
                     </div>
-                    <h3 className="text-base font-semibold text-gray-900">Pro</h3>
+                    <h3 className="text-base font-semibold text-ct-paper">Pro</h3>
                   </div>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-gray-900">
+                    <span className="text-3xl font-bold text-ct-paper">
                       ${billingCycle === 'annual' ? TIER_PRICING.pro.annualMonthly : TIER_PRICING.pro.monthly}
                     </span>
-                    <span className="text-gray-500 text-sm">/mo</span>
+                    <span className="text-ct-mute text-sm">/mo</span>
                   </div>
                   {billingCycle === 'annual' && (
                     <div className="mt-1 flex items-center gap-1.5">
-                      <span className="text-xs text-gray-400 line-through">${TIER_PRICING.pro.monthly}/mo</span>
-                      <span className="text-xs text-green-600 font-medium">Save ${annualSavingsPro}/yr</span>
+                      <span className="text-xs text-ct-mute line-through">${TIER_PRICING.pro.monthly}/mo</span>
+                      <span className="text-xs text-ct-teal font-medium">Save ${annualSavingsPro}/yr</span>
                     </div>
                   )}
                   {billingCycle === 'monthly' && (
-                    <p className="text-xs text-gray-500 mt-1.5">or ${TIER_PRICING.pro.annualMonthly}/mo billed annually</p>
+                    <p className="text-xs text-ct-mute mt-1.5">or ${TIER_PRICING.pro.annualMonthly}/mo billed annually</p>
                   )}
                 </div>
 
                 {/* Fee summary */}
-                <div className="mb-4 p-3 bg-warm-50 rounded-lg border border-warm-100">
+                <div className="mb-4 p-3 bg-ct-amber/[0.13] rounded-ct-sm border border-ct-teal/30">
                   <div className="flex items-center gap-1.5">
-                    <Percent className="w-3.5 h-3.5 text-warm-600" />
-                    <span className="text-xs font-medium text-warm-700">Lowest platform fees — keep more of every job</span>
+                    <Percent className="w-3.5 h-3.5 text-ct-amber" />
+                    <span className="text-xs font-medium text-ct-amber">Lowest platform fees — keep more of every job</span>
                   </div>
-                  <p className="text-[11px] text-gray-400 mt-1">Up to 50% lower fees than free. The bigger the job, the more you save.</p>
+                  <p className="text-[11px] text-ct-mute mt-1">Up to 50% lower fees than free. The bigger the job, the more you save.</p>
                 </div>
 
                 <div className="space-y-2.5 flex-1">
@@ -514,11 +514,11 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     return (
                       <div key={feature.text} className="flex items-center gap-2.5">
                         <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          feature.highlight ? 'bg-warm-100' : 'bg-green-100'
+                          feature.highlight ? 'bg-ct-amber/[0.13]' : 'bg-ct-teal/[0.14]'
                         }`}>
-                          <Icon className={`w-2.5 h-2.5 ${feature.highlight ? 'text-warm-600' : 'text-green-600'}`} />
+                          <Icon className={`w-2.5 h-2.5 ${feature.highlight ? 'text-ct-amber' : 'text-ct-teal'}`} />
                         </div>
-                        <span className={`text-xs ${feature.highlight ? 'text-gray-900 font-medium' : 'text-gray-700'}`}>
+                        <span className={`text-xs ${feature.highlight ? 'text-ct-paper font-medium' : 'text-ct-mute-2'}`}>
                           {feature.text}
                         </span>
                       </div>
@@ -530,32 +530,32 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                   <div className="mt-6 space-y-2.5">
                     {isTrialing ? (
                       <>
-                        <div className="py-2.5 bg-secondary-100 text-secondary-700 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
+                        <div className="py-2.5 bg-ct-surface-2 text-ct-mute-2 text-sm font-semibold rounded-ct-md flex items-center justify-center gap-2">
                           <Sparkles className="w-4 h-4" />
                           Free trial active
                         </div>
                         {trialConvertsOn && (
-                          <p className="text-[11px] text-gray-500 text-center leading-relaxed">
-                            Your card is charged on <span className="font-semibold text-gray-700">{trialConvertsOn}</span> to
+                          <p className="text-[11px] text-ct-mute text-center leading-relaxed">
+                            Your card is charged on <span className="font-semibold text-ct-mute-2">{trialConvertsOn}</span> to
                             continue Pro. Cancel any time before then and you won&rsquo;t be charged.
                           </p>
                         )}
                         <button
                           onClick={handleCancel}
-                          className="w-full py-2 text-xs text-gray-500 hover:text-red-600 font-medium rounded-xl hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors"
+                          className="w-full py-2 text-xs text-ct-mute hover:text-ct-rose font-medium rounded-ct-md hover:bg-ct-rose/[0.13] border border-transparent hover:border-ct-rose/[0.34] transition-colors"
                         >
                           Cancel trial — no charge
                         </button>
                       </>
                     ) : (
                       <>
-                        <div className="py-2.5 bg-green-100 text-green-700 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
+                        <div className="py-2.5 bg-ct-teal/[0.14] text-ct-teal text-sm font-semibold rounded-ct-md flex items-center justify-center gap-2">
                           <Check className="w-4 h-4" />
                           Active Plan
                         </div>
                         <button
                           onClick={handleCancel}
-                          className="w-full py-2 text-xs text-gray-500 hover:text-red-600 font-medium rounded-xl hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors"
+                          className="w-full py-2 text-xs text-ct-mute hover:text-ct-rose font-medium rounded-ct-md hover:bg-ct-rose/[0.13] border border-transparent hover:border-ct-rose/[0.34] transition-colors"
                         >
                           Cancel Subscription
                         </button>
@@ -567,7 +567,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     {showTestModeButton ? (
                       <button
                         onClick={handleTestModeSubscribe}
-                        className="w-full py-2.5 bg-gradient-to-r from-secondary-500 to-secondary-600 text-white text-sm font-semibold rounded-xl hover:from-secondary-600 hover:to-secondary-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                        className="w-full py-2.5 bg-gradient-to-r from-ct-surface-20 to-ct-surface-2 text-ct-ink text-sm font-semibold rounded-ct-md hover:from-ct-surface-2 hover:to-ct-surface-2 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                       >
                         <FlaskConical className="w-4 h-4" />
                         Activate Pro (Test)
@@ -576,7 +576,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                       <>
                         <button
                           onClick={handleUpgrade}
-                          className="w-full py-2.5 bg-gradient-to-r from-warm-500 to-warm-600 text-white text-sm font-semibold rounded-xl hover:from-warm-600 hover:to-warm-700 transition-all shadow-md hover:shadow-lg"
+                          className="w-full py-2.5 bg-gradient-to-r from-ct-teal0 to-ct-teal text-ct-ink text-sm font-semibold rounded-ct-md hover:from-ct-teal hover:to-ct-teal transition-all shadow-md hover:shadow-lg"
                         >
                           {trialEligible ? 'Start 14-day free trial' : 'Get Pro'}
                           {!trialEligible && billingCycle === 'annual' && (
@@ -584,9 +584,9 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                           )}
                         </button>
                         {trialEligible ? (
-                          <p className="text-[11px] text-gray-500 text-center leading-relaxed">
+                          <p className="text-[11px] text-ct-mute text-center leading-relaxed">
                             Free for 14 days, then{' '}
-                            <span className="font-semibold text-gray-700">
+                            <span className="font-semibold text-ct-mute-2">
                               {billingCycle === 'annual'
                                 ? `$${TIER_PRICING.pro.annual}/yr`
                                 : `$${TIER_PRICING.pro.monthly}/mo`}
@@ -594,7 +594,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                             . We&rsquo;ll email you before it ends — cancel any time during the trial and you won&rsquo;t be charged.
                           </p>
                         ) : (
-                          <p className="text-[11px] text-gray-400 text-center">
+                          <p className="text-[11px] text-ct-mute text-center">
                             {billingCycle === 'annual'
                               ? `Billed $${TIER_PRICING.pro.annual}/yr. Cancel anytime.`
                               : `Billed $${TIER_PRICING.pro.monthly}/mo. Cancel anytime.`}
@@ -608,28 +608,28 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
             </div>
 
             {currentTier === 'free' && (
-              <div className="mx-8 mb-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
-                <p className="text-xs font-semibold text-gray-700 mb-2 text-center">How we compare</p>
+              <div className="mx-8 mb-4 bg-ct-surface-2 border border-ct-line rounded-ct-md p-4">
+                <p className="text-xs font-semibold text-ct-mute-2 mb-2 text-center">How we compare</p>
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="bg-white rounded-lg p-2 border border-gray-100">
-                    <p className="text-gray-400 mb-0.5">hipages</p>
-                    <p className="font-bold text-gray-600 line-through">$200-500/mo</p>
+                  <div className="bg-ct-surface rounded-ct-sm p-2 border border-ct-line-soft">
+                    <p className="text-ct-mute mb-0.5">hipages</p>
+                    <p className="font-bold text-ct-mute-2 line-through">$200-500/mo</p>
                   </div>
-                  <div className="bg-white rounded-lg p-2 border border-gray-100">
-                    <p className="text-gray-400 mb-0.5">ServiceSeeking</p>
-                    <p className="font-bold text-gray-600 line-through">$83-250/qtr</p>
+                  <div className="bg-ct-surface rounded-ct-sm p-2 border border-ct-line-soft">
+                    <p className="text-ct-mute mb-0.5">ServiceSeeking</p>
+                    <p className="font-bold text-ct-mute-2 line-through">$83-250/qtr</p>
                   </div>
-                  <div className="bg-warm-50 rounded-lg p-2 border border-warm-200">
-                    <p className="text-warm-600 mb-0.5 font-medium">ConnecTradie</p>
-                    <p className="font-bold text-warm-700">${TIER_PRICING.pro.monthly}/mo</p>
+                  <div className="bg-ct-amber/[0.13] rounded-ct-sm p-2 border border-ct-amber/[0.34]">
+                    <p className="text-ct-amber mb-0.5 font-medium">ConnecTradie</p>
+                    <p className="font-bold text-ct-amber">${TIER_PRICING.pro.monthly}/mo</p>
                   </div>
                 </div>
-                <p className="text-xs text-gray-400 text-center mt-2">No per-lead fees. No lock-in contracts. Cancel anytime.</p>
+                <p className="text-xs text-ct-mute text-center mt-2">No per-lead fees. No lock-in contracts. Cancel anytime.</p>
               </div>
             )}
 
             <div className="px-8 pb-6 text-center">
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-ct-mute">
                 Prices in AUD. Cancel anytime. Annual billing saves you 28%.
               </p>
             </div>

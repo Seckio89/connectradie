@@ -345,26 +345,26 @@ export default function VerificationCenter() {
   if (isVerified) {
     return (
       <div className="space-y-6 p-6 md:p-8">
-        <div className="bg-gradient-to-br from-green-50 to-secondary-50 border border-green-200 rounded-2xl p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <BadgeCheck className="w-8 h-8 text-green-600" />
+        <div className="bg-gradient-to-br from-ct-teal to-ct-surface-2 border border-ct-teal/30 rounded-ct-lg p-8 text-center">
+          <div className="w-16 h-16 bg-ct-teal/[0.14] rounded-full flex items-center justify-center mx-auto mb-4">
+            <BadgeCheck className="w-8 h-8 text-ct-teal" />
           </div>
-          <h3 className="text-xl font-bold text-green-900 mb-2">Fully Verified</h3>
-          <p className="text-green-700">
+          <h3 className="text-xl font-bold text-ct-teal mb-2">Fully Verified</h3>
+          <p className="text-ct-teal">
             Your identity and credentials have been verified. You can accept all jobs including urgent leads.
           </p>
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="p-3 bg-white rounded-xl border border-green-200">
-              <FileText className="w-5 h-5 text-green-600 mb-1" />
-              <p className="text-sm font-medium text-green-800">ABN: {profile?.abn_number}</p>
+            <div className="p-3 bg-ct-surface rounded-ct-md border border-ct-teal/30">
+              <FileText className="w-5 h-5 text-ct-teal mb-1" />
+              <p className="text-sm font-medium text-ct-teal">ABN: {profile?.abn_number}</p>
             </div>
-            <div className="p-3 bg-white rounded-xl border border-green-200">
-              <Hash className="w-5 h-5 text-green-600 mb-1" />
-              <p className="text-sm font-medium text-green-800">License: {profile?.license_number}</p>
+            <div className="p-3 bg-ct-surface rounded-ct-md border border-ct-teal/30">
+              <Hash className="w-5 h-5 text-ct-teal mb-1" />
+              <p className="text-sm font-medium text-ct-teal">License: {profile?.license_number}</p>
             </div>
-            <div className="p-3 bg-white rounded-xl border border-green-200">
-              <Shield className="w-5 h-5 text-green-600 mb-1" />
-              <p className="text-sm font-medium text-green-800">Identity Confirmed</p>
+            <div className="p-3 bg-ct-surface rounded-ct-md border border-ct-teal/30">
+              <Shield className="w-5 h-5 text-ct-teal mb-1" />
+              <p className="text-sm font-medium text-ct-teal">Identity Confirmed</p>
             </div>
           </div>
         </div>
@@ -372,10 +372,10 @@ export default function VerificationCenter() {
         {profile?.license_number && profile?.license_state && profile?.license_expiry && (
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-navy-900">Your License Card</h3>
+              <h3 className="text-lg font-semibold text-ct-paper">Your License Card</h3>
               <button
                 onClick={() => setShowCertificate(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-navy-800 text-white text-sm font-medium rounded-lg hover:bg-navy-900 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-ct-surface text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-ink transition-colors"
               >
                 <Award className="w-4 h-4" />
                 View Certificate
@@ -418,26 +418,26 @@ export default function VerificationCenter() {
   if (isAlreadyPending) {
     return (
       <div className="space-y-6 p-6 md:p-8">
-        <div className="bg-gradient-to-br from-warm-50 to-warm-50 border border-warm-200 rounded-2xl p-8 text-center">
-          <div className="w-16 h-16 bg-warm-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <Clock className="w-8 h-8 text-warm-600" />
+        <div className="bg-gradient-to-br from-ct-teal to-ct-teal border border-ct-amber/[0.34] rounded-ct-lg p-8 text-center">
+          <div className="w-16 h-16 bg-ct-amber/[0.13] rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <Clock className="w-8 h-8 text-ct-amber" />
           </div>
-          <h3 className="text-xl font-bold text-warm-900 mb-2">Verification Under Review</h3>
-          <p className="text-warm-700 max-w-md mx-auto">
+          <h3 className="text-xl font-bold text-ct-teal mb-2">Verification Under Review</h3>
+          <p className="text-ct-amber max-w-md mx-auto">
             Your documents have been submitted and are being reviewed by our team. This usually takes 1-2 business days.
           </p>
-          <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-warm-100 rounded-full text-sm font-medium text-warm-800">
+          <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-ct-amber/[0.13] rounded-full text-sm font-medium text-ct-paper">
             <Loader2 className="w-4 h-4 animate-spin" />
             Pending Review
           </div>
           {isAdmin && (
             <div className="mt-6 space-y-3">
-              <div className="border-t border-warm-200 pt-4">
-                <p className="text-sm text-warm-800 mb-3">As an admin, you can approve your own verification:</p>
+              <div className="border-t border-ct-amber/[0.34] pt-4">
+                <p className="text-sm text-ct-paper mb-3">As an admin, you can approve your own verification:</p>
                 <button
                   onClick={handleSelfApprove}
                   disabled={selfApproving}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {selfApproving ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Approving...</>
@@ -456,52 +456,52 @@ export default function VerificationCenter() {
   return (
     <div className="space-y-6 p-6 md:p-8">
       {!user && (
-        <div className="p-4 bg-secondary-50 border border-secondary-200 rounded-xl flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-secondary-500 flex-shrink-0 mt-0.5" />
+        <div className="p-4 bg-ct-surface-2 border border-ct-line rounded-ct-md flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-ct-mute-2 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-secondary-900">Login Required</p>
-            <p className="text-sm text-secondary-700 mt-1">You must be logged in to verify your credentials.</p>
+            <p className="font-medium text-ct-paper">Login Required</p>
+            <p className="text-sm text-ct-mute-2 mt-1">You must be logged in to verify your credentials.</p>
           </div>
         </div>
       )}
 
       {isRejected && profile?.rejection_reason && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-          <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+        <div className="p-4 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md flex items-start gap-3">
+          <XCircle className="w-5 h-5 text-ct-rose flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-red-900">Verification Rejected</p>
-            <p className="text-sm text-red-700 mt-1">{profile.rejection_reason}</p>
-            <p className="text-sm text-red-600 mt-2">Please correct the issues below and resubmit.</p>
+            <p className="font-medium text-ct-paper">Verification Rejected</p>
+            <p className="text-sm text-ct-rose mt-1">{profile.rejection_reason}</p>
+            <p className="text-sm text-ct-rose mt-2">Please correct the issues below and resubmit.</p>
           </div>
         </div>
       )}
 
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">Get Verified</h3>
-        <p className="text-sm text-gray-600 mb-6">
+        <h3 className="text-lg font-semibold text-ct-paper mb-1">Get Verified</h3>
+        <p className="text-sm text-ct-mute-2 mb-6">
           Complete all three steps below to submit your verification. Only verified tradies can accept jobs and quote on urgent leads.
         </p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="p-5 border-b border-gray-100">
+      <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
+        <div className="p-5 border-b border-ct-line-soft">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-              abnResult.status === 'valid' ? 'bg-green-100' : 'bg-gray-100'
+            <div className={`w-10 h-10 rounded-ct-sm flex items-center justify-center ${
+              abnResult.status === 'valid' ? 'bg-ct-teal/[0.14]' : 'bg-ct-surface-2'
             }`}>
-              <span className={`text-sm font-bold ${abnResult.status === 'valid' ? 'text-green-700' : 'text-gray-500'}`}>A</span>
+              <span className={`text-sm font-bold ${abnResult.status === 'valid' ? 'text-ct-teal' : 'text-ct-mute'}`}>A</span>
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-gray-900">ABN Check</h4>
-              <p className="text-sm text-gray-500">Verify your Australian Business Number (11 digits)</p>
+              <h4 className="font-semibold text-ct-paper">ABN Check</h4>
+              <p className="text-sm text-ct-mute">Verify your Australian Business Number (11 digits)</p>
             </div>
-            {abnResult.status === 'valid' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+            {abnResult.status === 'valid' && <CheckCircle2 className="w-5 h-5 text-ct-teal" />}
           </div>
         </div>
         <div className="p-5">
           <div className="flex gap-3">
             <div className="relative flex-1">
-              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
               <input
                 type="text"
                 value={abnInput}
@@ -510,14 +510,14 @@ export default function VerificationCenter() {
                   setAbnResult({ status: 'incomplete', businessName: '' });
                 }}
                 placeholder="e.g., 10 824 753 556"
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                className="w-full pl-10 pr-4 py-2.5 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm"
                 disabled={abnResult.status === 'valid'}
               />
             </div>
             <button
               onClick={handleVerifyABN}
               disabled={!user || abnInput.replace(/\s/g, '').length !== 11 || abnResult.status === 'checking' || abnResult.status === 'valid'}
-              className="px-5 py-2.5 bg-warm-500 text-white text-sm font-medium rounded-lg hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="px-5 py-2.5 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               {abnResult.status === 'checking' ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Checking...</>
@@ -529,15 +529,15 @@ export default function VerificationCenter() {
             </button>
           </div>
           {abnResult.status === 'valid' && (
-            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-              <p className="text-sm text-green-800">Active -- {abnResult.businessName}</p>
+            <div className="mt-3 p-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-ct-teal flex-shrink-0" />
+              <p className="text-sm text-ct-teal">Active -- {abnResult.businessName}</p>
             </div>
           )}
           {abnResult.status === 'invalid' && (
-            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-              <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-              <p className="text-sm text-red-700">
+            <div className="mt-3 p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm flex items-center gap-2">
+              <XCircle className="w-4 h-4 text-ct-rose flex-shrink-0" />
+              <p className="text-sm text-ct-rose">
                 {abnResult.businessName || 'Invalid ABN. Please check the number and try again.'}
               </p>
             </div>
@@ -546,27 +546,27 @@ export default function VerificationCenter() {
       </div>
 
       {tradeIsExempt ? (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="p-5 border-b border-gray-100">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
+          <div className="p-5 border-b border-ct-line-soft">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-green-100">
-                <span className="text-sm font-bold text-green-700">B</span>
+              <div className="w-10 h-10 rounded-ct-sm flex items-center justify-center bg-ct-teal/[0.14]">
+                <span className="text-sm font-bold text-ct-teal">B</span>
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-gray-900">License Check</h4>
-                <p className="text-sm text-gray-500">Not required for your trade</p>
+                <h4 className="font-semibold text-ct-paper">License Check</h4>
+                <p className="text-sm text-ct-mute">Not required for your trade</p>
               </div>
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              <CheckCircle2 className="w-5 h-5 text-ct-teal" />
             </div>
           </div>
           <div className="p-5">
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div className="p-4 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-green-800">
+                <p className="text-sm font-medium text-ct-teal">
                   License Verification not required for {normalizeTradeName(primaryTrade)}.
                 </p>
-                <p className="text-xs text-green-700 mt-1">
+                <p className="text-xs text-ct-teal mt-1">
                   Your trade is exempt from licensing requirements. A verified ABN and identity are sufficient.
                 </p>
               </div>
@@ -574,29 +574,29 @@ export default function VerificationCenter() {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="p-5 border-b border-gray-100">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
+          <div className="p-5 border-b border-ct-line-soft">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                licenseResult.status === 'valid' ? 'bg-green-100' : 'bg-gray-100'
+              <div className={`w-10 h-10 rounded-ct-sm flex items-center justify-center ${
+                licenseResult.status === 'valid' ? 'bg-ct-teal/[0.14]' : 'bg-ct-surface-2'
               }`}>
-                <span className={`text-sm font-bold ${licenseResult.status === 'valid' ? 'text-green-700' : 'text-gray-500'}`}>B</span>
+                <span className={`text-sm font-bold ${licenseResult.status === 'valid' ? 'text-ct-teal' : 'text-ct-mute'}`}>B</span>
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-gray-900">License Check</h4>
-                <p className="text-sm text-gray-500">Verify your trade license number and upload a photo</p>
+                <h4 className="font-semibold text-ct-paper">License Check</h4>
+                <p className="text-sm text-ct-mute">Verify your trade license number and upload a photo</p>
               </div>
               {licenseResult.status === 'valid' && licenseExpiry && licenseFile && (
-                <CheckCircle2 className="w-5 h-5 text-green-500" />
+                <CheckCircle2 className="w-5 h-5 text-ct-teal" />
               )}
             </div>
           </div>
           <div className="p-5 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">License Number</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">License Number</label>
                 <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
                   <input
                     type="text"
                     value={licenseInput}
@@ -605,19 +605,19 @@ export default function VerificationCenter() {
                       setLicenseResult({ status: 'incomplete', licenseType: '', apiVerified: false, holderName: null, licenseClass: null });
                     }}
                     placeholder="e.g., ABC123456"
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                    className="w-full pl-10 pr-4 py-2.5 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">State</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">State</label>
                 <select
                   value={licenseState}
                   onChange={(e) => {
                     setLicenseState(e.target.value);
                     setLicenseResult({ status: 'incomplete', licenseType: '', apiVerified: false, holderName: null, licenseClass: null });
                   }}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                  className="w-full px-4 py-2.5 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm"
                 >
                   <option value="NSW">NSW</option>
                   <option value="VIC">VIC</option>
@@ -630,14 +630,14 @@ export default function VerificationCenter() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Expiry Date</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Expiry Date</label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
                   <input
                     type="date"
                     value={licenseExpiry}
                     onChange={(e) => setLicenseExpiry(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                    className="w-full pl-10 pr-4 py-2.5 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm"
                   />
                 </div>
               </div>
@@ -646,7 +646,7 @@ export default function VerificationCenter() {
             <button
               onClick={handleVerifyLicense}
               disabled={!licenseInput.trim() || !licenseExpiry || licenseResult.status === 'checking' || licenseResult.status === 'valid'}
-              className="px-5 py-2.5 bg-warm-500 text-white text-sm font-medium rounded-lg hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="px-5 py-2.5 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               {licenseResult.status === 'checking' ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Checking...</>
@@ -658,39 +658,39 @@ export default function VerificationCenter() {
             </button>
 
             {licenseResult.status === 'valid' && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+              <div className="p-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-ct-teal flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-green-800">{licenseResult.licenseType}</p>
+                    <p className="text-sm font-medium text-ct-teal">{licenseResult.licenseType}</p>
                     {licenseResult.apiVerified && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-secondary-100 text-secondary-700 text-xs font-medium rounded-full">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded-full">
                         <BadgeCheck className="w-3 h-3" />
                         Authority Verified
                       </span>
                     )}
                   </div>
                   {licenseResult.holderName && (
-                    <p className="text-xs text-green-700 mt-1">Holder: {licenseResult.holderName}</p>
+                    <p className="text-xs text-ct-teal mt-1">Holder: {licenseResult.holderName}</p>
                   )}
                   {licenseResult.licenseClass && (
-                    <p className="text-xs text-green-700 mt-0.5">Class: {licenseResult.licenseClass}</p>
+                    <p className="text-xs text-ct-teal mt-0.5">Class: {licenseResult.licenseClass}</p>
                   )}
                   {!licenseResult.apiVerified && (
-                    <p className="text-xs text-green-700 mt-1">Format validation only. Real-time verification with licensing authority not available.</p>
+                    <p className="text-xs text-ct-teal mt-1">Format validation only. Real-time verification with licensing authority not available.</p>
                   )}
                 </div>
               </div>
             )}
             {licenseResult.status === 'invalid' && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                <p className="text-sm text-red-700">{licenseResult.licenseType}</p>
+              <div className="p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm flex items-center gap-2">
+                <XCircle className="w-4 h-4 text-ct-rose flex-shrink-0" />
+                <p className="text-sm text-ct-rose">{licenseResult.licenseType}</p>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Photo of License Card</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Photo of License Card</label>
               <input
                 ref={licenseFileRef}
                 type="file"
@@ -700,25 +700,25 @@ export default function VerificationCenter() {
               />
               <button
                 onClick={() => licenseFileRef.current?.click()}
-                className="w-full border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:border-primary-300 hover:bg-primary-50/30 transition-colors"
+                className="w-full border-2 border-dashed border-ct-line rounded-ct-sm p-4 text-center hover:border-ct-teal/30 hover:bg-ct-surface-2/30 transition-colors"
               >
                 {licenseFile ? (
                   <div className="flex items-center justify-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                    <span className="text-sm font-medium text-gray-700">{licenseFile.name}</span>
+                    <CheckCircle2 className="w-5 h-5 text-ct-teal" />
+                    <span className="text-sm font-medium text-ct-mute-2">{licenseFile.name}</span>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center">
-                    <Upload className="w-6 h-6 text-gray-400 mb-1" />
-                    <span className="text-sm text-gray-500">Click to upload license photo</span>
+                    <Upload className="w-6 h-6 text-ct-mute mb-1" />
+                    <span className="text-sm text-ct-mute">Click to upload license photo</span>
                   </div>
                 )}
               </button>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Which trades does this license cover? <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-2">
+                Which trades does this license cover? <span className="text-ct-rose">*</span>
               </label>
               <div className="flex flex-wrap gap-2">
                 {tradeOptions.map((trade) => {
@@ -728,10 +728,10 @@ export default function VerificationCenter() {
                       key={trade}
                       type="button"
                       onClick={() => toggleLicenseTrade(trade)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                      className={`px-3 py-1.5 rounded-ct-sm text-sm font-medium border transition-all ${
                         selected
-                          ? 'bg-warm-500 text-white border-primary-600 shadow-sm'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-primary-300 hover:bg-primary-50'
+                          ? 'bg-ct-teal text-ct-ink border-ct-teal/30 shadow-sm'
+                          : 'bg-ct-surface text-ct-mute-2 border-ct-line hover:border-ct-teal/30 hover:bg-ct-surface-2'
                       }`}
                     >
                       {selected && <CheckCircle2 className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />}
@@ -741,7 +741,7 @@ export default function VerificationCenter() {
                 })}
               </div>
               {licenseTrades.length > 0 && (
-                <p className="text-xs text-primary-600 mt-2">
+                <p className="text-xs text-ct-mute-2 mt-2">
                   {licenseTrades.length} trade{licenseTrades.length !== 1 ? 's' : ''} selected
                 </p>
               )}
@@ -750,17 +750,17 @@ export default function VerificationCenter() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="p-5 border-b border-gray-100">
+      <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
+        <div className="p-5 border-b border-ct-line-soft">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-              identityStatus === 'verified' ? 'bg-green-100' : 'bg-gray-100'
+            <div className={`w-10 h-10 rounded-ct-sm flex items-center justify-center ${
+              identityStatus === 'verified' ? 'bg-ct-teal/[0.14]' : 'bg-ct-surface-2'
             }`}>
-              <span className={`text-sm font-bold ${identityStatus === 'verified' ? 'text-green-700' : 'text-gray-500'}`}>C</span>
+              <span className={`text-sm font-bold ${identityStatus === 'verified' ? 'text-ct-teal' : 'text-ct-mute'}`}>C</span>
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-gray-900">Identity Check</h4>
-              <p className="text-sm text-gray-500">
+              <h4 className="font-semibold text-ct-paper">Identity Check</h4>
+              <p className="text-sm text-ct-mute">
                 {identityStatus === 'verified'
                   ? 'Identity verified'
                   : identityStatus === 'processing'
@@ -768,27 +768,27 @@ export default function VerificationCenter() {
                     : 'Verify your identity via our secure partner'}
               </p>
             </div>
-            {identityStatus === 'verified' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+            {identityStatus === 'verified' && <CheckCircle2 className="w-5 h-5 text-ct-teal" />}
           </div>
         </div>
         <div className="p-5 space-y-4">
           {identityStatus === 'verified' ? (
-            <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <Shield className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 p-4 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm">
+              <Shield className="w-5 h-5 text-ct-teal flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-green-800">Identity Verified</p>
-                <p className="text-xs text-green-700 mt-1">
+                <p className="text-sm font-medium text-ct-teal">Identity Verified</p>
+                <p className="text-xs text-ct-teal mt-1">
                   Your profile now features a trusted verification badge.
                 </p>
               </div>
             </div>
           ) : identityStatus === 'processing' ? (
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-4 bg-warm-50 border border-warm-200 rounded-lg">
-                <Loader2 className="w-5 h-5 text-warm-600 flex-shrink-0 mt-0.5 animate-spin" />
+              <div className="flex items-start gap-3 p-4 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm">
+                <Loader2 className="w-5 h-5 text-ct-amber flex-shrink-0 mt-0.5 animate-spin" />
                 <div>
-                  <p className="text-sm font-medium text-warm-800">Securely verifying your identity...</p>
-                  <p className="text-xs text-warm-700 mt-1">
+                  <p className="text-sm font-medium text-ct-paper">Securely verifying your identity...</p>
+                  <p className="text-xs text-ct-amber mt-1">
                     Check your email if the verification is still pending. This page will update automatically.
                   </p>
                 </div>
@@ -796,7 +796,7 @@ export default function VerificationCenter() {
               <button
                 onClick={handleVerifyIdentity}
                 disabled={identityLoading}
-                className="w-full py-3 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-wait transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 bg-ct-surface text-ct-ink text-sm font-semibold rounded-ct-sm hover:bg-ct-surface disabled:opacity-50 disabled:cursor-wait transition-colors flex items-center justify-center gap-2"
               >
                 {identityLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Redirecting...</>
@@ -807,22 +807,22 @@ export default function VerificationCenter() {
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-4 bg-secondary-50 border border-secondary-200 rounded-lg">
-                <Shield className="w-5 h-5 text-secondary-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-secondary-800">
+              <div className="flex items-start gap-3 p-4 bg-ct-surface-2 border border-ct-line rounded-ct-sm">
+                <Shield className="w-5 h-5 text-ct-mute-2 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-ct-mute-2">
                   Your documents are processed securely and are <strong>never stored</strong> on ConnecTradie servers. Handled in accordance with Australian Privacy Principles.
                 </p>
               </div>
               {identityError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                  <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                  <p className="text-sm text-red-700">{identityError}</p>
+                <div className="p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm flex items-center gap-2">
+                  <XCircle className="w-4 h-4 text-ct-rose flex-shrink-0" />
+                  <p className="text-sm text-ct-rose">{identityError}</p>
                 </div>
               )}
               <button
                 onClick={handleVerifyIdentity}
                 disabled={identityLoading}
-                className="w-full py-3 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-wait transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 bg-ct-surface text-ct-ink text-sm font-semibold rounded-ct-sm hover:bg-ct-surface disabled:opacity-50 disabled:cursor-wait transition-colors flex items-center justify-center gap-2"
               >
                 {identityLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Redirecting to verification...</>
@@ -835,12 +835,12 @@ export default function VerificationCenter() {
         </div>
       </div>
 
-      <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
+      <div className="bg-ct-surface-2 rounded-ct-md border border-ct-line p-5">
         <div className="flex items-start gap-3 mb-4">
-          <AlertTriangle className="w-5 h-5 text-warm-500 flex-shrink-0 mt-0.5" />
+          <AlertTriangle className="w-5 h-5 text-ct-teal flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-gray-900">Verification Checklist</p>
-            <p className="text-sm text-gray-600 mt-1">All items must be completed before submitting.</p>
+            <p className="text-sm font-medium text-ct-paper">Verification Checklist</p>
+            <p className="text-sm text-ct-mute-2 mt-1">All items must be completed before submitting.</p>
           </div>
         </div>
         <div className="space-y-2">
@@ -858,11 +858,11 @@ export default function VerificationCenter() {
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-2">
               {item.done ? (
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <CheckCircle2 className="w-4 h-4 text-ct-teal" />
               ) : (
-                <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
+                <div className="w-4 h-4 rounded-full border-2 border-ct-line" />
               )}
-              <span className={`text-sm ${item.done ? 'text-green-700 font-medium' : 'text-gray-500'}`}>
+              <span className={`text-sm ${item.done ? 'text-ct-teal font-medium' : 'text-ct-mute'}`}>
                 {item.label}
               </span>
             </div>
@@ -871,16 +871,16 @@ export default function VerificationCenter() {
       </div>
 
       {submitError && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
-          <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-          <p className="text-sm text-red-700">{submitError}</p>
+        <div className="p-4 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md flex items-center gap-2">
+          <XCircle className="w-5 h-5 text-ct-rose flex-shrink-0" />
+          <p className="text-sm text-ct-rose">{submitError}</p>
         </div>
       )}
 
       <button
         onClick={handleSubmitForReview}
         disabled={!allStepsComplete || submitting}
-        className="w-full py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        className="w-full py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
       >
         {submitting ? (
           <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</>

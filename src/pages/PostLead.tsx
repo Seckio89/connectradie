@@ -931,7 +931,7 @@ export default function PostLead() {
                 }}
                 className={`relative group rounded-ct-lg border-2 p-5 text-left transition-all duration-200 ${
                   scheduleMode === 'urgent'
-                    ? 'border-ct-teal bg-gradient-to-br from-warm-50 to-warm-50 shadow-sm'
+                    ? 'border-ct-teal bg-gradient-to-br from-ct-teal/10 to-ct-teal/10 shadow-sm'
                     : 'border-ct-line bg-ct-surface hover:border-ct-amber/[0.34] hover:shadow-md'
                 }`}
               >
@@ -942,7 +942,7 @@ export default function PostLead() {
                 )}
                 <div className={`w-12 h-12 rounded-ct-md flex items-center justify-center mb-3 transition-colors ${
                   scheduleMode === 'urgent'
-                    ? 'bg-gradient-to-br from-warm-400 to-warm-400'
+                    ? 'bg-gradient-to-br from-ct-teal to-ct-teal'
                     : 'bg-ct-amber/[0.13] group-hover:bg-ct-amber/[0.13]'
                 }`}>
                   <Zap className={`w-6 h-6 ${scheduleMode === 'urgent' ? 'text-ct-ink' : 'text-ct-amber'}`} />
@@ -974,7 +974,7 @@ export default function PostLead() {
                 }}
                 className={`relative group rounded-ct-lg border-2 p-5 text-left transition-all duration-200 ${
                   scheduleMode === 'scheduled'
-                    ? 'border-ct-line bg-gradient-to-br from-secondary-50 to-secondary-50 shadow-sm'
+                    ? 'border-ct-line bg-gradient-to-br from-ct-surface-2 to-ct-surface-2 shadow-sm'
                     : 'border-ct-line bg-ct-surface hover:border-ct-line hover:shadow-md'
                 }`}
               >
@@ -985,7 +985,7 @@ export default function PostLead() {
                 )}
                 <div className={`w-12 h-12 rounded-ct-md flex items-center justify-center mb-3 transition-colors ${
                   scheduleMode === 'scheduled'
-                    ? 'bg-gradient-to-br from-secondary-400 to-secondary-400'
+                    ? 'bg-gradient-to-br from-ct-surface-2 to-ct-surface-2'
                     : 'bg-ct-surface-2 group-hover:bg-ct-surface-2'
                 }`}>
                   <CalendarDays className={`w-6 h-6 ${scheduleMode === 'scheduled' ? 'text-ct-ink' : 'text-ct-mute-2'}`} />
@@ -1002,7 +1002,7 @@ export default function PostLead() {
             </div>
 
             {scheduleMode === 'urgent' && !isUrgentAtCap && (
-              <div className="mt-4 bg-gradient-to-r from-warm-50 to-warm-50 border border-ct-amber/[0.34] rounded-ct-md p-4 flex items-start gap-3 animate-in fade-in duration-300">
+              <div className="mt-4 bg-gradient-to-r from-ct-teal/10 to-ct-teal/10 border border-ct-amber/[0.34] rounded-ct-md p-4 flex items-start gap-3 animate-in fade-in duration-300">
                 <Zap className="w-5 h-5 text-ct-amber flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-ct-paper">
                   <p className="font-medium mb-0.5">Flash Lead</p>
@@ -1281,9 +1281,9 @@ export default function PostLead() {
               disabled={submitting || !scheduleMode}
               className={`w-full py-3.5 font-semibold rounded-ct-md disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-lg ${
                 scheduleMode === 'urgent'
-                  ? 'bg-gradient-to-r from-warm-500 to-warm-500 text-ct-ink hover:from-warm-600 hover:to-warm-600 shadow-sm'
+                  ? 'bg-gradient-to-r from-ct-teal to-ct-teal text-ct-ink hover:from-ct-teal hover:to-ct-teal shadow-sm'
                   : scheduleMode === 'scheduled'
-                  ? 'bg-gradient-to-r from-secondary-400 to-secondary-400 text-ct-ink hover:from-secondary-500 hover:to-secondary-500 shadow-sm'
+                  ? 'bg-gradient-to-r from-ct-surface-2 to-ct-surface-2 text-ct-ink hover:from-ct-surface-2 hover:to-ct-surface-2 shadow-sm'
                   : 'bg-ct-line text-ct-mute'
               }`}
             >

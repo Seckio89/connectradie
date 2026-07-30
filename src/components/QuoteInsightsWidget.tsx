@@ -88,19 +88,19 @@ export default function QuoteInsightsWidget() {
 
   if (stats.totalQuotes === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 px-4 sm:px-6 py-4 sm:py-6">
+      <div className="bg-ct-surface rounded-ct-lg border border-ct-line px-4 sm:px-6 py-4 sm:py-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
-            <FileText className="w-5 h-5 text-secondary-600" />
+          <div className="w-10 h-10 bg-ct-surface-2 rounded-ct-md flex items-center justify-center">
+            <FileText className="w-5 h-5 text-ct-mute-2" />
           </div>
-          <h3 className="font-semibold text-gray-900">Quote Activity</h3>
+          <h3 className="font-semibold text-ct-paper">Quote Activity</h3>
         </div>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-ct-mute-2 mb-4">
           Start quoting on leads to see your performance insights here.
         </p>
         <Link
           to="/leads"
-          className="inline-flex items-center gap-2 text-sm font-medium text-secondary-600 hover:text-secondary-700"
+          className="inline-flex items-center gap-2 text-sm font-medium text-ct-mute-2 hover:text-ct-mute-2"
         >
           Browse Leads <ArrowRight className="w-4 h-4" />
         </Link>
@@ -109,17 +109,17 @@ export default function QuoteInsightsWidget() {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 px-4 sm:px-5 py-4">
+    <div className="bg-ct-surface rounded-ct-lg border border-ct-line px-4 sm:px-5 py-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-secondary-100 rounded-lg flex items-center justify-center">
-            <BarChart3 className="w-4 h-4 text-secondary-600" />
+          <div className="w-8 h-8 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center">
+            <BarChart3 className="w-4 h-4 text-ct-mute-2" />
           </div>
-          <h3 className="text-base font-semibold text-gray-900">Quote Insights</h3>
+          <h3 className="text-base font-semibold text-ct-paper">Quote Insights</h3>
         </div>
         <Link
           to="/leads?filter=quoted"
-          className="text-sm text-secondary-600 hover:text-secondary-700 font-medium"
+          className="text-sm text-ct-mute-2 hover:text-ct-mute-2 font-medium"
         >
           View All
         </Link>
@@ -127,60 +127,60 @@ export default function QuoteInsightsWidget() {
 
       {/* Two equal stat cards, tinted to differentiate at a glance. */}
       <div className="grid grid-cols-2 gap-2.5 mb-4">
-        <div className="p-3 bg-secondary-50 rounded-xl border border-secondary-100">
+        <div className="p-3 bg-ct-surface-2 rounded-ct-md border border-ct-line">
           <div className="flex items-center gap-1.5 mb-1">
-            <Target className="w-4 h-4 text-secondary-600" />
-            <span className="text-xs text-secondary-700 font-medium">Win Rate</span>
+            <Target className="w-4 h-4 text-ct-mute-2" />
+            <span className="text-xs text-ct-mute-2 font-medium">Win Rate</span>
           </div>
-          <p className="text-2xl font-bold text-secondary-800 tabular-nums">{stats.winRate}%</p>
+          <p className="text-2xl font-bold text-ct-mute-2 tabular-nums">{stats.winRate}%</p>
         </div>
-        <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+        <div className="p-3 bg-ct-teal/[0.14] rounded-ct-md border border-ct-teal/30">
           <div className="flex items-center gap-1.5 mb-1">
-            <DollarSign className="w-4 h-4 text-emerald-600" />
-            <span className="text-xs text-emerald-700 font-medium">Quoted Earnings</span>
+            <DollarSign className="w-4 h-4 text-ct-teal" />
+            <span className="text-xs text-ct-teal font-medium">Quoted Earnings</span>
           </div>
-          <p className="text-2xl font-bold text-emerald-800 tabular-nums">${stats.totalEarned.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-ct-teal tabular-nums">${stats.totalEarned.toLocaleString()}</p>
         </div>
       </div>
 
-      <div className="space-y-0 sm:space-y-3 divide-y sm:divide-y-0 divide-gray-100">
+      <div className="space-y-0 sm:space-y-3 divide-y sm:divide-y-0 divide-ct-line-soft">
         <div className="flex items-center justify-between text-sm py-2 sm:py-0">
-          <span className="flex items-center gap-2 text-gray-600">
-            <span className="w-2 h-2 rounded-full bg-warm-500 sm:hidden" />
-            <Clock className="w-4 h-4 text-warm-500 hidden sm:block" />
+          <span className="flex items-center gap-2 text-ct-mute-2">
+            <span className="w-2 h-2 rounded-full bg-ct-teal sm:hidden" />
+            <Clock className="w-4 h-4 text-ct-teal hidden sm:block" />
             Pending
           </span>
-          <span className="font-semibold text-gray-900">{stats.pendingQuotes}</span>
+          <span className="font-semibold text-ct-paper">{stats.pendingQuotes}</span>
         </div>
         <div className="flex items-center justify-between text-sm py-2 sm:py-0">
-          <span className="flex items-center gap-2 text-gray-600">
-            <span className="w-2 h-2 rounded-full bg-green-500 sm:hidden" />
-            <CheckCircle2 className="w-4 h-4 text-green-500 hidden sm:block" />
+          <span className="flex items-center gap-2 text-ct-mute-2">
+            <span className="w-2 h-2 rounded-full bg-ct-teal/[0.14]0 sm:hidden" />
+            <CheckCircle2 className="w-4 h-4 text-ct-teal hidden sm:block" />
             Won
           </span>
-          <span className="font-semibold text-green-700">{stats.wonQuotes}</span>
+          <span className="font-semibold text-ct-teal">{stats.wonQuotes}</span>
         </div>
         <div className="flex items-center justify-between text-sm py-2 sm:py-0">
-          <span className="flex items-center gap-2 text-gray-600">
-            <span className="w-2 h-2 rounded-full bg-red-400 sm:hidden" />
-            <XCircle className="w-4 h-4 text-red-400 hidden sm:block" />
+          <span className="flex items-center gap-2 text-ct-mute-2">
+            <span className="w-2 h-2 rounded-full bg-ct-rose sm:hidden" />
+            <XCircle className="w-4 h-4 text-ct-rose hidden sm:block" />
             Not Selected
           </span>
-          <span className="font-semibold text-gray-600">{stats.declinedQuotes}</span>
+          <span className="font-semibold text-ct-mute-2">{stats.declinedQuotes}</span>
         </div>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-gray-100">
+      <div className="mt-4 pt-3 border-t border-ct-line-soft">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-500">This Month</span>
-          <span className="font-semibold text-gray-900">
+          <span className="text-ct-mute">This Month</span>
+          <span className="font-semibold text-ct-paper">
             {stats.thisMonthQuotes} quoted, {stats.thisMonthWon} won
           </span>
         </div>
         {stats.avgQuoteAmount > 0 && (
           <div className="flex items-center justify-between text-sm mt-1">
-            <span className="text-gray-500">Avg. Quote</span>
-            <span className="font-semibold text-gray-900">${stats.avgQuoteAmount.toLocaleString()}</span>
+            <span className="text-ct-mute">Avg. Quote</span>
+            <span className="font-semibold text-ct-paper">${stats.avgQuoteAmount.toLocaleString()}</span>
           </div>
         )}
       </div>

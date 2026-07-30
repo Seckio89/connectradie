@@ -541,45 +541,45 @@ export default function Search() {
   const searchContent = (
     <div>
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Find a Tradie</h1>
-          <p className="text-sm text-gray-500 mt-1">Licensed professionals in your area, ready to quote</p>
+          <h1 className="text-2xl font-bold text-ct-paper tracking-tight">Find a Tradie</h1>
+          <p className="text-sm text-ct-mute mt-1">Licensed professionals in your area, ready to quote</p>
         </div>
 
         {/* Search & Filters Card */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm shadow-gray-200/60 p-5 sm:p-6 mb-6">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line-soft shadow-sm shadow-gray-200/60 p-5 sm:p-6 mb-6">
           {/* Main search input */}
           <div className="relative">
-            <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="What do you need done? (e.g., fix a leaking tap, install lights)"
-              className="w-full pl-11 pr-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all bg-white placeholder:text-gray-400"
+              className="w-full pl-11 pr-4 py-3 text-sm border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-all bg-ct-surface placeholder:text-ct-mute"
             />
           </div>
 
           {/* Advanced Search toggle */}
           <button
             onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
-            className="mt-3 text-primary-600 hover:text-primary-700 font-medium text-xs transition-colors flex items-center gap-1.5"
+            className="mt-3 text-ct-mute-2 hover:text-ct-mute-2 font-medium text-xs transition-colors flex items-center gap-1.5"
           >
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAdvancedSearch ? 'rotate-180' : ''}`} />
             Browse by trade
           </button>
 
           {showAdvancedSearch && (
-            <div className="mt-3 rounded-xl border border-gray-100 overflow-hidden">
+            <div className="mt-3 rounded-ct-md border border-ct-line-soft overflow-hidden">
               {/* Trade category grid */}
-              <div className="p-3 bg-gray-50/80 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+              <div className="p-3 bg-ct-surface-2/80 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
                 {Object.keys(advancedCategories).map((category) => (
                   <button
                     key={category}
                     onClick={() => setExpandedCategory(expandedCategory === category ? null : category)}
-                    className={`text-sm px-3 py-2.5 rounded-lg font-medium text-center transition-all ${
+                    className={`text-sm px-3 py-2.5 rounded-ct-sm font-medium text-center transition-all ${
                       expandedCategory === category
-                        ? 'bg-primary-600 text-white shadow-sm'
-                        : 'bg-white border border-gray-200 text-gray-700 hover:border-primary-300 hover:text-primary-600'
+                        ? 'bg-ct-teal text-ct-ink shadow-sm'
+                        : 'bg-ct-surface border border-ct-line text-ct-mute-2 hover:border-ct-teal/30 hover:text-ct-mute-2'
                     }`}
                   >
                     {tradeCategories.find((c) => c.value === category)?.label || category}
@@ -589,7 +589,7 @@ export default function Search() {
 
               {/* Selected category services */}
               {expandedCategory && advancedCategories[expandedCategory] && (
-                <div className="px-4 py-3 border-t border-gray-100 bg-white">
+                <div className="px-4 py-3 border-t border-ct-line-soft bg-ct-surface">
                   <div className="flex flex-wrap gap-1.5">
                     {advancedCategories[expandedCategory].map((service) => (
                       <button
@@ -600,7 +600,7 @@ export default function Search() {
                           setShowAdvancedSearch(false);
                           setExpandedCategory(null);
                         }}
-                        className="text-sm px-3 py-1.5 bg-gray-50 border border-gray-200 text-gray-600 rounded-lg hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50 transition-colors"
+                        className="text-sm px-3 py-1.5 bg-ct-surface-2 border border-ct-line text-ct-mute-2 rounded-ct-sm hover:border-ct-teal/30 hover:text-ct-mute-2 hover:bg-ct-surface-2 transition-colors"
                       >
                         {service}
                       </button>
@@ -633,16 +633,16 @@ export default function Search() {
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`px-5 py-2.5 text-sm font-medium rounded-xl transition-all flex items-center justify-center gap-2 min-h-[44px] ${
+              className={`px-5 py-2.5 text-sm font-medium rounded-ct-md transition-all flex items-center justify-center gap-2 min-h-[44px] ${
                 showFilters
-                  ? 'bg-primary-600 text-white shadow-sm'
-                  : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'
+                  ? 'bg-ct-teal text-ct-ink shadow-sm'
+                  : 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line hover:bg-ct-surface-2'
               }`}
             >
               <Filter className="w-4 h-4" />
               Filters
               {activeFilterCount > 0 && (
-                <span className="w-5 h-5 rounded-full bg-warm-500 text-white text-xs flex items-center justify-center font-semibold">
+                <span className="w-5 h-5 rounded-full bg-ct-teal text-ct-ink text-xs flex items-center justify-center font-semibold">
                   {activeFilterCount}
                 </span>
               )}
@@ -651,25 +651,25 @@ export default function Search() {
 
           {/* Expanded filter panel */}
           {showFilters && (
-            <div className="mt-5 pt-5 border-t border-gray-100 space-y-5">
+            <div className="mt-5 pt-5 border-t border-ct-line-soft space-y-5">
               <div>
-                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2.5">Minimum Rating</label>
+                <label className="block text-xs font-medium text-ct-mute uppercase tracking-wider mb-2.5">Minimum Rating</label>
                 <div className="flex gap-2">
                   {[0, 3, 4, 5].map((rating) => (
                     <button
                       key={rating}
                       onClick={() => setRatingFilter(rating)}
-                      className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-all min-h-[40px] ${
+                      className={`flex-1 px-3 py-2 rounded-ct-sm border text-sm transition-all min-h-[40px] ${
                         ratingFilter === rating
-                          ? 'border-primary-500 bg-primary-50 text-primary-700 font-medium shadow-sm'
-                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                          ? 'border-ct-teal bg-ct-surface-2 text-ct-mute-2 font-medium shadow-sm'
+                          : 'border-ct-line bg-ct-surface text-ct-mute-2 hover:border-ct-line'
                       }`}
                     >
                       {rating === 0 ? (
                         'All'
                       ) : (
                         <div className="flex items-center justify-center gap-1">
-                          <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                          <Star className="w-3.5 h-3.5 fill-yellow-400 text-ct-amber" />
                           <span>{rating}+</span>
                         </div>
                       )}
@@ -679,16 +679,16 @@ export default function Search() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2.5">Contractor Type</label>
+                <label className="block text-xs font-medium text-ct-mute uppercase tracking-wider mb-2.5">Contractor Type</label>
                 <div className="flex gap-2">
                   {['', 'Solo', 'Company', 'Labour Hire'].map((type) => (
                     <button
                       key={type || 'all'}
                       onClick={() => setContractorTypeFilter(type)}
-                      className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-all min-h-[40px] ${
+                      className={`flex-1 px-3 py-2 rounded-ct-sm border text-sm transition-all min-h-[40px] ${
                         contractorTypeFilter === type
-                          ? 'border-primary-500 bg-primary-50 text-primary-700 font-medium shadow-sm'
-                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                          ? 'border-ct-teal bg-ct-surface-2 text-ct-mute-2 font-medium shadow-sm'
+                          : 'border-ct-line bg-ct-surface text-ct-mute-2 hover:border-ct-line'
                       }`}
                     >
                       {type || 'All'}
@@ -698,13 +698,13 @@ export default function Search() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2.5">Other</label>
+                <label className="block text-xs font-medium text-ct-mute uppercase tracking-wider mb-2.5">Other</label>
                 <button
                   onClick={() => setEmergencyFilter(!emergencyFilter)}
-                  className={`px-4 py-2 rounded-lg border text-sm transition-all min-h-[40px] flex items-center gap-2 ${
+                  className={`px-4 py-2 rounded-ct-sm border text-sm transition-all min-h-[40px] flex items-center gap-2 ${
                     emergencyFilter
-                      ? 'border-red-500 bg-red-50 text-red-700 font-medium shadow-sm'
-                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                      ? 'border-ct-rose bg-ct-rose/[0.13] text-ct-rose font-medium shadow-sm'
+                      : 'border-ct-line bg-ct-surface text-ct-mute-2 hover:border-ct-line'
                   }`}
                 >
                   <Zap className="w-3.5 h-3.5" />
@@ -715,14 +715,14 @@ export default function Search() {
               <div className="flex gap-3 pt-1">
                 <button
                   onClick={clearFilters}
-                  className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 min-h-[40px]"
+                  className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors flex items-center justify-center gap-2 min-h-[40px]"
                 >
                   <X className="w-3.5 h-3.5" />
                   Clear All
                 </button>
                 <button
                   onClick={() => { setShowFilters(false); showToast('Filters applied'); }}
-                  className="flex-1 px-4 py-2.5 bg-warm-500 text-white text-sm font-medium rounded-xl hover:bg-warm-600 transition-colors min-h-[40px] shadow-sm shadow-warm-500/20"
+                  className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-md hover:brightness-110 transition-colors min-h-[40px] shadow-sm shadow-warm-500/20"
                 >
                   Apply Filters
                 </button>
@@ -737,7 +737,7 @@ export default function Search() {
             <div className="flex items-center justify-between mb-3">
               <button
                 onClick={() => setShowSavedSearches(!showSavedSearches)}
-                className="text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-2 transition-colors"
+                className="text-sm font-medium text-ct-mute-2 hover:text-ct-paper flex items-center gap-2 transition-colors"
               >
                 <Bookmark className="w-4 h-4" />
                 Saved Searches ({savedSearches.length})
@@ -746,7 +746,7 @@ export default function Search() {
               {(tradeFilter || postcodeFilter || ratingFilter > 0 || contractorTypeFilter) && (
                 <button
                   onClick={() => setShowSaveForm(true)}
-                  className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1.5 transition-colors"
+                  className="text-sm font-medium text-ct-mute-2 hover:text-ct-mute-2 flex items-center gap-1.5 transition-colors"
                 >
                   <Bookmark className="w-3.5 h-3.5" />
                   Save Current Search
@@ -755,15 +755,15 @@ export default function Search() {
             </div>
 
             {showSaveForm && (
-              <div className="bg-white rounded-xl border border-gray-200 p-4 mb-3 flex gap-3 items-end">
+              <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4 mb-3 flex gap-3 items-end">
                 <div className="flex-1">
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Search Name</label>
+                  <label className="block text-xs font-medium text-ct-mute mb-1.5">Search Name</label>
                   <input
                     type="text"
                     value={saveSearchName}
                     onChange={(e) => setSaveSearchName(e.target.value)}
                     placeholder="e.g., Plumber in Sydney"
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 text-sm border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                   />
                 </div>
                 <button
@@ -784,13 +784,13 @@ export default function Search() {
                     }
                   }}
                   disabled={!saveSearchName.trim()}
-                  className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-50 transition-colors"
                 >
                   Save
                 </button>
                 <button
                   onClick={() => { setShowSaveForm(false); setSaveSearchName(''); }}
-                  className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm transition-colors"
+                  className="px-3 py-2 text-ct-mute hover:text-ct-mute-2 text-sm transition-colors"
                 >
                   Cancel
                 </button>
@@ -798,7 +798,7 @@ export default function Search() {
             )}
 
             {showSavedSearches && savedSearches.length > 0 && (
-              <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+              <div className="bg-ct-surface rounded-ct-lg border border-ct-line divide-y divide-ct-line-soft">
                 {savedSearches.map((s) => (
                   <div key={s.id} className="flex items-center justify-between px-4 py-3">
                     <button
@@ -815,8 +815,8 @@ export default function Search() {
                       }}
                       className="text-left flex-1 min-w-0"
                     >
-                      <p className="text-sm font-medium text-gray-900 truncate">{s.name}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-sm font-medium text-ct-paper truncate">{s.name}</p>
+                      <p className="text-xs text-ct-mute mt-0.5">
                         {[
                           s.filters.trade_category && tradeCategories.find(c => c.value === s.filters.trade_category)?.label,
                           s.filters.postcode,
@@ -835,7 +835,7 @@ export default function Search() {
                             showToast('Failed to update alerts');
                           }
                         }}
-                        className={`p-2 rounded-lg transition-colors ${s.alert_enabled ? 'text-primary-600 bg-primary-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
+                        className={`p-2 rounded-ct-sm transition-colors ${s.alert_enabled ? 'text-ct-mute-2 bg-ct-surface-2' : 'text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2'}`}
                         title={s.alert_enabled ? 'Disable alerts' : 'Enable alerts'}
                       >
                         {s.alert_enabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
@@ -850,7 +850,7 @@ export default function Search() {
                             showToast('Failed to delete');
                           }
                         }}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-ct-mute hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors"
                         title="Delete saved search"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -862,9 +862,9 @@ export default function Search() {
             )}
 
             {showSavedSearches && savedSearches.length === 0 && (
-              <div className="bg-gray-50 rounded-xl border border-gray-100 p-6 text-center">
-                <Bookmark className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">No saved searches yet. Apply filters and save your search to quickly access it later.</p>
+              <div className="bg-ct-surface-2 rounded-ct-md border border-ct-line-soft p-6 text-center">
+                <Bookmark className="w-8 h-8 text-ct-mute mx-auto mb-2" />
+                <p className="text-sm text-ct-mute">No saved searches yet. Apply filters and save your search to quickly access it later.</p>
               </div>
             )}
           </div>
@@ -873,19 +873,19 @@ export default function Search() {
         {/* Results */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 className="w-7 h-7 text-primary-600 animate-spin" />
-            <p className="text-sm text-gray-400">Searching tradies...</p>
+            <Loader2 className="w-7 h-7 text-ct-mute-2 animate-spin" />
+            <p className="text-sm text-ct-mute">Searching tradies...</p>
           </div>
         ) : filteredTradies.length === 0 ? (
           <div className="text-center py-20">
-            <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <SearchIcon className="w-6 h-6 text-gray-400" />
+            <div className="w-14 h-14 bg-ct-surface-2 rounded-ct-lg flex items-center justify-center mx-auto mb-4">
+              <SearchIcon className="w-6 h-6 text-ct-mute" />
             </div>
-            <h3 className="text-base font-semibold text-gray-900 mb-1">No tradies found</h3>
-            <p className="text-sm text-gray-500 mb-6">Try adjusting your search or filters</p>
+            <h3 className="text-base font-semibold text-ct-paper mb-1">No tradies found</h3>
+            <p className="text-sm text-ct-mute mb-6">Try adjusting your search or filters</p>
             <Link
               to="/post-lead"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors shadow-sm shadow-warm-500/20"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors shadow-sm shadow-warm-500/20"
             >
               <Briefcase className="w-5 h-5" />
               Post a Job Instead
@@ -894,18 +894,18 @@ export default function Search() {
         ) : (
           <>
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-gray-500 font-medium">{filteredTradies.length} {filteredTradies.length === 1 ? 'tradie' : 'tradies'} found</p>
-              <div className="flex bg-gray-100 rounded-lg p-0.5">
+              <p className="text-sm text-ct-mute font-medium">{filteredTradies.length} {filteredTradies.length === 1 ? 'tradie' : 'tradies'} found</p>
+              <div className="flex bg-ct-surface-2 rounded-ct-sm p-0.5">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${viewMode === 'grid' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${viewMode === 'grid' ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute hover:text-ct-mute-2'}`}
                 >
                   <List className="w-3.5 h-3.5" />
                   List
                 </button>
                 <button
                   onClick={() => setViewMode('map')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${viewMode === 'map' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${viewMode === 'map' ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute hover:text-ct-mute-2'}`}
                 >
                   <MapIcon className="w-3.5 h-3.5" />
                   Map
@@ -933,7 +933,7 @@ export default function Search() {
                     <button
                       onClick={loadMore}
                       disabled={loading}
-                      className="px-8 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 min-h-[44px] shadow-sm"
+                      className="px-8 py-2.5 bg-ct-surface border border-ct-line text-ct-mute-2 text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 min-h-[44px] shadow-sm"
                     >
                       {loading ? 'Loading...' : 'Load More'}
                     </button>
@@ -961,25 +961,25 @@ export default function Search() {
         className="fixed inset-0 bg-black/50"
         onClick={() => setShowViewLimitModal(false)}
       />
-      <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-8 text-center">
-        <div className="w-16 h-16 bg-warm-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Eye className="w-8 h-8 text-warm-600" />
+      <div className="relative bg-ct-surface rounded-ct-lg shadow-xl max-w-md w-full p-8 text-center">
+        <div className="w-16 h-16 bg-ct-amber/[0.13] rounded-full flex items-center justify-center mx-auto mb-6">
+          <Eye className="w-8 h-8 text-ct-amber" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-3">Want Unlimited Access?</h2>
-        <p className="text-gray-600 mb-6">
+        <h2 className="text-2xl font-bold text-ct-paper mb-3">Want Unlimited Access?</h2>
+        <p className="text-ct-mute-2 mb-6">
           You've viewed {DAILY_VIEW_LIMIT_VALUE} profiles today. Post what you need and let verified tradies come to you — it's free.
         </p>
         <div className="flex flex-col gap-3">
           <Link
             to="/post-lead"
-            className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
           >
             <Briefcase className="w-5 h-5" />
             Post What You Need
           </Link>
           <button
             onClick={() => setShowViewLimitModal(false)}
-            className="text-sm text-gray-500 hover:text-gray-700"
+            className="text-sm text-ct-mute hover:text-ct-mute-2"
           >
             Continue browsing
           </button>
@@ -994,31 +994,31 @@ export default function Search() {
         className="fixed inset-0 bg-black/50"
         onClick={() => setShowAuthPrompt(false)}
       />
-      <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-8 text-center">
-        <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <LogIn className="w-8 h-8 text-primary-600" />
+      <div className="relative bg-ct-surface rounded-ct-lg shadow-xl max-w-md w-full p-8 text-center">
+        <div className="w-16 h-16 bg-ct-surface-2 rounded-full flex items-center justify-center mx-auto mb-6">
+          <LogIn className="w-8 h-8 text-ct-mute-2" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-3">One Step Away</h2>
-        <p className="text-gray-600 mb-8">
+        <h2 className="text-2xl font-bold text-ct-paper mb-3">One Step Away</h2>
+        <p className="text-ct-mute-2 mb-8">
           Create a free account to message tradies, check their availability, and get quotes — takes 30 seconds.
         </p>
         <div className="flex flex-col gap-3">
           <Link
             to="/register"
-            className="w-full px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+            className="w-full px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
           >
             Create Free Account
           </Link>
           <Link
             to="/login"
-            className="w-full px-6 py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
+            className="w-full px-6 py-3 border-2 border-ct-line text-ct-mute-2 font-semibold rounded-ct-md hover:bg-ct-surface-2 transition-colors"
           >
             Sign In
           </Link>
         </div>
         <button
           onClick={() => setShowAuthPrompt(false)}
-          className="mt-6 text-sm text-gray-500 hover:text-gray-700"
+          className="mt-6 text-sm text-ct-mute hover:text-ct-mute-2"
         >
           Continue browsing
         </button>
@@ -1032,20 +1032,20 @@ export default function Search() {
         className="fixed inset-0 bg-black/50"
         onClick={() => setQuoteRequestTradie(null)}
       />
-      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-ct-surface rounded-t-2xl sm:rounded-ct-lg shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
         <button
           onClick={() => setQuoteRequestTradie(null)}
-          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+          className="absolute top-4 right-4 p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm"
         >
           <X className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-            <FileText className="w-5 h-5 text-emerald-600" />
+          <div className="w-10 h-10 bg-ct-teal/[0.14] rounded-full flex items-center justify-center">
+            <FileText className="w-5 h-5 text-ct-teal" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Request Quote</h2>
-            <p className="text-sm text-gray-500">
+            <h2 className="text-lg font-bold text-ct-paper">Request Quote</h2>
+            <p className="text-sm text-ct-mute">
               from {quoteRequestTradie.tradie_details?.business_name || quoteRequestTradie.full_name}
             </p>
           </div>
@@ -1053,11 +1053,11 @@ export default function Search() {
 
         {loadingJobs ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+            <Loader2 className="w-6 h-6 text-ct-teal animate-spin" />
           </div>
         ) : clientPendingJobs.length > 0 ? (
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-3">Select a job to invite them to quote on:</p>
+            <p className="text-sm font-medium text-ct-mute-2 mb-3">Select a job to invite them to quote on:</p>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {clientPendingJobs.map(job => {
                 const categoryMatch = job.description?.match(/^\[([^\]]+)\]/);
@@ -1068,14 +1068,14 @@ export default function Search() {
                     key={job.id}
                     onClick={() => sendQuoteInvitation(job.id)}
                     disabled={sendingInvite}
-                    className="w-full text-left p-3 rounded-xl border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/50 transition-colors disabled:opacity-50"
+                    className="w-full text-left p-3 rounded-ct-md border border-ct-line hover:border-ct-teal/30 hover:bg-ct-teal/[0.14]/50 transition-colors disabled:opacity-50"
                   >
-                    <p className="text-sm font-semibold text-gray-900 capitalize truncate">
+                    <p className="text-sm font-semibold text-ct-paper capitalize truncate">
                       {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
                     </p>
-                    <p className="text-xs text-gray-500 truncate mt-0.5">{desc}</p>
+                    <p className="text-xs text-ct-mute truncate mt-0.5">{desc}</p>
                     {job.location_address && (
-                      <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                      <p className="text-xs text-ct-mute mt-1 flex items-center gap-1">
                         <MapPinIcon className="w-3 h-3" />
                         {job.location_address.split(',')[0]}
                       </p>
@@ -1084,10 +1084,10 @@ export default function Search() {
                 );
               })}
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="mt-4 pt-4 border-t border-ct-line-soft">
               <button
                 onClick={() => { setQuoteRequestTradie(null); navigate(`/post-lead?trade=${quoteRequestTradie.tradie_details?.trade_type || ''}&tradie=${quoteRequestTradie.id}`); }}
-                className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-ct-line text-ct-mute-2 text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Post a New Job Instead
@@ -1096,10 +1096,10 @@ export default function Search() {
           </div>
         ) : (
           <div className="text-center py-4">
-            <p className="text-sm text-gray-600 mb-4">You don't have any open jobs yet. Post one and this tradie will be invited to quote.</p>
+            <p className="text-sm text-ct-mute-2 mb-4">You don't have any open jobs yet. Post one and this tradie will be invited to quote.</p>
             <button
               onClick={() => { setQuoteRequestTradie(null); navigate(`/post-lead?trade=${quoteRequestTradie.tradie_details?.trade_type || ''}&tradie=${quoteRequestTradie.id}`); }}
-              className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-emerald-500 text-white text-sm font-medium rounded-xl hover:bg-emerald-600 transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-md hover:brightness-110 transition-colors"
             >
               <Plus className="w-4 h-4" />
               Post a Job
@@ -1117,31 +1117,31 @@ export default function Search() {
         {isClient && !isEngaged && (
           <div className="mb-4">
             {remainingViews === DAILY_VIEW_LIMIT_VALUE ? (
-              <div className="flex items-center gap-3 px-4 py-3 bg-secondary-50 border border-secondary-200 rounded-xl">
-                <Eye className="w-5 h-5 text-secondary-600 flex-shrink-0" />
-                <p className="text-sm text-secondary-800">
+              <div className="flex items-center gap-3 px-4 py-3 bg-ct-surface-2 border border-ct-line rounded-ct-md">
+                <Eye className="w-5 h-5 text-ct-mute-2 flex-shrink-0" />
+                <p className="text-sm text-ct-mute-2">
                   Free accounts can view <span className="font-semibold">{DAILY_VIEW_LIMIT_VALUE}</span> tradie profiles per day.{' '}
-                  <Link to="/post-lead" className="font-semibold underline hover:text-secondary-900">Post a job</Link> to unlock unlimited access.
+                  <Link to="/post-lead" className="font-semibold underline hover:text-ct-paper">Post a job</Link> to unlock unlimited access.
                 </p>
               </div>
             ) : remainingViews > 0 && remainingViews <= 3 ? (
-              <div className="flex items-center gap-3 px-4 py-3 bg-warm-50 border border-warm-200 rounded-xl">
-                <Eye className="w-5 h-5 text-warm-600 flex-shrink-0" />
-                <p className="text-sm text-warm-800">
+              <div className="flex items-center gap-3 px-4 py-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md">
+                <Eye className="w-5 h-5 text-ct-amber flex-shrink-0" />
+                <p className="text-sm text-ct-paper">
                   <span className="font-semibold">{remainingViews}</span> free profile view{remainingViews !== 1 ? 's' : ''} left today.{' '}
-                  <Link to="/post-lead" className="font-semibold underline hover:text-warm-900">Post your job</Link> and let tradies come to you — free and unlimited.
+                  <Link to="/post-lead" className="font-semibold underline hover:text-ct-teal">Post your job</Link> and let tradies come to you — free and unlimited.
                 </p>
               </div>
             ) : remainingViews <= 0 ? (
-              <div className="bg-gradient-to-r from-warm-50 to-primary-50 border border-warm-200 rounded-2xl p-6 text-center">
-                <Crown className="w-10 h-10 text-warm-500 mx-auto mb-3" />
-                <h3 className="text-lg font-bold text-gray-900 mb-2">You've reached your daily view limit</h3>
-                <p className="text-gray-600 mb-4 max-w-md mx-auto">
+              <div className="bg-gradient-to-r from-ct-teal to-ct-teal border border-ct-amber/[0.34] rounded-ct-lg p-6 text-center">
+                <Crown className="w-10 h-10 text-ct-teal mx-auto mb-3" />
+                <h3 className="text-lg font-bold text-ct-paper mb-2">You've reached your daily view limit</h3>
+                <p className="text-ct-mute-2 mb-4 max-w-md mx-auto">
                   Free accounts can view {DAILY_VIEW_LIMIT_VALUE} tradie profiles per day. Upgrade to Pro for unlimited views, verified badge, and priority search.
                 </p>
                 <div className="flex items-center justify-center gap-4">
-                  <span className="text-2xl font-bold text-warm-600">${TIER_PRICING.pro.monthly}/mo</span>
-                  <button onClick={() => setShowSubscriptionModal(true)} className="px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors shadow-sm">
+                  <span className="text-2xl font-bold text-ct-amber">${TIER_PRICING.pro.monthly}/mo</span>
+                  <button onClick={() => setShowSubscriptionModal(true)} className="px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors shadow-sm">
                     Upgrade to Pro
                   </button>
                 </div>
@@ -1166,7 +1166,7 @@ export default function Search() {
         {viewLimitModal}
         {quoteRequestModal}
         {toast.show && (
-          <div className={`fixed bottom-20 sm:bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm ${toast.isError ? 'bg-red-600' : 'bg-green-600'} text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-slide-up`}>
+          <div className={`fixed bottom-20 sm:bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm ${toast.isError ? 'bg-ct-rose' : 'bg-ct-teal'} text-ct-ink px-6 py-3 rounded-ct-md shadow-lg z-50 animate-slide-up`}>
             {toast.message}
           </div>
         )}
@@ -1175,7 +1175,7 @@ export default function Search() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-ct-surface">
       <SEO
         title={seoTitle}
         description={seoDescription}
@@ -1194,25 +1194,25 @@ export default function Search() {
           }))
         }}
       />
-      <header className="sticky top-0 z-30 bg-white border-b border-gray-100">
+      <header className="sticky top-0 z-30 bg-ct-surface border-b border-ct-line-soft">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center">
               <span className="text-2xl font-extrabold tracking-tight text-black">
-                Connec<span className="text-warm-500">Tradie</span>
+                Connec<span className="text-ct-teal">Tradie</span>
               </span>
             </Link>
 
             <div className="flex items-center gap-3">
               <Link
                 to="/login"
-                className="px-4 py-2 text-gray-700 font-medium hover:text-gray-900 transition-colors"
+                className="px-4 py-2 text-ct-mute-2 font-medium hover:text-ct-paper transition-colors"
               >
                 Sign In
               </Link>
               <Link
                 to="/register"
-                className="px-4 py-2 bg-warm-500 text-white font-medium rounded-lg hover:bg-warm-600 transition-colors"
+                className="px-4 py-2 bg-ct-teal text-ct-ink font-medium rounded-ct-sm hover:brightness-110 transition-colors"
               >
                 Get Started
               </Link>
@@ -1244,14 +1244,14 @@ function MapView({
 
   if (!isLoaded) {
     return (
-      <div className="flex items-center justify-center rounded-2xl border border-gray-200 bg-gray-50" style={{ height: 500 }}>
-        <Loader2 className="w-6 h-6 text-primary-600 animate-spin" />
+      <div className="flex items-center justify-center rounded-ct-lg border border-ct-line bg-ct-surface-2" style={{ height: 500 }}>
+        <Loader2 className="w-6 h-6 text-ct-mute-2 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-gray-200" style={{ height: 500 }}>
+    <div className="rounded-ct-lg overflow-hidden border border-ct-line" style={{ height: 500 }}>
       <GoogleMap
         center={{ lat: -33.8688, lng: 151.2093 }}
         zoom={10}

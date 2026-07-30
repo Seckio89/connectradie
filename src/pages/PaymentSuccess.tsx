@@ -47,20 +47,20 @@ export default function PaymentSuccess() {
   }, [paymentId]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-sm w-full text-center">
-        <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <CheckCircle2 className="w-7 h-7 text-emerald-600" />
+    <div className="min-h-screen bg-ct-surface-2 flex items-center justify-center px-4">
+      <div className="bg-ct-surface rounded-ct-md shadow-sm border border-ct-line p-8 max-w-sm w-full text-center">
+        <div className="w-14 h-14 bg-ct-teal/[0.14] rounded-full flex items-center justify-center mx-auto mb-4">
+          <CheckCircle2 className="w-7 h-7 text-ct-teal" />
         </div>
-        <h1 className="text-xl font-bold text-gray-900 mb-2">Payment successful</h1>
-        <p className="text-sm text-gray-600 mb-4">
+        <h1 className="text-xl font-bold text-ct-paper mb-2">Payment successful</h1>
+        <p className="text-sm text-ct-mute-2 mb-4">
           {verifying
             ? 'Confirming your payment…'
             : 'Your payment has been processed. Taking you back to your dashboard…'}
         </p>
         <button
           onClick={goToDashboard}
-          className="mt-2 inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-colors"
+          className="mt-2 inline-flex items-center justify-center gap-2 px-4 py-2 bg-ct-teal hover:brightness-110 text-ct-ink text-sm font-medium rounded-ct-sm transition-colors"
         >
           {verifying && <Loader2 className="w-4 h-4 animate-spin" />}
           Back to dashboard

@@ -26,11 +26,11 @@ export interface BadgeStyle {
   border: string;
 }
 
-const BADGE_AMBER: BadgeStyle = { bg: 'bg-warm-50', text: 'text-warm-700', border: 'border-warm-200' };
-const BADGE_SECONDARY: BadgeStyle = { bg: 'bg-secondary-50', text: 'text-secondary-700', border: 'border-secondary-200' };
-const BADGE_EMERALD: BadgeStyle = { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' };
-const BADGE_GRAY: BadgeStyle = { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' };
-const BADGE_RED: BadgeStyle = { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' };
+const BADGE_AMBER: BadgeStyle = { bg: 'bg-ct-amber/[0.13]', text: 'text-ct-amber', border: 'border-ct-amber/[0.34]' };
+const BADGE_SECONDARY: BadgeStyle = { bg: 'bg-ct-surface-2', text: 'text-ct-mute-2', border: 'border-ct-line' };
+const BADGE_EMERALD: BadgeStyle = { bg: 'bg-ct-teal/[0.14]', text: 'text-ct-teal', border: 'border-ct-teal/30' };
+const BADGE_GRAY: BadgeStyle = { bg: 'bg-ct-surface-2', text: 'text-ct-mute-2', border: 'border-ct-line' };
+const BADGE_RED: BadgeStyle = { bg: 'bg-ct-rose/[0.13]', text: 'text-ct-rose', border: 'border-ct-rose/[0.34]' };
 
 /**
  * Visual badge style per status. Role-independent — the same status looks the

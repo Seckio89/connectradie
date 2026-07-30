@@ -116,29 +116,29 @@ export default function ReviewModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50 modal-sheet-overlay">
-      <div className="bg-white rounded-t-2xl sm:rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto modal-sheet pb-[env(safe-area-inset-bottom)] sm:pb-0">
+      <div className="bg-ct-surface rounded-t-2xl sm:rounded-ct-md max-w-md w-full max-h-[90vh] overflow-y-auto modal-sheet pb-[env(safe-area-inset-bottom)] sm:pb-0">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
-          <h2 className="text-lg font-bold text-gray-900">Rate Your Experience</h2>
+          <h2 className="text-lg font-bold text-ct-paper">Rate Your Experience</h2>
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1.5 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="h-px bg-gray-100 mx-6" />
+        <div className="h-px bg-ct-surface-2 mx-6" />
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
           {/* Tradie name */}
-          <p className="text-sm text-gray-600">
-            How was your experience with <span className="font-semibold text-gray-900">{tradieName}</span>?
+          <p className="text-sm text-ct-mute-2">
+            How was your experience with <span className="font-semibold text-ct-paper">{tradieName}</span>?
           </p>
 
           {/* Star Rating */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-2">Rating</label>
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
@@ -152,22 +152,22 @@ export default function ReviewModal({
                   <Star
                     className={`w-8 h-8 transition-colors ${
                       star <= displayRating
-                        ? 'fill-yellow-400 text-yellow-400'
-                        : 'text-gray-300'
+                        ? 'fill-yellow-400 text-ct-amber'
+                        : 'text-ct-mute'
                     }`}
                   />
                 </button>
               ))}
               {displayRating > 0 && (
-                <span className="ml-2 text-sm font-medium text-gray-600">{RATING_LABELS[displayRating]}</span>
+                <span className="ml-2 text-sm font-medium text-ct-mute-2">{RATING_LABELS[displayRating]}</span>
               )}
             </div>
           </div>
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              What stood out? <span className="text-gray-400 font-normal">(optional)</span>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-2">
+              What stood out? <span className="text-ct-mute font-normal">(optional)</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {REVIEW_TAGS.map(tag => {
@@ -179,8 +179,8 @@ export default function ReviewModal({
                     onClick={() => toggleTag(tag.key)}
                     className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                       isSelected
-                        ? 'bg-warm-50 text-warm-700 border-warm-300'
-                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700'
+                        ? 'bg-ct-amber/[0.13] text-ct-amber border-ct-teal/30'
+                        : 'bg-ct-surface text-ct-mute border-ct-line hover:border-ct-line hover:text-ct-mute-2'
                     }`}
                   >
                     {isSelected && <span className="mr-1">&#10003;</span>}
@@ -193,8 +193,8 @@ export default function ReviewModal({
 
           {/* Comment */}
           <div>
-            <label htmlFor="review-comment" className="block text-sm font-medium text-gray-700 mb-2">
-              Review <span className="text-gray-400 font-normal">(optional)</span>
+            <label htmlFor="review-comment" className="block text-sm font-medium text-ct-mute-2 mb-2">
+              Review <span className="text-ct-mute font-normal">(optional)</span>
             </label>
             <textarea
               {...proseInputProps}
@@ -203,14 +203,14 @@ export default function ReviewModal({
               onChange={(e) => setComment(e.target.value)}
               rows={3}
               maxLength={1000}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-warm-500 focus:border-transparent resize-none placeholder-gray-400"
+              className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal resize-none placeholder-ct-placeholder"
               placeholder="Tell others about your experience..."
             />
-            <p className="text-xs text-gray-400 mt-1 text-right">{comment.length}/1000</p>
+            <p className="text-xs text-ct-mute mt-1 text-right">{comment.length}/1000</p>
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+            <div className="p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm text-ct-rose text-sm">
               {error}
             </div>
           )}
@@ -220,14 +220,14 @@ export default function ReviewModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || rating === 0}
-              className="flex-1 px-4 py-2.5 bg-warm-500 text-white rounded-lg text-sm font-semibold hover:bg-warm-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {isSubmitting ? 'Submitting...' : 'Submit Review'}

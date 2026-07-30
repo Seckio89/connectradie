@@ -38,7 +38,7 @@ export default function LicenseCard({
   const renderStatusBadge = () => {
     if (isExpired) {
       return (
-        <div className="flex items-center gap-1 bg-red-600 px-3 py-1 rounded-full text-xs font-medium">
+        <div className="flex items-center gap-1 bg-ct-rose px-3 py-1 rounded-full text-xs font-medium">
           <AlertCircle className="h-3 w-3" />
           <span>Expired</span>
         </div>
@@ -48,28 +48,28 @@ export default function LicenseCard({
     switch (effectiveStatus) {
       case 'verified':
         return (
-          <div className="flex items-center gap-1 bg-green-600 px-3 py-1 rounded-full text-xs font-medium">
+          <div className="flex items-center gap-1 bg-ct-teal px-3 py-1 rounded-full text-xs font-medium">
             <CheckCircle className="h-3 w-3" />
             <span>Verified</span>
           </div>
         );
       case 'rejected':
         return (
-          <div className="flex items-center gap-1 bg-red-600 px-3 py-1 rounded-full text-xs font-medium">
+          <div className="flex items-center gap-1 bg-ct-rose px-3 py-1 rounded-full text-xs font-medium">
             <XCircle className="h-3 w-3" />
             <span>Rejected</span>
           </div>
         );
       case 'pending':
         return (
-          <div className="flex items-center gap-1 bg-warm-500 px-3 py-1 rounded-full text-xs font-medium">
+          <div className="flex items-center gap-1 bg-ct-teal px-3 py-1 rounded-full text-xs font-medium">
             <Clock className="h-3 w-3" />
             <span>Pending Admin Approval</span>
           </div>
         );
       default:
         return (
-          <div className="flex items-center gap-1 bg-gray-500 px-3 py-1 rounded-full text-xs font-medium">
+          <div className="flex items-center gap-1 bg-ct-surface-20 px-3 py-1 rounded-full text-xs font-medium">
             <AlertCircle className="h-3 w-3" />
             <span>Unverified</span>
           </div>
@@ -78,18 +78,18 @@ export default function LicenseCard({
   };
 
   return (
-    <div className="relative bg-gradient-to-br from-navy-800 via-navy-700 to-navy-900 rounded-xl p-6 shadow-md text-white overflow-hidden">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500 opacity-10 rounded-full -mr-32 -mt-32"></div>
-      <div className="absolute bottom-0 left-0 w-48 h-48 bg-warm-500 opacity-10 rounded-full -ml-24 -mb-24"></div>
+    <div className="relative bg-gradient-to-br from-ct-surface via-ct-surface-2 to-ct-ink rounded-ct-md p-6 shadow-md text-ct-ink overflow-hidden">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-ct-surface-20 opacity-10 rounded-full -mr-32 -mt-32"></div>
+      <div className="absolute bottom-0 left-0 w-48 h-48 bg-ct-teal opacity-10 rounded-full -ml-24 -mb-24"></div>
 
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="bg-warm-500 p-3 rounded-lg">
+            <div className="bg-ct-teal p-3 rounded-ct-sm">
               <Shield className="h-6 w-6" />
             </div>
             <div>
-              <div className="text-xs text-navy-300 uppercase tracking-wide">Trade License</div>
+              <div className="text-xs text-ct-mute uppercase tracking-wide">Trade License</div>
               <div className="text-lg font-bold">{licenseState}</div>
             </div>
           </div>
@@ -97,7 +97,7 @@ export default function LicenseCard({
           <div className="flex items-center gap-2">
             {renderStatusBadge()}
             {apiVerified && (
-              <div className="flex items-center gap-1 bg-warm-500 px-3 py-1 rounded-full text-xs font-medium">
+              <div className="flex items-center gap-1 bg-ct-teal px-3 py-1 rounded-full text-xs font-medium">
                 <BadgeCheck className="h-3 w-3" />
                 <span>API Verified</span>
               </div>
@@ -107,59 +107,59 @@ export default function LicenseCard({
 
         <div className="space-y-4 mb-6">
           <div>
-            <div className="text-xs text-navy-400 uppercase tracking-wide mb-1">License Holder</div>
+            <div className="text-xs text-ct-mute uppercase tracking-wide mb-1">License Holder</div>
             <div className="text-xl font-bold">{holderName}</div>
           </div>
 
           {businessName && (
             <div>
-              <div className="text-xs text-navy-400 uppercase tracking-wide mb-1">Business Name</div>
+              <div className="text-xs text-ct-mute uppercase tracking-wide mb-1">Business Name</div>
               <div className="text-sm font-medium">{businessName}</div>
             </div>
           )}
 
           {tradeType && (
             <div>
-              <div className="text-xs text-navy-400 uppercase tracking-wide mb-1">Trade Type</div>
+              <div className="text-xs text-ct-mute uppercase tracking-wide mb-1">Trade Type</div>
               <div className="text-sm font-medium">{tradeType}</div>
             </div>
           )}
 
           {licenseClass && (
             <div>
-              <div className="text-xs text-navy-400 uppercase tracking-wide mb-1">License Class</div>
+              <div className="text-xs text-ct-mute uppercase tracking-wide mb-1">License Class</div>
               <div className="text-sm font-medium">{licenseClass}</div>
             </div>
           )}
         </div>
 
-        <div className="border-t border-navy-600 pt-4 grid grid-cols-2 gap-4">
+        <div className="border-t border-ct-line pt-4 grid grid-cols-2 gap-4">
           <div>
-            <div className="text-xs text-navy-400 uppercase tracking-wide mb-1">License Number</div>
+            <div className="text-xs text-ct-mute uppercase tracking-wide mb-1">License Number</div>
             <div className="text-lg font-mono font-bold tracking-wider">{licenseNumber}</div>
           </div>
 
           <div>
-            <div className="flex items-center gap-1 text-xs text-navy-400 uppercase tracking-wide mb-1">
+            <div className="flex items-center gap-1 text-xs text-ct-mute uppercase tracking-wide mb-1">
               <Calendar className="h-3 w-3" />
               <span>Expiry Date</span>
             </div>
             <div className={`text-lg font-bold ${
-              isExpired ? 'text-red-400' :
-              isExpiringSoon ? 'text-yellow-400' :
-              'text-green-400'
+              isExpired ? 'text-ct-rose' :
+              isExpiringSoon ? 'text-ct-amber' :
+              'text-ct-teal'
             }`}>
               {expiry.toLocaleDateString('en-AU')}
             </div>
             {isExpiringSoon && !isExpired && (
-              <div className="text-xs text-yellow-400 mt-1">
+              <div className="text-xs text-ct-amber mt-1">
                 Expires in {daysUntilExpiry} days
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 mt-4 text-xs text-navy-400">
+        <div className="flex items-center gap-2 mt-4 text-xs text-ct-mute">
           <MapPin className="h-3 w-3" />
           <span>{apiVerified ? 'Verified by' : 'Issued by'} {licenseState} Licensing Authority</span>
         </div>

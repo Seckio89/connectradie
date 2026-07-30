@@ -63,34 +63,34 @@ function RemoveUserModal({ userName, userEmail, loading, onConfirm, onCancel }: 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[70] p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
+      <div className="bg-ct-surface rounded-ct-lg max-w-lg w-full shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-start justify-between mb-5">
             <div className="flex items-start gap-3">
-              <div className="p-3 bg-red-50 rounded-full flex-shrink-0">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
+              <div className="p-3 bg-ct-rose/[0.13] rounded-full flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-ct-rose" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Remove User</h3>
-                <p className="text-sm text-gray-500 mt-0.5">{userName} ({userEmail})</p>
+                <h3 className="text-lg font-semibold text-ct-paper">Remove User</h3>
+                <p className="text-sm text-ct-mute mt-0.5">{userName} ({userEmail})</p>
               </div>
             </div>
-            <button onClick={onCancel} className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+            <button onClick={onCancel} className="p-1 text-ct-mute hover:text-ct-mute-2 transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-ct-mute-2 mb-4">
             Select a reason for removal. The user will receive a notification email explaining why their account was removed and how to dispute the decision.
           </p>
 
           {/* Reason selector */}
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Reason for removal</label>
+            <label className="block text-sm font-semibold text-ct-mute-2 mb-1.5">Reason for removal</label>
             <select
               value={selectedReason}
               onChange={(e) => setSelectedReason(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-gray-50 focus:bg-white"
+              className="w-full px-3 py-2.5 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-rose0 text-sm bg-ct-surface-2 focus:bg-ct-surface"
             >
               <option value="">Select a reason...</option>
               {REMOVAL_REASONS.map((reason) => (
@@ -101,23 +101,23 @@ function RemoveUserModal({ userName, userEmail, loading, onConfirm, onCancel }: 
 
           {/* Additional message */}
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Additional message to user {selectedReason !== 'Other (please specify below)' && <span className="font-normal text-gray-400">(optional)</span>}
+            <label className="block text-sm font-semibold text-ct-mute-2 mb-1.5">
+              Additional message to user {selectedReason !== 'Other (please specify below)' && <span className="font-normal text-ct-mute">(optional)</span>}
             </label>
             <textarea {...proseInputProps}
               value={customMessage}
               onChange={(e) => setCustomMessage(e.target.value)}
               rows={3}
               placeholder="Provide additional context or details for the user..."
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-gray-50 focus:bg-white resize-none"
+              className="w-full px-3 py-2.5 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-rose0 text-sm bg-ct-surface-2 focus:bg-ct-surface resize-none"
             />
           </div>
 
           {/* Preview */}
           {selectedReason && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
-              <p className="text-xs font-semibold text-red-700 uppercase mb-2">Email preview to user</p>
-              <div className="text-sm text-red-900 space-y-2">
+            <div className="bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md p-4 mb-4">
+              <p className="text-xs font-semibold text-ct-rose uppercase mb-2">Email preview to user</p>
+              <div className="text-sm text-ct-paper space-y-2">
                 <p>Hi {userName},</p>
                 <p>
                   Your ConnecTradie account has been removed for the following reason:
@@ -136,8 +136,8 @@ function RemoveUserModal({ userName, userEmail, loading, onConfirm, onCancel }: 
             </div>
           )}
 
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5">
-            <p className="text-xs text-amber-700">
+          <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md p-3 mb-5">
+            <p className="text-xs text-ct-amber">
               This action is permanent. The user's profile, tradie details, and associated data will be deleted and cannot be recovered.
             </p>
           </div>
@@ -146,14 +146,14 @@ function RemoveUserModal({ userName, userEmail, loading, onConfirm, onCancel }: 
         <div className="px-6 pb-6 flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+            className="flex-1 px-4 py-3 bg-ct-surface-2 text-ct-mute-2 rounded-ct-md font-medium hover:bg-ct-line transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={!canSubmit || loading}
-            className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-3 bg-ct-rose text-ct-ink rounded-ct-md font-medium hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -389,14 +389,14 @@ export default function AdminUsers() {
 
   const getVerificationBadge = (status: string | null) => {
     const map: Record<string, string> = {
-      pending: 'bg-warm-100 text-warm-700',
-      verified: 'bg-green-100 text-green-700',
-      rejected: 'bg-red-100 text-red-700',
-      unverified: 'bg-gray-100 text-gray-600',
-      expired: 'bg-warm-100 text-warm-700',
+      pending: 'bg-ct-amber/[0.13] text-ct-amber',
+      verified: 'bg-ct-teal/[0.14] text-ct-teal',
+      rejected: 'bg-ct-rose/[0.13] text-ct-rose',
+      unverified: 'bg-ct-surface-2 text-ct-mute-2',
+      expired: 'bg-ct-amber/[0.13] text-ct-amber',
     };
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${(status && map[status]) || 'bg-gray-100 text-gray-600'}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${(status && map[status]) || 'bg-ct-surface-2 text-ct-mute-2'}`}>
         {status}
       </span>
     );
@@ -404,21 +404,21 @@ export default function AdminUsers() {
 
   const getRoleBadge = (role: string | null) => {
     const map: Record<string, string> = {
-      client: 'bg-secondary-100 text-secondary-700',
-      tradie: 'bg-warm-100 text-warm-700',
-      admin: 'bg-warm-100 text-warm-700',
+      client: 'bg-ct-surface-2 text-ct-mute-2',
+      tradie: 'bg-ct-amber/[0.13] text-ct-amber',
+      admin: 'bg-ct-amber/[0.13] text-ct-amber',
     };
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[role || ''] || 'bg-gray-100 text-gray-600'}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[role || ''] || 'bg-ct-surface-2 text-ct-mute-2'}`}>
         {role || 'unknown'}
       </span>
     );
   };
 
   const getSubscriptionBadge = (tier: string | null) => {
-    if (tier === 'pro') return <span className="px-3 py-1 rounded-full text-xs font-medium bg-warm-100 text-warm-700">Pro</span>;
-    if (tier === 'business') return <span className="px-3 py-1 rounded-full text-xs font-medium bg-warm-100 text-warm-700">Business</span>;
-    return <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Free</span>;
+    if (tier === 'pro') return <span className="px-3 py-1 rounded-full text-xs font-medium bg-ct-amber/[0.13] text-ct-amber">Pro</span>;
+    if (tier === 'business') return <span className="px-3 py-1 rounded-full text-xs font-medium bg-ct-amber/[0.13] text-ct-amber">Business</span>;
+    return <span className="px-3 py-1 rounded-full text-xs font-medium bg-ct-surface-2 text-ct-mute-2">Free</span>;
   };
 
   return (
@@ -428,8 +428,8 @@ export default function AdminUsers() {
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-2xl font-bold text-ct-paper">User Management</h1>
+            <p className="text-ct-mute-2 mt-1">
               {activeTab === 'active'
                 ? `${filteredUsers.length} user${filteredUsers.length !== 1 ? 's' : ''} found`
                 : `${removedUsers.length} removed account${removedUsers.length !== 1 ? 's' : ''}`
@@ -439,13 +439,13 @@ export default function AdminUsers() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-6">
+        <div className="flex gap-1 bg-ct-surface-2 rounded-ct-md p-1 mb-6">
           <button
             onClick={() => setActiveTab('active')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-ct-sm text-sm font-medium transition-colors ${
               activeTab === 'active'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'bg-ct-surface text-ct-paper shadow-sm'
+                : 'text-ct-mute hover:text-ct-mute-2'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -453,10 +453,10 @@ export default function AdminUsers() {
           </button>
           <button
             onClick={() => { setActiveTab('removed'); fetchRemovedUsers(); }}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-ct-sm text-sm font-medium transition-colors ${
               activeTab === 'removed'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'bg-ct-surface text-ct-paper shadow-sm'
+                : 'text-ct-mute hover:text-ct-mute-2'
             }`}
           >
             <Ban className="w-4 h-4" />
@@ -466,41 +466,41 @@ export default function AdminUsers() {
 
         {/* Removed Users Tab */}
         {activeTab === 'removed' ? (
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
             {removedLoading ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
+                <Loader2 className="w-6 h-6 text-ct-mute animate-spin" />
               </div>
             ) : removedUsers.length === 0 ? (
               <div className="text-center py-16">
-                <UserCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">No removed users</p>
-                <p className="text-gray-400 text-sm mt-1">All disputes have been resolved</p>
+                <UserCheck className="w-12 h-12 text-ct-mute mx-auto mb-3" />
+                <p className="text-ct-mute font-medium">No removed users</p>
+                <p className="text-ct-mute text-sm mt-1">All disputes have been resolved</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-ct-line-soft">
                 {removedUsers.map((removal) => (
-                  <div key={removal.id} className="p-5 hover:bg-gray-50 transition-colors">
+                  <div key={removal.id} className="p-5 hover:bg-ct-surface-2 transition-colors">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Ban className="w-5 h-5 text-red-500" />
+                        <div className="w-10 h-10 bg-ct-rose/[0.13] rounded-full flex items-center justify-center flex-shrink-0">
+                          <Ban className="w-5 h-5 text-ct-rose" />
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900">
+                          <p className="font-semibold text-ct-paper">
                             {removal.full_name || 'Unknown User'}
                           </p>
-                          <p className="text-sm text-gray-500 break-words">{removal.email}</p>
+                          <p className="text-sm text-ct-mute break-words">{removal.email}</p>
                           <div className="mt-2 space-y-1">
-                            <p className="text-sm text-red-600">
+                            <p className="text-sm text-ct-rose">
                               <span className="font-medium">Reason:</span> {removal.reason}
                             </p>
                             {removal.additional_message && (
-                              <p className="text-sm text-gray-500">
+                              <p className="text-sm text-ct-mute">
                                 <span className="font-medium">Details:</span> {removal.additional_message}
                               </p>
                             )}
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs text-ct-mute">
                               Removed {new Date(removal.removed_at).toLocaleDateString('en-AU', {
                                 day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
                               })}
@@ -511,7 +511,7 @@ export default function AdminUsers() {
                       <button
                         onClick={() => handleReinstateUser(removal)}
                         disabled={actionLoading === removal.id}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors flex-shrink-0"
+                        className="flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-50 transition-colors flex-shrink-0"
                       >
                         {actionLoading === removal.id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -528,24 +528,24 @@ export default function AdminUsers() {
           </div>
         ) : (
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
           {/* Filters */}
-          <div className="p-4 border-b border-gray-100 space-y-3">
+          <div className="p-4 border-b border-ct-line-soft space-y-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search by name or email..."
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                className="w-full pl-10 pr-4 py-2.5 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm"
               />
             </div>
             <div className="flex flex-wrap gap-2">
               <select
                 value={roleFilter}
                 onChange={e => setRoleFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
               >
                 <option value="all">All Roles</option>
                 <option value="client">Client</option>
@@ -555,7 +555,7 @@ export default function AdminUsers() {
               <select
                 value={verificationFilter}
                 onChange={e => setVerificationFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
               >
                 <option value="all">All Verification</option>
                 <option value="unverified">Unverified</option>
@@ -566,7 +566,7 @@ export default function AdminUsers() {
               <select
                 value={subscriptionFilter}
                 onChange={e => setSubscriptionFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
               >
                 <option value="all">All Subscriptions</option>
                 <option value="free">Free</option>
@@ -579,13 +579,13 @@ export default function AdminUsers() {
           {/* Users List */}
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+              <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="py-16 text-center">
-              <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">No users found</p>
-              <p className="text-sm text-gray-400 mt-1">Try adjusting your search or filters</p>
+              <Users className="w-12 h-12 text-ct-mute mx-auto mb-3" />
+              <p className="text-ct-mute font-medium">No users found</p>
+              <p className="text-sm text-ct-mute mt-1">Try adjusting your search or filters</p>
             </div>
           ) : (
             <>
@@ -594,18 +594,18 @@ export default function AdminUsers() {
               {filteredUsers.map(user => {
                 const td = user.tradie_details?.[0];
                 return (
-                  <div key={user.id} className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+                  <div key={user.id} className="bg-ct-surface border border-ct-line rounded-ct-md p-4 space-y-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 bg-ct-surface-2 rounded-ct-md flex items-center justify-center flex-shrink-0">
                         {user.avatar_url ? (
-                          <img src={user.avatar_url} alt="" className="w-10 h-10 rounded-xl object-cover" />
+                          <img src={user.avatar_url} alt="" className="w-10 h-10 rounded-ct-md object-cover" />
                         ) : (
-                          <User className="w-5 h-5 text-secondary-600" />
+                          <User className="w-5 h-5 text-ct-mute-2" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 text-sm">{user.full_name || 'Unknown'}</h3>
-                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                        <h3 className="font-semibold text-ct-paper text-sm">{user.full_name || 'Unknown'}</h3>
+                        <p className="text-xs text-ct-mute truncate">{user.email}</p>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
@@ -613,10 +613,10 @@ export default function AdminUsers() {
                       {getVerificationBadge(user.verification_status)}
                       {td && getSubscriptionBadge(td.subscription_tier)}
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-ct-mute">
                       Joined {new Date(user.created_at).toLocaleDateString('en-AU')}
                     </div>
-                    <div className="flex flex-wrap gap-2 pt-1 border-t border-gray-100">
+                    <div className="flex flex-wrap gap-2 pt-1 border-t border-ct-line-soft">
                       <button
                         onClick={() =>
                           setConfirmModal({
@@ -626,10 +626,10 @@ export default function AdminUsers() {
                           })
                         }
                         disabled={actionLoading === user.id}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-xs transition-colors ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-ct-sm font-medium text-xs transition-colors ${
                           user.is_premium
-                            ? 'border border-warm-200 text-warm-700 hover:bg-warm-50'
-                            : 'bg-warm-600 text-white hover:bg-warm-700'
+                            ? 'border border-ct-amber/[0.34] text-ct-amber hover:bg-ct-amber/[0.13]'
+                            : 'bg-ct-teal text-ct-ink hover:bg-ct-teal'
                         }`}
                       >
                         <Crown className="w-3.5 h-3.5" />
@@ -645,7 +645,7 @@ export default function AdminUsers() {
                             })
                           }
                           disabled={actionLoading === user.id}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-700 rounded-lg font-medium text-xs hover:bg-gray-50 transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-ct-line text-ct-mute-2 rounded-ct-sm font-medium text-xs hover:bg-ct-surface-2 transition-colors"
                         >
                           <BadgeCheck className="w-3.5 h-3.5" />
                           To {user.role === 'client' ? 'Tradie' : 'Client'}
@@ -661,7 +661,7 @@ export default function AdminUsers() {
                             })
                           }
                           disabled={actionLoading === user.id}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-red-200 text-red-600 rounded-lg font-medium text-xs hover:bg-red-50 transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-ct-rose/[0.34] text-ct-rose rounded-ct-sm font-medium text-xs hover:bg-ct-rose/[0.13] transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           Remove
@@ -674,124 +674,124 @@ export default function AdminUsers() {
             </div>
 
             {/* Desktop List View */}
-            <div className="hidden md:block divide-y divide-gray-100">
+            <div className="hidden md:block divide-y divide-ct-line-soft">
               {filteredUsers.map(user => {
                 const isExpanded = expandedId === user.id;
                 const td = user.tradie_details?.[0];
 
                 return (
-                  <div key={user.id} className="hover:bg-gray-50/50 transition-colors">
+                  <div key={user.id} className="hover:bg-ct-surface-2/50 transition-colors">
                     <button
                       onClick={() => setExpandedId(isExpanded ? null : user.id)}
                       className="w-full text-left p-5 flex items-center gap-4"
                     >
-                      <div className="w-11 h-11 bg-secondary-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <div className="w-11 h-11 bg-ct-surface-2 rounded-ct-md flex items-center justify-center flex-shrink-0">
                         {user.avatar_url ? (
-                          <img src={user.avatar_url} alt="" className="w-11 h-11 rounded-xl object-cover" />
+                          <img src={user.avatar_url} alt="" className="w-11 h-11 rounded-ct-md object-cover" />
                         ) : (
-                          <User className="w-5 h-5 text-secondary-600" />
+                          <User className="w-5 h-5 text-ct-mute-2" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold text-gray-900">{user.full_name || 'Unknown'}</h3>
+                          <h3 className="font-semibold text-ct-paper">{user.full_name || 'Unknown'}</h3>
                           {getRoleBadge(user.role)}
                           {getVerificationBadge(user.verification_status)}
                           {td && getSubscriptionBadge(td.subscription_tier)}
                         </div>
-                        <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                        <p className="text-sm text-ct-mute truncate">{user.email}</p>
                       </div>
-                      <div className="hidden sm:block text-sm text-gray-500">
+                      <div className="hidden sm:block text-sm text-ct-mute">
                         {new Date(user.created_at).toLocaleDateString('en-AU')}
                       </div>
                       {isExpanded ? (
-                        <ChevronUp className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                        <ChevronUp className="w-5 h-5 text-ct-mute flex-shrink-0" />
                       ) : (
-                        <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                        <ChevronDown className="w-5 h-5 text-ct-mute flex-shrink-0" />
                       )}
                     </button>
 
                     {isExpanded && (
                       <div className="px-5 pb-5">
-                        <div className="bg-gray-50 rounded-xl p-5 space-y-4">
+                        <div className="bg-ct-surface-2 rounded-ct-md p-5 space-y-4">
                           {/* Profile Details */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <div className="bg-ct-surface rounded-ct-sm p-3 border border-ct-line">
                               <div className="flex items-center gap-2 mb-1">
-                                <Mail className="w-4 h-4 text-gray-400" />
-                                <span className="text-xs font-medium text-gray-500 uppercase">Email</span>
+                                <Mail className="w-4 h-4 text-ct-mute" />
+                                <span className="text-xs font-medium text-ct-mute uppercase">Email</span>
                               </div>
-                              <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
+                              <p className="text-sm font-medium text-ct-paper truncate">{user.email}</p>
                             </div>
-                            <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <div className="bg-ct-surface rounded-ct-sm p-3 border border-ct-line">
                               <div className="flex items-center gap-2 mb-1">
-                                <Phone className="w-4 h-4 text-gray-400" />
-                                <span className="text-xs font-medium text-gray-500 uppercase">Phone</span>
+                                <Phone className="w-4 h-4 text-ct-mute" />
+                                <span className="text-xs font-medium text-ct-mute uppercase">Phone</span>
                               </div>
-                              <p className="text-sm font-medium text-gray-900">{user.phone || '--'}</p>
+                              <p className="text-sm font-medium text-ct-paper">{user.phone || '--'}</p>
                             </div>
-                            <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <div className="bg-ct-surface rounded-ct-sm p-3 border border-ct-line">
                               <div className="flex items-center gap-2 mb-1">
-                                <MapPin className="w-4 h-4 text-gray-400" />
-                                <span className="text-xs font-medium text-gray-500 uppercase">Address</span>
+                                <MapPin className="w-4 h-4 text-ct-mute" />
+                                <span className="text-xs font-medium text-ct-mute uppercase">Address</span>
                               </div>
-                              <p className="text-sm font-medium text-gray-900 truncate">{user.address || '--'}</p>
+                              <p className="text-sm font-medium text-ct-paper truncate">{user.address || '--'}</p>
                             </div>
-                            <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <div className="bg-ct-surface rounded-ct-sm p-3 border border-ct-line">
                               <div className="flex items-center gap-2 mb-1">
-                                <Calendar className="w-4 h-4 text-gray-400" />
-                                <span className="text-xs font-medium text-gray-500 uppercase">Joined</span>
+                                <Calendar className="w-4 h-4 text-ct-mute" />
+                                <span className="text-xs font-medium text-ct-mute uppercase">Joined</span>
                               </div>
-                              <p className="text-sm font-medium text-gray-900">
+                              <p className="text-sm font-medium text-ct-paper">
                                 {new Date(user.created_at).toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' })}
                               </p>
                             </div>
-                            <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <div className="bg-ct-surface rounded-ct-sm p-3 border border-ct-line">
                               <div className="flex items-center gap-2 mb-1">
-                                <Crown className="w-4 h-4 text-gray-400" />
-                                <span className="text-xs font-medium text-gray-500 uppercase">Premium</span>
+                                <Crown className="w-4 h-4 text-ct-mute" />
+                                <span className="text-xs font-medium text-ct-mute uppercase">Premium</span>
                               </div>
-                              <p className="text-sm font-medium text-gray-900">{user.is_premium ? 'Yes' : 'No'}</p>
+                              <p className="text-sm font-medium text-ct-paper">{user.is_premium ? 'Yes' : 'No'}</p>
                             </div>
-                            <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <div className="bg-ct-surface rounded-ct-sm p-3 border border-ct-line">
                               <div className="flex items-center gap-2 mb-1">
-                                <ShieldCheck className="w-4 h-4 text-gray-400" />
-                                <span className="text-xs font-medium text-gray-500 uppercase">Onboarded</span>
+                                <ShieldCheck className="w-4 h-4 text-ct-mute" />
+                                <span className="text-xs font-medium text-ct-mute uppercase">Onboarded</span>
                               </div>
-                              <p className="text-sm font-medium text-gray-900">{user.onboarding_completed ? 'Yes' : 'No'}</p>
+                              <p className="text-sm font-medium text-ct-paper">{user.onboarding_completed ? 'Yes' : 'No'}</p>
                             </div>
                           </div>
 
                           {/* Tradie Details */}
                           {td && (
-                            <div className="bg-white rounded-lg p-4 border border-gray-200">
+                            <div className="bg-ct-surface rounded-ct-sm p-4 border border-ct-line">
                               <div className="flex items-center gap-2 mb-3">
-                                <Briefcase className="w-4 h-4 text-primary-600" />
-                                <span className="font-medium text-gray-900">Tradie Details</span>
+                                <Briefcase className="w-4 h-4 text-ct-mute-2" />
+                                <span className="font-medium text-ct-paper">Tradie Details</span>
                               </div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                                 <div>
-                                  <span className="text-gray-500">Business:</span>{' '}
-                                  <span className="font-medium text-gray-900">{td.business_name}</span>
+                                  <span className="text-ct-mute">Business:</span>{' '}
+                                  <span className="font-medium text-ct-paper">{td.business_name}</span>
                                 </div>
                                 <div>
-                                  <span className="text-gray-500">Trade:</span>{' '}
-                                  <span className="font-medium text-gray-900">{td.trade_category}</span>
+                                  <span className="text-ct-mute">Trade:</span>{' '}
+                                  <span className="font-medium text-ct-paper">{td.trade_category}</span>
                                 </div>
                                 <div>
-                                  <span className="text-gray-500">Type:</span>{' '}
-                                  <span className="font-medium text-gray-900">{td.contractor_type}</span>
+                                  <span className="text-ct-mute">Type:</span>{' '}
+                                  <span className="font-medium text-ct-paper">{td.contractor_type}</span>
                                 </div>
                                 <div>
-                                  <span className="text-gray-500">Verified:</span>{' '}
-                                  <span className="font-medium text-gray-900">{td.is_verified ? 'Yes' : 'No'}</span>
+                                  <span className="text-ct-mute">Verified:</span>{' '}
+                                  <span className="font-medium text-ct-paper">{td.is_verified ? 'Yes' : 'No'}</span>
                                 </div>
                                 <div>
-                                  <span className="text-gray-500">Insured:</span>{' '}
-                                  <span className="font-medium text-gray-900">{td.is_insured ? 'Yes' : 'No'}</span>
+                                  <span className="text-ct-mute">Insured:</span>{' '}
+                                  <span className="font-medium text-ct-paper">{td.is_insured ? 'Yes' : 'No'}</span>
                                 </div>
                                 <div>
-                                  <span className="text-gray-500">Tier:</span>{' '}
+                                  <span className="text-ct-mute">Tier:</span>{' '}
                                   {getSubscriptionBadge(td.subscription_tier)}
                                 </div>
                               </div>
@@ -809,10 +809,10 @@ export default function AdminUsers() {
                                 })
                               }
                               disabled={actionLoading === user.id}
-                              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-ct-md font-medium text-sm transition-colors ${
                                 user.is_premium
-                                  ? 'border border-warm-200 text-warm-700 hover:bg-warm-50'
-                                  : 'bg-warm-600 text-white hover:bg-warm-700'
+                                  ? 'border border-ct-amber/[0.34] text-ct-amber hover:bg-ct-amber/[0.13]'
+                                  : 'bg-ct-teal text-ct-ink hover:bg-ct-teal'
                               }`}
                             >
                               <Crown className="w-4 h-4" />
@@ -829,7 +829,7 @@ export default function AdminUsers() {
                                   })
                                 }
                                 disabled={actionLoading === user.id}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium text-sm hover:bg-gray-50 transition-colors"
+                                className="inline-flex items-center gap-2 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-md font-medium text-sm hover:bg-ct-surface-2 transition-colors"
                               >
                                 <BadgeCheck className="w-4 h-4" />
                                 Change to {user.role === 'client' ? 'Tradie' : 'Client'}
@@ -846,7 +846,7 @@ export default function AdminUsers() {
                                   })
                                 }
                                 disabled={actionLoading === user.id}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 border border-red-200 text-red-600 rounded-xl font-medium text-sm hover:bg-red-50 transition-colors"
+                                className="inline-flex items-center gap-2 px-4 py-2.5 border border-ct-rose/[0.34] text-ct-rose rounded-ct-md font-medium text-sm hover:bg-ct-rose/[0.13] transition-colors"
                               >
                                 <Trash2 className="w-4 h-4" />
                                 Remove User
@@ -861,13 +861,13 @@ export default function AdminUsers() {
               })}
             </div>
             <div className="flex items-center justify-between mt-6 px-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-ct-mute-2">
                 Showing {((page-1)*pageSize)+1}-{Math.min(page*pageSize, totalCount)} of {totalCount}
               </p>
               <div className="flex items-center gap-2">
-                <button disabled={page <= 1} onClick={() => setPage(p => p-1)} className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50">Previous</button>
-                <span className="text-sm font-medium text-gray-700">Page {page}</span>
-                <button disabled={page * pageSize >= totalCount} onClick={() => setPage(p => p+1)} className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50">Next</button>
+                <button disabled={page <= 1} onClick={() => setPage(p => p-1)} className="px-3 py-1.5 border border-ct-line rounded-ct-sm text-sm disabled:opacity-50 hover:bg-ct-surface-2">Previous</button>
+                <span className="text-sm font-medium text-ct-mute-2">Page {page}</span>
+                <button disabled={page * pageSize >= totalCount} onClick={() => setPage(p => p+1)} className="px-3 py-1.5 border border-ct-line rounded-ct-sm text-sm disabled:opacity-50 hover:bg-ct-surface-2">Next</button>
               </div>
             </div>
             </>

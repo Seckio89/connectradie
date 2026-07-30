@@ -121,22 +121,21 @@ targets tsconfig.app.json.
 
 ## ConnecTradie Design System
 
-⚠️ **Two systems are live at once during the rollout.** v2 is the target;
-v1 is what most screens still render. Read "Which system applies" before
-styling anything.
+**The rollout is complete: every screen is v2.** The app is dark-only —
+`index.html` pins the `dark` class unconditionally and the Settings
+theme toggle is gone. Use v2 for all work; the v1 section below is kept
+only as historical context for reading old diffs.
 
-### Which system applies
+The only place legacy colour literals remain is the print/PDF/email
+HTML-string generators (see the exemption under v2), plus Stripe
+Elements config in `BecsSetupForm.tsx` — an iframe CSS variables cannot
+reach, which carries the dark theme's values as literals.
 
-| Situation | Use |
-|---|---|
-| Building a new shared primitive (Phase 2) | **v2** |
-| Editing a screen already migrated to v2 (carries `ct-` classes) | **v2** |
-| Editing any other existing screen | **v1** — match what's there |
-| The three prioritised marketplace gaps | **v1** — they ship before the rollout reaches them |
-
-Do not opportunistically migrate a screen while doing unrelated work. The
-rollout is sequenced per primitive (Phase 2b), and a half-migrated screen
-is worse than an unmigrated one.
+Legacy cleanup still outstanding (do deliberately, not in passing):
+the unused v1 ramps in `tailwind.config.js`, the `.dark` override sheet
+and `.theme-aware` bridge in `src/index.css` (now matching almost
+nothing, but load-bearing until proven otherwise), and `useDarkMode`
+(now a pin, documented in the hook).
 
 ---
 

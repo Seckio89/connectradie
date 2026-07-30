@@ -27,22 +27,22 @@ export default function JobDescription({ text, className, compact, hideNotes, ma
       {scope.length > 0 && (
         <ul className={compact ? 'space-y-1' : 'space-y-1.5'}>
           {scope.map((item, i) => (
-            <li key={i} className={`flex items-start gap-2 ${compact ? 'text-xs' : 'text-sm'} text-gray-700`}>
-              <span className="mt-[0.45em] w-1.5 h-1.5 rounded-full bg-secondary-400 flex-shrink-0" />
+            <li key={i} className={`flex items-start gap-2 ${compact ? 'text-xs' : 'text-sm'} text-ct-mute-2`}>
+              <span className="mt-[0.45em] w-1.5 h-1.5 rounded-full bg-ct-surface-2 flex-shrink-0" />
               <span className={`leading-relaxed ${compact ? 'truncate' : ''}`}>{item}</span>
             </li>
           ))}
           {moreCount > 0 && (
-            <li className={`${compact ? 'text-xs' : 'text-sm'} text-gray-400 pl-3.5`}>+{moreCount} more…</li>
+            <li className={`${compact ? 'text-xs' : 'text-sm'} text-ct-mute pl-3.5`}>+{moreCount} more…</li>
           )}
         </ul>
       )}
       {notes.length > 0 && (
         <div className={scope.length > 0 ? 'mt-3' : ''}>
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Site notes</p>
+          <p className="text-xs font-medium text-ct-mute uppercase tracking-wide mb-1">Site notes</p>
           <ul className="space-y-1">
             {notes.map((n, i) => (
-              <li key={i} className="text-sm text-gray-500 leading-relaxed">{n}</li>
+              <li key={i} className="text-sm text-ct-mute leading-relaxed">{n}</li>
             ))}
           </ul>
         </div>

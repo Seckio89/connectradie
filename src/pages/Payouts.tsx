@@ -751,8 +751,8 @@ export default function Payouts() {
         <div>
           <div className="flex items-center justify-center py-24">
             <div className="text-center">
-              <Loader2 className="w-10 h-10 text-primary-600 animate-spin mx-auto mb-4" />
-              <p className="text-gray-500 font-medium">Loading payout details...</p>
+              <Loader2 className="w-10 h-10 text-ct-mute-2 animate-spin mx-auto mb-4" />
+              <p className="text-ct-mute font-medium">Loading payout details...</p>
             </div>
           </div>
         </div>
@@ -768,12 +768,12 @@ export default function Payouts() {
               purely off-platform, so don't hide them behind a Connect failure. */}
           <PaymentRequestsSection />
           <div className="flex flex-col items-center justify-center py-24">
-            <AlertTriangle className="w-12 h-12 text-red-400 mb-4" />
-            <p className="text-gray-900 font-semibold mb-2">Something went wrong</p>
-            <p className="text-gray-500 text-sm mb-6">{error}</p>
+            <AlertTriangle className="w-12 h-12 text-ct-rose mb-4" />
+            <p className="text-ct-paper font-semibold mb-2">Something went wrong</p>
+            <p className="text-ct-mute text-sm mb-6">{error}</p>
             <button
               onClick={fetchDetails}
-              className="px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+              className="px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
             >
               Try Again
             </button>
@@ -796,19 +796,19 @@ export default function Payouts() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <div className="p-2 bg-primary-50 rounded-lg">
-                <Wallet className="w-5 h-5 text-primary-700" />
+              <div className="p-2 bg-ct-surface-2 rounded-ct-sm">
+                <Wallet className="w-5 h-5 text-ct-mute-2" />
               </div>
-              <h1 className="text-2xl font-bold text-navy-900">Payouts</h1>
+              <h1 className="text-2xl font-bold text-ct-paper">Payouts</h1>
             </div>
-            <p className="text-sm text-navy-400 ml-12">
+            <p className="text-sm text-ct-mute ml-12">
               View your balance, payout history, and manage bank details
             </p>
           </div>
           {accountDetails?.connected && (accountDetails.payouts?.length ?? 0) > 0 && (
             <button
               onClick={handleExportCSV}
-              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 bg-white border border-surface-300 rounded-lg text-sm font-medium text-navy-700 hover:bg-surface-50 transition-colors flex-shrink-0"
+              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 bg-ct-surface border border-ct-line rounded-ct-sm text-sm font-medium text-ct-paper hover:bg-ct-surface-2 transition-colors flex-shrink-0"
             >
               <Download className="w-4 h-4" />
               Export CSV
@@ -821,13 +821,13 @@ export default function Payouts() {
 
         {/* Stripe vs external filter — only shown when there are external payments */}
         {externalPayments.length > 0 && (
-          <div className="flex items-center gap-1 bg-surface-100 rounded-xl p-1 w-full sm:w-auto sm:inline-flex">
+          <div className="flex items-center gap-1 bg-ct-surface-2 rounded-ct-md p-1 w-full sm:w-auto sm:inline-flex">
             {(['all', 'stripe', 'external'] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setPaymentFilter(f)}
-                className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  paymentFilter === f ? 'bg-white text-navy-900 shadow-sm' : 'text-navy-500 hover:text-navy-700'
+                className={`flex-1 sm:flex-none px-4 py-1.5 rounded-ct-sm text-sm font-medium transition-colors ${
+                  paymentFilter === f ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute-2 hover:text-ct-paper'
                 }`}
               >
                 {f === 'all' ? 'All' : f === 'stripe' ? 'Stripe' : 'External'}
@@ -838,37 +838,37 @@ export default function Payouts() {
 
         {/* Externally received payments (bank transfer / cash / cheque) */}
         {externalPayments.length > 0 && paymentFilter !== 'stripe' && (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line shadow-sm p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4 gap-3">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="p-2 bg-secondary-50 rounded-lg flex-shrink-0">
-                  <Banknote className="w-4 h-4 text-secondary-600" />
+                <div className="p-2 bg-ct-surface-2 rounded-ct-sm flex-shrink-0">
+                  <Banknote className="w-4 h-4 text-ct-mute-2" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-lg font-semibold text-navy-900">Externally received</h2>
-                  <p className="text-xs text-navy-400">Bank transfer / cash — marked paid by you</p>
+                  <h2 className="text-lg font-semibold text-ct-paper">Externally received</h2>
+                  <p className="text-xs text-ct-mute">Bank transfer / cash — marked paid by you</p>
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total</p>
-                <p className="text-xl font-bold text-navy-900">{formatCurrency(externalTotal)}</p>
+                <p className="text-xs font-medium text-ct-mute uppercase tracking-wide">Total</p>
+                <p className="text-xl font-bold text-ct-paper">{formatCurrency(externalTotal)}</p>
               </div>
             </div>
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-ct-line-soft">
               {externalPayments.map((p) => (
                 <div key={p.id} className="flex items-center gap-3 py-3">
-                  <div className="w-9 h-9 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
-                    <Banknote className="w-4 h-4 text-secondary-600" />
+                  <div className="w-9 h-9 rounded-ct-sm bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                    <Banknote className="w-4 h-4 text-ct-mute-2" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-navy-900 truncate">{p.clientName}</p>
-                    <p className="text-xs text-navy-400 truncate">
+                    <p className="font-medium text-ct-paper truncate">{p.clientName}</p>
+                    <p className="text-xs text-ct-mute truncate">
                       {p.service} · {new Date(p.paidAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                       {p.method ? ` · ${methodLabel(p.method)}` : ''}
                       {p.reference ? ` · ${p.reference}` : ''}
                     </p>
                   </div>
-                  <span className="text-sm font-semibold text-navy-900 tabular-nums flex-shrink-0">{formatCurrency(p.amount)}</span>
+                  <span className="text-sm font-semibold text-ct-paper tabular-nums flex-shrink-0">{formatCurrency(p.amount)}</span>
                 </div>
               ))}
             </div>
@@ -877,24 +877,24 @@ export default function Payouts() {
 
         {/* Not Connected state */}
         {!accountDetails?.connected && paymentFilter !== 'external' && (
-          <div className="bg-gradient-to-r from-secondary-50 to-primary-50 rounded-2xl border border-secondary-200 p-8 text-center">
-            <div className="w-16 h-16 bg-secondary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Wallet className="w-8 h-8 text-secondary-600" />
+          <div className="bg-gradient-to-r from-ct-surface-2 to-ct-teal rounded-ct-lg border border-ct-line p-8 text-center">
+            <div className="w-16 h-16 bg-ct-surface-2 rounded-ct-lg flex items-center justify-center mx-auto mb-4">
+              <Wallet className="w-8 h-8 text-ct-mute-2" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Set Up Payouts</h2>
-            <p className="text-gray-600 mb-2 max-w-md mx-auto">
+            <h2 className="text-xl font-bold text-ct-paper mb-2">Set Up Payouts</h2>
+            <p className="text-ct-mute-2 mb-2 max-w-md mx-auto">
               Connect your bank account to receive payments directly from completed jobs.
             </p>
-            <div className="flex items-start gap-2 px-3 py-2.5 bg-secondary-50 border border-secondary-200 rounded-lg mb-6 max-w-md mx-auto text-left">
-              <Shield className="w-4 h-4 text-secondary-600 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-secondary-800 leading-relaxed">
+            <div className="flex items-start gap-2 px-3 py-2.5 bg-ct-surface-2 border border-ct-line rounded-ct-sm mb-6 max-w-md mx-auto text-left">
+              <Shield className="w-4 h-4 text-ct-mute-2 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-ct-mute-2 leading-relaxed">
                 You'll need your <strong>BSB, account number, and ABN</strong>. Setup takes about 2 minutes. Payments processed securely by Stripe.
               </p>
             </div>
             <button
               onClick={handleConnectSetup}
               disabled={connectLoading}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-60 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-60 transition-colors"
             >
               {connectLoading ? (
                 <>
@@ -913,23 +913,23 @@ export default function Payouts() {
           <>
             {/* Account Status banner */}
             {isFullyActive ? (
-              <div className="bg-gradient-to-r from-green-50 to-secondary-50 rounded-2xl border border-green-200 p-5">
+              <div className="bg-gradient-to-r from-ct-teal to-ct-surface-2 rounded-ct-lg border border-ct-teal/30 p-5">
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-green-600" />
+                  <CheckCircle2 className="w-6 h-6 text-ct-teal" />
                   <div>
-                    <p className="font-semibold text-green-900">Account Active</p>
-                    <p className="text-sm text-green-700">Your bank account is connected and ready to receive payouts.</p>
+                    <p className="font-semibold text-ct-teal">Account Active</p>
+                    <p className="text-sm text-ct-teal">Your bank account is connected and ready to receive payouts.</p>
                   </div>
                 </div>
               </div>
             ) : hasRequirements ? (
-              <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl border border-amber-200 p-5">
+              <div className="bg-gradient-to-r from-ct-amber to-ct-amber rounded-ct-lg border border-ct-amber/[0.34] p-5">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <AlertTriangle className="w-6 h-6 text-amber-600 flex-shrink-0" />
+                    <AlertTriangle className="w-6 h-6 text-ct-amber flex-shrink-0" />
                     <div>
-                      <p className="font-semibold text-amber-900">Setup Incomplete</p>
-                      <p className="text-sm text-amber-700">
+                      <p className="font-semibold text-ct-paper">Setup Incomplete</p>
+                      <p className="text-sm text-ct-amber">
                         We need a few more details (e.g. bank account or identity info) before you can receive payouts.
                       </p>
                     </div>
@@ -937,7 +937,7 @@ export default function Payouts() {
                   <button
                     onClick={handleConnectSetup}
                     disabled={connectLoading}
-                    className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white font-semibold rounded-xl hover:bg-amber-700 disabled:opacity-60 transition-colors text-sm"
+                    className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-ct-amber text-ct-ink font-semibold rounded-ct-md hover:bg-ct-amber disabled:opacity-60 transition-colors text-sm"
                   >
                     {connectLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Complete Setup'}
                   </button>
@@ -948,9 +948,9 @@ export default function Payouts() {
             {/* Summary — one big number + three plain-language status rows.
                 Deliberately simple: a tradie should know in 3 seconds how much
                 they've earned, where the money is, and when it arrives. */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
-              <p className="text-sm text-gray-500">You’ve earned</p>
-              <p className="text-4xl font-bold text-gray-900 mt-0.5 tabular-nums">{formatCurrency(summary.earned)}</p>
+            <div className="bg-ct-surface rounded-ct-lg border border-ct-line shadow-sm p-5 sm:p-6">
+              <p className="text-sm text-ct-mute">You’ve earned</p>
+              <p className="text-4xl font-bold text-ct-paper mt-0.5 tabular-nums">{formatCurrency(summary.earned)}</p>
 
               <div className="mt-5">
                 <PayoutBreakdownRows summary={summary} autoReleaseLabel={autoReleaseLabel} />
@@ -962,29 +962,29 @@ export default function Payouts() {
                   sent. Sitting inside that row, it read as "get the $64.90 heading
                   to your bank now" while actually offering $3.50. */}
               {instantDone ? (
-                <p className="mt-3 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+                <p className="mt-3 text-xs font-medium text-ct-teal bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm px-3 py-2">
                   💰 {instantDone}
                 </p>
               ) : instantStatus?.eligible && instantStatus.netCents > 0 ? (
-                <div className="mt-3 rounded-xl bg-white border border-secondary-200 px-4 py-3">
-                  <p className="text-sm font-semibold text-gray-900 tabular-nums">
+                <div className="mt-3 rounded-ct-md bg-ct-surface border border-ct-line px-4 py-3">
+                  <p className="text-sm font-semibold text-ct-paper tabular-nums">
                     {formatCurrency(instantStatus.instantAvailable)} available now
                   </p>
-                  <p className="mt-0.5 text-xs text-gray-600">
+                  <p className="mt-0.5 text-xs text-ct-mute-2">
                     Instant transfer fee{' '}
                     <span className="font-semibold">{formatCurrency(instantStatus.feeCents)}</span>
                     {instantStatus.instantAvailable > 0
                       ? ` (${((instantStatus.feeCents / instantStatus.instantAvailable) * 100).toFixed(1)}%)`
                       : ''}
                     {' — you receive '}
-                    <span className="font-semibold text-gray-900">{formatCurrency(instantStatus.netCents)}</span>
+                    <span className="font-semibold text-ct-paper">{formatCurrency(instantStatus.netCents)}</span>
                     {' in minutes'}
                     {instantStatus.destinationLabel ? ` on ${instantStatus.destinationLabel}` : ''}
                   </p>
                   <button
                     onClick={runInstantPayout}
                     disabled={instantBusy}
-                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-600 text-white text-xs font-semibold rounded-lg hover:bg-secondary-700 disabled:opacity-50 transition-colors"
+                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface-2 text-ct-ink text-xs font-semibold rounded-ct-sm hover:bg-ct-surface-2 disabled:opacity-50 transition-colors"
                   >
                     {instantBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '⚡'} Send {formatCurrency(instantStatus.netCents)} now
                   </button>
@@ -992,32 +992,32 @@ export default function Payouts() {
                       it as an application fee on the instant payout. The tradie
                       never has to take it — standard payouts remain free — so say
                       that plainly rather than burying the choice. */}
-                  <p className="mt-1.5 text-[11px] text-gray-500">
+                  <p className="mt-1.5 text-[11px] text-ct-mute">
                     Only charged if you choose instant. Waiting costs nothing — standard payouts are always free.
                   </p>
-                  {instantError && <p className="mt-1.5 text-xs text-red-600">{instantError}</p>}
+                  {instantError && <p className="mt-1.5 text-xs text-ct-rose">{instantError}</p>}
                 </div>
               ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'below_minimum' ? (
-                <p className="mt-3 text-[11px] text-gray-500">
+                <p className="mt-3 text-[11px] text-ct-mute">
                   Instant payout is available from {formatCurrency(instantStatus.minBaseCents ?? 0)} — below that the{' '}
                   {formatCurrency(instantStatus.feeMinCents ?? 0)} minimum fee takes too much of it. Your{' '}
                   {formatCurrency(instantStatus.instantAvailable)} is on its way free of charge.
                 </p>
               ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'funds_pending' ? (
-                <p className="mt-3 text-[11px] text-gray-500">
+                <p className="mt-3 text-[11px] text-ct-mute">
                   Instant payout available once funds clear (usually next business day).
                 </p>
               ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'no_instant_method' && summary.transit.amount > 0 && payoutPref !== 'standard' ? (
-                <p className="mt-3 text-[11px] text-gray-500">
+                <p className="mt-3 text-[11px] text-ct-mute">
                   This payout account can’t receive instant payouts — add an instant-eligible debit card or bank in Bank Settings.
                 </p>
               ) : null}
 
               {/* The payout breakdown and the explainer use the same wording, so a
                   tradie can reconcile what they read with what they were paid. */}
-              <p className="mt-3 text-xs text-gray-400 text-center">
+              <p className="mt-3 text-xs text-ct-mute text-center">
                 Our fee applies to your labour only — never your materials.{' '}
-                <Link to="/how-fees-work" className="text-secondary-600 hover:text-secondary-700 font-medium">
+                <Link to="/how-fees-work" className="text-ct-mute-2 hover:text-ct-mute-2 font-medium">
                   How fees work
                 </Link>
               </p>
@@ -1025,13 +1025,13 @@ export default function Payouts() {
 
             {/* Stripe Connect onboarding warning */}
             {onboardingWarning && onboardingComplete === false && (
-              <div className="bg-gradient-to-r from-red-50 to-amber-50 rounded-2xl border border-red-200 p-5">
+              <div className="bg-gradient-to-r from-ct-rose to-ct-amber rounded-ct-lg border border-ct-rose/[0.34] p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <AlertTriangle className="w-6 h-6 text-red-600" />
+                    <AlertTriangle className="w-6 h-6 text-ct-rose" />
                     <div>
-                      <p className="font-semibold text-red-900">Stripe Connect Setup Required</p>
-                      <p className="text-sm text-red-700">
+                      <p className="font-semibold text-ct-paper">Stripe Connect Setup Required</p>
+                      <p className="text-sm text-ct-rose">
                         You must complete your Stripe Connect setup before you can manage payouts or access your payout dashboard. Please complete onboarding first.
                       </p>
                     </div>
@@ -1039,7 +1039,7 @@ export default function Payouts() {
                   <button
                     onClick={handleConnectSetup}
                     disabled={connectLoading}
-                    className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-60 transition-colors text-sm"
+                    className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-ct-rose text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-60 transition-colors text-sm"
                   >
                     {connectLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Complete Setup'}
                   </button>
@@ -1053,7 +1053,7 @@ export default function Payouts() {
                 {onboardingComplete === false ? (
                   <button
                     onClick={() => setOnboardingWarning(true)}
-                    className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-colors"
+                    className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 bg-ct-surface text-ct-ink font-semibold rounded-ct-md hover:bg-ct-surface transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
                     Bank Settings
@@ -1063,19 +1063,19 @@ export default function Payouts() {
                     href={accountDetails.dashboardUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-colors"
+                    className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 bg-ct-surface text-ct-ink font-semibold rounded-ct-md hover:bg-ct-surface transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
                     Bank Settings
                   </a>
                 )}
                 <div className="flex flex-col gap-1">
-                  <label className="flex items-center gap-2 text-xs text-gray-500">
+                  <label className="flex items-center gap-2 text-xs text-ct-mute">
                     Payout speed:
                     <select
                       value={payoutPref}
                       onChange={(e) => savePayoutPref(e.target.value as 'standard' | 'instant' | 'ask')}
-                      className="px-2.5 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="px-2.5 py-2 border border-ct-line rounded-ct-sm text-xs bg-ct-surface text-ct-mute-2 focus:outline-none focus:ring-2 focus:ring-ct-teal"
                     >
                       <option value="standard">Standard — free (2–3 business days)</option>
                       {/* Rates come from pricing_tiers via the status response; the
@@ -1099,7 +1099,7 @@ export default function Payouts() {
                     </select>
                   </label>
                   {instantPreferenceBlocked && payoutPref === 'instant' && (
-                    <p className="text-[11px] text-gray-500 max-w-sm">
+                    <p className="text-[11px] text-ct-mute max-w-sm">
                       {instantPreferenceBlocked === 'no_instant_method'
                         ? 'Instant needs an instant-eligible debit card or bank account — add one in Bank Settings. Until then your payouts go out free on the standard schedule.'
                         : 'Instant payouts aren’t available right now. Your payouts go out free on the standard schedule until they are.'}
@@ -1111,15 +1111,15 @@ export default function Payouts() {
 
             {/* Recent Job Payments */}
             {recentPayments.length > 0 && (
-              <div className="bg-white rounded-2xl border border-surface-200 overflow-hidden">
-                <div className="flex items-start justify-between gap-2 px-4 sm:px-5 py-3.5 border-b border-surface-200">
+              <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
+                <div className="flex items-start justify-between gap-2 px-4 sm:px-5 py-3.5 border-b border-ct-line">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-navy-300 flex-shrink-0" />
-                      <h2 className="text-sm font-semibold text-navy-800 whitespace-nowrap">Recent Payments</h2>
-                      <span className="text-xs text-navy-300 font-medium hidden sm:inline">(Last 5 days)</span>
+                      <Briefcase className="w-4 h-4 text-ct-mute flex-shrink-0" />
+                      <h2 className="text-sm font-semibold text-ct-paper whitespace-nowrap">Recent Payments</h2>
+                      <span className="text-xs text-ct-mute font-medium hidden sm:inline">(Last 5 days)</span>
                     </div>
-                    <span className="text-[11px] text-navy-300 font-medium ml-6 sm:hidden">Last 5 days</span>
+                    <span className="text-[11px] text-ct-mute font-medium ml-6 sm:hidden">Last 5 days</span>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <input
@@ -1131,10 +1131,10 @@ export default function Payouts() {
                     />
                     {customInvoiceTemplate ? (
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-3 py-1 rounded-full whitespace-nowrap">Custom template active</span>
+                        <span className="text-xs text-ct-teal font-medium bg-ct-teal/[0.14] px-3 py-1 rounded-full whitespace-nowrap">Custom template active</span>
                         <button
                           onClick={handleRemoveTemplate}
-                          className="text-xs text-red-500 hover:text-red-700 font-medium"
+                          className="text-xs text-ct-rose hover:text-ct-rose font-medium"
                         >
                           Remove
                         </button>
@@ -1142,7 +1142,7 @@ export default function Payouts() {
                     ) : (
                       <button
                         onClick={() => templateInputRef.current?.click()}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-navy-500 border border-surface-200 rounded-lg hover:bg-surface-50 transition-colors whitespace-nowrap flex-shrink-0"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ct-mute-2 border border-ct-line rounded-ct-sm hover:bg-ct-surface-2 transition-colors whitespace-nowrap flex-shrink-0"
                       >
                         <FileText className="w-3.5 h-3.5 flex-shrink-0" />
                         <span className="sm:hidden">Upload Invoice</span>
@@ -1159,20 +1159,20 @@ export default function Payouts() {
                       {/* Month header */}
                       <button
                         onClick={() => togglePaymentMonth(monthGroup.key)}
-                        className="w-full flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-3 bg-surface-100 sm:bg-surface-50 border-b border-surface-200 hover:bg-surface-100 transition-colors"
+                        className="w-full flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-3 bg-ct-surface-2 sm:bg-ct-surface-2 border-b border-ct-line hover:bg-ct-surface-2 transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           {isMonthCollapsed ? (
-                            <ChevronRight className="w-4 h-4 text-navy-400" />
+                            <ChevronRight className="w-4 h-4 text-ct-mute" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 text-navy-400" />
+                            <ChevronDown className="w-4 h-4 text-ct-mute" />
                           )}
-                          <span className="text-[15px] sm:text-sm font-bold sm:font-semibold text-navy-900">{monthGroup.label}</span>
-                          <span className="text-xs text-navy-300">
+                          <span className="text-[15px] sm:text-sm font-bold sm:font-semibold text-ct-paper">{monthGroup.label}</span>
+                          <span className="text-xs text-ct-mute">
                             ({monthGroup.weeks.reduce((s, w) => s + w.payments.length, 0)} payments)
                           </span>
                         </div>
-                        <span className="text-sm font-semibold text-navy-900 tabular-nums">
+                        <span className="text-sm font-semibold text-ct-paper tabular-nums">
                           {formatCurrency(monthGroup.total)}
                         </span>
                       </button>
@@ -1184,18 +1184,18 @@ export default function Payouts() {
                             {/* Week header */}
                             <button
                               onClick={() => togglePaymentWeek(weekGroup.key)}
-                              className="w-full flex items-center justify-between px-5 py-2.5 pl-9 bg-white border-b border-surface-100 hover:bg-surface-50 transition-colors"
+                              className="w-full flex items-center justify-between px-5 py-2.5 pl-9 bg-ct-surface border-b border-ct-line-soft hover:bg-ct-surface-2 transition-colors"
                             >
                               <div className="flex items-center gap-2">
                                 {isWeekCollapsed ? (
-                                  <ChevronRight className="w-3.5 h-3.5 text-navy-300" />
+                                  <ChevronRight className="w-3.5 h-3.5 text-ct-mute" />
                                 ) : (
-                                  <ChevronDown className="w-3.5 h-3.5 text-navy-300" />
+                                  <ChevronDown className="w-3.5 h-3.5 text-ct-mute" />
                                 )}
-                                <span className="text-xs font-medium text-navy-500">{weekGroup.label}</span>
-                                <span className="text-xs text-navy-300">({weekGroup.payments.length})</span>
+                                <span className="text-xs font-medium text-ct-mute-2">{weekGroup.label}</span>
+                                <span className="text-xs text-ct-mute">({weekGroup.payments.length})</span>
                               </div>
-                              <span className="text-xs font-semibold text-navy-700 tabular-nums">
+                              <span className="text-xs font-semibold text-ct-paper tabular-nums">
                                 {formatCurrency(weekGroup.total)}
                               </span>
                             </button>
@@ -1217,39 +1217,39 @@ export default function Payouts() {
                                       <col className="w-[132px]" />
                                       <col className="w-16" />
                                     </colgroup>
-                                    <tbody className="divide-y divide-surface-100">
+                                    <tbody className="divide-y divide-ct-line-soft">
                                       {weekGroup.payments.map((p) => {
                                         const jobTitle = p.jobs?.title || p.jobs?.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job';
                                         const isInvoice = p.id.startsWith('inv_');
                                         const isReleased = isInvoice || !!(p.metadata?.transfer_id);
                                         const statusLabel = isInvoice ? 'Completed' : isReleased ? 'Paid to Bank' : p.status === 'completed' ? 'In Escrow' : p.status;
-                                        const statusClass = isInvoice ? 'bg-emerald-100 text-emerald-700' : isReleased ? 'bg-green-100 text-green-700' : p.status === 'completed' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600';
+                                        const statusClass = isInvoice ? 'bg-ct-teal/[0.14] text-ct-teal' : isReleased ? 'bg-ct-teal/[0.14] text-ct-teal' : p.status === 'completed' ? 'bg-ct-amber/[0.13] text-ct-amber' : 'bg-ct-surface-2 text-ct-mute-2';
                                         const isCancelled = p.jobStatus === 'cancelled' || p.jobStatus === 'declined';
                                         return (
-                                          <tr key={p.id} onClick={() => !isInvoice && setSelectedJobId(p.job_id)} className={`hover:bg-surface-50 transition-colors ${isInvoice ? '' : 'cursor-pointer'} ${isCancelled ? 'opacity-60' : ''}`}>
-                                            <td className="px-5 py-3 text-sm text-navy-400 w-24">
+                                          <tr key={p.id} onClick={() => !isInvoice && setSelectedJobId(p.job_id)} className={`hover:bg-ct-surface-2 transition-colors ${isInvoice ? '' : 'cursor-pointer'} ${isCancelled ? 'opacity-60' : ''}`}>
+                                            <td className="px-5 py-3 text-sm text-ct-mute w-24">
                                               {new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                                             </td>
                                             <td className="px-5 py-3">
                                               <div className="flex items-center gap-2 min-w-0">
-                                                <p className="text-sm font-medium text-navy-900 truncate">{jobTitle}</p>
+                                                <p className="text-sm font-medium text-ct-paper truncate">{jobTitle}</p>
                                                 {p.isRecurring && (
                                                   <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
-                                                    isCancelled ? 'bg-red-100 text-red-600' : 'bg-secondary-100 text-secondary-700'
+                                                    isCancelled ? 'bg-ct-rose/[0.13] text-ct-rose' : 'bg-ct-surface-2 text-ct-mute-2'
                                                   }`}>
                                                     {isCancelled ? 'Cancelled' : 'Ongoing'}
                                                   </span>
                                                 )}
                                                 {!p.isRecurring && isCancelled && (
-                                                  <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 bg-red-100 text-red-600">
+                                                  <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 bg-ct-rose/[0.13] text-ct-rose">
                                                     Cancelled
                                                   </span>
                                                 )}
                                               </div>
                                             </td>
-                                            <td className="px-5 py-3 text-sm text-navy-500">{p.client_name}</td>
+                                            <td className="px-5 py-3 text-sm text-ct-mute-2">{p.client_name}</td>
                                             <td className="px-5 py-3 text-right">
-                                              <span className="text-sm font-semibold text-navy-900 tabular-nums">{formatCurrency(p.amount)}</span>
+                                              <span className="text-sm font-semibold text-ct-paper tabular-nums">{formatCurrency(p.amount)}</span>
                                             </td>
                                             <td className="px-5 py-3 text-center">
                                               <span className={`inline-flex items-center text-xs font-medium px-3 py-1 rounded-full ${statusClass}`}>
@@ -1260,7 +1260,7 @@ export default function Payouts() {
                                               <button
                                                 onClick={(e) => { e.stopPropagation(); handleDownloadInvoice(p); }}
                                                 disabled={pdfLoadingId === p.id}
-                                                className="p-1.5 text-navy-300 hover:text-secondary-600 hover:bg-secondary-50 rounded-lg transition-colors disabled:opacity-50"
+                                                className="p-1.5 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors disabled:opacity-50"
                                                 title="Download Invoice"
                                               >
                                                 {pdfLoadingId === p.id ? (
@@ -1278,40 +1278,40 @@ export default function Payouts() {
                                 </div>
 
                                 {/* Mobile rows */}
-                                <div className="md:hidden divide-y divide-surface-100">
+                                <div className="md:hidden divide-y divide-ct-line-soft">
                                   {weekGroup.payments.map((p) => {
                                     const jobTitle = p.jobs?.title || p.jobs?.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job';
                                     const isInvoice = p.id.startsWith('inv_');
                                     const isReleased = isInvoice || !!(p.metadata?.transfer_id);
                                     const statusLabel = isInvoice ? 'Completed' : isReleased ? 'Paid to Bank' : p.status === 'completed' ? 'In Escrow' : p.status;
-                                    const statusClass = isInvoice ? 'bg-emerald-100 text-emerald-700' : isReleased ? 'bg-green-100 text-green-700' : p.status === 'completed' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600';
+                                    const statusClass = isInvoice ? 'bg-ct-teal/[0.14] text-ct-teal' : isReleased ? 'bg-ct-teal/[0.14] text-ct-teal' : p.status === 'completed' ? 'bg-ct-amber/[0.13] text-ct-amber' : 'bg-ct-surface-2 text-ct-mute-2';
                                     const isCancelled = p.jobStatus === 'cancelled' || p.jobStatus === 'declined';
                                     return (
-                                      <div key={p.id} onClick={() => !isInvoice && setSelectedJobId(p.job_id)} className={`px-4 py-4 ${isInvoice ? '' : 'cursor-pointer'} hover:bg-surface-50 transition-colors ${isCancelled ? 'opacity-60' : ''}`}>
+                                      <div key={p.id} onClick={() => !isInvoice && setSelectedJobId(p.job_id)} className={`px-4 py-4 ${isInvoice ? '' : 'cursor-pointer'} hover:bg-ct-surface-2 transition-colors ${isCancelled ? 'opacity-60' : ''}`}>
                                         {/* Row 1: icon + full service name + amount */}
                                         <div className="flex items-start justify-between gap-3">
                                           <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                                            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-warm-50 mt-0.5">
-                                              <DollarSign className="w-4 h-4 text-warm-600" />
+                                            <div className="w-8 h-8 rounded-ct-sm flex items-center justify-center flex-shrink-0 bg-ct-amber/[0.13] mt-0.5">
+                                              <DollarSign className="w-4 h-4 text-ct-amber" />
                                             </div>
                                             <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
-                                              <p className="text-sm font-medium text-navy-900 leading-snug">{jobTitle}</p>
+                                              <p className="text-sm font-medium text-ct-paper leading-snug">{jobTitle}</p>
                                               {p.isRecurring && (
-                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${isCancelled ? 'bg-red-100 text-red-600' : 'bg-secondary-100 text-secondary-700'}`}>
+                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${isCancelled ? 'bg-ct-rose/[0.13] text-ct-rose' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
                                                   {isCancelled ? 'Cancelled' : 'Ongoing'}
                                                 </span>
                                               )}
                                               {!p.isRecurring && isCancelled && (
-                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 bg-red-100 text-red-600">Cancelled</span>
+                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 bg-ct-rose/[0.13] text-ct-rose">Cancelled</span>
                                               )}
                                             </div>
                                           </div>
-                                          <p className="text-base font-semibold text-navy-900 tabular-nums flex-shrink-0">{formatCurrency(p.amount)}</p>
+                                          <p className="text-base font-semibold text-ct-paper tabular-nums flex-shrink-0">{formatCurrency(p.amount)}</p>
                                         </div>
 
                                         {/* Row 2: client · date + status badge (aligned under the name) */}
                                         <div className="flex items-center justify-between gap-2 mt-2 pl-[42px]">
-                                          <p className="text-xs text-navy-400 truncate min-w-0">
+                                          <p className="text-xs text-ct-mute truncate min-w-0">
                                             {p.client_name} · {new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                                           </p>
                                           <span className={`inline-flex items-center text-[11px] font-medium px-2.5 py-1 rounded-full flex-shrink-0 ${statusClass}`}>
@@ -1324,7 +1324,7 @@ export default function Payouts() {
                                           <button
                                             onClick={(e) => { e.stopPropagation(); handleDownloadInvoice(p); }}
                                             disabled={pdfLoadingId === p.id}
-                                            className="inline-flex items-center gap-1.5 text-xs font-medium text-secondary-600 hover:text-secondary-700 disabled:opacity-50 min-h-[36px]"
+                                            className="inline-flex items-center gap-1.5 text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 disabled:opacity-50 min-h-[36px]"
                                             title="Download Invoice"
                                           >
                                             {pdfLoadingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
@@ -1347,13 +1347,13 @@ export default function Payouts() {
             )}
 
             {/* Payout History — month-grouped like client page */}
-            <div className="bg-white rounded-2xl border border-surface-200 overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-surface-200">
+            <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-ct-line">
                 <div className="flex items-center gap-2">
-                  <Banknote className="w-4 h-4 text-navy-300" />
-                  <h2 className="text-sm font-semibold text-navy-800">Payout History</h2>
+                  <Banknote className="w-4 h-4 text-ct-mute" />
+                  <h2 className="text-sm font-semibold text-ct-paper">Payout History</h2>
                   {totalPayoutCount > 0 && (
-                    <span className="text-xs text-navy-300 font-medium">({totalPayoutCount})</span>
+                    <span className="text-xs text-ct-mute font-medium">({totalPayoutCount})</span>
                   )}
                 </div>
               </div>
@@ -1367,16 +1367,16 @@ export default function Payouts() {
                         {/* Month header */}
                         <button
                           onClick={() => toggleMonth(group.key)}
-                          className="w-full flex items-center justify-between px-5 py-3 bg-surface-50 border-b border-surface-200 hover:bg-surface-100 transition-colors"
+                          className="w-full flex items-center justify-between px-5 py-3 bg-ct-surface-2 border-b border-ct-line hover:bg-ct-surface-2 transition-colors"
                         >
                           <div className="flex items-center gap-2">
-                            <ChevronDown className={`w-4 h-4 text-navy-400 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
-                            <h3 className="text-sm font-semibold text-navy-800">{group.label}</h3>
-                            <span className="text-xs text-navy-300">
+                            <ChevronDown className={`w-4 h-4 text-ct-mute transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
+                            <h3 className="text-sm font-semibold text-ct-paper">{group.label}</h3>
+                            <span className="text-xs text-ct-mute">
                               {group.payouts.length} payout{group.payouts.length !== 1 ? 's' : ''}
                             </span>
                           </div>
-                          <span className="text-sm font-semibold text-navy-700 tabular-nums">
+                          <span className="text-sm font-semibold text-ct-paper tabular-nums">
                             {formatCurrency(group.total)}
                           </span>
                         </button>
@@ -1386,37 +1386,37 @@ export default function Payouts() {
                             {/* Desktop rows */}
                             <div className="hidden md:block">
                               <table className="w-full">
-                                <tbody className="divide-y divide-surface-100">
+                                <tbody className="divide-y divide-ct-line-soft">
                                   {group.payouts.map((payout) => (
-                                    <tr key={payout.id} className="hover:bg-surface-50 transition-colors">
+                                    <tr key={payout.id} className="hover:bg-ct-surface-2 transition-colors">
                                       <td className="px-5 py-3.5 w-32">
-                                        <span className="text-sm text-navy-400">
+                                        <span className="text-sm text-ct-mute">
                                           {new Date(payout.created * 1000).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                                         </span>
                                       </td>
                                       <td className="px-5 py-3.5">
                                         <div className="flex items-center gap-3">
-                                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                                            payout.status === 'paid' ? 'bg-warm-50' :
-                                            payout.status === 'in_transit' ? 'bg-accent-50' :
-                                            payout.status === 'pending' ? 'bg-accent-50' : 'bg-surface-100'
+                                          <div className={`w-8 h-8 rounded-ct-sm flex items-center justify-center flex-shrink-0 ${
+                                            payout.status === 'paid' ? 'bg-ct-amber/[0.13]' :
+                                            payout.status === 'in_transit' ? 'bg-ct-amber/[0.13]' :
+                                            payout.status === 'pending' ? 'bg-ct-amber/[0.13]' : 'bg-ct-surface-2'
                                           }`}>
                                             <Banknote className={`w-3.5 h-3.5 ${
-                                              payout.status === 'paid' ? 'text-warm-600' :
-                                              payout.status === 'in_transit' ? 'text-accent-600' :
-                                              payout.status === 'pending' ? 'text-accent-600' : 'text-navy-400'
+                                              payout.status === 'paid' ? 'text-ct-amber' :
+                                              payout.status === 'in_transit' ? 'text-ct-amber' :
+                                              payout.status === 'pending' ? 'text-ct-amber' : 'text-ct-mute'
                                             }`} />
                                           </div>
                                           <div className="min-w-0">
-                                            <p className="text-sm font-medium text-navy-900">Bank Transfer</p>
-                                            <span className="text-xs text-navy-300">
+                                            <p className="text-sm font-medium text-ct-paper">Bank Transfer</p>
+                                            <span className="text-xs text-ct-mute">
                                               Arrives {new Date(payout.arrival_date * 1000).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                                             </span>
                                           </div>
                                         </div>
                                       </td>
                                       <td className="px-5 py-3.5 text-right w-28">
-                                        <span className="text-sm font-semibold text-navy-900 tabular-nums">
+                                        <span className="text-sm font-semibold text-ct-paper tabular-nums">
                                           {formatCurrency(payout.amount)}
                                         </span>
                                       </td>
@@ -1430,31 +1430,31 @@ export default function Payouts() {
                             </div>
 
                             {/* Mobile rows */}
-                            <div className="md:hidden divide-y divide-surface-100">
+                            <div className="md:hidden divide-y divide-ct-line-soft">
                               {group.payouts.map((payout) => (
                                 <div key={payout.id} className="flex items-center gap-3 px-5 py-3.5">
-                                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                                    payout.status === 'paid' ? 'bg-warm-50' :
-                                    payout.status === 'in_transit' ? 'bg-accent-50' : 'bg-surface-100'
+                                  <div className={`w-9 h-9 rounded-ct-sm flex items-center justify-center flex-shrink-0 ${
+                                    payout.status === 'paid' ? 'bg-ct-amber/[0.13]' :
+                                    payout.status === 'in_transit' ? 'bg-ct-amber/[0.13]' : 'bg-ct-surface-2'
                                   }`}>
                                     <Banknote className={`w-4 h-4 ${
-                                      payout.status === 'paid' ? 'text-warm-600' :
-                                      payout.status === 'in_transit' ? 'text-accent-600' : 'text-navy-400'
+                                      payout.status === 'paid' ? 'text-ct-amber' :
+                                      payout.status === 'in_transit' ? 'text-ct-amber' : 'text-ct-mute'
                                     }`} />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-navy-900">Bank Transfer</p>
+                                    <p className="text-sm font-medium text-ct-paper">Bank Transfer</p>
                                     <div className="flex items-center gap-2 mt-0.5">
-                                      <span className="text-xs text-navy-300">
+                                      <span className="text-xs text-ct-mute">
                                         {new Date(payout.created * 1000).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                                       </span>
-                                      <span className="text-xs text-navy-200">
+                                      <span className="text-xs text-ct-mute">
                                         → {new Date(payout.arrival_date * 1000).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                                       </span>
                                     </div>
                                   </div>
                                   <div className="text-right flex-shrink-0">
-                                    <p className="text-sm font-semibold text-navy-900 tabular-nums">{formatCurrency(payout.amount)}</p>
+                                    <p className="text-sm font-semibold text-ct-paper tabular-nums">{formatCurrency(payout.amount)}</p>
                                     <div className="mt-1"><PayoutStatusBadge status={payout.status} /></div>
                                   </div>
                                 </div>
@@ -1468,11 +1468,11 @@ export default function Payouts() {
                 </>
               ) : (
                 <div className="py-20 text-center">
-                  <div className="w-16 h-16 bg-surface-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Wallet className="w-8 h-8 text-navy-200" />
+                  <div className="w-16 h-16 bg-ct-surface-2 rounded-ct-lg flex items-center justify-center mx-auto mb-4">
+                    <Wallet className="w-8 h-8 text-ct-mute" />
                   </div>
-                  <h3 className="text-lg font-semibold text-navy-800 mb-1">No Payouts Yet</h3>
-                  <p className="text-sm text-navy-400 max-w-sm mx-auto">
+                  <h3 className="text-lg font-semibold text-ct-paper mb-1">No Payouts Yet</h3>
+                  <p className="text-sm text-ct-mute max-w-sm mx-auto">
                     When clients release funds for completed jobs, your payouts will appear here. Payments typically arrive in your bank within 2-3 business days.
                   </p>
                 </div>
@@ -1496,11 +1496,11 @@ export default function Payouts() {
 
 function PayoutStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    paid: 'bg-green-100 text-green-700',
-    pending: 'bg-amber-100 text-amber-700',
-    in_transit: 'bg-secondary-100 text-secondary-700',
-    canceled: 'bg-red-100 text-red-700',
-    failed: 'bg-red-100 text-red-700',
+    paid: 'bg-ct-teal/[0.14] text-ct-teal',
+    pending: 'bg-ct-amber/[0.13] text-ct-amber',
+    in_transit: 'bg-ct-surface-2 text-ct-mute-2',
+    canceled: 'bg-ct-rose/[0.13] text-ct-rose',
+    failed: 'bg-ct-rose/[0.13] text-ct-rose',
   };
 
   const labels: Record<string, string> = {
@@ -1522,7 +1522,7 @@ function PayoutStatusBadge({ status }: { status: string }) {
   return (
     <span
       className={`inline-flex items-center text-xs font-medium px-3 py-1 rounded-full ${
-        styles[status] || 'bg-gray-100 text-gray-300'
+        styles[status] || 'bg-ct-surface-2 text-ct-mute'
       }`}
       title={tooltips[status] || ''}
     >

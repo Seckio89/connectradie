@@ -195,18 +195,18 @@ export default function BookingRequestModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[85vh]">
+      <div className="bg-ct-surface rounded-ct-md shadow-2xl w-full max-w-2xl flex flex-col max-h-[85vh]">
 
         {/* Header - Pinned to Top */}
-        <div className="flex-none p-6 border-b border-gray-100 flex justify-between items-center">
+        <div className="flex-none p-6 border-b border-ct-line-soft flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-warm-500 rounded-full flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 bg-ct-teal rounded-full flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-ct-ink" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Booking Request</h2>
+              <h2 className="text-xl font-bold text-ct-paper">Booking Request</h2>
               {client && (
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-ct-mute-2">
                   From {client.full_name} {message?.created_at && `• ${new Date(message.created_at).toLocaleDateString('en-AU')}`}
                 </p>
               )}
@@ -214,21 +214,21 @@ export default function BookingRequestModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="p-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-ct-mute" />
           </button>
         </div>
 
         {/* Tabs - Pinned Below Header */}
-        <div className="flex-none border-b border-gray-200 bg-gray-50">
+        <div className="flex-none border-b border-ct-line bg-ct-surface-2">
           <div className="flex">
             <button
               onClick={() => setActiveTab('details')}
               className={`flex-1 px-4 py-3 text-sm font-medium transition-colors min-h-[44px] ${
                 activeTab === 'details'
-                  ? 'text-warm-600 border-b-2 border-warm-600 bg-white'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-ct-amber border-b-2 border-ct-teal/30 bg-ct-surface'
+                  : 'text-ct-mute-2 hover:text-ct-paper'
               }`}
             >
               Details
@@ -237,8 +237,8 @@ export default function BookingRequestModal({
               onClick={() => setActiveTab('availability')}
               className={`flex-1 px-4 py-3 text-sm font-medium transition-colors min-h-[44px] ${
                 activeTab === 'availability'
-                  ? 'text-warm-600 border-b-2 border-warm-600 bg-white'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-ct-amber border-b-2 border-ct-teal/30 bg-ct-surface'
+                  : 'text-ct-mute-2 hover:text-ct-paper'
               }`}
             >
               Availability
@@ -250,7 +250,7 @@ export default function BookingRequestModal({
         <div className="flex-1 overflow-y-auto min-h-0 p-6 space-y-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 text-warm-600 animate-spin" />
+              <Loader2 className="w-8 h-8 text-ct-amber animate-spin" />
             </div>
           ) : (
             <>
@@ -266,18 +266,18 @@ export default function BookingRequestModal({
                       />
 
                       {job.is_emergency && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div className="bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm p-4">
                           <div className="flex items-center gap-2">
-                            <AlertCircle className="w-5 h-5 text-red-600" />
-                            <p className="text-sm font-medium text-red-800">Emergency Job - Immediate Attention Required</p>
+                            <AlertCircle className="w-5 h-5 text-ct-rose" />
+                            <p className="text-sm font-medium text-ct-paper">Emergency Job - Immediate Attention Required</p>
                           </div>
                         </div>
                       )}
                     </>
                   )}
 
-                  <div className="border-t border-gray-200 pt-6">
-                    <h3 className="text-sm font-medium text-gray-600 mb-3">Send a Message</h3>
+                  <div className="border-t border-ct-line pt-6">
+                    <h3 className="text-sm font-medium text-ct-mute-2 mb-3">Send a Message</h3>
                     <textarea {...proseInputProps}
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
@@ -288,7 +288,7 @@ export default function BookingRequestModal({
                       }
                       disabled={(isTradie && !isUnlocked) || sending}
                       rows={4}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-warm-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:cursor-not-allowed"
+                      className="w-full px-4 py-3 border border-ct-line rounded-ct-sm resize-none focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-all disabled:bg-ct-surface-2 disabled:cursor-not-allowed"
                     />
                   </div>
                 </>
@@ -297,36 +297,36 @@ export default function BookingRequestModal({
               {activeTab === 'availability' && (
                 <>
                   {tradie && (
-                    <div className="p-3 bg-secondary-50 border border-secondary-200 rounded-lg text-sm text-secondary-800">
+                    <div className="p-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm text-sm text-ct-mute-2">
                       <strong>Viewing availability for:</strong> {tradie.full_name || 'Tradie'}
                       <br />
                       <strong>Total available slots:</strong> {availabilitySlots.length}
                     </div>
                   )}
 
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+                  <div className="bg-ct-surface border border-ct-line rounded-ct-sm overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 bg-ct-surface-2 border-b border-ct-line">
                       <button
                         onClick={previousMonth}
-                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        className="p-2 hover:bg-ct-line rounded-ct-sm transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                       >
-                        <ChevronLeft className="w-5 h-5 text-gray-600" />
+                        <ChevronLeft className="w-5 h-5 text-ct-mute-2" />
                       </button>
-                      <h3 className="text-base font-semibold text-gray-900">
+                      <h3 className="text-base font-semibold text-ct-paper">
                         {currentMonth.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
                       </h3>
                       <button
                         onClick={nextMonth}
-                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        className="p-2 hover:bg-ct-line rounded-ct-sm transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                       >
-                        <ChevronRight className="w-5 h-5 text-gray-600" />
+                        <ChevronRight className="w-5 h-5 text-ct-mute-2" />
                       </button>
                     </div>
 
                     <div className="p-4">
                       <div className="grid grid-cols-7 gap-2 mb-2">
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                          <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
+                          <div key={day} className="text-center text-xs font-medium text-ct-mute py-2">
                             {day}
                           </div>
                         ))}
@@ -351,17 +351,17 @@ export default function BookingRequestModal({
                               key={day}
                               onClick={() => setSelectedDate(hasAvailability ? dateKey : null)}
                               disabled={!hasAvailability}
-                              className={`aspect-square rounded-lg text-sm font-medium transition-all ${
+                              className={`aspect-square rounded-ct-sm text-sm font-medium transition-all ${
                                 hasAvailability
                                   ? isSelected
-                                    ? 'bg-warm-500 text-white shadow-md'
+                                    ? 'bg-ct-teal text-ct-ink shadow-md'
                                     : isPast
-                                    ? 'bg-green-50/50 text-green-500 opacity-50 hover:opacity-75 border border-green-100'
-                                    : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
+                                    ? 'bg-ct-teal/[0.14]/50 text-ct-teal opacity-50 hover:opacity-75 border border-ct-teal/30'
+                                    : 'bg-ct-teal/[0.14] text-ct-teal hover:bg-ct-teal/[0.14] border border-ct-teal/30'
                                   : isPast
-                                  ? 'text-gray-300 opacity-50'
-                                  : 'text-gray-400 cursor-not-allowed'
-                              } ${isToday && !isSelected ? 'ring-2 ring-warm-300' : ''}`}
+                                  ? 'text-ct-mute opacity-50'
+                                  : 'text-ct-mute cursor-not-allowed'
+                              } ${isToday && !isSelected ? 'ring-2 ring-ct-teal' : ''}`}
                             >
                               {day}
                             </button>
@@ -372,8 +372,8 @@ export default function BookingRequestModal({
                   </div>
 
                   {availabilitySlots.length === 0 ? (
-                    <div className="bg-warm-50 border border-warm-200 rounded-lg p-4">
-                      <p className="text-sm text-warm-800 flex items-center gap-2">
+                    <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm p-4">
+                      <p className="text-sm text-ct-paper flex items-center gap-2">
                         <AlertCircle className="w-4 h-4" />
                         {isTradie
                           ? 'You haven\'t set any available time slots yet. Go to your dashboard to add availability.'
@@ -381,8 +381,8 @@ export default function BookingRequestModal({
                       </p>
                     </div>
                   ) : selectedDate ? (
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <div className="bg-ct-surface-2 rounded-ct-sm p-4 border border-ct-line">
+                      <h4 className="text-sm font-medium text-ct-mute-2 mb-3 flex items-center gap-2">
                         <Clock className="w-4 h-4" />
                         Available Times for {selectedDate}
                       </h4>
@@ -402,17 +402,17 @@ export default function BookingRequestModal({
                           return (
                             <div
                               key={slot.id}
-                              className={`flex items-center justify-between px-4 py-3 rounded-lg border-2 ${
+                              className={`flex items-center justify-between px-4 py-3 rounded-ct-sm border-2 ${
                                 isRequestedSlot
-                                  ? 'bg-warm-50 border-warm-500'
-                                  : 'bg-white border-gray-200'
+                                  ? 'bg-ct-amber/[0.13] border-ct-teal'
+                                  : 'bg-ct-surface border-ct-line'
                               }`}
                             >
-                              <span className="text-sm font-medium text-gray-900">{timeRange}</span>
+                              <span className="text-sm font-medium text-ct-paper">{timeRange}</span>
                               <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                                 isRequestedSlot
-                                  ? 'bg-warm-500 text-white'
-                                  : 'bg-green-100 text-green-700'
+                                  ? 'bg-ct-teal text-ct-ink'
+                                  : 'bg-ct-teal/[0.14] text-ct-teal'
                               }`}>
                                 {isRequestedSlot ? 'Requested' : 'Available'}
                               </span>
@@ -423,20 +423,20 @@ export default function BookingRequestModal({
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <p className="text-sm text-gray-600 text-center">
+                      <p className="text-sm text-ct-mute-2 text-center">
                         {isTradie
                           ? 'Green dates show your available time slots'
                           : 'Click on a green date to see available time slots'}
                       </p>
 
                       {availabilitySlots.length > 0 && (
-                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="bg-ct-surface-2 rounded-ct-sm p-4 border border-ct-line">
                           <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-sm font-medium text-gray-700">All Available Slots</h4>
+                            <h4 className="text-sm font-medium text-ct-mute-2">All Available Slots</h4>
                             {availabilitySlots.length > 10 && (
                               <button
                                 onClick={() => setShowAllSlots(!showAllSlots)}
-                                className="text-xs text-primary-600 hover:text-primary-700 font-medium"
+                                className="text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium"
                               >
                                 {showAllSlots ? 'Show Less' : `Show All (${availabilitySlots.length})`}
                               </button>
@@ -447,7 +447,7 @@ export default function BookingRequestModal({
                               const startDate = new Date(slot.start_time);
                               const endDate = new Date(slot.end_time);
                               return (
-                                <div key={slot.id} className="text-xs bg-white p-2 rounded border border-gray-200">
+                                <div key={slot.id} className="text-xs bg-ct-surface p-2 rounded border border-ct-line">
                                   <strong>{startDate.toLocaleDateString('en-AU')}</strong>
                                   {' '}
                                   {startDate.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
@@ -459,7 +459,7 @@ export default function BookingRequestModal({
                             {!showAllSlots && availabilitySlots.length > 10 && (
                               <button
                                 onClick={() => setShowAllSlots(true)}
-                                className="w-full py-2 text-sm font-medium text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+                                className="w-full py-2 text-sm font-medium text-ct-mute-2 hover:text-ct-mute-2 bg-ct-surface-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
                               >
                                 Click to view {availabilitySlots.length - 10} more slots
                               </button>
@@ -476,11 +476,11 @@ export default function BookingRequestModal({
         </div>
 
         {/* Footer - Pinned to Bottom */}
-        <div className="flex-none p-6 border-t border-gray-100 bg-gray-50 rounded-b-xl">
+        <div className="flex-none p-6 border-t border-ct-line-soft bg-ct-surface-2 rounded-b-xl">
           <div className="flex justify-end gap-3">
             <button
               onClick={onClose}
-              className="px-5 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium min-h-[44px]"
+              className="px-5 py-2.5 text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors font-medium min-h-[44px]"
             >
               Close
             </button>
@@ -488,7 +488,7 @@ export default function BookingRequestModal({
               <button
                 onClick={handleSendReply}
                 disabled={!replyText.trim() || sending || (isTradie && !isUnlocked)}
-                className="px-5 py-2.5 bg-warm-500 text-white rounded-lg hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 font-medium min-h-[44px]"
+                className="px-5 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 font-medium min-h-[44px]"
               >
                 {sending ? (
                   <>

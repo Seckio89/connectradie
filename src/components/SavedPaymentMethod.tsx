@@ -25,22 +25,22 @@ export default function SavedPaymentMethod({ bsbLast4, accountLast4, mandateStat
 
   return (
     <>
-      <div className="rounded-lg border border-secondary-200 overflow-hidden">
-        <div className="flex items-center justify-between gap-3 px-4 py-3 bg-secondary-50">
+      <div className="rounded-ct-sm border border-ct-line overflow-hidden">
+        <div className="flex items-center justify-between gap-3 px-4 py-3 bg-ct-surface-2">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-secondary-100 rounded-lg flex items-center justify-center">
-              <Building2 className="w-4.5 h-4.5 text-secondary-600" />
+            <div className="w-9 h-9 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center">
+              <Building2 className="w-4.5 h-4.5 text-ct-mute-2" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-ct-paper">
                   BSB ****{bsbLast4 || '??'} · Account ****{accountLast4 || '????'}
                 </p>
                 {mandateStatus === 'active' && (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-ct-teal" />
                 )}
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ct-mute">
                 {mandateStatus === 'active'
                   ? 'Active — invoices are charged automatically'
                   : mandateStatus === 'revoked'
@@ -51,11 +51,11 @@ export default function SavedPaymentMethod({ bsbLast4, accountLast4, mandateStat
           </div>
         </div>
         {mandateStatus === 'active' && (
-          <div className="px-4 py-2.5 bg-white border-t border-secondary-100">
+          <div className="px-4 py-2.5 bg-ct-surface border-t border-ct-line">
             <button
               onClick={() => setShowConfirm(true)}
               disabled={removing}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-red-600 hover:text-red-700 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-ct-rose hover:text-ct-rose transition-colors"
             >
               {removing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
               Stop Automatic Payments
