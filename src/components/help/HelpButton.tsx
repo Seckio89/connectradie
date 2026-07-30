@@ -33,7 +33,7 @@ export default function HelpButton() {
       <button
         onClick={() => setOpen(true)}
         aria-label="Help"
-        className="relative p-2.5 text-gray-300 hover:text-white hover:bg-navy-800 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
+        className="relative p-2.5 text-ct-mute hover:text-ct-ink hover:bg-ct-surface rounded-ct-sm min-w-[44px] min-h-[44px] flex items-center justify-center"
       >
         <HelpCircle className="w-5 h-5" />
       </button>
@@ -44,16 +44,16 @@ export default function HelpButton() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
 
           {/* Panel */}
-          <div className="relative w-full max-w-sm bg-white h-full shadow-xl flex flex-col animate-in slide-in-from-right">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div className="relative w-full max-w-sm bg-ct-surface h-full shadow-xl flex flex-col animate-in slide-in-from-right">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-ct-line-soft">
               <div className="flex items-center gap-2">
-                <HelpCircle className="w-5 h-5 text-secondary-600" />
-                <h2 className="text-base font-semibold text-gray-900">{content?.title ?? 'Need a hand?'}</h2>
+                <HelpCircle className="w-5 h-5 text-ct-mute-2" />
+                <h2 className="text-base font-semibold text-ct-paper">{content?.title ?? 'Need a hand?'}</h2>
               </div>
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Close help"
-                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-50"
+                className="p-1.5 text-ct-mute hover:text-ct-mute-2 rounded-md hover:bg-ct-surface-2"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -65,19 +65,19 @@ export default function HelpButton() {
                   {/* FAQ */}
                   {content.faqs.length > 0 && (
                     <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Common questions</p>
-                      <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden">
+                      <p className="text-xs font-medium text-ct-mute uppercase tracking-wide mb-2">Common questions</p>
+                      <div className="divide-y divide-ct-line-soft border border-ct-line-soft rounded-ct-md overflow-hidden">
                         {content.faqs.map((faq, i) => (
                           <div key={i}>
                             <button
                               onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                              className="w-full flex items-center justify-between gap-3 px-3.5 py-3 text-left hover:bg-gray-50 transition-colors"
+                              className="w-full flex items-center justify-between gap-3 px-3.5 py-3 text-left hover:bg-ct-surface-2 transition-colors"
                             >
-                              <span className="text-sm font-medium text-gray-800">{faq.q}</span>
-                              <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+                              <span className="text-sm font-medium text-ct-paper">{faq.q}</span>
+                              <ChevronDown className={`w-4 h-4 text-ct-mute flex-shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
                             </button>
                             {openFaq === i && (
-                              <p className="px-3.5 pb-3 text-sm text-gray-600 leading-relaxed">{faq.a}</p>
+                              <p className="px-3.5 pb-3 text-sm text-ct-mute-2 leading-relaxed">{faq.a}</p>
                             )}
                           </div>
                         ))}
@@ -86,8 +86,8 @@ export default function HelpButton() {
                   )}
                 </>
               ) : (
-                <div className="rounded-xl bg-secondary-50 border border-secondary-100 p-4">
-                  <p className="text-sm text-gray-700 leading-relaxed break-words">
+                <div className="rounded-ct-md bg-ct-surface-2 border border-ct-line p-4">
+                  <p className="text-sm text-ct-mute-2 leading-relaxed break-words">
                     Looking for help with this page? Browse the full help centre below, or get in touch and we&rsquo;ll point you in the right direction.
                   </p>
                 </div>
@@ -96,19 +96,19 @@ export default function HelpButton() {
               {/* Location & privacy — only for tradies who enabled background location */}
               {locationEnabled && (
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Location &amp; privacy</p>
-                  <div className="border border-gray-100 rounded-xl overflow-hidden">
+                  <p className="text-xs font-medium text-ct-mute uppercase tracking-wide mb-2">Location &amp; privacy</p>
+                  <div className="border border-ct-line-soft rounded-ct-md overflow-hidden">
                     <button
                       onClick={() => setShowSecurityHelp((v) => !v)}
-                      className="w-full flex items-center justify-between gap-3 px-3.5 py-3 text-left hover:bg-gray-50 transition-colors"
+                      className="w-full flex items-center justify-between gap-3 px-3.5 py-3 text-left hover:bg-ct-surface-2 transition-colors"
                     >
-                      <span className="flex items-center gap-2 text-sm font-medium text-gray-800">
-                        <ShieldAlert className="w-4 h-4 text-amber-500 flex-shrink-0" /> Getting a security warning?
+                      <span className="flex items-center gap-2 text-sm font-medium text-ct-paper">
+                        <ShieldAlert className="w-4 h-4 text-ct-amber flex-shrink-0" /> Getting a security warning?
                       </span>
-                      <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${showSecurityHelp ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-4 h-4 text-ct-mute flex-shrink-0 transition-transform ${showSecurityHelp ? 'rotate-180' : ''}`} />
                     </button>
                     {showSecurityHelp && (
-                      <div className="px-3.5 pb-3 text-sm text-gray-600 leading-relaxed space-y-2">
+                      <div className="px-3.5 pb-3 text-sm text-ct-mute-2 leading-relaxed space-y-2">
                         <p>
                           Android sometimes shows warnings like “an app is accessing your location” when
                           background location is enabled. This is your phone’s standard security alert, not a
@@ -116,16 +116,16 @@ export default function HelpButton() {
                         </p>
                         <ul className="space-y-1.5">
                           <li className="flex items-start gap-2">
-                            <span className="text-secondary-500 mt-0.5">•</span>
-                            <span>Open <span className="font-medium text-gray-800">Android Settings → Apps → ConnecTradie → Permissions → Location</span> and choose <span className="font-medium text-gray-800">“Allow all the time”</span>.</span>
+                            <span className="text-ct-mute-2 mt-0.5">•</span>
+                            <span>Open <span className="font-medium text-ct-paper">Android Settings → Apps → ConnecTradie → Permissions → Location</span> and choose <span className="font-medium text-ct-paper">“Allow all the time”</span>.</span>
                           </li>
                           <li className="flex items-start gap-2">
-                            <span className="text-secondary-500 mt-0.5">•</span>
-                            <span><span className="font-medium text-gray-800">Samsung:</span> Settings → Biometrics and Security → turn off <span className="font-medium text-gray-800">App permission monitor</span> for ConnecTradie.</span>
+                            <span className="text-ct-mute-2 mt-0.5">•</span>
+                            <span><span className="font-medium text-ct-paper">Samsung:</span> Settings → Biometrics and Security → turn off <span className="font-medium text-ct-paper">App permission monitor</span> for ConnecTradie.</span>
                           </li>
                           <li className="flex items-start gap-2">
-                            <span className="text-secondary-500 mt-0.5">•</span>
-                            <span>Set <span className="font-medium text-gray-800">Battery</span> to <span className="font-medium text-gray-800">“Unrestricted”</span> for ConnecTradie.</span>
+                            <span className="text-ct-mute-2 mt-0.5">•</span>
+                            <span>Set <span className="font-medium text-ct-paper">Battery</span> to <span className="font-medium text-ct-paper">“Unrestricted”</span> for ConnecTradie.</span>
                           </li>
                         </ul>
                       </div>
@@ -138,16 +138,16 @@ export default function HelpButton() {
               <div className="space-y-2 pt-2">
                 <button
                   onClick={() => showToast('Video walkthroughs are coming soon.')}
-                  className="w-full inline-flex items-center gap-2.5 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="w-full inline-flex items-center gap-2.5 px-4 py-2.5 border border-ct-line rounded-ct-sm text-sm font-medium text-ct-mute-2 hover:bg-ct-surface-2 transition-colors"
                 >
-                  <PlayCircle className="w-4 h-4 text-secondary-600" /> Watch a quick video
+                  <PlayCircle className="w-4 h-4 text-ct-mute-2" /> Watch a quick video
                 </button>
                 <Link
                   to="/help"
                   onClick={() => setOpen(false)}
-                  className="w-full inline-flex items-center gap-2.5 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="w-full inline-flex items-center gap-2.5 px-4 py-2.5 border border-ct-line rounded-ct-sm text-sm font-medium text-ct-mute-2 hover:bg-ct-surface-2 transition-colors"
                 >
-                  <LifeBuoy className="w-4 h-4 text-secondary-600" /> Contact support &amp; FAQ
+                  <LifeBuoy className="w-4 h-4 text-ct-mute-2" /> Contact support &amp; FAQ
                 </Link>
               </div>
             </div>

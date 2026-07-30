@@ -151,9 +151,9 @@ function AutoReleaseCountdown({ completedAt, jobTitle, invoiceNumber }: { comple
 
   if (expired) {
     return (
-      <div className="flex items-start gap-2 px-5 py-2.5 bg-red-50 border-t border-red-100">
-        <Clock className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
-        <p className="text-xs text-red-700 font-medium">
+      <div className="flex items-start gap-2 px-5 py-2.5 bg-ct-rose/[0.13] border-t border-ct-rose/[0.34]">
+        <Clock className="w-4 h-4 text-ct-rose mt-0.5 shrink-0" />
+        <p className="text-xs text-ct-rose font-medium">
           Payment for {label}{invLabel} will be auto-released in <span className="font-semibold tabular-nums">{cronTimeLeft}</span> if no action is taken.
         </p>
       </div>
@@ -161,9 +161,9 @@ function AutoReleaseCountdown({ completedAt, jobTitle, invoiceNumber }: { comple
   }
 
   return (
-    <div className="flex items-start gap-2 px-5 py-2.5 bg-amber-50 border-t border-amber-100">
-      <Clock className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-      <div className="text-xs text-amber-800">
+    <div className="flex items-start gap-2 px-5 py-2.5 bg-ct-amber/[0.13] border-t border-ct-amber/[0.34]">
+      <Clock className="w-4 h-4 text-ct-amber mt-0.5 shrink-0" />
+      <div className="text-xs text-ct-paper">
         <p>
           Payment for {label}{invLabel} will auto-release in <span className="font-semibold tabular-nums">{timeLeft}</span>.
           Release now or raise a dispute if there&apos;s an issue.
@@ -1497,20 +1497,20 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     if (lead.status === 'completed') {
       const isReleased = releasedJobIds.has(lead.id);
       const isReviewed = reviewedJobIds.has(lead.id);
-      if (isReleased && isReviewed) return 'bg-green-100 text-green-800 border-green-300';
-      if (isReleased) return 'bg-amber-100 text-amber-700 border-amber-200';
+      if (isReleased && isReviewed) return 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30';
+      if (isReleased) return 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]';
       // Ready to Release — make it stand out as an action-required badge
-      return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+      return 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30';
     }
-    if (lead.status === 'in_progress') return 'bg-secondary-100 text-secondary-700 border-secondary-200';
-    if (lead.status === 'funded') return 'bg-green-100 text-green-700 border-green-200';
-    if (lead.status === 'accepted') return 'bg-secondary-100 text-secondary-700 border-secondary-200';
-    if (lead.quoting_status === 'awarded') return 'bg-green-100 text-green-700 border-green-200';
-    if (lead.quote_count > 0) return 'bg-secondary-100 text-secondary-700 border-secondary-200';
-    if (lead.tradie_id) return 'bg-green-100 text-green-700 border-green-200';
-    if (lead.is_flash_boost) return 'bg-warm-100 text-warm-700 border-warm-200';
+    if (lead.status === 'in_progress') return 'bg-ct-surface-2 text-ct-mute-2 border-ct-line';
+    if (lead.status === 'funded') return 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30';
+    if (lead.status === 'accepted') return 'bg-ct-surface-2 text-ct-mute-2 border-ct-line';
+    if (lead.quoting_status === 'awarded') return 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30';
+    if (lead.quote_count > 0) return 'bg-ct-surface-2 text-ct-mute-2 border-ct-line';
+    if (lead.tradie_id) return 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30';
+    if (lead.is_flash_boost) return 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]';
     if (lead.priority === 'high') return 'bg-orange-100 text-orange-700 border-orange-200';
-    return 'bg-amber-100 text-amber-700 border-amber-200';
+    return 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]';
   };
 
   const tradieFilters: { key: LeadFilter; label: string }[] = [
@@ -1561,24 +1561,24 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           tabIndex={0}
           onClick={isClientEditable ? () => openEditJob(lead) : () => setViewLeadDetail(lead)}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (isClientEditable) openEditJob(lead); else setViewLeadDetail(lead); } }}
-          className={`rounded-2xl overflow-hidden transition-all cursor-pointer ${
+          className={`rounded-ct-lg overflow-hidden transition-all cursor-pointer ${
             isFlashActive && isTradie && lead.status === 'pending'
-              ? 'border border-warm-200 bg-white shadow-md hover:shadow-xl ring-1 ring-warm-100'
+              ? 'border border-ct-amber/[0.34] bg-ct-surface shadow-md hover:shadow-xl ring-1 ring-ct-amber/30'
               : isUrgent && isTradie
-              ? 'border border-red-200 bg-white shadow-md hover:shadow-xl'
+              ? 'border border-ct-rose/[0.34] bg-ct-surface shadow-md hover:shadow-xl'
               : hasQuoted
-              ? 'border border-secondary-200 bg-white shadow-sm hover:shadow-md'
-              : 'border border-gray-200 bg-white shadow-sm hover:shadow-lg hover:border-gray-300'
+              ? 'border border-ct-line bg-ct-surface shadow-sm hover:shadow-md'
+              : 'border border-ct-line bg-ct-surface shadow-sm hover:shadow-lg hover:border-ct-line'
           }`}
         >
           {/* Left accent bar + card content */}
           <div className="flex">
             {/* Accent bar */}
             <div className={`w-1.5 flex-shrink-0 ${
-              isFlashActive && isTradie && lead.status === 'pending' ? 'bg-warm-500'
-              : isUrgent && isTradie ? 'bg-red-400'
-              : hasQuoted ? 'bg-secondary-400'
-              : 'bg-primary-400'
+              isFlashActive && isTradie && lead.status === 'pending' ? 'bg-ct-teal'
+              : isUrgent && isTradie ? 'bg-ct-rose'
+              : hasQuoted ? 'bg-ct-surface-2'
+              : 'bg-ct-teal'
             }`} />
 
             <div className="flex-1 min-w-0">
@@ -1588,14 +1588,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-gray-900 leading-snug capitalize">
+                      <h3 className="text-base font-bold text-ct-paper leading-snug capitalize">
                         {(() => {
                           const raw = lead.title || category || 'Untitled Job';
                           return raw.replace(/_/g, ' ');
                         })()}
                       </h3>
                       {lead.status === 'completed' && jobPaymentIds.get(lead.id) && (
-                        <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-medium flex-shrink-0">
+                        <span className="px-2 py-0.5 bg-ct-surface-2 text-ct-mute rounded text-[10px] font-medium flex-shrink-0">
                           {fmtInvoiceRef(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id))}
                         </span>
                       )}
@@ -1608,19 +1608,19 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       </span>
                     )}
                     {isFlashActive && isTradie && lead.status === 'pending' && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-warm-500 text-white rounded-full text-xs font-medium shadow-sm animate-pulse">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-teal text-ct-ink rounded-full text-xs font-medium shadow-sm animate-pulse">
                         <Zap className="w-3 h-3" />
                         Flash
                       </span>
                     )}
                     {!isFlashActive && isUrgent && isTradie && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-50 text-red-700 rounded-full text-xs font-medium border border-red-200">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-rose/[0.13] text-ct-rose rounded-full text-xs font-medium border border-ct-rose/[0.34]">
                         <Zap className="w-3 h-3" />
                         Urgent
                       </span>
                     )}
                     {isTradie && !!(lead.title && /ongoing|recurring/i.test(lead.title)) && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-medium border border-purple-200">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-surface-2 text-ct-mute-2 rounded-full text-xs font-medium border border-ct-line">
                         <RefreshCw className="w-3 h-3" />
                         Ongoing
                       </span>
@@ -1637,7 +1637,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     {isClientEditable && !lead.tradie_id && lead.status === 'pending' && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setDeleteJobTarget(lead); }}
-                        className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-ct-mute hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors"
                         title="Delete job posting"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -1648,23 +1648,23 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
                 {/* Description — short preview; full detail on the job page */}
                 {desc && (
-                  <p className="text-sm text-gray-500 mb-3 leading-relaxed">
+                  <p className="text-sm text-ct-mute mb-3 leading-relaxed">
                     {descriptionPreview(desc, 60)}{' '}
-                    <span className="text-secondary-600 font-medium whitespace-nowrap">View details →</span>
+                    <span className="text-ct-mute-2 font-medium whitespace-nowrap">View details →</span>
                   </p>
                 )}
 
                 {/* Details row */}
-                <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap text-xs text-gray-500">
+                <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap text-xs text-ct-mute">
                   {category && (
-                    <span className="inline-flex items-center gap-1 text-gray-600 font-medium">
-                      <Briefcase className="w-3 h-3 text-gray-400" />
+                    <span className="inline-flex items-center gap-1 text-ct-mute-2 font-medium">
+                      <Briefcase className="w-3 h-3 text-ct-mute" />
                       {category}
                     </span>
                   )}
                   {lead.location_address && (
                     <span className="inline-flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-gray-400" />
+                      <MapPin className="w-3 h-3 text-ct-mute" />
                       {isTradie ? extractSuburb(lead.location_address) || 'Nearby' : (() => {
                         const parts = lead.location_address!.split(',').map(s => s.trim());
                         return parts.length >= 2 ? `${parts[0]}, ${parts[1]}` : parts[0];
@@ -1673,7 +1673,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   )}
                   {isTradie && lead.distance_km != null && (
                     <span
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-50 text-secondary-700 border border-secondary-100 font-medium"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-ct-surface-2 text-ct-mute-2 border border-ct-line-soft font-medium"
                       title={`Approx. ${lead.distance_km.toFixed(1)} km from your base`}
                     >
                       {lead.distance_km < 1 ? '<1' : Math.round(lead.distance_km)} km away
@@ -1681,42 +1681,42 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   )}
                   {lead.scheduled_date && (
                     <span className="inline-flex items-center gap-1">
-                      <CalendarDays className="w-3 h-3 text-secondary-500" />
-                      <span className="text-secondary-700 font-medium">
+                      <CalendarDays className="w-3 h-3 text-ct-mute-2" />
+                      <span className="text-ct-mute-2 font-medium">
                         {new Date(lead.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                       </span>
                     </span>
                   )}
                   {lead.preferred_time_slot && SlotIcon && (
                     <span className="inline-flex items-center gap-1">
-                      <SlotIcon className="w-3 h-3 text-gray-400" />
+                      <SlotIcon className="w-3 h-3 text-ct-mute" />
                       {SLOT_LABELS[lead.preferred_time_slot]}
                     </span>
                   )}
                   {lead.budget_amount ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-ct-teal/[0.14] border border-ct-teal/30 text-ct-teal font-semibold">
                       Budget ${lead.budget_amount.toLocaleString()}
                     </span>
                   ) : lead.budget_type === 'request_quote' ? (
-                    <span className="inline-flex items-center gap-1 text-secondary-600 font-medium">
+                    <span className="inline-flex items-center gap-1 text-ct-mute-2 font-medium">
                       <FileText className="w-3 h-3" />
                       Quote Requested
                     </span>
                   ) : null}
                   {isTradie && slotsRemaining <= 2 && slotsRemaining > 0 && !hasQuoted && (
-                    <span className="inline-flex items-center gap-1 text-warm-700 font-semibold">
+                    <span className="inline-flex items-center gap-1 text-ct-amber font-semibold">
                       <Users className="w-3 h-3" />
                       {slotsRemaining} spot{slotsRemaining !== 1 ? 's' : ''} left
                     </span>
                   )}
                   {isTradie && slotsRemaining > 2 && lead.quote_count > 0 && !hasQuoted && (
                     <span className="inline-flex items-center gap-1">
-                      <Users className="w-3 h-3 text-gray-400" />
+                      <Users className="w-3 h-3 text-ct-mute" />
                       {lead.quote_count}/{lead.max_quotes} quotes
                     </span>
                   )}
                   {hasQuoted && (
-                    <span className="inline-flex items-center gap-1 text-secondary-700 font-bold">
+                    <span className="inline-flex items-center gap-1 text-ct-mute-2 font-bold">
                       <CheckCircle2 className="w-3 h-3" />
                       Quoted
                     </span>
@@ -1726,14 +1726,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
               {/* Footer: actions + meta */}
               {isTradie && !hasQuoted && (
-                <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-                  <span className="text-xs text-gray-400">
+                <div className="flex items-center justify-between px-5 py-3 border-t border-ct-line-soft" onClick={(e) => e.stopPropagation()}>
+                  <span className="text-xs text-ct-mute">
                     Posted by {((lead as LeadWithClient).client_name || 'Client').split(' ')[0]} · {formatDate(lead.created_at)}
                   </span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleDismissLead(lead.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+                      className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-ct-sm text-xs font-medium text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 transition-all"
                     >
                       <XCircle className="w-3.5 h-3.5" />
                       Pass
@@ -1741,7 +1741,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     {canQuoteOnLead(lead) ? (
                       <button
                         onClick={() => handleQuoteClick(lead)}
-                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-xs font-semibold bg-warm-500 text-white hover:bg-warm-600 shadow-sm transition-all"
+                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-ct-sm text-xs font-semibold bg-ct-teal text-ct-ink hover:brightness-110 shadow-sm transition-all"
                       >
                         <FileText className="w-3.5 h-3.5" />
                         Submit Quote
@@ -1749,7 +1749,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     ) : (
                       <button
                         onClick={() => handleQuoteClick(lead)}
-                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-xs font-semibold bg-amber-500 text-white hover:bg-amber-600 shadow-sm transition-all"
+                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-ct-sm text-xs font-semibold bg-ct-amber/[0.13]0 text-ct-ink hover:bg-ct-amber shadow-sm transition-all"
                         title="Get verified to quote on this trade"
                       >
                         <Shield className="w-3.5 h-3.5" />
@@ -1760,8 +1760,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 </div>
               )}
               {isTradie && hasQuoted && (
-                <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
-                  <span className="text-xs text-gray-400">
+                <div className="flex items-center justify-between px-5 py-3 border-t border-ct-line-soft">
+                  <span className="text-xs text-ct-mute">
                     Posted by {((lead as LeadWithClient).client_name || 'Client').split(' ')[0]} · {formatDate(lead.created_at)}
                   </span>
                 </div>
@@ -1769,23 +1769,23 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
               {/* Flash/Boost banners */}
               {isFlashActive && isTradie && lead.status === 'pending' && (
-                <div className="mx-5 mb-3 flex items-center gap-2 px-3 py-2 bg-warm-50 border border-warm-200 rounded-lg">
-                  <Zap className="w-3.5 h-3.5 text-warm-600 flex-shrink-0" />
-                  <span className="text-xs font-medium text-warm-700">
+                <div className="mx-5 mb-3 flex items-center gap-2 px-3 py-2 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm">
+                  <Zap className="w-3.5 h-3.5 text-ct-amber flex-shrink-0" />
+                  <span className="text-xs font-medium text-ct-amber">
                     Flash Deal — Quick Quote Priority
                   </span>
                 </div>
               )}
 
               {!isTradie && isFlashActive && lead.status === 'pending' && (
-                <div className="mx-5 mb-3 flex items-center justify-between px-3 py-2 bg-gradient-to-r from-warm-50 to-orange-50 border border-warm-200 rounded-lg">
+                <div className="mx-5 mb-3 flex items-center justify-between px-3 py-2 bg-gradient-to-r from-warm-50 to-orange-50 border border-ct-amber/[0.34] rounded-ct-sm">
                   <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-warm-500 flex-shrink-0" />
-                    <span className="text-sm font-medium text-warm-700">
+                    <Zap className="w-4 h-4 text-ct-teal flex-shrink-0" />
+                    <span className="text-sm font-medium text-ct-amber">
                       Boosted — finding tradies faster
                     </span>
                   </div>
-                  <div className="text-xs text-warm-600">
+                  <div className="text-xs text-ct-amber">
                     <FlashCountdown
                       expiry={lead.flash_expiry!}
                       onExpired={() => handleFlashExpired(lead.id)}
@@ -1807,27 +1807,27 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 ? `$${lead.my_quote!.firm_price.toLocaleString()}`
                 : `$${lead.my_quote!.price_min.toLocaleString()} - $${lead.my_quote!.price_max.toLocaleString()}`;
               return (
-                <div className="px-5 py-3 bg-gray-50 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-                  <p className="text-sm font-semibold text-gray-700 mb-2">Your estimate: {priceLabel}</p>
+                <div className="px-5 py-3 bg-ct-surface-2 border-t border-ct-line-soft" onClick={(e) => e.stopPropagation()}>
+                  <p className="text-sm font-semibold text-ct-mute-2 mb-2">Your estimate: {priceLabel}</p>
                   <TradieQuoteActions quote={lead.my_quote!} job={lead} tradeCategory={lead.description?.match(/^\[([^\]]+)\]/)?.[1]} onChange={fetchLeads} />
                 </div>
               );
             }
             const statusConfig = qs === 'accepted'
-              ? { bg: 'bg-green-50 border-green-200', icon: <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />, label: 'Quote accepted — the client chose you!', textColor: 'text-green-800' }
+              ? { bg: 'bg-ct-teal/[0.14] border-ct-teal/30', icon: <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0" />, label: 'Quote accepted — the client chose you!', textColor: 'text-ct-teal' }
               : qs === 'declined'
-              ? { bg: 'bg-red-50 border-red-200', icon: <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />, label: 'Quote declined by client', textColor: 'text-red-700' }
+              ? { bg: 'bg-ct-rose/[0.13] border-ct-rose/[0.34]', icon: <XCircle className="w-5 h-5 text-ct-rose flex-shrink-0" />, label: 'Quote declined by client', textColor: 'text-ct-rose' }
               : qs === 'expired'
-              ? { bg: 'bg-gray-50 border-gray-200', icon: <Clock className="w-5 h-5 text-gray-400 flex-shrink-0" />, label: 'Quote expired', textColor: 'text-gray-600' }
+              ? { bg: 'bg-ct-surface-2 border-ct-line', icon: <Clock className="w-5 h-5 text-ct-mute flex-shrink-0" />, label: 'Quote expired', textColor: 'text-ct-mute-2' }
               : qs === 'withdrawn'
-              ? { bg: 'bg-gray-50 border-gray-200', icon: <XCircle className="w-5 h-5 text-gray-400 flex-shrink-0" />, label: 'Quote withdrawn', textColor: 'text-gray-600' }
-              : { bg: 'bg-secondary-50 border-secondary-200', icon: <Clock className="w-5 h-5 text-secondary-600 flex-shrink-0" />, label: 'Awaiting client decision', textColor: 'text-secondary-600' };
+              ? { bg: 'bg-ct-surface-2 border-ct-line', icon: <XCircle className="w-5 h-5 text-ct-mute flex-shrink-0" />, label: 'Quote withdrawn', textColor: 'text-ct-mute-2' }
+              : { bg: 'bg-ct-surface-2 border-ct-line', icon: <Clock className="w-5 h-5 text-ct-mute-2 flex-shrink-0" />, label: 'Awaiting client decision', textColor: 'text-ct-mute-2' };
             return (
-              <div className="px-5 py-3 bg-gray-50 border-t border-gray-100">
-                <div className={`flex items-center gap-3 px-4 py-3 ${statusConfig.bg} border rounded-xl`}>
+              <div className="px-5 py-3 bg-ct-surface-2 border-t border-ct-line-soft">
+                <div className={`flex items-center gap-3 px-4 py-3 ${statusConfig.bg} border rounded-ct-md`}>
                   {statusConfig.icon}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-secondary-800">
+                    <p className="text-sm font-semibold text-ct-mute-2">
                       You quoted {lead.my_quote!.firm_price
                         ? `$${lead.my_quote!.firm_price.toLocaleString()}`
                         : `$${lead.my_quote!.price_min.toLocaleString()} - $${lead.my_quote!.price_max.toLocaleString()}`
@@ -1840,7 +1840,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   {qs === 'pending' && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setWithdrawQuoteTarget(lead); }}
-                      className="text-xs text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 px-2 py-1.5"
+                      className="text-xs text-ct-mute hover:text-ct-rose transition-colors flex-shrink-0 px-2 py-1.5"
                     >
                       Withdraw
                     </button>
@@ -1851,14 +1851,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           })()}
 
           {!isTradie && !lead.tradie_id && lead.status === 'pending' && lead.quote_count === 0 && (
-            <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-100">
-              <div className="flex items-center gap-2 text-xs text-gray-400">
+            <div className="flex items-center justify-between px-5 py-2.5 border-t border-ct-line-soft">
+              <div className="flex items-center gap-2 text-xs text-ct-mute">
                 <Loader2 className="w-3 h-3 animate-spin" />
                 Waiting for tradies to submit quotes...
               </div>
               <Link
                 to={`/search?trade=${extractCategory(lead.description) || ''}`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-medium rounded-ct-sm hover:brightness-110 transition-colors"
                 onClick={(e) => e.stopPropagation()}
               >
                 <SearchIcon className="w-3 h-3" />
@@ -1868,13 +1868,13 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           )}
 
           {!isTradie && lead.status === 'pending' && lead.quote_count > 0 && (
-            <div className="border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+            <div className="border-t border-ct-line-soft" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={() => setExpandedJobId(expandedJobId === lead.id ? null : lead.id)}
                 className={`w-full flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold transition-colors ${
                   expandedJobId === lead.id
-                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                    ? 'bg-ct-surface-2 text-ct-mute-2 hover:bg-ct-line'
+                    : 'bg-ct-teal/[0.14] text-ct-teal hover:bg-ct-teal/[0.14]'
                 }`}
               >
                 <Eye className="w-4 h-4" />
@@ -1893,13 +1893,13 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 {!isReleased && completedAt && (
                   <AutoReleaseCountdown completedAt={completedAt} jobTitle={lead.title || lead.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ')} invoiceNumber={jobPaymentIds.get(lead.id) ? fmtInvoiceRef(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id)) : undefined} />
                 )}
-                <div className="flex items-center justify-between px-5 py-2.5 bg-gray-50 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-5 py-2.5 bg-ct-surface-2 border-t border-ct-line-soft" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-2">
                   {isFullyDone ? (
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setViewCompletedJob(lead)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded-lg hover:bg-primary-100 border border-primary-200 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface-2 text-ct-mute-2 text-xs font-semibold rounded-ct-sm hover:bg-ct-surface-2 border border-ct-line transition-colors"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         View
@@ -1921,7 +1921,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                             }
                           });
                         }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-lg hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal/[0.14] text-ct-teal text-xs font-semibold rounded-ct-sm hover:bg-ct-teal/[0.14] border border-ct-teal/30 transition-colors"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                         Make Recurring
@@ -1931,7 +1931,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <button
                       onClick={() => handleReleasePayment(lead.id)}
                       disabled={releasingJobId === lead.id}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-600 text-white text-xs font-semibold rounded-lg hover:bg-warm-700 transition-colors disabled:opacity-60"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-semibold rounded-ct-sm hover:bg-ct-amber transition-colors disabled:opacity-60"
                     >
                       {releasingJobId === lead.id ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1943,7 +1943,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   ) : (
                     <Link
                       to={`/review/${lead.id}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-500 text-white text-xs font-semibold rounded-lg hover:bg-warm-600 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-semibold rounded-ct-sm hover:brightness-110 transition-colors"
                     >
                       <Star className="w-3.5 h-3.5" />
                       Leave a Review
@@ -1954,7 +1954,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   {!lead.archived_at && filter !== 'history' && (
                     <button
                       onClick={() => handleArchiveJob(lead.id)}
-                      className="p-2 text-gray-300 hover:text-gray-500 rounded-lg transition-colors"
+                      className="p-2 text-ct-mute hover:text-ct-mute rounded-ct-sm transition-colors"
                       title="Archive"
                     >
                       <Archive className="w-3.5 h-3.5" />
@@ -1967,14 +1967,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           })()}
 
           {!isTradie && lead.status === 'funded' && lead.tradie_id && !pendingIncreases[lead.id] && (
-            <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
-              <div className="flex items-center gap-2 text-sm text-green-600">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-ct-line-soft">
+              <div className="flex items-center gap-2 text-sm text-ct-teal">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                 Payment received — waiting for tradie to start
               </div>
               <button
                 onClick={(e) => { e.stopPropagation(); handleMessageTradie(lead.tradie_id!, lead.id); }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-secondary-700 bg-secondary-50 border border-secondary-200 rounded-lg hover:bg-secondary-100 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-ct-mute-2 bg-ct-surface-2 border border-ct-line rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
                 Message tradie
@@ -1983,14 +1983,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           )}
 
           {!isTradie && lead.status === 'in_progress' && lead.tradie_id && !pendingIncreases[lead.id] && (
-            <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-gray-100">
-              <div className="flex items-center gap-2 text-sm text-secondary-600">
+            <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-ct-line-soft">
+              <div className="flex items-center gap-2 text-sm text-ct-mute-2">
                 <Loader2 className="w-4 h-4" />
                 Work in progress
               </div>
               <button
                 onClick={(e) => { e.stopPropagation(); handleMessageTradie(lead.tradie_id!, lead.id); }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-secondary-700 bg-secondary-50 border border-secondary-200 rounded-lg hover:bg-secondary-100 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ct-mute-2 bg-ct-surface-2 border border-ct-line rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
                 Message tradie
@@ -1999,17 +1999,17 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           )}
 
           {!isTradie && pendingIncreases[lead.id] && !paidIncreaseJobIds.has(lead.id) && lead.status !== null && ['funded', 'in_progress', 'completed'].includes(lead.status) && (
-            <div className="px-5 py-3 border-t border-amber-200 bg-amber-50">
-              <div className="flex items-center gap-2 text-sm font-medium text-amber-800 mb-2">
+            <div className="px-5 py-3 border-t border-ct-amber/[0.34] bg-ct-amber/[0.13]">
+              <div className="flex items-center gap-2 text-sm font-medium text-ct-paper mb-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>Price adjusted after site visit</span>
               </div>
-              <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-xs text-amber-700 mb-3 ml-0 sm:ml-6">
+              <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-xs text-ct-amber mb-3 ml-0 sm:ml-6">
                 <span>Original: <span className="font-semibold">${pendingIncreases[lead.id].originalAmount.toFixed(2)}</span></span>
-                <span className="text-amber-400">→</span>
+                <span className="text-ct-amber">→</span>
                 <span>Final: <span className="font-semibold">${pendingIncreases[lead.id].finalAmount.toFixed(2)}</span></span>
-                <span className="text-amber-400">|</span>
-                <span>Additional: <span className="font-semibold text-amber-900">${pendingIncreases[lead.id].amount.toFixed(2)}</span></span>
+                <span className="text-ct-amber">|</span>
+                <span>Additional: <span className="font-semibold text-ct-paper">${pendingIncreases[lead.id].amount.toFixed(2)}</span></span>
               </div>
               <div className="flex justify-end">
                 <button
@@ -2025,7 +2025,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       });
                   }}
                   disabled={payingJobId === lead.id}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13]0 text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-amber transition-colors disabled:opacity-60"
                 >
                   {payingJobId === lead.id ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2039,10 +2039,10 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           )}
 
           {!isTradie && lead.tradie_id && lead.quoting_status === 'awarded' && lead.status !== 'completed' && lead.status !== 'in_progress' && lead.status !== 'funded' && (
-            <div className="px-5 py-3 border-t border-gray-100">
+            <div className="px-5 py-3 border-t border-ct-line-soft">
               {acceptedQuotes[lead.id] ? (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 text-sm text-green-700 min-w-0">
+                  <div className="flex items-center gap-2 text-sm text-ct-teal min-w-0">
                     <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                     <span className="truncate">{(() => {
                       const q = acceptedQuotes[lead.id];
@@ -2052,7 +2052,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       if (q.requires_site_inspection && q.price_min) {
                         const budget = typeof lead.budget_amount === 'number' ? lead.budget_amount : null;
                         const deposit = Math.max(q.price_min, budget ?? q.price_min);
-                        return <>Deposit <span className="font-semibold">${deposit.toLocaleString()}{gstLabel}</span> <span className="text-gray-400">· final after site visit</span></>;
+                        return <>Deposit <span className="font-semibold">${deposit.toLocaleString()}{gstLabel}</span> <span className="text-ct-mute">· final after site visit</span></>;
                       }
                       return <>Quoted <span className="font-semibold">${q.price_min.toLocaleString()} – ${q.price_max.toLocaleString()}{gstLabel}</span></>;
                     })()}</span>
@@ -2060,7 +2060,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleMessageTradie(lead.tradie_id!, lead.id); }}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-secondary-700 bg-secondary-50 border border-secondary-200 rounded-lg hover:bg-secondary-100 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-ct-mute-2 bg-ct-surface-2 border border-ct-line rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                       Message
@@ -2093,7 +2093,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                         }
                       }}
                       disabled={payingJobId === lead.id}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-60"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-ct-teal hover:brightness-110 text-ct-ink text-sm font-medium rounded-ct-md transition-colors disabled:opacity-60"
                     >
                       {payingJobId === lead.id ? (
                         <>
@@ -2110,7 +2110,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-sm text-green-600">
+                <div className="flex items-center gap-2 text-sm text-ct-teal">
                   <CheckCircle2 className="w-4 h-4" />
                   Quote accepted — tradie assigned
                 </div>
@@ -2127,10 +2127,10 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
               excluded: reversing those is a dispute, not a cancellation. */}
           {!isTradie && !lead.archived_at && lead.tradie_id &&
            !['completed', 'cancelled', 'declined'].includes(lead.status) && (
-            <div className="flex justify-end px-5 py-3 border-t border-gray-100">
+            <div className="flex justify-end px-5 py-3 border-t border-ct-line-soft">
               <button
                 onClick={(e) => { e.stopPropagation(); setCancelJobTarget(lead); }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ct-rose hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors"
               >
                 <XCircle className="w-3.5 h-3.5" />
                 Cancel job
@@ -2140,10 +2140,10 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
           {/* Archive button for cancelled/declined jobs */}
           {!isTradie && !lead.archived_at && filter !== 'history' && (lead.status === 'cancelled' || lead.status === 'declined') && (
-            <div className="flex justify-end px-5 py-3 border-t border-gray-100">
+            <div className="flex justify-end px-5 py-3 border-t border-ct-line-soft">
               <button
                 onClick={(e) => { e.stopPropagation(); handleArchiveJob(lead.id); }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
               >
                 <Archive className="w-3.5 h-3.5" />
                 Archive
@@ -2155,9 +2155,9 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         </div>
 
         {showQuoteComparison && (
-          <div className="relative mt-0 ml-2 pl-3 sm:ml-6 sm:pl-6 border-l-2 border-gray-200">
+          <div className="relative mt-0 ml-2 pl-3 sm:ml-6 sm:pl-6 border-l-2 border-ct-line">
             {/* Connector from job card to quotes */}
-            <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-gray-300" />
+            <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-ct-surface border-2 border-ct-line" />
             <div className="pt-2">
               <QuoteComparisonView
                 job={lead}
@@ -2201,24 +2201,24 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     return (
       <div className="space-y-6">
         {isTradie && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-gray-200 bg-white px-4 py-3">
-            <MapPin className="w-4 h-4 text-secondary-500 flex-shrink-0" />
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-ct-md border border-ct-line bg-ct-surface px-4 py-3">
+            <MapPin className="w-4 h-4 text-ct-mute-2 flex-shrink-0" />
             {!hasBaseCoords ? (
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-ct-mute-2">
                 Add your business address in{' '}
-                <Link to="/settings" className="text-secondary-600 font-medium hover:text-secondary-700">
+                <Link to="/settings" className="text-ct-mute-2 font-medium hover:text-ct-mute-2">
                   Settings
                 </Link>{' '}
                 to filter jobs by distance.
               </p>
             ) : (
               <div className="flex items-center gap-2 flex-wrap w-full">
-                <span className="text-sm text-gray-700">Showing leads</span>
+                <span className="text-sm text-ct-mute-2">Showing leads</span>
                 <select
                   value={radiusFilterOn ? String(serviceRadiusKm) : 'all'}
                   onChange={(e) => handleRadiusChange(e.target.value)}
                   aria-label="Distance from your base"
-                  className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                  className="rounded-ct-sm border border-ct-line bg-ct-surface px-2.5 py-1.5 text-sm font-medium text-ct-paper focus:outline-none focus:ring-2 focus:ring-ct-teal"
                 >
                   {Array.from(new Set([...RADIUS_OPTIONS, serviceRadiusKm]))
                     .sort((a, b) => a - b)
@@ -2227,9 +2227,9 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     ))}
                   <option value="all">everywhere</option>
                 </select>
-                <span className="text-sm text-gray-500">of your base</span>
+                <span className="text-sm text-ct-mute">of your base</span>
                 {radiusFilterOn && hiddenByRadius > 0 && (
-                  <span className="ml-auto text-xs text-gray-500">{hiddenByRadius} further away hidden</span>
+                  <span className="ml-auto text-xs text-ct-mute">{hiddenByRadius} further away hidden</span>
                 )}
               </div>
             )}
@@ -2239,11 +2239,11 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         {showUrgent && urgentLeads.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-warm-400 to-red-400 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-white" />
+              <div className="w-7 h-7 rounded-ct-sm bg-gradient-to-br from-warm-400 to-red-400 flex items-center justify-center">
+                <Zap className="w-4 h-4 text-ct-ink" />
               </div>
-              <h3 className="font-bold text-gray-900">Urgent / Now</h3>
-              <span className="ml-auto px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+              <h3 className="font-bold text-ct-paper">Urgent / Now</h3>
+              <span className="ml-auto px-3 py-1 bg-ct-rose/[0.13] text-ct-rose rounded-full text-xs font-medium">
                 {urgentLeads.length}
               </span>
             </div>
@@ -2256,11 +2256,11 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         {showGrouped && scheduledGroups.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-secondary-400 to-secondary-400 flex items-center justify-center">
-                <CalendarDays className="w-4 h-4 text-white" />
+              <div className="w-7 h-7 rounded-ct-sm bg-gradient-to-br from-secondary-400 to-secondary-400 flex items-center justify-center">
+                <CalendarDays className="w-4 h-4 text-ct-ink" />
               </div>
-              <h3 className="font-bold text-gray-900">Ongoing Leads</h3>
-              <span className="ml-auto px-3 py-1 bg-secondary-100 text-secondary-700 rounded-full text-xs font-medium">
+              <h3 className="font-bold text-ct-paper">Ongoing Leads</h3>
+              <span className="ml-auto px-3 py-1 bg-ct-surface-2 text-ct-mute-2 rounded-full text-xs font-medium">
                 {scheduledGroups.reduce((acc, g) => acc + g.leads.length, 0)}
               </span>
             </div>
@@ -2268,9 +2268,9 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
               {scheduledGroups.map((group) => (
                 <div key={group.date}>
                   <div className="flex items-center gap-2 mb-2">
-                    <CalendarDays className="w-4 h-4 text-secondary-600" />
-                    <span className="text-sm font-semibold text-secondary-700">{group.label}</span>
-                    <div className="flex-1 h-px bg-secondary-100" />
+                    <CalendarDays className="w-4 h-4 text-ct-mute-2" />
+                    <span className="text-sm font-semibold text-ct-mute-2">{group.label}</span>
+                    <div className="flex-1 h-px bg-ct-surface-2" />
                   </div>
                   <div className="space-y-3 sm:ml-6">
                     {group.leads.map(renderLeadCard)}
@@ -2284,11 +2284,11 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         {showGrouped && otherLeads.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-lg bg-gray-200 flex items-center justify-center">
-                <Briefcase className="w-4 h-4 text-gray-600" />
+              <div className="w-7 h-7 rounded-ct-sm bg-ct-line flex items-center justify-center">
+                <Briefcase className="w-4 h-4 text-ct-mute-2" />
               </div>
-              <h3 className="font-bold text-gray-900">Other Leads</h3>
-              <span className="ml-auto px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+              <h3 className="font-bold text-ct-paper">Other Leads</h3>
+              <span className="ml-auto px-3 py-1 bg-ct-surface-2 text-ct-mute-2 rounded-full text-xs font-medium">
                 {otherLeads.length}
               </span>
             </div>
@@ -2299,29 +2299,29 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         )}
 
         {urgentLeads.length === 0 && scheduledGroups.length === 0 && otherLeads.length === 0 && (
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center">
-            <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Briefcase className="w-7 h-7 text-gray-400" />
+          <div className="rounded-ct-lg border border-ct-line bg-ct-surface p-8 text-center">
+            <div className="w-14 h-14 bg-ct-surface-2 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Briefcase className="w-7 h-7 text-ct-mute" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">No leads right now</h3>
-            <p className="text-gray-600 text-sm mb-5 max-w-sm mx-auto">
+            <h3 className="text-lg font-bold text-ct-paper mb-2">No leads right now</h3>
+            <p className="text-ct-mute-2 text-sm mb-5 max-w-sm mx-auto">
               New jobs are posted every day. While you wait, here are some things you can do to get more leads:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto mb-6">
-              <Link to="/settings" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gray-50 hover:bg-primary-50 border border-gray-200 hover:border-primary-200 transition-all text-center">
-                <User className="w-5 h-5 text-primary-600" />
-                <span className="text-xs font-medium text-gray-700">Complete profile</span>
+              <Link to="/settings" className="flex flex-col items-center gap-2 p-4 rounded-ct-md bg-ct-surface-2 hover:bg-ct-surface-2 border border-ct-line hover:border-ct-line transition-all text-center">
+                <User className="w-5 h-5 text-ct-mute-2" />
+                <span className="text-xs font-medium text-ct-mute-2">Complete profile</span>
               </Link>
-              <Link to="/dashboard" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gray-50 hover:bg-primary-50 border border-gray-200 hover:border-primary-200 transition-all text-center">
-                <Calendar className="w-5 h-5 text-primary-600" />
-                <span className="text-xs font-medium text-gray-700">Update availability</span>
+              <Link to="/dashboard" className="flex flex-col items-center gap-2 p-4 rounded-ct-md bg-ct-surface-2 hover:bg-ct-surface-2 border border-ct-line hover:border-ct-line transition-all text-center">
+                <Calendar className="w-5 h-5 text-ct-mute-2" />
+                <span className="text-xs font-medium text-ct-mute-2">Update availability</span>
               </Link>
-              <Link to="/settings" state={{ tab: 'verification' }} className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gray-50 hover:bg-primary-50 border border-gray-200 hover:border-primary-200 transition-all text-center">
-                <ShieldAlert className="w-5 h-5 text-primary-600" />
-                <span className="text-xs font-medium text-gray-700">Get verified</span>
+              <Link to="/settings" state={{ tab: 'verification' }} className="flex flex-col items-center gap-2 p-4 rounded-ct-md bg-ct-surface-2 hover:bg-ct-surface-2 border border-ct-line hover:border-ct-line transition-all text-center">
+                <ShieldAlert className="w-5 h-5 text-ct-mute-2" />
+                <span className="text-xs font-medium text-ct-mute-2">Get verified</span>
               </Link>
             </div>
-            <p className="text-xs text-gray-400">Verified tradies with complete profiles appear higher in search results. New leads typically arrive daily.</p>
+            <p className="text-xs text-ct-mute">Verified tradies with complete profiles appear higher in search results. New leads typically arrive daily.</p>
           </div>
         )}
       </div>
@@ -2332,34 +2332,34 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     <>
       <div>
         {quoteAcceptedBanner === 'success' && (
-          <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4">
+          <div className="mb-4 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md p-4">
             <div className="flex items-center gap-3 mb-1">
-              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-              <p className="text-sm font-bold text-green-800">Payment successful!</p>
+              <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0" />
+              <p className="text-sm font-bold text-ct-teal">Payment successful!</p>
             </div>
-            <p className="text-xs text-green-700 ml-8">Your tradie has been hired and payment is secured with Stripe. The tradie will be notified and can start work.</p>
+            <p className="text-xs text-ct-teal ml-8">Your tradie has been hired and payment is secured with Stripe. The tradie will be notified and can start work.</p>
           </div>
         )}
         {quoteAcceptedBanner === 'recurring_success' && (
-          <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4">
+          <div className="mb-4 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md p-4">
             <div className="flex items-center gap-3 mb-1">
-              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-              <p className="text-sm font-bold text-green-800">Your ongoing service is now active!</p>
+              <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0" />
+              <p className="text-sm font-bold text-ct-teal">Your ongoing service is now active!</p>
             </div>
-            <p className="text-xs text-green-700 ml-8">The agreed price is locked in for every visit. Your service is shown below — manage upcoming visits and invoicing from here.</p>
+            <p className="text-xs text-ct-teal ml-8">The agreed price is locked in for every visit. Your service is shown below — manage upcoming visits and invoicing from here.</p>
           </div>
         )}
         {quoteAcceptedBanner === 'price_increase_success' && (
-          <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4">
+          <div className="mb-4 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md p-4">
             <div className="flex items-center gap-3 mb-1">
-              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-              <p className="text-sm font-bold text-green-800">Additional payment successful!</p>
+              <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0" />
+              <p className="text-sm font-bold text-ct-teal">Additional payment successful!</p>
             </div>
-            <p className="text-xs text-green-700 ml-8">The adjusted amount is now secured with Stripe. You can release payment once the work is complete.</p>
+            <p className="text-xs text-ct-teal ml-8">The adjusted amount is now secured with Stripe. You can release payment once the work is complete.</p>
           </div>
         )}
         {quoteAcceptedBanner === 'cancelled' && (
-          <div className="mb-4 bg-accent-50 border border-accent-200 rounded-xl p-4">
+          <div className="mb-4 bg-accent-50 border border-accent-200 rounded-ct-md p-4">
             <div className="flex items-center gap-3 mb-1">
               <AlertCircle className="w-5 h-5 text-accent-600 flex-shrink-0" />
               <p className="text-sm font-bold text-accent-800">Payment not completed</p>
@@ -2368,18 +2368,18 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           </div>
         )}
         {quoteAcceptedBanner === 'error' && (
-          <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="mb-4 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md p-4">
             <div className="flex items-center gap-3 mb-1">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-              <p className="text-sm font-bold text-red-800">Something went wrong</p>
+              <AlertCircle className="w-5 h-5 text-ct-rose flex-shrink-0" />
+              <p className="text-sm font-bold text-ct-paper">Something went wrong</p>
             </div>
-            <p className="text-xs text-red-700 ml-8">Failed to process the quote acceptance. Please try again.</p>
+            <p className="text-xs text-ct-rose ml-8">Failed to process the quote acceptance. Please try again.</p>
           </div>
         )}
         {offlineQueued && (
-          <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-warm-50 border border-warm-200 rounded-xl animate-pulse">
-            <WifiOff className="w-5 h-5 text-warm-600 flex-shrink-0" />
-            <p className="text-sm font-medium text-warm-800">
+          <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md animate-pulse">
+            <WifiOff className="w-5 h-5 text-ct-amber flex-shrink-0" />
+            <p className="text-sm font-medium text-ct-paper">
               You're offline. Your action has been queued and will sync automatically when you're back online.
             </p>
           </div>
@@ -2387,10 +2387,10 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         {!embedded && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-ct-paper">
                 {isTradie ? 'Available Work' : 'My Jobs'}
               </h1>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-ct-mute mt-1">
                 {isTradie
                   ? 'These are jobs posted by clients near you. Quote on the ones you want.'
                   : 'Track your quote requests and compare incoming quotes'}
@@ -2410,7 +2410,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                           setFilter('pending');
                         }
                       }}
-                      className="inline-flex items-center gap-2 px-4 py-2 border border-warm-300 text-warm-700 text-sm font-semibold rounded-lg hover:bg-warm-50 transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 border border-ct-amber/[0.34] text-ct-amber text-sm font-semibold rounded-ct-sm hover:bg-ct-amber/[0.13] transition-colors"
                     >
                       <Zap className="w-4 h-4" />
                       Boost ${BOOST_PRICE.toFixed(2)}
@@ -2423,19 +2423,19 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         )}
 
         {isTradie && isLicenseExpired && (
-          <div className="mb-6 bg-red-50 border-2 border-red-300 rounded-2xl p-5">
+          <div className="mb-6 bg-ct-rose/[0.13] border-2 border-ct-rose/40 rounded-ct-lg p-5">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <ShieldAlert className="w-6 h-6 text-red-600" />
+              <div className="w-12 h-12 bg-ct-rose/[0.13] rounded-ct-md flex items-center justify-center flex-shrink-0">
+                <ShieldAlert className="w-6 h-6 text-ct-rose" />
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-red-900 text-lg">License Expired</h3>
-                <p className="text-red-800 mt-1">
+                <h3 className="font-bold text-ct-paper text-lg">License Expired</h3>
+                <p className="text-ct-paper mt-1">
                   Your trade license has expired. You cannot submit quotes until your license is renewed.
                 </p>
                 <Link
                   to="/settings"
-                  className="inline-flex items-center gap-2 mt-3 px-5 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-colors"
+                  className="inline-flex items-center gap-2 mt-3 px-5 py-2.5 bg-ct-rose text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
                 >
                   <Settings className="w-4 h-4" />
                   Upload Renewed License
@@ -2446,9 +2446,9 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         )}
 
         {isTradie && (
-          <div className="mb-4 inline-flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-            <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <p className="text-xs text-gray-500">
+          <div className="mb-4 inline-flex items-center gap-2 px-3 py-2 bg-ct-surface-2 border border-ct-line rounded-ct-sm">
+            <FileText className="w-4 h-4 text-ct-mute flex-shrink-0" />
+            <p className="text-xs text-ct-mute">
               <span className="font-semibold">Blind quoting:</span> Other tradies cannot see your price. Compete on quality, not just cost.
             </p>
           </div>
@@ -2458,11 +2458,11 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         {isTradie ? (
           initialFilter !== 'quoted' && (
             <div className="flex items-center gap-2 mb-6">
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Filter</label>
+              <label className="text-xs font-medium text-ct-mute uppercase tracking-wide">Filter</label>
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value as LeadFilter)}
-                className="text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-warm-500 focus:border-transparent"
+                className="text-sm font-medium text-ct-mute-2 bg-ct-surface border border-ct-line rounded-ct-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
               >
                 {filters.map((f) => (
                   <option key={f.key} value={f.key}>{f.label}</option>
@@ -2471,7 +2471,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             </div>
           )
         ) : (
-          <div className="overflow-x-auto -mx-1 px-1 border-b border-gray-200 mb-6 scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="overflow-x-auto -mx-1 px-1 border-b border-ct-line mb-6 scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
             <div className="flex items-center gap-3 sm:gap-6 flex-nowrap">
               {filters.map((f) => (
                 <button
@@ -2479,8 +2479,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   onClick={() => setFilter(f.key)}
                   className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                     filter === f.key
-                      ? 'border-warm-500 text-warm-600'
-                      : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                      ? 'border-ct-teal text-ct-amber'
+                      : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
                   }`}
                 >
                   {f.label}
@@ -2495,17 +2495,17 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           {filter === 'services' ? (
             <ClientServicesTab />
           ) : fetchError ? (
-            <div className="bg-white rounded-2xl border border-red-200 p-12 text-center">
-              <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Something went wrong</h3>
-              <p className="text-gray-600 mb-4">{fetchError}</p>
-              <button onClick={fetchLeads} className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+            <div className="bg-ct-surface rounded-ct-lg border border-ct-rose/[0.34] p-12 text-center">
+              <AlertCircle className="w-12 h-12 text-ct-rose mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-ct-paper mb-2">Something went wrong</h3>
+              <p className="text-ct-mute-2 mb-4">{fetchError}</p>
+              <button onClick={fetchLeads} className="inline-flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm hover:brightness-110 transition-colors">
                 <RefreshCw className="w-4 h-4" />Try Again
               </button>
             </div>
           ) : loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+              <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
             </div>
           ) : isTradie ? (
             renderTradieGroupedView()
@@ -2550,14 +2550,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 });
                 if (expiredJobs.length === 0) return null;
                 return (
-                  <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-4">
+                  <div className="mb-4 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md p-4">
                     <div className="flex items-start gap-2">
-                      <Clock className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
-                      <div className="text-sm text-red-700">
+                      <Clock className="w-4 h-4 text-ct-rose mt-0.5 shrink-0" />
+                      <div className="text-sm text-ct-rose">
                         <p className="font-medium">
                           {expiredJobs.length} payment{expiredJobs.length !== 1 ? 's' : ''} will be auto-released if no action is taken:
                         </p>
-                        <ul className="mt-1 space-y-0.5 text-xs text-red-600">
+                        <ul className="mt-1 space-y-0.5 text-xs text-ct-rose">
                           {expiredJobs.map(j => {
                             const payId = jobPaymentIds.get(j.id);
                             const invNum = fmtInvoiceRef(jobPaymentInvoiceNumbers.get(j.id), payId) || null;
@@ -2574,12 +2574,12 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 );
               })()}
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-ct-mute">
                   {leads.length} completed job{leads.length !== 1 ? 's' : ''}
                 </p>
                 <button
                   onClick={handleExportInvoice}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-lg transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-ct-mute-2 hover:text-ct-mute-2 bg-ct-surface-2 hover:bg-ct-surface-2 border border-ct-line rounded-ct-sm transition-colors"
                 >
                   <FileText className="w-3.5 h-3.5" />
                   Export Invoice
@@ -2601,14 +2601,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   const monthLabel = new Date(Number(yr), Number(mo) - 1).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
                   return (
                     <details key={monthKey} open={sortedMonths.indexOf(monthKey) === 0} className="mb-4">
-                      <summary className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors select-none list-none">
+                      <summary className="flex items-center justify-between px-4 py-3 bg-ct-surface-2 rounded-ct-md cursor-pointer hover:bg-ct-surface-2 transition-colors select-none list-none">
                         <div className="flex items-center gap-2">
-                          <ChevronDown className="w-4 h-4 text-gray-400 transition-transform [details[open]>&]:rotate-0 [details:not([open])>&]:-rotate-90" />
-                          <span className="text-sm font-semibold text-gray-900">{monthLabel}</span>
+                          <ChevronDown className="w-4 h-4 text-ct-mute transition-transform [details[open]>&]:rotate-0 [details:not([open])>&]:-rotate-90" />
+                          <span className="text-sm font-semibold text-ct-paper">{monthLabel}</span>
                         </div>
-                        <span className="text-xs text-gray-500">{monthJobs.length} job{monthJobs.length !== 1 ? 's' : ''}</span>
+                        <span className="text-xs text-ct-mute">{monthJobs.length} job{monthJobs.length !== 1 ? 's' : ''}</span>
                       </summary>
-              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden divide-y divide-gray-100 mt-2">
+              <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden divide-y divide-ct-line-soft mt-2">
                 {monthJobs.map((lead) => {
                   const category = extractCategory(lead.description);
                   const desc = cleanDescription(lead.description);
@@ -2621,26 +2621,26 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       {!isReleased && completedAt2 && (
                         <AutoReleaseCountdown completedAt={completedAt2} jobTitle={lead.title || lead.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ')} invoiceNumber={jobPaymentIds.get(lead.id) ? fmtInvoiceRef(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id)) : undefined} />
                       )}
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors group">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-5 py-3.5 hover:bg-ct-surface-2 transition-colors group">
                       <div className="flex items-start sm:items-center gap-3 min-w-0 sm:flex-1">
-                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5 sm:mt-0" />
+                      <CheckCircle2 className="w-4 h-4 text-ct-teal flex-shrink-0 mt-0.5 sm:mt-0" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-semibold text-gray-900 truncate capitalize">
+                          <h4 className="text-sm font-semibold text-ct-paper truncate capitalize">
                             {(lead.title || category || 'Untitled Job').replace(/_/g, ' ')}
                           </h4>
                           {jobPaymentIds.get(lead.id) && (
-                            <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-medium flex-shrink-0">
+                            <span className="px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute rounded text-[10px] font-medium flex-shrink-0">
                               {fmtInvoiceRef(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id))}
                             </span>
                           )}
                           {category && (
-                            <span className="hidden sm:inline px-1.5 py-0.5 bg-primary-50 text-primary-700 rounded text-[10px] font-medium flex-shrink-0">
+                            <span className="hidden sm:inline px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute-2 rounded text-[10px] font-medium flex-shrink-0">
                               {category}
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-400 truncate mt-0.5">{desc}</p>
+                        <p className="text-xs text-ct-mute truncate mt-0.5">{desc}</p>
                       </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0 pl-7 sm:pl-0" onClick={(e) => e.stopPropagation()}>
@@ -2648,7 +2648,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                           <>
                             <button
                               onClick={() => setViewCompletedJob(lead)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded-lg hover:bg-primary-100 border border-primary-200 transition-colors"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface-2 text-ct-mute-2 text-xs font-semibold rounded-ct-sm hover:bg-ct-surface-2 border border-ct-line transition-colors"
                             >
                               <Eye className="w-3.5 h-3.5" />
                               View
@@ -2656,7 +2656,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                             {lead.tradie_id && (
                               <Link
                                 to={`/post-lead?tradie=${lead.tradie_id}`}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-lg hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal/[0.14] text-ct-teal text-xs font-semibold rounded-ct-sm hover:bg-ct-teal/[0.14] border border-ct-teal/30 transition-colors"
                                 title="Post a new job and invite this tradie to quote"
                               >
                                 <Repeat className="w-3.5 h-3.5" />
@@ -2668,7 +2668,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                           <button
                             onClick={() => handleReleasePayment(lead.id)}
                             disabled={releasingJobId === lead.id}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-600 text-white text-xs font-semibold rounded-lg hover:bg-warm-700 transition-colors disabled:opacity-60"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-semibold rounded-ct-sm hover:bg-ct-amber transition-colors disabled:opacity-60"
                           >
                             {releasingJobId === lead.id ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2680,7 +2680,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                         ) : (
                           <Link
                             to={`/review/${lead.id}`}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-500 text-white text-xs font-semibold rounded-lg hover:bg-warm-600 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-semibold rounded-ct-sm hover:brightness-110 transition-colors"
                           >
                             <Star className="w-3.5 h-3.5" />
                             Leave a Review
@@ -2688,7 +2688,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                         )}
                         <button
                           onClick={() => handleArchiveJob(lead.id)}
-                          className="p-2 rounded-lg text-gray-300 hover:text-gray-500 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
+                          className="p-2 rounded-ct-sm text-ct-mute hover:text-ct-mute sm:opacity-0 sm:group-hover:opacity-100 transition-all"
                           title="Archive"
                         >
                           <Archive className="w-3.5 h-3.5" />
@@ -2706,9 +2706,9 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             </div>
           ) : filter === 'archived' ? (
             <div>
-              <div className="flex items-center gap-2 mb-4 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg">
-                <Archive className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <p className="text-xs text-gray-500">
+              <div className="flex items-center gap-2 mb-4 px-3 py-2.5 bg-ct-surface-2 border border-ct-line rounded-ct-sm">
+                <Archive className="w-4 h-4 text-ct-mute flex-shrink-0" />
+                <p className="text-xs text-ct-mute">
                   Archived jobs are hidden from your main list. You can unarchive them anytime to bring them back.
                 </p>
               </div>
@@ -2717,34 +2717,34 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   const category = lead.description.match(/^\[([^\]]+)\]/)?.[1] || '';
                   const desc = lead.description.replace(/^\[[^\]]+\]\s*/, '');
                   return (
-                    <div key={lead.id} className="rounded-xl p-5 border border-gray-200 bg-white">
+                    <div key={lead.id} className="rounded-ct-md p-5 border border-ct-line bg-ct-surface">
                       <div className="flex items-start justify-between gap-3 mb-1.5">
-                        <h3 className="text-base font-semibold text-gray-900">{lead.title || category || 'Untitled Job'}</h3>
+                        <h3 className="text-base font-semibold text-ct-paper">{lead.title || category || 'Untitled Job'}</h3>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <button
                             onClick={() => handleUnarchiveJob(lead.id)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-lg transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 bg-ct-surface-2 hover:bg-ct-surface-2 border border-ct-line rounded-ct-sm transition-colors"
                           >
                             <RefreshCw className="w-3.5 h-3.5" />
                             Unarchive
                           </button>
                         </div>
                       </div>
-                      <p className="text-sm text-gray-500 mb-3 line-clamp-2">{desc}</p>
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
-                        {category && <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium">{category}</span>}
+                      <p className="text-sm text-ct-mute mb-3 line-clamp-2">{desc}</p>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ct-mute">
+                        {category && <span className="px-3 py-1 bg-ct-surface-2 rounded-full text-xs font-medium">{category}</span>}
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          lead.status === 'completed' ? 'bg-green-100 text-green-700' :
-                          lead.status === 'cancelled' ? 'bg-gray-100 text-gray-600' :
-                          lead.status === 'declined' ? 'bg-red-100 text-red-600' :
-                          'bg-yellow-100 text-yellow-700'
+                          lead.status === 'completed' ? 'bg-ct-teal/[0.14] text-ct-teal' :
+                          lead.status === 'cancelled' ? 'bg-ct-surface-2 text-ct-mute-2' :
+                          lead.status === 'declined' ? 'bg-ct-rose/[0.13] text-ct-rose' :
+                          'bg-ct-amber/[0.13] text-ct-amber'
                         }`}>{(lead.status ?? 'pending').replace('_', ' ')}</span>
                         {lead.location_address && (
                           <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{lead.location_address}</span>
                         )}
                         <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{formatDate(lead.created_at)}</span>
                         {lead.archived_at && (
-                          <span className="text-gray-400">Archived {new Date(lead.archived_at).toLocaleDateString('en-AU')}</span>
+                          <span className="text-ct-mute">Archived {new Date(lead.archived_at).toLocaleDateString('en-AU')}</span>
                         )}
                       </div>
                     </div>
@@ -2776,37 +2776,37 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             <div className="overflow-hidden">
               {/* Header */}
               <div className={`px-6 py-4 border-b ${
-                vlIsFlash ? 'bg-gradient-to-r from-warm-50 to-orange-50 border-warm-200'
-                : vlIsUrgent ? 'bg-red-50 border-red-100'
-                : 'bg-gray-50 border-gray-100'
+                vlIsFlash ? 'bg-gradient-to-r from-warm-50 to-orange-50 border-ct-amber/[0.34]'
+                : vlIsUrgent ? 'bg-ct-rose/[0.13] border-ct-rose/[0.34]'
+                : 'bg-ct-surface-2 border-ct-line-soft'
               }`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${
-                      vlIsFlash ? 'bg-warm-100' : vlIsUrgent ? 'bg-red-100' : 'bg-white border border-gray-200'
+                    <div className={`w-11 h-11 rounded-ct-md flex items-center justify-center ${
+                      vlIsFlash ? 'bg-ct-amber/[0.13]' : vlIsUrgent ? 'bg-ct-rose/[0.13]' : 'bg-ct-surface border border-ct-line'
                     }`}>
                       <Briefcase className={`w-5 h-5 ${
-                        vlIsFlash ? 'text-warm-600' : vlIsUrgent ? 'text-red-600' : 'text-gray-600'
+                        vlIsFlash ? 'text-ct-amber' : vlIsUrgent ? 'text-ct-rose' : 'text-ct-mute-2'
                       }`} />
                     </div>
                     <div>
-                      <h2 className="text-lg font-bold text-gray-900 capitalize">
+                      <h2 className="text-lg font-bold text-ct-paper capitalize">
                         {(vl.title || vlCategory || 'Untitled Job').replace(/_/g, ' ')}
                       </h2>
                       <div className="flex items-center gap-2 mt-1">
                         {vlCategory && (
-                          <span className="px-3 py-1 bg-white text-gray-600 rounded-full text-xs font-medium border border-gray-200">
+                          <span className="px-3 py-1 bg-ct-surface text-ct-mute-2 rounded-full text-xs font-medium border border-ct-line">
                             {vlCategory}
                           </span>
                         )}
                         {vlIsFlash && (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-warm-500 text-white rounded-full text-xs font-medium animate-pulse">
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-teal text-ct-ink rounded-full text-xs font-medium animate-pulse">
                             <Zap className="w-3 h-3" />
                             Flash Deal
                           </span>
                         )}
                         {vlIsUrgent && !vlIsFlash && (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium border border-red-200">
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-rose/[0.13] text-ct-rose rounded-full text-xs font-medium border border-ct-rose/[0.34]">
                             <Zap className="w-3 h-3" />
                             Urgent
                           </span>
@@ -2814,7 +2814,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => setViewLeadDetail(null)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-colors">
+                  <button onClick={() => setViewLeadDetail(null)} className="p-1.5 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface rounded-ct-sm transition-colors">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
@@ -2824,14 +2824,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
               <div className="px-6 py-5 space-y-5">
                 {/* Description section */}
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Job Description</h4>
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{vlDesc}</p>
+                  <h4 className="text-xs font-semibold text-ct-mute uppercase tracking-wider mb-2">Job Description</h4>
+                  <p className="text-sm text-ct-mute-2 leading-relaxed whitespace-pre-line">{vlDesc}</p>
                 </div>
 
                 {/* Photos */}
                 {vlPhotos.length > 0 && (
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Photos</h4>
+                    <h4 className="text-xs font-semibold text-ct-mute uppercase tracking-wider mb-2">Photos</h4>
                     <div className="flex gap-2 overflow-x-auto pb-1">
                       {vlPhotos.map((value, i) => (
                         <button
@@ -2841,7 +2841,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                             const signed = await getSignedUrl('job-attachments', value);
                             if (signed) setPreviewPhoto(signed);
                           }}
-                          className="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden border border-gray-200 hover:border-primary-300 transition-colors"
+                          className="flex-shrink-0 w-24 h-24 rounded-ct-md overflow-hidden border border-ct-line hover:border-ct-line transition-colors"
                         >
                           <SignedImage bucket="job-attachments" value={value} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
                         </button>
@@ -2853,80 +2853,80 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 {/* Details grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {vl.location_address && (
-                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
-                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
+                      <MapPin className="w-4 h-4 text-ct-mute mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Location</p>
-                        <p className="text-sm text-gray-700 mt-0.5">{extractSuburb(vl.location_address) || 'Nearby'}</p>
+                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Location</p>
+                        <p className="text-sm text-ct-mute-2 mt-0.5">{extractSuburb(vl.location_address) || 'Nearby'}</p>
                       </div>
                     </div>
                   )}
                   {vl.scheduled_date && (
-                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
-                      <CalendarDays className="w-4 h-4 text-secondary-500 mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
+                      <CalendarDays className="w-4 h-4 text-ct-mute-2 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Scheduled Date</p>
-                        <p className="text-sm text-gray-700 mt-0.5">
+                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Scheduled Date</p>
+                        <p className="text-sm text-ct-mute-2 mt-0.5">
                           {new Date(vl.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
                       </div>
                     </div>
                   )}
                   {vl.preferred_time_slot && vlSlotIcon && (
-                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
-                      {(() => { const Icon = vlSlotIcon; return <Icon className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />; })()}
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
+                      {(() => { const Icon = vlSlotIcon; return <Icon className="w-4 h-4 text-ct-mute mt-0.5 flex-shrink-0" />; })()}
                       <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Preferred Time</p>
-                        <p className="text-sm text-gray-700 mt-0.5">{SLOT_LABELS[vl.preferred_time_slot]}</p>
+                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Preferred Time</p>
+                        <p className="text-sm text-ct-mute-2 mt-0.5">{SLOT_LABELS[vl.preferred_time_slot]}</p>
                       </div>
                     </div>
                   )}
                   {vl.budget_amount ? (
-                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-emerald-50 rounded-xl">
-                      <DollarSign className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-teal/[0.14] rounded-ct-md">
+                      <DollarSign className="w-4 h-4 text-ct-teal mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Budget</p>
-                        <p className="text-sm font-semibold text-emerald-700 mt-0.5">${vl.budget_amount.toLocaleString()}</p>
+                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Budget</p>
+                        <p className="text-sm font-semibold text-ct-teal mt-0.5">${vl.budget_amount.toLocaleString()}</p>
                       </div>
                     </div>
                   ) : vl.budget_type === 'request_quote' ? (
-                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-secondary-50 rounded-xl">
-                      <FileText className="w-4 h-4 text-secondary-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
+                      <FileText className="w-4 h-4 text-ct-mute-2 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Budget</p>
-                        <p className="text-sm font-medium text-secondary-700 mt-0.5">Requesting Quote</p>
+                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Budget</p>
+                        <p className="text-sm font-medium text-ct-mute-2 mt-0.5">Requesting Quote</p>
                       </div>
                     </div>
                   ) : null}
-                  <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
-                    <Clock className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
+                    <Clock className="w-4 h-4 text-ct-mute mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Posted</p>
-                      <p className="text-sm text-gray-700 mt-0.5">{formatDate(vl.created_at)}</p>
+                      <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Posted</p>
+                      <p className="text-sm text-ct-mute-2 mt-0.5">{formatDate(vl.created_at)}</p>
                     </div>
                   </div>
                   {vl.quoting_status !== 'awarded' && (
-                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
-                      <Users className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
+                      <Users className="w-4 h-4 text-ct-mute mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Quote Slots</p>
-                        <p className="text-sm text-gray-700 mt-0.5">{vl.quote_count}/{vl.max_quotes} filled</p>
+                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Quote Slots</p>
+                        <p className="text-sm text-ct-mute-2 mt-0.5">{vl.quote_count}/{vl.max_quotes} filled</p>
                       </div>
                     </div>
                   )}
                   {vl.allows_site_inspection && !['Cleaner', 'Handyman', 'Pest Control', 'Locksmith', 'Appliance Repair', 'Private Chef', 'Event Catering', 'Security Systems', 'Garage Doors'].includes(vlCategory ?? '') && (
-                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-secondary-50 rounded-xl">
-                      <Eye className="w-4 h-4 text-secondary-500 mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
+                      <Eye className="w-4 h-4 text-ct-mute-2 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Site Inspection</p>
-                        <p className="text-sm text-secondary-700 mt-0.5">Client allows inspections</p>
+                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Site Inspection</p>
+                        <p className="text-sm text-ct-mute-2 mt-0.5">Client allows inspections</p>
                       </div>
                     </div>
                   )}
                 </div>
 
                 {/* Posted by */}
-                <div className="flex items-center gap-2 text-xs text-gray-400">
+                <div className="flex items-center gap-2 text-xs text-ct-mute">
                   <User className="w-3.5 h-3.5" />
                   Posted by {((vl as LeadWithClient).client_name || 'Client').split(' ')[0]}
                 </div>
@@ -2934,10 +2934,10 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
               {/* Footer actions */}
               {isTradie && !vlHasQuoted && (
-                <div className="flex items-center gap-3 px-6 py-4 bg-gray-50 border-t border-gray-100">
+                <div className="flex items-center gap-3 px-6 py-4 bg-ct-surface-2 border-t border-ct-line-soft">
                   <button
                     onClick={() => { handleDismissLead(vl.id); setViewLeadDetail(null); }}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-white hover:text-gray-700 border border-gray-200 transition-all"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-ct-sm text-sm font-medium text-ct-mute hover:bg-ct-surface hover:text-ct-mute-2 border border-ct-line transition-all"
                   >
                     <XCircle className="w-4 h-4" />
                     Not Interested
@@ -2945,7 +2945,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   {canQuoteOnLead(vl) ? (
                     <button
                       onClick={() => { setViewLeadDetail(null); handleQuoteClick(vl); }}
-                      className="inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-lg text-sm font-semibold bg-warm-500 text-white hover:bg-warm-600 shadow-sm transition-all"
+                      className="inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-ct-sm text-sm font-semibold bg-ct-teal text-ct-ink hover:brightness-110 shadow-sm transition-all"
                     >
                       <FileText className="w-4 h-4" />
                       Submit Quote
@@ -2953,7 +2953,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   ) : (
                     <button
                       onClick={() => { setViewLeadDetail(null); handleQuoteClick(vl); }}
-                      className="inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-lg text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 shadow-sm transition-all"
+                      className="inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-ct-sm text-sm font-semibold bg-ct-amber/[0.13]0 text-ct-ink hover:bg-ct-amber shadow-sm transition-all"
                     >
                       <Shield className="w-4 h-4" />
                       Get Verified
@@ -2964,7 +2964,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
               {/* Client: View Quotes button */}
               {!isTradie && vl.status === 'pending' && vl.quote_count > 0 && (
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                <div className="px-6 py-4 bg-ct-surface-2 border-t border-ct-line-soft">
                   <button
                     onClick={() => {
                       setViewLeadDetail(null);
@@ -2973,7 +2973,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                         document.getElementById(`job-${vl.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                       }, 100);
                     }}
-                    className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 transition-colors shadow-sm"
+                    className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors shadow-sm"
                   >
                     <Eye className="w-4 h-4" />
                     View {vl.quote_count} Quote{vl.quote_count !== 1 ? 's' : ''}
@@ -2983,17 +2983,17 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
               {/* Client: awarded/accepted job — show tradie assigned status */}
               {!isTradie && vl.tradie_id && vl.quoting_status === 'awarded' && (
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-                  <div className="flex items-center gap-3 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                <div className="px-6 py-4 bg-ct-surface-2 border-t border-ct-line-soft">
+                  <div className="flex items-center gap-3 px-4 py-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md">
+                    <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0" />
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-green-800">Tradie assigned</p>
-                      <p className="text-xs text-green-600">This job is managed as an ongoing service</p>
+                      <p className="text-sm font-semibold text-ct-teal">Tradie assigned</p>
+                      <p className="text-xs text-ct-teal">This job is managed as an ongoing service</p>
                     </div>
                   </div>
                   <button
                     onClick={() => { setViewLeadDetail(null); setFilter('services'); }}
-                    className="w-full mt-3 flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-500 text-white font-medium rounded-xl hover:bg-emerald-600 transition-colors text-sm"
+                    className="w-full mt-3 flex items-center justify-center gap-2 px-5 py-2.5 bg-ct-teal text-ct-ink font-medium rounded-ct-md hover:brightness-110 transition-colors text-sm"
                   >
                     <RefreshCw className="w-4 h-4" />
                     View in Ongoing Services
@@ -3004,16 +3004,16 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
               {isTradie && vlHasQuoted && (() => {
                 const qs = vl.my_quote!.status;
                 const statusConfig = qs === 'accepted'
-                  ? { bg: 'bg-green-50 border-green-200', icon: <CheckCircle2 className="w-5 h-5 text-green-600" />, label: 'Quote accepted — the client chose you!', textColor: 'text-green-800' }
+                  ? { bg: 'bg-ct-teal/[0.14] border-ct-teal/30', icon: <CheckCircle2 className="w-5 h-5 text-ct-teal" />, label: 'Quote accepted — the client chose you!', textColor: 'text-ct-teal' }
                   : qs === 'declined'
-                  ? { bg: 'bg-red-50 border-red-200', icon: <XCircle className="w-5 h-5 text-red-500" />, label: 'Quote declined by client', textColor: 'text-red-700' }
-                  : { bg: 'bg-secondary-50 border-secondary-200', icon: <Clock className="w-5 h-5 text-secondary-600" />, label: 'Awaiting client decision', textColor: 'text-secondary-600' };
+                  ? { bg: 'bg-ct-rose/[0.13] border-ct-rose/[0.34]', icon: <XCircle className="w-5 h-5 text-ct-rose" />, label: 'Quote declined by client', textColor: 'text-ct-rose' }
+                  : { bg: 'bg-ct-surface-2 border-ct-line', icon: <Clock className="w-5 h-5 text-ct-mute-2" />, label: 'Awaiting client decision', textColor: 'text-ct-mute-2' };
                 return (
-                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-                    <div className={`flex items-center gap-3 px-4 py-3 ${statusConfig.bg} border rounded-xl`}>
+                  <div className="px-6 py-4 bg-ct-surface-2 border-t border-ct-line-soft">
+                    <div className={`flex items-center gap-3 px-4 py-3 ${statusConfig.bg} border rounded-ct-md`}>
                       {statusConfig.icon}
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-gray-800">
+                        <p className="text-sm font-semibold text-ct-paper">
                           You quoted {vl.my_quote!.firm_price
                             ? `$${vl.my_quote!.firm_price.toLocaleString()}`
                             : `$${vl.my_quote!.price_min.toLocaleString()} – $${vl.my_quote!.price_max.toLocaleString()}`
@@ -3024,7 +3024,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       {qs === 'pending' && (
                         <button
                           onClick={() => setWithdrawQuoteTarget(vl)}
-                          className="text-xs text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                          className="text-xs text-ct-mute hover:text-ct-rose transition-colors flex-shrink-0"
                         >
                           Withdraw
                         </button>
@@ -3082,17 +3082,17 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
               {/* Header — category as title */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                    <Briefcase className="w-5 h-5 text-emerald-600" />
+                  <div className="w-10 h-10 rounded-ct-md bg-ct-teal/[0.14] flex items-center justify-center">
+                    <Briefcase className="w-5 h-5 text-ct-teal" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900">{ej.title || ejCategory || 'Job Details'}</h2>
+                    <h2 className="text-lg font-bold text-ct-paper">{ej.title || ejCategory || 'Job Details'}</h2>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getClientStatusColor(ej)}`}>
                         {getClientStatusLabel(ej)}
                       </span>
                       {ejIsFlash && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-warm-100 text-warm-700 rounded-full text-xs font-medium border border-warm-200">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-amber/[0.13] text-ct-amber rounded-full text-xs font-medium border border-ct-amber/[0.34]">
                           <Zap className="w-3 h-3" />
                           Boosted
                         </span>
@@ -3100,31 +3100,31 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     </div>
                   </div>
                 </div>
-                <button onClick={() => setEditJob(null)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                <button onClick={() => setEditJob(null)} className="p-1.5 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Info pills */}
               <div className="flex flex-wrap gap-2 mb-5">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-xs text-gray-600">
-                  <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface-2 rounded-ct-sm text-xs text-ct-mute-2">
+                  <Calendar className="w-3.5 h-3.5 text-ct-mute" />
                   Posted {formatDate(ej.created_at)}
                 </div>
                 {ej.quote_count > 0 && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-50 rounded-lg text-xs text-secondary-700 font-medium">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface-2 rounded-ct-sm text-xs text-ct-mute-2 font-medium">
                     <Users className="w-3.5 h-3.5" />
                     {ej.quote_count} quote{ej.quote_count !== 1 ? 's' : ''}
                   </div>
                 )}
                 {ej.scheduled_date && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-50 rounded-lg text-xs text-secondary-700">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface-2 rounded-ct-sm text-xs text-ct-mute-2">
                     <Clock className="w-3.5 h-3.5" />
                     {new Date(ej.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </div>
                 )}
                 {ej.budget_amount && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 rounded-lg text-xs text-green-700 font-medium">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal/[0.14] rounded-ct-sm text-xs text-ct-teal font-medium">
                     ${ej.budget_amount.toLocaleString()} budget
                   </div>
                 )}
@@ -3132,18 +3132,18 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
               {/* In-progress notice — shown when the deal is locked */}
               {dealLocked && (
-                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2.5">
-                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-xs text-amber-800">
+                <div className="mb-4 p-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-ct-amber flex-shrink-0 mt-0.5" />
+                  <div className="text-xs text-ct-paper">
                     <p className="font-medium mb-0.5">Tradie accepted — limited edits</p>
-                    <p className="text-amber-700">You can still update the description, location, and photos. Title and budget are locked to preserve the agreed deal.</p>
+                    <p className="text-ct-amber">You can still update the description, location, and photos. Title and budget are locked to preserve the agreed deal.</p>
                   </div>
                 </div>
               )}
 
               {/* Title */}
               <div className="mb-4">
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mb-1.5">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-ct-mute mb-1.5">
                   Job Title
                 </label>
                 <input
@@ -3153,13 +3153,13 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   placeholder="Give your job a short title"
                   maxLength={80}
                   disabled={dealLocked}
-                  className={`w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-warm-500 focus:border-warm-500 transition-colors ${dealLocked ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
+                  className={`w-full px-3.5 py-2.5 bg-ct-surface border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-colors ${dealLocked ? 'bg-ct-surface-2 text-ct-mute cursor-not-allowed' : ''}`}
                 />
               </div>
 
               {/* Description section */}
-              <div className="bg-gray-50 rounded-xl p-4 mb-4">
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mb-2">
+              <div className="bg-ct-surface-2 rounded-ct-md p-4 mb-4">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-ct-mute mb-2">
                   <FileText className="w-3.5 h-3.5" />
                   Description
                 </label>
@@ -3168,12 +3168,12 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   onChange={(e) => setEditDesc(e.target.value)}
                   rows={3}
                   placeholder="Describe what you need done — the more detail, the better the quotes."
-                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-warm-500 focus:border-warm-500 transition-colors resize-none"
+                  className="w-full px-3.5 py-2.5 bg-ct-surface border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-colors resize-none"
                 />
                 {/* Quick-add hints — compact, below description */}
                 {ejCategory && (
                   <details className="mt-2" open={editDesc.length < 40}>
-                    <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600 select-none">
+                    <summary className="text-xs text-ct-mute cursor-pointer hover:text-ct-mute-2 select-none">
                       Quick-add suggestions for {ejCategory}
                     </summary>
                     <div className="flex flex-wrap gap-1.5 mt-2">
@@ -3189,10 +3189,10 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                 setEditDesc((prev) => prev.trim() + separator + hint + ' ');
                               }
                             }}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                            className={`px-2.5 py-1 rounded-ct-sm text-xs font-medium border transition-colors ${
                               isAdded
-                                ? 'bg-secondary-50 text-secondary-600 border-secondary-200 cursor-default'
-                                : 'bg-white text-gray-600 border-gray-200 hover:bg-warm-50 hover:border-warm-300 hover:text-warm-700'
+                                ? 'bg-ct-surface-2 text-ct-mute-2 border-ct-line cursor-default'
+                                : 'bg-ct-surface text-ct-mute-2 border-ct-line hover:bg-ct-amber/[0.13] hover:border-ct-amber/[0.34] hover:text-ct-amber'
                             }`}
                           >
                             {isAdded ? '✓ ' : '+ '}{hint}
@@ -3207,7 +3207,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
               {/* Location & Budget — side by side */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                 <div className="sm:col-span-2">
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mb-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-ct-mute mb-1.5">
                     <MapPin className="w-3.5 h-3.5" />
                     Location
                   </label>
@@ -3215,23 +3215,23 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     type="text"
                     value={editLocation}
                     onChange={(e) => setEditLocation(e.target.value)}
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-warm-500 focus:border-warm-500 transition-colors"
+                    className="w-full px-3.5 py-2.5 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mb-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-ct-mute mb-1.5">
                     Budget
-                    <span className="text-gray-400 font-normal">(optional)</span>
+                    <span className="text-ct-mute font-normal">(optional)</span>
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ct-mute text-sm">$</span>
                     <input
                       type="number"
                       value={editBudget}
                       onChange={(e) => setEditBudget(e.target.value)}
                       placeholder="—"
                       disabled={dealLocked}
-                      className={`w-full pl-8 pr-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-warm-500 focus:border-warm-500 transition-colors ${dealLocked ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
+                      className={`w-full pl-8 pr-3.5 py-2.5 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-colors ${dealLocked ? 'bg-ct-surface-2 text-ct-mute cursor-not-allowed' : ''}`}
                     />
                   </div>
                 </div>
@@ -3239,14 +3239,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
               {/* Photos — compact row */}
               <div className="mb-2">
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mb-2">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-ct-mute mb-2">
                   <Camera className="w-3.5 h-3.5" />
                   Photos
-                  <span className="text-gray-400 font-normal">({editPhotos.length}/5)</span>
+                  <span className="text-ct-mute font-normal">({editPhotos.length}/5)</span>
                 </label>
                 <div className="flex gap-2 items-center flex-wrap">
                   {editPhotos.map((p, i) => (
-                    <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex-shrink-0 group">
+                    <div key={i} className="relative w-16 h-16 rounded-ct-sm overflow-hidden border border-ct-line bg-ct-surface-2 flex-shrink-0 group">
                       <img
                         src={p.url}
                         alt={`Photo ${i + 1}`}
@@ -3256,7 +3256,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); removeEditPhoto(i); }}
-                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/50 hover:bg-black/70 text-ct-ink rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -3266,10 +3266,10 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <button
                       type="button"
                       onClick={() => editFileRef.current?.click()}
-                      className="w-16 h-16 flex-shrink-0 flex flex-col items-center justify-center gap-0.5 border border-dashed border-gray-300 rounded-lg hover:border-warm-400 hover:bg-warm-50/30 transition-colors group"
+                      className="w-16 h-16 flex-shrink-0 flex flex-col items-center justify-center gap-0.5 border border-dashed border-ct-line rounded-ct-sm hover:border-ct-teal hover:bg-ct-amber/[0.13]/30 transition-colors group"
                     >
-                      <Plus className="w-4 h-4 text-gray-400 group-hover:text-warm-600 transition-colors" />
-                      <span className="text-[10px] text-gray-400 group-hover:text-warm-600">Add</span>
+                      <Plus className="w-4 h-4 text-ct-mute group-hover:text-ct-amber transition-colors" />
+                      <span className="text-[10px] text-ct-mute group-hover:text-ct-amber">Add</span>
                     </button>
                   )}
                 </div>
@@ -3284,10 +3284,10 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-3 mt-5 pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-3 mt-5 pt-4 border-t border-ct-line-soft">
                 <button
                   onClick={() => { setEditJob(null); setDeleteJobTarget(ej); }}
-                  className="inline-flex items-center gap-1.5 text-red-500 hover:text-red-700 transition-colors text-sm font-medium"
+                  className="inline-flex items-center gap-1.5 text-ct-rose hover:text-ct-rose transition-colors text-sm font-medium"
                 >
                   <Trash2 className="w-4 h-4" />
                   Cancel Job
@@ -3295,14 +3295,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 <div className="flex-1" />
                 <button
                   onClick={() => setEditJob(null)}
-                  className="px-5 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                  className="px-5 py-2 border border-ct-line text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors text-sm font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEdit}
                   disabled={editSaving || !editDesc.trim() || !editLocation.trim()}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-warm-500 text-white rounded-lg hover:bg-warm-600 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-ct-teal text-ct-ink rounded-ct-sm hover:brightness-110 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {editSaving ? (
                     <>
@@ -3328,12 +3328,12 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           <img
             src={previewPhoto}
             alt="Photo preview"
-            className="max-w-full max-h-[85vh] rounded-lg object-contain"
+            className="max-w-full max-h-[85vh] rounded-ct-sm object-contain"
             onMouseDown={(e) => e.stopPropagation()}
           />
           <button
             onClick={() => setPreviewPhoto(null)}
-            className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors"
+            className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 text-ct-ink rounded-full flex items-center justify-center transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -3343,17 +3343,17 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
       {priceConfirm && (
         <Modal isOpen={true} onClose={() => setPriceConfirm(null)}>
           <div className="px-6 pt-5 pb-1">
-            <h2 className="text-lg font-semibold text-gray-900">Confirm Agreed Price</h2>
+            <h2 className="text-lg font-semibold text-ct-paper">Confirm Agreed Price</h2>
           </div>
           <div className="px-6 pb-6 space-y-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-ct-mute-2">
               The tradie quoted a range of <span className="font-semibold">${priceConfirm.min.toLocaleString()}</span> – <span className="font-semibold">${priceConfirm.max.toLocaleString()}</span>.
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-ct-mute-2">
               Please enter the price you and the tradie have agreed on:
             </p>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ct-mute font-medium">$</span>
               <input
                 type="number"
                 min={priceConfirm.min}
@@ -3362,19 +3362,19 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 value={priceConfirm.agreedPrice}
                 onChange={(e) => setPriceConfirm({ ...priceConfirm, agreedPrice: e.target.value })}
                 placeholder={`${priceConfirm.min} – ${priceConfirm.max}`}
-                className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-full pl-8 pr-4 py-2.5 border border-ct-line rounded-ct-md text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
               />
             </div>
             {priceConfirm.agreedPrice && (
               Number(priceConfirm.agreedPrice) < priceConfirm.min || Number(priceConfirm.agreedPrice) > priceConfirm.max
             ) && (
-              <p className="text-xs text-red-500">
+              <p className="text-xs text-ct-rose">
                 Price must be between ${priceConfirm.min.toLocaleString()} and ${priceConfirm.max.toLocaleString()}
               </p>
             )}
             {priceConfirm.isGstRegistered && priceConfirm.agreedPrice && Number(priceConfirm.agreedPrice) > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-xs text-amber-700">
+              <div className="flex items-center gap-2 px-3 py-2 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm">
+                <p className="text-xs text-ct-amber">
                   This tradie is GST registered. 10% GST (${(Number(priceConfirm.agreedPrice) * 0.1).toFixed(2)}) will be added at checkout — total: <span className="font-semibold">${(Number(priceConfirm.agreedPrice) * 1.1).toFixed(2)}</span>
                 </p>
               </div>
@@ -3386,7 +3386,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             <div className="flex justify-end gap-3 pt-2">
               <button
                 onClick={() => setPriceConfirm(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-ct-mute-2 hover:text-ct-paper transition-colors"
               >
                 Cancel
               </button>
@@ -3404,7 +3404,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   Number(priceConfirm.agreedPrice) < priceConfirm.min ||
                   Number(priceConfirm.agreedPrice) > priceConfirm.max
                 }
-                className="inline-flex items-center gap-2 px-5 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-5 py-2 bg-ct-teal hover:brightness-110 text-ct-ink text-sm font-medium rounded-ct-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Shield className="w-4 h-4" />
                 Confirm & Pay
@@ -3517,29 +3517,29 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           <Modal isOpen={!!viewCompletedJob} onClose={() => setViewCompletedJob(null)} maxWidth="lg">
             <div className="overflow-hidden">
               {/* Header */}
-              <div className="px-6 py-4 border-b bg-green-50 border-green-100">
+              <div className="px-6 py-4 border-b bg-ct-teal/[0.14] border-ct-teal/30">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-green-100 flex items-center justify-center">
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <div className="w-11 h-11 rounded-ct-md bg-ct-teal/[0.14] flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5 text-ct-teal" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-bold text-gray-900 capitalize">
+                      <h2 className="text-lg font-bold text-ct-paper capitalize">
                         {(cj.title || cjCategory || 'Untitled Job').replace(/_/g, ' ')}
                       </h2>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium border border-green-300">
+                        <span className="px-3 py-1 bg-ct-teal/[0.14] text-ct-teal rounded-full text-xs font-medium border border-ct-teal/30">
                           Completed
                         </span>
                         {cjCategory && (
-                          <span className="px-3 py-1 bg-white text-gray-600 rounded-full text-xs font-medium border border-gray-200">
+                          <span className="px-3 py-1 bg-ct-surface text-ct-mute-2 rounded-full text-xs font-medium border border-ct-line">
                             {cjCategory}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => setViewCompletedJob(null)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-colors">
+                  <button onClick={() => setViewCompletedJob(null)} className="p-1.5 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface rounded-ct-sm transition-colors">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
@@ -3549,14 +3549,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
               <div className="px-6 py-5 space-y-5">
                 {/* Description */}
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Job Description</h4>
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{cjDesc}</p>
+                  <h4 className="text-xs font-semibold text-ct-mute uppercase tracking-wider mb-2">Job Description</h4>
+                  <p className="text-sm text-ct-mute-2 leading-relaxed whitespace-pre-line">{cjDesc}</p>
                 </div>
 
                 {/* Photos */}
                 {cjPhotos.length > 0 && (
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Photos</h4>
+                    <h4 className="text-xs font-semibold text-ct-mute uppercase tracking-wider mb-2">Photos</h4>
                     <div className="flex gap-2 overflow-x-auto pb-1">
                       {cjPhotos.map((value, i) => (
                         <button
@@ -3566,7 +3566,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                             const signed = await getSignedUrl('job-attachments', value);
                             if (signed) setPreviewPhoto(signed);
                           }}
-                          className="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border border-gray-200 hover:border-primary-300 transition-colors"
+                          className="flex-shrink-0 w-20 h-20 rounded-ct-md overflow-hidden border border-ct-line hover:border-ct-line transition-colors"
                         >
                           <SignedImage bucket="job-attachments" value={value} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
                         </button>
@@ -3578,64 +3578,64 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 {/* Details grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {cj.location_address && (
-                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
-                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
+                      <MapPin className="w-4 h-4 text-ct-mute mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Location</p>
-                        <p className="text-sm text-gray-700 mt-0.5">{cj.location_address}</p>
+                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Location</p>
+                        <p className="text-sm text-ct-mute-2 mt-0.5">{cj.location_address}</p>
                       </div>
                     </div>
                   )}
                   {cj.scheduled_date && (
-                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
-                      <CalendarDays className="w-4 h-4 text-secondary-500 mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
+                      <CalendarDays className="w-4 h-4 text-ct-mute-2 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Scheduled Date</p>
-                        <p className="text-sm text-gray-700 mt-0.5">
+                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Scheduled Date</p>
+                        <p className="text-sm text-ct-mute-2 mt-0.5">
                           {new Date(cj.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
                       </div>
                     </div>
                   )}
-                  <div className="flex items-start gap-2.5 px-3.5 py-3 bg-gray-50 rounded-xl">
-                    <Calendar className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
+                    <Calendar className="w-4 h-4 text-ct-mute mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Completed</p>
-                      <p className="text-sm text-gray-700 mt-0.5">{completedDate}</p>
+                      <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Completed</p>
+                      <p className="text-sm text-ct-mute-2 mt-0.5">{completedDate}</p>
                     </div>
                   </div>
                   {cj.budget_amount ? (
-                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-emerald-50 rounded-xl">
-                      <DollarSign className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-teal/[0.14] rounded-ct-md">
+                      <DollarSign className="w-4 h-4 text-ct-teal mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Amount Paid</p>
-                        <p className="text-sm font-semibold text-emerald-700 mt-0.5">${cj.budget_amount.toLocaleString()}</p>
+                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Amount Paid</p>
+                        <p className="text-sm font-semibold text-ct-teal mt-0.5">${cj.budget_amount.toLocaleString()}</p>
                       </div>
                     </div>
                   ) : null}
                 </div>
 
                 {/* Payment & Review status */}
-                <div className="flex items-center gap-3 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
-                  <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                <div className="flex items-center gap-3 px-4 py-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md">
+                  <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0" />
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-green-800">Payment Released & Reviewed</p>
-                    <p className="text-xs text-green-600 mt-0.5">This job has been fully completed. Payment has been released to the tradie and a review has been left.</p>
+                    <p className="text-sm font-semibold text-ct-teal">Payment Released & Reviewed</p>
+                    <p className="text-xs text-ct-teal mt-0.5">This job has been fully completed. Payment has been released to the tradie and a review has been left.</p>
                   </div>
                 </div>
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-100">
+              <div className="flex items-center justify-between px-6 py-4 bg-ct-surface-2 border-t border-ct-line-soft">
                 <button
                   onClick={() => setViewCompletedJob(null)}
-                  className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-ct-mute hover:text-ct-mute-2 transition-colors"
                 >
                   Close
                 </button>
                 <button
                   onClick={handleExportSingleInvoice}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-sm hover:brightness-110 transition-colors"
                 >
                   <FileText className="w-4 h-4" />
                   Export Invoice
