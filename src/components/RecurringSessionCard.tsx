@@ -709,7 +709,7 @@ export default function RecurringSessionCard({
           const finish = session.end_time?.slice(0, 5) || (arrival ? addHoursToTime(arrival, DEFAULT_SESSION_DURATION_HOURS).slice(0, 5) : null);
           return arrival ? (
             <div className="flex items-center gap-2 ml-6">
-              <span className="text-xs text-ct-amber bg-ct-amber/[0.13] border border-ct-amber/[0.34] px-2 py-0.5 rounded-md inline-flex items-center gap-1.5 font-semibold">
+              <span className="text-xs text-ct-amber bg-ct-amber/[0.13] border border-ct-amber/[0.34] px-2 py-0.5 rounded-ct-xs inline-flex items-center gap-1.5 font-semibold">
                 <Clock className="w-3 h-3" />
                 {formatTime12h(arrival)}{finish ? ` – ${formatTime12h(finish)}` : ''}
               </span>
@@ -856,13 +856,13 @@ export default function RecurringSessionCard({
               value={declineReason}
               onChange={(e) => setDeclineReason(e.target.value)}
               placeholder="Optional — schedule conflict..."
-              className="flex-1 min-w-0 px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
+              className="flex-1 min-w-0 px-2 py-1 text-xs border border-ct-line rounded-ct-xs focus:outline-none focus:ring-1 focus:ring-ct-teal"
             />
           </div>
           <button
             onClick={handleDecline}
             disabled={loading}
-            className="inline-flex items-center gap-1 bg-ct-rose/[0.13]0 hover:bg-ct-rose text-ct-ink px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1 bg-ct-rose/[0.13]0 hover:bg-ct-rose text-ct-ink px-3 py-1 rounded-ct-xs text-xs font-medium disabled:opacity-50 transition-colors"
           >
             {loading ? 'Declining...' : 'Decline'}
           </button>
@@ -967,7 +967,7 @@ export default function RecurringSessionCard({
                 value={rescheduleDate}
                 min={minDate}
                 onChange={(e) => setRescheduleDate(e.target.value)}
-                className={`w-[140px] px-2 py-1 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal ${
+                className={`w-[140px] px-2 py-1 text-xs border rounded-ct-xs focus:outline-none focus:ring-1 focus:ring-ct-teal ${
                   clashWarning ? 'border-ct-rose/40 bg-ct-rose/[0.13]' : 'border-ct-line'
                 }`}
               />
@@ -979,13 +979,13 @@ export default function RecurringSessionCard({
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="That date doesn't work..."
-                className="flex-1 min-w-0 px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
+                className="flex-1 min-w-0 px-2 py-1 text-xs border border-ct-line rounded-ct-xs focus:outline-none focus:ring-1 focus:ring-ct-teal"
               />
             </div>
             <button
               onClick={handleReschedule}
               disabled={loading || !rescheduleDate || !reason.trim() || !!clashWarning || checkingClash}
-              className="inline-flex items-center gap-1 bg-ct-teal hover:brightness-110 text-ct-ink px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1 bg-ct-teal hover:brightness-110 text-ct-ink px-3 py-1 rounded-ct-xs text-xs font-medium disabled:opacity-50 transition-colors"
             >
               {loading ? 'Sending...' : 'Propose'}
             </button>
@@ -1000,7 +1000,7 @@ export default function RecurringSessionCard({
             <p className="text-[10px] text-ct-mute animate-pulse">Checking availability...</p>
           )}
           {clashWarning && (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-md">
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-xs">
               <AlertTriangle className="w-3 h-3 text-ct-rose flex-shrink-0" />
               <p className="text-[10px] text-ct-rose font-medium">{clashWarning}</p>
             </div>
@@ -1191,7 +1191,7 @@ export default function RecurringSessionCard({
                 value={rescheduleDate}
                 min={minDate}
                 onChange={(e) => setRescheduleDate(e.target.value)}
-                className={`w-[140px] px-2 py-1 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal ${
+                className={`w-[140px] px-2 py-1 text-xs border rounded-ct-xs focus:outline-none focus:ring-1 focus:ring-ct-teal ${
                   clashWarning ? 'border-ct-rose/40 bg-ct-rose/[0.13]' : 'border-ct-line'
                 }`}
               />
@@ -1203,13 +1203,13 @@ export default function RecurringSessionCard({
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder={isTradie ? 'Schedule conflict' : 'Not available'}
-                className="flex-1 min-w-0 px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
+                className="flex-1 min-w-0 px-2 py-1 text-xs border border-ct-line rounded-ct-xs focus:outline-none focus:ring-1 focus:ring-ct-teal"
               />
             </div>
             <button
               onClick={handleReschedule}
               disabled={loading || !rescheduleDate || !reason.trim() || !!clashWarning || checkingClash}
-              className="inline-flex items-center gap-1 bg-ct-teal hover:brightness-110 text-ct-ink px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1 bg-ct-teal hover:brightness-110 text-ct-ink px-3 py-1 rounded-ct-xs text-xs font-medium disabled:opacity-50 transition-colors"
             >
               {loading ? 'Sending...' : isTradie ? 'Propose' : 'Confirm'}
             </button>
@@ -1224,7 +1224,7 @@ export default function RecurringSessionCard({
             <p className="text-[10px] text-ct-mute animate-pulse">Checking availability...</p>
           )}
           {clashWarning && (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-md">
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-xs">
               <AlertTriangle className="w-3 h-3 text-ct-rose flex-shrink-0" />
               <p className="text-[10px] text-ct-rose font-medium">{clashWarning}</p>
             </div>
@@ -1242,13 +1242,13 @@ export default function RecurringSessionCard({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder={isTradie ? 'Schedule conflict, on leave...' : 'Away, not available...'}
-              className="flex-1 min-w-0 px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
+              className="flex-1 min-w-0 px-2 py-1 text-xs border border-ct-line rounded-ct-xs focus:outline-none focus:ring-1 focus:ring-ct-teal"
             />
           </div>
           <button
             onClick={handleSkip}
             disabled={loading || !reason.trim()}
-            className="inline-flex items-center gap-1 bg-ct-amber/[0.13]0 hover:bg-ct-amber text-ct-ink px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1 bg-ct-amber/[0.13]0 hover:bg-ct-amber text-ct-ink px-3 py-1 rounded-ct-xs text-xs font-medium disabled:opacity-50 transition-colors"
           >
             {loading ? 'Skipping...' : 'Skip'}
           </button>
@@ -1270,7 +1270,7 @@ export default function RecurringSessionCard({
               type="time"
               value={newStartTime}
               onChange={(e) => setNewStartTime(e.target.value)}
-              className="w-[110px] px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
+              className="w-[110px] px-2 py-1 text-xs border border-ct-line rounded-ct-xs focus:outline-none focus:ring-1 focus:ring-ct-teal"
             />
           </div>
           <span className="text-ct-mute text-xs">–</span>
@@ -1280,13 +1280,13 @@ export default function RecurringSessionCard({
               type="time"
               value={newEndTime}
               onChange={(e) => setNewEndTime(e.target.value)}
-              className="w-[110px] px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
+              className="w-[110px] px-2 py-1 text-xs border border-ct-line rounded-ct-xs focus:outline-none focus:ring-1 focus:ring-ct-teal"
             />
           </div>
           <button
             onClick={handleSaveTime}
             disabled={loading || !newStartTime}
-            className="inline-flex items-center gap-1 bg-ct-teal hover:brightness-110 text-ct-ink px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1 bg-ct-teal hover:brightness-110 text-ct-ink px-3 py-1 rounded-ct-xs text-xs font-medium disabled:opacity-50 transition-colors"
           >
             {loading ? 'Saving...' : 'Save'}
           </button>
@@ -1310,7 +1310,7 @@ export default function RecurringSessionCard({
                 value={extraDate}
                 min={minDate}
                 onChange={(e) => setExtraDate(e.target.value)}
-                className={`w-[140px] px-2 py-1 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal ${
+                className={`w-[140px] px-2 py-1 text-xs border rounded-ct-xs focus:outline-none focus:ring-1 focus:ring-ct-teal ${
                   extraClashWarning ? 'border-ct-rose/40 bg-ct-rose/[0.13]' : 'border-ct-line'
                 }`}
               />
@@ -1325,7 +1325,7 @@ export default function RecurringSessionCard({
                 value={extraHours}
                 onChange={(e) => setExtraHours(e.target.value)}
                 placeholder="2"
-                className="w-[60px] px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
+                className="w-[60px] px-2 py-1 text-xs border border-ct-line rounded-ct-xs focus:outline-none focus:ring-1 focus:ring-ct-teal"
               />
             </div>
             <div className="flex items-center gap-1.5">
@@ -1337,13 +1337,13 @@ export default function RecurringSessionCard({
                 value={extraCost}
                 onChange={(e) => setExtraCost(e.target.value)}
                 placeholder="0.00"
-                className="w-[80px] px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
+                className="w-[80px] px-2 py-1 text-xs border border-ct-line rounded-ct-xs focus:outline-none focus:ring-1 focus:ring-ct-teal"
               />
             </div>
             <button
               onClick={handleAddExtra}
               disabled={loading || !extraDate || !!extraClashWarning || checkingExtraClash}
-              className="inline-flex items-center gap-1 bg-ct-teal hover:brightness-110 text-ct-ink px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1 bg-ct-teal hover:brightness-110 text-ct-ink px-3 py-1 rounded-ct-xs text-xs font-medium disabled:opacity-50 transition-colors"
             >
               {loading ? 'Adding...' : 'Add'}
             </button>
@@ -1361,14 +1361,14 @@ export default function RecurringSessionCard({
               value={extraNotes}
               onChange={(e) => setExtraNotes(e.target.value)}
               placeholder="Optional — e.g., Emergency callout"
-              className="flex-1 min-w-0 px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
+              className="flex-1 min-w-0 px-2 py-1 text-xs border border-ct-line rounded-ct-xs focus:outline-none focus:ring-1 focus:ring-ct-teal"
             />
           </div>
           {checkingExtraClash && (
             <p className="text-[10px] text-ct-mute animate-pulse">Checking availability...</p>
           )}
           {extraClashWarning && (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-md">
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-xs">
               <AlertTriangle className="w-3 h-3 text-ct-rose flex-shrink-0" />
               <p className="text-[10px] text-ct-rose font-medium">{extraClashWarning}</p>
             </div>

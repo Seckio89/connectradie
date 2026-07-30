@@ -427,11 +427,11 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
 
                 <div className="mt-4 flex items-center flex-wrap gap-5 text-sm text-ct-mute-2">
                   <div className="flex items-center gap-2">
-                    <span className="w-4 h-4 bg-ct-surface-2 border-2 border-ct-line rounded" />
+                    <span className="w-4 h-4 bg-ct-surface-2 border-2 border-ct-line rounded-ct-xs" />
                     <span className="font-medium">Available</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="w-4 h-4 border-2 border-ct-teal rounded" />
+                    <span className="w-4 h-4 border-2 border-ct-teal rounded-ct-xs" />
                     <span className="font-medium">Today</span>
                   </div>
                 </div>
@@ -732,7 +732,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                             <img
                               src={filePreviewUrls[index]}
                               alt={file.name}
-                              className="w-12 h-12 object-cover rounded"
+                              className="w-12 h-12 object-cover rounded-ct-xs"
                             />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-ct-paper truncate">
@@ -747,7 +747,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                                 e.stopPropagation();
                                 removeFile(index);
                               }}
-                              className="p-1 text-ct-mute hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded transition-colors"
+                              className="p-1 text-ct-mute hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-xs transition-colors"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -763,7 +763,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
 
                 </div>
 
-                <div className="border-t border-ct-line-soft p-6 bg-ct-surface-2 rounded-b-2xl">
+                <div className="border-t border-ct-line-soft p-6 bg-ct-surface-2 rounded-b-ct-xl">
                   <button
                     onClick={handleBooking}
                     disabled={

@@ -668,7 +668,7 @@ export default function ProjectDetailsModal({
                             type="checkbox"
                             checked={selectedJobs.has(job.id)}
                             onChange={() => toggleJobSelection(job.id)}
-                            className="w-4 h-4 text-ct-mute-2 rounded"
+                            className="w-4 h-4 text-ct-mute-2 rounded-ct-xs"
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-ct-paper truncate">
@@ -772,7 +772,7 @@ export default function ProjectDetailsModal({
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-ct-paper mb-1">{job.description}</p>
                           <div className="flex items-center gap-3 text-sm text-ct-mute-2">
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${getJobStatusColor(job.status)}`}>
+                            <span className={`px-2 py-0.5 rounded-ct-xs text-xs font-medium ${getJobStatusColor(job.status)}`}>
                               {(job.status ?? 'pending').replace('_', ' ')}
                             </span>
                             {job.scheduled_time && (

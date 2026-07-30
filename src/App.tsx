@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { useDarkMode } from './hooks/useDarkMode';
 import { replayOnReconnect } from './lib/serviceWorker';
 import { trackPageView } from './lib/analytics';
 import { Loader2 } from 'lucide-react';
@@ -592,7 +591,6 @@ function AppRoutes() {
 }
 
 export default function App() {
-  useDarkMode();
   return (
     <ErrorBoundary>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>

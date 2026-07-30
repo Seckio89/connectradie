@@ -1485,7 +1485,7 @@ export default function ClientDashboard() {
 
                     return (
                       <div key={job.id} className={`rounded-ct-md border transition-all ${isOverdue ? 'border-ct-rose/[0.34] bg-ct-rose/[0.13]/50' : isDueSoon ? 'border-ct-amber/[0.34] bg-ct-amber/[0.13]/30' : 'border-ct-line bg-ct-surface'}`}>
-                        <div className="p-3 cursor-pointer hover:bg-ct-surface/50 transition-colors rounded-t-xl" onClick={() => navigate('/leads?tab=services')} role="button" tabIndex={0}>
+                        <div className="p-3 cursor-pointer hover:bg-ct-surface/50 transition-colors rounded-t-ct-lg" onClick={() => navigate('/leads?tab=services')} role="button" tabIndex={0}>
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium text-ct-paper truncate capitalize">
@@ -2255,7 +2255,7 @@ export default function ClientDashboard() {
       {cancelServiceTarget && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="fixed inset-0 bg-black/50" onClick={() => setCancelServiceTarget(null)} />
-          <div className="relative bg-ct-surface rounded-t-2xl sm:rounded-ct-lg shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+          <div className="relative bg-ct-surface rounded-t-ct-xl sm:rounded-ct-lg shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
             <button onClick={() => setCancelServiceTarget(null)} className="absolute top-4 right-4 p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm">
               <X className="w-5 h-5" />
             </button>
@@ -2951,7 +2951,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
               type="checkbox"
               checked={allowsSiteInspection}
               onChange={e => setAllowsSiteInspection(e.target.checked)}
-              className="mt-0.5 rounded border-ct-line text-ct-teal focus:ring-ct-teal"
+              className="mt-0.5 rounded-ct-xs border-ct-line text-ct-teal focus:ring-ct-teal"
             />
             <div>
               <span className="text-sm font-medium text-ct-mute-2">Allow on-site quote</span>

@@ -74,7 +74,7 @@ export default function TradieDateBlocker({ tradieId, onBlocked }: TradieDateBlo
             type="checkbox"
             checked={isRange}
             onChange={(e) => { setIsRange(e.target.checked); setEndDate(''); }}
-            className="rounded border-ct-line text-ct-teal focus:ring-ct-teal"
+            className="rounded-ct-xs border-ct-line text-ct-teal focus:ring-ct-teal"
           />
           <span className="text-xs text-ct-mute-2">Date range</span>
         </label>

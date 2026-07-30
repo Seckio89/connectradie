@@ -231,7 +231,7 @@ function AssignTeamModal({ job, teamMembers, existingAssignments, onClose, onSav
         className="bg-ct-surface rounded-ct-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 z-10 bg-ct-surface rounded-t-2xl flex items-start justify-between p-6 border-b border-ct-line-soft">
+        <div className="sticky top-0 z-10 bg-ct-surface rounded-t-ct-xl flex items-start justify-between p-6 border-b border-ct-line-soft">
           <div>
             <h2 className="text-xl font-bold text-ct-paper">Assign Team</h2>
             <p className="text-sm text-ct-mute mt-0.5 line-clamp-2">{job.description}</p>
@@ -1348,15 +1348,15 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                               {/* Header: category badge + status */}
                               <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
                                 {category && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-ct-surface-2 text-ct-mute-2 font-semibold text-[10px] uppercase tracking-wide">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-ct-xs bg-ct-surface-2 text-ct-mute-2 font-semibold text-[10px] uppercase tracking-wide">
                                     {category}
                                   </span>
                                 )}
-                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${(job.status && STATUS_COLORS[job.status]) || 'bg-ct-surface-2 text-ct-mute-2 border-ct-line'}`}>
+                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded-ct-xs text-[10px] font-medium border ${(job.status && STATUS_COLORS[job.status]) || 'bg-ct-surface-2 text-ct-mute-2 border-ct-line'}`}>
                                   {(job.status ?? 'pending').replace('_', ' ')}
                                 </span>
                                 {job.is_emergency && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-ct-rose/[0.13] text-ct-rose text-[10px] font-semibold">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-ct-xs bg-ct-rose/[0.13] text-ct-rose text-[10px] font-semibold">
                                     Urgent
                                   </span>
                                 )}
@@ -1368,7 +1368,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                         setConflictMenuJob(conflictMenuJob === job.id ? null : job.id);
                                       }}
                                       title="Resolve conflict"
-                                      className="p-0.5 rounded hover:bg-ct-rose/[0.13] transition-colors"
+                                      className="p-0.5 rounded-ct-xs hover:bg-ct-rose/[0.13] transition-colors"
                                     >
                                       <AlertCircle className="w-3.5 h-3.5 text-ct-rose" />
                                     </button>
@@ -1533,7 +1533,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                         ) : (
                           <span className="text-sm font-medium text-ct-mute">No jobs</span>
                         )}
-                        {today && <span className="text-[10px] font-bold uppercase tracking-wide text-ct-teal bg-ct-teal/[0.14] px-1.5 py-0.5 rounded">Today</span>}
+                        {today && <span className="text-[10px] font-bold uppercase tracking-wide text-ct-teal bg-ct-teal/[0.14] px-1.5 py-0.5 rounded-ct-xs">Today</span>}
                       </div>
 
                       {jobCount === 0 ? (
@@ -1682,7 +1682,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                             <div
                               key={job.id}
                               onClick={() => setSelectedJob(job)}
-                              className={`px-2 py-1 rounded text-xs cursor-pointer truncate border font-medium transition-colors ${
+                              className={`px-2 py-1 rounded-ct-xs text-xs cursor-pointer truncate border font-medium transition-colors ${
                                 job.is_emergency
                                   ? 'bg-ct-rose/[0.13] text-ct-rose border-ct-rose/[0.34] hover:bg-ct-rose/[0.13]'
                                   : conflictWarning
@@ -1761,7 +1761,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                           <span className={`text-[11px] font-bold uppercase tracking-wider ${today ? 'text-ct-teal' : 'text-ct-mute'}`}>
                             {day.toLocaleDateString('en-AU', { weekday: 'short' })} {day.getDate()} {day.toLocaleDateString('en-AU', { month: 'short' })}
                           </span>
-                          {today && <span className="text-[10px] font-medium text-ct-teal bg-ct-teal/[0.14] px-1.5 py-0.5 rounded">Today</span>}
+                          {today && <span className="text-[10px] font-medium text-ct-teal bg-ct-teal/[0.14] px-1.5 py-0.5 rounded-ct-xs">Today</span>}
                           <span className="ml-auto text-[10px] text-ct-mute">{entries.length} job{entries.length !== 1 ? 's' : ''}</span>
                         </div>
                         {entries.map(({ job, conflictWarning }) => {
@@ -1835,16 +1835,16 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
           <div className="flex items-center flex-wrap gap-3 sm:gap-5 text-xs text-ct-mute-2">
             <span className="font-medium text-ct-mute-2">Legend:</span>
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-ct-teal/[0.14] border border-ct-teal/30" />
+              <span className="w-3 h-3 rounded-ct-xs bg-ct-teal/[0.14] border border-ct-teal/30" />
               Available
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-ct-amber/[0.13] border border-ct-amber/[0.34]" />
+              <span className="w-3 h-3 rounded-ct-xs bg-ct-amber/[0.13] border border-ct-amber/[0.34]" />
               Scheduled job
             </span>
             {conflictCount > 0 && (
               <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-ct-rose/[0.13] border border-ct-rose/[0.34]" />
+                <span className="w-3 h-3 rounded-ct-xs bg-ct-rose/[0.13] border border-ct-rose/[0.34]" />
                 Conflict
               </span>
             )}
@@ -1931,7 +1931,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
             className="bg-ct-surface rounded-ct-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 z-10 bg-ct-surface rounded-t-2xl flex items-start justify-between p-6 border-b border-ct-line-soft">
+            <div className="sticky top-0 z-10 bg-ct-surface rounded-t-ct-xl flex items-start justify-between p-6 border-b border-ct-line-soft">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-2">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium border ${(selectedJob.status && STATUS_COLORS[selectedJob.status]) || 'bg-ct-surface-2 text-ct-mute-2 border-ct-line'}`}>

@@ -31,7 +31,7 @@ export default function Toast({ message, type = 'success', onClose, duration = 3
         <p className="flex-1 font-medium">{message}</p>
         <button
           onClick={onClose}
-          className="p-2 hover:bg-ct-surface/20 rounded transition-colors flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
+          className="p-2 hover:bg-ct-surface/20 rounded-ct-xs transition-colors flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
         >
           <X className="w-4 h-4" />
         </button>

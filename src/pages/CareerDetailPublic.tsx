@@ -97,7 +97,7 @@ export default function CareerDetailPublic() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-ct-ink theme-aware flex flex-col">
+      <div className="min-h-screen bg-ct-ink flex flex-col">
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="w-6 h-6 text-ct-mute animate-spin" />
@@ -109,7 +109,7 @@ export default function CareerDetailPublic() {
 
   if (!v) {
     return (
-      <div className="min-h-screen bg-ct-ink font-sans theme-aware flex flex-col">
+      <div className="min-h-screen bg-ct-ink font-sans flex flex-col">
         <SEO title="Role no longer available" description="This trade role is no longer open." canonical={`/careers/${id}`} noindex />
         <Navbar />
         <main className="flex-1 flex items-center justify-center px-4">
@@ -145,7 +145,7 @@ export default function CareerDetailPublic() {
   ];
 
   return (
-    <div className="min-h-screen bg-ct-ink font-sans antialiased theme-aware flex flex-col">
+    <div className="min-h-screen bg-ct-ink font-sans antialiased flex flex-col">
       {/* SEO drives og/twitter/description; title, canonical and the JobPosting
           JSON-LD are set imperatively in the effect above (Helmet is unreliable
           for those here). */}

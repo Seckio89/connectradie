@@ -88,7 +88,7 @@ export default function SearchableSelect({
           {value && clearable && (
             <button
               onClick={handleClear}
-              className="p-1 hover:bg-ct-surface-2 rounded-md transition-colors"
+              className="p-1 hover:bg-ct-surface-2 rounded-ct-xs transition-colors"
             >
               <X className="w-4 h-4 text-ct-mute" />
             </button>

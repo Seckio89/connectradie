@@ -619,7 +619,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     return (
       <DashboardLayout wide>
         <div className="space-y-6">
-          <div className="h-8 bg-ct-line rounded w-48 animate-pulse" />
+          <div className="h-8 bg-ct-line rounded-ct-xs w-48 animate-pulse" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[1,2,3,4].map(i => <div key={i} className="h-28 bg-ct-surface rounded-ct-lg border border-ct-line animate-pulse" />)}
           </div>
@@ -1251,7 +1251,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
             <p className="text-xs font-bold text-ct-mute uppercase tracking-widest mb-2.5">Service Details</p>
             <div className="flex items-center gap-2 mb-1.5">
               {jobCategory && (
-                <span className="px-2 py-0.5 bg-ct-surface-2 text-ct-mute-2 rounded text-xs font-semibold">{jobCategory}</span>
+                <span className="px-2 py-0.5 bg-ct-surface-2 text-ct-mute-2 rounded-ct-xs text-xs font-semibold">{jobCategory}</span>
               )}
               {getStatusBadge(payment.status)}
             </div>

@@ -235,14 +235,14 @@ export default function Projects() {
               <div className="flex items-center bg-ct-surface-2 rounded-ct-sm p-0.5">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-ct-surface shadow-sm text-ct-paper' : 'text-ct-mute hover:text-ct-mute-2'}`}
+                  className={`p-2 rounded-ct-xs transition-colors ${viewMode === 'grid' ? 'bg-ct-surface shadow-sm text-ct-paper' : 'text-ct-mute hover:text-ct-mute-2'}`}
                   title="Grid view"
                 >
                   <LayoutList className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('timeline')}
-                  className={`p-2 rounded-md transition-colors ${viewMode === 'timeline' ? 'bg-ct-surface shadow-sm text-ct-paper' : 'text-ct-mute hover:text-ct-mute-2'}`}
+                  className={`p-2 rounded-ct-xs transition-colors ${viewMode === 'timeline' ? 'bg-ct-surface shadow-sm text-ct-paper' : 'text-ct-mute hover:text-ct-mute-2'}`}
                   title="Timeline view"
                 >
                   <BarChart3 className="w-4 h-4" />
@@ -322,13 +322,13 @@ export default function Projects() {
                               <button
                                 onClick={() => handleSaveTitle(project.id)}
                                 disabled={savingTitle}
-                                className="p-2 text-ct-mute-2 hover:bg-ct-surface-2 rounded transition-colors"
+                                className="p-2 text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-xs transition-colors"
                               >
                                 <CheckCircle2 className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => setEditingId(null)}
-                                className="p-2 text-ct-mute hover:bg-ct-surface-2 rounded transition-colors"
+                                className="p-2 text-ct-mute hover:bg-ct-surface-2 rounded-ct-xs transition-colors"
                               >
                                 <X className="w-4 h-4" />
                               </button>
@@ -344,7 +344,7 @@ export default function Projects() {
                                   setEditingId(project.id);
                                   setEditTitle(project.title);
                                 }}
-                                className="p-2 rounded text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 transition-all sm:opacity-0 sm:group-hover:opacity-100 flex-shrink-0"
+                                className="p-2 rounded-ct-xs text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 transition-all sm:opacity-0 sm:group-hover:opacity-100 flex-shrink-0"
                                 title="Rename project"
                               >
                                 <PenLine className="w-3.5 h-3.5" />

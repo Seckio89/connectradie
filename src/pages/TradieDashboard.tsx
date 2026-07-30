@@ -901,7 +901,7 @@ export default function TradieDashboard() {
             <span className="text-sm text-ct-teal flex-1 hidden sm:inline">You're keeping more of every job with Pro.</span>
             <button
               onClick={() => { localStorage.setItem('dismissedPayoutBanner', 'true'); setShowPayoutBanner(false); }}
-              className="p-1 text-ct-teal hover:text-ct-teal rounded transition-colors flex-shrink-0"
+              className="p-1 text-ct-teal hover:text-ct-teal rounded-ct-xs transition-colors flex-shrink-0"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1369,7 +1369,7 @@ export default function TradieDashboard() {
                                 </span>
                               )}
                               {lead.budget_amount ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-ct-teal/[0.14] border border-ct-teal/30 text-ct-teal font-semibold">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-ct-xs bg-ct-teal/[0.14] border border-ct-teal/30 text-ct-teal font-semibold">
                                   Budget ${lead.budget_amount.toLocaleString()}
                                 </span>
                               ) : lead.budget_type === 'request_quote' ? (
@@ -1907,7 +1907,7 @@ export default function TradieDashboard() {
                   <div className="flex gap-1 bg-ct-surface-2 rounded-ct-sm p-1">
                     {(['day', 'week', 'month'] as const).map(v => (
                       <button key={v} onClick={() => setCalendarView(v)}
-                        className={`px-2 sm:px-3 py-1.5 min-h-[44px] text-xs font-medium rounded-md transition-colors ${calendarView === v ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute hover:text-ct-mute-2'}`}>
+                        className={`px-2 sm:px-3 py-1.5 min-h-[44px] text-xs font-medium rounded-ct-xs transition-colors ${calendarView === v ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute hover:text-ct-mute-2'}`}>
                         <span>{v.charAt(0).toUpperCase() + v.slice(1)}</span>
                       </button>
                     ))}
@@ -1921,7 +1921,7 @@ export default function TradieDashboard() {
                     </button>
                   ) : (
                     <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-ct-teal text-ct-ink text-[10px] sm:text-sm font-medium rounded-ct-md hover:brightness-110 transition-all min-h-[36px] sm:min-h-[44px]">
-                      <Crown className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots<span className="text-xs font-bold bg-ct-surface/20 px-1.5 py-0.5 rounded ml-1">PRO</span>
+                      <Crown className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots<span className="text-xs font-bold bg-ct-surface/20 px-1.5 py-0.5 rounded-ct-xs ml-1">PRO</span>
                     </button>
                   )}
                   {isProUser ? (
@@ -1956,7 +1956,7 @@ export default function TradieDashboard() {
                     </>
                   ) : (
                     <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-teal/30 text-ct-amber text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-amber/[0.13] transition-colors min-h-[32px] sm:min-h-[44px]">
-                      <Calendar className="w-4 h-4" /><span className="hidden sm:inline">Google Calendar</span><span className="sm:hidden">Calendar</span><span className="text-xs font-bold bg-ct-amber/[0.13] text-ct-amber px-1.5 py-0.5 rounded">PRO</span>
+                      <Calendar className="w-4 h-4" /><span className="hidden sm:inline">Google Calendar</span><span className="sm:hidden">Calendar</span><span className="text-xs font-bold bg-ct-amber/[0.13] text-ct-amber px-1.5 py-0.5 rounded-ct-xs">PRO</span>
                     </button>
                   )}
                   <div className="relative flex-shrink-0">
@@ -2016,7 +2016,7 @@ export default function TradieDashboard() {
                               </div>
                               <div className="flex-1 flex gap-1 p-1">
                                 {slotsInHour.map(s => (
-                                  <div key={s.id} className={`flex-1 rounded-md px-2 py-1 text-xs font-medium ${s.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal border border-ct-teal/30' : s.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose border border-ct-rose/[0.34]' : 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line'}`}>
+                                  <div key={s.id} className={`flex-1 rounded-ct-xs px-2 py-1 text-xs font-medium ${s.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal border border-ct-teal/30' : s.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose border border-ct-rose/[0.34]' : 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line'}`}>
                                     {s.status === 'available' ? 'Available' : s.status === 'booked' ? 'Booked' : s.status}
                                   </div>
                                 ))}
@@ -2026,8 +2026,8 @@ export default function TradieDashboard() {
                         })}
                       </div>
                       <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-ct-mute-2">
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded flex-shrink-0" /><span className="font-medium">Available</span></div>
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded flex-shrink-0" /><span className="font-medium">Booked</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded-ct-xs flex-shrink-0" /><span className="font-medium">Booked</span></div>
                       </div>
                     </div>
                   );
@@ -2055,7 +2055,7 @@ export default function TradieDashboard() {
                       <div className="relative">
                       <div className="overflow-x-auto overflow-y-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
                         <div className="min-w-[480px]">
-                          <div className="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[80px_repeat(7,1fr)] border border-ct-line rounded-t-xl overflow-hidden">
+                          <div className="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[80px_repeat(7,1fr)] border border-ct-line rounded-t-ct-lg overflow-hidden">
                             <div className="bg-ct-surface-2 border-r border-b border-ct-line p-2" />
                             {weekDays.map(d => {
                               const isToday = d.toDateString() === new Date().toDateString();
@@ -2067,7 +2067,7 @@ export default function TradieDashboard() {
                               );
                             })}
                           </div>
-                          <div className="border-x border-b border-ct-line rounded-b-xl overflow-hidden">
+                          <div className="border-x border-b border-ct-line rounded-b-ct-lg overflow-hidden">
                             {hours.map(hour => {
                               const label = hour < 12 ? `${hour}:00 AM` : hour === 12 ? '12:00 PM' : `${hour - 12}:00 PM`;
                               return (
@@ -2084,7 +2084,7 @@ export default function TradieDashboard() {
                                     return (
                                       <div key={d.toISOString()} className="border-r border-ct-line-soft last:border-r-0 p-0.5 min-h-[32px]">
                                         {slotsInHour.map(s => (
-                                          <div key={s.id} className={`rounded px-1 py-0.5 text-xs font-medium truncate ${s.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal' : s.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
+                                          <div key={s.id} className={`rounded-ct-xs px-1 py-0.5 text-xs font-medium truncate ${s.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal' : s.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
                                             {s.status === 'available' ? 'Avail' : 'Bkd'}
                                           </div>
                                         ))}
@@ -2100,8 +2100,8 @@ export default function TradieDashboard() {
                       <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent sm:hidden" />
                       </div>
                       <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-ct-mute-2">
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded flex-shrink-0" /><span className="font-medium">Available</span></div>
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded flex-shrink-0" /><span className="font-medium">Booked</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded-ct-xs flex-shrink-0" /><span className="font-medium">Booked</span></div>
                       </div>
                     </div>
                   );
@@ -2162,8 +2162,8 @@ export default function TradieDashboard() {
                   </div>
 
                   <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-sm text-ct-mute-2">
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded flex-shrink-0" /><span className="font-medium">Available</span></div>
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded flex-shrink-0" /><span className="font-medium">Booked</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded-ct-xs flex-shrink-0" /><span className="font-medium">Booked</span></div>
                   </div>
                 </>
               )}

@@ -347,7 +347,7 @@ export default function JobPostGuide() {
       >
         <button
           onClick={dismiss}
-          className="absolute top-3.5 right-3.5 p-1 text-ct-mute hover:text-ct-mute-2 rounded-md hover:bg-ct-surface-2 transition-colors z-10"
+          className="absolute top-3.5 right-3.5 p-1 text-ct-mute hover:text-ct-mute-2 rounded-ct-xs hover:bg-ct-surface-2 transition-colors z-10"
           aria-label="Close"
         >
           <X className="w-3.5 h-3.5" />

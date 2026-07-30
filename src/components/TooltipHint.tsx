@@ -147,7 +147,7 @@ export default function TooltipHint({
         </div>
         <button
           onClick={handleDismiss}
-          className="flex-shrink-0 p-1 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface/40 rounded transition-colors"
+          className="flex-shrink-0 p-1 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface/40 rounded-ct-xs transition-colors"
         >
           <X className="w-4 h-4" />
         </button>

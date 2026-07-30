@@ -174,7 +174,7 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
             return (
               <div key={item.id} className={`flex items-center gap-2 px-3 py-2 rounded-ct-sm text-xs ${isLow ? 'bg-ct-amber/[0.13]' : 'bg-ct-surface-2'}`}>
                 <span className="font-medium text-ct-paper flex-1">{item.name}</span>
-                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                <span className={`px-1.5 py-0.5 rounded-ct-xs text-[10px] font-medium ${
                   item.provided_by === 'tradie' ? 'bg-ct-surface-2 text-ct-mute-2' : 'bg-ct-surface-2 text-ct-mute'
                 }`}>
                   {item.provided_by === 'tradie' ? 'Tradie supplies' : 'You supply'}
@@ -839,7 +839,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                     type="checkbox"
                     checked={parkingAvailable}
                     onChange={(e) => setParkingAvailable(e.target.checked)}
-                    className="w-4 h-4 rounded border-ct-line text-ct-teal focus:ring-ct-teal"
+                    className="w-4 h-4 rounded-ct-xs border-ct-line text-ct-teal focus:ring-ct-teal"
                   />
                   <span className="text-sm text-ct-mute-2">Parking available on site for the tradie</span>
                 </label>
@@ -856,7 +856,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                       <button
                         type="button"
                         onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                        className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 text-ct-ink rounded-md hover:bg-black/80 transition-colors opacity-0 group-hover/photo:opacity-100"
+                        className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 text-ct-ink rounded-ct-xs hover:bg-black/80 transition-colors opacity-0 group-hover/photo:opacity-100"
                       >
                         <X className="w-2.5 h-2.5" />
                       </button>
@@ -1005,7 +1005,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                 type="checkbox"
                 checked={allowsSiteInspection}
                 onChange={(e) => setAllowsSiteInspection(e.target.checked)}
-                className="w-4 h-4 text-ct-mute-2 rounded border-ct-line focus:ring-ct-teal mt-0.5"
+                className="w-4 h-4 text-ct-mute-2 rounded-ct-xs border-ct-line focus:ring-ct-teal mt-0.5"
               />
               <div>
                 <span className="text-sm font-medium text-ct-mute-2">Allow on-site quote</span>
@@ -1697,7 +1697,7 @@ export default function ClientServicesTab() {
                           </span>
                         )}
                         {savedMethods.has(job.id) && savedMethods.get(job.id)!.mandate_status === 'active' && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-ct-mute-2 bg-ct-surface-2 border border-ct-line px-1.5 py-0.5 rounded-md">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-ct-mute-2 bg-ct-surface-2 border border-ct-line px-1.5 py-0.5 rounded-ct-xs">
                             <Building2 className="w-2.5 h-2.5" />
                             Direct Debit
                           </span>
@@ -1711,7 +1711,7 @@ export default function ClientServicesTab() {
                           <span className="text-xs font-normal text-ct-mute ml-0.5">per visit</span>
                         </span>
                       ) : (
-                        <span className="text-xs font-medium text-ct-amber bg-ct-amber/[0.13] border border-ct-amber/[0.34] px-2 py-0.5 rounded-md">
+                        <span className="text-xs font-medium text-ct-amber bg-ct-amber/[0.13] border border-ct-amber/[0.34] px-2 py-0.5 rounded-ct-xs">
                           Awaiting quote
                         </span>
                       )}
@@ -1891,7 +1891,7 @@ export default function ClientServicesTab() {
                     <div className="relative">
                       <button
                         onClick={() => setMenuOpen(menuOpen === job.id ? null : job.id)}
-                        className="p-2.5 text-ct-mute hover:text-ct-mute-2 rounded transition-colors"
+                        className="p-2.5 text-ct-mute hover:text-ct-mute-2 rounded-ct-xs transition-colors"
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>
@@ -2400,7 +2400,7 @@ export default function ClientServicesTab() {
                               </div>
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 <span className="text-xs font-medium text-ct-paper">${inv.total.toFixed(2)}</span>
-                                <span className="px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute text-[10px] font-medium rounded">{method}</span>
+                                <span className="px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute text-[10px] font-medium rounded-ct-xs">{method}</span>
                               </div>
                             </div>
                           );

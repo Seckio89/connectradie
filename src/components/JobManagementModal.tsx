@@ -594,7 +594,7 @@ export default function JobManagementModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 modal-sheet-overlay">
-      <div className="bg-ct-surface rounded-t-2xl sm:rounded-ct-lg max-w-2xl w-full max-h-[92vh] overflow-hidden flex flex-col modal-sheet">
+      <div className="bg-ct-surface rounded-t-ct-xl sm:rounded-ct-lg max-w-2xl w-full max-h-[92vh] overflow-hidden flex flex-col modal-sheet">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
@@ -1349,7 +1349,7 @@ export default function JobManagementModal({
                     onClick={() => setShowNotesFull(false)}
                   >
                     <div
-                      className="bg-ct-surface w-full sm:max-w-lg rounded-t-2xl sm:rounded-ct-lg h-[85vh] sm:h-auto sm:max-h-[85vh] flex flex-col"
+                      className="bg-ct-surface w-full sm:max-w-lg rounded-t-ct-xl sm:rounded-ct-lg h-[85vh] sm:h-auto sm:max-h-[85vh] flex flex-col"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-center justify-between px-5 py-4 border-b border-ct-line-soft flex-shrink-0">
@@ -1357,7 +1357,7 @@ export default function JobManagementModal({
                         <button
                           onClick={() => setShowNotesFull(false)}
                           aria-label="Close notes"
-                          className="p-1.5 text-ct-mute hover:text-ct-mute-2 rounded-md hover:bg-ct-surface-2"
+                          className="p-1.5 text-ct-mute hover:text-ct-mute-2 rounded-ct-xs hover:bg-ct-surface-2"
                         >
                           <X className="w-5 h-5" />
                         </button>
@@ -1402,7 +1402,7 @@ export default function JobManagementModal({
                       </div>
                     </div>
                     <label className="flex items-center gap-2.5 cursor-pointer border border-ct-line rounded-ct-sm p-3">
-                      <input type="checkbox" checked={isDelayed} onChange={(e) => setIsDelayed(e.target.checked)} className="w-4 h-4 text-ct-mute-2 rounded focus:ring-ct-teal" />
+                      <input type="checkbox" checked={isDelayed} onChange={(e) => setIsDelayed(e.target.checked)} className="w-4 h-4 text-ct-mute-2 rounded-ct-xs focus:ring-ct-teal" />
                       <Clock className="w-4 h-4 text-ct-mute" />
                       <div className="flex-1">
                         <span className="text-sm text-ct-mute-2">Can&apos;t start yet</span>

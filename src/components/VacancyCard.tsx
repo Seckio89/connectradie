@@ -88,12 +88,12 @@ export default function VacancyCard({ vacancy, onApply, hasApplied, isOwner, onM
         {tickets.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-4">
             {tickets.slice(0, 4).map(t => (
-              <span key={t} className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-ct-surface-2 text-ct-mute-2 border border-ct-line">
+              <span key={t} className="px-2 py-0.5 rounded-ct-xs text-[11px] font-medium bg-ct-surface-2 text-ct-mute-2 border border-ct-line">
                 {t}
               </span>
             ))}
             {tickets.length > 4 && (
-              <span className="px-2 py-0.5 rounded-md text-[11px] font-medium text-ct-mute">
+              <span className="px-2 py-0.5 rounded-ct-xs text-[11px] font-medium text-ct-mute">
                 +{tickets.length - 4} more
               </span>
             )}

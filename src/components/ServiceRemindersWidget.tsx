@@ -147,7 +147,7 @@ export default function ServiceRemindersWidget() {
                     </p>
                     <button
                       onClick={() => handleDismiss(reminder.id)}
-                      className="p-1 text-ct-mute hover:text-ct-mute rounded transition-colors flex-shrink-0"
+                      className="p-1 text-ct-mute hover:text-ct-mute rounded-ct-xs transition-colors flex-shrink-0"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -163,7 +163,7 @@ export default function ServiceRemindersWidget() {
                     </span>
                     <button
                       onClick={() => handleBookAgain(reminder)}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-ct-mute-2 hover:text-ct-mute-2 bg-ct-surface-2 hover:bg-ct-surface-2 px-2.5 py-1 rounded-md transition-colors"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-ct-mute-2 hover:text-ct-mute-2 bg-ct-surface-2 hover:bg-ct-surface-2 px-2.5 py-1 rounded-ct-xs transition-colors"
                     >
                       <RefreshCw className="w-3 h-3" />
                       Book Again

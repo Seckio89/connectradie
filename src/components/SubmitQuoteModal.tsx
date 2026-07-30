@@ -921,7 +921,7 @@ export default function SubmitQuoteModal({
                         <button
                           type="button"
                           onClick={() => handleDeleteTemplate(t.id)}
-                          className="ml-2 p-1 text-ct-mute hover:text-ct-rose rounded transition-colors"
+                          className="ml-2 p-1 text-ct-mute hover:text-ct-rose rounded-ct-xs transition-colors"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -978,7 +978,7 @@ export default function SubmitQuoteModal({
                         type="checkbox"
                         checked={saveAsTemplate}
                         onChange={(e) => setSaveAsTemplate(e.target.checked)}
-                        className="rounded border-ct-line text-ct-mute-2 focus:ring-ct-teal"
+                        className="rounded-ct-xs border-ct-line text-ct-mute-2 focus:ring-ct-teal"
                       />
                       <span className="text-xs text-ct-mute">Save this message for next time</span>
                     </label>
@@ -1050,7 +1050,7 @@ export default function SubmitQuoteModal({
                     type="checkbox"
                     checked={includesMaterials}
                     onChange={(e) => setIncludesMaterials(e.target.checked)}
-                    className="w-4 h-4 text-ct-mute-2 rounded border-ct-line focus:ring-ct-teal"
+                    className="w-4 h-4 text-ct-mute-2 rounded-ct-xs border-ct-line focus:ring-ct-teal"
                   />
                   <Package className="w-4 h-4 text-ct-mute" />
                   <span className="text-sm text-ct-mute-2">Quote includes materials</span>

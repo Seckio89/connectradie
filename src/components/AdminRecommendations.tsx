@@ -312,7 +312,7 @@ export default function AdminRecommendations() {
                     rec.priority === 'high' ? 'bg-ct-rose' : rec.priority === 'medium' ? 'bg-ct-amber' : 'bg-ct-surface-2'
                   }`} />
 
-                  <div className={`p-1.5 rounded-md flex-shrink-0 mt-0.5 ${catConfig.bg}`}>
+                  <div className={`p-1.5 rounded-ct-xs flex-shrink-0 mt-0.5 ${catConfig.bg}`}>
                     <CatIcon className={`w-4 h-4 ${catConfig.color}`} />
                   </div>
 
@@ -326,7 +326,7 @@ export default function AdminRecommendations() {
                         {priorityConfig.label}
                       </span>
                       {rec.status === 'new' && (
-                        <span className="px-1.5 py-0.5 bg-ct-teal/[0.14] text-ct-teal text-xs font-semibold rounded">
+                        <span className="px-1.5 py-0.5 bg-ct-teal/[0.14] text-ct-teal text-xs font-semibold rounded-ct-xs">
                           NEW
                         </span>
                       )}
@@ -371,7 +371,7 @@ export default function AdminRecommendations() {
 
                       {/* Confidence indicator */}
                       {Boolean(confidence) && (
-                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium ${
+                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-ct-xs text-xs font-medium ${
                           confidence === 'high'
                             ? 'bg-ct-teal/[0.14] text-ct-teal'
                             : confidence === 'medium'
@@ -397,7 +397,7 @@ export default function AdminRecommendations() {
                             {Object.entries(rec.data_snapshot)
                               .filter(([key]) => key !== 'confidence')
                               .map(([key, val]) => (
-                                <div key={key} className="bg-ct-surface-2 rounded px-3 py-2">
+                                <div key={key} className="bg-ct-surface-2 rounded-ct-xs px-3 py-2">
                                   <p className="text-xs text-ct-mute uppercase tracking-wide">{formatKey(key)}</p>
                                   <p className="text-sm font-medium text-ct-paper truncate">
                                     {typeof val === 'object' ? JSON.stringify(val) : String(val)}
@@ -414,7 +414,7 @@ export default function AdminRecommendations() {
                           <Link
                             to={rec.action_url}
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-ct-surface text-ct-ink text-xs font-medium rounded-md hover:bg-ct-surface transition-colors"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-ct-surface text-ct-ink text-xs font-medium rounded-ct-xs hover:bg-ct-surface transition-colors"
                           >
                             <ArrowUpRight className="w-3 h-3" />
                             Take Action
@@ -423,7 +423,7 @@ export default function AdminRecommendations() {
                         {rec.status === 'new' && (
                           <button
                             onClick={(e) => { e.stopPropagation(); updateStatus(rec.id, 'reviewed'); }}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-ct-mute-2 text-xs font-medium rounded-md border border-ct-line hover:bg-ct-surface-2 transition-colors"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-ct-mute-2 text-xs font-medium rounded-ct-xs border border-ct-line hover:bg-ct-surface-2 transition-colors"
                           >
                             <Eye className="w-3 h-3" />
                             Mark Reviewed
@@ -431,14 +431,14 @@ export default function AdminRecommendations() {
                         )}
                         <button
                           onClick={(e) => { e.stopPropagation(); updateStatus(rec.id, 'implemented'); }}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-ct-teal text-xs font-medium rounded-md border border-ct-teal/30 hover:bg-ct-teal/[0.14] transition-colors"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-ct-teal text-xs font-medium rounded-ct-xs border border-ct-teal/30 hover:bg-ct-teal/[0.14] transition-colors"
                         >
                           <Check className="w-3 h-3" />
                           Done
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); updateStatus(rec.id, 'dismissed'); }}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-ct-mute text-xs font-medium rounded-md hover:bg-ct-surface-2 transition-colors ml-auto"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-ct-mute text-xs font-medium rounded-ct-xs hover:bg-ct-surface-2 transition-colors ml-auto"
                         >
                           <X className="w-3 h-3" />
                           Dismiss

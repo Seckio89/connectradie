@@ -226,7 +226,7 @@ export default function AdminUpdates() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors capitalize ${
+              className={`px-4 py-1.5 rounded-ct-xs text-sm font-medium transition-colors capitalize ${
                 filter === f ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute hover:text-ct-mute-2'
               }`}
             >
@@ -434,7 +434,7 @@ export default function AdminUpdates() {
                     type="checkbox"
                     checked={requiresAck}
                     onChange={(e) => setRequiresAck(e.target.checked)}
-                    className="w-4 h-4 rounded border-ct-line text-ct-mute-2 focus:ring-ct-teal"
+                    className="w-4 h-4 rounded-ct-xs border-ct-line text-ct-mute-2 focus:ring-ct-teal"
                   />
                   <span className="text-sm text-ct-mute-2">Requires acknowledgment</span>
                 </label>

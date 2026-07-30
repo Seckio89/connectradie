@@ -59,7 +59,7 @@ export default function CareersPublic() {
   }, [vacancies, role, trade, query]);
 
   return (
-    <div className="min-h-screen bg-ct-ink font-sans antialiased theme-aware flex flex-col">
+    <div className="min-h-screen bg-ct-ink font-sans antialiased flex flex-col">
       <SEO
         title="Trade Jobs & Apprenticeships in Australia"
         description="Browse apprenticeships, qualified tradesperson roles and senior trade jobs across Australia. Free to apply — post your details and get hired by verified trade businesses."

@@ -836,7 +836,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
         </div>
       </aside>
 
-      <div className="lg:pl-64 theme-aware flex-1 flex flex-col">
+      <div className="lg:pl-64 flex-1 flex flex-col">
         <header className="sticky top-0 z-30 bg-ct-ink-2/95 backdrop-blur-sm border-b border-ct-line" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
           <div className="flex items-center justify-between px-4 py-3">
             <button

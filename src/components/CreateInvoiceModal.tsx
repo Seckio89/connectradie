@@ -495,7 +495,7 @@ export default function CreateInvoiceModal({
                       type="checkbox"
                       checked={includeGst}
                       onChange={(e) => setIncludeGst(e.target.checked)}
-                      className="rounded border-ct-line text-ct-mute-2 focus:ring-ct-teal"
+                      className="rounded-ct-xs border-ct-line text-ct-mute-2 focus:ring-ct-teal"
                     />
                     GST (10%)
                   </label>

@@ -540,7 +540,7 @@ export default function QuoteComparisonView({
                         <Shield className="w-4 h-4 text-ct-mute-2 flex-shrink-0" />
                       )}
                       {isAccepted && !isV2 && (
-                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 bg-ct-teal/[0.14] text-ct-teal rounded text-xs font-bold">
+                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 bg-ct-teal/[0.14] text-ct-teal rounded-ct-xs text-xs font-bold">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           Hired
                         </span>

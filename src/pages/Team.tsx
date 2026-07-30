@@ -783,8 +783,8 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                 <div key={i} className="flex items-center gap-4 p-5 animate-pulse">
                   <div className="w-12 h-12 bg-ct-surface-2 rounded-full" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-ct-surface-2 rounded w-1/3" />
-                    <div className="h-3 bg-ct-surface-2 rounded w-1/4" />
+                    <div className="h-4 bg-ct-surface-2 rounded-ct-xs w-1/3" />
+                    <div className="h-3 bg-ct-surface-2 rounded-ct-xs w-1/4" />
                   </div>
                 </div>
               ))}

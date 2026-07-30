@@ -43,7 +43,7 @@ export default function GeofenceCrossingToast() {
             {isIn ? 'Your time on site is being recorded.' : 'Your time on site has been saved to the job.'}
           </p>
         </div>
-        <button onClick={() => setCrossing(null)} aria-label="Dismiss" className="p-1 text-ct-mute hover:text-ct-mute-2 rounded-md flex-shrink-0">
+        <button onClick={() => setCrossing(null)} aria-label="Dismiss" className="p-1 text-ct-mute hover:text-ct-mute-2 rounded-ct-xs flex-shrink-0">
           <X className="w-4 h-4" />
         </button>
       </div>

@@ -560,7 +560,7 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
                       } as Record<string, { label: string; cls: string }>)[s.invoiceStatus ?? 'sent']
                         ?? { label: 'Invoiced', cls: 'bg-ct-amber/[0.13] text-ct-amber' };
                       return (
-                        <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-ct-amber/[0.13] rounded text-xs">
+                        <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-ct-amber/[0.13] rounded-ct-xs text-xs">
                           <span className="text-ct-mute-2">
                             {new Date(s.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
                           </span>
@@ -580,7 +580,7 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
                   <p className="text-xs font-medium text-ct-mute-2 mb-1.5">Ready to Invoice ({completedCount})</p>
                   <div className="space-y-1">
                     {uninvoicedSessions.filter(s => s.status === 'completed').map((s) => (
-                      <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-ct-surface-2 rounded text-xs">
+                      <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-ct-surface-2 rounded-ct-xs text-xs">
                         <span className="text-ct-mute-2">
                           {new Date(s.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
                         </span>
@@ -602,7 +602,7 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
                   <p className="text-xs font-medium text-ct-amber mb-1.5">Awaiting Your Confirmation ({awaitingConfirmationCount})</p>
                   <div className="space-y-1">
                     {uninvoicedSessions.filter(s => s.status === 'awaiting_completion').map((s) => (
-                      <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-ct-amber/[0.13] rounded text-xs">
+                      <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-ct-amber/[0.13] rounded-ct-xs text-xs">
                         <span className="text-ct-mute-2">
                           {new Date(s.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
                         </span>
@@ -624,7 +624,7 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
                   <p className="text-xs font-medium text-ct-mute-2 mb-1.5">Extra Sessions ({extraCount})</p>
                   <div className="space-y-1">
                     {uninvoicedSessions.filter(s => s.status === 'extra').map((s) => (
-                      <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-ct-amber/[0.13] rounded text-xs">
+                      <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-ct-amber/[0.13] rounded-ct-xs text-xs">
                         <div className="min-w-0">
                           <span className="text-ct-mute-2">
                             {new Date(s.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
@@ -644,7 +644,7 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
               {(() => {
                 const suppliesTotal = uninvoicedSessions.reduce((sum, s) => sum + ((s.supply_cost as number) ?? 0), 0);
                 return suppliesTotal > 0 ? (
-                  <div className="flex items-center justify-between py-2 px-2 bg-ct-surface-2 rounded text-xs">
+                  <div className="flex items-center justify-between py-2 px-2 bg-ct-surface-2 rounded-ct-xs text-xs">
                     <span className="font-medium text-ct-mute-2 inline-flex items-center gap-1.5">
                       <Package className="w-3 h-3" />
                       Supplies & Materials
@@ -1105,7 +1105,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-medium text-ct-paper">{item.name}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${
+                        <span className={`px-1.5 py-0.5 rounded-ct-xs text-[9px] font-semibold ${
                           item.provided_by === 'tradie' ? 'bg-ct-surface-2 text-ct-mute-2' : 'bg-ct-surface-2 text-ct-mute'
                         }`}>
                           {item.provided_by === 'tradie' ? 'You' : 'Client'}
@@ -1118,14 +1118,14 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
                         <div className="flex items-center justify-center gap-2 sm:gap-1">
                           <button
                             onClick={() => handleUpdateStock(item.id, Math.max(0, (item.stock_level ?? 0) - 1))}
-                            className="w-11 h-11 sm:w-6 sm:h-6 rounded-md bg-ct-surface-2 hover:bg-ct-line text-ct-mute-2 text-xs font-bold flex items-center justify-center transition-colors min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px]"
+                            className="w-11 h-11 sm:w-6 sm:h-6 rounded-ct-xs bg-ct-surface-2 hover:bg-ct-line text-ct-mute-2 text-xs font-bold flex items-center justify-center transition-colors min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px]"
                           >−</button>
                           <span className={`text-xs font-bold min-w-[24px] text-center ${isLow ? 'text-ct-amber' : 'text-ct-paper'}`}>
                             {item.stock_level}
                           </span>
                           <button
                             onClick={() => handleUpdateStock(item.id, (item.stock_level ?? 0) + 1)}
-                            className="w-11 h-11 sm:w-6 sm:h-6 rounded-md bg-ct-surface-2 hover:bg-ct-line text-ct-mute-2 text-xs font-bold flex items-center justify-center transition-colors min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px]"
+                            className="w-11 h-11 sm:w-6 sm:h-6 rounded-ct-xs bg-ct-surface-2 hover:bg-ct-line text-ct-mute-2 text-xs font-bold flex items-center justify-center transition-colors min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px]"
                           >+</button>
                         </div>
                       ) : (
@@ -1138,7 +1138,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
                           <button
                             onClick={() => handleFlagRestock(item)}
                             disabled={restocking === item.id}
-                            className="px-2 py-1 bg-ct-amber/[0.13]0 hover:bg-ct-amber text-ct-ink text-[9px] font-semibold rounded transition-colors disabled:opacity-50"
+                            className="px-2 py-1 bg-ct-amber/[0.13]0 hover:bg-ct-amber text-ct-ink text-[9px] font-semibold rounded-ct-xs transition-colors disabled:opacity-50"
                           >
                             {restocking === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Restock'}
                           </button>
@@ -1951,7 +1951,7 @@ export default function ServicesTab() {
                       <button
                         key={v}
                         onClick={() => setStatusFilter(v)}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                        className={`px-3 py-1.5 text-xs font-medium rounded-ct-xs transition-colors ${
                           statusFilter === v ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute hover:text-ct-mute-2'
                         }`}
                       >

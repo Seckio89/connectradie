@@ -40,7 +40,7 @@ export default function GeofenceActiveToast() {
         <button
           onClick={() => setShow(false)}
           aria-label="Dismiss"
-          className="p-1 text-ct-mute hover:text-ct-mute-2 rounded-md flex-shrink-0"
+          className="p-1 text-ct-mute hover:text-ct-mute-2 rounded-ct-xs flex-shrink-0"
         >
           <X className="w-4 h-4" />
         </button>

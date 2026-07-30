@@ -162,7 +162,7 @@ function CompleteVisitModal({ isOpen, quote, tradeCategory, onClose, onDone }: C
               The client will be notified. After this, you'll need to submit your final quote.
             </p>
           </div>
-          <button onClick={onClose} className="p-1 text-ct-mute hover:text-ct-mute-2 rounded transition-colors">
+          <button onClick={onClose} className="p-1 text-ct-mute hover:text-ct-mute-2 rounded-ct-xs transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -287,7 +287,7 @@ function SubmitFinalQuoteModal({ isOpen, quote, onClose, onDone }: SubmitFinalQu
               up until the validity date — after that, the quote expires and you can submit a new one.
             </p>
           </div>
-          <button onClick={onClose} className="p-1 text-ct-mute hover:text-ct-mute-2 rounded transition-colors">
+          <button onClick={onClose} className="p-1 text-ct-mute hover:text-ct-mute-2 rounded-ct-xs transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>

@@ -198,7 +198,7 @@ export default function NewGroupModal({ isOpen, onClose, currentUserId, onCreate
                     return (
                       <button key={c.userId} type="button" onClick={() => toggle(c.userId)}
                         className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-ct-surface-2">
-                        <span className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 ${on ? 'bg-ct-teal border-ct-teal' : 'border-ct-line'}`}>
+                        <span className={`w-5 h-5 rounded-ct-xs border flex items-center justify-center flex-shrink-0 ${on ? 'bg-ct-teal border-ct-teal' : 'border-ct-line'}`}>
                           {on && <Check className="w-3.5 h-3.5 text-ct-ink" />}
                         </span>
                         <div className="w-8 h-8 rounded-full bg-ct-surface-2 flex items-center justify-center flex-shrink-0">

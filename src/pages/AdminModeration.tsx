@@ -501,7 +501,7 @@ export default function AdminModeration() {
                             <div className="flex items-center gap-3 text-xs text-ct-mute">
                               <span><User className="w-3 h-3 inline mr-1" />{job.client_profile?.full_name || 'Unknown'}</span>
                               <span><Clock className="w-3 h-3 inline mr-1" />{new Date(job.created_at).toLocaleDateString('en-AU')}</span>
-                              <span className="px-2 py-0.5 bg-ct-surface-2 rounded text-xs">{job.status}</span>
+                              <span className="px-2 py-0.5 bg-ct-surface-2 rounded-ct-xs text-xs">{job.status}</span>
                             </div>
                           </div>
                         </div>

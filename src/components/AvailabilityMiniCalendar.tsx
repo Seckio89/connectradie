@@ -126,7 +126,7 @@ export default function AvailabilityMiniCalendar({
           type="button"
           onClick={goToPrevMonth}
           disabled={!canGoPrev}
-          className="p-1 rounded hover:bg-ct-surface-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-1 rounded-ct-xs hover:bg-ct-surface-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft className="w-4 h-4 text-ct-mute" />
         </button>
@@ -134,7 +134,7 @@ export default function AvailabilityMiniCalendar({
         <button
           type="button"
           onClick={goToNextMonth}
-          className="p-1 rounded hover:bg-ct-surface-2 transition-colors"
+          className="p-1 rounded-ct-xs hover:bg-ct-surface-2 transition-colors"
         >
           <ChevronRight className="w-4 h-4 text-ct-mute" />
         </button>

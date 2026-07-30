@@ -172,13 +172,13 @@ export default function EditDetailsModal({ isOpen, onClose, currentValues, onSav
               type="checkbox"
               checked={isEmergencyAvailable}
               onChange={(e) => setIsEmergencyAvailable(e.target.checked)}
-              className="w-4 h-4 text-ct-mute-2 border-ct-line rounded focus:ring-ct-teal"
+              className="w-4 h-4 text-ct-mute-2 border-ct-line rounded-ct-xs focus:ring-ct-teal"
             />
             <span className="text-sm text-ct-mute-2 font-medium">Available for emergency call-outs</span>
           </label>
         </div>
 
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-ct-line-soft bg-ct-surface-2 rounded-b-2xl flex-shrink-0">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-ct-line-soft bg-ct-surface-2 rounded-b-ct-xl flex-shrink-0">
           <button
             onClick={onClose}
             disabled={saving}
