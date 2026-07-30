@@ -532,7 +532,7 @@ export default function ConversationSettingsModal({
                                 )
                               }
                               disabled={!isAdmin}
-                              className="w-4 h-4 text-ct-mute-2 rounded focus:ring-ct-teal"
+                              className="w-4 h-4 text-ct-mute-2 rounded-ct-xs focus:ring-ct-teal"
                             />
                           </label>
 
@@ -552,7 +552,7 @@ export default function ConversationSettingsModal({
                                 )
                               }
                               disabled={!isAdmin}
-                              className="w-4 h-4 text-ct-mute-2 rounded focus:ring-ct-teal"
+                              className="w-4 h-4 text-ct-mute-2 rounded-ct-xs focus:ring-ct-teal"
                             />
                           </label>
 
@@ -572,7 +572,7 @@ export default function ConversationSettingsModal({
                                 )
                               }
                               disabled={!isAdmin}
-                              className="w-4 h-4 text-ct-mute-2 rounded focus:ring-ct-teal"
+                              className="w-4 h-4 text-ct-mute-2 rounded-ct-xs focus:ring-ct-teal"
                             />
                           </label>
                         </div>

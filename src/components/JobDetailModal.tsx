@@ -501,7 +501,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                       </span>
                     </div>
                     {i < STEPS.length - 1 && (
-                      <div className={`flex-1 h-0.5 mx-1 sm:mx-2 rounded ${
+                      <div className={`flex-1 h-0.5 mx-1 sm:mx-2 rounded-ct-xs ${
                         i < currentStep ? 'bg-ct-surface-2' : 'bg-ct-line'
                       }`} />
                     )}

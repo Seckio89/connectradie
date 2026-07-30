@@ -293,11 +293,11 @@ function SmartCalendar({
 
       <div className="mt-3 flex items-center gap-4 text-xs text-ct-mute">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-ct-teal/[0.14] border border-ct-teal/30"></div>
+          <div className="w-3 h-3 rounded-ct-xs bg-ct-teal/[0.14] border border-ct-teal/30"></div>
           <span>Available</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-ct-rose/[0.13] border border-ct-rose/[0.34]"></div>
+          <div className="w-3 h-3 rounded-ct-xs bg-ct-rose/[0.13] border border-ct-rose/[0.34]"></div>
           <span>Unavailable</span>
         </div>
       </div>
@@ -789,7 +789,7 @@ export default function PostLead() {
                             setTitle(suggestion);
                             setTitleDropdownOpen(false);
                           }}
-                          className="px-4 py-2.5 text-sm text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-mute-2 cursor-pointer first:rounded-t-xl last:rounded-b-xl"
+                          className="px-4 py-2.5 text-sm text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-mute-2 cursor-pointer first:rounded-t-ct-lg last:rounded-b-ct-lg"
                         >
                           {suggestion}
                         </li>
@@ -865,7 +865,7 @@ export default function PostLead() {
                       type="checkbox"
                       checked={parkingAvailable}
                       onChange={(e) => setParkingAvailable(e.target.checked)}
-                      className="w-4 h-4 rounded border-ct-line text-ct-teal focus:ring-ct-teal"
+                      className="w-4 h-4 rounded-ct-xs border-ct-line text-ct-teal focus:ring-ct-teal"
                     />
                     <span className="text-sm text-ct-mute-2">Parking available on site</span>
                   </label>
@@ -886,7 +886,7 @@ export default function PostLead() {
                         <button
                           type="button"
                           onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                          className="absolute top-0.5 right-0.5 p-1 bg-black/60 text-ct-ink rounded-md hover:bg-black/80 transition-colors sm:opacity-0 sm:group-hover/photo:opacity-100"
+                          className="absolute top-0.5 right-0.5 p-1 bg-black/60 text-ct-ink rounded-ct-xs hover:bg-black/80 transition-colors sm:opacity-0 sm:group-hover/photo:opacity-100"
                         >
                           <X className="w-2.5 h-2.5" />
                         </button>
@@ -1256,7 +1256,7 @@ export default function PostLead() {
                     type="checkbox"
                     checked={allowsSiteInspection}
                     onChange={(e) => setAllowsSiteInspection(e.target.checked)}
-                    className="w-4 h-4 text-ct-mute-2 rounded border-ct-line focus:ring-ct-teal mt-0.5"
+                    className="w-4 h-4 text-ct-mute-2 rounded-ct-xs border-ct-line focus:ring-ct-teal mt-0.5"
                   />
                   <div>
                     <span className="text-sm font-medium text-ct-mute-2">Allow site inspections</span>

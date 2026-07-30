@@ -911,7 +911,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               {enteredHours > 0 ? (
                 <span className="font-semibold text-ct-mute-2 tabular-nums">{enteredHours % 1 === 0 ? enteredHours : enteredHours.toFixed(2)}</span>
               ) : (
-                <input type="number" min="0" step="0.5" value={hoursEdit} onChange={(e) => setHoursEdit(e.target.value)} className="w-16 px-2 py-1 border border-ct-line rounded text-sm" />
+                <input type="number" min="0" step="0.5" value={hoursEdit} onChange={(e) => setHoursEdit(e.target.value)} className="w-16 px-2 py-1 border border-ct-line rounded-ct-xs text-sm" />
               )}
             </div>
           </div>
@@ -920,7 +920,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             <div className="flex items-center justify-end gap-1.5 text-xs text-ct-mute">
               <span>Materials $</span>
               <input type="number" min="0" value={materialsEdit} onChange={(e) => setMaterialsEdit(e.target.value)}
-                className="w-20 px-2 py-1 border border-ct-line rounded text-sm" aria-label="Materials cost" />
+                className="w-20 px-2 py-1 border border-ct-line rounded-ct-xs text-sm" aria-label="Materials cost" />
               <span className="text-[11px] text-ct-mute">edit if it’s off</span>
             </div>
           )}

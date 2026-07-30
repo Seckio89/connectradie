@@ -147,7 +147,7 @@ export default function FindByLocation() {
                 <li key={trade.value}>
                   <Link
                     to={findUrl(trade.value, suburb.slug)}
-                    className="flex items-center justify-between text-sm text-ct-mute-2 hover:text-ct-teal hover:bg-ct-surface-2 rounded-md px-2 py-1.5 transition-colors group"
+                    className="flex items-center justify-between text-sm text-ct-mute-2 hover:text-ct-teal hover:bg-ct-surface-2 rounded-ct-xs px-2 py-1.5 transition-colors group"
                   >
                     <span>
                       {tradePluralLabel(trade.value)} in <span className="font-medium">{suburb.name}</span>
@@ -172,7 +172,7 @@ export default function FindByLocation() {
                   <li key={n.slug}>
                     <Link
                       to={suburbHubUrl(n.slug)}
-                      className="block text-sm text-ct-mute-2 hover:text-ct-teal hover:bg-ct-surface-2 rounded-md px-2 py-1.5 transition-colors"
+                      className="block text-sm text-ct-mute-2 hover:text-ct-teal hover:bg-ct-surface-2 rounded-ct-xs px-2 py-1.5 transition-colors"
                     >
                       Tradies in {n.name}
                     </Link>

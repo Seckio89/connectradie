@@ -176,7 +176,7 @@ export default function FindByTrade() {
                     <li key={s.slug}>
                       <Link
                         to={findUrl(trade, s.slug)}
-                        className="block text-sm text-ct-mute-2 hover:text-ct-teal hover:bg-ct-surface-2 rounded-md px-2 py-1.5 transition-colors"
+                        className="block text-sm text-ct-mute-2 hover:text-ct-teal hover:bg-ct-surface-2 rounded-ct-xs px-2 py-1.5 transition-colors"
                       >
                         {plural} in {s.name}
                       </Link>
@@ -223,7 +223,7 @@ export default function FindByTrade() {
               <li key={s.slug}>
                 <Link
                   to={suburbHubUrl(s.slug)}
-                  className="block text-sm text-ct-mute-2 hover:text-ct-teal hover:bg-ct-surface-2 rounded-md px-2 py-1.5 transition-colors"
+                  className="block text-sm text-ct-mute-2 hover:text-ct-teal hover:bg-ct-surface-2 rounded-ct-xs px-2 py-1.5 transition-colors"
                 >
                   Tradies in {s.name}
                 </Link>

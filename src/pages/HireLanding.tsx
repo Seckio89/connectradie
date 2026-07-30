@@ -13,7 +13,7 @@ import SEO from '../components/SEO';
  */
 export default function HireLanding() {
   return (
-    <div className="min-h-screen bg-ct-ink font-sans antialiased theme-aware flex flex-col">
+    <div className="min-h-screen bg-ct-ink font-sans antialiased flex flex-col">
       <SEO
         title="Hire a Licensed Tradie — Payment Protected"
         description="Post your job free and hire verified, licensed Australian tradies. Your payment is held safely by Stripe and only released when you approve the finished work."

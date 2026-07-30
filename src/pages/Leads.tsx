@@ -1595,7 +1595,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                         })()}
                       </h3>
                       {lead.status === 'completed' && jobPaymentIds.get(lead.id) && (
-                        <span className="px-2 py-0.5 bg-ct-surface-2 text-ct-mute rounded text-[10px] font-medium flex-shrink-0">
+                        <span className="px-2 py-0.5 bg-ct-surface-2 text-ct-mute rounded-ct-xs text-[10px] font-medium flex-shrink-0">
                           {fmtInvoiceRef(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id))}
                         </span>
                       )}
@@ -1694,7 +1694,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     </span>
                   )}
                   {lead.budget_amount ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-ct-teal/[0.14] border border-ct-teal/30 text-ct-teal font-semibold">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-ct-xs bg-ct-teal/[0.14] border border-ct-teal/30 text-ct-teal font-semibold">
                       Budget ${lead.budget_amount.toLocaleString()}
                     </span>
                   ) : lead.budget_type === 'request_quote' ? (
@@ -2630,12 +2630,12 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                             {(lead.title || category || 'Untitled Job').replace(/_/g, ' ')}
                           </h4>
                           {jobPaymentIds.get(lead.id) && (
-                            <span className="px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute rounded text-[10px] font-medium flex-shrink-0">
+                            <span className="px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute rounded-ct-xs text-[10px] font-medium flex-shrink-0">
                               {fmtInvoiceRef(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id))}
                             </span>
                           )}
                           {category && (
-                            <span className="hidden sm:inline px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute-2 rounded text-[10px] font-medium flex-shrink-0">
+                            <span className="hidden sm:inline px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute-2 rounded-ct-xs text-[10px] font-medium flex-shrink-0">
                               {category}
                             </span>
                           )}

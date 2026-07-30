@@ -53,7 +53,7 @@ export default function HelpButton() {
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Close help"
-                className="p-1.5 text-ct-mute hover:text-ct-mute-2 rounded-md hover:bg-ct-surface-2"
+                className="p-1.5 text-ct-mute hover:text-ct-mute-2 rounded-ct-xs hover:bg-ct-surface-2"
               >
                 <X className="w-5 h-5" />
               </button>

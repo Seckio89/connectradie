@@ -400,7 +400,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                   }`}
                 >
                   Annual
-                  <span className="px-1.5 py-0.5 bg-ct-teal/[0.14] text-ct-teal text-xs font-semibold rounded-md">
+                  <span className="px-1.5 py-0.5 bg-ct-teal/[0.14] text-ct-teal text-xs font-semibold rounded-ct-xs">
                     Save 28%
                   </span>
                 </button>

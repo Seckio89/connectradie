@@ -447,7 +447,7 @@ export default function BookingRequestModal({
                               const startDate = new Date(slot.start_time);
                               const endDate = new Date(slot.end_time);
                               return (
-                                <div key={slot.id} className="text-xs bg-ct-surface p-2 rounded border border-ct-line">
+                                <div key={slot.id} className="text-xs bg-ct-surface p-2 rounded-ct-xs border border-ct-line">
                                   <strong>{startDate.toLocaleDateString('en-AU')}</strong>
                                   {' '}
                                   {startDate.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
@@ -476,7 +476,7 @@ export default function BookingRequestModal({
         </div>
 
         {/* Footer - Pinned to Bottom */}
-        <div className="flex-none p-6 border-t border-ct-line-soft bg-ct-surface-2 rounded-b-xl">
+        <div className="flex-none p-6 border-t border-ct-line-soft bg-ct-surface-2 rounded-b-ct-lg">
           <div className="flex justify-end gap-3">
             <button
               onClick={onClose}

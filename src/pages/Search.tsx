@@ -898,14 +898,14 @@ export default function Search() {
               <div className="flex bg-ct-surface-2 rounded-ct-sm p-0.5">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${viewMode === 'grid' ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute hover:text-ct-mute-2'}`}
+                  className={`px-3 py-1.5 rounded-ct-xs text-xs font-medium flex items-center gap-1.5 transition-colors ${viewMode === 'grid' ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute hover:text-ct-mute-2'}`}
                 >
                   <List className="w-3.5 h-3.5" />
                   List
                 </button>
                 <button
                   onClick={() => setViewMode('map')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${viewMode === 'map' ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute hover:text-ct-mute-2'}`}
+                  className={`px-3 py-1.5 rounded-ct-xs text-xs font-medium flex items-center gap-1.5 transition-colors ${viewMode === 'map' ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute hover:text-ct-mute-2'}`}
                 >
                   <MapIcon className="w-3.5 h-3.5" />
                   Map

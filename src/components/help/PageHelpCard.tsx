@@ -51,7 +51,7 @@ export default function PageHelpCard() {
       <button
         onClick={dismiss}
         aria-label="Dismiss"
-        className="absolute top-3 right-3 p-1 text-ct-mute hover:text-ct-mute-2 rounded-md hover:bg-ct-surface/70 transition-colors"
+        className="absolute top-3 right-3 p-1 text-ct-mute hover:text-ct-mute-2 rounded-ct-xs hover:bg-ct-surface/70 transition-colors"
       >
         <X className="w-4 h-4" />
       </button>

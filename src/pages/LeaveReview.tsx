@@ -352,7 +352,7 @@ export default function LeaveReview() {
                 <p className="text-sm font-semibold text-ct-paper truncate">{tradieName}</p>
                 <div className="flex items-center gap-2 mt-0.5">
                   {category && (
-                    <span className="px-2 py-0.5 bg-ct-surface-2 text-ct-mute-2 rounded text-xs font-medium border border-ct-line">
+                    <span className="px-2 py-0.5 bg-ct-surface-2 text-ct-mute-2 rounded-ct-xs text-xs font-medium border border-ct-line">
                       {category}
                     </span>
                   )}

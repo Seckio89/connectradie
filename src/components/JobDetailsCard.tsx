@@ -108,7 +108,7 @@ function ImageLightbox({ url, onClose }: { url: string | null; onClose: () => vo
       <img
         src={url}
         alt="Attachment"
-        className="max-w-full max-h-[90vh] rounded-lg object-contain"
+        className="max-w-full max-h-[90vh] rounded-ct-sm object-contain"
         onClick={(e) => e.stopPropagation()}
       />
       <button
@@ -631,7 +631,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
                 {job.images_url.map((_, index) => {
                   const signedUrl = photoSignedUrls[index];
                   return (
-                    <div key={index} className="w-20 h-20 rounded-lg overflow-hidden bg-ct-surface-2 border border-ct-line flex-shrink-0">
+                    <div key={index} className="w-20 h-20 rounded-ct-sm overflow-hidden bg-ct-surface-2 border border-ct-line flex-shrink-0">
                       {signedUrl ? (
                         <img
                           src={signedUrl}
@@ -708,7 +708,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           <span className="text-sm font-medium text-ct-paper">{pJob.tradie_details?.trade_category || 'Tradie'}</span>
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          <span className={`px-2 py-0.5 rounded-ct-xs text-xs font-medium ${
                             pJob.status === 'completed' ? 'bg-ct-teal/[0.14] text-ct-teal' :
                             pJob.status === 'in_progress' ? 'bg-ct-teal/[0.14] text-ct-teal' :
                             'bg-ct-amber/[0.13] text-ct-amber'
@@ -966,7 +966,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
           </button>
           <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
             <img src={viewingProof.images[viewingProof.index]} alt={`Proof ${viewingProof.index + 1}`}
-              className="w-full h-auto max-h-[85vh] object-contain rounded-lg" />
+              className="w-full h-auto max-h-[85vh] object-contain rounded-ct-sm" />
             {viewingProof.images.length > 1 && (
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/50 px-4 py-2 rounded-full">
                 <button onClick={() => setViewingProof({ ...viewingProof, index: viewingProof.index > 0 ? viewingProof.index - 1 : viewingProof.images.length - 1 })}
@@ -1042,7 +1042,7 @@ function PaymentTimelineItem({
             <div className="flex items-center gap-2 flex-wrap mb-0.5">
               <span className="font-ct-display font-semibold tracking-tight text-ct-paper text-sm">{milestone.title}</span>
               {isSubcontractor && (
-                <span className="px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded flex items-center gap-1">
+                <span className="px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded-ct-xs flex items-center gap-1">
                   <Building2 className="w-3 h-3" />Sub
                 </span>
               )}
@@ -1212,13 +1212,13 @@ function AddPaymentForm({
                 <div className="flex items-center gap-1">
                   {sub.invoice_id && (
                     <button type="button" onClick={() => setViewingInvoiceId(sub.invoice_id!)}
-                      className="p-1 text-ct-mute-2 hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded transition-colors" title="View Invoice">
+                      className="p-1 text-ct-mute-2 hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-xs transition-colors" title="View Invoice">
                       <Eye className="w-3.5 h-3.5" />
                     </button>
                   )}
                   {subcontractors.length > 1 && (
                     <button type="button" onClick={() => setSubcontractors(subcontractors.filter((_, i) => i !== idx))}
-                      className="p-1 text-ct-rose hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded transition-colors">
+                      className="p-1 text-ct-rose hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-xs transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -1307,7 +1307,7 @@ function AddPaymentForm({
                       <span className="text-ct-mute">$</span>
                       <input type="number" step="0.01" min="0" value={sub.amount}
                         onChange={(e) => { const updated = [...subcontractors]; updated[idx] = { ...updated[idx], amount: e.target.value }; setSubcontractors(updated); }}
-                        className="w-24 text-right text-xs font-medium text-ct-paper bg-ct-surface border border-ct-line rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-ct-teal"
+                        className="w-24 text-right text-xs font-medium text-ct-paper bg-ct-surface border border-ct-line rounded-ct-xs px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-ct-teal"
                         placeholder="0.00" />
                     </div>
                   </div>
@@ -1317,7 +1317,7 @@ function AddPaymentForm({
                       <span className="text-ct-mute">$</span>
                       <input type="number" step="0.01" min="0" value={sub.gst}
                         onChange={(e) => { const updated = [...subcontractors]; updated[idx] = { ...updated[idx], gst: e.target.value }; setSubcontractors(updated); }}
-                        className="w-24 text-right text-xs font-medium text-ct-paper bg-ct-surface border border-ct-line rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-ct-teal"
+                        className="w-24 text-right text-xs font-medium text-ct-paper bg-ct-surface border border-ct-line rounded-ct-xs px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-ct-teal"
                         placeholder="0.00" />
                     </div>
                   </div>

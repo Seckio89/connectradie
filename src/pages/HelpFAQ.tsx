@@ -154,7 +154,7 @@ function FAQAccordion({ item, highlight }: { item: FAQItem; highlight?: string }
     const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
     const parts = text.split(regex);
     return parts.map((part, i) =>
-      regex.test(part) ? <mark key={i} className="bg-ct-amber/[0.13] rounded px-0.5">{part}</mark> : part
+      regex.test(part) ? <mark key={i} className="bg-ct-amber/[0.13] rounded-ct-xs px-0.5">{part}</mark> : part
     );
   };
 

@@ -369,7 +369,7 @@ export default function PaymentRequestsSection() {
                 type="checkbox"
                 checked={gstIncluded}
                 onChange={(e) => setGstIncluded(e.target.checked)}
-                className="w-4 h-4 rounded border-ct-line text-ct-teal focus:ring-ct-teal"
+                className="w-4 h-4 rounded-ct-xs border-ct-line text-ct-teal focus:ring-ct-teal"
               />
               <span className="text-sm text-ct-mute-2">Amount includes GST</span>
             </label>

@@ -60,7 +60,7 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
             </span>
             {userRole === 'tradie' && (
               <div className="relative">
-                <button onClick={() => setShowMenu(!showMenu)} className="p-1 text-ct-mute hover:text-ct-mute-2 rounded transition-colors">
+                <button onClick={() => setShowMenu(!showMenu)} className="p-1 text-ct-mute hover:text-ct-mute-2 rounded-ct-xs transition-colors">
                   <MoreVertical className="w-4 h-4" />
                 </button>
                 {showMenu && (
@@ -87,7 +87,7 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
                           <div className="flex gap-2">
                             <button
                               onClick={async () => { await endAgreement(agreement.id); setShowMenu(false); setConfirmEnd(false); onRefresh(); }}
-                              className="px-2.5 py-1 bg-ct-rose/[0.13]0 text-ct-ink text-xs font-medium rounded-md hover:bg-ct-rose transition-colors"
+                              className="px-2.5 py-1 bg-ct-rose/[0.13]0 text-ct-ink text-xs font-medium rounded-ct-xs hover:bg-ct-rose transition-colors"
                             >
                               Yes, end it
                             </button>

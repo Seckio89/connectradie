@@ -64,7 +64,7 @@ export function ProBadgeButton({ onClick, label = 'Pro', className = '' }: ProBa
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-ct-teal0 to-ct-teal text-ct-ink text-xs font-bold rounded-md shadow-sm hover:shadow-md transition-all ${className}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-ct-teal0 to-ct-teal text-ct-ink text-xs font-bold rounded-ct-xs shadow-sm hover:shadow-md transition-all ${className}`}
     >
       <Crown className="w-2.5 h-2.5" />
       {label}

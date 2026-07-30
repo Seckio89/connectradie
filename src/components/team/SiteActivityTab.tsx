@@ -79,7 +79,7 @@ export default function SiteActivityTab({ activeMembers }: SiteActivityTabProps)
             <button
               key={r.days}
               onClick={() => setRangeDays(r.days)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-ct-xs text-xs font-medium transition-colors ${
                 rangeDays === r.days ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute hover:text-ct-mute-2'
               }`}
             >

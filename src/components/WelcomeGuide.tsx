@@ -508,7 +508,7 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
         {/* Close */}
         <button
           onClick={dismiss}
-          className="absolute top-2.5 right-2.5 p-2.5 text-ct-mute hover:text-ct-mute-2 rounded-md hover:bg-ct-surface-2 transition-colors z-10 min-w-[44px] min-h-[44px] flex items-center justify-center"
+          className="absolute top-2.5 right-2.5 p-2.5 text-ct-mute hover:text-ct-mute-2 rounded-ct-xs hover:bg-ct-surface-2 transition-colors z-10 min-w-[44px] min-h-[44px] flex items-center justify-center"
         >
           <X className="w-3.5 h-3.5" />
         </button>

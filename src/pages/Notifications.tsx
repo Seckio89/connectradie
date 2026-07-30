@@ -195,9 +195,9 @@ function ListSkeleton() {
         <div key={i} className="p-4 flex items-start gap-3 animate-pulse">
           <div className="w-10 h-10 bg-ct-line rounded-full flex-shrink-0" />
           <div className="flex-1 space-y-2">
-            <div className="h-4 bg-ct-line rounded w-1/3" />
-            <div className="h-3 bg-ct-surface-2 rounded w-2/3" />
-            <div className="h-3 bg-ct-surface-2 rounded w-1/4" />
+            <div className="h-4 bg-ct-line rounded-ct-xs w-1/3" />
+            <div className="h-3 bg-ct-surface-2 rounded-ct-xs w-2/3" />
+            <div className="h-3 bg-ct-surface-2 rounded-ct-xs w-1/4" />
           </div>
         </div>
       ))}
@@ -548,7 +548,7 @@ export default function Notifications() {
 
                       <button
                         onClick={(e) => handleDelete(e, notification.id)}
-                        className="p-2.5 text-ct-mute hover:text-ct-rose sm:opacity-0 opacity-60 group-hover:opacity-100 transition-all flex-shrink-0 rounded hover:bg-ct-rose/[0.13] min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        className="p-2.5 text-ct-mute hover:text-ct-rose sm:opacity-0 opacity-60 group-hover:opacity-100 transition-all flex-shrink-0 rounded-ct-xs hover:bg-ct-rose/[0.13] min-w-[44px] min-h-[44px] flex items-center justify-center"
                         aria-label="Delete notification"
                       >
                         <X className="w-4 h-4" />

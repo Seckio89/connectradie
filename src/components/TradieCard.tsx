@@ -150,7 +150,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
         <div className="flex flex-wrap gap-1.5 mt-3">
           {isIdentityVerified && (
             <div className="relative group/tip">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded-md border border-ct-line cursor-help">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded-ct-xs border border-ct-line cursor-help">
                 <ShieldCheck className="w-3 h-3" />
                 ID Verified
               </span>
@@ -165,7 +165,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
           )}
           {details?.is_insured && (
             <div className="relative group/tip">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded-md border border-ct-line cursor-help">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded-ct-xs border border-ct-line cursor-help">
                 <Shield className="w-3 h-3" />
                 Insured
               </span>
@@ -180,7 +180,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
           )}
           {details?.is_licensed && (
             <div className="relative group/tip">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-md border border-ct-teal/30 cursor-help">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-ct-xs border border-ct-teal/30 cursor-help">
                 <FileCheck className="w-3 h-3" />
                 Licensed
               </span>

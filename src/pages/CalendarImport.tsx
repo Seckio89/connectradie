@@ -193,14 +193,14 @@ export default function CalendarImport() {
                 return (
                   <div key={c.id} className="flex items-center gap-2.5 py-2.5">
                     <input type="checkbox" checked={row.selected} onChange={(e) => setRow(c.id, { selected: e.target.checked })}
-                      className="w-4 h-4 flex-shrink-0 rounded border-ct-line text-ct-teal focus:ring-ct-teal" />
+                      className="w-4 h-4 flex-shrink-0 rounded-ct-xs border-ct-line text-ct-teal focus:ring-ct-teal" />
                     <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 border border-black/5" style={{ background: row.color }} />
                     <span className="flex-1 min-w-0 text-sm text-ct-paper truncate">{c.summary}{c.primary && <span className="text-xs text-ct-mute"> · primary</span>}</span>
                     <select
                       value={row.teamMemberId ?? ''}
                       onChange={(e) => setRow(c.id, { teamMemberId: e.target.value || null })}
                       disabled={!row.selected}
-                      className="flex-shrink-0 w-32 px-2 py-1 border border-ct-line rounded-md text-xs bg-ct-surface text-ct-mute-2 disabled:opacity-50 disabled:bg-ct-surface-2"
+                      className="flex-shrink-0 w-32 px-2 py-1 border border-ct-line rounded-ct-xs text-xs bg-ct-surface text-ct-mute-2 disabled:opacity-50 disabled:bg-ct-surface-2"
                     >
                       <option value="">Unassigned</option>
                       {team.map((m) => <option key={m.id} value={m.id}>{m.invite_name}</option>)}

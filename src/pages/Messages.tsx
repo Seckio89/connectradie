@@ -803,7 +803,7 @@ export default function Messages() {
     if (parts.length === 1) return text;
     return parts.map((part, i) =>
       pattern.test(`[${part}]`)
-        ? <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded">{`[${part}]`}</span>
+        ? <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-ct-xs">{`[${part}]`}</span>
         : part
     );
   };
@@ -1019,8 +1019,8 @@ export default function Messages() {
                             style={isOwn ? { color: '#ffffff' } : undefined}
                             className={`max-w-[85%] sm:max-w-[70%] rounded-ct-lg px-4 py-2.5 ${
                               isOwn
-                                ? 'bg-ct-surface-20 text-ct-ink rounded-br-md'
-                                : 'bg-ct-surface text-ct-paper rounded-bl-md border border-ct-line shadow-sm'
+                                ? 'bg-ct-surface-20 text-ct-ink rounded-br-ct-xs'
+                                : 'bg-ct-surface text-ct-paper rounded-bl-ct-xs border border-ct-line shadow-sm'
                             } ${
                               message.is_booking_request
                                 ? 'border-2 border-ct-teal cursor-pointer hover:shadow-lg transition-shadow'
@@ -1079,7 +1079,7 @@ export default function Messages() {
                                 {message.content && !message.content.startsWith('Sent a ') && (
                                   <p style={isOwn ? { color: '#ffffff' } : undefined} className={`text-sm whitespace-pre-wrap ${isOwn ? 'text-ct-ink' : 'text-ct-paper'}`}>
                                     {isCrossMessageRedacted
-                                      ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded">[hidden]</span>
+                                      ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-ct-xs">[hidden]</span>
                                       : renderRedacted(maybeRedact(message.content, selectedConversation))}
                                   </p>
                                 )}
@@ -1087,7 +1087,7 @@ export default function Messages() {
                             ) : (
                               <p style={isOwn ? { color: '#ffffff' } : undefined} className={`text-sm whitespace-pre-wrap ${isOwn ? 'text-ct-ink' : 'text-ct-paper'}`}>
                                 {isCrossMessageRedacted
-                                  ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded">[hidden]</span>
+                                  ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-ct-xs">[hidden]</span>
                                   : renderRedacted(maybeRedact(message.content.replace('[Booking Request] ', ''), selectedConversation))}
                               </p>
                             )}
@@ -1155,7 +1155,7 @@ export default function Messages() {
                         <p className="text-xs text-ct-rose flex-1">Message failed to send.</p>
                         <button
                           onClick={() => handleRetryMessage(newMessage)}
-                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-ct-rose bg-ct-rose/[0.13] rounded-md hover:bg-ct-rose/[0.13] transition-colors"
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-ct-rose bg-ct-rose/[0.13] rounded-ct-xs hover:bg-ct-rose/[0.13] transition-colors"
                         >
                           <RotateCcw className="w-3 h-3" />
                           Retry

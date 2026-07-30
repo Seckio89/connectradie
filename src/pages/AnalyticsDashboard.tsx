@@ -529,7 +529,7 @@ export default function AnalyticsDashboard() {
                       {responseByDay.map((d, i) => (
                         <div key={i} className="flex-1 flex flex-col items-center">
                           <div
-                            className="w-full max-w-[32px] bg-ct-teal rounded-t-sm"
+                            className="w-full max-w-[32px] bg-ct-teal rounded-t-ct-xs"
                             style={{ height: `${Math.max((d.avg / maxDayResponse) * 80, 2)}px` }}
                             title={d.avg > 0 ? `${d.label}: ${formatHours(d.avg)}` : `${d.label}: no quotes`}
                           />
@@ -608,11 +608,11 @@ export default function AnalyticsDashboard() {
                 </div>
                 <div className="flex items-center gap-4 text-xs text-ct-mute-2">
                   <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded bg-ct-surface-20" />
+                    <div className="w-3 h-3 rounded-ct-xs bg-ct-surface-20" />
                     <span>High season</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded bg-ct-line" />
+                    <div className="w-3 h-3 rounded-ct-xs bg-ct-line" />
                     <span>Low season</span>
                   </div>
                 </div>
