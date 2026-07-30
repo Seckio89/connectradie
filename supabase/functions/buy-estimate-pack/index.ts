@@ -74,7 +74,7 @@ Deno.serve(async (req: Request) => {
     if (authError || !user) return json({ error: "Unauthorized" }, 401);
 
     // Creates Stripe Checkout sessions.
-    const { allowed } = checkRateLimit(`${user.id}-buy-estimate-pack`, 5, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-buy-estimate-pack`, 5, 60000);
     if (!allowed) return json({ error: "Rate limit exceeded. Please try again later." }, 429);
 
     let body: { successUrl?: string; cancelUrl?: string };

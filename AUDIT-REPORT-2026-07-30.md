@@ -9,14 +9,14 @@ tooling traps, the check was run against the current governing rules in
 
 | Dimension | Score | Weight | Weighted Contribution | Status |
 |-----------|-------|--------|----------------------|--------|
-| Security & Auth | 92.3% | 25% | 23.1% | 🟡 (see #4) |
+| Security & Auth | 100% | 25% | 25.0% | 🟢 |
 | Payments & Stripe | 86.4% | 25% | 21.6% | 🟡 |
 | Database & RLS | 100% | 20% | 20.0% | 🟢 |
 | TypeScript Safety | 100% | 10% | 10.0% | 🟢 |
 | UI & Design System | 85.7% | 5% | 4.3% | 🟡 |
 | Navigation | 80.0% | 5% | 4.0% | 🟡 |
 | Test Coverage | 42.9% | 10% | 4.3% | 🔴 |
-| **Overall** | **87.3%** | | | 🟡 |
+| **Overall** | **89.2%** | | | 🟡 |
 
 > **Amended same day, twice.**
 >
@@ -25,12 +25,17 @@ tooling traps, the check was run against the current governing rules in
 > zero rows) and the `JobDetailsCard` N+1 is batched. Database & RLS moved
 > 71.4% 🔴 → 100% 🟢, taking the overall score 81.5% → 87.3%.
 >
-> Then finding #4's inventory **escalated to CRITICAL**. Building it proved by
-> execution that `checkRateLimit` enforces nothing in production, so the
-> platform has no working rate limiting on any endpoint. Security & Auth stays
-> at 92.3% (the check was already scored ❌) and the overall stays 87.3% — but
-> the dimension now carries a critical finding, and the score should be read
-> with that in mind. Detail in `docs/edge-function-rate-limits.md`.
+> Then finding #4's inventory **escalated to CRITICAL** and was fixed the same
+> day. Building the inventory proved by execution that `checkRateLimit`
+> enforced nothing — the platform had no working rate limiting on any endpoint,
+> including money-moving ones. Counters were moved into the database and the
+> fix was proven with the same probe that exposed the bug (60 requests vs a
+> 20/min limit: 60 × 404 before, 20 × 404 + 40 × 429 after). Security & Auth
+> 92.3% 🟢 → 100% 🟢, overall 87.3% → **89.2%**. Detail in
+> `docs/edge-function-rate-limits.md`.
+>
+> Test Coverage (42.9% 🔴) is now the only red dimension and the single largest
+> drag on the score.
 
 ## Detailed Check Results
 
@@ -43,7 +48,7 @@ tooling traps, the check was run against the current governing rules in
 | Input validation | 3× | ✅ | Money-path fns validate all inputs (verified by execution this month: approve-variation, pay-price-increase, process-refund, adjust-quote-price). |
 | Structured errors | 1× | ✅ | `errorJson` pattern fleet-wide. |
 | No hardcoded secrets | 3× | ✅ | 0 matches for live/test keys, webhook secrets, JWTs across all functions. |
-| Rate limiting | 2× | ❌ | **Worse than first scored.** The inventory (`docs/edge-function-rate-limits.md`) classified all 74 and found 11 reachable functions with no limit — but then proved by execution that `checkRateLimit` **enforces nothing in production**: 60 consecutive requests against a deployed 20/min limit returned 60 × 404 and zero 429s. Its counters live in a module-level `Map` that is empty on every request. All 50 callers are affected, not just the 11. See finding #4. |
+| Rate limiting | 2× | ✅ (fixed) | Went ❌ → CRITICAL → fixed in one day. The inventory found 11 unlimited reachable functions, then proved `checkRateLimit` enforced **nothing** (60 requests vs a 20/min limit → 60 × 404, zero 429s; counters lived in a per-request `Map`). Counters now live in `edge_rate_limits` behind the `consume_rate_limit` RPC. Same probe after the fix: **20 × 404 then 40 × 429.** 50 call sites enforcing across 50 functions. |
 | Webhook signature validation | 3× | ✅ | `constructEvent` in stripe-webhook; prod probe returns 400 (not 401) on unsigned POST, so the in-code check is live. |
 | RLS enabled all tables | 3× | ✅ | **100/100 tables** (live query, not migrations). |
 | No permissive SELECT on sensitive tables | 3× | ✅ | 11 `USING (true)` SELECTs, all public-catalogue by design (pricing_tiers, reviews, cancellation_policies…). Two worth a deliberate review: `tradie_details` (public marketplace data, but the profiles-RLS split is still queued) and `platform_config`. |
@@ -132,7 +137,7 @@ Score: 3/7.
 | 1 | HIGH | Tests | supabase/functions/* | 74 edge-fn entry points lack unit tests; only e2e + 5 _shared modules cover the money paths | Add deno tests for the top 10 money/auth fns' guard clauses |
 | 2 | HIGH (accepted) | Payments | auto-release-payments | Automatic escrow release 5h post-completion contradicts the "client-initiated only" rule | Keep (deliberate, mitigated by dispute gate + notifications); document as policy in CLAUDE.md |
 | 3 | ~~HIGH~~ **FIXED** | Database | platform_fee_charges.job_id | Unindexed FK on a money-path table | Done — migration `20260730114952`, verified live |
-| 4 | **CRITICAL** (was HIGH) | Security | `_shared/rateLimiter.ts` + all 50 callers | **The platform has no working rate limiting.** `checkRateLimit` stores counters in a module-level `Map` that is re-instantiated per request, so it always returns `allowed: true`. Proven against prod: 60 consecutive requests to a deployed 20/min endpoint → 60 × 404, zero 429s. Every one of the 50 functions that "has rate limiting" is unprotected. | Move counters into the DB: a counter table + `SECURITY DEFINER` RPC that atomically increments and returns the count. Patterns already in-repo: `worker-invite`, `sms_send_log`. Inventory + declared limits are done (`docs/edge-function-rate-limits.md`, 11 functions deployed); the enforcement layer is not. |
+| 4 | ~~**CRITICAL**~~ **FIXED** | Security | `_shared/rateLimiter.ts` + 50 callers | The platform had **no working rate limiting**: `checkRateLimit` stored counters in a per-request `Map`, so it always returned `allowed: true` (60 requests vs a 20/min limit → 60 × 404, zero 429s). Four functions also carried private copies of the same broken Map. | Done — `edge_rate_limits` + `consume_rate_limit` RPC (migration `20260730121507`), helper rewritten DB-backed, all 50 call sites awaited, 4 local copies removed, 50 functions deployed. Re-probe: **20 × 404 then 40 × 429.** |
 | 5 | ~~MEDIUM~~ **FIXED** | Database | JobDetailsCard.tsx fetchMilestones | N+1: one subcontractor query per milestone | Done — single `.in('milestone_id', ids)` query, skipped entirely when unused |
 | 6 | ~~MEDIUM~~ **FIXED** | Database | 4 more unindexed FKs | custom_task_suggestions ×2, platform_fee_invoices, service_decline_tokens | Done — same migration as #3 |
 | 7 | MEDIUM | UI | 8 files | Residual hex outside documented exemptions, mostly chart palettes; 1 arbitrary `text-[#1D9E75]` in TradieDashboard | Chart palette → CSS vars; add charts to exemptions or fix |
@@ -144,15 +149,12 @@ Score: 3/7.
 
 ## Recommendations (Prioritised)
 
-**Critical:** #4 — build the DB-backed rate limiter. The platform currently has
-no working rate limiting on any endpoint, including money-moving and
-unauthenticated ones. Everything else in this dimension is clean: no secrets, no
-RLS gaps, no permissive user writes, no AFSL language, webhook signatures
-verified in prod.
+**Critical — fix before deploy:** none remaining. #4 (no working rate limiting)
+was found and fixed on 2026-07-30. No secrets, no RLS gaps, no permissive user
+writes, no AFSL language, webhook signatures verified in prod.
 
-**High — this sprint:** ~~#3 index migration~~ (done); ~~#4 rate-limit
-inventory~~ (done — and it surfaced the critical above); #1 guard-clause tests
-for the top money fns; ratify #2 in docs.
+**High — this sprint:** ~~#3 index migration~~ (done); ~~#4 rate limiting~~
+(done); #1 guard-clause tests for the top money fns; ratify #2 in docs.
 
 **Medium — next sprint:** ~~#5 N+1 fix~~ (done); ~~#6 remaining indexes~~
 (done); #7 chart palette onto tokens; #8 policy merge.
@@ -165,14 +167,16 @@ for the top money fns; ratify #2 in docs.
 |------|---------|-------|
 | 2026-06-12 | (report on file) | |
 | 2026-07-01 | ~85.6% 🟡 | Pre-rebuild baseline; different check set |
-| 2026-07-30 | 81.5% 🟡 → **87.3%** 🟡 | Amended after fixing #3/#5/#6. Not comparable head-to-head: this run scores harder (weighted tiers, live-DB queries, e2e-verified payment checks) and the two 🔴s are test-coverage and DB items the earlier set didn't weigh. Security/TS/UI are materially stronger than July 1 (RLS now 100/100 live-verified; 0 type errors vs a 239-error history; one design system instead of two). |
+| 2026-07-30 | 81.5% → 87.3% → **89.2%** 🟡 | Amended twice: #3/#5/#6 (indexes, N+1), then #4 (rate limiting). Not comparable head-to-head: this run scores harder (weighted tiers, live-DB queries, e2e-verified payment checks) and the two 🔴s are test-coverage and DB items the earlier set didn't weigh. Security/TS/UI are materially stronger than July 1 (RLS now 100/100 live-verified; 0 type errors vs a 239-error history; one design system instead of two). |
 
 ## Next Recommended Action
 
-**Build the DB-backed rate limiter (#4).** The inventory that was meant to close
-this finding instead escalated it: `checkRateLimit` enforces nothing, so no
-endpoint on the platform is rate limited — including `instant-payout`,
-`release-escrow` and the fully public `public-quote`. Nothing else in the
-findings list is close to this in severity. A counter table plus a
-`SECURITY DEFINER` increment RPC makes all 50 existing call sites live without
-touching them, since the keys and ceilings are already declared.
+**Edge Function unit tests (#1)** — now the highest-severity open finding and
+the reason Test Coverage is the last red dimension. The 74 entry points have e2e
+coverage of the money paths but no unit tests on their guard clauses. Start with
+the ten money/auth functions: assert the 401/403/409 refusals, not the happy
+path, since those are the branches e2e never exercises.
+
+Worth noting what this audit demonstrated twice: `check:columns` and the
+rate-limit probe both found real defects that reading the code did not. The
+guard-clause tests are the same bet.

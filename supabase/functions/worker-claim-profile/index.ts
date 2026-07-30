@@ -67,7 +67,7 @@ Deno.serve(async (req: Request) => {
 
     // Bounds token guessing per account. Best-effort only — see the note in
     // docs/edge-function-rate-limits.md about the in-process limiter.
-    const { allowed } = checkRateLimit(`${user.id}-worker-claim-profile`, 10, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-worker-claim-profile`, 10, 60000);
     if (!allowed) return json({ error: "Too many attempts. Please try again in a minute." }, 429);
 
     let body: Record<string, unknown>;

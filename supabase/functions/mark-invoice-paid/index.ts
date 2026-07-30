@@ -54,7 +54,7 @@ Deno.serve(async (req: Request) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
     if (authError || !user) return json({ error: "Unauthorized" }, 401);
 
-    const { allowed } = checkRateLimit(`${user.id}-mark-invoice-paid`, 20, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-mark-invoice-paid`, 20, 60000);
     if (!allowed) return json({ error: "Rate limit exceeded. Please try again later." }, 429);
 
     let body: { invoiceId?: string; method?: string; receivedDate?: string; reference?: string };

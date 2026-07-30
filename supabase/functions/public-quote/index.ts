@@ -71,7 +71,7 @@ Deno.serve(async (req: Request) => {
     // the quote token is the only thing to key on. Against a distributed
     // attacker an in-process limiter is a speed bump, not a bound; the token is
     // still the real security boundary. See docs/edge-function-rate-limits.md.
-    const { allowed } = checkRateLimit(`${token}-public-quote`, 20, 60000);
+    const { allowed } = await checkRateLimit(`${token}-public-quote`, 20, 60000);
     if (!allowed) return json({ error: "Too many requests. Please try again in a minute." }, 429);
 
     const supabase = createClient(supabaseUrl, serviceKey);

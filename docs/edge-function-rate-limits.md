@@ -3,50 +3,60 @@
 Built 2026-07-30 to close audit finding #4. Covers all 74 functions in
 `supabase/functions/`. If you add a function, add a row.
 
-## Read this first: `checkRateLimit` does not work in production
+## How it works, and how we know it works
 
-**Measured, not assumed.** On 2026-07-30, `public-quote` was deployed with a
-limit of 20 requests per 60 s keyed on the quote token, then sent **60
-consecutive requests with the same token over one keep-alive connection**.
+Counters live in `public.edge_rate_limits` and are consumed through the
+`consume_rate_limit(key, max, window_seconds)` RPC (migration
+`20260730121507_edge_rate_limits`). `_shared/rateLimiter.ts` calls that RPC over
+PostgREST using the service-role key from the environment, so **no call site
+passes a client** — the call is just `await checkRateLimit(key, max, windowMs)`.
 
-Result: **60 × HTTP 404, zero 429s.** The limiter never fired. A second run of
-30 gave the same result. Every response carried a distinct
-`x-deno-execution-id`, consistent with each request getting a fresh execution
-context.
+`INSERT ... ON CONFLICT DO UPDATE` takes a row lock, so concurrent callers on
+the same key serialise. The window is **fixed, not sliding**: a caller can burst
+across a boundary, up to 2× the ceiling straddling the reset. Accepted — a
+sliding window costs a second table, and the fixed window is what the original
+code intended anyway.
 
-`_shared/rateLimiter.ts` keeps its counters in a **module-level `Map`**. If that
-module is re-instantiated per request, the `Map` is empty every time, `count`
-never reaches `maxRequests`, and `checkRateLimit` returns `allowed: true`
-forever. That is exactly what the measurement shows.
+**It fails open.** If the RPC is unreachable or errors, `checkRateLimit` logs
+and allows the request. If the database is down the calling function's next
+query fails regardless, so failing closed would trade a real outage for no
+security gain.
 
-**This applies to all 50 functions that call it, not just the eleven added
-below.** The 39 that already had `checkRateLimit` have never been rate limited
-in production either. Treat every `checkRateLimit` call in this repo as
-decorative until the limiter is made durable.
+### Proof, on prod
 
-`worker-invite` was right, and its header comment understates it:
+`public-quote` carries a 20/min limit keyed on the quote token. Sixty
+consecutive requests with the same junk token over one keep-alive connection:
+
+| | Before (in-process `Map`) | After (DB-backed) |
+|---|---|---|
+| HTTP 404 (allowed through) | 60 | **20** |
+| HTTP 429 (limited) | **0** | **40** |
+
+The window-reset branch was proven separately by ageing a live counter's
+`window_start` past the boundary and consuming again: `allowed: true`,
+`remaining: 19` — the count resets rather than locking the key out.
+
+### What this replaced
+
+Until 2026-07-30 `checkRateLimit` kept its counters in a **module-level `Map`**.
+That module is re-instantiated per request, so the `Map` was empty every time,
+`count` never reached `maxRequests`, and it returned `allowed: true` forever.
+The same 60-request probe returned 60 × 404 and zero 429s. Every one of the 50
+call sites was decorative, including `release-escrow` and `instant-payout`.
+
+Four functions — `create-checkout-session`, `create-payment-session`,
+`send-email`, `send-sms` — carried their own byte-identical private copy of that
+Map. They now import the shared helper. **Do not reintroduce a local copy.**
+
+`worker-invite` had it right all along, and its header comment understated it:
 
 > Rate limiting is DB-backed on purpose. `_shared/rateLimiter.ts` is an
 > in-process Map that does not survive across Deno isolates — fine for cheap
 > endpoints, not for one that spends money on email and SMS.
 
-It is not fine for cheap endpoints either. It does nothing.
-
-### The fix
-
-Rate limiting has to live in the database. Two patterns already exist here:
-
-- **Count domain rows in a window** — `worker-invite` counts
-  `business_team_members` rows created in the last hour; `sms_send_log` does the
-  same for SMS. Works where the function already writes a row.
-- **A dedicated counter table** — needed where there is no such row
-  (`public-quote` viewing a quote writes nothing). No generic
-  `edge_rate_limits` table exists yet. Building one, with a `SECURITY DEFINER`
-  RPC that atomically increments and returns the count, is the outstanding work.
-
-The eleven `checkRateLimit` calls added below are kept deliberately: they record
-the intended key and ceiling for each endpoint, and they start working the day
-the limiter is backed by the database. They are not protection today.
+It was not fine for cheap endpoints either. It did nothing. Its own DB-backed
+cap (and `sms_send_log`) remain valid — they count domain rows in a window,
+which is stricter than the generic counter and worth keeping where it exists.
 
 ## Reachability classes
 
@@ -91,12 +101,10 @@ throttling ourselves.
 | `access-pin` | 5-attempt lockout with email reset, DB-backed |
 | `worker-invite` | Per-business hourly invite cap, counted in the DB |
 
-## Declaring a limit with `checkRateLimit`
+## Limited with `checkRateLimit`
 
-⚠ Read the section at the top: these calls do not currently enforce anything.
-They document the intended key and ceiling.
-
-The 39 that already had it are not listed individually — grep
+50 call sites across 50 functions, all enforcing. The 39 that already had it are
+not listed individually — grep
 `checkRateLimit` in `supabase/functions/`. `release-escrow:61` is the canonical
 call shape.
 
@@ -120,12 +128,14 @@ Added 2026-07-30 (the eleven gaps this inventory found):
 
 `public-quote` is open by design: an off-app client opens their quote link from
 any browser, so the unguessable `quotes.public_token` is the security boundary,
-not the origin or a JWT. There is no caller identity to key on, so the declared
-limit keys on the token — which caps abuse of *one known token* and does nothing
-about someone spraying random ones. The token is a UUID, so guessing is not the
-practical risk; unbounded request volume is. **This is the first endpoint to
-move onto a DB-backed limiter** — it is both fully public and the one this
-inventory used to prove the in-process limiter is inert.
+not the origin or a JWT. There is no caller identity, so the limit keys on the
+token — which now genuinely caps abuse of *one* token but still does nothing
+about someone spraying many random ones. The token is a UUID, so guessing is not
+the practical risk; unbounded volume across many keys is.
+
+**Open follow-up: per-IP limiting for `public-quote`.** It needs a decision on
+extracting the client IP from `x-forwarded-for` behind Supabase's proxy, which
+is why it is not in this change.
 
 `geofence-event` authenticates with a per-device opaque token. Same caveat,
 lower exposure: an invalid token is rejected before any write.

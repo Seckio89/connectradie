@@ -54,7 +54,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const { allowed } = checkRateLimit(`${user.id}-delete-user`, 5, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-delete-user`, 5, 60000);
     if (!allowed) {
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),

@@ -131,7 +131,7 @@ Deno.serve(async (req: Request) => {
       // concurrent requests in the same isolate.
       authedUser = authUser;
 
-      const { allowed } = checkRateLimit(`${authUser.id}-google-calendar-oauth`, 15, 60000);
+      const { allowed } = await checkRateLimit(`${authUser.id}-google-calendar-oauth`, 15, 60000);
       if (!allowed) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),

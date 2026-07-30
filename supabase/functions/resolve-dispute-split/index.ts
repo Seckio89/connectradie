@@ -72,7 +72,7 @@ Deno.serve(async (req: Request) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
     if (authError || !user) return errorJson(authError?.message || "Unauthorized", 401);
 
-    const { allowed } = checkRateLimit(`${user.id}-resolve-dispute-split`, 5, 60_000);
+    const { allowed } = await checkRateLimit(`${user.id}-resolve-dispute-split`, 5, 60_000);
     if (!allowed) return errorJson("Rate limit exceeded. Please try again later.", 429);
 
     // Admin only. Same shape as process-refund/index.ts:130-146 — the platform

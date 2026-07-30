@@ -57,7 +57,7 @@ Deno.serve(async (req: Request) => {
       return errorJson(authError?.message || "Unauthorized", 401);
     }
 
-    const { allowed } = checkRateLimit(`${user.id}-pay-milestone`, 5, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-pay-milestone`, 5, 60000);
     if (!allowed) {
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),

@@ -75,7 +75,7 @@ Deno.serve(async (req: Request) => {
     if (authError || !user) return json({ error: "Unauthorized" }, 401);
 
     // Sends email on every call.
-    const { allowed } = checkRateLimit(`${user.id}-invoice-contact`, 10, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-invoice-contact`, 10, 60000);
     if (!allowed) return json({ error: "Rate limit exceeded. Please try again later." }, 429);
 
     let body: { recurringJobId?: string; sessionsCount?: number; note?: string; jobId?: string };

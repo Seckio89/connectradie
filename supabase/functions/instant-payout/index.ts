@@ -75,7 +75,7 @@ Deno.serve(async (req: Request) => {
     if (authErr || !user) return json({ error: "Unauthorized" }, 401);
 
     // Money out. Same ceiling as release-escrow.
-    const { allowed } = checkRateLimit(`${user.id}-instant-payout`, 5, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-instant-payout`, 5, 60000);
     if (!allowed) return json({ error: "Rate limit exceeded. Please try again later." }, 429);
 
     let body: { action?: string; value?: string };

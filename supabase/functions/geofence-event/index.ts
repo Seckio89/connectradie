@@ -73,7 +73,7 @@ Deno.serve(async (req: Request) => {
     // A generous ceiling, not a throttle — crossings are bursty and batchSync
     // legitimately posts a backlog after the device regains signal. This exists
     // to stop a wedged device writing without bound, not to shape normal use.
-    const { allowed } = checkRateLimit(`${deviceToken}-geofence-event`, 120, 60000);
+    const { allowed } = await checkRateLimit(`${deviceToken}-geofence-event`, 120, 60000);
     if (!allowed) return json({ error: "Too many events. Please try again shortly." }, 429);
 
     // Best-effort touch of last_used_at (non-critical).

@@ -62,7 +62,7 @@ Deno.serve(async (req: Request) => {
       return errorJson(`Auth failed: ${authErr?.message || "no user"}`, 401);
     }
 
-    const { allowed } = checkRateLimit(`${user.id}-approve-invoice`, 10, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-approve-invoice`, 10, 60000);
     if (!allowed) {
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),

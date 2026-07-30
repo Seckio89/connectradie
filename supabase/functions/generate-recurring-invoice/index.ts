@@ -62,7 +62,7 @@ Deno.serve(async (req: Request) => {
       return errorJson(authError?.message || "Unauthorized", 401);
     }
 
-    const { allowed } = checkRateLimit(`${user.id}-generate-recurring-invoice`, 10, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-generate-recurring-invoice`, 10, 60000);
     if (!allowed) {
       return errorJson("Rate limit exceeded. Please try again later.", 429);
     }

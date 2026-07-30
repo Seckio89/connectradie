@@ -65,7 +65,7 @@ Deno.serve(async (req: Request) => {
     if (authErr || !user) return json({ error: "Unauthorized" }, 401);
 
     // Spends Google Calendar API quota.
-    const { allowed } = checkRateLimit(`${user.id}-google-calendar-import`, 5, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-google-calendar-import`, 5, 60000);
     if (!allowed) return json({ error: "Rate limit exceeded. Please try again later." }, 429);
 
     // --- Google access token (from google-calendar-oauth), refreshed if stale ---

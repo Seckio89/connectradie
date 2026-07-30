@@ -387,7 +387,7 @@ Deno.serve(async (req: Request) => {
 
     // The real cost control is the ai_estimate_usage meter further down; this
     // only bounds the CPU burnt before a caller reaches it.
-    const { allowed } = checkRateLimit(`${user.id}-estimate-quote`, 10, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-estimate-quote`, 10, 60000);
     if (!allowed) return json({ error: "Rate limit exceeded. Please try again later." }, 429);
 
     let body: EstimateRequest;

@@ -77,7 +77,7 @@ Deno.serve(async (req: Request) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) return errorJson(authError?.message || "Unauthorized", 401);
 
-    const { allowed } = checkRateLimit(`${user.id}-submit-final-quote`, 10, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-submit-final-quote`, 10, 60000);
     if (!allowed) {
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),

@@ -267,7 +267,7 @@ Deno.serve(async (req: Request) => {
 
       // Paid model call. The service-role caller is an internal trigger and is
       // deliberately not limited.
-      const { allowed } = checkRateLimit(`${user.id}-dispute-evidence-summary`, 5, 60000);
+      const { allowed } = await checkRateLimit(`${user.id}-dispute-evidence-summary`, 5, 60000);
       if (!allowed) return json({ error: "Rate limit exceeded. Please try again later." }, 429);
     }
 
