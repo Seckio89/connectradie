@@ -131,11 +131,14 @@ HTML-string generators (see the exemption under v2), plus Stripe
 Elements config in `BecsSetupForm.tsx` — an iframe CSS variables cannot
 reach, which carries the dark theme's values as literals.
 
-Legacy cleanup still outstanding (do deliberately, not in passing):
-the unused v1 ramps in `tailwind.config.js`, the `.dark` override sheet
-and `.theme-aware` bridge in `src/index.css` (now matching almost
-nothing, but load-bearing until proven otherwise), and `useDarkMode`
-(now a pin, documented in the hook).
+Legacy cleanup is DONE: the v1 ramps, the `.dark` override sheet, the
+`.theme-aware` bridge, `useDarkMode` and the dark-class pin are all
+deleted. The base theme lives at the top of `src/index.css`
+(`color-scheme: dark`, body on `--ink`/`--paper`, dark scrollbars, and
+a tokenized default for form controls that set no background — any
+explicit `bg-*` class wins over it). There is no light mode and no
+`dark` class; do not reintroduce either. The `ct-` prefix is kept
+deliberately (renaming ~4,000 call sites is churn without benefit).
 
 ---
 
