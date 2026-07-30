@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import type { Insert, Json } from "../_shared/dbTypes.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 /*
   dispute-evidence-summary — Phase 2 of AI-assisted dispute handling.
@@ -263,6 +264,11 @@ Deno.serve(async (req: Request) => {
       const { data: { user }, error: authError } = await supabase.auth.getUser(token);
       if (authError || !user) return json({ error: "Unauthorized" }, 401);
       callerId = user.id;
+
+      // Paid model call. The service-role caller is an internal trigger and is
+      // deliberately not limited.
+      const { allowed } = checkRateLimit(`${user.id}-dispute-evidence-summary`, 5, 60000);
+      if (!allowed) return json({ error: "Rate limit exceeded. Please try again later." }, 429);
     }
 
     let body: RequestBody;

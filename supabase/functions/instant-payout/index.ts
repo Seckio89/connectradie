@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { fetchEscrowReserveCents } from "../_shared/escrowReserve.ts";
 import { recordInstantPayoutFee } from "../_shared/feeContext.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 import {
   classifyInstantFailure,
   computeInstantPayout,
@@ -72,6 +73,10 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, serviceKey);
     const { data: { user }, error: authErr } = await supabase.auth.getUser(authHeader.slice(7));
     if (authErr || !user) return json({ error: "Unauthorized" }, 401);
+
+    // Money out. Same ceiling as release-escrow.
+    const { allowed } = checkRateLimit(`${user.id}-instant-payout`, 5, 60000);
+    if (!allowed) return json({ error: "Rate limit exceeded. Please try again later." }, 429);
 
     let body: { action?: string; value?: string };
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }

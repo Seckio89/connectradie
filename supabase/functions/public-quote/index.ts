@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { resolveTradieTier } from "../_shared/pricing.ts";
 import { resolveChargeFee, getJobQuoteSplit } from "../_shared/feeContext.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 /*
   public-quote — token-gated public access to a quote sent to an OFF-APP client.
@@ -65,6 +66,13 @@ Deno.serve(async (req: Request) => {
       : "view";
     const declineReason = typeof payload.reason === "string" ? payload.reason.trim().slice(0, 1000) : "";
     if (!UUID_RE.test(token)) return json({ error: "Invalid quote link" }, 400);
+
+    // No caller identity exists here — this endpoint is deliberately public, so
+    // the quote token is the only thing to key on. Against a distributed
+    // attacker an in-process limiter is a speed bump, not a bound; the token is
+    // still the real security boundary. See docs/edge-function-rate-limits.md.
+    const { allowed } = checkRateLimit(`${token}-public-quote`, 20, 60000);
+    if (!allowed) return json({ error: "Too many requests. Please try again in a minute." }, 429);
 
     const supabase = createClient(supabaseUrl, serviceKey);
 

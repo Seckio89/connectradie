@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 /*
   buy-estimate-pack — one-time Stripe Checkout for an "AI Estimate Pack"
@@ -71,6 +72,10 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, serviceKey);
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
     if (authError || !user) return json({ error: "Unauthorized" }, 401);
+
+    // Creates Stripe Checkout sessions.
+    const { allowed } = checkRateLimit(`${user.id}-buy-estimate-pack`, 5, 60000);
+    if (!allowed) return json({ error: "Rate limit exceeded. Please try again later." }, 429);
 
     let body: { successUrl?: string; cancelUrl?: string };
     try { body = await req.json(); } catch { body = {}; }

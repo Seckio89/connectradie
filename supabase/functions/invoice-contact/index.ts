@@ -4,6 +4,7 @@ import Stripe from "npm:stripe@14.21.0";
 import { resolveTradieTier } from "../_shared/pricing.ts";
 import { resolveChargeFee } from "../_shared/feeContext.ts";
 import type { Insert } from "../_shared/dbTypes.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 /*
   invoice-contact — bill an OFF-APP client_contact.
@@ -72,6 +73,10 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, serviceKey);
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
     if (authError || !user) return json({ error: "Unauthorized" }, 401);
+
+    // Sends email on every call.
+    const { allowed } = checkRateLimit(`${user.id}-invoice-contact`, 10, 60000);
+    if (!allowed) return json({ error: "Rate limit exceeded. Please try again later." }, 429);
 
     let body: { recurringJobId?: string; sessionsCount?: number; note?: string; jobId?: string };
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }

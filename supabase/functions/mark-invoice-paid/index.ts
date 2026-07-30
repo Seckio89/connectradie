@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 /*
   mark-invoice-paid — a tradie confirms an EXTERNAL invoice was paid off-platform
@@ -52,6 +53,9 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, serviceKey);
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
     if (authError || !user) return json({ error: "Unauthorized" }, 401);
+
+    const { allowed } = checkRateLimit(`${user.id}-mark-invoice-paid`, 20, 60000);
+    if (!allowed) return json({ error: "Rate limit exceeded. Please try again later." }, 429);
 
     let body: { invoiceId?: string; method?: string; receivedDate?: string; reference?: string };
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }

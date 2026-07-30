@@ -13,6 +13,7 @@
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const ALLOWED_ORIGINS = [
   Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -63,6 +64,11 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, serviceKey);
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
     if (authError || !user) return json({ error: "Please sign in to accept this invite" }, 401);
+
+    // Bounds token guessing per account. Best-effort only — see the note in
+    // docs/edge-function-rate-limits.md about the in-process limiter.
+    const { allowed } = checkRateLimit(`${user.id}-worker-claim-profile`, 10, 60000);
+    if (!allowed) return json({ error: "Too many attempts. Please try again in a minute." }, 429);
 
     let body: Record<string, unknown>;
     try {

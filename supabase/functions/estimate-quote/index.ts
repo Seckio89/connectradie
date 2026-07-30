@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 /*
   estimate-quote (v2) — AI-assisted job pricing.
@@ -383,6 +384,11 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, serviceKey);
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
     if (authError || !user) return json({ error: "Unauthorized" }, 401);
+
+    // The real cost control is the ai_estimate_usage meter further down; this
+    // only bounds the CPU burnt before a caller reaches it.
+    const { allowed } = checkRateLimit(`${user.id}-estimate-quote`, 10, 60000);
+    if (!allowed) return json({ error: "Rate limit exceeded. Please try again later." }, 429);
 
     let body: EstimateRequest;
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
