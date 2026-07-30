@@ -15,8 +15,8 @@ tooling traps, the check was run against the current governing rules in
 | TypeScript Safety | 100% | 10% | 10.0% | 🟢 |
 | UI & Design System | 85.7% | 5% | 4.3% | 🟡 |
 | Navigation | 80.0% | 5% | 4.0% | 🟡 |
-| Test Coverage | 42.9% | 10% | 4.3% | 🔴 |
-| **Overall** | **89.2%** | | | 🟡 |
+| Test Coverage | 71.4% | 10% | 7.1% | 🔴 |
+| **Overall** | **92.1%** | | | 🟢 |
 
 > **Amended same day, twice.**
 >
@@ -34,8 +34,13 @@ tooling traps, the check was run against the current governing rules in
 > 92.3% 🟢 → 100% 🟢, overall 87.3% → **89.2%**. Detail in
 > `docs/edge-function-rate-limits.md`.
 >
-> Test Coverage (42.9% 🔴) is now the only red dimension and the single largest
-> drag on the score.
+> Finally #1 and a new #1b: guard-clause tests for the 10 money/auth handlers,
+> and the discovery that **CI ran none of the existing Deno tests**. Both fixed.
+> Test Coverage 42.9% 🔴 → 71.4%, overall 89.2% → **92.1% 🟢**.
+>
+> Test Coverage remains the lowest dimension: page/component coverage is still
+> sparse and the test:source ratio is ~8%. It is no longer the *risky* gap —
+> the money and auth refusal paths are covered and gated by CI.
 
 ## Detailed Check Results
 
@@ -122,19 +127,27 @@ CLAUDE.md:
 
 | Check | Weight | Result | Notes |
 |-------|--------|--------|-------|
-| Test:source ratio | 1× | ❌ | 23 test files vs 290 source files (~8%). |
-| Edge Functions tested | 2× | ❌ | Unit coverage only for 5 `_shared` modules (fee cap, dispute split, escrow reserve, instant payout). The 74 function entry points have no unit tests — mitigated but not replaced by the e2e harnesses. |
+| Test:source ratio | 1× | ❌ | 24 test files vs 290 source files (~8%). |
+| Edge Functions tested | 2× | ✅ (fixed) | `supabase/functions/guards.test.ts` — 30 tests calling the **real exported handlers** of the 10 money/auth functions and asserting real refusals (401 unauthenticated, 405 wrong method, non-wildcard CORS preflight; 400 unsigned and forged webhook signatures). Mutation-checked: deleting the auth guard from `release-escrow` fails the suite. Plus the 5 `_shared` module suites. 102 Deno tests total. |
 | Pages/components tested | 1× | ❌ | Very sparse. |
 | E2E covers critical flows | 2× | ✅ | Six harnesses: full money path (fund→payout), disputes (won/lost chargeback), variations (incl. stranded-payment recovery), cancellation (full refund, idempotency, post-release 409), seed/doctor. All prod-refusing, all green this week. |
-| Test commands work | 1× | ✅ | Full vitest suite passes. |
+| Test commands work | 1× | ✅ | vitest 655 pass; Deno 102 pass. |
 
-Score: 3/7.
+Score: 5/7.
+
+**Separate finding surfaced while doing this: CI ran none of the Deno tests.**
+The 6 pre-existing edge-function test files had never executed in CI — they ran
+only if someone typed the command. A test nothing runs is documentation, and it
+is the same failure mode as the rate limiter that spent its life returning
+`allowed: true`. An `Edge Function Tests (Deno)` job was added to
+`.github/workflows/ci.yml`.
 
 ## All Findings (Severity-Ranked)
 
 | # | Severity | Dimension | File/Location | Finding | Recommendation |
 |---|----------|-----------|---------------|---------|----------------|
-| 1 | HIGH | Tests | supabase/functions/* | 74 edge-fn entry points lack unit tests; only e2e + 5 _shared modules cover the money paths | Add deno tests for the top 10 money/auth fns' guard clauses |
+| 1 | ~~HIGH~~ **FIXED** | Tests | supabase/functions/* | Edge-fn entry points had no unit tests; only e2e + 5 _shared modules covered the money paths | Done — `guards.test.ts`, 30 behavioural tests over the 10 money/auth handlers. Handlers exported behind `if (import.meta.main)`, pattern proven on `health` in prod before touching a money function. Mutation-checked. |
+| 1b | ~~HIGH~~ **FIXED** | Tests / CI | .github/workflows/ci.yml | **CI ran none of the 6 existing Deno test files** — they only executed by hand | Done — `Edge Function Tests (Deno)` job added; 102 tests now gate every push |
 | 2 | HIGH (accepted) | Payments | auto-release-payments | Automatic escrow release 5h post-completion contradicts the "client-initiated only" rule | Keep (deliberate, mitigated by dispute gate + notifications); document as policy in CLAUDE.md |
 | 3 | ~~HIGH~~ **FIXED** | Database | platform_fee_charges.job_id | Unindexed FK on a money-path table | Done — migration `20260730114952`, verified live |
 | 4 | ~~**CRITICAL**~~ **FIXED** | Security | `_shared/rateLimiter.ts` + 50 callers | The platform had **no working rate limiting**: `checkRateLimit` stored counters in a per-request `Map`, so it always returned `allowed: true` (60 requests vs a 20/min limit → 60 × 404, zero 429s). Four functions also carried private copies of the same broken Map. | Done — `edge_rate_limits` + `consume_rate_limit` RPC (migration `20260730121507`), helper rewritten DB-backed, all 50 call sites awaited, 4 local copies removed, 50 functions deployed. Re-probe: **20 × 404 then 40 × 429.** |
@@ -153,8 +166,9 @@ Score: 3/7.
 was found and fixed on 2026-07-30. No secrets, no RLS gaps, no permissive user
 writes, no AFSL language, webhook signatures verified in prod.
 
-**High — this sprint:** ~~#3 index migration~~ (done); ~~#4 rate limiting~~
-(done); #1 guard-clause tests for the top money fns; ratify #2 in docs.
+**High — this sprint:** ~~#3 index migration~~, ~~#4 rate limiting~~, ~~#1
+guard-clause tests~~, ~~#1b Deno tests in CI~~ — all done. Remaining: ratify #2
+(auto-release) in docs.
 
 **Medium — next sprint:** ~~#5 N+1 fix~~ (done); ~~#6 remaining indexes~~
 (done); #7 chart palette onto tokens; #8 policy merge.
@@ -167,16 +181,20 @@ writes, no AFSL language, webhook signatures verified in prod.
 |------|---------|-------|
 | 2026-06-12 | (report on file) | |
 | 2026-07-01 | ~85.6% 🟡 | Pre-rebuild baseline; different check set |
-| 2026-07-30 | 81.5% → 87.3% → **89.2%** 🟡 | Amended twice: #3/#5/#6 (indexes, N+1), then #4 (rate limiting). Not comparable head-to-head: this run scores harder (weighted tiers, live-DB queries, e2e-verified payment checks) and the two 🔴s are test-coverage and DB items the earlier set didn't weigh. Security/TS/UI are materially stronger than July 1 (RLS now 100/100 live-verified; 0 type errors vs a 239-error history; one design system instead of two). |
+| 2026-07-30 | 81.5% → 87.3% → 89.2% → **92.1%** 🟢 | Amended three times: #3/#5/#6 (indexes, N+1), #4 (rate limiting), #1/#1b (guard tests + Deno CI). Not comparable head-to-head: this run scores harder (weighted tiers, live-DB queries, e2e-verified payment checks) and the two 🔴s are test-coverage and DB items the earlier set didn't weigh. Security/TS/UI are materially stronger than July 1 (RLS now 100/100 live-verified; 0 type errors vs a 239-error history; one design system instead of two). |
 
 ## Next Recommended Action
 
-**Edge Function unit tests (#1)** — now the highest-severity open finding and
-the reason Test Coverage is the last red dimension. The 74 entry points have e2e
-coverage of the money paths but no unit tests on their guard clauses. Start with
-the ten money/auth functions: assert the 401/403/409 refusals, not the happy
-path, since those are the branches e2e never exercises.
+**Ratify #2 — the automatic escrow release — in `CLAUDE.md`.** It is the only
+remaining HIGH, it is a deliberate product decision rather than a defect, and it
+will be re-flagged by every future audit until the policy is written down where
+the rule lives. Cheapest item on the list.
 
-Worth noting what this audit demonstrated twice: `check:columns` and the
-rate-limit probe both found real defects that reading the code did not. The
-guard-clause tests are the same bet.
+After that the list is all MEDIUM and below: the `JobDetailsCard` chart palette
+(#7), the overlapping-policy merge (#8), and per-IP limiting for `public-quote`.
+
+One pattern is worth carrying forward. Four separate defects this audit —
+`check:columns`, the inert rate limiter, CI never running the Deno tests, and
+the missing guard-clause coverage — were all invisible to review and obvious to
+execution. Two of them had been shipping for months while the code read
+correctly. When a control is claimed, probe it.

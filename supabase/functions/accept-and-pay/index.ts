@@ -20,7 +20,10 @@ function errorJson(message: string, status: number) {
   });
 }
 
-Deno.serve(async (req: Request) => {
+// Exported so tests can call it with a fabricated Request. `import.meta.main`
+// is true for the runtime entrypoint and false when a test imports this module,
+// so importing it does not start a server.
+export const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
@@ -660,4 +663,6 @@ Deno.serve(async (req: Request) => {
     console.error("Error in accept-and-pay:", err);
     return errorJson("An internal error occurred", 500);
   }
-});
+};
+
+if (import.meta.main) Deno.serve(handler);

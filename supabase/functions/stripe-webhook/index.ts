@@ -21,7 +21,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
 };
 
-Deno.serve(async (req) => {
+// Exported so tests can call it with a fabricated Request. `import.meta.main`
+// is true for the runtime entrypoint and false when a test imports this module,
+// so importing it does not start a server.
+export const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
@@ -99,7 +102,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
-});
+};
+
+if (import.meta.main) Deno.serve(handler);
 
 async function handleConnectAccountUpdate(account: Stripe.Account) {
   const userId = account.metadata?.user_id;

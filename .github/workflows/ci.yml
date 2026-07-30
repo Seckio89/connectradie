@@ -138,6 +138,25 @@ jobs:
       # generated from disk and this fails when it drifts.
       - run: node scripts/check-edge-fn-docs.mjs
 
+  edge-tests:
+    name: Edge Function Tests (Deno)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # Six Deno test files existed for a year and CI ran NONE of them — they
+      # only executed if someone typed the command by hand, which is the same
+      # failure mode as the rate limiter that spent its whole life returning
+      # allowed:true. A test nothing runs is documentation.
+      #
+      # `npx deno@2` rather than an install step, matching scripts/typecheck-edge.mjs.
+      #
+      # --allow-env: guards.test.ts sets fake config before importing handlers.
+      # --allow-net: the npm: and jsr: specifiers resolve over the network.
+      - run: npx --yes deno@2 test --allow-env --allow-net --allow-read --node-modules-dir=auto supabase/functions/
+
   build:
     name: Build
     needs: [type-check, test]

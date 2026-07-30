@@ -55,7 +55,10 @@ function corsFor(req: Request) {
   };
 }
 
-Deno.serve(async (req: Request) => {
+// Exported so tests can call it with a fabricated Request. `import.meta.main`
+// is true for the runtime entrypoint and false when a test imports this module,
+// so importing it does not start a server.
+export const handler = async (req: Request): Promise<Response> => {
   const cors = corsFor(req);
   const json = (b: unknown, s = 200) =>
     new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json" } });
@@ -408,4 +411,6 @@ Deno.serve(async (req: Request) => {
       (err instanceof Error ? err.message : null);
     return json({ error: stripeMsg || "Could not process the payout. Please try again." }, 500);
   }
-});
+};
+
+if (import.meta.main) Deno.serve(handler);
